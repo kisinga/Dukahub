@@ -22,12 +22,6 @@ FROM alpine:latest
 # Set the working directory to /bin inside the container
 WORKDIR /bin
 
-# Copy the binary from the builder stage
-# COPY --from=builder /app/bin/pantrify .
-
-# Set the binary as the entrypoint of the container
-# ENTRYPOINT ["./pantrify"]
-
 # --- Runtime stage ---
 FROM ubuntu:latest AS runtime
 
