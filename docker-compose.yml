@@ -3,4 +3,4 @@ services:
   pantrify:
     build: .
     ports:
-      - "443:8090"
+      - "80:8090"
