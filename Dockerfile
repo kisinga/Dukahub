@@ -40,7 +40,7 @@ COPY sshd_config /etc/ssh/
 COPY entry.sh ./
 RUN chmod +x /entry.sh
 
-EXPOSE 8090 2222
+EXPOSE 8090 2222 4200
 
 # Copy the Go binary from the go-builder stage
 COPY --from=go-builder /app/bin/pantrify /usr/local/bin/pantrify

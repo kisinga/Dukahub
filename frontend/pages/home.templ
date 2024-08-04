@@ -1,0 +1,91 @@
+package pages
+
+templ Root() {
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Bursary System</title>
+        <base href="/" />
+        <link rel="stylesheet" href="/static/tailwind.css" />
+    </head>
+    <body id="body">
+        <!-- Hero Section -->
+        <header class="bg-blue-500 text-white py-20">
+            <div
+                class="container mx-auto text-center p-6 bg-blue-500 text-white"
+            >
+                <h1 class="text-5xl font-bold mb-4">
+                    Welcome to the County Bursary System
+                </h1>
+                <p class="text-xl mb-8">
+                    A platform dedicated to empowering students and bridging
+                    financial gaps.
+                </p>
+                <!-- Updated to use HTMX for navigation -->
+                <a
+                    href="apply/page/1"
+                    class="inline-block bg-white text-blue-600 px-6 py-3 text-lg font-semibold rounded-full shadow-md hover:bg-gray-100 mr-4"
+                >
+                    Apply Now
+                </a>
+                <a
+                    href="forms"
+                    class="inline-block bg-yellow-200 text-blue-600 px-6 py-3 text-lg font-semibold rounded-full shadow-md hover:bg-gray-100"
+                >
+                    Download Forms
+                </a>
+            </div>
+        </header>
+        <!-- Details Section -->
+        <section class="py-24 px-4 flex-1">
+            <div class="container mx-auto space-y-12">
+                <h2 class="text-4xl font-semibold text-center">
+                    About the Bursary System
+                </h2>
+                <p class="text-lg leading-relaxed">
+                    The Bursary System is a centralized platform designed to
+                    offer financial assistance to deserving students. This
+                    platform streamlines the bursary process, from application
+                    submission to evaluation and awarding. Its primary goal is
+                    to ensure transparency and provide equal opportunities for
+                    all applicants.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                    <div class="card w-96 bg-neutral text-neutral-content">
+                        <div class="card-body items-center text-center">
+                            <h2 class="card-title">Frontend</h2>
+                            <p class="">
+                                A user-friendly interface for students to easily
+                                apply and submit their applications, ensuring
+                                they provide all the necessary details.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="card w-96 bg-neutral text-neutral-content">
+                        <div class="card-body items-center text-center">
+                            <h2 class="card-title">Admin Dashboard</h2>
+                            <p>
+                                An intuitive interface for administrators,
+                                equipped with analytics and reporting tools for
+                                efficient application review and decisions.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="card w-96 bg-neutral text-neutral-content">
+                        <div class="card-body items-center text-center">
+                            <h2 class="card-title">Backend</h2>
+                            <p class="">
+                                A robust backend powered by NodeJS ensures the
+                                security and integrity of data, facilitating
+                                smooth system operations.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </body>
+</html>
+}

@@ -1,0 +1,13 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
+  },
+  "[templ]": {
+    "editor.defaultFormatter": "a-h.templ"
+  }
+}
