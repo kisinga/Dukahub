@@ -10,6 +10,6 @@ import (
 // This is also good for testing as we can easily test each handler independently.
 type HomeHandler struct{}
 
-func (h *HomeHandler) HandleHome(c echo.Context) error {
+func (h *HomeHandler) RenderHome(c echo.Context) error {
 	return render(c, pages.Root())
 }

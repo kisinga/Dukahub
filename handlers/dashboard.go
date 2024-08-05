@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/kisinga/pantrify/frontend/pages"
 	dbUtils "github.com/kisinga/pocketbase-utils"
 	"github.com/labstack/echo/v5"
 )
@@ -17,5 +18,5 @@ func NewdashboardHandler(db dbUtils.DB) *dashboardHandler {
 }
 
 func (h *dashboardHandler) HandleDashboard(c echo.Context) error {
-	return nil
+	return render(c, pages.Dashboard())
 }

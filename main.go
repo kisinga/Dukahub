@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	handlersPackage "github.com/kisinga/pantrify/handlers"
-	db "github.com/kisinga/pocketbase-utils"
+	dbUtils "github.com/kisinga/pocketbase-utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -19,7 +19,8 @@ import (
 var static embed.FS
 
 type allHandlers struct {
-	homeHandler handlersPackage.HomeHandler
+	homeHandler *handlersPackage.HomeHandler
+	authHandler *handlersPackage.AuthHandler
 }
 
 func main() {
@@ -37,25 +38,21 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	handlers, err := createHandlers()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	mydb := db.New(pb)
+	mydb := dbUtils.New(pb)
+
+	handlers, err := createHandlers(mydb)
 
 	pb.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		e.Router.GET("/", handlers.homeHandler.HandleHome, apis.ActivityLogger(pb))
+		e.Router.GET("/", handlers.homeHandler.RenderHome, apis.ActivityLogger(pb))
 		return nil
 	})
 
-	// Debugging: List embedded files
-	fs.WalkDir(contentStatic, ".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			log.Println("Walking error:", err)
-			return err
-		}
-		log.Println("Embedded file:", path)
+	pb.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+		e.Router.GET("/login", handlers.authHandler.RenderLogin, apis.ActivityLogger(pb))
 		return nil
 	})
 
@@ -73,12 +70,14 @@ func main() {
 	wg.Wait()
 }
 
-func createHandlers() (allHandlers, error) {
+func createHandlers(db dbUtils.DB) (allHandlers, error) {
 
 	homeHandler := handlersPackage.HomeHandler{}
+	authHandler := handlersPackage.NewAutuhHandler(db)
 
 	return allHandlers{
-		homeHandler: homeHandler,
+		homeHandler: &homeHandler,
+		authHandler: authHandler,
 	}, nil
 
 }
