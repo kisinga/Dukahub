@@ -4,8 +4,11 @@ BINARY_DIR=./bin
 
 .PHONY: build
 build:
+	@echo "Building frontend..."
+	@make -C ./frontend all
+	@echo "Building backend..."
 	@mkdir -p $(BINARY_DIR)
-	@go build -o $(BINARY_DIR)/$(BINARY_NAME) **/**.go
+	@go build -o $(BINARY_DIR)/$(BINARY_NAME) *.go
 
 .PHONY: test
 test:

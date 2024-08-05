@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build:css": "tailwindcss build -i ./src/css/main.css -o ./static/tailwind.css"
+    "build:css": "npx -y tailwindcss build -i ./src/css/main.css -o ./static/tailwind.css"
   },
   "devDependencies": {
     "daisyui": "^4.6.1",

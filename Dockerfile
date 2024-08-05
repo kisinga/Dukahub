@@ -1,54 +1,58 @@
-# Start with a base image that has Go installed
-FROM golang:latest as go-builder
+# Builder stage for Go and Node.js
+FROM golang:latest as builder
 
-# Set the working directory inside the container
+# Set working directory
 WORKDIR /app
 
-# Copy the Go modules manifests
-COPY go.mod go.sum ./
+# Install system dependencies including Node.js
+RUN apt-get update && \
+    apt-get install -y curl build-essential nodejs npm \
+    && rm -rf /var/lib/apt/lists/*
 
-# Download and cache dependencies
+# Set environment variables for Go
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+
+# Install the templ package
+RUN go install github.com/a-h/templ/cmd/templ@latest
+
+# Check Node.js and npm availability
+RUN node --version
+RUN npm --version
+
+# Copy Go module manifests and install dependencies
+COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the application source code
+# Copy application source
 COPY . .
 
 # Build the application
 RUN make build
 
-# Start a new stage to create a lightweight final image
-FROM alpine:latest
-
-# Set the working directory to /bin inside the container
-WORKDIR /bin
-
-# --- Runtime stage ---
+# Runtime stage
 FROM ubuntu:latest AS runtime
 
-# Install OpenSSH server and nginx
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends openssh-server nginx \
-    && echo "root:Docker!" | chpasswd
+# Install OpenSSH and other necessary packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends openssh-server \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create nginx log directories
-RUN mkdir -p /var/log/nginx /usr/share/nginx/logs \
-    && touch /usr/share/nginx/logs/nginx_error.log \
-    && touch /usr/share/nginx/logs/nginx_access.log \
-    && chmod -R 755 /usr/share/nginx/logs /var/log/nginx
-
+# Set root password and configure SSH
+RUN echo "root:Docker!" | chpasswd
 COPY sshd_config /etc/ssh/
 COPY entry.sh ./
 RUN chmod +x /entry.sh
 
-EXPOSE 8090 2222 4200
+# Expose necessary ports
+EXPOSE 8090 2222
 
-# Copy the Go binary from the go-builder stage
-COPY --from=go-builder /app/bin/pantrify /usr/local/bin/pantrify
-# Ensure backend binary is executable
+# Copy the Go binary from the builder stage
+COPY --from=builder /app/bin/pantrify /usr/local/bin/pantrify
 RUN chmod +x /usr/local/bin/pantrify
-RUN ldd /usr/local/bin/pantrify || true
 
-# On azure this folder is mounted from a fileshare
+# Setup work directory
 WORKDIR /data
 
+# Command to run
 CMD ["/bin/sh", "-c", "./../entry.sh && pantrify serve --http=0.0.0.0:8090"]

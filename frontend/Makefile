@@ -2,4 +2,7 @@ build:
 	@npm run build:css
 	@templ generate
 
-all: build
+install-deps:
+	@npm install
+
+all: install-deps build
