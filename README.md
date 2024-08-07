@@ -1,7 +1,7 @@
 Run bare metal
 
 ```bash
-make && go run *.go --dir=data serve --http=0.0.0.0:8090
+go run *.go --dir=data serve --http=0.0.0.0:8090
 ```
 
 Run inside docker in prod mode

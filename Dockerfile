@@ -47,8 +47,8 @@ RUN apt-get update && \
 
 # Set root password and configure SSH
 RUN echo "root:Docker!" | chpasswd
-COPY sshd_config /etc/ssh/
-COPY entry.sh ./
+COPY docker_configs/sshd_config /etc/ssh/
+COPY docker_configs/entry.sh ./
 RUN chmod +x /entry.sh
 
 # Expose necessary ports
