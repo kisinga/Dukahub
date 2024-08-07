@@ -3,7 +3,7 @@ module github.com/kisinga/pantrify
 go 1.22.3
 
 require (
-	github.com/kisinga/pocketbase-utils v0.0.0-20240725131759-8c29d2938ca5
+	github.com/kisinga/pocketbase-utils v0.0.0-20240806145158-54b3a813ddfd
 	github.com/pocketbase/pocketbase v0.22.18
 )
 

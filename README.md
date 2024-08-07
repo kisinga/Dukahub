@@ -1,7 +1,7 @@
 Run bare metal
 
 ```bash
-go run **/**.go --dir=data serve --http=0.0.0.0:8090
+make && go run *.go --dir=data serve --http=0.0.0.0:8090
 ```
 
 Run inside docker in prod mode
@@ -15,6 +15,12 @@ Run inside docker in dev mode
 ```bash
 docker-compose build;
 docker-compose -f docker-compose.dev.yml up;
+```
+
+In case you want to force fetch latest changes (e.g recent update to db utils has been cached)
+
+```bash
+    GOPROXY=direct go get -u
 ```
 
 Structure

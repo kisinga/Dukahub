@@ -1,24 +1,13 @@
 # Builder stage for Go and Node.js
-FROM golang:latest as builder
+FROM golang:latest AS go-builder
 
 # Set working directory
 WORKDIR /app
 
 # Install system dependencies including Node.js
 RUN apt-get update && \
-    apt-get install -y curl build-essential nodejs npm \
+    apt-get install -y curl build-essential \
     && rm -rf /var/lib/apt/lists/*
-
-# Set environment variables for Go
-ENV GOPATH /go
-ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
-
-# Install the templ package
-RUN go install github.com/a-h/templ/cmd/templ@latest
-
-# Check Node.js and npm availability
-RUN node --version
-RUN npm --version
 
 # Copy Go module manifests and install dependencies
 COPY go.mod go.sum ./
@@ -28,10 +17,28 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN make build
+RUN go build -o pantrify 
+
+
+# Build stage for frontend
+FROM node:18-alpine AS node-builder
+
+# Set the working directory
+WORKDIR /app
+
+# Copy Node.js files and install dependencies
+COPY ./frontend .
+RUN npm ci
+RUN npm run build
 
 # Runtime stage
 FROM ubuntu:latest AS runtime
+
+# copy the /public directory from the node-builder stage
+COPY --from=node-builder /app/dist /public
+
+# set environment variables
+ENV PUBLIC_FOLDER_PATH="/public"
 
 # Install OpenSSH and other necessary packages
 RUN apt-get update && \
@@ -48,7 +55,7 @@ RUN chmod +x /entry.sh
 EXPOSE 8090 2222
 
 # Copy the Go binary from the builder stage
-COPY --from=builder /app/bin/pantrify /usr/local/bin/pantrify
+COPY --from=go-builder /app/pantrify /usr/local/bin/pantrify
 RUN chmod +x /usr/local/bin/pantrify
 
 # Setup work directory

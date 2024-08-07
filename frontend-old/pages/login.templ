@@ -1,0 +1,45 @@
+package pages
+
+templ Login() {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>SimpleStock - Login</title>
+			<base href="/"/>
+			<link rel="stylesheet" href="/static/tailwind.css"/>
+			<script src="https://cdn.jsdelivr.net/npm/unpoly@3.8.0/unpoly.min.js"></script>
+			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/unpoly@3.8.0/unpoly.min.css"/>
+		</head>
+		<body class="bg-gray-50">
+			<div class="min-h-screen flex items-center justify-center">
+				<div class="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
+					<h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Login</h2>
+					<form action="/path/to/your/login/endpoint" method="POST">
+						<div class="mb-4">
+							<label for="username" class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+							<input type="text" id="username" name="username" class="form-input mt-1 block w-full" placeholder="Enter your username" required/>
+						</div>
+						<div class="mb-6">
+							<label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+							<input type="password" id="password" name="password" class="form-input mt-1 block w-full" placeholder="Enter your password" required/>
+						</div>
+						<div class="flex items-center justify-between mb-6">
+							// <div class="flex items-center">
+							// 	<input id="remember_me" name="remember_me" type="checkbox" class="form-checkbox"/>
+							// 	<label for="remember_me" class="ml-2 block text-sm text-gray-800">Remember me</label>
+							// </div>
+							<a href="#" class="text-sm text-blue-500 hover:text-blue-700">Forgot your password?</a>
+						</div>
+						<button type="submit" class="btn btn-primary w-full">Log in</button>
+					</form>
+				</div>
+			</div>
+			<!-- Footer -->
+			<footer class="bg-neutral py-4 text-center text-sm text-white">
+				© 2024 SimpleStock. All rights reserved.
+			</footer>
+		</body>
+	</html>
+}

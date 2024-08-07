@@ -158,6 +158,16 @@ github.com/kisinga/pocketbase-utils v0.0.0-20240725123148-5f67fdc49689 h1:fy2pee
 github.com/kisinga/pocketbase-utils v0.0.0-20240725123148-5f67fdc49689/go.mod h1:LJOwMnyoafHwkiPEESbLaNwR1zCCyT+gTbFEtuHLbkk=
 github.com/kisinga/pocketbase-utils v0.0.0-20240725131759-8c29d2938ca5 h1:ZaD9mkOuZVZqkWU+vOqjbwrdtrLiItMimdPspIN4AQg=
 github.com/kisinga/pocketbase-utils v0.0.0-20240725131759-8c29d2938ca5/go.mod h1:LJOwMnyoafHwkiPEESbLaNwR1zCCyT+gTbFEtuHLbkk=
+github.com/kisinga/pocketbase-utils v0.0.0-20240806134507-3066202bc50a h1:0YnSUhDtD5AZw96ogfVIt6ilYZLANk6E2MvMOkNGxGs=
+github.com/kisinga/pocketbase-utils v0.0.0-20240806134507-3066202bc50a/go.mod h1:LJOwMnyoafHwkiPEESbLaNwR1zCCyT+gTbFEtuHLbkk=
+github.com/kisinga/pocketbase-utils v0.0.0-20240806135724-8b1ac494aded h1:YClgdAP+0gXnH3lSwDFCQ/rfZ6Gqhyd8hn9SXDf64nU=
+github.com/kisinga/pocketbase-utils v0.0.0-20240806135724-8b1ac494aded/go.mod h1:LJOwMnyoafHwkiPEESbLaNwR1zCCyT+gTbFEtuHLbkk=
+github.com/kisinga/pocketbase-utils v0.0.0-20240806142139-4e78e9237c69 h1:/Z4eB5692Q54GnRI4eXeWDVsKpoArwIngv1gVr8lBD4=
+github.com/kisinga/pocketbase-utils v0.0.0-20240806142139-4e78e9237c69/go.mod h1:LJOwMnyoafHwkiPEESbLaNwR1zCCyT+gTbFEtuHLbkk=
+github.com/kisinga/pocketbase-utils v0.0.0-20240806144537-39f25a1e78aa h1:8fJoE0Kc+rXxMegesTw4S2cUoExEDnSIPEytmmlanOs=
+github.com/kisinga/pocketbase-utils v0.0.0-20240806144537-39f25a1e78aa/go.mod h1:LJOwMnyoafHwkiPEESbLaNwR1zCCyT+gTbFEtuHLbkk=
+github.com/kisinga/pocketbase-utils v0.0.0-20240806145158-54b3a813ddfd h1:EVpMpso0LveSEYavLZSiEwgfEiSiKrrhuvwwNyagvR0=
+github.com/kisinga/pocketbase-utils v0.0.0-20240806145158-54b3a813ddfd/go.mod h1:LJOwMnyoafHwkiPEESbLaNwR1zCCyT+gTbFEtuHLbkk=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
 github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3xk=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=

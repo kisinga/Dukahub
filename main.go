@@ -1,26 +1,20 @@
 package main
 
 import (
-	"embed"
-	"io/fs"
 	"log"
-	"net/http"
+	"os"
+	"path/filepath"
 	"sync"
 
 	handlersPackage "github.com/kisinga/pantrify/handlers"
 	dbUtils "github.com/kisinga/pocketbase-utils"
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
-//go:embed frontend/static/*
-var static embed.FS
-
-type allHandlers struct {
-	homeHandler *handlersPackage.HomeHandler
-	authHandler *handlersPackage.AuthHandler
+type customHandlers struct {
+	custom *handlersPackage.CustomHandler
 }
 
 func main() {
@@ -28,38 +22,36 @@ func main() {
 		pocketbase.Config{
 			DefaultDev:      true,
 			HideStartBanner: false,
+			DefaultDataDir:  "./data",
 		},
 	)
 
-	contentStatic, err := fs.Sub(static, "frontend/static")
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	var wg sync.WaitGroup
-
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	mydb := dbUtils.New(pb)
 
-	handlers, err := createHandlers(mydb)
+	_, err := createHandlers(mydb)
+	if err != nil {
+		log.Fatal(err)
+	}
+	publicFolderPath := os.Getenv("PUBLIC_FOLDER_PATH")
+	if publicFolderPath == "" {
+		log.Default().Println("PUBLIC_FOLDER_PATH not set, defaulting to public")
+		publicFolderPath = "public"
+	} else {
+		// convert to absolute path
+		absPath, err := filepath.Abs(publicFolderPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		publicFolderPath = absPath
+	}
 
 	pb.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		e.Router.GET("/", handlers.homeHandler.RenderHome, apis.ActivityLogger(pb))
+		e.Router.GET("/*", apis.StaticDirectoryHandler(os.DirFS(publicFolderPath), false))
 		return nil
 	})
 
-	pb.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		e.Router.GET("/login", handlers.authHandler.RenderLogin, apis.ActivityLogger(pb))
-		return nil
-	})
-
-	pb.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		e.Router.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", http.FileServer(http.FS(contentStatic)))), apis.ActivityLogger(pb))
-		return nil
-	})
 	// connect to the database
 	wg.Add(1)
 	go func() {
@@ -70,14 +62,12 @@ func main() {
 	wg.Wait()
 }
 
-func createHandlers(db dbUtils.DB) (allHandlers, error) {
+func createHandlers(utils dbUtils.DB) (customHandlers, error) {
 
-	homeHandler := handlersPackage.HomeHandler{}
-	authHandler := handlersPackage.NewAutuhHandler(db)
+	custom := handlersPackage.CustomHandler{}
 
-	return allHandlers{
-		homeHandler: &homeHandler,
-		authHandler: authHandler,
+	return customHandlers{
+		custom: &custom,
 	}, nil
 
 }
