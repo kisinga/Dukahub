@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	handlersPackage "github.com/kisinga/pantrify/handlers"
@@ -36,8 +37,13 @@ func main() {
 	}
 	publicFolderPath := os.Getenv("PUBLIC_FOLDER_PATH")
 	if publicFolderPath == "" {
-		log.Default().Println("PUBLIC_FOLDER_PATH not set, defaulting to public")
-		publicFolderPath = "public"
+		_, withGoRun := inspectRuntime()
+		if withGoRun {
+			// we are running with go run
+			publicFolderPath = "frontend/dist"
+		} else {
+			log.Fatal("PUBLIC_FOLDER_PATH not set and not running with go run")
+		}
 	} else {
 		// convert to absolute path
 		absPath, err := filepath.Abs(publicFolderPath)
@@ -70,4 +76,17 @@ func createHandlers(utils dbUtils.DB) (customHandlers, error) {
 		custom: &custom,
 	}, nil
 
+}
+
+func inspectRuntime() (baseDir string, withGoRun bool) {
+	if strings.HasPrefix(os.Args[0], os.TempDir()) {
+		// probably ran with go run
+		withGoRun = true
+		baseDir, _ = os.Getwd()
+	} else {
+		// probably ran with go build
+		withGoRun = false
+		baseDir = filepath.Dir(os.Args[0])
+	}
+	return
 }
