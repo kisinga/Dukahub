@@ -5,7 +5,7 @@ import PocketBase from 'pocketbase';
   providedIn: 'root'
 })
 export class DbService {
-  pb = new PocketBase('pantrify.azurewebsites.net');
+  pb = new PocketBase('https://pantrify.azurewebsites.net');
 
   authenticated = signal(false);
 
