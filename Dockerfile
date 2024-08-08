@@ -51,15 +51,18 @@ COPY docker_configs/sshd_config /etc/ssh/
 COPY docker_configs/entry.sh ./
 RUN chmod +x /entry.sh
 
-# Expose necessary ports
-EXPOSE 80 2222
-
 # Copy the Go binary from the builder stage
 COPY --from=go-builder /app/pantrify /usr/local/bin/pantrify
 RUN chmod +x /usr/local/bin/pantrify
 
+# mount the /data directory from the host
+VOLUME /data
+
 # Setup work directory
 WORKDIR /data
+
+# Expose necessary ports
+EXPOSE 80 2222
 
 # Command to run
 CMD ["/bin/sh", "-c", "./../entry.sh && pantrify serve --http=0.0.0.0:80"]

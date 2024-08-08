@@ -8,14 +8,7 @@ cd frontend && npm run watch
 Run inside docker in prod mode
 
 ```bash
-docker-compose build && docker-compose up
-```
-
-Run inside docker in dev mode
-
-```bash
-docker-compose build;
-docker-compose -f docker-compose.dev.yml up;
+docker build -t pantrify . && docker run -p 80:80 pantrify
 ```
 
 In case you want to force fetch latest changes (e.g recent update to db utils has been cached)
