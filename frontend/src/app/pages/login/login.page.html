@@ -1,0 +1,57 @@
+<div class="min-h-screen flex items-center justify-center">
+  <div class="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
+    <div class="flex justify-center mb-8">
+      <a href="/">
+        <img src="/icon_rounded.avif" alt="Logo" class="h-16 w-auto" />
+      </a>
+    </div>
+    <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Login</h2>
+    <form (ngSubmit)="login()">
+      <div class="mb-4">
+        <label for="Email" class="block text-gray-700 text-sm font-bold mb-2"
+          >Email</label
+        >
+        <input
+          type="text"
+          id="Email"
+          name="Email"
+          class="form-input mt-1 block w-full"
+          placeholder="Enter your Email"
+          required
+          [(ngModel)]="email"
+        />
+      </div>
+      <div class="mb-6">
+        <label for="password" class="block text-gray-700 text-sm font-bold mb-2"
+          >Password</label
+        >
+        <input
+          type="password"
+          id="password"
+          name="password"
+          class="form-input mt-1 block w-full"
+          placeholder="Enter your password"
+          [(ngModel)]="password"
+          required
+        />
+      </div>
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center">
+          <input
+            id="remember_me"
+            name="remember_me"
+            type="checkbox"
+            class="form-checkbox"
+          />
+          <label for="remember_me" class="ml-2 block text-sm text-gray-800"
+            >Remember me</label
+          >
+        </div>
+        <a href="#" class="text-sm text-blue-500 hover:text-blue-700"
+          >Forgot your password?</a
+        >
+      </div>
+      <button type="submit" class="btn btn-primary w-full">Log in</button>
+    </form>
+  </div>
+</div>

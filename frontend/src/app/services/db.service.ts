@@ -19,9 +19,12 @@ export class DbService {
     })
   }
 
-  async login(email: string, password: string): Promise<void> {
-    await this.pb.collection('users').authWithPassword(email, password);
-    return;
+  async login(email: string, password: string): Promise<boolean> {
+    let result = await this.pb.collection('users').authWithPassword(email, password);
+    if (result === null) {
+      return false;
+    }
+    return true;
   }
 
 }

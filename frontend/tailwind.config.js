@@ -8,32 +8,32 @@ module.exports = {
     themes: [
       {
         light: {
-          primary: "#2b49ff",
-          secondary: "#00b5b4",
-          accent: "#ff301c",
-          neutral: "#0f1023",
-          "base-100": "#fff",
-          "base-200": "#f6f7fb",
-          "base-300": "#fafbfc",
-          info: "#98d7f0",
-          success: "#9cdcc5",
-          warning: "#e0ca96",
-          error: "#f8bbb0",
+          primary: "#FFCC00", // Bright Yellow
+          secondary: "#0057A0", // Deep Blue
+          accent: "#FF6F00", // A complementary vibrant accent color
+          neutral: "#0F1023", // Dark neutral
+          "base-100": "#FFFFFF", // White
+          "base-200": "#F6F7FB", // Light grey
+          "base-300": "#FAFBFC", // Slightly darker grey
+          info: "#00A9E0", // Bright Blue
+          success: "#00A859", // Bright Green
+          warning: "#FFC107", // Bright Yellow-Orange
+          error: "#FF5252", // Bright Red
         },
       },
       {
         dark: {
-          primary: "#2b49ff",
-          secondary: "#00b5b4",
-          accent: "#ff301c",
-          neutral: "#4e5168",
-          "base-100": "#393b51",
-          "base-200": "#2b2d43",
-          "base-300": "#0f1023",
-          info: "#98d7f0",
-          success: "#9cdcc5",
-          warning: "#e0ca96",
-          error: "#f8bbb0",
+          primary: "#FFCC00", // Bright Yellow
+          secondary: "#0057A0", // Deep Blue
+          accent: "#FF6F00", // A complementary vibrant accent color
+          neutral: "#4E5168", // Medium dark neutral
+          "base-100": "#393B51", // Dark grey
+          "base-200": "#2B2D43", // Darker grey
+          "base-300": "#0F1023", // Dark neutral
+          info: "#00A9E0", // Bright Blue
+          success: "#00A859", // Bright Green
+          warning: "#FFC107", // Bright Yellow-Orange
+          error: "#FF5252", // Bright Red
         },
       },
     ],

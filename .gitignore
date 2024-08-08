@@ -1,2 +1,5 @@
 /data
 /bin
+
+# all vscode go debug binaries
+__debug_bin**
