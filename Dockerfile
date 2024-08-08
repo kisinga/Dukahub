@@ -52,7 +52,7 @@ COPY docker_configs/entry.sh ./
 RUN chmod +x /entry.sh
 
 # Expose necessary ports
-EXPOSE 8090 2222
+EXPOSE 80 2222
 
 # Copy the Go binary from the builder stage
 COPY --from=go-builder /app/pantrify /usr/local/bin/pantrify
@@ -62,4 +62,4 @@ RUN chmod +x /usr/local/bin/pantrify
 WORKDIR /data
 
 # Command to run
-CMD ["/bin/sh", "-c", "./../entry.sh && pantrify serve --http=0.0.0.0:8090"]
+CMD ["/bin/sh", "-c", "./../entry.sh && pantrify serve --http=0.0.0.0:80"]
