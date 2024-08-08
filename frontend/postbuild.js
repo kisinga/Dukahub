@@ -1,3 +1,8 @@
+/*
+This script moves the files from the browser directory to the root of the dist directory.
+This is done to make the files accessible from the root of the server and avoids unnecessary nesting when running inside docker
+*/
+
 const fs = require("fs");
 const path = require("path");
 

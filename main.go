@@ -35,26 +35,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	publicFolderPath := os.Getenv("PUBLIC_FOLDER_PATH")
-	if publicFolderPath == "" {
-		_, withGoRun := inspectRuntime()
-		if withGoRun {
-			// we are running with go run
-			publicFolderPath = "frontend/dist"
-		} else {
-			log.Fatal("PUBLIC_FOLDER_PATH not set and not running with go run")
-		}
-	} else {
-		// convert to absolute path
-		absPath, err := filepath.Abs(publicFolderPath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		publicFolderPath = absPath
-	}
+
+	indexFile := getIndexFile()
 
 	pb.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		e.Router.GET("/*", apis.StaticDirectoryHandler(os.DirFS(publicFolderPath), false))
+		e.Router.GET("/*", apis.StaticDirectoryHandler(os.DirFS(indexFile), false))
 		return nil
 	})
 
@@ -76,6 +61,30 @@ func createHandlers(utils dbUtils.DB) (customHandlers, error) {
 		custom: &custom,
 	}, nil
 
+}
+
+func getIndexFile() string {
+	publicFolderPath := os.Getenv("PUBLIC_FOLDER_PATH")
+	if publicFolderPath == "" {
+		_, withGoRun := inspectRuntime()
+		if withGoRun {
+			// we are running with go run
+			log.Println("Running with go run, using frontend/dist as public folder")
+			publicFolderPath = "./frontend/dist/browser"
+		} else {
+			log.Fatal("PUBLIC_FOLDER_PATH not set and not running with go run")
+		}
+	} else {
+		// convert to absolute path
+		absPath, err := filepath.Abs(publicFolderPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		publicFolderPath = absPath
+	}
+
+	// since we have an SPA, we need to serve the index.html for all routes
+	return filepath.Join(publicFolderPath, "index.html")
 }
 
 func inspectRuntime() (baseDir string, withGoRun bool) {

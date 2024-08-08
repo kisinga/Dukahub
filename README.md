@@ -1,7 +1,8 @@
 Run bare metal
 
 ```bash
-go run *.go --dir=data serve --http=0.0.0.0:8090
+go run *.go --dir=data serve &
+cd frontend && npm run watch
 ```
 
 Run inside docker in prod mode
