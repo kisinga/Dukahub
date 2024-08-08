@@ -23,7 +23,6 @@ func main() {
 		pocketbase.Config{
 			DefaultDev:      true,
 			HideStartBanner: false,
-			DefaultDataDir:  "./data",
 		},
 	)
 
