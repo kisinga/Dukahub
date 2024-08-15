@@ -1,40 +1,54 @@
-import { ChangeDetectionStrategy, Component, Inject, input, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject, type OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DbService } from '../../services/db.service';
 import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
 
 @Component({
     standalone: true,
     imports: [
         FormsModule,
         ReactiveFormsModule,
+        CommonModule,
     ],
     templateUrl: './login.page.html',
     styleUrl: './login.page.css',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginPage implements OnInit {
-
-    email = ""
-    password = ""
+    email = "";
+    password = "";
+    errorMessage = "";
+    isLoading = false;
 
     constructor(
         @Inject(DbService) private readonly db: DbService,
         @Inject(Router) private readonly router: Router,
-    ) {
-    }
+        private cdr: ChangeDetectorRef
+    ) { }
 
     async login(): Promise<void> {
-        let result = await this.db.login(this.email, this.password);
-        if (result === false) {
-            console.log('Login failed');
-        } else {
-            console.log('Login successful');
+        if (this.isLoading) return; // Prevent multiple submissions
 
-            // navigate to dashboard
-            this.router.navigate(['/dashboard']);
+        this.isLoading = true;
+        this.errorMessage = "";
+        this.cdr.detectChanges(); // Trigger change detection to show loading state and clear error
+
+        try {
+            const result = await this.db.login(this.email, this.password);
+            if (result === false) {
+                this.errorMessage = "Invalid email or password. Please try again.";
+            } else {
+                console.log('Login successful');
+                this.router.navigate(['/dashboard']);
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            this.errorMessage = "An unexpected error occurred. Please try again later.";
+        } finally {
+            this.isLoading = false;
+            this.cdr.detectChanges(); // Trigger change detection to hide loading state and show error if any
         }
-        return;
     }
 
     ngOnInit(): void { }

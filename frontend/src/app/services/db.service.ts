@@ -43,14 +43,10 @@ export class DbService {
     this.selectedCompanyIndex.set(index);
   }
 
-  async login(email: string, password: string): Promise<boolean> {
-    let result = (await this.pb.collection('users').authWithPassword(email, password, {
+  login(email: string, password: string): Promise<any> {
+    return this.pb.collection('users').authWithPassword(email, password, {
       expand: 'company'
-    }))
-    if (result === null) {
-      return false;
-    }
-    return true;
+    })
   }
 
   logout(): void {
