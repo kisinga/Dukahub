@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, Inject, type OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { DbService } from '../../services/db.service';
 
 @Component({
     standalone: true,
@@ -9,13 +10,20 @@ import { RouterLink, RouterOutlet } from '@angular/router';
         RouterOutlet,
         FormsModule,
         ReactiveFormsModule,
+        RouterLinkActive,
     ],
     templateUrl: './dashboard.page.html',
     styleUrl: './dashboard.page.css',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardPage implements OnInit {
+    constructor(@Inject(DbService) private readonly db: DbService,
+        private activatedRoute: ActivatedRoute) {
 
-    ngOnInit(): void { }
+    }
 
+    ngOnInit(): void {
+
+
+    }
 }
