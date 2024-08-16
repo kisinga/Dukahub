@@ -1,10 +1,12 @@
 import type { Routes } from '@angular/router';
 import { DashboardPage } from './dashboard.page';
+import { dashboardResolver } from './dashboard.resolver';
 
 export const routes: Routes = [
     {
         path: '',
         component: DashboardPage,
+        resolve: { ready: dashboardResolver },
         children: [
             { path: '', loadComponent: () => import('./main/main.page').then((m) => m.MainPage) },
             { path: 'open-close', loadComponent: () => import('./open-close/open-close.page').then((m) => m.OpenClosePage) },

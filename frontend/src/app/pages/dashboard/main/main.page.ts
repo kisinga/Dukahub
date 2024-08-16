@@ -25,31 +25,32 @@ export class MainPage implements OnInit {
 
     constructor(
         @Inject(DbService) private readonly db: DbService,
-        @Inject(AppStateService) private readonly state: AppStateService,
+        @Inject(AppStateService) private readonly stateService: AppStateService,
         @Inject(Router) private readonly router: Router,
         private cdr: ChangeDetectorRef
     ) {
-        this.user = this.state.user
-        this.companies = this.state.companies
-        this.weeklySales = this.state.weeklySales
+        this.companies = this.stateService.companies
+        this.weeklySales = this.stateService.weeklySales
 
         effect(() => {
-            this.weeklySales = this.state.weeklySales
-            this.totalWeeklySales = this.calculateTotalWeeklySales(this.state.weeklySales())
+            this.user.set(this.stateService.user())
+        });
+
+        effect(() => {
+            this.weeklySales = this.stateService.weeklySales
+            this.totalWeeklySales = this.calculateTotalWeeklySales(this.stateService.weeklySales())
             // get total sales for today where each day has several opening and closing balances
-
-
             this.cdr.detectChanges(); // Trigger change detection 
         })
     }
 
     ngOnInit(): void {
-        this.selectedCompanyIndex = this.state.selectedCompanyIndex()
+        this.selectedCompanyIndex = this.stateService.selectedCompanyIndex()
     }
 
     onCompanyChange() {
         if (this.selectedCompanyIndex !== -1) {
-            this.state.changeSelectedCompany(this.selectedCompanyIndex);
+            this.stateService.changeSelectedCompany(this.selectedCompanyIndex);
         }
     }
 

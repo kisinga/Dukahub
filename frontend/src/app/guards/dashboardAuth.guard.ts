@@ -1,34 +1,20 @@
-import { Inject, Injectable } from '@angular/core';
+import { inject, Inject, Injectable } from '@angular/core';
 import { Router, type ActivatedRouteSnapshot, type CanActivate, type RouterStateSnapshot } from '@angular/router';
-import { Observable } from 'rxjs';
-import { DbService } from '../services/db.service';
+
 import { AppStateService } from '../services/app-state.service';
 
+export const DashboardAuthGuard = () => {
+  const stateService = inject(AppStateService);
+  const router = inject(Router);
 
-@Injectable({
-  providedIn: 'root'
-})
-export class DashboardAuthGuard implements CanActivate {
-  constructor(
-    @Inject(AppStateService) private readonly state: AppStateService,
-    @Inject(Router) private readonly router: Router,
-  ) { }
-
-  canActivate(
-    route: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot
-  ): Observable<boolean> | Promise<boolean> | boolean {
-    return this.checkUserAuthentication();
+  if (stateService.loadingUser()) {
+    return true; // Allow the route to activate while loading
   }
 
-  private checkUserAuthentication(): boolean {
-    const user = this.state.user()
-    if (user) {
-      return true;
-    } else {
-      // Redirect to the login page
-      this.router.navigate(['/login']);
-      return false;
-    }
+  if (stateService.isAuthenticated()) {
+    return true;
   }
+
+  // Redirect to login page
+  return router.parseUrl('/login');
 }

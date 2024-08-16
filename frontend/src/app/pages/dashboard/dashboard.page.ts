@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, effect, Inject, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, Inject, signal, type OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { DbService } from '../../services/db.service';
+import { AppStateService } from '../../services/app-state.service';
 
 @Component({
     standalone: true,
@@ -17,8 +17,11 @@ import { DbService } from '../../services/db.service';
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardPage implements OnInit {
-    constructor(@Inject(DbService) private readonly db: DbService,
+    loadingUser = signal<boolean>(true);
+
+    constructor(@Inject(AppStateService) private readonly stateService: AppStateService,
         private activatedRoute: ActivatedRoute) {
+        this.loadingUser = this.stateService.loadingUser;
 
     }
 

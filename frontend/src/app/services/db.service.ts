@@ -10,20 +10,10 @@ import { AccountNamesResponse, AccountsResponse, CompaniesRecord, CompaniesRespo
 export class DbService {
   private pb = new PocketBase('https://pantrify.azurewebsites.net');
 
-  private user = signal<UsersResponse | undefined>(undefined);
-
-  constructor() {
-    this.pb.authStore.onChange((auth) => {
-      if (auth) {
-        console.log('Authenticated');
-        this.user.set(this.pb.authStore.model! as UsersResponse);
-      }
-    }, true);
+  getAuthStore() {
+    return this.pb.authStore
   }
 
-  getUserSignal() {
-    return this.user;
-  }
 
   async fetchExpandUser(userID: string): Promise<UsersRecord> {
     return await this.pb.collection('users').getOne<UsersResponse<CompaniesRecord>>(userID, {

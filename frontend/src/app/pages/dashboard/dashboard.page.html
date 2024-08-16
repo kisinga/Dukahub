@@ -107,5 +107,9 @@
   </div>
 
   <!-- content -->
+  @if (loadingUser()) {
+  <div>Loading...</div>
+  } @else {
   <router-outlet></router-outlet>
+  }
 </div>

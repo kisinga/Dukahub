@@ -1,4 +1,4 @@
-import { effect, Inject, Injectable, signal } from '@angular/core';
+import { computed, effect, Inject, Injectable, signal } from '@angular/core';
 import { DbService } from './db.service';
 import { CompaniesResponse, AccountsResponse, AccountNamesResponse, DailyFinancialsResponse, UsersResponse } from '../../types/pocketbase-types';
 
@@ -10,16 +10,22 @@ export class AppStateService {
   accounts = signal<AccountsResponse[]>([]);
   accountNames = signal<AccountNamesResponse[]>([]);
 
-  user = signal<UsersResponse | undefined>(undefined);
-
   selectedCompanyIndex = signal<number>(0);
   weeklySales = signal<DailyFinancialsResponse[]>([]);
 
+  user = signal<UsersResponse | undefined>(undefined);
+  loadingUser = signal<boolean>(true);
+
+  readonly isAuthenticated = computed(() => !!this.user());
+
   constructor(@Inject(DbService) private readonly db: DbService) {
-    effect(() => {
-      this.user = this.db.getUserSignal();
-      this.setup()
-    });
+
+  }
+
+  setUser(user: UsersResponse) {
+    this.user.set(user);
+    this.loadingUser.set(false);
+    this.setup()
   }
 
   setup() {
