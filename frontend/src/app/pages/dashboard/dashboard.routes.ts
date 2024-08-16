@@ -10,7 +10,7 @@ export const routes: Routes = [
             { path: 'open-close', loadComponent: () => import('./open-close/open-close.page').then((m) => m.OpenClosePage) },
             { path: 'config', loadComponent: () => import('./config/config.page').then((m) => m.ConfigPage) },
             { path: 'manage', loadComponent: () => import('./manage/manage.page').then((m) => m.ManagePage) },
+            { path: 'transactions', loadComponent: () => import('./transactions/transactions.page').then((m) => m.TransactionsPage) },
         ],
     },
-
 ];

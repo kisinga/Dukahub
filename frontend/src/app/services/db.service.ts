@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import PocketBase from 'pocketbase';
-import { CompaniesRecord, CompaniesResponse, DailyFinancialsRecord, UsersRecord, UsersResponse } from '../../types/pocketbase-types';
+import { AccountNamesResponse, AccountsResponse, CompaniesRecord, CompaniesResponse, DailyFinancialsRecord, DailyFinancialsResponse, UsersRecord, UsersResponse } from '../../types/pocketbase-types';
 
 @Injectable({
   providedIn: 'root'
@@ -12,8 +12,12 @@ export class DbService {
 
   user = signal<UsersResponse | undefined>(undefined);
   companies = signal<CompaniesResponse[]>([]);
+  accounts = signal<AccountsResponse[]>([]);
+  accountNames = signal<AccountNamesResponse[]>([]);
+
+
   selectedCompanyIndex = signal<number>(0);
-  sales = signal<DailyFinancialsRecord[]>([]);
+  weeklySales = signal<DailyFinancialsResponse[]>([]);
 
 
   constructor() {
@@ -33,9 +37,13 @@ export class DbService {
   }
 
   setup() {
-    this.fetchUserCompanies().then((company) => {
-      // console.log("co", company);
+    console.log('Setting up');
+    this.fetchUserCompanies().then(async (company) => {
+      console.log("co", company);
       this.companies.set(company);
+
+      let weeklySales = await this.fetchWeeklySales()
+      this.weeklySales.set(weeklySales)
     })
   }
 
@@ -65,7 +73,7 @@ export class DbService {
     return this.pb.files.getUrl(record, fileName, { 'thumb': '100x250' });
   }
 
-  async fetchSales(): Promise<DailyFinancialsRecord[]> {
+  async fetchWeeklySales(): Promise<DailyFinancialsResponse[]> {
     if (!this.user()?.company) {
       console.error('No company found');
       return [];
@@ -77,15 +85,17 @@ export class DbService {
     let diff = today.getDate() - day + (day == 0 ? -6 : 1);
     let mondayUTC = new Date(today.setDate(diff)).toISOString();
     let sundayUTC = new Date(today.setDate(diff + 6)).toISOString();
-
+    console.log('mondayUTC', mondayUTC);
+    console.log('sundayUTC', sundayUTC);
     let sales = await this.pb.collection('daily_financials')
-      .getFullList<DailyFinancialsRecord>(
+      .getFullList<DailyFinancialsResponse>(
         {
-          filter: `created >= ${mondayUTC} AND created <= ${sundayUTC} &&
-          company = ${this.user()!.company}
-          `,
+          filter: `created >= "${mondayUTC}" 
+          && created <= "${sundayUTC}"
+          && company = "${this.companies()[this.selectedCompanyIndex()].id}"`,
         }
       )
+    console.log('sales', sales);
 
     return sales;
   }

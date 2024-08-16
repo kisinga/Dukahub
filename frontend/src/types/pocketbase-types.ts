@@ -73,10 +73,10 @@ export type CustomersRecord = {
 
 export type DailyFinancialsRecord = {
 	account: RecordIdString
-	closing_bal?: number
+	closing_bal: number
 	company: RecordIdString
 	notes?: HTMLString
-	opening_bal?: number
+	opening_bal: number
 	user?: RecordIdString
 }
 
