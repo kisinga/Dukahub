@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@angular/core';
 import { Router, type ActivatedRouteSnapshot, type CanActivate, type RouterStateSnapshot } from '@angular/router';
 import { Observable } from 'rxjs';
 import { DbService } from '../services/db.service';
+import { AppStateService } from '../services/app-state.service';
 
 
 @Injectable({
@@ -9,7 +10,7 @@ import { DbService } from '../services/db.service';
 })
 export class DashboardAuthGuard implements CanActivate {
   constructor(
-    @Inject(DbService) private readonly db: DbService,
+    @Inject(AppStateService) private readonly state: AppStateService,
     @Inject(Router) private readonly router: Router,
   ) { }
 
@@ -21,7 +22,7 @@ export class DashboardAuthGuard implements CanActivate {
   }
 
   private checkUserAuthentication(): boolean {
-    const user = this.db.user()
+    const user = this.state.user()
     if (user) {
       return true;
     } else {

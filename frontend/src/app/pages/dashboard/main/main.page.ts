@@ -4,6 +4,7 @@ import { DbService } from '../../../services/db.service';
 import { CompaniesRecord, CompaniesResponse, DailyFinancialsRecord, UsersRecord, UsersResponse } from '../../../../types/pocketbase-types';
 import { TruncatePipe } from "../../../pipes/truncate.pipe";
 import { FormsModule } from '@angular/forms';
+import { AppStateService } from '../../../services/app-state.service';
 
 @Component({
     standalone: true,
@@ -24,16 +25,17 @@ export class MainPage implements OnInit {
 
     constructor(
         @Inject(DbService) private readonly db: DbService,
+        @Inject(AppStateService) private readonly state: AppStateService,
         @Inject(Router) private readonly router: Router,
         private cdr: ChangeDetectorRef
     ) {
-        this.user = this.db.user
-        this.companies = this.db.companies
-        this.weeklySales = this.db.weeklySales
+        this.user = this.state.user
+        this.companies = this.state.companies
+        this.weeklySales = this.state.weeklySales
 
         effect(() => {
-            this.weeklySales = this.db.weeklySales
-            this.totalWeeklySales = this.calculateTotalWeeklySales(this.db.weeklySales())
+            this.weeklySales = this.state.weeklySales
+            this.totalWeeklySales = this.calculateTotalWeeklySales(this.state.weeklySales())
             // get total sales for today where each day has several opening and closing balances
 
 
@@ -42,12 +44,12 @@ export class MainPage implements OnInit {
     }
 
     ngOnInit(): void {
-        this.selectedCompanyIndex = this.db.selectedCompanyIndex()
+        this.selectedCompanyIndex = this.state.selectedCompanyIndex()
     }
 
     onCompanyChange() {
         if (this.selectedCompanyIndex !== -1) {
-            this.db.changeSelectedCompany(this.selectedCompanyIndex);
+            this.state.changeSelectedCompany(this.selectedCompanyIndex);
         }
     }
 
