@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import PocketBase, { RecordFullListOptions } from 'pocketbase';
+import PocketBase, { FileOptions, RecordFullListOptions } from 'pocketbase';
 import { AccountNamesResponse, AccountsResponse, CompaniesRecord, CompaniesResponse, DailyFinancialsResponse, UsersRecord, UsersResponse } from '../../types/pocketbase-types';
 
 @Injectable({
@@ -35,8 +35,12 @@ export class DbService {
     return await this.pb.collection('account_names').getFullList<AccountNamesResponse>()
   }
 
-  async fetchAccounts(): Promise<AccountsResponse[]> {
-    return await this.pb.collection('accounts').getFullList<AccountsResponse>()
+  async fetchAccounts(companyID: string): Promise<AccountsResponse[]> {
+    return await this.pb.collection('accounts').getFullList<AccountsResponse>(
+      {
+        filter: `company = "${companyID}"`,
+      }
+    )
   }
 
   async fetchUserCompanies(): Promise<CompaniesResponse[]> {
@@ -47,8 +51,8 @@ export class DbService {
   // since pb is private
   generateURL(record: {
     [key: string]: any;
-  }, fileName: string): string {
-    return this.pb.files.getUrl(record, fileName, { 'thumb': '100x250' });
+  }, filename: string, queryParams?: FileOptions): string {
+    return this.pb.files.getUrl(record, filename, queryParams);
   }
 
   fetchWeeklySales(filter?: RecordFullListOptions): Promise<DailyFinancialsResponse[]> {
@@ -57,5 +61,4 @@ export class DbService {
         filter
       )
   }
-
 }

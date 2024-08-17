@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, effect, EventEmitter, Inject, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TruncatePipe } from "../../../pipes/truncate.pipe";
+import { AppStateService } from '../../../services/app-state.service';
 
 interface TableColumn {
   key: string;
@@ -9,14 +11,14 @@ interface TableColumn {
 }
 
 interface TableRow {
-  id: number;
+  id: string;
   [key: string]: any;
 }
 
 @Component({
   selector: 'app-generic-table',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TruncatePipe],
   templateUrl: './generic-table.component.html',
   styles: []
 })
@@ -26,6 +28,17 @@ export class GenericTableComponent {
   @Input() itemsPerPage = 10;
   @Output() save = new EventEmitter<TableRow[]>();
 
+  selectedCompany: string = ""
+
+  constructor(@Inject(AppStateService) private readonly stateService: AppStateService,
+    private cdr: ChangeDetectorRef
+
+  ) {
+    effect(() => {
+      this.selectedCompany = this.stateService.companies()[this.stateService.selectedCompanyIndex()].name
+      this.cdr.detectChanges(); // Trigger change detection
+    })
+  }
   currentPage = 1;
 
   get paginatedData(): TableRow[] {
@@ -42,7 +55,7 @@ export class GenericTableComponent {
     this.currentPage = page;
   }
 
-  onFieldUpdate(id: number, key: string, value: any): void {
+  onFieldUpdate(id: string, key: string, value: any): void {
     const index = this.data.findIndex(item => item.id === id);
     if (index !== -1) {
       this.data[index] = { ...this.data[index], [key]: value };
@@ -52,4 +65,8 @@ export class GenericTableComponent {
   onSave(): void {
     this.save.emit(this.data);
   }
+}
+
+function signal<T>(arg0: number) {
+  throw new Error('Function not implemented.');
 }

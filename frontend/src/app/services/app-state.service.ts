@@ -29,6 +29,10 @@ export class AppStateService {
         this.fetchWeeklySales(this.companies()[this.selectedCompanyIndex()].id).then((weeklySales) => {
           this.weeklySales.set(weeklySales)
         });
+
+        this.db.fetchAccounts(this.companies()[this.selectedCompanyIndex()].id).then((accounts) => {
+          this.accounts.set(accounts);
+        })
       }
     });
 
@@ -49,9 +53,7 @@ export class AppStateService {
     this.db.fetchAccountNames().then(async (accountNames) => {
       this.accountNames.set(accountNames);
     })
-    this.db.fetchAccounts().then(async (accounts) => {
-      this.accounts.set(accounts);
-    })
+
   }
 
 

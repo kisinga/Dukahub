@@ -46,6 +46,7 @@ export type AuthSystemFields<T = never> = {
 // Record types for each collection
 
 export type AccountNamesRecord = {
+	icons: string[]
 	name: string
 }
 
@@ -53,6 +54,8 @@ export type AccountsRecord = {
 	account_number?: string
 	bal?: number
 	company: RecordIdString
+	icon_id?: number
+	name?: string
 	type: RecordIdString
 }
 
@@ -60,6 +63,7 @@ export type CompaniesRecord = {
 	location?: string
 	logo?: string
 	name?: string
+	phone?: string
 }
 
 export type DailyFinancialsRecord = {

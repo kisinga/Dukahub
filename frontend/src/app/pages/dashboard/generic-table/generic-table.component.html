@@ -3,7 +3,15 @@
     <table class="table w-full">
       <thead>
         <tr>
-          <th *ngFor="let col of columns">{{ col.label }}</th>
+          @for (col of columns; track col.key; let i = $index) {
+          <th>
+            @if (i === 0) {
+            {{ selectedCompany | truncate : 10 }} {{ col.label }}
+            }@else{
+            {{ col.label }}
+            }
+          </th>
+          }
         </tr>
       </thead>
       <tbody>
@@ -20,7 +28,7 @@
                   <div>
                     <div class="font-bold">{{ row[col.key + "Name"] }}</div>
                     <div class="text-sm opacity-50">
-                      {{ row[col.key + "SubText"] }}
+                      {{ row[col.key + "SubText"] | truncate : 10 }}
                     </div>
                   </div>
                 </div>
