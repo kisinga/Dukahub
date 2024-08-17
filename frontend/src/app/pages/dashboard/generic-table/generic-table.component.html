@@ -4,13 +4,7 @@
       <thead>
         <tr>
           @for (col of columns; track col.key; let i = $index) {
-          <th>
-            @if (i === 0) {
-            {{ selectedCompany | truncate : 10 }} {{ col.label }}
-            }@else{
-            {{ col.label }}
-            }
-          </th>
+          <th [innerHTML]="col.safeLabel"></th>
           }
         </tr>
       </thead>
@@ -34,14 +28,25 @@
                 </div>
               </ng-container>
               <ng-container *ngSwitchCase="'editable'">
-                <input
-                  [type]="
-                    col.key.toLowerCase().includes('bal') ? 'number' : 'text'
-                  "
-                  [(ngModel)]="row[col.key]"
-                  (ngModelChange)="onFieldUpdate(row.id, col.key, $event)"
-                  class="input input-bordered w-full max-w-xs"
-                />
+                <div
+                  class="editable-cell"
+                  (click)="startEditing(row.id, col.key)"
+                >
+                  <span *ngIf="!isEditing(row.id, col.key)">{{
+                    row[col.key]
+                  }}</span>
+                  <input
+                    *ngIf="isEditing(row.id, col.key)"
+                    [type]="
+                      col.key.toLowerCase().includes('bal') ? 'number' : 'text'
+                    "
+                    [(ngModel)]="row[col.key]"
+                    (blur)="stopEditing()"
+                    (keyup.enter)="stopEditing()"
+                    class="input input-bordered w-full max-w-xs"
+                    #editInput
+                  />
+                </div>
               </ng-container>
               <ng-container *ngSwitchDefault>{{ row[col.key] }}</ng-container>
             </ng-container>

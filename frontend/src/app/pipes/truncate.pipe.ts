@@ -1,11 +1,15 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import { Injectable, Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'truncate',
   standalone: true
 })
+
+@Injectable({
+  providedIn: 'root'
+})
 export class TruncatePipe implements PipeTransform {
-  transform(value: any, limit: number = 100): string {
+  transform(value: any, limit: number = 100, ellipsis: boolean = false): string {
     if (value == undefined) {
       return "";
     }
@@ -13,7 +17,7 @@ export class TruncatePipe implements PipeTransform {
     return this.optionalTruncate(value, limit);
   }
 
-  optionalTruncate(str: string, maxLength: number = 15): string {
+  optionalTruncate(str: string, maxLength: number = 15, ellipsis: boolean = false): string {
     if (!str) return '';
 
     // If the string is already shorter than maxLength, return it as is
@@ -25,7 +29,7 @@ export class TruncatePipe implements PipeTransform {
     // If there's no space (i.e., it's a single word) or the first word is longer than maxLength
     if (firstSpaceIndex === -1 || firstSpaceIndex > maxLength) {
       // Apply normal truncation
-      return str.slice(0, maxLength - 3) + '...';
+      return str.slice(0, maxLength - 3) + ellipsis ? '...' : '';
     }
 
     // If the first word is not longer than maxLength, return it
@@ -38,9 +42,9 @@ export class TruncatePipe implements PipeTransform {
 
     // If found, truncate at this space; otherwise, truncate at maxLength
     if (lastSpaceIndex > 0) {
-      return str.slice(0, lastSpaceIndex) + '...';
+      return str.slice(0, lastSpaceIndex) + ellipsis ? '...' : '';
     } else {
-      return str.slice(0, maxLength - 3) + '...';
+      return str.slice(0, maxLength - 3) + ellipsis ? '...' : '';
     }
   }
 }

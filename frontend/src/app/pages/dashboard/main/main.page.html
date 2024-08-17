@@ -71,20 +71,20 @@
     </section>
     <!-- Navigation Button -->
     <div
-      class="card absolute bottom-20 left-0 right-0 bg-base-100 shadow-xl w-full max-w-sm mx-auto"
+      class="card fixed bottom-20 left-4 right-4 bg-base-100 shadow-xl max-w-sm mx-auto"
     >
       <div class="card-body p-4">
-        <h2 class="card-title justify-center text-lg mb-3">
+        <h2 class="card-title justify-center text-base mb-3">
           Record Opening/Closing Balance
         </h2>
-        <div class="flex flex-col sm:flex-row gap-2">
+        <div class="flex flex-row gap-2">
           <button
-            class="btn btn-primary flex-1 text-xs sm:text-sm"
+            class="btn btn-primary flex-1 text-xs"
             (click)="navigateToFinancial()"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 mr-1 sm:h-5 sm:w-5 sm:mr-2"
+              class="h-4 w-4 mr-1"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -99,12 +99,12 @@
             Financial
           </button>
           <button
-            class="btn btn-secondary flex-1 text-xs sm:text-sm"
+            class="btn btn-secondary flex-1 text-xs"
             (click)="navigateToStock()"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 mr-1 sm:h-5 sm:w-5 sm:mr-2"
+              class="h-4 w-4 mr-1"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"

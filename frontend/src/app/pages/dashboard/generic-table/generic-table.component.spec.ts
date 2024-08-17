@@ -10,7 +10,7 @@ describe('GenericTableComponent', () => {
     await TestBed.configureTestingModule({
       imports: [GenericTableComponent]
     })
-    .compileComponents();
+      .compileComponents();
 
     fixture = TestBed.createComponent(GenericTableComponent);
     component = fixture.componentInstance;

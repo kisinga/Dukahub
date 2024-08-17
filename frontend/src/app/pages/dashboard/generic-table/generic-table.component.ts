@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, effect, EventEmitter, Inject, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TruncatePipe } from "../../../pipes/truncate.pipe";
-import { AppStateService } from '../../../services/app-state.service';
 
 interface TableColumn {
   key: string;
   label: string;
+  safeLabel?: SafeHtml;
   type: 'text' | 'number' | 'image' | 'editable';
 }
 
@@ -23,22 +24,24 @@ interface TableRow {
   styles: []
 })
 export class GenericTableComponent {
-  @Input() columns: TableColumn[] = [];
+  @Input() set columns(value: TableColumn[]) {
+    this._columns = value.map(col => ({
+      ...col,
+      safeLabel: this.sanitizer.bypassSecurityTrustHtml(col.label)
+    }));
+  }
+  get columns(): TableColumn[] {
+    return this._columns;
+  }
+  private _columns: TableColumn[] = [];
+  editingCell: { rowId: string | null, key: string | null } = { rowId: null, key: null };
+
   @Input() data: TableRow[] = [];
   @Input() itemsPerPage = 10;
   @Output() save = new EventEmitter<TableRow[]>();
 
-  selectedCompany: string = ""
+  constructor(private sanitizer: DomSanitizer) { }
 
-  constructor(@Inject(AppStateService) private readonly stateService: AppStateService,
-    private cdr: ChangeDetectorRef
-
-  ) {
-    effect(() => {
-      this.selectedCompany = this.stateService.companies()[this.stateService.selectedCompanyIndex()].name
-      this.cdr.detectChanges(); // Trigger change detection
-    })
-  }
   currentPage = 1;
 
   get paginatedData(): TableRow[] {
@@ -55,6 +58,29 @@ export class GenericTableComponent {
     this.currentPage = page;
   }
 
+
+  startEditing(rowId: string, key: string): void {
+    this.editingCell = { rowId, key };
+    setTimeout(() => {
+      const input = document.querySelector('input:focus') as HTMLInputElement;
+      if (input) {
+        input.select();
+      }
+    }, 0);
+  }
+
+  stopEditing(): void {
+    const { rowId, key } = this.editingCell;
+    if (rowId !== null && key !== null) {
+      this.onFieldUpdate(rowId, key, this.data.find(row => row.id === rowId)?.[key]);
+    }
+    this.editingCell = { rowId: null, key: null };
+  }
+
+  isEditing(rowId: string, key: string): boolean {
+    return this.editingCell.rowId === rowId && this.editingCell.key === key;
+  }
+
   onFieldUpdate(id: string, key: string, value: any): void {
     const index = this.data.findIndex(item => item.id === id);
     if (index !== -1) {
@@ -67,6 +93,3 @@ export class GenericTableComponent {
   }
 }
 
-function signal<T>(arg0: number) {
-  throw new Error('Function not implemented.');
-}
