@@ -1,6 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable } from '@angular/core';
 import PocketBase, { RecordFullListOptions } from 'pocketbase';
-import { AccountNamesResponse, AccountsResponse, CompaniesRecord, CompaniesResponse, DailyFinancialsRecord, DailyFinancialsResponse, UsersRecord, UsersResponse } from '../../types/pocketbase-types';
+import { CompaniesRecord, CompaniesResponse, DailyFinancialsResponse, UsersRecord, UsersResponse } from '../../types/pocketbase-types';
 
 @Injectable({
   providedIn: 'root'

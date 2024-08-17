@@ -1,6 +1,6 @@
-import { computed, effect, Inject, Injectable, signal } from '@angular/core';
+import { computed, Inject, Injectable, signal } from '@angular/core';
+import { AccountNamesResponse, AccountsResponse, CompaniesResponse, DailyFinancialsResponse, UsersResponse } from '../../types/pocketbase-types';
 import { DbService } from './db.service';
-import { CompaniesResponse, AccountsResponse, AccountNamesResponse, DailyFinancialsResponse, UsersResponse } from '../../types/pocketbase-types';
 
 @Injectable({
   providedIn: 'root'

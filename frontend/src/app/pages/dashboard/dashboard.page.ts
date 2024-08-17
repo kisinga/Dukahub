@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, Inject, signal, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject, signal, type OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AppStateService } from '../../services/app-state.service';

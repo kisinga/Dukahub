@@ -1,11 +1,11 @@
-import { bootstrapApplication } from '@angular/platform-browser';
-import { AppComponent } from './app/app.component';
-import { provideRouter } from '@angular/router';
-import { routes } from './app/app.routes';
-import { DbService } from './app/services/db.service';
-import { AppStateService } from './app/services/app-state.service';
-import { UsersResponse } from './types/pocketbase-types';
 import { APP_INITIALIZER, ApplicationConfig } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
+import { AppComponent } from './app/app.component';
+import { routes } from './app/app.routes';
+import { AppStateService } from './app/services/app-state.service';
+import { DbService } from './app/services/db.service';
+import { UsersResponse } from './types/pocketbase-types';
 
 function initializeAppFactory(dbService: DbService, stateService: AppStateService) {
   return () => new Promise<void>((resolve) => {

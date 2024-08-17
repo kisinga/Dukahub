@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, Inject, type OnInit, ChangeDetectorRef } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { DbService } from '../../services/db.service';
-import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, type OnInit } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { DbService } from '../../services/db.service';
 
 @Component({
     standalone: true,
