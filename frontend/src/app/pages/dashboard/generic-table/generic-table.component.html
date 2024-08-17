@@ -1,0 +1,59 @@
+<div class="p-4">
+  <div class="overflow-x-auto">
+    <table class="table w-full">
+      <thead>
+        <tr>
+          <th *ngFor="let col of columns">{{ col.label }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of paginatedData">
+          <td *ngFor="let col of columns">
+            <ng-container [ngSwitch]="col.type">
+              <ng-container *ngSwitchCase="'image'">
+                <div class="flex items-center gap-3">
+                  <div class="avatar">
+                    <div class="mask mask-squircle h-12 w-12">
+                      <img [src]="row[col.key]" [alt]="row[col.key + 'Alt']" />
+                    </div>
+                  </div>
+                  <div>
+                    <div class="font-bold">{{ row[col.key + "Name"] }}</div>
+                    <div class="text-sm opacity-50">
+                      {{ row[col.key + "SubText"] }}
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+              <ng-container *ngSwitchCase="'editable'">
+                <input
+                  [type]="
+                    col.key.toLowerCase().includes('bal') ? 'number' : 'text'
+                  "
+                  [(ngModel)]="row[col.key]"
+                  (ngModelChange)="onFieldUpdate(row.id, col.key, $event)"
+                  class="input input-bordered w-full max-w-xs"
+                />
+              </ng-container>
+              <ng-container *ngSwitchDefault>{{ row[col.key] }}</ng-container>
+            </ng-container>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="flex justify-between items-center mt-4">
+    <div class="join">
+      <button
+        *ngFor="let page of getPages()"
+        class="join-item btn"
+        [class.btn-active]="currentPage === page"
+        (click)="setPage(page)"
+      >
+        {{ page }}
+      </button>
+    </div>
+    <button class="btn btn-primary" (click)="onSave()">Save All</button>
+  </div>
+</div>

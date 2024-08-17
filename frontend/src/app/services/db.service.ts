@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import PocketBase, { RecordFullListOptions } from 'pocketbase';
-import { CompaniesRecord, CompaniesResponse, DailyFinancialsResponse, UsersRecord, UsersResponse } from '../../types/pocketbase-types';
+import { AccountNamesResponse, AccountsResponse, CompaniesRecord, CompaniesResponse, DailyFinancialsResponse, UsersRecord, UsersResponse } from '../../types/pocketbase-types';
 
 @Injectable({
   providedIn: 'root'
@@ -29,6 +29,14 @@ export class DbService {
 
   logout(): void {
     this.pb.authStore.clear();
+  }
+
+  async fetchAccountNames(): Promise<AccountNamesResponse[]> {
+    return await this.pb.collection('account_names').getFullList<AccountNamesResponse>()
+  }
+
+  async fetchAccounts(): Promise<AccountsResponse[]> {
+    return await this.pb.collection('accounts').getFullList<AccountsResponse>()
   }
 
   async fetchUserCompanies(): Promise<CompaniesResponse[]> {

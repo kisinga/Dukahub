@@ -55,8 +55,12 @@ export class MainPage implements OnInit {
         return this.db.generateURL(company, name);
     }
 
-    navigateToOpenClose() {
-        this.router.navigate(['/dashboard/open-close']);
+    navigateToFinancial() {
+        this.router.navigate(['/dashboard/open-close-financial']);
+    }
+
+    navigateToStock() {
+        this.router.navigate(['/dashboard/open-close-stock']);
     }
 
     // calculate total weekly sales

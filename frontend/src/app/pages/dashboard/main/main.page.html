@@ -70,27 +70,56 @@
       </div>
     </section>
     <!-- Navigation Button -->
-    <div class="absolute bottom-20 left-0 right-0 flex justify-center">
-      <button
-        class="btn btn-secondary btn-lg shadow-lg transform transition duration-300 ease-in-out hover:scale-105"
-        (click)="navigateToOpenClose()"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 mr-2"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-          />
-        </svg>
-        Record Opening/Closing Balance
-      </button>
+    <div
+      class="card absolute bottom-20 left-0 right-0 bg-base-100 shadow-xl w-full max-w-sm mx-auto"
+    >
+      <div class="card-body p-4">
+        <h2 class="card-title justify-center text-lg mb-3">
+          Record Opening/Closing Balance
+        </h2>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <button
+            class="btn btn-primary flex-1 text-xs sm:text-sm"
+            (click)="navigateToFinancial()"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4 mr-1 sm:h-5 sm:w-5 sm:mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Financial
+          </button>
+          <button
+            class="btn btn-secondary flex-1 text-xs sm:text-sm"
+            (click)="navigateToStock()"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4 mr-1 sm:h-5 sm:w-5 sm:mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+              />
+            </svg>
+            Stock
+          </button>
+        </div>
+      </div>
     </div>
   </main>
 </div>

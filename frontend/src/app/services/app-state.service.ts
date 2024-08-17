@@ -46,7 +46,14 @@ export class AppStateService {
       this.companies.set(company);
       this.selectedCompanyIndex.set(0);
     })
+    this.db.fetchAccountNames().then(async (accountNames) => {
+      this.accountNames.set(accountNames);
+    })
+    this.db.fetchAccounts().then(async (accounts) => {
+      this.accounts.set(accounts);
+    })
   }
+
 
   async changeSelectedCompany(index: number) {
     this.selectedCompanyIndex.set(index);
