@@ -47,7 +47,7 @@ export class MainPage implements OnInit {
 
     onCompanyChange() {
         if (this.selectedCompanyIndex !== -1) {
-            this.stateService.changeSelectedCompany(this.selectedCompanyIndex);
+            this.stateService.changeSelectedCompany(this.selectedCompanyIndex)
         }
     }
 
@@ -62,9 +62,9 @@ export class MainPage implements OnInit {
     // calculate total weekly sales
     calculateTotalWeeklySales(weeklySales: DailyFinancialsRecord[]): number {
         console.log('Calculating total weekly sales');
-        let totalClosingBlalances = weeklySales.reduce((acc, curr) => acc + curr.closing_bal, 0);
-        let totalOpeningBalances = weeklySales.reduce((acc, curr) => acc + curr.opening_bal, 0);
-        return totalClosingBlalances - totalOpeningBalances;
+        let totalClosingBalances = weeklySales.reduce((acc, curr) => acc + (curr.closing_bal ?? 0), 0);
+        let totalOpeningBalances = weeklySales.reduce((acc, curr) => acc + (curr.opening_bal ?? 0), 0);
+        return totalClosingBalances - totalOpeningBalances;
     }
 
     logout(): void {

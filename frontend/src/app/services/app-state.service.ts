@@ -24,6 +24,14 @@ export class AppStateService {
         this.setup();
       }
     });
+    effect(() => {
+      if (this.companies().length > 0) {
+        this.fetchWeeklySales(this.companies()[this.selectedCompanyIndex()].id).then((weeklySales) => {
+          this.weeklySales.set(weeklySales)
+        });
+      }
+    });
+
   }
 
   setUser(user: UsersResponse) {
@@ -34,22 +42,17 @@ export class AppStateService {
   setup() {
     console.log('Setting up');
     this.db.fetchUserCompanies().then(async (company) => {
-      console.log("co", company);
+      // console.log("co", company);
       this.companies.set(company);
-      let weeklySales = await this.fetchWeeklySales()
-      this.weeklySales.set(weeklySales)
+      this.selectedCompanyIndex.set(0);
     })
   }
 
-  changeSelectedCompany(index: number) {
+  async changeSelectedCompany(index: number) {
     this.selectedCompanyIndex.set(index);
   }
 
-  async fetchWeeklySales(): Promise<DailyFinancialsResponse[]> {
-    if (!this.user()?.company) {
-      console.error('No company found');
-      return [];
-    }
+  async fetchWeeklySales(companyID: string): Promise<DailyFinancialsResponse[]> {
     // use the date today to fetch independent sales arrays for the week
     // the week starts on a Monday
     let today = new Date();
@@ -62,7 +65,7 @@ export class AppStateService {
     let options = {
       filter: `created >= "${mondayUTC}" 
       && created <= "${sundayUTC}"
-      && company = "${this.companies()[this.selectedCompanyIndex()].id}"`,
+      && company = "${companyID}"`,
     }
     let sales = await this.db.fetchWeeklySales(options);
 
