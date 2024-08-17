@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, Inject, type OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
-import { DbService } from '../../../services/db.service';
-import { CompaniesRecord, CompaniesResponse, DailyFinancialsRecord, UsersRecord, UsersResponse } from '../../../../types/pocketbase-types';
-import { TruncatePipe } from "../../../pipes/truncate.pipe";
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { CompaniesRecord, CompaniesResponse, DailyFinancialsRecord, UsersResponse } from '../../../../types/pocketbase-types';
+import { TruncatePipe } from "../../../pipes/truncate.pipe";
 import { AppStateService } from '../../../services/app-state.service';
+import { DbService } from '../../../services/db.service';
 
 @Component({
     standalone: true,
@@ -31,13 +31,10 @@ export class MainPage implements OnInit {
     ) {
         this.companies = this.stateService.companies
         this.weeklySales = this.stateService.weeklySales
+        this.user = this.stateService.user
+        this.weeklySales = this.stateService.weeklySales
 
         effect(() => {
-            this.user.set(this.stateService.user())
-        });
-
-        effect(() => {
-            this.weeklySales = this.stateService.weeklySales
             this.totalWeeklySales = this.calculateTotalWeeklySales(this.stateService.weeklySales())
             // get total sales for today where each day has several opening and closing balances
             this.cdr.detectChanges(); // Trigger change detection 

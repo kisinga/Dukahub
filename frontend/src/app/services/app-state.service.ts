@@ -1,4 +1,4 @@
-import { computed, Inject, Injectable, signal } from '@angular/core';
+import { computed, effect, Inject, Injectable, signal } from '@angular/core';
 import { AccountNamesResponse, AccountsResponse, CompaniesResponse, DailyFinancialsResponse, UsersResponse } from '../../types/pocketbase-types';
 import { DbService } from './db.service';
 
@@ -19,13 +19,16 @@ export class AppStateService {
   readonly isAuthenticated = computed(() => !!this.user());
 
   constructor(@Inject(DbService) private readonly db: DbService) {
-
+    effect(() => {
+      if (this.isAuthenticated()) {
+        this.setup();
+      }
+    });
   }
 
   setUser(user: UsersResponse) {
     this.user.set(user);
     this.loadingUser.set(false);
-    this.setup()
   }
 
   setup() {
@@ -33,7 +36,6 @@ export class AppStateService {
     this.db.fetchUserCompanies().then(async (company) => {
       console.log("co", company);
       this.companies.set(company);
-
       let weeklySales = await this.fetchWeeklySales()
       this.weeklySales.set(weeklySales)
     })
@@ -55,8 +57,8 @@ export class AppStateService {
     let diff = today.getDate() - day + (day == 0 ? -6 : 1);
     let mondayUTC = new Date(today.setDate(diff)).toISOString();
     let sundayUTC = new Date(today.setDate(diff + 6)).toISOString();
-    console.log('mondayUTC', mondayUTC);
-    console.log('sundayUTC', sundayUTC);
+    // console.log('mondayUTC', mondayUTC);
+    // console.log('sundayUTC', sundayUTC);
     let options = {
       filter: `created >= "${mondayUTC}" 
       && created <= "${sundayUTC}"

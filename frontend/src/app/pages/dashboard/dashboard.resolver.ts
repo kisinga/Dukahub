@@ -6,12 +6,12 @@ export const dashboardResolver = () => {
 
     return new Promise<boolean>(resolve => {
         if (!stateService.loadingUser()) {
-            console.log('Done Loading User');
+            console.log('Resolver: Done Loading User');
             resolve(true);
         } else {
             effect(() => {
                 if (!stateService.loadingUser()) {
-                    console.log('Done Loading User');
+                    console.log('Resolver: Done Loading User');
                     resolve(true);
                 }
             });

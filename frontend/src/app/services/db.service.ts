@@ -14,7 +14,6 @@ export class DbService {
     return this.pb.authStore
   }
 
-
   async fetchExpandUser(userID: string): Promise<UsersRecord> {
     return await this.pb.collection('users').getOne<UsersResponse<CompaniesRecord>>(userID, {
       expand: "company"

@@ -9,18 +9,15 @@ export enum Collections {
 	AccountNames = "account_names",
 	Accounts = "accounts",
 	Companies = "companies",
-	Customers = "customers",
 	DailyFinancials = "daily_financials",
 	DailyStocks = "daily_stocks",
-	FinancialTransactions = "financial_transactions",
 	Invoices = "invoices",
-	Payments = "payments",
+	Partners = "partners",
 	Products = "products",
 	Purchases = "purchases",
 	Sales = "sales",
 	Skus = "skus",
-	StockBalances = "stock_balances",
-	StockTransactions = "stock_transactions",
+	Transactions = "transactions",
 	Users = "users",
 }
 
@@ -65,18 +62,12 @@ export type CompaniesRecord = {
 	name?: string
 }
 
-export type CustomersRecord = {
-	company: RecordIdString
-	name: string
-	phone: string
-}
-
 export type DailyFinancialsRecord = {
 	account: RecordIdString
-	closing_bal: number
+	closing_bal?: number
 	company: RecordIdString
 	notes?: HTMLString
-	opening_bal: number
+	opening_bal?: number
 	user?: RecordIdString
 }
 
@@ -85,20 +76,8 @@ export type DailyStocksRecord = {
 	company: RecordIdString
 	opening_bal?: number
 	product: RecordIdString
-	purchases?: RecordIdString[]
 	sku: RecordIdString
 	user?: RecordIdString
-}
-
-export enum FinancialTransactionsTypeOptions {
-	"debit" = "debit",
-	"credit" = "credit",
-}
-export type FinancialTransactionsRecord = {
-	account?: RecordIdString
-	amount?: number
-	company?: RecordIdString
-	type?: FinancialTransactionsTypeOptions
 }
 
 export enum InvoicesStatusOptions {
@@ -106,48 +85,53 @@ export enum InvoicesStatusOptions {
 	"partial" = "partial",
 	"pending" = "pending",
 }
+
+export enum InvoicesTypeOptions {
+	"sales" = "sales",
+	"purchase" = "purchase",
+}
 export type InvoicesRecord = {
 	amount?: number
 	bal?: number
 	company: RecordIdString
-	customer: RecordIdString
-	payments?: HTMLString
+	partner: RecordIdString
 	status?: InvoicesStatusOptions
+	transactions?: RecordIdString[]
+	type?: InvoicesTypeOptions
 	user: RecordIdString
 }
 
-export type PaymentsRecord = {
-	account: RecordIdString
-	amount: number
+export type PartnersRecord = {
+	balance?: number
 	company: RecordIdString
+	name: string
+	phone: string
 }
 
-export type ProductsRecord = {
+export type ProductsRecord<Tbalances = unknown> = {
+	balances: null | Tbalances
 	company: RecordIdString
 	name: string
 	skus: RecordIdString[]
 }
 
 export type PurchasesRecord = {
-	Product?: RecordIdString
-	Quantity: number
 	company: RecordIdString
+	invoice?: RecordIdString
+	product?: RecordIdString
+	quantity: number
 	sku?: RecordIdString
+	transaction?: RecordIdString
 	user: RecordIdString
 }
 
-export enum SalesTypeOptions {
-	"cash" = "cash",
-	"credit" = "credit",
-}
 export type SalesRecord = {
 	Product: RecordIdString
 	amount?: number
 	company: RecordIdString
 	invoice?: RecordIdString
 	sku: RecordIdString
-	transaction?: RecordIdString
-	type?: SalesTypeOptions
+	transaction?: RecordIdString[]
 }
 
 export type SkusRecord = {
@@ -155,19 +139,16 @@ export type SkusRecord = {
 	name: string
 }
 
-export type StockBalancesRecord = {
-	bal?: number
-	company?: RecordIdString
-	product?: RecordIdString
-}
-
-export enum StockTransactionsTypeOptions {
+export enum TransactionsTypeOptions {
 	"debit" = "debit",
 	"credit" = "credit",
 }
-export type StockTransactionsRecord = {
-	invoice?: RecordIdString
-	type?: StockTransactionsTypeOptions
+export type TransactionsRecord = {
+	account?: RecordIdString
+	amount?: number
+	company?: RecordIdString
+	transaction_id?: string
+	type?: TransactionsTypeOptions
 }
 
 export enum UsersLevelOptions {
@@ -177,7 +158,7 @@ export enum UsersLevelOptions {
 }
 export type UsersRecord = {
 	avatar?: string
-	company: RecordIdString
+	company: RecordIdString[]
 	level: UsersLevelOptions
 	name?: string
 }
@@ -186,18 +167,15 @@ export type UsersRecord = {
 export type AccountNamesResponse<Texpand = unknown> = Required<AccountNamesRecord> & BaseSystemFields<Texpand>
 export type AccountsResponse<Texpand = unknown> = Required<AccountsRecord> & BaseSystemFields<Texpand>
 export type CompaniesResponse<Texpand = unknown> = Required<CompaniesRecord> & BaseSystemFields<Texpand>
-export type CustomersResponse<Texpand = unknown> = Required<CustomersRecord> & BaseSystemFields<Texpand>
 export type DailyFinancialsResponse<Texpand = unknown> = Required<DailyFinancialsRecord> & BaseSystemFields<Texpand>
 export type DailyStocksResponse<Texpand = unknown> = Required<DailyStocksRecord> & BaseSystemFields<Texpand>
-export type FinancialTransactionsResponse<Texpand = unknown> = Required<FinancialTransactionsRecord> & BaseSystemFields<Texpand>
 export type InvoicesResponse<Texpand = unknown> = Required<InvoicesRecord> & BaseSystemFields<Texpand>
-export type PaymentsResponse<Texpand = unknown> = Required<PaymentsRecord> & BaseSystemFields<Texpand>
-export type ProductsResponse<Texpand = unknown> = Required<ProductsRecord> & BaseSystemFields<Texpand>
+export type PartnersResponse<Texpand = unknown> = Required<PartnersRecord> & BaseSystemFields<Texpand>
+export type ProductsResponse<Tbalances = unknown, Texpand = unknown> = Required<ProductsRecord<Tbalances>> & BaseSystemFields<Texpand>
 export type PurchasesResponse<Texpand = unknown> = Required<PurchasesRecord> & BaseSystemFields<Texpand>
 export type SalesResponse<Texpand = unknown> = Required<SalesRecord> & BaseSystemFields<Texpand>
 export type SkusResponse<Texpand = unknown> = Required<SkusRecord> & BaseSystemFields<Texpand>
-export type StockBalancesResponse<Texpand = unknown> = Required<StockBalancesRecord> & BaseSystemFields<Texpand>
-export type StockTransactionsResponse<Texpand = unknown> = Required<StockTransactionsRecord> & BaseSystemFields<Texpand>
+export type TransactionsResponse<Texpand = unknown> = Required<TransactionsRecord> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
 
 // Types containing all Records and Responses, useful for creating typing helper functions
@@ -206,18 +184,15 @@ export type CollectionRecords = {
 	account_names: AccountNamesRecord
 	accounts: AccountsRecord
 	companies: CompaniesRecord
-	customers: CustomersRecord
 	daily_financials: DailyFinancialsRecord
 	daily_stocks: DailyStocksRecord
-	financial_transactions: FinancialTransactionsRecord
 	invoices: InvoicesRecord
-	payments: PaymentsRecord
+	partners: PartnersRecord
 	products: ProductsRecord
 	purchases: PurchasesRecord
 	sales: SalesRecord
 	skus: SkusRecord
-	stock_balances: StockBalancesRecord
-	stock_transactions: StockTransactionsRecord
+	transactions: TransactionsRecord
 	users: UsersRecord
 }
 
@@ -225,18 +200,15 @@ export type CollectionResponses = {
 	account_names: AccountNamesResponse
 	accounts: AccountsResponse
 	companies: CompaniesResponse
-	customers: CustomersResponse
 	daily_financials: DailyFinancialsResponse
 	daily_stocks: DailyStocksResponse
-	financial_transactions: FinancialTransactionsResponse
 	invoices: InvoicesResponse
-	payments: PaymentsResponse
+	partners: PartnersResponse
 	products: ProductsResponse
 	purchases: PurchasesResponse
 	sales: SalesResponse
 	skus: SkusResponse
-	stock_balances: StockBalancesResponse
-	stock_transactions: StockTransactionsResponse
+	transactions: TransactionsResponse
 	users: UsersResponse
 }
 
@@ -247,17 +219,14 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: 'account_names'): RecordService<AccountNamesResponse>
 	collection(idOrName: 'accounts'): RecordService<AccountsResponse>
 	collection(idOrName: 'companies'): RecordService<CompaniesResponse>
-	collection(idOrName: 'customers'): RecordService<CustomersResponse>
 	collection(idOrName: 'daily_financials'): RecordService<DailyFinancialsResponse>
 	collection(idOrName: 'daily_stocks'): RecordService<DailyStocksResponse>
-	collection(idOrName: 'financial_transactions'): RecordService<FinancialTransactionsResponse>
 	collection(idOrName: 'invoices'): RecordService<InvoicesResponse>
-	collection(idOrName: 'payments'): RecordService<PaymentsResponse>
+	collection(idOrName: 'partners'): RecordService<PartnersResponse>
 	collection(idOrName: 'products'): RecordService<ProductsResponse>
 	collection(idOrName: 'purchases'): RecordService<PurchasesResponse>
 	collection(idOrName: 'sales'): RecordService<SalesResponse>
 	collection(idOrName: 'skus'): RecordService<SkusResponse>
-	collection(idOrName: 'stock_balances'): RecordService<StockBalancesResponse>
-	collection(idOrName: 'stock_transactions'): RecordService<StockTransactionsResponse>
+	collection(idOrName: 'transactions'): RecordService<TransactionsResponse>
 	collection(idOrName: 'users'): RecordService<UsersResponse>
 }
