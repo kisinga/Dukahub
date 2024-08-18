@@ -7,7 +7,7 @@
     @if (companies().length > 0) {
     <div class="flex items-center">
       <img
-        [src]="generateURL(companies()[selectedCompanyIndex], companies()[selectedCompanyIndex].logo)"
+        [src]="generateURL(companies()[selectedCompanyIndex()], companies()[selectedCompanyIndex()].logo)"
         alt="Company Logo"
         class="h-8 w-8 object-contain mr-2"
       />

@@ -46,9 +46,10 @@ export class AppStateService {
   setup() {
     console.log('Setting up');
     this.db.fetchUserCompanies().then(async (company) => {
-      // console.log("co", company);
       this.companies.set(company);
-      this.selectedCompanyIndex.set(0);
+      if (this.user()) {
+        this.selectedCompanyIndex.set(company.findIndex(c => c.id === this.user()!!.defaultCompany));
+      }
     })
     this.db.fetchAccountNames().then(async (accountNames) => {
       this.accountNames.set(accountNames);

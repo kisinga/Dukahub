@@ -33,7 +33,7 @@
                     col.key.toLowerCase().includes('bal') ? 'number' : 'text'
                   "
                   [(ngModel)]="row[col.key]"
-                  class="input input-bordered w-full max-w-xs"
+                  class="input input-bordered w-full max-w-60"
                 />
               </ng-container>
               <ng-container *ngSwitchDefault>{{ row[col.key] }}</ng-container>

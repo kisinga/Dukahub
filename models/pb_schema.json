@@ -69,6 +69,22 @@
           "maxSelect": null,
           "displayFields": null
         }
+      },
+      {
+        "system": false,
+        "id": "vq1krhbw",
+        "name": "defaultCompany",
+        "type": "relation",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "collectionId": "ekjku0lrs17viq2",
+          "cascadeDelete": false,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
+        }
       }
     ],
     "indexes": [],
@@ -129,7 +145,7 @@
     "indexes": [
       "CREATE UNIQUE INDEX `idx_hjxT3zb` ON `account_names` (`name`)"
     ],
-    "listRule": null,
+    "listRule": "@request.auth.id != \"\"&& @request.auth.verified = true ",
     "viewRule": null,
     "createRule": null,
     "updateRule": null,

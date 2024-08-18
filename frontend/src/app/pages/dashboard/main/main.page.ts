@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, Inject, type OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, Inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CompaniesRecord, CompaniesResponse, DailyFinancialsRecord, UsersResponse } from '../../../../types/pocketbase-types';
@@ -13,7 +13,7 @@ import { DbService } from '../../../services/db.service';
     styleUrl: './main.page.css',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MainPage implements OnInit {
+export class MainPage {
     companies = signal<CompaniesResponse[]>([]);
     user = signal<UsersResponse | undefined>(undefined);
     weeklySales = signal<DailyFinancialsRecord[]>([]);
@@ -21,7 +21,7 @@ export class MainPage implements OnInit {
 
     totalSalesToday = 0
 
-    selectedCompanyIndex: number = -1;
+    selectedCompanyIndex = signal<number>(-1);
 
     constructor(
         @Inject(DbService) private readonly db: DbService,
@@ -33,6 +33,7 @@ export class MainPage implements OnInit {
         this.weeklySales = this.stateService.weeklySales
         this.user = this.stateService.user
         this.weeklySales = this.stateService.weeklySales
+        this.selectedCompanyIndex = this.stateService.selectedCompanyIndex
 
         effect(() => {
             this.totalWeeklySales = this.calculateTotalWeeklySales(this.stateService.weeklySales())
@@ -41,13 +42,9 @@ export class MainPage implements OnInit {
         })
     }
 
-    ngOnInit(): void {
-        this.selectedCompanyIndex = this.stateService.selectedCompanyIndex()
-    }
-
     onCompanyChange() {
-        if (this.selectedCompanyIndex !== -1) {
-            this.stateService.changeSelectedCompany(this.selectedCompanyIndex)
+        if (this.selectedCompanyIndex() !== -1) {
+            this.stateService.changeSelectedCompany(this.selectedCompanyIndex())
         }
     }
 

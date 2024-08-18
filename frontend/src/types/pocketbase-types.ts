@@ -163,6 +163,7 @@ export enum UsersLevelOptions {
 export type UsersRecord = {
 	avatar?: string
 	company: RecordIdString[]
+	defaultCompany: RecordIdString
 	level: UsersLevelOptions
 	name?: string
 }

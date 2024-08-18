@@ -43,7 +43,7 @@ export class OpenCloseFinancialPage implements OnInit {
                         iconURL: this.db.generateURL(relatedAccount, relatedAccount.icons[account.icon_id])
                     }
                 })
-                // console.log('Accounts:', accounts);
+                console.log('Accounts:', accounts);
 
                 this.financialTableData = accounts.map(account => {
                     return {
