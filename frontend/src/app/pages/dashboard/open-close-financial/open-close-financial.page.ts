@@ -48,7 +48,7 @@ export class OpenCloseFinancialPage implements OnInit {
                 this.financialTableData = accounts.map(account => {
                     return {
                         id: account.id,
-                        iconURL: account.iconURL,
+                        account: account.iconURL,
                         accountName: `${account.parentName}: ${account.name}`,
                         accountSubText: account.account_number,
                         openingBal: 0,
@@ -61,7 +61,7 @@ export class OpenCloseFinancialPage implements OnInit {
         })
     }
     columns: TableColumn[] = [
-        { key: 'iconURL', label: `<span class="text-lg">Loading...</span> Accounts`, type: 'image' },
+        { key: 'account', label: `<span class="text-lg">Loading...</span> Accounts`, type: 'image' },
         { key: 'openingBal', label: 'Opening Bal', type: 'editable' },
         { key: 'closingBal', label: 'Closing Bal', type: 'editable' }
     ];

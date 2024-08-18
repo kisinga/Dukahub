@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TruncatePipe } from "../../../pipes/truncate.pipe";
@@ -34,13 +34,15 @@ export class GenericTableComponent {
     return this._columns;
   }
   private _columns: TableColumn[] = [];
-  editingCell: { rowId: string | null, key: string | null } = { rowId: null, key: null };
 
   @Input() data: TableRow[] = [];
   @Input() itemsPerPage = 10;
   @Output() save = new EventEmitter<TableRow[]>();
 
-  constructor(private sanitizer: DomSanitizer) { }
+  constructor(private sanitizer: DomSanitizer,
+    private cdr: ChangeDetectorRef
+
+  ) { }
 
   currentPage = 1;
 
@@ -58,27 +60,20 @@ export class GenericTableComponent {
     this.currentPage = page;
   }
 
+  onInputChange(event: Event, id: string, key: string): void {
+    const value = (event.target as HTMLInputElement).value;
 
-  startEditing(rowId: string, key: string): void {
-    this.editingCell = { rowId, key };
-    setTimeout(() => {
-      const input = document.querySelector('input:focus') as HTMLInputElement;
-      if (input) {
-        input.select();
-      }
-    }, 0);
-  }
-
-  stopEditing(): void {
-    const { rowId, key } = this.editingCell;
-    if (rowId !== null && key !== null) {
-      this.onFieldUpdate(rowId, key, this.data.find(row => row.id === rowId)?.[key]);
+    // Update the data immediately
+    const index = this.data.findIndex(item => item.id === id);
+    if (index !== -1) {
+      this.data[index] = { ...this.data[index], [key]: value };
     }
-    this.editingCell = { rowId: null, key: null };
-  }
 
-  isEditing(rowId: string, key: string): boolean {
-    return this.editingCell.rowId === rowId && this.editingCell.key === key;
+    // Call onFieldUpdate to ensure consistency with existing logic
+    this.onFieldUpdate(id, key, value);
+
+    // Trigger change detection
+    this.cdr.detectChanges();
   }
 
   onFieldUpdate(id: string, key: string, value: any): void {
@@ -86,8 +81,8 @@ export class GenericTableComponent {
     if (index !== -1) {
       this.data[index] = { ...this.data[index], [key]: value };
     }
+    // If you have any additional logic or API calls, you can keep them here
   }
-
   onSave(): void {
     this.save.emit(this.data);
   }

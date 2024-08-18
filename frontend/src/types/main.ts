@@ -6,7 +6,7 @@ export interface TableColumn {
 
 export interface FinancialTableData {
     id: string;
-    iconURL: string;
+    account: string;
     accountName: string;
     accountSubText: string;
     openingBal: number;

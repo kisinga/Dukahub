@@ -28,25 +28,14 @@
                 </div>
               </ng-container>
               <ng-container *ngSwitchCase="'editable'">
-                <div
-                  class="editable-cell"
-                  (click)="startEditing(row.id, col.key)"
-                >
-                  <span *ngIf="!isEditing(row.id, col.key)">{{
-                    row[col.key]
-                  }}</span>
-                  <input
-                    *ngIf="isEditing(row.id, col.key)"
-                    [type]="
-                      col.key.toLowerCase().includes('bal') ? 'number' : 'text'
-                    "
-                    [(ngModel)]="row[col.key]"
-                    (blur)="stopEditing()"
-                    (keyup.enter)="stopEditing()"
-                    class="input input-bordered w-full max-w-xs"
-                    #editInput
-                  />
-                </div>
+                <input
+                  [type]="
+                    col.key.toLowerCase().includes('bal') ? 'number' : 'text'
+                  "
+                  [(ngModel)]="row[col.key]"
+                  (input)="onInputChange($event, row.id, col.key)"
+                  class="input input-bordered w-full max-w-xs"
+                />
               </ng-container>
               <ng-container *ngSwitchDefault>{{ row[col.key] }}</ng-container>
             </ng-container>
