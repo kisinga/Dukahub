@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { TruncatePipe } from "../../../pipes/truncate.pipe";
+import { TruncatePipe } from '../../../pipes/truncate.pipe';
 
 interface TableColumn {
   key: string;
@@ -17,13 +17,13 @@ interface TableRow {
 }
 
 @Component({
-  selector: 'app-generic-table',
+  selector: 'app-open-close-table',
   standalone: true,
   imports: [CommonModule, FormsModule, TruncatePipe],
-  templateUrl: './generic-table.component.html',
-  styles: []
+  templateUrl: './open-close-table.component.html',
+  styleUrl: './open-close-table.component.scss'
 })
-export class GenericTableComponent {
+export class OpenCloseTableComponent {
   @Input() set columns(value: TableColumn[]) {
     this._columns = value.map(col => ({
       ...col,

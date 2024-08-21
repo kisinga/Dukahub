@@ -4,11 +4,11 @@ import { AccountsResponse } from '../../../../types/pocketbase-types';
 import { TruncatePipe } from '../../../pipes/truncate.pipe';
 import { AppStateService } from '../../../services/app-state.service';
 import { DbService } from '../../../services/db.service';
-import { GenericTableComponent } from "../generic-table/generic-table.component";
+import { OpenCloseTableComponent } from '../open-close-table/open-close-table.component';
 
 @Component({
     standalone: true,
-    imports: [GenericTableComponent],
+    imports: [OpenCloseTableComponent],
     templateUrl: './open-close-financial.page.html',
     styleUrl: './open-close-financial.page.css',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,7 +46,7 @@ export class OpenCloseFinancialPage implements OnInit {
                     return {
                         id: account.id,
                         account: account.iconURL,
-                        accountName: `${account.parentName}: ${account.name}`,
+                        accountName: account.name,
                         accountSubText: account.account_number,
                         openingBal: 0,
                         closingBal: 0

@@ -1,0 +1,85 @@
+<div class="p-4 bg-base-100 rounded-box shadow-lg">
+  <div class="overflow-x-auto">
+    <table class="table table-zebra w-full">
+      <thead>
+        <tr>
+          @for (col of columns; track col.key; let i = $index) {
+          <th
+            class="bg-base-200 text-base-content"
+            [innerHTML]="col.safeLabel"
+          ></th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of paginatedData; track row.id) {
+        <tr class="hover:bg-base-200 transition-colors duration-200">
+          @for (col of columns; track col.key) {
+          <td class="p-2 md:p-4">
+            <ng-container [ngSwitch]="col.type">
+              <ng-container *ngSwitchCase="'image'">
+                <div
+                  class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3"
+                >
+                  <div class="avatar">
+                    <div class="mask mask-squircle h-10 w-10 sm:h-12 sm:w-12">
+                      <img
+                        [src]="row[col.key]"
+                        [alt]="row[col.key + 'Alt']"
+                        class="object-cover"
+                      />
+                    </div>
+                  </div>
+                  <div class="text-center sm:text-left">
+                    <div class="font-bold text-sm sm:text-base">
+                      {{ row[col.key + "Name"] | truncate : 15 }}
+                    </div>
+                    <div class="text-xs sm:text-sm opacity-70">
+                      {{ row[col.key + "SubText"] | truncate : 15 }}
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+              <ng-container *ngSwitchCase="'editable'">
+                <input
+                  [type]="
+                    col.key.toLowerCase().includes('bal') ? 'number' : 'text'
+                  "
+                  [(ngModel)]="row[col.key]"
+                  class="input input-bordered input-sm w-full max-w-[120px] sm:max-w-[200px]"
+                />
+              </ng-container>
+              <ng-container *ngSwitchDefault>
+                <span class="text-sm sm:text-base">{{ row[col.key] }}</span>
+              </ng-container>
+            </ng-container>
+          </td>
+          }
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div
+    class="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4"
+  >
+    <div class="join">
+      @for (page of getPages(); track page) {
+      <button
+        class="join-item btn btn-sm sm:btn-md"
+        [class.btn-active]="currentPage === page"
+        (click)="setPage(page)"
+      >
+        {{ page }}
+      </button>
+      }
+    </div>
+    <button
+      class="btn btn-primary btn-sm sm:btn-md w-full sm:w-auto"
+      (click)="onSave()"
+    >
+      Save All
+    </button>
+  </div>
+</div>
