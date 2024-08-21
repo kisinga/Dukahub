@@ -58,6 +58,8 @@ export class DashboardPage implements OnInit {
             if (params['date']) {
                 this.stateService.selectedDate.set(new Date(params['date']))
                 this.toggleDatePicker()
+            } else {
+                this.showDatePicker.set(false)
             }
         })
     }
