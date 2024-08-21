@@ -16,6 +16,8 @@ export class AppStateService {
   user = signal<UsersResponse | undefined>(undefined);
   loadingUser = signal<boolean>(true);
 
+  selectedDate = signal<Date>(new Date())
+
   readonly isAuthenticated = computed(() => !!this.user());
 
   constructor(@Inject(DbService) private readonly db: DbService) {

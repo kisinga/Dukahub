@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, Inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, Inject, Signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { CompaniesRecord, CompaniesResponse, DailyFinancialsRecord, UsersResponse } from '../../../../types/pocketbase-types';
+import { DailyFinancialsRecord } from '../../../../types/pocketbase-types';
 import { TruncatePipe } from "../../../pipes/truncate.pipe";
 import { AppStateService } from '../../../services/app-state.service';
-import { DbService } from '../../../services/db.service';
 
 @Component({
     standalone: true,
@@ -14,26 +13,18 @@ import { DbService } from '../../../services/db.service';
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MainPage {
-    companies = signal<CompaniesResponse[]>([]);
-    user = signal<UsersResponse | undefined>(undefined);
-    weeklySales = signal<DailyFinancialsRecord[]>([]);
+    weeklySales: Signal<DailyFinancialsRecord[]>;
     totalWeeklySales = 0
 
     totalSalesToday = 0
 
-    selectedCompanyIndex = signal<number>(-1);
 
     constructor(
-        @Inject(DbService) private readonly db: DbService,
         @Inject(AppStateService) private readonly stateService: AppStateService,
         @Inject(Router) private readonly router: Router,
         private cdr: ChangeDetectorRef
     ) {
-        this.companies = this.stateService.companies
         this.weeklySales = this.stateService.weeklySales
-        this.user = this.stateService.user
-        this.weeklySales = this.stateService.weeklySales
-        this.selectedCompanyIndex = this.stateService.selectedCompanyIndex
 
         effect(() => {
             this.totalWeeklySales = this.calculateTotalWeeklySales(this.stateService.weeklySales())
@@ -42,22 +33,14 @@ export class MainPage {
         })
     }
 
-    onCompanyChange() {
-        if (this.selectedCompanyIndex() !== -1) {
-            this.stateService.changeSelectedCompany(this.selectedCompanyIndex())
-        }
-    }
 
-    generateURL(company: CompaniesRecord, name: string): string {
-        return this.db.generateURL(company, name);
-    }
 
     navigateToFinancial() {
-        this.router.navigate(['/dashboard/open-close-financial']);
+        this.router.navigate(['/dashboard/open-close-financial'], { queryParams: { date: new Date().toISOString() } });
     }
 
     navigateToStock() {
-        this.router.navigate(['/dashboard/open-close-stock']);
+        this.router.navigate(['/dashboard/open-close-stock'], { queryParams: { date: new Date().toISOString() } });
     }
 
     // calculate total weekly sales
@@ -68,8 +51,4 @@ export class MainPage {
         return totalClosingBalances - totalOpeningBalances;
     }
 
-    logout(): void {
-        this.db.logout();
-        this.router.navigate(['/login']);
-    }
 }

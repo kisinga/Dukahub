@@ -5,6 +5,30 @@
     <div class="navbar hidden lg:flex">
       <div class="flex-1">
         <a class="btn btn-ghost normal-case text-xl">SimpleStock</a>
+        @if (!loadingUser()) {
+        <!-- Company Selector -->
+        @if (companies().length > 0) {
+        <div class="flex items-center">
+          <img
+            [src]="generateURL(companies()[selectedCompanyIndex()], companies()[selectedCompanyIndex()].logo)"
+            alt="Company Logo"
+            class="h-8 w-8 object-contain mr-2"
+          />
+          <select
+            class="select select-secondary select-bordered select-sm w-40 max-w-40 text-primary-content"
+            [(ngModel)]="selectedCompanyIndex"
+            (change)="onCompanyChange()"
+          >
+            @for (company of companies(); track company.id; let i = $index) {
+            <option class="max-w-40" [ngValue]="i">
+              {{company.name | truncate : 10}}
+            </option>
+            }
+          </select>
+        </div>
+        } @else {
+        <div class="text-warning-content">No selected company</div>
+        } }
       </div>
       <div class="flex-none">
         <ul class="menu menu-horizontal p-0">
@@ -32,6 +56,24 @@
               >Setup</a
             >
           </li>
+        </ul>
+      </div>
+      <!-- User Menu -->
+      <div class="dropdown-end dropdown z-10">
+        <div tabindex="0" class="avatar btn btn-circle btn-ghost">
+          <div class="w-10 rounded-full">
+            <img [src]="user?.avatarURL" />
+          </div>
+        </div>
+        <ul
+          tabindex="0"
+          class="menu dropdown-content mt-3 w-52 rounded-box bg-base-100 p-2 shadow-2xl"
+        >
+          <li>
+            <a>Profile</a>
+          </li>
+          <li><a>Settings</a></li>
+          <li (click)="logout()"><a>Logout</a></li>
         </ul>
       </div>
     </div>
@@ -110,6 +152,64 @@
   @if (loadingUser()) {
   <div>Loading...</div>
   } @else {
+  <!-- Top Bar -->
+  <header
+    class="bg-primary text-primary-content p-4 flex justify-between items-center lg:hidden"
+  >
+    <!-- Company Selector -->
+    @if (companies().length > 0) {
+    <div class="flex join items-center">
+      <img
+        [src]="generateURL(companies()[selectedCompanyIndex()], companies()[selectedCompanyIndex()].logo)"
+        alt="Company Logo"
+        class="h-8 w-8 object-contain mr-2"
+      />
+      <select
+        class="select join-item select-secondary select-bordered select-sm w-40 max-w-40 bg-primary text-primary-content"
+        [(ngModel)]="selectedCompanyIndex"
+        (change)="onCompanyChange()"
+      >
+        @for (company of companies(); track company.id; let i = $index) {
+        <option class="max-w-40" [ngValue]="i">
+          {{company.name | truncate : 10}}
+        </option>
+        }
+      </select>
+
+      <!-- date picker -->
+      @if(showDatePicker()) {
+      <input
+        type="date"
+        [(ngModel)]="dateString"
+        (ngModelChange)="updateDate($event)"
+        class="input join-item input-sm bg-neutral input-bordered w-full max-w-xs"
+      />
+      }
+    </div>
+    } @else {
+    <div class="text-warning-content">No selected company</div>
+    }
+
+    <!-- User Menu -->
+    <div class="dropdown-end dropdown z-10">
+      <div tabindex="0" class="avatar btn btn-circle btn-ghost">
+        <div class="w-6 rounded-full">
+          <img [src]="user?.avatarURL" />
+          />
+        </div>
+      </div>
+      <ul
+        tabindex="0"
+        class="menu dropdown-content mt-3 w-52 rounded-box bg-base-content p-2 shadow-2xl"
+      >
+        <li>
+          <a>Profile</a>
+        </li>
+        <li><a>Settings</a></li>
+        <li (click)="logout()"><a>Logout</a></li>
+      </ul>
+    </div>
+  </header>
   <router-outlet></router-outlet>
   }
 </div>

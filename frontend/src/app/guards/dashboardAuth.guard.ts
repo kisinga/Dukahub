@@ -1,5 +1,5 @@
-import { inject, Inject, Injectable } from '@angular/core';
-import { Router, type ActivatedRouteSnapshot, type CanActivate, type RouterStateSnapshot } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { AppStateService } from '../services/app-state.service';
 

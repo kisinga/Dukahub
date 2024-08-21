@@ -17,16 +17,13 @@ import { GenericTableComponent } from "../generic-table/generic-table.component"
 export class OpenCloseFinancialPage implements OnInit {
     financialTableData: FinancialTableData[] = [];
     selectedCompanyName = '';
+
     constructor(@Inject(AppStateService) private readonly stateService: AppStateService,
         @Inject(DbService) private readonly db: DbService,
         @Inject(TruncatePipe) private readonly truncatePipe: TruncatePipe,
         private cdr: ChangeDetectorRef
     ) {
-        effect(() => {
-            if (this.stateService.companies().length > 0) {
-                this.updateColumnLabel(this.stateService.companies()[this.stateService.selectedCompanyIndex()].name);
-            }
-        })
+
         effect(() => {
             if (this.stateService.accountNames().length > 0) {
                 // console.log('AccountNames:', this.stateService.accountNames());
@@ -61,19 +58,12 @@ export class OpenCloseFinancialPage implements OnInit {
         })
     }
     columns: TableColumn[] = [
-        { key: 'account', label: `<span class="text-lg">Loading...</span> Accounts`, type: 'image' },
+        { key: 'account', label: `Accounts`, type: 'image' },
         { key: 'openingBal', label: 'Opening Bal', type: 'editable' },
         { key: 'closingBal', label: 'Closing Bal', type: 'editable' }
     ];
 
-    updateColumnLabel(selectedCompanyName: string) {
-        this.columns = this.columns.map((col, index) =>
-            index === 0
-                ? { ...col, label: `<span class="text-lg">${this.truncatePipe.transform(selectedCompanyName, 10)}</span> &nbsp Accounts` }
-                : col
-        );
-        this.cdr.detectChanges();
-    }
+
 
     onSave(updatedData: any[]): void {
         console.log('Saving:', updatedData);

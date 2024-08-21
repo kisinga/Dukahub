@@ -1,13 +1,13 @@
-import { APP_INITIALIZER, ApplicationConfig } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, inject } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
 import { AppStateService } from './app/services/app-state.service';
 import { DbService } from './app/services/db.service';
 import { UsersResponse } from './types/pocketbase-types';
 
-function initializeAppFactory(dbService: DbService, stateService: AppStateService) {
+function initializeAppFactory(dbService: DbService, stateService: AppStateService, router: Router) {
   return () => new Promise<void>((resolve) => {
     let authStore = dbService.getAuthStore();
     authStore.onChange((auth) => {
@@ -18,6 +18,10 @@ function initializeAppFactory(dbService: DbService, stateService: AppStateServic
 
       } else {
         console.log('Not authenticated');
+        // check the activated route and redirect to the login page
+        if (router.url !== '/login') {
+          router.navigate(['/login']);
+        }
         resolve();
 
       }
@@ -32,7 +36,7 @@ const appConfig: ApplicationConfig = {
     {
       provide: APP_INITIALIZER,
       useFactory: (dbService: DbService, stateService: AppStateService) =>
-        initializeAppFactory(dbService, stateService),
+        initializeAppFactory(dbService, stateService, inject(Router)),
       deps: [DbService, AppStateService],
       multi: true
     }
