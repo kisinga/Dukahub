@@ -31,6 +31,24 @@ export class DbService {
     this.pb.authStore.clear();
   }
 
+  async fetchFinancialRecords(companyID: string, date?: Date): Promise<DailyFinancialsResponse[]> {
+    console.log('CompanyID:', companyID);
+    if (!date) {
+      return await this.pb.collection('daily_financials').getFullList<DailyFinancialsResponse>({
+        filter: `company = "${companyID}"`
+      })
+    }
+
+    // remove the time from the date so that it only compares the date
+    let stringDate = date.toISOString().split('T')[0];
+    console.log('StringDate:', stringDate);
+
+
+    return await this.pb.collection('daily_financials').getFullList<DailyFinancialsResponse>({
+      filter: `date = "${stringDate}" && company = "${companyID}"`
+    })
+  }
+
   async fetchAccountNames(): Promise<AccountNamesResponse[]> {
     return await this.pb.collection('account_names').getFullList<AccountNamesResponse>()
   }

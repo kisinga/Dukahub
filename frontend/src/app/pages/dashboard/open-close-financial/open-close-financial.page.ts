@@ -42,16 +42,34 @@ export class OpenCloseFinancialPage implements OnInit {
                 })
                 console.log('Accounts:', accounts);
 
-                this.financialTableData = accounts.map(account => {
-                    return {
-                        id: account.id,
-                        account: account.iconURL,
-                        accountName: account.name,
-                        accountSubText: account.account_number,
-                        openingBal: 0,
-                        closingBal: 0
-                    }
-                })
+                // check if the database has data for the selected date
+
+                this.db.fetchFinancialRecords(this.stateService.companies()[this.stateService.selectedCompanyIndex()].id,
+                    this.stateService.selectedDate()).then((dailyFinancials) => {
+                        console.log('DailyFinancials:', dailyFinancials);
+                        this.financialTableData = accounts.map(account => {
+                            let record = dailyFinancials.find(d => d.id === account.id)
+                            return {
+                                id: account.id,
+                                account: account.iconURL,
+                                accountName: account.name,
+                                accountSubText: account.account_number,
+                                openingBal: record?.opening_bal ?? 0,
+                                closingBal: record?.closing_bal ?? 0
+                            }
+                        })
+                    })
+
+                // this.financialTableData = accounts.map(account => {
+                //     return {
+                //         id: account.id,
+                //         account: account.iconURL,
+                //         accountName: account.name,
+                //         accountSubText: account.account_number,
+                //         openingBal: 0,
+                //         closingBal: 0
+                //     }
+                // })
                 this.cdr.detectChanges(); // Trigger change detection
             }
 
@@ -66,6 +84,11 @@ export class OpenCloseFinancialPage implements OnInit {
 
 
     onSave(updatedData: any[]): void {
+        let data: FinancialTableData[] = updatedData;
+        // let mappedData:
+        //     data.forEach(d => {
+        //         data.
+        // })
         console.log('Saving:', updatedData);
         // Implement your save logic here
     }
