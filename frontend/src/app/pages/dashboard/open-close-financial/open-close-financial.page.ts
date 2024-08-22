@@ -50,7 +50,8 @@ export class OpenCloseFinancialPage implements OnInit {
                             let record = dailyFinancials.find(d => d.account === account.id)
                             return {
                                 id: account.id,
-                                account: account.iconURL,
+                                existingRecordID: record?.id,
+                                accountIconURL: account.iconURL,
                                 accountName: account.name,
                                 accountSubText: account.account_number,
                                 openingBal: record?.opening_bal ?? 0,
@@ -65,7 +66,7 @@ export class OpenCloseFinancialPage implements OnInit {
         })
     }
     columns: TableColumn[] = [
-        { key: 'account', label: `Accounts`, type: 'image' },
+        { key: 'accountIconURL', label: `Accounts`, type: 'image' },
         { key: 'openingBal', label: 'Opening Bal', type: 'editable' },
         { key: 'closingBal', label: 'Closing Bal', type: 'editable' }
     ];
@@ -73,14 +74,49 @@ export class OpenCloseFinancialPage implements OnInit {
 
 
     onSave(updatedData: any[]): void {
-        let data: FinancialTableData[] = updatedData;
-        // let mappedData:
-        //     data.forEach(d => {
-        //         data.
-        // })
+        let data: FinancialTableData[] = updatedData.map(d => {
+            let newData: FinancialTableData = d as FinancialTableData
+            newData.openingBal = parseFloat(newData.openingBal.toString())
+            newData.closingBal = parseFloat(newData.closingBal.toString())
+            return newData
+        });
+        // aggregate all the changes made to existing records by filtering out records with existingRecordID
+        let updatedRecords = data.filter(d => d.existingRecordID)
+
+        // aggregate all the new records by filtering out records without existingRecordID
+        let newRecords = data.filter(d => !d.existingRecordID)
+
+        // update the existing records
+        updatedRecords.forEach(record => {
+            this.db.updateFinancialRecord(record.existingRecordID!!, {
+                opening_bal: record.openingBal,
+                closing_bal: record.closingBal,
+                account: record.id,
+                date: this.stateService.selectedDate().toISOString(),
+                company: this.stateService.companies()[this.stateService.selectedCompanyIndex()].id,
+                notes: "",
+                user: this.stateService.user()!!.id
+            }
+            )
+        })
+
+        // create new records for records without existingRecordID
+        newRecords.forEach(record => {
+            this.db.createFinancialRecord({
+                opening_bal: record.openingBal,
+                closing_bal: record.closingBal,
+                account: record.id,
+                date: this.stateService.selectedDate().toISOString(),
+                company: this.stateService.companies()[this.stateService.selectedCompanyIndex()].id,
+                notes: "",
+                user: this.stateService.user()!!.id
+            })
+        })
+
         console.log('Saving:', updatedData);
         // Implement your save logic here
     }
+
     ngOnInit(): void { }
 
 }

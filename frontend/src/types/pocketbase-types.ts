@@ -46,7 +46,7 @@ export type AuthSystemFields<T = never> = {
 // Record types for each collection
 
 export type AccountNamesRecord = {
-	icons: string[]
+	icons?: string[]
 	name: string
 }
 
@@ -67,9 +67,10 @@ export type CompaniesRecord = {
 }
 
 export type DailyFinancialsRecord = {
-	account: RecordIdString
+	account?: RecordIdString
 	closing_bal?: number
 	company: RecordIdString
+	date: IsoDateString
 	notes?: HTMLString
 	opening_bal?: number
 	user?: RecordIdString
@@ -78,6 +79,7 @@ export type DailyFinancialsRecord = {
 export type DailyStocksRecord = {
 	closing_bal?: number
 	company: RecordIdString
+	date: IsoDateString
 	opening_bal?: number
 	product: RecordIdString
 	sku: RecordIdString
@@ -98,6 +100,7 @@ export type InvoicesRecord = {
 	amount?: number
 	bal?: number
 	company: RecordIdString
+	date: IsoDateString
 	partner: RecordIdString
 	status?: InvoicesStatusOptions
 	transactions?: RecordIdString[]
@@ -121,6 +124,7 @@ export type ProductsRecord<Tbalances = unknown> = {
 
 export type PurchasesRecord = {
 	company: RecordIdString
+	date: IsoDateString
 	invoice?: RecordIdString
 	product?: RecordIdString
 	quantity: number
@@ -133,6 +137,7 @@ export type SalesRecord = {
 	Product: RecordIdString
 	amount?: number
 	company: RecordIdString
+	date: IsoDateString
 	invoice?: RecordIdString
 	sku: RecordIdString
 	transaction?: RecordIdString[]
@@ -150,7 +155,8 @@ export enum TransactionsTypeOptions {
 export type TransactionsRecord = {
 	account?: RecordIdString
 	amount?: number
-	company?: RecordIdString
+	company: RecordIdString
+	date: IsoDateString
 	transaction_id?: string
 	type?: TransactionsTypeOptions
 }

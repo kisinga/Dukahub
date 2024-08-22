@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import PocketBase, { FileOptions, RecordFullListOptions } from 'pocketbase';
-import { AccountNamesResponse, AccountsResponse, CompaniesRecord, CompaniesResponse, DailyFinancialsResponse, UsersRecord, UsersResponse } from '../../types/pocketbase-types';
+import { AccountNamesResponse, AccountsResponse, CompaniesRecord, CompaniesResponse, DailyFinancialsRecord, DailyFinancialsResponse, UsersRecord, UsersResponse } from '../../types/pocketbase-types';
 
 @Injectable({
   providedIn: 'root'
@@ -45,6 +45,15 @@ export class DbService {
     return await this.pb.collection('daily_financials').getFullList<DailyFinancialsResponse>({
       filter: `date ?~ "${stringDate}" && company = "${companyID}"`
     })
+  }
+
+  async updateFinancialRecord(recordID: string, record: DailyFinancialsRecord): Promise<void> {
+    console.log('RecordID:', recordID, 'Record:', record);
+    return await this.pb.collection('daily_financials').update(recordID, record)
+  }
+
+  async createFinancialRecord(record: DailyFinancialsRecord): Promise<void> {
+    return await this.pb.collection('daily_financials').create(record)
   }
 
   async fetchAccountNames(): Promise<AccountNamesResponse[]> {
