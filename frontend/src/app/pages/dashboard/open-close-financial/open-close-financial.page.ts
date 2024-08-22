@@ -17,7 +17,10 @@ import { OpenCloseTableComponent } from '../open-close-table/open-close-table.co
 export class OpenCloseFinancialPage implements OnInit {
     financialTableData: FinancialTableData[] = [];
     selectedCompanyName = '';
-
+    accounts: (AccountsResponse & {
+        iconURL: string;
+        parentName: string;
+    })[] = [];
     constructor(@Inject(AppStateService) private readonly stateService: AppStateService,
         @Inject(DbService) private readonly db: DbService,
         @Inject(TruncatePipe) private readonly truncatePipe: TruncatePipe,
@@ -26,12 +29,7 @@ export class OpenCloseFinancialPage implements OnInit {
 
         effect(() => {
             if (this.stateService.accountNames().length > 0) {
-                // console.log('AccountNames:', this.stateService.accountNames());
-                // console.log('Accounts:', this.stateService.accounts());
-                let accounts: (AccountsResponse & {
-                    iconURL: string;
-                    parentName: string;
-                })[] = this.stateService.accounts().map(account => {
+                this.accounts = this.stateService.accounts().map(account => {
                     let relatedAccount = this.stateService.accountNames().find(id => id.id === account.type)!!
                     // console.log('RelatedAccount:', relatedAccount);
                     return {
@@ -40,15 +38,16 @@ export class OpenCloseFinancialPage implements OnInit {
                         iconURL: this.db.generateURL(relatedAccount, relatedAccount.icons[account.icon_id])
                     }
                 })
-                console.log('Accounts:', accounts);
+                // console.log('Accounts:', accounts);
 
                 // check if the database has data for the selected date
 
-                this.db.fetchFinancialRecords(this.stateService.companies()[this.stateService.selectedCompanyIndex()].id,
+                this.db.fetchFinancialRecords(
+                    this.stateService.companies()[this.stateService.selectedCompanyIndex()].id,
                     this.stateService.selectedDate()).then((dailyFinancials) => {
                         console.log('DailyFinancials:', dailyFinancials);
-                        this.financialTableData = accounts.map(account => {
-                            let record = dailyFinancials.find(d => d.id === account.id)
+                        this.financialTableData = this.accounts.map(account => {
+                            let record = dailyFinancials.find(d => d.account === account.id)
                             return {
                                 id: account.id,
                                 account: account.iconURL,
@@ -58,19 +57,9 @@ export class OpenCloseFinancialPage implements OnInit {
                                 closingBal: record?.closing_bal ?? 0
                             }
                         })
+                        console.log('FinancialTableData:', this.financialTableData);
+                        this.cdr.detectChanges(); // Trigger change detection
                     })
-
-                // this.financialTableData = accounts.map(account => {
-                //     return {
-                //         id: account.id,
-                //         account: account.iconURL,
-                //         accountName: account.name,
-                //         accountSubText: account.account_number,
-                //         openingBal: 0,
-                //         closingBal: 0
-                //     }
-                // })
-                this.cdr.detectChanges(); // Trigger change detection
             }
 
         })

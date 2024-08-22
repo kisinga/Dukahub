@@ -32,7 +32,7 @@ export class DbService {
   }
 
   async fetchFinancialRecords(companyID: string, date?: Date): Promise<DailyFinancialsResponse[]> {
-    console.log('CompanyID:', companyID);
+    console.log('CompanyID:', companyID, 'Date:', date);
     if (!date) {
       return await this.pb.collection('daily_financials').getFullList<DailyFinancialsResponse>({
         filter: `company = "${companyID}"`
@@ -41,11 +41,9 @@ export class DbService {
 
     // remove the time from the date so that it only compares the date
     let stringDate = date.toISOString().split('T')[0];
-    console.log('StringDate:', stringDate);
-
 
     return await this.pb.collection('daily_financials').getFullList<DailyFinancialsResponse>({
-      filter: `date = "${stringDate}" && company = "${companyID}"`
+      filter: `date ?~ "${stringDate}" && company = "${companyID}"`
     })
   }
 

@@ -26,6 +26,13 @@
         </div>
         } @else {
         <div class="badge badge-warning">No selected company</div>
+        } @if(showDatePicker()) {
+        <input
+          type="date"
+          [(ngModel)]="dateString"
+          (ngModelChange)="updateDate($event)"
+          class="input input-bordered input-sm"
+        />
         } }
       </div>
       <div class="flex-none">

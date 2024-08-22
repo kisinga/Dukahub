@@ -10,7 +10,7 @@ export class AppStateService {
   accounts = signal<AccountsResponse[]>([]);
   accountNames = signal<AccountNamesResponse[]>([]);
 
-  selectedCompanyIndex = signal<number>(0);
+  selectedCompanyIndex = signal<number>(-1);
   weeklySales = signal<DailyFinancialsResponse[]>([]);
 
   user = signal<UsersResponse | undefined>(undefined);
@@ -47,13 +47,13 @@ export class AppStateService {
 
   setup() {
     console.log('Setting up');
-    this.db.fetchUserCompanies().then(async (company) => {
+    this.db.fetchUserCompanies().then((company) => {
       this.companies.set(company);
       if (this.user()) {
         this.selectedCompanyIndex.set(company.findIndex(c => c.id === this.user()!!.defaultCompany));
       }
     })
-    this.db.fetchAccountNames().then(async (accountNames) => {
+    this.db.fetchAccountNames().then((accountNames) => {
       this.accountNames.set(accountNames);
     })
 
