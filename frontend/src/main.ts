@@ -1,5 +1,6 @@
 import { APP_INITIALIZER, ApplicationConfig, inject } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
@@ -32,6 +33,7 @@ function initializeAppFactory(dbService: DbService, stateService: AppStateServic
 
 const appConfig: ApplicationConfig = {
   providers: [
+    provideAnimations(),
     provideRouter(routes),
     {
       provide: APP_INITIALIZER,

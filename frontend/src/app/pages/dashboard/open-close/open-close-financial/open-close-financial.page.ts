@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, signal, Signal, type OnInit } from '@angular/core';
 import { FinancialTableData, TableColumn } from '../../../../../types/main';
 import { FiancialStateService } from '../../../../services/financial-state.service';
+import { ToastService } from '../../../../services/toast.service';
 import { OpenCloseTableComponent } from '../../open-close-table/open-close-table.component';
 
 @Component({
@@ -16,6 +17,8 @@ export class OpenCloseFinancialPage implements OnInit {
     financialTableData: Signal<FinancialTableData[]>
     loadingFinancials = signal<boolean>(false);
 
+    savingFinancials: Signal<boolean>
+
     columns: TableColumn[] = [
         { key: 'account', label: `Accounts`, type: 'image' },
         { key: 'openingBal', label: 'Opening Bal', type: 'editable' },
@@ -25,9 +28,13 @@ export class OpenCloseFinancialPage implements OnInit {
     constructor(
         private cdr: ChangeDetectorRef,
         @Inject(FiancialStateService) private readonly financialStateService: FiancialStateService,
+        @Inject(ToastService) private readonly toastService: ToastService
     ) {
         this.financialTableData = this.financialStateService.financialTableData
         this.loadingFinancials = this.financialStateService.loadingFinancials
+
+        this.savingFinancials = this.financialStateService.savingFinancials
+
 
     }
 
@@ -42,7 +49,7 @@ export class OpenCloseFinancialPage implements OnInit {
             newData.openingBal = parseFloat(newData.openingBal.toString())
             newData.closingBal = parseFloat(newData.closingBal.toString())
             return newData
-        });
+        }).filter(d => d.openingBal || d.closingBal)
         // aggregate all the changes made to existing records by filtering out records with existingRecordID
         let updatedRecords = data.filter(d => d.existingRecordID)
 
@@ -54,7 +61,9 @@ export class OpenCloseFinancialPage implements OnInit {
         // create new records for records without existingRecordID
         await this.financialStateService.createRecords(newRecords)
 
-        this.financialStateService.savingFinancials.set(true)
+        this.financialStateService.savingFinancials.set(false)
+
+        this.toastService.show('Financial records saved successfully')
 
     }
 

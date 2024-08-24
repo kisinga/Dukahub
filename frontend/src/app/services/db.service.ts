@@ -32,7 +32,7 @@ export class DbService {
   }
 
   async fetchFinancialRecords(companyID: string, date?: Date): Promise<DailyFinancialsResponse[]> {
-    console.log('CompanyID:', companyID, 'Date:', date);
+    // console.log('CompanyID:', companyID, 'Date:', date);
     if (!date) {
       return await this.pb.collection('daily_financials').getFullList<DailyFinancialsResponse>({
         filter: `company = "${companyID}"`

@@ -78,6 +78,7 @@
     <button
       class="btn btn-primary btn-sm sm:btn-md w-full sm:w-auto"
       (click)="onSave()"
+      [disabled]="saving"
     >
       Save All
     </button>

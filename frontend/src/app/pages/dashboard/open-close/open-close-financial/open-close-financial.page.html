@@ -11,6 +11,7 @@
     <app-open-close-table
       [columns]="columns"
       [data]="financialTableData()"
+      [saving]="savingFinancials()"
       (save)="onSave($event)"
       class="block w-full overflow-x-auto"
     ></app-open-close-table>

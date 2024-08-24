@@ -54,7 +54,7 @@ export class DashboardPage implements OnInit {
         })
 
         // show datepicker depending on route
-        this.activatedRoute.queryParams.subscribe(params => {
+        this.activatedRoute.queryParams.subscribe((params: { [x: string]: string | number | Date; }) => {
             if (params['date']) {
                 this.stateService.selectedDate.set(new Date(params['date']))
                 this.toggleDatePicker(true)

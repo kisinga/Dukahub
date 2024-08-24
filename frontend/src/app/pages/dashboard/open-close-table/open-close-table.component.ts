@@ -37,6 +37,7 @@ export class OpenCloseTableComponent {
 
   @Input() data: TableRow[] = [];
   @Input() itemsPerPage = 10;
+  @Input() saving: boolean = false;
   @Output() save = new EventEmitter<TableRow[]>();
 
   constructor(private sanitizer: DomSanitizer,

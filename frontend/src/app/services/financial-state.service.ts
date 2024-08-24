@@ -1,5 +1,4 @@
 import { computed, effect, Inject, Injectable, signal } from '@angular/core';
-import { ReplaySubject } from 'rxjs';
 import { FinancialTableData } from '../../types/main';
 import { AccountsResponse } from '../../types/pocketbase-types';
 import { AppStateService } from './app-state.service';
@@ -32,6 +31,7 @@ export class FiancialStateService {
 
   shouldFetchData = computed(() =>
     this.stateService.companies().length > 0 &&
+    this.stateService.accounts().length > 0 &&
     this.stateService.selectedDate() != null &&
     this.stateService.selectedCompanyIndex() >= 0
   );
@@ -43,7 +43,6 @@ export class FiancialStateService {
     )
   }
 
-  private loadingObservable: ReplaySubject<boolean> = new ReplaySubject(1);
   loadingFinancials = signal<boolean>(false);
 
   constructor(@Inject(AppStateService) private readonly stateService: AppStateService,
@@ -65,8 +64,8 @@ export class FiancialStateService {
           };
           return data;
         });
+        // console.log('Accounts:', this.accounts());
         this.financialTableData.set(updatedData);
-        this.loadingObservable.next(false);
       }
     });
 
