@@ -48,7 +48,7 @@ export class DbService {
   }
 
   async updateFinancialRecord(recordID: string, record: DailyFinancialsRecord): Promise<void> {
-    console.log('RecordID:', recordID, 'Record:', record);
+    // console.log('RecordID:', recordID, 'Record:', record);
     return await this.pb.collection('daily_financials').update(recordID, record)
   }
 
