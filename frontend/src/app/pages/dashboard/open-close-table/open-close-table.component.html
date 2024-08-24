@@ -32,10 +32,10 @@
                   </div>
                   <div class="text-center sm:text-left">
                     <div class="font-bold text-sm sm:text-base">
-                      {{ row[col.key + "Name"] | truncate : 15 }}
+                      {{ row[col.key + "Name"] | truncate : 10 }}
                     </div>
                     <div class="text-xs sm:text-sm opacity-70">
-                      {{ row[col.key + "SubText"] | truncate : 15 }}
+                      {{ row[col.key + "SubText"] | truncate : 10 : true }}
                     </div>
                   </div>
                 </div>

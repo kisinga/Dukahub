@@ -15,7 +15,11 @@ import { OpenCloseTableComponent } from '../open-close-table/open-close-table.co
 })
 
 export class OpenCloseFinancialPage implements OnInit {
+
+    loadingFinancials = true;
     financialTableData: FinancialTableData[] = [];
+
+
     selectedCompanyName = '';
     accounts: (AccountsResponse & {
         iconURL: string;
@@ -41,32 +45,38 @@ export class OpenCloseFinancialPage implements OnInit {
                 // console.log('Accounts:', accounts);
 
                 // check if the database has data for the selected date
+                if (this.stateService.companies().length > 0 && this.stateService.selectedDate() && this.stateService.selectedCompanyIndex() >= 0) {
+                    this.loadingFinancials = true
+                    this.cdr.detectChanges(); // Trigger change detection
 
-                this.db.fetchFinancialRecords(
-                    this.stateService.companies()[this.stateService.selectedCompanyIndex()].id,
-                    this.stateService.selectedDate()).then((dailyFinancials) => {
-                        console.log('DailyFinancials:', dailyFinancials);
-                        this.financialTableData = this.accounts.map(account => {
-                            let record = dailyFinancials.find(d => d.account === account.id)
-                            return {
-                                id: account.id,
-                                existingRecordID: record?.id,
-                                accountIconURL: account.iconURL,
-                                accountName: account.name,
-                                accountSubText: account.account_number,
-                                openingBal: record?.opening_bal ?? 0,
-                                closingBal: record?.closing_bal ?? 0
-                            }
+                    this.db.fetchFinancialRecords(
+                        this.stateService.companies()[this.stateService.selectedCompanyIndex()].id,
+                        this.stateService.selectedDate()).then((dailyFinancials) => {
+                            console.log('DailyFinancials:', dailyFinancials);
+                            this.financialTableData = this.accounts.map(account => {
+                                let record = dailyFinancials.find(d => d.account === account.id)
+                                return {
+                                    id: account.id,
+                                    existingRecordID: record?.id || "",
+                                    account: account.iconURL,
+                                    accountName: account.name,
+                                    accountSubText: account.account_number,
+                                    openingBal: record?.opening_bal ?? 0,
+                                    closingBal: record?.closing_bal ?? 0
+                                }
+                            })
+                            // console.log('FinancialTableData:', this.financialTableData);
+                            this.loadingFinancials = false
+                            this.cdr.detectChanges(); // Trigger change detection
+
                         })
-                        console.log('FinancialTableData:', this.financialTableData);
-                        this.cdr.detectChanges(); // Trigger change detection
-                    })
+                }
             }
 
         })
     }
     columns: TableColumn[] = [
-        { key: 'accountIconURL', label: `Accounts`, type: 'image' },
+        { key: 'account', label: `Accounts`, type: 'image' },
         { key: 'openingBal', label: 'Opening Bal', type: 'editable' },
         { key: 'closingBal', label: 'Closing Bal', type: 'editable' }
     ];

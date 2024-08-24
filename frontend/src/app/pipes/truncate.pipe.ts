@@ -14,10 +14,12 @@ export class TruncatePipe implements PipeTransform {
       return "";
     }
 
-    return this.optionalTruncate(value, limit);
+    return this.optionalTruncate(value, limit, ellipsis);
   }
 
-  optionalTruncate(str: string, maxLength: number = 15, ellipsis: boolean = false): string {
+  optionalTruncate(input: string, maxLength: number, ellipsis: boolean = false): string {
+    const str = String(input);
+
     if (!str) return '';
 
     // If the string is already shorter than maxLength, return it as is
@@ -29,7 +31,7 @@ export class TruncatePipe implements PipeTransform {
     // If there's no space (i.e., it's a single word) or the first word is longer than maxLength
     if (firstSpaceIndex === -1 || firstSpaceIndex > maxLength) {
       // Apply normal truncation
-      return str.slice(0, maxLength - 3) + ellipsis ? '...' : '';
+      return str.slice(0, (ellipsis ? maxLength - 3 : maxLength)) + (ellipsis ? '...' : '');
     }
 
     // If the first word is not longer than maxLength, return it
@@ -42,9 +44,9 @@ export class TruncatePipe implements PipeTransform {
 
     // If found, truncate at this space; otherwise, truncate at maxLength
     if (lastSpaceIndex > 0) {
-      return str.slice(0, lastSpaceIndex) + ellipsis ? '...' : '';
+      return str.slice(0, lastSpaceIndex) + (ellipsis ? '...' : '');
     } else {
-      return str.slice(0, maxLength - 3) + ellipsis ? '...' : '';
+      return str.slice(0, (ellipsis ? maxLength - 3 : maxLength)) + (ellipsis ? '...' : '');
     }
   }
 }

@@ -57,7 +57,7 @@ export class DashboardPage implements OnInit {
         this.activatedRoute.queryParams.subscribe(params => {
             if (params['date']) {
                 this.stateService.selectedDate.set(new Date(params['date']))
-                this.toggleDatePicker()
+                this.toggleDatePicker(true)
             } else {
                 this.showDatePicker.set(false)
             }
@@ -65,15 +65,16 @@ export class DashboardPage implements OnInit {
     }
 
     updateDate(dateString: string): void {
-        this.stateService.selectedDate.set(new Date(dateString));
+        // check the currently active route
+        this.router.navigate([], { queryParams: { date: dateString } });
     }
 
     private formatDate(date: Date): string {
         return date.toISOString().split('T')[0];
     }
 
-    toggleDatePicker() {
-        this.showDatePicker.set(!this.showDatePicker())
+    toggleDatePicker(value?: boolean): void {
+        this.showDatePicker.set(value === undefined ? !this.showDatePicker() : value)
     }
 
     getAvatarURL(): string {

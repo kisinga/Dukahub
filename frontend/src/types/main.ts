@@ -6,7 +6,7 @@ export interface TableColumn {
 
 export interface FinancialTableData {
     id: string; //This field maps the original account id
-    accountIconURL: string;
+    account: string;
     existingRecordID?: string;
     accountName: string;
     accountSubText: string;
