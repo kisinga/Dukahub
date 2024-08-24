@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, type OnInit } from '@angular/core';
-import { FinancialTableData, TableColumn } from '../../../../types/main';
-import { OpenCloseTableComponent } from '../open-close-table/open-close-table.component';
+import { FinancialTableData, TableColumn } from '../../../../../types/main';
+import { OpenCloseTableComponent } from '../../open-close-table/open-close-table.component';
 
 @Component({
     standalone: true,
