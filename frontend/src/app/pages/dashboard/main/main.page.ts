@@ -36,11 +36,11 @@ export class MainPage {
 
 
     navigateToFinancial() {
-        this.router.navigate(['/dashboard/open-close-financial'], { queryParams: { date: new Date().toISOString() } });
+        this.router.navigate(['/dashboard/open-close-financial'], { queryParams: { date: new Date().toISOString().split("T")[0] } });
     }
 
     navigateToStock() {
-        this.router.navigate(['/dashboard/open-close-stock'], { queryParams: { date: new Date().toISOString() } });
+        this.router.navigate(['/dashboard/open-close-stock'], { queryParams: { date: new Date().toISOString().split("T")[0] } });
     }
 
     // calculate total weekly sales
