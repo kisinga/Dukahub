@@ -1,12 +1,14 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, signal, Signal, type OnInit } from '@angular/core';
-import { FinancialTableData, TableColumn } from '../../../../../types/main';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, Inject, signal, Signal, type OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { FinancialTableData } from '../../../../../types/main';
+import { TruncatePipe } from "../../../../pipes/truncate.pipe";
 import { FiancialStateService } from '../../../../services/financial-state.service';
 import { ToastService } from '../../../../services/toast.service';
-import { OpenCloseTableComponent } from '../../open-close-table/open-close-table.component';
 
 @Component({
     standalone: true,
-    imports: [OpenCloseTableComponent],
+    imports: [TruncatePipe, CommonModule, FormsModule],
     templateUrl: './open-close-financial.page.html',
     styleUrl: './open-close-financial.page.css',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -14,37 +16,56 @@ import { OpenCloseTableComponent } from '../../open-close-table/open-close-table
 
 export class OpenCloseFinancialPage implements OnInit {
 
-    financialTableData: Signal<FinancialTableData[]>
+    financialTableData: FinancialTableData[] = [];
     loadingFinancials = signal<boolean>(false);
 
     savingFinancials: Signal<boolean>
+    itemsPerPage = 10;
+    currentPage = 1;
 
-    columns: TableColumn[] = [
-        { key: 'account', label: `Accounts`, type: 'image' },
-        { key: 'openingBal', label: 'Opening Bal', type: 'editable' },
-        { key: 'closingBal', label: 'Closing Bal', type: 'editable' }
-    ];
 
     constructor(
         private cdr: ChangeDetectorRef,
         @Inject(FiancialStateService) private readonly financialStateService: FiancialStateService,
         @Inject(ToastService) private readonly toastService: ToastService
     ) {
-        this.financialTableData = this.financialStateService.financialTableData
+        effect(() => {
+            this.financialTableData = this.financialStateService.financialTableData()
+            this.cdr.markForCheck()
+        })
+
         this.loadingFinancials = this.financialStateService.loadingFinancials
-
         this.savingFinancials = this.financialStateService.savingFinancials
-
 
     }
 
+    get paginatedData(): FinancialTableData[] {
+        const start = (this.currentPage - 1) * this.itemsPerPage;
+        return this.financialTableData.slice(start, start + this.itemsPerPage);
+    }
+
+    getPages(): number[] {
+        const pageCount = Math.ceil(this.financialTableData.length / this.itemsPerPage);
+        return Array.from({ length: pageCount }, (_, i) => i + 1);
+    }
+
+    setPage(page: number): void {
+        this.currentPage = page;
+    }
+
+    onFieldUpdate(id: string, key: string, value: any): void {
+        // const index = this.data.findIndex(item => item.id === id);
+        // if (index !== -1) {
+        //   this.data[index] = { ...this.data[index], [key]: value };
+        // }
+        // If you have any additional logic or API calls, you can keep them here
+    }
 
 
-
-    async onSave(updatedData: any[]): Promise<void> {
+    async onSave(): Promise<void> {
         this.financialStateService.savingFinancials.set(true)
 
-        let data: FinancialTableData[] = updatedData.map(d => {
+        let data: FinancialTableData[] = this.financialTableData.map(d => {
             let newData: FinancialTableData = d as FinancialTableData
             newData.openingBal = parseFloat(newData.openingBal.toString())
             newData.closingBal = parseFloat(newData.closingBal.toString())
