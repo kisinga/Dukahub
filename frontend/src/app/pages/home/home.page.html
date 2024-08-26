@@ -1,71 +1,119 @@
 <!-- Navigation Bar -->
-<nav class="bg-base-100 px-4 py-4 shadow-md">
-  <div class="container mx-auto flex justify-between items-center">
-    <a href="/" class="text-xl font-bold text-primary">SimpleStock</a>
-    <div class="flex items-center space-x-4">
-      <a href="#features" class="text-base text-white hover:text-primary"
-        >Features</a
+<nav class="bg-base-100 shadow-lg sticky top-0 z-50">
+  <div class="navbar container mx-auto">
+    <div class="navbar-start">
+      <div class="dropdown">
+        <label tabindex="0" class="btn btn-ghost lg:hidden">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h8m-8 6h16"
+            />
+          </svg>
+        </label>
+        <ul
+          tabindex="0"
+          class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+        >
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="/login" class="btn btn-accent btn-sm mt-2">Login</a></li>
+        </ul>
+      </div>
+      <a href="/" class="btn btn-ghost normal-case text-xl text-primary"
+        >SimpleStock</a
       >
-      <a href="#pricing" class="text-base text-white hover:text-primary"
-        >Pricing</a
-      >
-      <a href="/login" class="btn btn-accent">Login</a>
+    </div>
+    <div class="navbar-center hidden lg:flex">
+      <ul class="menu menu-horizontal px-1">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+      </ul>
+    </div>
+    <div class="navbar-end">
+      <a href="/login" class="btn btn-accent btn-sm lg:btn-md">Login</a>
     </div>
   </div>
 </nav>
+
 <!-- Hero Section -->
-<header
-  class="hero-background h-screen flex items-center justify-center text-center text-white"
->
-  <div>
-    <h1 class="text-5xl font-bold">Empower Your Business</h1>
-    <p class="mt-4 text-2xl">
-      Simple, Powerful Stock Management for Small Businesses
-    </p>
-    <a href="/signup" class="btn btn-primary mt-8">Get Started</a>
+<header class="hero min-h-screen bg-base-200">
+  <div class="hero-content text-center">
+    <div class="max-w-md">
+      <h1 class="text-4xl lg:text-5xl font-bold text-primary">
+        Empower Your Business
+      </h1>
+      <p class="py-6 text-lg lg:text-2xl">
+        Simple, Powerful Stock Management for Small Businesses
+      </p>
+      <a href="/signup" class="btn btn-primary btn-lg">Get Started</a>
+    </div>
   </div>
 </header>
+
 <!-- Features Section -->
-<section id="features" class="bg-base-100 py-12">
-  <div class="container mx-auto">
-    <h2 class="text-3xl font-bold text-center text-primary mb-6">
+<section id="features" class="py-12 bg-base-100">
+  <div class="container mx-auto px-4">
+    <h2 class="text-3xl font-bold text-center text-primary mb-8">
       Why SimpleStock?
     </h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <!-- Stock Management -->
-      <div class="bg-base-200 p-6 rounded-lg shadow">
-        <h3 class="text-2xl text-secondary mb-2">
-          Streamlined Stock Management
-        </h3>
-        <p>
-          Manage your daily stock effortlessly with tools tailored for small
-          businesses.
-        </p>
+      <div class="card bg-base-200 shadow-xl">
+        <div class="card-body">
+          <h3 class="card-title text-secondary">
+            Streamlined Stock Management
+          </h3>
+          <p>
+            Manage your daily stock effortlessly with tools tailored for small
+            businesses.
+          </p>
+        </div>
       </div>
       <!-- Customer Management -->
-      <div class="bg-base-200 p-6 rounded-lg shadow">
-        <h3 class="text-2xl text-secondary mb-2">Customer Relationships</h3>
-        <p>Track customer interactions, invoices, and payments in one place.</p>
+      <div class="card bg-base-200 shadow-xl">
+        <div class="card-body">
+          <h3 class="card-title text-secondary">Customer Relationships</h3>
+          <p>
+            Track customer interactions, invoices, and payments in one place.
+          </p>
+        </div>
       </div>
       <!-- Insights and Reporting -->
-      <div class="bg-base-200 p-6 rounded-lg shadow">
-        <h3 class="text-2xl text-secondary mb-2">Insights and Analytics</h3>
-        <p>
-          Gain valuable insights into your most popular products and sales
-          trends.
-        </p>
+      <div class="card bg-base-200 shadow-xl">
+        <div class="card-body">
+          <h3 class="card-title text-secondary">Insights and Analytics</h3>
+          <p>
+            Gain valuable insights into your most popular products and sales
+            trends.
+          </p>
+        </div>
       </div>
     </div>
   </div>
 </section>
+
 <!-- Call to Action -->
-<div class="bg-primary py-10">
-  <div class="container mx-auto text-center">
-    <h2 class="text-3xl font-bold text-white">Start Managing Smarter</h2>
-    <a href="/signup" class="btn btn-accent mt-4">Sign Up Now</a>
+<div class="bg-primary py-12">
+  <div class="container mx-auto px-4 text-center">
+    <h2 class="text-3xl font-bold text-base-100 mb-6">
+      Start Managing Smarter
+    </h2>
+    <a href="/signup" class="btn btn-accent btn-lg">Sign Up Now</a>
   </div>
 </div>
+
 <!-- Footer -->
-<footer class="bg-neutral py-4 text-center text-sm text-white">
-  © 2024 SimpleStock. All rights reserved.
+<footer class="footer footer-center p-4 bg-neutral text-neutral-content">
+  <div>
+    <p>© 2024 SimpleStock. All rights reserved.</p>
+  </div>
 </footer>

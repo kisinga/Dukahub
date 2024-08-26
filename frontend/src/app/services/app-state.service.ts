@@ -2,16 +2,15 @@ import { computed, effect, Inject, Injectable, signal } from '@angular/core';
 import { MergedAccountWithType } from '../../types/main';
 import { AccountNamesResponse, AccountsResponse, CompaniesResponse, DailyFinancialsResponse, UsersResponse } from '../../types/pocketbase-types';
 import { DbService } from './db.service';
+import { DynamicUrlService } from './dynamic-url.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AppStateService {
-  allGeneralAccountNames = signal<AccountNamesResponse[]>([]);
-  companies = signal<CompaniesResponse[]>([]);
+  private allGeneralAccountNames = signal<AccountNamesResponse[]>([]);
   private allPlainCompanyAccounts = signal<AccountsResponse[]>([]);
-
-  allMergedCompanyAccounts = computed<MergedAccountWithType[]>(() => {
+  private allMergedCompanyAccounts = computed<MergedAccountWithType[]>(() => {
     return this.allPlainCompanyAccounts().map(account => {
       let relatedAccount = this.allGeneralAccountNames().find(name => name.id === account.type);
 
@@ -24,24 +23,24 @@ export class AppStateService {
       }
     })
   });
+  selectedCompanyAccounts = computed(() => {
+    return this.allMergedCompanyAccounts().filter(account => account.company === this.userCompanies()[this.selectedCompanyIndex()].id)
+  });
 
+  userCompanies = signal<CompaniesResponse[]>([]);
   selectedCompanyIndex = signal<number>(-1);
 
   selectedCompany = computed(() => {
     if (this.selectedCompanyIndex() > -1) {
-      return this.companies()[this.selectedCompanyIndex()];
+      return this.userCompanies()[this.selectedCompanyIndex()];
     } else {
       return undefined;
     }
   })
-
-  selectedCompanyAccounts = computed(() => {
-    return this.allMergedCompanyAccounts().filter(account => account.company === this.companies()[this.selectedCompanyIndex()].id)
-  });
+  urlCompany = signal<string>("");
 
 
   weeklySales = signal<DailyFinancialsResponse[]>([]);
-
   user = signal<UsersResponse | undefined>(undefined);
   loadingUser = signal<boolean>(true);
 
@@ -49,7 +48,10 @@ export class AppStateService {
 
   readonly isAuthenticated = computed(() => !!this.user());
 
-  constructor(@Inject(DbService) private readonly db: DbService) {
+  constructor(
+    @Inject(DbService) private readonly db: DbService,
+    @Inject(DynamicUrlService) private readonly dynamicUrlService: DynamicUrlService
+  ) {
     effect(() => {
       if (this.isAuthenticated()) {
         this.setup();
@@ -57,15 +59,27 @@ export class AppStateService {
     });
     effect(() => {
       if (this.selectedCompany()) {
+
         this.fetchWeeklySales(this.selectedCompany()?.id!!).then((weeklySales) => {
           this.weeklySales.set(weeklySales)
         });
 
-        this.db.fetchAccounts().then((accounts) => {
+        let queryOptions = {
+          filter: `company = "${this.selectedCompany()?.id}"`
+        }
+
+        this.db.fetchAccounts(queryOptions).then((accounts) => {
           this.allPlainCompanyAccounts.set(accounts);
         })
       }
     });
+
+    // change the url segment whenver the selected company and date change
+    effect(() => {
+      if (this.selectedCompany() && this.selectedDate()) {
+        this.dynamicUrlService.updateDashboardUrl(this.selectedDate().toISOString().split('T')[0], this.selectedCompany()!.id);
+      }
+    })
 
   }
 
@@ -77,9 +91,20 @@ export class AppStateService {
   setup() {
     console.log('Setting up');
     this.db.fetchUserCompanies().then((company) => {
-      this.companies.set(company);
+      this.userCompanies.set(company);
       if (this.user()) {
-        this.selectedCompanyIndex.set(company.findIndex(c => c.id === this.user()!!.defaultCompany));
+        if (this.urlCompany() !== "") {
+          // make sure the company exists in the list of companies
+          let co = company.find(c => c.id === this.urlCompany());
+          if (co) {
+            this.selectedCompanyIndex.set(company.findIndex(c => c.id === this.urlCompany()));
+          } else {
+            console.log('provided Company not found');
+            this.selectedCompanyIndex.set(company.findIndex(c => c.id === this.user()!!.defaultCompany));
+          }
+        } else {
+          this.selectedCompanyIndex.set(company.findIndex(c => c.id === this.user()!!.defaultCompany));
+        }
       }
     })
     this.db.fetchAccountNames().then((accountNames) => {

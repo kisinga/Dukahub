@@ -33,19 +33,6 @@ export class DbService {
 
   async fetchFinancialRecords<T>(options?: RecordFullListOptions): Promise<T[]> {
     return await this.pb.collection('daily_financials').getFullList<T>(options)
-    // console.log('CompanyID:', companyID, 'Date:', date);
-    // if (!date) {
-    //   return await this.pb.collection('daily_financials').getFullList<DailyFinancialsResponse>({
-    //     filter: `company = "${companyID}"`
-    //   })
-    // }
-
-    // // remove the time from the date so that it only compares the date
-    // let stringDate = date.toISOString().split('T')[0];
-
-    // return await this.pb.collection('daily_financials').getFullList<DailyFinancialsResponse>({
-    //   filter: `date ?~ "${stringDate}" && company = "${companyID}"`
-    // })
   }
 
   async updateFinancialRecord(recordID: string, record: DailyFinancialsRecord): Promise<void> {

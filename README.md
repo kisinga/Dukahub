@@ -29,3 +29,23 @@ It's built on templ for interfacing html with go, and tailwind for styling
 Prerequisites for building the frontend
 install templ, nodejs and npm
 The packagae.json file contains the build:css script that builds the css file usind npm
+
+## Account setup requirements
+
+username
+email
+password
+avatar
+
+Company name
+Company location
+Company phone number
+Company logo
+
+Financial accounts
+Account name
+Account number
+Account type
+
+Each company MUST have at least one financial account
+Each company can have multiple accounts

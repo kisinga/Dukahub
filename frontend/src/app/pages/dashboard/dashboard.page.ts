@@ -38,7 +38,7 @@ export class DashboardPage implements OnInit {
         private activatedRoute: ActivatedRoute) {
         this.loadingUser = this.stateService.loadingUser;
         this.selectedCompanyIndex = this.stateService.selectedCompanyIndex
-        this.companies = this.stateService.companies
+        this.companies = this.stateService.userCompanies
         this.selectedDate = this.stateService.selectedDate
 
         effect(() => {
@@ -60,6 +60,10 @@ export class DashboardPage implements OnInit {
                 this.toggleDatePicker(true)
             } else {
                 this.showDatePicker.set(false)
+            }
+
+            if (params['company']) {
+                this.stateService.urlCompany.set(params['company'] as string)
             }
         })
     }
