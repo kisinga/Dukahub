@@ -73,14 +73,6 @@ export class AppStateService {
         })
       }
     });
-
-    // change the url segment whenver the selected company and date change
-    effect(() => {
-      if (this.selectedCompany() && this.selectedDate()) {
-        this.dynamicUrlService.updateDashboardUrl(this.selectedDate().toISOString().split('T')[0], this.selectedCompany()!.id);
-      }
-    })
-
   }
 
   setUser(user: UsersResponse) {

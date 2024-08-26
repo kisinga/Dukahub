@@ -6,6 +6,7 @@ import { Collections, DailyFinancialsResponse } from '../../../../../types/pocke
 import { TruncatePipe } from "../../../../pipes/truncate.pipe";
 import { AppStateService } from '../../../../services/app-state.service';
 import { DbService } from '../../../../services/db.service';
+import { DynamicUrlService } from '../../../../services/dynamic-url.service';
 import { ToastService } from '../../../../services/toast.service';
 
 type MergedDailyFInancialWithAccountIcon = MergedDailyFInancialWithAccount & { iconURL: string }
@@ -35,7 +36,10 @@ export class OpenCloseFinancialPage implements OnInit {
         @Inject(ToastService) private readonly toastService: ToastService,
         @Inject(DbService) private readonly db: DbService,
         @Inject(AppStateService) private readonly stateService: AppStateService,
+        @Inject(DynamicUrlService) private readonly dynamicUrlService: DynamicUrlService
+
     ) {
+
         // this.loadingFinancials.set(true)
 
         effect(async () => {
@@ -43,56 +47,64 @@ export class OpenCloseFinancialPage implements OnInit {
                 this.stateService.selectedCompanyAccounts().length > 0 &&
                 this.stateService.selectedDate() !== null) {
                 // remove the time from the date so that it only compares the date
-                let stringDate = this.stateService.selectedDate().toISOString().split('T')[0];
-
-                let queryOption = {
-                    filter: `date ?~ "${stringDate}" && company = "${this.stateService.selectedCompany()?.id!!}"`
-                }
-
-                let financialRecords = await this.db.fetchFinancialRecords<DailyFinancialsResponse>(queryOption)
-
-                this.financialTableData = financialRecords.map(record => {
-                    let relatedAccount = this.stateService.selectedCompanyAccounts().find(account => account.id === record.account)
-                    if (!relatedAccount) {
-                        throw new Error(`Account not found for record ${record.id}`)
-                    }
-                    return {
-                        ...record,
-                        relatedMergedAccountWithType: relatedAccount,
-                        iconURL: this.db.generateURL(relatedAccount.accountType, relatedAccount.accountType.icons[relatedAccount.icon_id])
-                    }
-                })
-
-                // make sure that a table item is populated fofr each account
-                this.stateService.selectedCompanyAccounts().forEach(account => {
-                    let existingRecord = financialRecords.find(record => record.account === account.id)
-                    if (!existingRecord) {
-                        this.financialTableData.push(
-                            {
-                                relatedMergedAccountWithType: account,
-                                account: account.id,
-                                company: this.stateService.selectedCompany()?.id!!,
-                                date: stringDate,
-                                opening_bal: 0,
-                                closing_bal: 0,
-                                notes: '',
-                                user: this.stateService.user()?.id!!,
-                                updated: "",
-                                collectionId: "",
-                                collectionName: Collections.DailyFinancials,
-                                id: "",
-                                created: "",
-                                iconURL: this.db.generateURL(account.accountType, account.accountType.icons[account.icon_id])
-                            }
-                        )
-                    }
-                })
-
-
-                console.log('Financial Records:', this.financialTableData);
-                this.cdr.detectChanges()
+                await this.initData()
             }
         })
+        // change the url segment whenver the selected company and date change
+        effect(() => {
+            if (this.stateService.selectedCompany() && this.stateService.selectedDate()) {
+                this.dynamicUrlService.updateDashboardUrl("open-close-financial", this.stateService.selectedDate().toISOString().split('T')[0], this.stateService.selectedCompany()!.id);
+            }
+        })
+    }
+
+    async initData(): Promise<void> {
+        let stringDate = this.stateService.selectedDate().toISOString().split('T')[0];
+
+        let queryOption = {
+            filter: `date ?~ "${stringDate}" && company = "${this.stateService.selectedCompany()?.id!!}"`
+        }
+
+        let financialRecords = await this.db.fetchFinancialRecords<DailyFinancialsResponse>(queryOption)
+
+        this.financialTableData = financialRecords.map(record => {
+            let relatedAccount = this.stateService.selectedCompanyAccounts().find(account => account.id === record.account)
+            if (!relatedAccount) {
+                throw new Error(`Account not found for record ${record.id}`)
+            }
+            return {
+                ...record,
+                relatedMergedAccountWithType: relatedAccount,
+                iconURL: this.db.generateURL(relatedAccount.accountType, relatedAccount.accountType.icons[relatedAccount.icon_id])
+            }
+        })
+
+        // make sure that a table item is populated fofr each account
+        this.stateService.selectedCompanyAccounts().forEach(account => {
+            let existingRecord = financialRecords.find(record => record.account === account.id)
+            if (!existingRecord) {
+                this.financialTableData.push(
+                    {
+                        relatedMergedAccountWithType: account,
+                        account: account.id,
+                        company: this.stateService.selectedCompany()?.id!!,
+                        date: stringDate,
+                        opening_bal: 0,
+                        closing_bal: 0,
+                        notes: '',
+                        user: this.stateService.user()?.id!!,
+                        updated: "",
+                        collectionId: "",
+                        collectionName: Collections.DailyFinancials,
+                        id: "",
+                        created: "",
+                        iconURL: this.db.generateURL(account.accountType, account.accountType.icons[account.icon_id])
+                    }
+                )
+            }
+        })
+        console.log('Financial Records:', this.financialTableData);
+        this.cdr.detectChanges()
     }
 
     get paginatedData(): MergedDailyFInancialWithAccountIcon[] {

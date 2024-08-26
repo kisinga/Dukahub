@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, Inject, Signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { DailyFinancialsRecord } from '../../../../types/pocketbase-types';
 import { TruncatePipe } from "../../../pipes/truncate.pipe";
 import { AppStateService } from '../../../services/app-state.service';
+import { DynamicUrlService } from '../../../services/dynamic-url.service';
 
 @Component({
     standalone: true,
@@ -21,7 +21,7 @@ export class MainPage {
 
     constructor(
         @Inject(AppStateService) private readonly stateService: AppStateService,
-        @Inject(Router) private readonly router: Router,
+        @Inject(DynamicUrlService) private readonly dynamicUrlService: DynamicUrlService,
         private cdr: ChangeDetectorRef
     ) {
         this.weeklySales = this.stateService.weeklySales
@@ -36,11 +36,11 @@ export class MainPage {
 
 
     navigateToFinancial() {
-        this.router.navigate(['/dashboard/open-close-financial'], { queryParams: { date: new Date().toISOString().split("T")[0] } });
+        this.dynamicUrlService.navigateDashboardUrl('open-close-financial', new Date().toISOString().split('T')[0], this.stateService.selectedCompany()!.id);
     }
 
     navigateToStock() {
-        this.router.navigate(['/dashboard/open-close-stock'], { queryParams: { date: new Date().toISOString().split("T")[0] } });
+        this.dynamicUrlService.navigateDashboardUrl('open-close-stock', new Date().toISOString().split('T')[0], this.stateService.selectedCompany()!.id);
     }
 
     // calculate total weekly sales
