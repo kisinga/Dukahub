@@ -109,14 +109,6 @@ export class OpenCloseFinancialPage implements OnInit {
         this.currentPage = page;
     }
 
-    onFieldUpdate(id: string, key: string, value: any): void {
-        // const index = this.data.findIndex(item => item.id === id);
-        // if (index !== -1) {
-        //   this.data[index] = { ...this.data[index], [key]: value };
-        // }
-        // If you have any additional logic or API calls, you can keep them here
-    }
-
 
     async onSave(): Promise<void> {
         this.savingFinancials.set(true)
