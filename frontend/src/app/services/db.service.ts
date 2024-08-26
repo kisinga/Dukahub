@@ -31,20 +31,21 @@ export class DbService {
     this.pb.authStore.clear();
   }
 
-  async fetchFinancialRecords(companyID: string, date?: Date): Promise<DailyFinancialsResponse[]> {
+  async fetchFinancialRecords<T>(options?: RecordFullListOptions): Promise<T[]> {
+    return await this.pb.collection('daily_financials').getFullList<T>(options)
     // console.log('CompanyID:', companyID, 'Date:', date);
-    if (!date) {
-      return await this.pb.collection('daily_financials').getFullList<DailyFinancialsResponse>({
-        filter: `company = "${companyID}"`
-      })
-    }
+    // if (!date) {
+    //   return await this.pb.collection('daily_financials').getFullList<DailyFinancialsResponse>({
+    //     filter: `company = "${companyID}"`
+    //   })
+    // }
 
-    // remove the time from the date so that it only compares the date
-    let stringDate = date.toISOString().split('T')[0];
+    // // remove the time from the date so that it only compares the date
+    // let stringDate = date.toISOString().split('T')[0];
 
-    return await this.pb.collection('daily_financials').getFullList<DailyFinancialsResponse>({
-      filter: `date ?~ "${stringDate}" && company = "${companyID}"`
-    })
+    // return await this.pb.collection('daily_financials').getFullList<DailyFinancialsResponse>({
+    //   filter: `date ?~ "${stringDate}" && company = "${companyID}"`
+    // })
   }
 
   async updateFinancialRecord(recordID: string, record: DailyFinancialsRecord): Promise<void> {
@@ -60,12 +61,8 @@ export class DbService {
     return await this.pb.collection('account_names').getFullList<AccountNamesResponse>()
   }
 
-  async fetchAccounts(companyID: string): Promise<AccountsResponse[]> {
-    return await this.pb.collection('accounts').getFullList<AccountsResponse>(
-      {
-        filter: `company = "${companyID}"`,
-      }
-    )
+  async fetchAccounts(options?: RecordFullListOptions): Promise<AccountsResponse[]> {
+    return await this.pb.collection('accounts').getFullList<AccountsResponse>(options)
   }
 
   async fetchUserCompanies(): Promise<CompaniesResponse[]> {

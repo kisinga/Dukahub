@@ -1,4 +1,5 @@
 import { computed, effect, Inject, Injectable, signal } from '@angular/core';
+import { MergedAccountWithType } from '../../types/main';
 import { AccountNamesResponse, AccountsResponse, CompaniesResponse, DailyFinancialsResponse, UsersResponse } from '../../types/pocketbase-types';
 import { DbService } from './db.service';
 
@@ -6,11 +7,39 @@ import { DbService } from './db.service';
   providedIn: 'root'
 })
 export class AppStateService {
+  allGeneralAccountNames = signal<AccountNamesResponse[]>([]);
   companies = signal<CompaniesResponse[]>([]);
-  accounts = signal<AccountsResponse[]>([]);
-  accountNames = signal<AccountNamesResponse[]>([]);
+  private allPlainCompanyAccounts = signal<AccountsResponse[]>([]);
+
+  allMergedCompanyAccounts = computed<MergedAccountWithType[]>(() => {
+    return this.allPlainCompanyAccounts().map(account => {
+      let relatedAccount = this.allGeneralAccountNames().find(name => name.id === account.type);
+
+      if (!relatedAccount) {
+        throw new Error(`Account not found for record ${account.id}`)
+      }
+      return {
+        ...account,
+        accountType: relatedAccount
+      }
+    })
+  });
 
   selectedCompanyIndex = signal<number>(-1);
+
+  selectedCompany = computed(() => {
+    if (this.selectedCompanyIndex() > -1) {
+      return this.companies()[this.selectedCompanyIndex()];
+    } else {
+      return undefined;
+    }
+  })
+
+  selectedCompanyAccounts = computed(() => {
+    return this.allMergedCompanyAccounts().filter(account => account.company === this.companies()[this.selectedCompanyIndex()].id)
+  });
+
+
   weeklySales = signal<DailyFinancialsResponse[]>([]);
 
   user = signal<UsersResponse | undefined>(undefined);
@@ -27,13 +56,13 @@ export class AppStateService {
       }
     });
     effect(() => {
-      if (this.companies().length > 0) {
-        this.fetchWeeklySales(this.companies()[this.selectedCompanyIndex()].id).then((weeklySales) => {
+      if (this.selectedCompany()) {
+        this.fetchWeeklySales(this.selectedCompany()?.id!!).then((weeklySales) => {
           this.weeklySales.set(weeklySales)
         });
 
-        this.db.fetchAccounts(this.companies()[this.selectedCompanyIndex()].id).then((accounts) => {
-          this.accounts.set(accounts);
+        this.db.fetchAccounts().then((accounts) => {
+          this.allPlainCompanyAccounts.set(accounts);
         })
       }
     });
@@ -54,7 +83,7 @@ export class AppStateService {
       }
     })
     this.db.fetchAccountNames().then((accountNames) => {
-      this.accountNames.set(accountNames);
+      this.allGeneralAccountNames.set(accountNames);
     })
 
   }

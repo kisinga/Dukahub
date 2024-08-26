@@ -130,7 +130,7 @@
         "id": "ewarb0yn",
         "name": "icons",
         "type": "file",
-        "required": false,
+        "required": true,
         "presentable": false,
         "unique": false,
         "options": {
@@ -241,9 +241,9 @@
         "presentable": false,
         "unique": false,
         "options": {
-          "min": null,
+          "min": 0,
           "max": null,
-          "noDecimal": false
+          "noDecimal": true
         }
       }
     ],
@@ -367,7 +367,7 @@
         "id": "3te0kvth",
         "name": "account",
         "type": "relation",
-        "required": false,
+        "required": true,
         "presentable": false,
         "unique": false,
         "options": {
@@ -411,7 +411,7 @@
         "id": "6yht5umn",
         "name": "user",
         "type": "relation",
-        "required": false,
+        "required": true,
         "presentable": false,
         "unique": false,
         "options": {
@@ -438,9 +438,9 @@
     ],
     "indexes": ["CREATE INDEX `idx_VBB3N2W` ON `daily_financials` (`date`)"],
     "listRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company",
-    "viewRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company &&  @request.data.date < @todayEnd",
-    "createRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company && @request.data.date < @todayEnd",
-    "updateRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company && @request.data.date < @todayEnd",
+    "viewRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company ",
+    "createRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company ",
+    "updateRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company && @request.data.user = @request.auth.id",
     "deleteRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company",
     "options": {}
   },
@@ -559,9 +559,52 @@
     "indexes": [],
     "listRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company",
     "viewRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company",
-    "createRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company",
-    "updateRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company",
+    "createRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company && @request.data.date < @todayEnd && @request.data.user = @request.auth.id",
+    "updateRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company && @request.data.date < @todayEnd && @request.data.user = @request.auth.id",
     "deleteRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company",
+    "options": {}
+  },
+  {
+    "id": "1curvt6zp6ey2fx",
+    "name": "expenses",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "1vosxaim",
+        "name": "amount",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "noDecimal": false
+        }
+      },
+      {
+        "system": false,
+        "id": "eympeh3k",
+        "name": "purpose",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
+      }
+    ],
+    "indexes": [],
+    "listRule": null,
+    "viewRule": null,
+    "createRule": null,
+    "updateRule": null,
+    "deleteRule": null,
     "options": {}
   },
   {
@@ -841,6 +884,18 @@
         "name": "balances",
         "type": "json",
         "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSize": 2000000
+        }
+      },
+      {
+        "system": false,
+        "id": "5uv61liy",
+        "name": "prices",
+        "type": "json",
+        "required": false,
         "presentable": false,
         "unique": false,
         "options": {

@@ -29,20 +29,20 @@
                   <div class="avatar">
                     <div class="mask mask-squircle h-10 w-10 sm:h-12 sm:w-12">
                       <img
-                        [src]="row.account"
-                        [alt]="row.accountName"
+                        [src]="row.iconURL"
+                        [alt]="row.relatedMergedAccountWithType.accountType.name"
                         class="object-cover"
                       />
                     </div>
                   </div>
                   <div class="text-center sm:text-left">
                     <div class="font-bold text-sm sm:text-base">
-                      {{ row.accountName | truncate: 10 }}{{
-                      row.accountName.length > 10 ? '...' : '' }}
+                      {{ row.relatedMergedAccountWithType.accountType.name |
+                      truncate: 10:true }}
                     </div>
                     <div class="text-xs sm:text-sm opacity-70">
-                      {{ row.accountSubText | truncate: 10 }}{{
-                      row.accountSubText.length > 10 ? '...' : '' }}
+                      {{ row.relatedMergedAccountWithType.account_number|
+                      truncate: 12:true }}
                     </div>
                   </div>
                 </div>
@@ -50,14 +50,14 @@
               <td class="p-2 md:p-4">
                 <input
                   type="number"
-                  [(ngModel)]="row.openingBal"
+                  [(ngModel)]="row.opening_bal"
                   class="input input-bordered input-sm w-full max-w-[120px] sm:max-w-[200px]"
                 />
               </td>
               <td class="p-2 md:p-4">
                 <input
                   type="number"
-                  [(ngModel)]="row.closingBal"
+                  [(ngModel)]="row.closing_bal"
                   class="input input-bordered input-sm w-full max-w-[120px] sm:max-w-[200px]"
                 />
               </td>

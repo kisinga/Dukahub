@@ -1,10 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, Inject, signal, Signal, type OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, Inject, signal, type OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { FinancialTableData } from '../../../../../types/main';
+import { MergedDailyeFInancialWithAccount as MergedDailyFInancialWithAccount } from '../../../../../types/main';
+import { Collections, DailyFinancialsResponse } from '../../../../../types/pocketbase-types';
 import { TruncatePipe } from "../../../../pipes/truncate.pipe";
-import { FiancialStateService } from '../../../../services/financial-state.service';
+import { AppStateService } from '../../../../services/app-state.service';
+import { DbService } from '../../../../services/db.service';
 import { ToastService } from '../../../../services/toast.service';
+
+type MergedDailyFInancialWithAccountIcon = MergedDailyFInancialWithAccount & { iconURL: string }
 
 @Component({
     standalone: true,
@@ -14,32 +18,84 @@ import { ToastService } from '../../../../services/toast.service';
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 
+
 export class OpenCloseFinancialPage implements OnInit {
 
-    financialTableData: FinancialTableData[] = [];
-    loadingFinancials = signal<boolean>(false);
+    financialTableData: MergedDailyFInancialWithAccountIcon[] = [];
 
-    savingFinancials: Signal<boolean>
+    loadingFinancials = signal<boolean>(false);
+    savingFinancials = signal<boolean>(false);
+
     itemsPerPage = 10;
     currentPage = 1;
 
 
     constructor(
         private cdr: ChangeDetectorRef,
-        @Inject(FiancialStateService) private readonly financialStateService: FiancialStateService,
-        @Inject(ToastService) private readonly toastService: ToastService
+        @Inject(ToastService) private readonly toastService: ToastService,
+        @Inject(DbService) private readonly db: DbService,
+        @Inject(AppStateService) private readonly stateService: AppStateService,
     ) {
-        effect(() => {
-            this.financialTableData = this.financialStateService.financialTableData()
-            this.cdr.markForCheck()
+        // this.loadingFinancials.set(true)
+
+        effect(async () => {
+            if (this.stateService.selectedCompany() &&
+                this.stateService.selectedCompanyAccounts().length > 0 &&
+                this.stateService.selectedDate() !== null) {
+                // remove the time from the date so that it only compares the date
+                let stringDate = this.stateService.selectedDate().toISOString().split('T')[0];
+
+                let queryOption = {
+                    filter: `date ?~ "${stringDate}" && company = "${this.stateService.selectedCompany()?.id!!}"`
+                }
+
+                let financialRecords = await this.db.fetchFinancialRecords<DailyFinancialsResponse>(queryOption)
+
+                this.financialTableData = financialRecords.map(record => {
+                    let relatedAccount = this.stateService.selectedCompanyAccounts().find(account => account.id === record.account)
+                    if (!relatedAccount) {
+                        throw new Error(`Account not found for record ${record.id}`)
+                    }
+                    return {
+                        ...record,
+                        relatedMergedAccountWithType: relatedAccount,
+                        iconURL: this.db.generateURL(relatedAccount.accountType, relatedAccount.accountType.icons[relatedAccount.icon_id])
+                    }
+                })
+
+                // make sure that a table item is populated fofr each account
+                this.stateService.selectedCompanyAccounts().forEach(account => {
+                    let existingRecord = financialRecords.find(record => record.account === account.id)
+                    if (!existingRecord) {
+                        this.financialTableData.push(
+                            {
+                                relatedMergedAccountWithType: account,
+                                account: account.id,
+                                company: this.stateService.selectedCompany()?.id!!,
+                                date: stringDate,
+                                opening_bal: 0,
+                                closing_bal: 0,
+                                notes: '',
+                                user: this.stateService.user()?.id!!,
+                                updated: "",
+                                collectionId: "",
+                                collectionName: Collections.DailyFinancials,
+                                id: "",
+                                created: "",
+                                iconURL: this.db.generateURL(account.accountType, account.accountType.icons[account.icon_id])
+                            }
+                        )
+                    }
+                })
+
+
+                console.log('Financial Records:', this.financialTableData);
+                this.cdr.detectChanges()
+            }
         })
-
-        this.loadingFinancials = this.financialStateService.loadingFinancials
-        this.savingFinancials = this.financialStateService.savingFinancials
-
     }
 
-    get paginatedData(): FinancialTableData[] {
+    get paginatedData(): MergedDailyFInancialWithAccountIcon[] {
         const start = (this.currentPage - 1) * this.itemsPerPage;
         return this.financialTableData.slice(start, start + this.itemsPerPage);
     }
@@ -63,26 +119,37 @@ export class OpenCloseFinancialPage implements OnInit {
 
 
     async onSave(): Promise<void> {
-        this.financialStateService.savingFinancials.set(true)
+        this.savingFinancials.set(true)
 
-        let data: FinancialTableData[] = this.financialTableData.map(d => {
-            let newData: FinancialTableData = d as FinancialTableData
-            newData.openingBal = parseFloat(newData.openingBal.toString())
-            newData.closingBal = parseFloat(newData.closingBal.toString())
-            return newData
-        }).filter(d => d.openingBal || d.closingBal)
-        // aggregate all the changes made to existing records by filtering out records with existingRecordID
-        let updatedRecords = data.filter(d => d.existingRecordID)
+        let newRecords: DailyFinancialsResponse[] = []
+        let existingRecords: DailyFinancialsResponse[] = []
 
-        // aggregate all the new records by filtering out records without existingRecordID
-        let newRecords = data.filter(d => !d.existingRecordID)
+        this.financialTableData
+            .filter(d => d.opening_bal || d.closing_bal)
+            .map(d => {
+                let newData: DailyFinancialsResponse = d
+                newData.opening_bal = parseFloat(newData.opening_bal.toString())
+                newData.closing_bal = parseFloat(newData.closing_bal.toString())
+
+                if (d.id !== '') {
+                    existingRecords.push(newData)
+                } else {
+                    newRecords.push(newData)
+                }
+
+                return newData
+            })
 
         // update the existing records
-        await this.financialStateService.updateRecords(updatedRecords)
+        await Promise.all(existingRecords.map(record => {
+            return this.db.updateFinancialRecord(record.id, record)
+        }))
         // create new records for records without existingRecordID
-        await this.financialStateService.createRecords(newRecords)
+        await Promise.all(newRecords.map(record => {
+            return this.db.createFinancialRecord(record)
+        }))
 
-        this.financialStateService.savingFinancials.set(false)
+        this.savingFinancials.set(false)
 
         this.toastService.show('Financial records saved successfully')
 

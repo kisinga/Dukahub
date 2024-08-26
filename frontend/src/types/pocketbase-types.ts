@@ -11,6 +11,7 @@ export enum Collections {
 	Companies = "companies",
 	DailyFinancials = "daily_financials",
 	DailyStocks = "daily_stocks",
+	Expenses = "expenses",
 	Invoices = "invoices",
 	Partners = "partners",
 	Products = "products",
@@ -46,7 +47,7 @@ export type AuthSystemFields<T = never> = {
 // Record types for each collection
 
 export type AccountNamesRecord = {
-	icons?: string[]
+	icons: string[]
 	name: string
 }
 
@@ -67,13 +68,13 @@ export type CompaniesRecord = {
 }
 
 export type DailyFinancialsRecord = {
-	account?: RecordIdString
+	account: RecordIdString
 	closing_bal?: number
 	company: RecordIdString
 	date: IsoDateString
 	notes?: HTMLString
 	opening_bal?: number
-	user?: RecordIdString
+	user: RecordIdString
 }
 
 export type DailyStocksRecord = {
@@ -84,6 +85,11 @@ export type DailyStocksRecord = {
 	product: RecordIdString
 	sku: RecordIdString
 	user?: RecordIdString
+}
+
+export type ExpensesRecord = {
+	amount?: number
+	purpose?: string
 }
 
 export enum InvoicesStatusOptions {
@@ -115,10 +121,11 @@ export type PartnersRecord = {
 	phone: string
 }
 
-export type ProductsRecord<Tbalances = unknown> = {
+export type ProductsRecord<Tbalances = unknown, Tprices = unknown> = {
 	balances: null | Tbalances
 	company: RecordIdString
 	name: string
+	prices?: null | Tprices
 	skus: RecordIdString[]
 }
 
@@ -180,9 +187,10 @@ export type AccountsResponse<Texpand = unknown> = Required<AccountsRecord> & Bas
 export type CompaniesResponse<Texpand = unknown> = Required<CompaniesRecord> & BaseSystemFields<Texpand>
 export type DailyFinancialsResponse<Texpand = unknown> = Required<DailyFinancialsRecord> & BaseSystemFields<Texpand>
 export type DailyStocksResponse<Texpand = unknown> = Required<DailyStocksRecord> & BaseSystemFields<Texpand>
+export type ExpensesResponse<Texpand = unknown> = Required<ExpensesRecord> & BaseSystemFields<Texpand>
 export type InvoicesResponse<Texpand = unknown> = Required<InvoicesRecord> & BaseSystemFields<Texpand>
 export type PartnersResponse<Texpand = unknown> = Required<PartnersRecord> & BaseSystemFields<Texpand>
-export type ProductsResponse<Tbalances = unknown, Texpand = unknown> = Required<ProductsRecord<Tbalances>> & BaseSystemFields<Texpand>
+export type ProductsResponse<Tbalances = unknown, Tprices = unknown, Texpand = unknown> = Required<ProductsRecord<Tbalances, Tprices>> & BaseSystemFields<Texpand>
 export type PurchasesResponse<Texpand = unknown> = Required<PurchasesRecord> & BaseSystemFields<Texpand>
 export type SalesResponse<Texpand = unknown> = Required<SalesRecord> & BaseSystemFields<Texpand>
 export type SkusResponse<Texpand = unknown> = Required<SkusRecord> & BaseSystemFields<Texpand>
@@ -197,6 +205,7 @@ export type CollectionRecords = {
 	companies: CompaniesRecord
 	daily_financials: DailyFinancialsRecord
 	daily_stocks: DailyStocksRecord
+	expenses: ExpensesRecord
 	invoices: InvoicesRecord
 	partners: PartnersRecord
 	products: ProductsRecord
@@ -213,6 +222,7 @@ export type CollectionResponses = {
 	companies: CompaniesResponse
 	daily_financials: DailyFinancialsResponse
 	daily_stocks: DailyStocksResponse
+	expenses: ExpensesResponse
 	invoices: InvoicesResponse
 	partners: PartnersResponse
 	products: ProductsResponse
@@ -232,6 +242,7 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: 'companies'): RecordService<CompaniesResponse>
 	collection(idOrName: 'daily_financials'): RecordService<DailyFinancialsResponse>
 	collection(idOrName: 'daily_stocks'): RecordService<DailyStocksResponse>
+	collection(idOrName: 'expenses'): RecordService<ExpensesResponse>
 	collection(idOrName: 'invoices'): RecordService<InvoicesResponse>
 	collection(idOrName: 'partners'): RecordService<PartnersResponse>
 	collection(idOrName: 'products'): RecordService<ProductsResponse>

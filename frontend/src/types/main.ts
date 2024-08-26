@@ -1,15 +1,5 @@
-export interface TableColumn {
-    key: string;
-    label: string;
-    type: 'text' | 'number' | 'image' | 'editable';
-}
+import { AccountNamesResponse, AccountsResponse, DailyFinancialsResponse } from "./pocketbase-types";
 
-export interface FinancialTableData {
-    id: string; //This field maps the original account id
-    account: string;
-    existingRecordID?: string;
-    accountName: string;
-    accountSubText: string;
-    openingBal: number;
-    closingBal: number;
-}
+
+export type MergedAccountWithType = AccountsResponse & { accountType: AccountNamesResponse };
+export type MergedDailyeFInancialWithAccount = DailyFinancialsResponse & { relatedMergedAccountWithType: MergedAccountWithType };

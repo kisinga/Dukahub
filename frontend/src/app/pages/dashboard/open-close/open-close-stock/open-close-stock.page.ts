@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, type OnInit } from '@angular/core';
-import { FinancialTableData, TableColumn } from '../../../../../types/main';
+import { } from '../../../../../types/main';
 
 @Component({
     standalone: true,
@@ -10,12 +10,7 @@ import { FinancialTableData, TableColumn } from '../../../../../types/main';
 })
 export class OpenCloseStockPage implements OnInit {
     loadingStocks = true;
-    financialTableData: FinancialTableData[] = [];
-    columns: TableColumn[] = [
-        { key: 'account', label: `Accounts`, type: 'image' },
-        { key: 'openingBal', label: 'Opening Bal', type: 'editable' },
-        { key: 'closingBal', label: 'Closing Bal', type: 'editable' }
-    ];
+
     ngOnInit(): void { }
     onSave(updatedData: any[]): void {
     }
