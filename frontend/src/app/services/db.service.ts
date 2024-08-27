@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import PocketBase, { FileOptions, RecordFullListOptions } from 'pocketbase';
-import { AccountNamesResponse, AccountsResponse, CompaniesRecord, CompaniesResponse, DailyFinancialsRecord, DailyFinancialsResponse, UsersRecord, UsersResponse } from '../../types/pocketbase-types';
+import { AccountNamesResponse, AccountsResponse, CompaniesRecord, CompaniesResponse, DailyFinancialsRecord, DailyFinancialsResponse, TypedPocketBase, UsersResponse } from '../../types/pocketbase-types';
 
 @Injectable({
   providedIn: 'root'
@@ -8,20 +8,20 @@ import { AccountNamesResponse, AccountsResponse, CompaniesRecord, CompaniesRespo
 
 
 export class DbService {
-  private pb = new PocketBase('https://pantrify.azurewebsites.net');
+  private pb = new PocketBase('https://pantrify.azurewebsites.net') as TypedPocketBase
 
   getAuthStore() {
     return this.pb.authStore
   }
 
-  async fetchExpandUser(userID: string): Promise<UsersRecord> {
+  async fetchExpandUser(userID: string) {
     return await this.pb.collection('users').getOne<UsersResponse<CompaniesRecord>>(userID, {
       expand: "company"
     });
   }
 
 
-  login(email: string, password: string): Promise<any> {
+  login(email: string, password: string) {
     return this.pb.collection('users').authWithPassword(email, password, {
       expand: 'company'
     })
@@ -31,28 +31,28 @@ export class DbService {
     this.pb.authStore.clear();
   }
 
-  async fetchFinancialRecords<T>(options?: RecordFullListOptions): Promise<T[]> {
-    return await this.pb.collection('daily_financials').getFullList<T>(options)
+  async fetchFinancialRecords(options?: RecordFullListOptions) {
+    return await this.pb.collection('daily_financials').getFullList(options)
   }
 
-  async updateFinancialRecord(recordID: string, record: DailyFinancialsRecord): Promise<void> {
+  async updateFinancialRecord(recordID: string, record: DailyFinancialsRecord) {
     // console.log('RecordID:', recordID, 'Record:', record);
     return await this.pb.collection('daily_financials').update(recordID, record)
   }
 
-  async createFinancialRecord(record: DailyFinancialsRecord): Promise<void> {
+  async createFinancialRecord(record: DailyFinancialsRecord) {
     return await this.pb.collection('daily_financials').create(record)
   }
 
-  async fetchAccountNames(): Promise<AccountNamesResponse[]> {
+  async fetchAccountNames() {
     return await this.pb.collection('account_names').getFullList<AccountNamesResponse>()
   }
 
-  async fetchAccounts(options?: RecordFullListOptions): Promise<AccountsResponse[]> {
+  async fetchAccounts(options?: RecordFullListOptions) {
     return await this.pb.collection('accounts').getFullList<AccountsResponse>(options)
   }
 
-  async fetchUserCompanies(): Promise<CompaniesResponse[]> {
+  async fetchUserCompanies() {
     return await this.pb.collection('companies').getFullList<CompaniesResponse>()
   }
 
@@ -64,7 +64,7 @@ export class DbService {
     return this.pb.files.getUrl(record, filename, queryParams);
   }
 
-  fetchWeeklySales(filter?: RecordFullListOptions): Promise<DailyFinancialsResponse[]> {
+  fetchWeeklySales(filter?: RecordFullListOptions) {
     return this.pb.collection('daily_financials')
       .getFullList<DailyFinancialsResponse>(
         filter

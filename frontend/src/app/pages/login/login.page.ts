@@ -36,7 +36,7 @@ export class LoginPage implements OnInit {
 
         try {
             const result = await this.db.login(this.email, this.password);
-            if (result === false) {
+            if (result.token === null) {
                 this.errorMessage = "Invalid email or password. Please try again.";
             } else {
                 console.log('Login successful');

@@ -65,7 +65,7 @@ export class OpenCloseFinancialPage implements OnInit {
             filter: `date ?~ "${stringDate}" && company = "${this.stateService.selectedCompany()?.id!!}"`
         }
 
-        let financialRecords = await this.db.fetchFinancialRecords<DailyFinancialsResponse>(queryOption)
+        let financialRecords = await this.db.fetchFinancialRecords(queryOption)
 
         this.financialTableData = financialRecords.map(record => {
             let relatedAccount = this.stateService.selectedCompanyAccounts().find(account => account.id === record.account)

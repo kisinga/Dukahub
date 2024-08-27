@@ -13,10 +13,10 @@
               Account
             </th>
             <th class="bg-base-200 text-base-content sticky top-0 z-10">
-              Opening Balance
+              Opening
             </th>
             <th class="bg-base-200 text-base-content sticky top-0 z-10">
-              Closing Balance
+              Closing
             </th>
           </tr>
         </thead>
@@ -26,7 +26,7 @@
             <td class="p-3">
               <div class="flex items-center gap-3">
                 <div class="avatar">
-                  <div class="mask mask-squircle w-12 h-12">
+                  <div class="mask mask-squircle w-10 h-10">
                     <img
                       [src]="row.iconURL"
                       [alt]="row.relatedMergedAccountWithType.accountType.name"
@@ -37,11 +37,11 @@
                 <div>
                   <div class="font-bold">
                     {{ row.relatedMergedAccountWithType.accountType.name |
-                    truncate:10:true }}
+                    truncate:9:true }}
                   </div>
                   <div class="text-sm opacity-70">
                     {{ row.relatedMergedAccountWithType.account_number |
-                    truncate:10:true }}
+                    truncate:9:true }}
                   </div>
                 </div>
               </div>
