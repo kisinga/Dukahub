@@ -107,7 +107,7 @@
   },
   {
     "id": "fn0vtj6vn1z9fq2",
-    "name": "account_names",
+    "name": "account_types",
     "type": "base",
     "system": false,
     "schema": [
@@ -143,7 +143,7 @@
       }
     ],
     "indexes": [
-      "CREATE UNIQUE INDEX `idx_hjxT3zb` ON `account_names` (`name`)"
+      "CREATE UNIQUE INDEX `idx_hjxT3zb` ON `account_types` (`name`)"
     ],
     "listRule": "@request.auth.id != \"\"&& @request.auth.verified = true ",
     "viewRule": null,

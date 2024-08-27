@@ -1,6 +1,6 @@
 import { computed, effect, Inject, Injectable, signal } from '@angular/core';
 import { MergedAccountWithType } from '../../types/main';
-import { AccountNamesResponse, AccountsResponse, CompaniesResponse, DailyFinancialsResponse, UsersResponse } from '../../types/pocketbase-types';
+import { AccountsResponse, AccountTypesResponse, CompaniesResponse, DailyFinancialsResponse, UsersResponse } from '../../types/pocketbase-types';
 import { DbService } from './db.service';
 import { DynamicUrlService } from './dynamic-url.service';
 
@@ -8,7 +8,7 @@ import { DynamicUrlService } from './dynamic-url.service';
   providedIn: 'root'
 })
 export class AppStateService {
-  private allGeneralAccountNames = signal<AccountNamesResponse[]>([]);
+  private allGeneralAccountNames = signal<AccountTypesResponse[]>([]);
   private allPlainCompanyAccounts = signal<AccountsResponse[]>([]);
   private allMergedCompanyAccounts = computed<MergedAccountWithType[]>(() => {
     return this.allPlainCompanyAccounts().map(account => {
@@ -99,7 +99,7 @@ export class AppStateService {
         }
       }
     })
-    this.db.fetchAccountNames().then((accountNames) => {
+    this.db.fetchAccountTypes().then((accountNames) => {
       this.allGeneralAccountNames.set(accountNames);
     })
 

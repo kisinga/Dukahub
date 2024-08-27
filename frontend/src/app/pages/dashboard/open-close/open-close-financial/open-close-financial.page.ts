@@ -65,7 +65,7 @@ export class OpenCloseFinancialPage implements OnInit {
             filter: `date ?~ "${stringDate}" && company = "${this.stateService.selectedCompany()?.id!!}"`
         }
 
-        let financialRecords = await this.db.fetchFinancialRecords(queryOption)
+        let financialRecords = await this.db.fetchDailyFinancialRecords(queryOption)
 
         this.financialTableData = financialRecords.map(record => {
             let relatedAccount = this.stateService.selectedCompanyAccounts().find(account => account.id === record.account)
@@ -146,11 +146,11 @@ export class OpenCloseFinancialPage implements OnInit {
 
         // update the existing records
         await Promise.all(existingRecords.map(record => {
-            return this.db.updateFinancialRecord(record.id, record)
+            return this.db.updateDailyFinancialRecord(record.id, record)
         }))
         // create new records for records without existingRecordID
         await Promise.all(newRecords.map(record => {
-            return this.db.createFinancialRecord(record)
+            return this.db.createDailyFinancialRecord(record)
         }))
 
         this.savingFinancials.set(false)

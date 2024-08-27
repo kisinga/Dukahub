@@ -6,7 +6,7 @@ import type PocketBase from 'pocketbase'
 import type { RecordService } from 'pocketbase'
 
 export enum Collections {
-	AccountNames = "account_names",
+	AccountTypes = "account_types",
 	Accounts = "accounts",
 	Companies = "companies",
 	DailyFinancials = "daily_financials",
@@ -46,7 +46,7 @@ export type AuthSystemFields<T = never> = {
 
 // Record types for each collection
 
-export type AccountNamesRecord = {
+export type AccountTypesRecord = {
 	icons: string[]
 	name: string
 }
@@ -182,7 +182,7 @@ export type UsersRecord = {
 }
 
 // Response types include system fields and match responses from the PocketBase API
-export type AccountNamesResponse<Texpand = unknown> = Required<AccountNamesRecord> & BaseSystemFields<Texpand>
+export type AccountTypesResponse<Texpand = unknown> = Required<AccountTypesRecord> & BaseSystemFields<Texpand>
 export type AccountsResponse<Texpand = unknown> = Required<AccountsRecord> & BaseSystemFields<Texpand>
 export type CompaniesResponse<Texpand = unknown> = Required<CompaniesRecord> & BaseSystemFields<Texpand>
 export type DailyFinancialsResponse<Texpand = unknown> = Required<DailyFinancialsRecord> & BaseSystemFields<Texpand>
@@ -200,7 +200,7 @@ export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSyste
 // Types containing all Records and Responses, useful for creating typing helper functions
 
 export type CollectionRecords = {
-	account_names: AccountNamesRecord
+	account_types: AccountTypesRecord
 	accounts: AccountsRecord
 	companies: CompaniesRecord
 	daily_financials: DailyFinancialsRecord
@@ -217,7 +217,7 @@ export type CollectionRecords = {
 }
 
 export type CollectionResponses = {
-	account_names: AccountNamesResponse
+	account_types: AccountTypesResponse
 	accounts: AccountsResponse
 	companies: CompaniesResponse
 	daily_financials: DailyFinancialsResponse
@@ -237,7 +237,7 @@ export type CollectionResponses = {
 // https://github.com/pocketbase/js-sdk#specify-typescript-definitions
 
 export type TypedPocketBase = PocketBase & {
-	collection(idOrName: 'account_names'): RecordService<AccountNamesResponse>
+	collection(idOrName: 'account_types'): RecordService<AccountTypesResponse>
 	collection(idOrName: 'accounts'): RecordService<AccountsResponse>
 	collection(idOrName: 'companies'): RecordService<CompaniesResponse>
 	collection(idOrName: 'daily_financials'): RecordService<DailyFinancialsResponse>

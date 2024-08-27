@@ -13,5 +13,7 @@ export class StockStateService {
   constructor(@Inject(AppStateService) private readonly stateService: AppStateService,
     @Inject(DbService) private readonly db: DbService) {
 
+
+
   }
 }
