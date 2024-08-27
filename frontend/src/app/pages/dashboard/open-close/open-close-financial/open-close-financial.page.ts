@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, Inject, signal, type OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MergedDailyeFInancialWithAccount as MergedDailyFInancialWithAccount } from '../../../../../types/main';
+import { MergedDailyFInancialWithAccount } from '../../../../../types/main';
 import { Collections, DailyFinancialsResponse } from '../../../../../types/pocketbase-types';
 import { TruncatePipe } from "../../../../pipes/truncate.pipe";
 import { AppStateService } from '../../../../services/app-state.service';
@@ -43,26 +43,23 @@ export class OpenCloseFinancialPage implements OnInit {
         // this.loadingFinancials.set(true)
 
         effect(async () => {
-            if (this.stateService.selectedCompany() &&
+            if (
                 this.stateService.selectedCompanyAccounts().length > 0 &&
                 this.stateService.selectedDate() !== null) {
-                // remove the time from the date so that it only compares the date
+
+                // change the url segment whenver the selected company and date change
+                this.dynamicUrlService.updateDashboardUrl("open-close-financial", this.stateService.selectedDateUTC(), this.stateService.selectedCompany()!.id);
+
                 await this.initData()
             }
         })
-        // change the url segment whenver the selected company and date change
-        effect(() => {
-            if (this.stateService.selectedCompany() && this.stateService.selectedDate()) {
-                this.dynamicUrlService.updateDashboardUrl("open-close-financial", this.stateService.selectedDate().toISOString().split('T')[0], this.stateService.selectedCompany()!.id);
-            }
-        })
+
     }
 
     async initData(): Promise<void> {
-        let stringDate = this.stateService.selectedDate().toISOString().split('T')[0];
 
         let queryOption = {
-            filter: `date ?~ "${stringDate}" && company = "${this.stateService.selectedCompany()?.id!!}"`
+            filter: `date ?~ "${this.stateService.selectedDateUTC()}" && company = "${this.stateService.selectedCompany()?.id!!}"`
         }
 
         let financialRecords = await this.db.fetchDailyFinancialRecords(queryOption)
@@ -88,7 +85,7 @@ export class OpenCloseFinancialPage implements OnInit {
                         relatedMergedAccountWithType: account,
                         account: account.id,
                         company: this.stateService.selectedCompany()?.id!!,
-                        date: stringDate,
+                        date: this.stateService.selectedDateUTC(),
                         opening_bal: 0,
                         closing_bal: 0,
                         notes: '',

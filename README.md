@@ -47,5 +47,9 @@ Account name
 Account number
 Account type
 
-Each company MUST have at least one financial account
+Each company MUST have at least:
+one financial account
+one user account
+one product
+
 Each company can have multiple accounts

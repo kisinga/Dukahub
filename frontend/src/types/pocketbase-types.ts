@@ -83,7 +83,6 @@ export type DailyStocksRecord = {
 	date: IsoDateString
 	opening_bal?: number
 	product: RecordIdString
-	sku: RecordIdString
 	user?: RecordIdString
 }
 

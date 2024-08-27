@@ -50,7 +50,7 @@ export class DashboardPage implements OnInit {
         })
 
         effect(() => {
-            this.dateString = this.formatDate(this.stateService.selectedDate())
+            this.dateString = this.stateService.selectedDateUTC()
         })
 
         // show datepicker depending on route
@@ -71,10 +71,6 @@ export class DashboardPage implements OnInit {
     updateDate(dateString: string): void {
         // check the currently active route
         this.router.navigate([], { queryParams: { date: dateString } });
-    }
-
-    private formatDate(date: Date): string {
-        return date.toISOString().split('T')[0];
     }
 
     toggleDatePicker(value?: boolean): void {

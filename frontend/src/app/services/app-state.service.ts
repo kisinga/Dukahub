@@ -45,6 +45,9 @@ export class AppStateService {
   loadingUser = signal<boolean>(true);
 
   selectedDate = signal<Date>(new Date())
+  selectedDateUTC = computed(() => {
+    return this.selectedDate().toISOString().split('T')[0];
+  })
 
   readonly isAuthenticated = computed(() => !!this.user());
 

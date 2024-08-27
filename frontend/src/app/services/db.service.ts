@@ -47,6 +47,22 @@ export class DbService {
     return await this.pb.collection('products').update(productID, product)
   }
 
+  async deleteProduct(productID: string) {
+    return await this.pb.collection('products').delete(productID)
+  }
+
+  async fetchSkus(options?: RecordFullListOptions) {
+    return await this.pb.collection('skus').getFullList(options)
+  }
+
+  async fetchDailyStocks(options?: RecordFullListOptions) {
+    return await this.pb.collection('daily_stocks').getFullList(options)
+  }
+
+  async updateDailyStock(recordID: string, record: any) {
+    return await this.pb.collection('daily_stocks').update(recordID, record)
+  }
+
   async fetchDailyFinancialRecords(options?: RecordFullListOptions) {
     return await this.pb.collection('daily_financials').getFullList(options)
   }

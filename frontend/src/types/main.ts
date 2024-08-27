@@ -1,5 +1,8 @@
-import { AccountTypesResponse, AccountsResponse, DailyFinancialsResponse } from "./pocketbase-types";
+import { AccountTypesResponse, AccountsResponse, DailyFinancialsResponse, DailyStocksResponse, ProductsResponse, SkusResponse } from "./pocketbase-types";
 
 
 export type MergedAccountWithType = AccountsResponse & { accountType: AccountTypesResponse };
-export type MergedDailyeFInancialWithAccount = DailyFinancialsResponse & { relatedMergedAccountWithType: MergedAccountWithType };
+export type MergedDailyFInancialWithAccount = DailyFinancialsResponse & { relatedMergedAccountWithType: MergedAccountWithType };
+
+export type MergedProductWithSKUs = ProductsResponse & { skusArray: SkusResponse[] };
+export type MergedDailyProductWithSKU = DailyStocksResponse & { relatedMergedProductWithSKUs: MergedProductWithSKUs };
