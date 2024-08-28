@@ -468,50 +468,6 @@
       },
       {
         "system": false,
-        "id": "4xxmfr3k",
-        "name": "opening_bal",
-        "type": "number",
-        "required": false,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "min": null,
-          "max": null,
-          "noDecimal": false
-        }
-      },
-      {
-        "system": false,
-        "id": "bcl2fxdx",
-        "name": "closing_bal",
-        "type": "number",
-        "required": false,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "min": null,
-          "max": null,
-          "noDecimal": false
-        }
-      },
-      {
-        "system": false,
-        "id": "g0vmq8p6",
-        "name": "sku",
-        "type": "relation",
-        "required": true,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "collectionId": "3fzy73gqs5dwae7",
-          "cascadeDelete": false,
-          "minSelect": null,
-          "maxSelect": 1,
-          "displayFields": null
-        }
-      },
-      {
-        "system": false,
         "id": "rlypowb8",
         "name": "company",
         "type": "relation",
@@ -553,6 +509,30 @@
         "options": {
           "min": "",
           "max": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "cotr9p0r",
+        "name": "opening_bal",
+        "type": "json",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSize": 2000000
+        }
+      },
+      {
+        "system": false,
+        "id": "tgfylioh",
+        "name": "closing_bal",
+        "type": "json",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSize": 2000000
         }
       }
     ],
@@ -1216,9 +1196,9 @@
     "indexes": [
       "CREATE UNIQUE INDEX `idx_OzW2Z7p` ON `skus` (\n  `name`,\n  `initials`\n)"
     ],
-    "listRule": null,
-    "viewRule": null,
-    "createRule": null,
+    "listRule": "@request.auth.id != \"\"&& @request.auth.verified = true",
+    "viewRule": "@request.auth.id != \"\"&& @request.auth.verified = true",
+    "createRule": "",
     "updateRule": null,
     "deleteRule": null,
     "options": {}

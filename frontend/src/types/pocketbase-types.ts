@@ -77,11 +77,11 @@ export type DailyFinancialsRecord = {
 	user: RecordIdString
 }
 
-export type DailyStocksRecord = {
-	closing_bal?: number
+export type DailyStocksRecord<Tclosing_bal = unknown, Topening_bal = unknown> = {
+	closing_bal: null | Tclosing_bal
 	company: RecordIdString
 	date: IsoDateString
-	opening_bal?: number
+	opening_bal: null | Topening_bal
 	product: RecordIdString
 	user?: RecordIdString
 }
@@ -124,6 +124,7 @@ export type ProductsRecord<Tbalances = unknown, Tprices = unknown> = {
 	balances: null | Tbalances
 	company: RecordIdString
 	name: string
+	image: string
 	prices?: null | Tprices
 	skus: RecordIdString[]
 }
@@ -185,7 +186,7 @@ export type AccountTypesResponse<Texpand = unknown> = Required<AccountTypesRecor
 export type AccountsResponse<Texpand = unknown> = Required<AccountsRecord> & BaseSystemFields<Texpand>
 export type CompaniesResponse<Texpand = unknown> = Required<CompaniesRecord> & BaseSystemFields<Texpand>
 export type DailyFinancialsResponse<Texpand = unknown> = Required<DailyFinancialsRecord> & BaseSystemFields<Texpand>
-export type DailyStocksResponse<Texpand = unknown> = Required<DailyStocksRecord> & BaseSystemFields<Texpand>
+export type DailyStocksResponse<Tclosing_bal = unknown, Topening_bal = unknown, Texpand = unknown> = Required<DailyStocksRecord<Tclosing_bal, Topening_bal>> & BaseSystemFields<Texpand>
 export type ExpensesResponse<Texpand = unknown> = Required<ExpensesRecord> & BaseSystemFields<Texpand>
 export type InvoicesResponse<Texpand = unknown> = Required<InvoicesRecord> & BaseSystemFields<Texpand>
 export type PartnersResponse<Texpand = unknown> = Required<PartnersRecord> & BaseSystemFields<Texpand>
