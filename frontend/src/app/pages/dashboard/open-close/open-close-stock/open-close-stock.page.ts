@@ -18,7 +18,7 @@ import { ToastService } from '../../../../services/toast.service';
 export class OpenCloseStockPage implements OnInit {
     loadingProducts = false;
 
-    dailyProductRecord: MergedDailyProductWithSKU[] = [];
+    dailyProductRecord: (MergedDailyProductWithSKU & { imageURL: string })[] = [];
     balanceForm: FormGroup;
 
 
@@ -78,12 +78,14 @@ export class OpenCloseStockPage implements OnInit {
                 }
                 return {
                     ...emptyStock,
-                    relatedMergedProductWithSKUs: product
+                    relatedMergedProductWithSKUs: product,
+                    imageURL: this.db.generateURL(product, product.image)
                 }
             }
             return {
                 ...relatedStock,
-                relatedMergedProductWithSKUs: product
+                relatedMergedProductWithSKUs: product,
+                imageURL: this.db.generateURL(product, product.image)
             }
         })
         console.log(this.dailyProductRecord)
