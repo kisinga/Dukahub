@@ -88,7 +88,7 @@ export class OpenCloseStockPage implements OnInit {
                 imageURL: this.db.generateURL(product, product.image)
             }
         })
-        console.log(this.dailyProductRecord)
+        console.log("Daily Products:", this.dailyProductRecord)
         this.cdr.detectChanges()
 
     }
