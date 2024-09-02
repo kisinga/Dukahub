@@ -23,14 +23,14 @@ jobs:
       uses: docker/login-action@v2
       with:
         registry: https://ghcr.io/
-        username: ${{ secrets.AzureAppService_ContainerUsername_9e6a5edff3854a7298cdc6256cee9827 }}
-        password: ${{ secrets.AzureAppService_ContainerPassword_85156f8743aa453380acbd2d1992ecd5 }}
+        username: ${{ secrets.AzureAppService_ContainerUsername_c703ace52a5249f4ad8d90d55f32dfd8 }}
+        password: ${{ secrets.AzureAppService_ContainerPassword_9faa5c5d1c444facb699766e2a663110 }}
 
     - name: Build and push container image to registry
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: ghcr.io/${{ secrets.AzureAppService_ContainerUsername_9e6a5edff3854a7298cdc6256cee9827 }}/pantrify:${{ github.sha }}
+        tags: ghcr.io/${{ secrets.AzureAppService_ContainerUsername_c703ace52a5249f4ad8d90d55f32dfd8 }}/kisinga/pantrify:${{ github.sha }}
         file: ./Dockerfile
 
   deploy:
@@ -47,5 +47,5 @@ jobs:
       with:
         app-name: 'pantrify'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_c507a9d002cd40fe9f64dd7e723e4270 }}
-        images: 'ghcr.io/${{ secrets.AzureAppService_ContainerUsername_9e6a5edff3854a7298cdc6256cee9827 }}/pantrify:${{ github.sha }}'
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_bc9a8268df464c9fb99ca4e1bcf72035 }}
+        images: 'ghcr.io/${{ secrets.AzureAppService_ContainerUsername_c703ace52a5249f4ad8d90d55f32dfd8 }}/kisinga/pantrify:${{ github.sha }}'
