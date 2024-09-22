@@ -23,10 +23,8 @@ export class DailyFinancialStateService {
     let queryOption = {
       filter: `date ?~ "${this.stateService.selectedDateUTC()}" && company = "${this.stateService.selectedCompany()?.id!!}"`,
     };
-    // @TODO use the dailyFinancicalService to avoid fetching financialRecords every time the page is loaded
-    this.dailyFinancialRecords.set(
-      await this.db.fetchDailyFinancialRecords(queryOption),
-    );
+    let records = await this.db.fetchDailyFinancialRecords(queryOption);
+    this.dailyFinancialRecords.set(records);
     this.loadingFinancials.set(false);
   }
 

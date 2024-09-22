@@ -5,6 +5,7 @@ import {
   Component,
   effect,
   Inject,
+  Signal,
   signal,
   type OnInit,
 } from "@angular/core";
@@ -36,8 +37,8 @@ export class OpenCloseFinancialPage implements OnInit {
   financialTableData: MergedDailyFInancialWithAccountIcon[] = [];
   itemsPerPage = 10;
   currentPage = 1;
-  loadingFinancials = signal<boolean>(false);
-  savingFinancials = signal<boolean>(false);
+  loadingFinancials: Signal<boolean>;
+  savingFinancials: Signal<boolean>;
   dailyFinancialRecords: DailyFinancialsResponse[] = [];
 
   constructor(
@@ -64,7 +65,6 @@ export class OpenCloseFinancialPage implements OnInit {
           this.stateService.selectedDateUTC(),
           this.stateService.selectedCompany()!.id,
         );
-        await this.dailyFinancialStateService.refreshFinancialRecords();
       }
     });
 
