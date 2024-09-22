@@ -16,6 +16,9 @@
               Opening
             </th>
             <th class="bg-base-200 text-base-content sticky top-0 z-10">
+              Expenses
+            </th>
+            <th class="bg-base-200 text-base-content sticky top-0 z-10">
               Closing
             </th>
           </tr>
@@ -50,6 +53,13 @@
               <input
                 type="number"
                 [(ngModel)]="row.opening_bal"
+                class="input input-bordered input-sm w-full max-w-[120px]"
+              />
+            </td>
+            <td class="p-3">
+              <input
+                type="number"
+                [(ngModel)]="row.expenses"
                 class="input input-bordered input-sm w-full max-w-[120px]"
               />
             </td>

@@ -1,0 +1,73 @@
+<div class="container mx-auto p-4">
+  <h1 class="text-xl sm:text-2xl font-bold mb-4">Stock Balance</h1>
+  <form>
+    <div class="space-y-4 sm:space-y-6">
+      @for (product of dailyProductRecord; track
+      product.relatedMergedProductWithSKUs.id) {
+      <div class="card bg-base-100 shadow-md">
+        <div class="flex items-center p-4">
+          <img
+            [src]="product.imageURL"
+            [alt]="product.relatedMergedProductWithSKUs.name"
+            class="w-16 h-16 object-cover rounded-lg mr-4"
+          />
+          <h2 class="card-title text-lg">
+            {{ product.relatedMergedProductWithSKUs.name }}
+          </h2>
+        </div>
+        <div class="card-body pt-0">
+          @for (sku of product.relatedMergedProductWithSKUs.skusArray; track
+          sku.id) {
+          <div class="form-control">
+            <label [for]="'opening_' + sku.id" class="label">
+              <span class="label-text font-medium">{{ sku.name }}</span>
+            </label>
+            <div class="flex space-x-2">
+              <div class="flex-1">
+                <input
+                  type="number"
+                  [id]="'opening_' + sku.id"
+                  [name]="'opening_' + sku.id"
+                  placeholder="Opening"
+                  class="input input-bordered w-full text-sm"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div class="flex-1">
+                <input
+                  type="number"
+                  [id]="'purchases_' + sku.id"
+                  [name]="'purchases_' + sku.id"
+                  placeholder="Purchases"
+                  class="input input-bordered w-full text-sm"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div class="flex-1">
+                <input
+                  type="number"
+                  [id]="'closing_' + sku.id"
+                  [name]="'closing_' + sku.id"
+                  placeholder="Closing"
+                  class="input input-bordered w-full text-sm"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+      }
+    </div>
+
+    <div class="mt-6 mb-10">
+      <button (click)="onSubmit()" class="btn btn-primary w-full sm:w-auto">
+        Submit
+      </button>
+    </div>
+  </form>
+</div>

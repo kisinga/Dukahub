@@ -74,6 +74,7 @@ export type DailyFinancialsRecord = {
 	date: IsoDateString
 	notes?: HTMLString
 	opening_bal?: number
+	expenses?: number
 	user: RecordIdString
 }
 
