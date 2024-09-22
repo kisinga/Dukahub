@@ -28,6 +28,7 @@ type MergedDailyFInancialWithAccountIcon = MergedDailyFInancialWithAccount & {
 
 @Component({
   standalone: true,
+  selector: "open-close-financial-page",
   imports: [TruncatePipe, CommonModule, FormsModule],
   templateUrl: "./open-close-financial.page.html",
   styleUrl: "./open-close-financial.page.css",

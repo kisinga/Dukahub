@@ -1,103 +1,117 @@
-@if (loadingFinancials()) {
+@if (false) {
 <div class="flex justify-center items-center min-h-[200px]">
-  <span class="loading loading-spinner loading-lg text-primary"></span>
+    <span class="loading loading-spinner loading-lg text-primary"></span>
 </div>
 } @else {
 <div class="space-y-6">
-  <div class="bg-base-100 rounded-box shadow-lg overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="table table-zebra w-full">
-        <thead>
-          <tr>
-            <th class="bg-base-200 text-base-content sticky top-0 z-10">
-              Account
-            </th>
-            <th class="bg-base-200 text-base-content sticky top-0 z-10">
-              Opening
-            </th>
-            <th class="bg-base-200 text-base-content sticky top-0 z-10">
-              Expenses
-            </th>
-            <th class="bg-base-200 text-base-content sticky top-0 z-10">
-              Closing
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of paginatedData; track row.account) {
-          <tr class="hover:bg-base-200 transition-colors duration-200">
-            <td class="p-3">
-              <div class="flex items-center gap-3">
-                <div class="avatar">
-                  <div class="mask mask-squircle w-10 h-10">
-                    <img
-                      [src]="row.iconURL"
-                      [alt]="row.relatedMergedAccountWithType.accountType.name"
-                      class="object-cover"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div class="font-bold">
-                    {{ row.relatedMergedAccountWithType.accountType.name |
-                    truncate:9:true }}
-                  </div>
-                  <div class="text-sm opacity-70">
-                    {{ row.relatedMergedAccountWithType.account_number |
-                    truncate:9:true }}
-                  </div>
-                </div>
-              </div>
-            </td>
-            <td class="p-3">
-              <input
-                type="number"
-                [(ngModel)]="row.opening_bal"
-                class="input input-bordered input-sm w-full max-w-[120px]"
-              />
-            </td>
-            <td class="p-3">
-              <input
-                type="number"
-                [(ngModel)]="row.expenses"
-                class="input input-bordered input-sm w-full max-w-[120px]"
-              />
-            </td>
-            <td class="p-3">
-              <input
-                type="number"
-                [(ngModel)]="row.closing_bal"
-                class="input input-bordered input-sm w-full max-w-[120px]"
-              />
-            </td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    <div class="p-4 bg-base-200 border-t border-base-300">
-      <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div class="join w-full sm:w-auto">
-          @for (page of getPages(); track page) {
-          <button
-            class="join-item btn btn-sm"
-            [class.btn-active]="currentPage === page"
-            (click)="setPage(page)"
-          >
-            {{ page }}
-          </button>
-          }
+    <div class="bg-base-100 rounded-box shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th
+                            class="bg-base-200 text-base-content sticky top-0 z-10"
+                        >
+                            Account
+                        </th>
+                        <th
+                            class="bg-base-200 text-base-content sticky top-0 z-10"
+                        >
+                            Opening
+                        </th>
+                        <th
+                            class="bg-base-200 text-base-content sticky top-0 z-10"
+                        >
+                            Expenses
+                        </th>
+                        <th
+                            class="bg-base-200 text-base-content sticky top-0 z-10"
+                        >
+                            Closing
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (row of paginatedData; track row.account) {
+                    <tr
+                        class="hover:bg-base-200 transition-colors duration-200"
+                    >
+                        <td class="p-3">
+                            <div class="flex items-center gap-3">
+                                <div class="avatar">
+                                    <div class="mask mask-squircle w-10 h-10">
+                                        <img
+                                            [src]="row.iconURL"
+                                            [alt]="row.relatedMergedAccountWithType.accountType.name"
+                                            class="object-cover"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="font-bold">
+                                        {{
+                                        row.relatedMergedAccountWithType.accountType.name
+                                        | truncate:9:true }}
+                                    </div>
+                                    <div class="text-sm opacity-70">
+                                        {{
+                                        row.relatedMergedAccountWithType.account_number
+                                        | truncate:9:true }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-3">
+                            <input
+                                type="number"
+                                [(ngModel)]="row.opening_bal"
+                                class="input input-bordered input-sm w-full max-w-[120px]"
+                            />
+                        </td>
+                        <td class="p-3">
+                            <input
+                                type="number"
+                                [(ngModel)]="row.expenses"
+                                class="input input-bordered input-sm w-full max-w-[120px]"
+                            />
+                        </td>
+                        <td class="p-3">
+                            <input
+                                type="number"
+                                [(ngModel)]="row.closing_bal"
+                                class="input input-bordered input-sm w-full max-w-[120px]"
+                            />
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
         </div>
-        <button
-          class="btn btn-primary btn-sm w-full sm:w-auto"
-          (click)="onSave()"
-          [disabled]="savingFinancials()"
-        >
-          Save All
-        </button>
-      </div>
+
+        <div class="p-4 bg-base-200 border-t border-base-300">
+            <div
+                class="flex flex-col sm:flex-row justify-between items-center gap-4"
+            >
+                <div class="join w-full sm:w-auto">
+                    @for (page of getPages(); track page) {
+                    <button
+                        class="join-item btn btn-sm"
+                        [class.btn-active]="currentPage === page"
+                        (click)="setPage(page)"
+                    >
+                        {{ page }}
+                    </button>
+                    }
+                </div>
+                <button
+                    class="btn btn-primary btn-sm w-full sm:w-auto"
+                    (click)="onSave()"
+                    [disabled]="savingFinancials()"
+                >
+                    Save All
+                </button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 }

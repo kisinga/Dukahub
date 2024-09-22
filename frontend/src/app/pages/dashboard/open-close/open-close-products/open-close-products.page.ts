@@ -25,6 +25,7 @@ import { DailyProductStateService } from "../../../../services/daily-products-st
 @Component({
   standalone: true,
   imports: [],
+  selector: "open-close-products-page",
   templateUrl: "./open-close-products.page.html",
   styleUrl: "./open-close-products.page.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
