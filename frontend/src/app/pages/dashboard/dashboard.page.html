@@ -38,6 +38,13 @@
                         }
                     </ul>
                 </div>
+                <a class="link" [routerLink]="['/dashboard/open-close']">
+                    @if (openCloseState() === 'open') {
+                    <div class="badge badge-success">OPEN</div>
+                    } @else {
+                    <div class="badge badge-error">CLOSED</div>
+                    }
+                </a>
                 <input
                     type="date"
                     [(ngModel)]="dateString"

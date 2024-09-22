@@ -25,6 +25,8 @@ import { TruncatePipe } from "../../pipes/truncate.pipe";
 import { AppStateService } from "../../services/app-state.service";
 import { DbService } from "../../services/db.service";
 import { Component as komponent, ViewChild, ElementRef } from "@angular/core";
+import { OpenClose } from "../../../types/main";
+import { OpenCloseStateService } from "../../services/open-close-state.service";
 
 @Component({
   standalone: true,
@@ -47,13 +49,15 @@ export class DashboardPage implements OnInit {
   user: (UsersResponse & { avatarURL?: string }) | undefined;
   selectedDate: Signal<Date>;
   dateString = "";
-  showDatePicker = signal<boolean>(false);
+  openCloseState: Signal<OpenClose>;
   @ViewChild("dropdownContainer") dropdownContainer!: ElementRef;
 
   constructor(
     @Inject(AppStateService) private readonly stateService: AppStateService,
     @Inject(DbService) private readonly db: DbService,
     @Inject(Router) private readonly router: Router,
+    @Inject(OpenCloseStateService)
+    private readonly openCloseStateService: OpenCloseStateService,
     private cdr: ChangeDetectorRef,
     private activatedRoute: ActivatedRoute,
   ) {
@@ -61,6 +65,7 @@ export class DashboardPage implements OnInit {
     this.selectedCompanyIndex = this.stateService.selectedCompanyIndex;
     this.companies = this.stateService.userCompanies;
     this.selectedDate = this.stateService.selectedDate;
+    this.openCloseState = this.openCloseStateService.openCloseState;
 
     effect(() => {
       if (this.stateService.user()) {
@@ -79,9 +84,7 @@ export class DashboardPage implements OnInit {
       (params: { [x: string]: string | number | Date }) => {
         if (params["date"]) {
           this.stateService.selectedDate.set(new Date(params["date"]));
-          this.toggleDatePicker(true);
         } else {
-          this.showDatePicker.set(false);
         }
 
         if (params["company"]) {
@@ -94,12 +97,6 @@ export class DashboardPage implements OnInit {
   updateDate(dateString: string): void {
     // check the currently active route
     this.router.navigate([], { queryParams: { date: dateString } });
-  }
-
-  toggleDatePicker(value?: boolean): void {
-    this.showDatePicker.set(
-      value === undefined ? !this.showDatePicker() : value,
-    );
   }
 
   getAvatarURL(): string {

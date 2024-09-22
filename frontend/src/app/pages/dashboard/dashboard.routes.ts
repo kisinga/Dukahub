@@ -13,19 +13,13 @@ export const routes: Routes = [
         loadComponent: () => import("./main/main.page").then((m) => m.MainPage),
       },
       {
-        path: "open-close-financial",
+        path: "open-close",
         loadComponent: () =>
-          import(
-            "./open-close/open-close-financial/open-close-financial.page"
-          ).then((m) => m.OpenCloseFinancialPage),
+          import("./open-close/open-close.component").then(
+            (m) => m.OpenCloseComponent,
+          ),
       },
-      {
-        path: "open-close-stock",
-        loadComponent: () =>
-          import(
-            "./open-close/open-close-products/open-close-products.page"
-          ).then((m) => m.OpenCloseProductsPage),
-      },
+
       {
         path: "config",
         loadComponent: () =>

@@ -434,6 +434,20 @@
           "min": "",
           "max": ""
         }
+      },
+      {
+        "system": false,
+        "id": "6qz5yf8r",
+        "name": "expenses",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "noDecimal": false
+        }
       }
     ],
     "indexes": ["CREATE INDEX `idx_VBB3N2W` ON `daily_financials` (`date`)"],
@@ -442,6 +456,54 @@
     "createRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company ",
     "updateRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company && @request.data.user = @request.auth.id",
     "deleteRule": "@request.auth.id != \"\"&& @request.auth.verified = true && @request.auth.company:each?=company",
+    "options": {}
+  },
+  {
+    "id": "0wzfzkbefir2b9h",
+    "name": "daily_open_close",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "3e5jdbhl",
+        "name": "date",
+        "type": "date",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": "",
+          "max": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "5wim3mwi",
+        "name": "open",
+        "type": "bool",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {}
+      },
+      {
+        "system": false,
+        "id": "r9qc5qle",
+        "name": "close",
+        "type": "bool",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {}
+      }
+    ],
+    "indexes": [],
+    "listRule": null,
+    "viewRule": null,
+    "createRule": null,
+    "updateRule": null,
+    "deleteRule": null,
     "options": {}
   },
   {
@@ -880,6 +942,22 @@
         "unique": false,
         "options": {
           "maxSize": 2000000
+        }
+      },
+      {
+        "system": false,
+        "id": "v9b58oto",
+        "name": "image",
+        "type": "file",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "mimeTypes": ["image/jpeg", "image/png", "image/vnd.mozilla.apng"],
+          "thumbs": [],
+          "maxSelect": 1,
+          "maxSize": 5242880,
+          "protected": false
         }
       }
     ],
