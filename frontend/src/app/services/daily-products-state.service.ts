@@ -20,6 +20,8 @@ export class DailyProductStateService {
     this.dailyStockRecords.set(await this.db.fetchDailyStocks(queryOption));
   }
 
+  async saveDailyProducts(dailyProducts: DailyStocksResponse[]) {}
+
   async refreshStockRecords() {
     await this.fetchDailyStocks();
   }

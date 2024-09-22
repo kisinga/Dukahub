@@ -10,6 +10,7 @@ export enum Collections {
 	Accounts = "accounts",
 	Companies = "companies",
 	DailyFinancials = "daily_financials",
+	DailyOpenClose = "daily_open_close",
 	DailyStocks = "daily_stocks",
 	Expenses = "expenses",
 	Invoices = "invoices",
@@ -72,10 +73,16 @@ export type DailyFinancialsRecord = {
 	closing_bal?: number
 	company: RecordIdString
 	date: IsoDateString
+	expenses?: number
 	notes?: HTMLString
 	opening_bal?: number
-	expenses?: number
 	user: RecordIdString
+}
+
+export type DailyOpenCloseRecord = {
+	close?: boolean
+	date?: IsoDateString
+	open?: boolean
 }
 
 export type DailyStocksRecord<Tclosing_bal = unknown, Topening_bal = unknown> = {
@@ -124,8 +131,8 @@ export type PartnersRecord = {
 export type ProductsRecord<Tbalances = unknown, Tprices = unknown> = {
 	balances: null | Tbalances
 	company: RecordIdString
-	name: string
 	image: string
+	name: string
 	prices?: null | Tprices
 	skus: RecordIdString[]
 }
@@ -187,6 +194,7 @@ export type AccountTypesResponse<Texpand = unknown> = Required<AccountTypesRecor
 export type AccountsResponse<Texpand = unknown> = Required<AccountsRecord> & BaseSystemFields<Texpand>
 export type CompaniesResponse<Texpand = unknown> = Required<CompaniesRecord> & BaseSystemFields<Texpand>
 export type DailyFinancialsResponse<Texpand = unknown> = Required<DailyFinancialsRecord> & BaseSystemFields<Texpand>
+export type DailyOpenCloseResponse<Texpand = unknown> = Required<DailyOpenCloseRecord> & BaseSystemFields<Texpand>
 export type DailyStocksResponse<Tclosing_bal = unknown, Topening_bal = unknown, Texpand = unknown> = Required<DailyStocksRecord<Tclosing_bal, Topening_bal>> & BaseSystemFields<Texpand>
 export type ExpensesResponse<Texpand = unknown> = Required<ExpensesRecord> & BaseSystemFields<Texpand>
 export type InvoicesResponse<Texpand = unknown> = Required<InvoicesRecord> & BaseSystemFields<Texpand>
@@ -205,6 +213,7 @@ export type CollectionRecords = {
 	accounts: AccountsRecord
 	companies: CompaniesRecord
 	daily_financials: DailyFinancialsRecord
+	daily_open_close: DailyOpenCloseRecord
 	daily_stocks: DailyStocksRecord
 	expenses: ExpensesRecord
 	invoices: InvoicesRecord
@@ -222,6 +231,7 @@ export type CollectionResponses = {
 	accounts: AccountsResponse
 	companies: CompaniesResponse
 	daily_financials: DailyFinancialsResponse
+	daily_open_close: DailyOpenCloseResponse
 	daily_stocks: DailyStocksResponse
 	expenses: ExpensesResponse
 	invoices: InvoicesResponse
@@ -242,6 +252,7 @@ export type TypedPocketBase = PocketBase & {
 	collection(idOrName: 'accounts'): RecordService<AccountsResponse>
 	collection(idOrName: 'companies'): RecordService<CompaniesResponse>
 	collection(idOrName: 'daily_financials'): RecordService<DailyFinancialsResponse>
+	collection(idOrName: 'daily_open_close'): RecordService<DailyOpenCloseResponse>
 	collection(idOrName: 'daily_stocks'): RecordService<DailyStocksResponse>
 	collection(idOrName: 'expenses'): RecordService<ExpensesResponse>
 	collection(idOrName: 'invoices'): RecordService<InvoicesResponse>
