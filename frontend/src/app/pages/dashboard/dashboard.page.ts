@@ -24,7 +24,7 @@ import {
 import { TruncatePipe } from "../../pipes/truncate.pipe";
 import { AppStateService } from "../../services/app-state.service";
 import { DbService } from "../../services/db.service";
-import { Component as komponent, ViewChild, ElementRef } from "@angular/core";
+import { ViewChild, ElementRef } from "@angular/core";
 import { OpenClose } from "../../../types/main";
 import { OpenCloseStateService } from "../../services/open-close-state.service";
 

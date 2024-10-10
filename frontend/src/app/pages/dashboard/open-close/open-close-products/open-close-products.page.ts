@@ -4,9 +4,10 @@ import {
   Component,
   effect,
   Inject,
+  Input,
   type OnInit,
 } from "@angular/core";
-import { FormArray, FormBuilder, FormGroup } from "@angular/forms";
+import { FormArray, FormBuilder, FormControl, FormGroup } from "@angular/forms";
 import {
   MergedDailyProductWithSKU,
   MergedProductWithSKUs,
@@ -21,20 +22,26 @@ import { DynamicUrlService } from "../../../../services/dynamic-url.service";
 import { ProductsStateService } from "../../../../services/products-state.service";
 import { ToastService } from "../../../../services/toast.service";
 import { DailyProductStateService } from "../../../../services/daily-products-state.service";
+import { CustomInputComponent } from "../../../../components/custom-input/custom-input.component";
 
 @Component({
   standalone: true,
-  imports: [],
+  imports: [CustomInputComponent],
   selector: "open-close-products-page",
   templateUrl: "./open-close-products.page.html",
   styleUrl: "./open-close-products.page.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OpenCloseProductsPage implements OnInit {
+  @Input() header: string = "";
+  @Input() actionLabel: string = "";
+
   loadingProducts = false;
   dailyProductRecord: (MergedDailyProductWithSKU & { imageURL: string })[] = [];
   balanceForm: FormGroup;
   dailyStocks: DailyStocksResponse[] = [];
+
+  formControl = new FormControl("");
 
   constructor(
     @Inject(ToastService) private readonly toastService: ToastService,

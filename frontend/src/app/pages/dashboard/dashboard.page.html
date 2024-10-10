@@ -38,20 +38,21 @@
                         }
                     </ul>
                 </div>
-                <a class="link" [routerLink]="['/dashboard/open-close']">
-                    @if (openCloseState() === 'open') {
-                    <div class="badge badge-success">OPEN</div>
-                    } @else {
-                    <div class="badge badge-error">CLOSED</div>
-                    }
-                </a>
-                <input
+
+                <!-- <input
                     type="date"
                     [(ngModel)]="dateString"
                     (ngModelChange)="updateDate($event)"
                     class="input input-bordered input-sm w-32 lg:w-auto"
-                />
+                /> -->
             </div>
+            <a class="link" [routerLink]="['/dashboard/open-close']">
+                @if (openCloseState() === 'open') {
+                <div class="badge badge-success">OPEN</div>
+                } @else {
+                <div class="badge badge-error">CLOSED</div>
+                }
+            </a>
             <div class="flex-none hidden lg:block">
                 <ul class="menu menu-horizontal p-0">
                     <li>

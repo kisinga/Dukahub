@@ -1,34 +1,17 @@
-@if (false) {
-<div class="flex justify-center items-center min-h-[200px]">
-    <span class="loading loading-spinner loading-lg text-primary"></span>
-</div>
-} @else {
-<div class="space-y-6">
-    <div class="bg-base-100 rounded-box shadow-lg overflow-hidden">
+<div class="container mx-auto px-4 py-6">
+    <h2 class="text-2xl font-bold mb-6">{{header}}</h2>
+    @if (false) {
+    <div class="flex justify-center items-center min-h-[200px]">
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+    </div>
+    } @else {
+    <div class="card bg-base-100 shadow-lg overflow-hidden">
         <div class="overflow-x-auto">
             <table class="table table-zebra w-full">
                 <thead>
                     <tr>
-                        <th
-                            class="bg-base-200 text-base-content sticky top-0 z-10"
-                        >
-                            Account
-                        </th>
-                        <th
-                            class="bg-base-200 text-base-content sticky top-0 z-10"
-                        >
-                            Opening
-                        </th>
-                        <th
-                            class="bg-base-200 text-base-content sticky top-0 z-10"
-                        >
-                            Expenses
-                        </th>
-                        <th
-                            class="bg-base-200 text-base-content sticky top-0 z-10"
-                        >
-                            Closing
-                        </th>
+                        <th class="bg-base-200 text-base-content">Account</th>
+                        <th class="bg-base-200 text-base-content">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -36,10 +19,10 @@
                     <tr
                         class="hover:bg-base-200 transition-colors duration-200"
                     >
-                        <td class="p-3">
+                        <td class="p-4">
                             <div class="flex items-center gap-3">
                                 <div class="avatar">
-                                    <div class="mask mask-squircle w-10 h-10">
+                                    <div class="mask mask-squircle w-12 h-12">
                                         <img
                                             [src]="row.iconURL"
                                             [alt]="row.relatedMergedAccountWithType.accountType.name"
@@ -51,48 +34,33 @@
                                     <div class="font-bold">
                                         {{
                                         row.relatedMergedAccountWithType.accountType.name
-                                        | truncate:9:true }}
+                                        | truncate:15:true }}
                                     </div>
                                     <div class="text-sm opacity-70">
                                         {{
                                         row.relatedMergedAccountWithType.account_number
-                                        | truncate:9:true }}
+                                        | truncate:15:true }}
                                     </div>
                                 </div>
                             </div>
                         </td>
-                        <td class="p-3">
+                        <td class="p-4">
                             <custom-input
-                                label="Username"
-                                [control]="usernameControl"
-                                id="username"
+                                label="Amount"
+                                [control]="formControl"
+                                [id]="'amount-' + row.account"
                             ></custom-input>
-                        </td>
-                        <td class="p-3">
-                            <input
-                                type="number"
-                                [(ngModel)]="row.expenses"
-                                class="input input-bordered input-sm w-full max-w-[120px]"
-                            />
-                        </td>
-                        <td class="p-3">
-                            <input
-                                type="number"
-                                [(ngModel)]="row.closing_bal"
-                                class="input input-bordered input-sm w-full max-w-[120px]"
-                            />
                         </td>
                     </tr>
                     }
                 </tbody>
             </table>
         </div>
-
-        <div class="p-4 bg-base-200 border-t border-base-300">
+        <div class="card-body bg-base-200 border-t border-base-300">
             <div
                 class="flex flex-col sm:flex-row justify-between items-center gap-4"
             >
-                <div class="join w-full sm:w-auto">
+                <div class="join">
                     @for (page of getPages(); track page) {
                     <button
                         class="join-item btn btn-sm"
@@ -104,14 +72,13 @@
                     }
                 </div>
                 <button
-                    class="btn btn-primary btn-sm w-full sm:w-auto"
+                    class="btn btn-primary w-full sm:w-auto"
                     (click)="onSave()"
-                    [disabled]="savingFinancials()"
                 >
-                    Save All
+                    NEXT
                 </button>
             </div>
         </div>
     </div>
+    }
 </div>
-}

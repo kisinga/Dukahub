@@ -4,7 +4,10 @@ import {
   ChangeDetectorRef,
   Component,
   effect,
+  EventEmitter,
   Inject,
+  Input,
+  Output,
   Signal,
   signal,
   type OnInit,
@@ -36,13 +39,19 @@ type MergedDailyFInancialWithAccountIcon = MergedDailyFInancialWithAccount & {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OpenCloseFinancialPage implements OnInit {
+  @Input() header: string = "";
+  @Input() actionLabel: string = "";
+  @Output() financialData = new EventEmitter<
+    MergedDailyFInancialWithAccount[]
+  >();
+
   financialTableData: MergedDailyFInancialWithAccountIcon[] = [];
   itemsPerPage = 10;
   currentPage = 1;
   loadingFinancials: Signal<boolean>;
   savingFinancials: Signal<boolean>;
   dailyFinancialRecords: DailyFinancialsResponse[] = [];
-  usernameControl = new FormControl("");
+  formControl = new FormControl("");
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -145,10 +154,7 @@ export class OpenCloseFinancialPage implements OnInit {
   }
 
   async onSave(): Promise<void> {
-    this.dailyFinancialStateService.saveDailyFinancials(
-      this.financialTableData,
-    );
-    this.toastService.show("Financial records saved successfully");
+    this.financialData.emit(this.financialTableData);
   }
 
   ngOnInit(): void {}
