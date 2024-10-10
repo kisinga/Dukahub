@@ -9,7 +9,7 @@ import {
   signal,
   type OnInit,
 } from "@angular/core";
-import { FormsModule } from "@angular/forms";
+import { FormControl, FormsModule } from "@angular/forms";
 import { MergedDailyFInancialWithAccount } from "../../../../../types/main";
 import {
   Collections,
@@ -21,6 +21,7 @@ import { DbService } from "../../../../services/db.service";
 import { DynamicUrlService } from "../../../../services/dynamic-url.service";
 import { ToastService } from "../../../../services/toast.service";
 import { DailyFinancialStateService } from "../../../../services/daily-financial-state.service";
+import { CustomInputComponent } from "../../../../components/custom-input/custom-input.component";
 
 type MergedDailyFInancialWithAccountIcon = MergedDailyFInancialWithAccount & {
   iconURL: string;
@@ -29,7 +30,7 @@ type MergedDailyFInancialWithAccountIcon = MergedDailyFInancialWithAccount & {
 @Component({
   standalone: true,
   selector: "open-close-financial-page",
-  imports: [TruncatePipe, CommonModule, FormsModule],
+  imports: [TruncatePipe, CommonModule, FormsModule, CustomInputComponent],
   templateUrl: "./open-close-financial.page.html",
   styleUrl: "./open-close-financial.page.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,6 +42,7 @@ export class OpenCloseFinancialPage implements OnInit {
   loadingFinancials: Signal<boolean>;
   savingFinancials: Signal<boolean>;
   dailyFinancialRecords: DailyFinancialsResponse[] = [];
+  usernameControl = new FormControl("");
 
   constructor(
     private cdr: ChangeDetectorRef,

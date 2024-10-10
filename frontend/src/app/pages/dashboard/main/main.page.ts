@@ -49,7 +49,7 @@ export class MainPage {
     },
   ];
   openCloseState: Signal<OpenClose>;
-
+  registerStatus = "Open";
   constructor(
     @Inject(AppStateService) private readonly stateService: AppStateService,
     @Inject(DynamicUrlService)
@@ -68,19 +68,23 @@ export class MainPage {
       this.cdr.detectChanges(); // Trigger change detection
     });
   }
-  onExpensesClick(period: string): void {
+  onAddExpense(period?: string): void {
     console.log(`Expenses clicked for ${period}`);
     // Add your click handler logic here
   }
 
-  onSalesClick(period: string): void {
+  onAddSale(period?: string): void {
     console.log(`Sales clicked for ${period}`);
     // Add your click handler logic here
   }
 
-  onPurchasesClick(period: string): void {
+  onAddPurchase(period?: string): void {
     console.log(`Purchases clicked for ${period}`);
     // Add your click handler logic here
+  }
+  onRegisterClick() {
+    console.log("Navigating to register opening/closing page");
+    // Implement navigation logic here
   }
   navigateToFinancial() {
     this.dynamicUrlService.navigateDashboardUrl(

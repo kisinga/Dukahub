@@ -1,0 +1,19 @@
+<div class="relative">
+    <input
+        [type]="type"
+        (focus)="onFocus()"
+        (blur)="onBlur()"
+        class="input input-bordered input-sm w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-300 ease-in-out"
+        [ngClass]="{ 'pt-5': isFocused || control.value }"
+    />
+    <label
+        [for]="id"
+        class="absolute left-3 transition-all duration-300 ease-in-out pointer-events-none"
+        [ngClass]="{
+            '-top-5 text-xs text-blue-500 px-1': isFocused || control.value,
+            'top-2 text-gray-600': !(isFocused || control.value),
+        }"
+    >
+        {{ label }}
+    </label>
+</div>
