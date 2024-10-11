@@ -49,5 +49,6 @@ export class OpenCloseComponent {
   }
   onFinancialDataReceived(data: MergedDailyFInancialWithAccount[]) {
     console.log("Received financial data:", data);
+    this.activePage = 2;
   }
 }

@@ -42,7 +42,7 @@ export class MainPage {
       purchases: 68900,
     },
     {
-      title: "This Week",
+      title: "Week",
       sales: 567800,
       expenses: 283900,
       purchases: 498600,

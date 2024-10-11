@@ -4,18 +4,20 @@
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
                 <div class="dropdown" #dropdownContainer>
-                    @if (companies().length > 0) {
                     <label tabindex="0" class="btn btn-ghost btn-circle avatar">
                         <div class="w-10 rounded-full">
+                            @if (companies().length > 0) {
                             <img
                                 [src]="generateURL(companies()[selectedCompanyIndex()], companies()[selectedCompanyIndex()].logo)"
                                 alt="Company Logo"
                             />
+                            } @else {
+                            <span
+                                class="loading loading-spinner loading-lg text-accent"
+                            ></span>
+                            }
                         </div>
                     </label>
-                    } @else {
-                    <div class="badge badge-warning">Loading...</div>
-                    }
 
                     <ul
                         tabindex="0"
@@ -46,11 +48,14 @@
                     class="input input-bordered input-sm w-32 lg:w-auto"
                 /> -->
             </div>
+
             <a class="link" [routerLink]="['/dashboard/open-close']">
                 @if (openCloseState() === 'open') {
-                <div class="badge badge-success">OPEN</div>
+                <div class="badge badge-lg badge-success h-8">OPEN</div>
                 } @else {
-                <div class="badge badge-error">CLOSED</div>
+                <div class="badge pr-4 pl-4 badge-lg badge-error h-8">
+                    CLOSED
+                </div>
                 }
             </a>
             <div class="flex-none hidden lg:block">
