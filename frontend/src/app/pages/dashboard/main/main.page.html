@@ -1,4 +1,4 @@
-<div class="container mx-auto p-2">
+<div class="container mx-auto">
     <div class="card bg-base-100 shadow-xl overflow-x-auto">
         <div class="card-body p-0">
             <table class="table w-full">
@@ -73,12 +73,12 @@
                 </thead>
                 <tbody>
                     <tr *ngFor="let period of periods; let i = index">
-                        <td class="p-2">
+                        <td class="p-0">
                             <div
-                                class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow duration-300"
+                                class="bg-base-250 h-30 shadow-sm hover:shadow-lg transition-shadow duration-300"
                             >
                                 <div
-                                    class="card-body flex flex-col items-center p-3 text-center"
+                                    class="py-10 flex flex-col items-center p-3 text-center"
                                 >
                                     <p class="text-l font-bold text-primary">
                                         {{ period.purchases | number }}
@@ -91,12 +91,12 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="p-2">
+                        <td class="p-0">
                             <div
-                                class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow duration-300"
+                                class="bg-base-200 h-30 shadow-sm hover:shadow-lg transition-shadow duration-300"
                             >
                                 <div
-                                    class="card-body flex flex-col items-center p-3 text-center"
+                                    class="py-10 flex flex-col items-center p-3 text-center"
                                 >
                                     <p
                                         class="text-l font-bold text-secondary-secondary-content"
@@ -111,12 +111,12 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="p-2">
+                        <td class="p-0">
                             <div
-                                class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow duration-300"
+                                class="bg-base-250 h-30 shadow-sm hover:shadow-lg transition-shadow duration-300"
                             >
                                 <div
-                                    class="card-body flex flex-col items-center p-3 text-center"
+                                    class="py-10 flex flex-col items-center p-3 text-center"
                                 >
                                     <p class="text-l font-bold text-accent">
                                         {{ period.expenses | number }}
