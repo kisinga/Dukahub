@@ -10,7 +10,3 @@ import (
 type CustomHandler struct {
 	crudUtils dbUtils.DB
 }
-
-func NewCustomHandler(db dbUtils.DB) *CustomHandler {
-	return &CustomHandler{crudUtils: db}
-}

@@ -15,7 +15,7 @@ import (
 )
 
 type customHandlers struct {
-	custom *handlersPackage.CustomHandler
+	toggledayoperationstate *handlersPackage.ToggleDayOperationStateHandler
 }
 
 func main() {
@@ -26,11 +26,14 @@ func main() {
 		},
 	)
 
+	// create a global waitgroup in case we want to run several "main" threads
 	var wg sync.WaitGroup
 
+	// create a global db instance through the dbUtils package
 	mydb := dbUtils.New(pb)
 
-	_, err := createHandlers(mydb)
+	// By creating global handlers, we can easily match them to the routes
+	handlers, err := createHandlers(mydb)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,6 +42,7 @@ func main() {
 	log.Default().Printf("Serving index file: %s", public)
 
 	pb.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+		e.Router.POST("/toggledayoperationstate", handlers.toggledayoperationstate.Handle)
 		e.Router.GET("/*", apis.StaticDirectoryHandler(os.DirFS(public), true))
 		return nil
 	})
@@ -55,10 +59,10 @@ func main() {
 
 func createHandlers(utils dbUtils.DB) (customHandlers, error) {
 
-	custom := handlersPackage.CustomHandler{}
+	toggleDayOperationsHandler := handlersPackage.NewToggleDayOperationStateHandler(utils)
 
 	return customHandlers{
-		custom: &custom,
+		toggledayoperationstate: toggleDayOperationsHandler,
 	}, nil
 
 }
