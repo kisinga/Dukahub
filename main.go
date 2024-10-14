@@ -14,6 +14,9 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
+// by cteating a customHandlers struct, we can easily match the handlers to the routes
+// and we ensure that we have a single instance of each handler
+// we are guaranteed that all handlers are created in the same place
 type customHandlers struct {
 	toggledayoperationstate *handlersPackage.ToggleDayOperationStateHandler
 }
