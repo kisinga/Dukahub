@@ -19,6 +19,7 @@
             <open-close-products-page
                 [header]="customStrings.header"
                 [actionLabel]="customStrings.actionLabel"
+                (productData)="onProductDataReceived($event)"
             ></open-close-products-page>
         }
     </div>

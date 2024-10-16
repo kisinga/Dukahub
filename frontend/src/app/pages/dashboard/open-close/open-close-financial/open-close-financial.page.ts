@@ -116,7 +116,6 @@ export class OpenCloseFinancialPage implements OnInit {
           account: account.id,
           company: this.stateService.selectedCompany()?.id!!,
           date: this.stateService.selectedDateUTC(),
-          expenses: 0,
           opening_bal: 0,
           closing_bal: 0,
           notes: "",
@@ -135,22 +134,6 @@ export class OpenCloseFinancialPage implements OnInit {
     });
     console.log("Financial Records:", this.financialTableData);
     this.cdr.detectChanges();
-  }
-
-  get paginatedData(): MergedDailyFInancialWithAccountIcon[] {
-    const start = (this.currentPage - 1) * this.itemsPerPage;
-    return this.financialTableData.slice(start, start + this.itemsPerPage);
-  }
-
-  getPages(): number[] {
-    const pageCount = Math.ceil(
-      this.financialTableData.length / this.itemsPerPage,
-    );
-    return Array.from({ length: pageCount }, (_, i) => i + 1);
-  }
-
-  setPage(page: number): void {
-    this.currentPage = page;
   }
 
   async onSave(): Promise<void> {

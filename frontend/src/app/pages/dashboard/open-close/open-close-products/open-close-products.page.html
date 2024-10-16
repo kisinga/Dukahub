@@ -1,51 +1,52 @@
 <div class="container mx-auto px-4 py-6">
     <h2 class="text-2xl font-bold mb-6">{{header}}</h2>
-    <form (ngSubmit)="onSubmit()">
-        <div class="space-y-6">
-            @for (product of dailyProductRecord; track
-            product.relatedMergedProductWithSKUs.id) {
-            <div
-                class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow duration-300"
-            >
-                <div class="card-body p-4 sm:p-6">
-                    <div
-                        class="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-4"
-                    >
-                        <img
-                            [src]="product.imageURL"
-                            [alt]="product.relatedMergedProductWithSKUs.name"
-                            class="w-24 h-24 object-cover rounded-lg"
+    <div class="space-y-6">
+        @for (product of dailyProductRecord; track
+        product.relatedMergedProductWithSKUs.id) {
+        <div
+            class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow duration-300"
+        >
+            <div class="card-body p-4 sm:p-6">
+                <div
+                    class="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-4"
+                >
+                    <img
+                        [src]="product.imageURL"
+                        [alt]="product.relatedMergedProductWithSKUs.name"
+                        class="w-24 h-24 object-cover rounded-lg"
+                    />
+                    <h3 class="card-title text-lg text-center sm:text-left">
+                        {{ product.relatedMergedProductWithSKUs.name }}
+                    </h3>
+                </div>
+                <div
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                >
+                    @for (sku of product.relatedMergedProductWithSKUs.skusArray;
+                    track sku.id) {
+                    <div class="form-control">
+                        <input
+                            type="number"
+                            [ngModel]="skuBalances[product.id][sku.id]"
+                            class="input input-bordered input-sm w-full max-w-[120px]"
                         />
-                        <h3 class="card-title text-lg text-center sm:text-left">
-                            {{ product.relatedMergedProductWithSKUs.name }}
-                        </h3>
                     </div>
-                    <div
-                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-                    >
-                        @for (sku of
-                        product.relatedMergedProductWithSKUs.skusArray; track
-                        sku.id) {
-                        <div class="form-control">
-                            <custom-input
-                                [label]="sku.name"
-                                [control]="formControl"
-                                [id]="'sku-' + sku.id"
-                            ></custom-input>
-                        </div>
-                        }
-                    </div>
+                    }
                 </div>
             </div>
-            }
         </div>
-        <div class="mt-8 flex justify-center sm:justify-start">
+        }
+    </div>
+    <div class="card-body bg-base-200 border-t border-base-300">
+        <div
+            class="flex flex-col sm:flex-row justify-between items-center gap-4"
+        >
             <button
-                type="submit"
-                class="btn btn-primary w-full sm:w-auto min-w-[200px]"
+                class="btn btn-primary w-full sm:w-auto"
+                (click)="onSubmit()"
             >
                 {{actionLabel}}
             </button>
         </div>
-    </form>
+    </div>
 </div>

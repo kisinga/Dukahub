@@ -3,11 +3,19 @@ import {
   ChangeDetectorRef,
   Component,
   effect,
+  EventEmitter,
   Inject,
   Input,
+  Output,
   type OnInit,
 } from "@angular/core";
-import { FormArray, FormBuilder, FormControl, FormGroup } from "@angular/forms";
+import { CommonModule } from "@angular/common";
+import {
+  FormsModule,
+  FormBuilder,
+  FormControl,
+  FormGroup,
+} from "@angular/forms";
 import {
   MergedDailyProductWithSKU,
   MergedProductWithSKUs,
@@ -20,13 +28,15 @@ import { AppStateService } from "../../../../services/app-state.service";
 import { DbService } from "../../../../services/db.service";
 import { DynamicUrlService } from "../../../../services/dynamic-url.service";
 import { ProductsStateService } from "../../../../services/products-state.service";
-import { ToastService } from "../../../../services/toast.service";
 import { DailyProductStateService } from "../../../../services/daily-products-state.service";
 import { CustomInputComponent } from "../../../../components/custom-input/custom-input.component";
 
+// ProductID: SKUID: Balance
+type ProductSKUBalances = { [key: string]: { [key: string]: number } };
+
 @Component({
   standalone: true,
-  imports: [CustomInputComponent],
+  imports: [CustomInputComponent, CommonModule, FormsModule],
   selector: "open-close-products-page",
   templateUrl: "./open-close-products.page.html",
   styleUrl: "./open-close-products.page.css",
@@ -35,16 +45,14 @@ import { CustomInputComponent } from "../../../../components/custom-input/custom
 export class OpenCloseProductsPage implements OnInit {
   @Input() header: string = "";
   @Input() actionLabel: string = "";
+  @Output() productData = new EventEmitter<MergedDailyProductWithSKU[]>();
 
+  skuBalances: ProductSKUBalances = {};
   loadingProducts = false;
   dailyProductRecord: (MergedDailyProductWithSKU & { imageURL: string })[] = [];
-  balanceForm: FormGroup;
   dailyStocks: DailyStocksResponse[] = [];
 
-  formControl = new FormControl("");
-
   constructor(
-    @Inject(ToastService) private readonly toastService: ToastService,
     @Inject(DbService) private readonly db: DbService,
     @Inject(AppStateService) private readonly stateService: AppStateService,
     @Inject(DynamicUrlService)
@@ -53,13 +61,8 @@ export class OpenCloseProductsPage implements OnInit {
     private readonly productsStateService: ProductsStateService,
     @Inject(DailyProductStateService)
     private readonly dailyStockStateService: DailyProductStateService,
-    private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
   ) {
-    this.balanceForm = this.fb.group({
-      skuBalances: this.fb.array([]),
-    });
-
     effect(async () => {
       if (
         this.stateService.selectedCompanyAccounts().length > 0 &&
@@ -86,6 +89,11 @@ export class OpenCloseProductsPage implements OnInit {
     this.dailyProductRecord = this.productsStateService
       .mergeProductsAndSKUs()
       .map((product) => {
+        this.skuBalances[product.id] = {};
+        product.skus.forEach((sku) => {
+          this.skuBalances[product.id][sku] = 0;
+        });
+
         let relatedStock = this.dailyStocks.find(
           (stock) => stock.product === product.id,
         );
@@ -102,6 +110,7 @@ export class OpenCloseProductsPage implements OnInit {
             collectionName: Collections.DailyStocks,
             id: "",
             created: "",
+            sku: "",
           };
           return {
             ...emptyStock,
@@ -120,49 +129,9 @@ export class OpenCloseProductsPage implements OnInit {
     this.cdr.detectChanges();
   }
   ngOnInit(): void {}
-  onSave(updatedData: any[]): void {}
-  get skuBalances() {
-    return this.balanceForm.get("skuBalances") as FormArray;
-  }
-
-  increment(index: number, field: "openingBalance" | "closingBalance") {
-    const currentValue = this.skuBalances.at(index).get(field)?.value || 0;
-    this.skuBalances
-      .at(index)
-      .get(field)
-      ?.setValue(currentValue + 1);
-  }
-
-  decrement(index: number, field: "openingBalance" | "closingBalance") {
-    const currentValue = this.skuBalances.at(index).get(field)?.value || 0;
-    if (currentValue > 0) {
-      this.skuBalances
-        .at(index)
-        .get(field)
-        ?.setValue(currentValue - 1);
-    }
-  }
-
-  copyOpeningToClosing(index: number) {
-    const openingBalance = this.skuBalances
-      .at(index)
-      .get("openingBalance")?.value;
-    this.skuBalances.at(index).get("closingBalance")?.setValue(openingBalance);
-  }
-
-  resetForm() {
-    this.balanceForm.reset();
-    this.skuBalances.controls.forEach((control) => {
-      control.setValue({ openingBalance: 0, closingBalance: 0 });
-    });
-  }
 
   onSubmit() {
-    console.log(this.balanceForm.value);
-
-    if (this.balanceForm.valid) {
-      console.log(this.balanceForm.value);
-      // Here you would typically send this data to your backend
-    }
+    console.log(this.dailyProductRecord);
+    console.log(this.skuBalances);
   }
 }

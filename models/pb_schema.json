@@ -434,20 +434,6 @@
           "min": "",
           "max": ""
         }
-      },
-      {
-        "system": false,
-        "id": "6qz5yf8r",
-        "name": "expenses",
-        "type": "number",
-        "required": false,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "min": null,
-          "max": null,
-          "noDecimal": false
-        }
       }
     ],
     "indexes": ["CREATE INDEX `idx_VBB3N2W` ON `daily_financials` (`date`)"],
@@ -479,23 +465,58 @@
       },
       {
         "system": false,
-        "id": "5wim3mwi",
-        "name": "open",
-        "type": "bool",
-        "required": false,
+        "id": "ztauh6xi",
+        "name": "status",
+        "type": "select",
+        "required": true,
         "presentable": false,
         "unique": false,
-        "options": {}
+        "options": {
+          "maxSelect": 1,
+          "values": ["open", "closed"]
+        }
       },
       {
         "system": false,
-        "id": "r9qc5qle",
-        "name": "close",
-        "type": "bool",
+        "id": "v5wjhiqm",
+        "name": "open_time",
+        "type": "date",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": "",
+          "max": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "w1oc3ynr",
+        "name": "close_time",
+        "type": "date",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": "",
+          "max": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "shuex92h",
+        "name": "user",
+        "type": "relation",
         "required": false,
         "presentable": false,
         "unique": false,
-        "options": {}
+        "options": {
+          "collectionId": "_pb_users_auth_",
+          "cascadeDelete": false,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
+        }
       }
     ],
     "indexes": [],
@@ -549,7 +570,7 @@
         "id": "c3802nqk",
         "name": "user",
         "type": "relation",
-        "required": false,
+        "required": true,
         "presentable": false,
         "unique": false,
         "options": {
@@ -575,26 +596,46 @@
       },
       {
         "system": false,
-        "id": "cotr9p0r",
-        "name": "opening_bal",
-        "type": "json",
+        "id": "hm8kwfwj",
+        "name": "sku",
+        "type": "relation",
         "required": true,
         "presentable": false,
         "unique": false,
         "options": {
-          "maxSize": 2000000
+          "collectionId": "3fzy73gqs5dwae7",
+          "cascadeDelete": false,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
         }
       },
       {
         "system": false,
-        "id": "tgfylioh",
-        "name": "closing_bal",
-        "type": "json",
-        "required": true,
+        "id": "5xkqixiy",
+        "name": "opening_bal",
+        "type": "number",
+        "required": false,
         "presentable": false,
         "unique": false,
         "options": {
-          "maxSize": 2000000
+          "min": null,
+          "max": null,
+          "noDecimal": false
+        }
+      },
+      {
+        "system": false,
+        "id": "9suywsyq",
+        "name": "closing_bal",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "noDecimal": false
         }
       }
     ],
@@ -847,7 +888,7 @@
       },
       {
         "system": false,
-        "id": "ro27m6g2",
+        "id": "4kxyryb3",
         "name": "balance",
         "type": "number",
         "required": false,
@@ -856,7 +897,7 @@
         "options": {
           "min": null,
           "max": null,
-          "noDecimal": true
+          "noDecimal": false
         }
       }
     ],

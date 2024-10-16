@@ -1,11 +1,20 @@
-import { ChangeDetectorRef, Component, effect, Signal } from "@angular/core";
+import {
+  ChangeDetectorRef,
+  Component,
+  effect,
+  Inject,
+  Signal,
+} from "@angular/core";
 import { OpenCloseProductsPage } from "./open-close-products/open-close-products.page";
 import { OpenCloseFinancialPage } from "./open-close-financial/open-close-financial.page";
 import {
   MergedDailyFInancialWithAccount,
+  MergedDailyProductWithSKU,
   OpenClose,
 } from "../../../../types/main";
 import { OpenCloseStateService } from "../../../services/open-close-state.service";
+import { ToastService } from "../../../services/toast.service";
+import { DbService } from "../../../services/db.service";
 
 @Component({
   selector: "app-open-close",
@@ -24,8 +33,11 @@ export class OpenCloseComponent {
 
   activePage = 1;
   financialData: MergedDailyFInancialWithAccount[] = [];
+  productData: MergedDailyProductWithSKU[] = [];
 
   constructor(
+    @Inject(ToastService) private readonly toastService: ToastService,
+    @Inject(DbService) private readonly db: DbService,
     private readonly openCloseStateService: OpenCloseStateService,
     private cdr: ChangeDetectorRef,
   ) {
@@ -48,7 +60,30 @@ export class OpenCloseComponent {
     });
   }
   onFinancialDataReceived(data: MergedDailyFInancialWithAccount[]) {
-    console.log("Received financial data:", data);
+    this.financialData = data;
     this.activePage = 2;
+    console.log("financial data received", data);
+  }
+
+  onProductDataReceived(data: MergedDailyProductWithSKU[]) {
+    this.productData = data;
+    this.activePage = 2;
+    console.log("product data received", data);
+  }
+
+  asubmitAllData() {
+    this.db
+      .toggleDayOperationState({
+        financialData: this.financialData,
+        productData: this.productData,
+      })
+      .then((res) => {
+        console.log(res);
+        this.toastService.show("Data submitted successfully");
+      })
+      .catch((err) => {
+        console.log(err);
+        this.toastService.show("Error submitting data");
+      });
   }
 }

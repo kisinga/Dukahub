@@ -15,7 +15,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (row of paginatedData; track row.account) {
+                    @for (row of financialTableData; track row.account) {
                     <tr
                         class="hover:bg-base-200 transition-colors duration-200"
                     >
@@ -45,11 +45,11 @@
                             </div>
                         </td>
                         <td class="p-4">
-                            <custom-input
-                                label="Amount"
-                                [control]="formControl"
-                                [id]="'amount-' + row.account"
-                            ></custom-input>
+                            <input
+                                type="number"
+                                [(ngModel)]="row.opening_bal"
+                                class="input input-bordered input-sm w-full max-w-[120px]"
+                            />
                         </td>
                     </tr>
                     }
@@ -60,17 +60,6 @@
             <div
                 class="flex flex-col sm:flex-row justify-between items-center gap-4"
             >
-                <div class="join">
-                    @for (page of getPages(); track page) {
-                    <button
-                        class="join-item btn btn-sm"
-                        [class.btn-active]="currentPage === page"
-                        (click)="setPage(page)"
-                    >
-                        {{ page }}
-                    </button>
-                    }
-                </div>
                 <button
                     class="btn btn-primary w-full sm:w-auto"
                     (click)="onSave()"
