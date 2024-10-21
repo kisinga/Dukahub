@@ -1,8 +1,7 @@
 <div class="container mx-auto px-4 py-6">
     <h2 class="text-2xl font-bold mb-6">{{header}}</h2>
     <div class="space-y-6">
-        @for (product of dailyProductRecord; track
-        product.relatedMergedProductWithSKUs.id) {
+        @for (product of mergedProductWithSKUs(); track product.id) {
         <div
             class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow duration-300"
         >
@@ -11,21 +10,21 @@
                     class="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-4"
                 >
                     <img
-                        [src]="product.imageURL"
-                        [alt]="product.relatedMergedProductWithSKUs.name"
+                        [src]="generateImageURL(product)"
+                        [alt]="product.name"
                         class="w-24 h-24 object-cover rounded-lg"
                     />
                     <h3 class="card-title text-lg text-center sm:text-left">
-                        {{ product.relatedMergedProductWithSKUs.name }}
+                        {{ product.name }}
                     </h3>
                 </div>
                 <div
                     class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
                 >
-                    @for (sku of product.relatedMergedProductWithSKUs.skusArray;
-                    track sku.id) {
+                    @for (sku of product.skusArray; track sku.id) {
                     <div class="form-control">
                         <input
+                            [placeholder]="sku.name"
                             type="number"
                             [ngModel]="skuBalances[product.id][sku.id]"
                             class="input input-bordered input-sm w-full max-w-[120px]"

@@ -9,17 +9,18 @@ import { OpenCloseProductsPage } from "./open-close-products/open-close-products
 import { OpenCloseFinancialPage } from "./open-close-financial/open-close-financial.page";
 import {
   MergedDailyFInancialWithAccount,
-  MergedDailyProductWithSKU,
   OpenClose,
+  ProductSKUBalances,
 } from "../../../../types/main";
 import { OpenCloseStateService } from "../../../services/open-close-state.service";
 import { ToastService } from "../../../services/toast.service";
 import { DbService } from "../../../services/db.service";
+import { CommonModule } from "@angular/common";
 
 @Component({
   selector: "app-open-close",
   standalone: true,
-  imports: [OpenCloseProductsPage, OpenCloseFinancialPage],
+  imports: [OpenCloseProductsPage, OpenCloseFinancialPage, CommonModule],
   templateUrl: "./open-close.component.html",
   styleUrl: "./open-close.component.scss",
 })
@@ -33,7 +34,7 @@ export class OpenCloseComponent {
 
   activePage = 1;
   financialData: MergedDailyFInancialWithAccount[] = [];
-  productData: MergedDailyProductWithSKU[] = [];
+  productData: ProductSKUBalances = {};
 
   constructor(
     @Inject(ToastService) private readonly toastService: ToastService,
@@ -65,12 +66,23 @@ export class OpenCloseComponent {
     console.log("financial data received", data);
   }
 
-  onProductDataReceived(data: MergedDailyProductWithSKU[]) {
+  onProductDataReceived(data: ProductSKUBalances) {
     this.productData = data;
     this.activePage = 2;
     console.log("product data received", data);
   }
 
+  nextStep() {
+    if (this.activePage < 2) {
+      this.activePage++;
+    }
+  }
+
+  previousStep() {
+    if (this.activePage > 1) {
+      this.activePage--;
+    }
+  }
   asubmitAllData() {
     this.db
       .toggleDayOperationState({
