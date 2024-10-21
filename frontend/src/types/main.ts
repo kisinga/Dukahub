@@ -1,10 +1,8 @@
 import {
   AccountTypesResponse,
   AccountsResponse,
-  DailyFinancialsResponse,
-  DailyStocksResponse,
   ProductsResponse,
-  SkusResponse,
+  SkusResponse
 } from "./pocketbase-types";
 
 export type OpenClose = "open" | "closed";
@@ -15,13 +13,10 @@ export type ProductSKUBalances = {
 };
 
 // AccountID: Balance
-type AccountBalances = { [key: string]: number | null };
+export type AccountBalances = { [key: string]: number | null };
 
 export type MergedAccountWithType = AccountsResponse & {
   accountType: AccountTypesResponse;
-};
-export type MergedDailyFInancialWithAccount = DailyFinancialsResponse & {
-  relatedMergedAccountWithType: MergedAccountWithType;
 };
 
 export type MergedProductWithSKUs = ProductsResponse & {

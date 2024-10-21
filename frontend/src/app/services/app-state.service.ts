@@ -1,11 +1,8 @@
 import { computed, effect, Inject, Injectable, signal } from "@angular/core";
-import { MergedAccountWithType, OpenClose } from "../../types/main";
 import {
-  AccountsResponse,
-  AccountTypesResponse,
   CompaniesResponse,
   DailyFinancialsResponse,
-  UsersResponse,
+  UsersResponse
 } from "../../types/pocketbase-types";
 import { DbService } from "./db.service";
 import { DynamicUrlService } from "./dynamic-url.service";
@@ -14,31 +11,6 @@ import { DynamicUrlService } from "./dynamic-url.service";
   providedIn: "root",
 })
 export class AppStateService {
-  private allGeneralAccountNames = signal<AccountTypesResponse[]>([]);
-  private allPlainCompanyAccounts = signal<AccountsResponse[]>([]);
-  private allMergedCompanyAccounts = computed<MergedAccountWithType[]>(() => {
-    return this.allPlainCompanyAccounts().map((account) => {
-      let relatedAccount = this.allGeneralAccountNames().find(
-        (name) => name.id === account.type,
-      );
-
-      if (!relatedAccount) {
-        throw new Error(`Account not found for record ${account.id}`);
-      }
-      return {
-        ...account,
-        accountType: relatedAccount,
-      };
-    });
-  });
-  selectedCompanyAccounts = computed(() => {
-    return this.allMergedCompanyAccounts().filter(
-      (account) =>
-        account.company ===
-        this.userCompanies()[this.selectedCompanyIndex()].id,
-    );
-  });
-
   userCompanies = signal<CompaniesResponse[]>([]);
   selectedCompanyIndex = signal<number>(-1);
 
@@ -79,14 +51,6 @@ export class AppStateService {
             this.weeklySales.set(weeklySales);
           },
         );
-
-        let queryOptions = {
-          filter: `company = "${this.selectedCompany()?.id}"`,
-        };
-
-        this.db.fetchAccounts(queryOptions).then((accounts) => {
-          this.allPlainCompanyAccounts.set(accounts);
-        });
       }
     });
   }
@@ -120,9 +84,6 @@ export class AppStateService {
           );
         }
       }
-    });
-    this.db.fetchAccountTypes().then((accountNames) => {
-      this.allGeneralAccountNames.set(accountNames);
     });
   }
 

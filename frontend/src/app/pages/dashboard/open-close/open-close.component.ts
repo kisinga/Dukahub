@@ -1,3 +1,4 @@
+import { CommonModule } from "@angular/common";
 import {
   ChangeDetectorRef,
   Component,
@@ -5,17 +6,16 @@ import {
   Inject,
   Signal,
 } from "@angular/core";
-import { OpenCloseProductsPage } from "./open-close-products/open-close-products.page";
-import { OpenCloseFinancialPage } from "./open-close-financial/open-close-financial.page";
 import {
-  MergedDailyFInancialWithAccount,
+  AccountBalances,
   OpenClose,
   ProductSKUBalances,
 } from "../../../../types/main";
+import { DbService } from "../../../services/db.service";
 import { OpenCloseStateService } from "../../../services/open-close-state.service";
 import { ToastService } from "../../../services/toast.service";
-import { DbService } from "../../../services/db.service";
-import { CommonModule } from "@angular/common";
+import { OpenCloseFinancialPage } from "./open-close-financial/open-close-financial.page";
+import { OpenCloseProductsPage } from "./open-close-products/open-close-products.page";
 
 @Component({
   selector: "app-open-close",
@@ -33,8 +33,8 @@ export class OpenCloseComponent {
   };
 
   activePage = 1;
-  financialData: MergedDailyFInancialWithAccount[] = [];
-  productData: ProductSKUBalances = {};
+  accountBalances: AccountBalances[] = [];
+  productSKUBalances: ProductSKUBalances = {};
 
   constructor(
     @Inject(ToastService) private readonly toastService: ToastService,
@@ -60,14 +60,14 @@ export class OpenCloseComponent {
       this.cdr.detectChanges();
     });
   }
-  onFinancialDataReceived(data: MergedDailyFInancialWithAccount[]) {
-    this.financialData = data;
+  onFinancialDataReceived(data: AccountBalances[]) {
+    this.accountBalances = data;
     this.activePage = 2;
     console.log("financial data received", data);
   }
 
   onProductDataReceived(data: ProductSKUBalances) {
-    this.productData = data;
+    this.productSKUBalances = data;
     this.activePage = 2;
     console.log("product data received", data);
   }
@@ -86,8 +86,8 @@ export class OpenCloseComponent {
   asubmitAllData() {
     this.db
       .toggleDayOperationState({
-        financialData: this.financialData,
-        productData: this.productData,
+        accountBalances: this.accountBalances,
+        productSKUBalances: this.productSKUBalances,
       })
       .then((res) => {
         console.log(res);

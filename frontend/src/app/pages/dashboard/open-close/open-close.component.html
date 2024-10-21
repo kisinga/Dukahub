@@ -1,63 +1,58 @@
-<div class="container mx-auto px-4 py-8">
-    <div role="alert" class="alert alert-info shadow-lg mb-8">
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            class="stroke-current shrink-0 w-6 h-6"
-        >
-            <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-        </svg>
-        <span>{{ customStrings.bannerMessage }}</span>
-    </div>
+<div class="container mx-auto px-2 py-4 max-w-md">
+  <div role="alert" class="alert alert-info shadow-sm mb-4 text-sm">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      class="stroke-current shrink-0 w-5 h-5"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      ></path>
+    </svg>
+    <span>{{ customStrings.bannerMessage }}</span>
+  </div>
 
-    <ul class="steps steps-horizontal w-full mb-8">
-        <li class="step" [ngClass]="{ 'step-primary': activePage >= 1 }">
-            Financial
-        </li>
-        <li class="step" [ngClass]="{ 'step-primary': activePage >= 2 }">
-            Products
-        </li>
-    </ul>
+  <ul class="steps steps-horizontal sm:steps-horizontal w-full mb-6">
+    <li class="step" [ngClass]="{ 'step-primary': activePage >= 1 }">
+      Financial
+    </li>
+    <li class="step" [ngClass]="{ 'step-primary': activePage >= 2 }">
+      Products
+    </li>
+  </ul>
 
-    <div class="card bg-base-100 shadow-xl">
-        <div class="card-body">
-            @if (activePage === 1) {
-                <open-close-financial-page
-                    [header]="customStrings.header"
-                    [actionLabel]="customStrings.actionLabel"
-                    (financialData)="onFinancialDataReceived($event)"
-                ></open-close-financial-page>
-            }
-            @if (activePage === 2) {
-                <open-close-products-page
-                    [header]="customStrings.header"
-                    [actionLabel]="customStrings.actionLabel"
-                    (productSKUBalances)="onProductDataReceived($event)"
-                ></open-close-products-page>
-            }
-        </div>
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body p-4">
+      @if (activePage === 1) {
+      <open-close-financial-page
+        (accountBalances)="onFinancialDataReceived($event)"
+      ></open-close-financial-page>
+      } @if (activePage === 2) {
+      <open-close-products-page
+        (productSKUBalances)="onProductDataReceived($event)"
+      ></open-close-products-page>
+      }
     </div>
+  </div>
 
-    <div class="mt-8 flex justify-between">
-        <button
-            class="btn btn-primary"
-            [disabled]="activePage === 1"
-            (click)="previousStep()"
-        >
-            Previous
-        </button>
-        <button
-            class="btn btn-primary"
-            [disabled]="activePage === 2"
-            (click)="nextStep()"
-        >
-            Next
-        </button>
-    </div>
+  <div class="mt-6 mb-12 flex justify-between">
+    <button
+      class="btn btn-sm btn-outline"
+      [disabled]="activePage === 1"
+      (click)="previousStep()"
+    >
+      Previous
+    </button>
+    <button
+      class="btn btn-sm btn-primary"
+      [disabled]="activePage === 2"
+      (click)="nextStep()"
+    >
+      Next
+    </button>
+  </div>
 </div>

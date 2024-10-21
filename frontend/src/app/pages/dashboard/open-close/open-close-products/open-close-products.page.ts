@@ -1,3 +1,4 @@
+import { CommonModule } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -5,33 +6,26 @@ import {
   effect,
   EventEmitter,
   Inject,
-  Input,
   Output,
   Signal,
-  type OnInit,
+  type OnInit
 } from "@angular/core";
-import { CommonModule } from "@angular/common";
 import {
-  FormsModule,
-  FormBuilder,
-  FormControl,
-  FormGroup,
+  FormsModule
 } from "@angular/forms";
 import {
   MergedProductWithSKUs,
   ProductSKUBalances,
 } from "../../../../../types/main";
 import {
-  Collections,
-  DailyStocksResponse,
-  ProductsRecord,
+  ProductsRecord
 } from "../../../../../types/pocketbase-types";
+import { CustomInputComponent } from "../../../../components/custom-input/custom-input.component";
 import { AppStateService } from "../../../../services/app-state.service";
+import { DailyProductStateService } from "../../../../services/daily-products-state.service";
 import { DbService } from "../../../../services/db.service";
 import { DynamicUrlService } from "../../../../services/dynamic-url.service";
 import { ProductsStateService } from "../../../../services/products-state.service";
-import { DailyProductStateService } from "../../../../services/daily-products-state.service";
-import { CustomInputComponent } from "../../../../components/custom-input/custom-input.component";
 
 @Component({
   standalone: true,
@@ -42,11 +36,9 @@ import { CustomInputComponent } from "../../../../components/custom-input/custom
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OpenCloseProductsPage implements OnInit {
-  @Input() header: string = "";
-  @Input() actionLabel: string = "";
   @Output() productSKUBalances = new EventEmitter<ProductSKUBalances>();
 
-  skuBalances: ProductSKUBalances = {};
+  localproductSKUBalances: ProductSKUBalances = {};
   loadingProducts = false;
   mergedProductWithSKUs: Signal<MergedProductWithSKUs[]>;
 
@@ -71,10 +63,10 @@ export class OpenCloseProductsPage implements OnInit {
 
   initData() {
     this.mergedProductWithSKUs().forEach((product) => {
-      this.skuBalances[product.id] = {};
+      this.localproductSKUBalances[product.id] = {};
 
       for (let sku of product.skus) {
-        this.skuBalances[product.id][sku] = null;
+        this.localproductSKUBalances[product.id][sku] = null;
       }
     });
   }
@@ -82,10 +74,10 @@ export class OpenCloseProductsPage implements OnInit {
   generateImageURL(product: ProductsRecord): string {
     return this.db.generateURL(product, product.image);
   }
-  ngOnInit(): void {}
+  ngOnInit(): void { }
 
   onSubmit() {
     console.log(this.productSKUBalances);
-    console.log(this.skuBalances);
+    console.log(this.localproductSKUBalances);
   }
 }
