@@ -47,12 +47,8 @@
     >
       Previous
     </button>
-    <button
-      class="btn btn-sm btn-primary"
-      [disabled]="activePage === 2"
-      (click)="nextStep()"
-    >
-      Next
+    <button class="btn btn-sm btn-primary" (click)="nextStep()">
+      {{ activePage === 1 ? "Next" : "Submit" }}
     </button>
   </div>
 </div>

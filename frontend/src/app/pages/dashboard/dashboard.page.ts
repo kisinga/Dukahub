@@ -3,10 +3,11 @@ import {
   ChangeDetectorRef,
   Component,
   effect,
+  ElementRef,
   Inject,
-  signal,
   Signal,
-  type OnInit,
+  ViewChild,
+  type OnInit
 } from "@angular/core";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import {
@@ -17,6 +18,7 @@ import {
   RouterOutlet,
 } from "@angular/router";
 import { FileOptions } from "pocketbase";
+import { OpenClose } from "../../../types/main";
 import {
   CompaniesResponse,
   UsersResponse,
@@ -24,8 +26,6 @@ import {
 import { TruncatePipe } from "../../pipes/truncate.pipe";
 import { AppStateService } from "../../services/app-state.service";
 import { DbService } from "../../services/db.service";
-import { ViewChild, ElementRef } from "@angular/core";
-import { OpenClose } from "../../../types/main";
 import { OpenCloseStateService } from "../../services/open-close-state.service";
 
 @Component({
@@ -47,7 +47,6 @@ export class DashboardPage implements OnInit {
   selectedCompanyIndex: Signal<number>;
   companies: Signal<CompaniesResponse[]>;
   user: (UsersResponse & { avatarURL?: string }) | undefined;
-  selectedDate: Signal<Date>;
   dateString = "";
   openCloseState: Signal<OpenClose>;
   @ViewChild("dropdownContainer") dropdownContainer!: ElementRef;
@@ -64,7 +63,6 @@ export class DashboardPage implements OnInit {
     this.loadingUser = this.stateService.loadingUser;
     this.selectedCompanyIndex = this.stateService.selectedCompanyIndex;
     this.companies = this.stateService.userCompanies;
-    this.selectedDate = this.stateService.selectedDate;
     this.openCloseState = this.openCloseStateService.openCloseState;
 
     effect(() => {
@@ -74,24 +72,6 @@ export class DashboardPage implements OnInit {
         this.cdr.detectChanges(); // Trigger change detection
       }
     });
-
-    effect(() => {
-      this.dateString = this.stateService.selectedDateUTC();
-    });
-
-    // show datepicker depending on route
-    this.activatedRoute.queryParams.subscribe(
-      (params: { [x: string]: string | number | Date }) => {
-        if (params["date"]) {
-          this.stateService.selectedDate.set(new Date(params["date"]));
-        } else {
-        }
-
-        if (params["company"]) {
-          this.stateService.urlCompany.set(params["company"] as string);
-        }
-      },
-    );
   }
 
   updateDate(dateString: string): void {
@@ -137,5 +117,5 @@ export class DashboardPage implements OnInit {
       dropdownElement.removeAttribute("open");
     }
   }
-  ngOnInit(): void {}
+  ngOnInit(): void { }
 }

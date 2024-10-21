@@ -43,7 +43,7 @@ export class DbService {
   }
 
   async fetchProducts(options?: RecordFullListOptions) {
-    return await this.pb.collection("products").getFullList();
+    return await this.pb.collection("products").getFullList(options);
   }
 
   async fetchProduct(productID: string) {

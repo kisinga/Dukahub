@@ -2,14 +2,12 @@ import {
   computed,
   Inject,
   Injectable,
-  Signal,
   signal
 } from "@angular/core";
 import { MergedAccountWithType } from "../../types/main";
 import {
   AccountsResponse,
-  AccountTypesResponse,
-  CompaniesResponse,
+  AccountTypesResponse
 } from "../../types/pocketbase-types";
 import { AppStateService } from "./app-state.service";
 import { DbService } from "./db.service";
@@ -36,30 +34,31 @@ export class FinancialStateService {
       };
     });
   });
-  private selectedCompany: Signal<CompaniesResponse | undefined>;
 
   mergedCompanyAccounts = computed(() => {
     return this.allMergedCompanyAccounts().filter(
-      (account) => account.company === this.selectedCompany()?.id,
+      (account) => account.company === this.stateService.selectedCompany()?.id,
     );
   });
   constructor(
     @Inject(AppStateService) private readonly stateService: AppStateService,
     @Inject(DbService) private readonly db: DbService,
   ) {
+    this.refreshData();
+  }
+
+  async refreshData() {
     this.db.fetchAccountTypes().then((accountNames) => {
       this.allGeneralAccountNames.set(accountNames);
       if (this.stateService.selectedCompany()) {
         this.initData();
       }
     });
-
-    this.selectedCompany = this.stateService.selectedCompany;
   }
 
   initData() {
     let queryOptions = {
-      filter: `company = "${this.selectedCompany()?.id}"`,
+      filter: `company = "${this.stateService.selectedCompany()?.id}"`,
     };
 
     this.db.fetchAccounts(queryOptions).then((accounts) => {

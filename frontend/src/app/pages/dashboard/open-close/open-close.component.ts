@@ -5,6 +5,7 @@ import {
   effect,
   Inject,
   Signal,
+  ViewChild,
 } from "@angular/core";
 import {
   AccountBalances,
@@ -33,8 +34,9 @@ export class OpenCloseComponent {
   };
 
   activePage = 1;
-  accountBalances: AccountBalances[] = [];
+  accountBalances: AccountBalances = {};
   productSKUBalances: ProductSKUBalances = {};
+  @ViewChild(OpenCloseFinancialPage) openCloseFinancialPage!: OpenCloseFinancialPage;
 
   constructor(
     @Inject(ToastService) private readonly toastService: ToastService,
@@ -60,7 +62,7 @@ export class OpenCloseComponent {
       this.cdr.detectChanges();
     });
   }
-  onFinancialDataReceived(data: AccountBalances[]) {
+  onFinancialDataReceived(data: AccountBalances) {
     this.accountBalances = data;
     this.activePage = 2;
     console.log("financial data received", data);
@@ -74,7 +76,11 @@ export class OpenCloseComponent {
 
   nextStep() {
     if (this.activePage < 2) {
+      this.openCloseFinancialPage.onSubmit();
       this.activePage++;
+    } else {
+      // this.openCloseProductsPage.onSubmit();
+      this.submitAllData();
     }
   }
 
@@ -83,7 +89,9 @@ export class OpenCloseComponent {
       this.activePage--;
     }
   }
-  asubmitAllData() {
+  submitAllData() {
+    console.log(this.accountBalances);
+    console.log(this.productSKUBalances);
     this.db
       .toggleDayOperationState({
         accountBalances: this.accountBalances,

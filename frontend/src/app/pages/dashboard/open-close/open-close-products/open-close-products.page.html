@@ -33,7 +33,7 @@
             [placeholder]="'Enter ' + sku.name + ' quantity'"
             type="number"
             min="0"
-            [ngModel]="localproductSKUBalances[product.id][sku.id]"
+            [(ngModel)]="localproductSKUBalances[product.id][sku.id]"
             class="input input-bordered input-sm w-full"
           />
         </div>

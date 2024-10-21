@@ -1,20 +1,19 @@
-import { computed, effect, Inject, Injectable, signal } from "@angular/core";
-import { MergedProductWithSKUs } from "../../types/main";
-import { ProductsResponse, SkusResponse } from "../../types/pocketbase-types";
-import { AppStateService } from "./app-state.service";
-import { DbService } from "./db.service";
+import { computed, effect, Inject, Injectable, signal } from '@angular/core';
+import { MergedProductWithSKUs } from '../../types/main';
+import { ProductsResponse, SkusResponse } from '../../types/pocketbase-types';
+import { AppStateService } from './app-state.service';
+import { DbService } from './db.service';
 
 @Injectable({
-  providedIn: "root",
+  providedIn: 'root',
 })
 export class ProductsStateService {
   products = signal<ProductsResponse[]>([]);
   SKUs = signal<SkusResponse[]>([]);
 
   mergeProductsAndSKUs = computed<MergedProductWithSKUs[]>(() => {
-    let products = this.products();
-    if (this.SKUs().length > 0 && products.length > 0) {
-      return products.map((product) => {
+    if (this.SKUs().length > 0 && this.products().length > 0) {
+      return this.products().map((product) => {
         // for every product, get the skus that match the product skus array
         let skus = this.SKUs().filter((sku) => product.skus.includes(sku.id));
 
@@ -30,13 +29,11 @@ export class ProductsStateService {
 
   constructor(
     @Inject(AppStateService) private readonly stateService: AppStateService,
-    @Inject(DbService) private readonly db: DbService,
+    @Inject(DbService) private readonly db: DbService
   ) {
+
     effect(() => {
-      if (
-        this.stateService.selectedCompany() &&
-        this.stateService.selectedDate() !== null
-      ) {
+      if (this.stateService.selectedCompany() != undefined) {
         this.initData(this.stateService.selectedCompany()?.id!!);
       }
     });
@@ -44,10 +41,15 @@ export class ProductsStateService {
 
   //@TODO we probably want to create a db subscription that re-runs this whenever any of the products or SKUs change
   async initData(companyID: string) {
+    console.log('init data', companyID);
     let queryOptions = {
-      filter: "company=" + companyID,
+      filter: 'company = ' + companyID,
     };
-    this.products.set(await this.db.fetchProducts(queryOptions));
-    this.SKUs.set(await this.db.fetchSkus());
+    const productsData = await this.db.fetchProducts(queryOptions);
+    console.log(productsData);
+    const skuData = await this.db.fetchSkus();
+    console.log(skuData);
+    this.products.set(productsData);
+    this.SKUs.set(skuData);
   }
 }

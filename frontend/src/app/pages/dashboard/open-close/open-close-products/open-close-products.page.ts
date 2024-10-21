@@ -1,4 +1,4 @@
-import { CommonModule } from "@angular/common";
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -8,31 +8,24 @@ import {
   Inject,
   Output,
   Signal,
-  type OnInit
-} from "@angular/core";
-import {
-  FormsModule
-} from "@angular/forms";
+  type OnInit,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import {
   MergedProductWithSKUs,
   ProductSKUBalances,
-} from "../../../../../types/main";
-import {
-  ProductsRecord
-} from "../../../../../types/pocketbase-types";
-import { CustomInputComponent } from "../../../../components/custom-input/custom-input.component";
-import { AppStateService } from "../../../../services/app-state.service";
-import { DailyProductStateService } from "../../../../services/daily-products-state.service";
-import { DbService } from "../../../../services/db.service";
-import { DynamicUrlService } from "../../../../services/dynamic-url.service";
-import { ProductsStateService } from "../../../../services/products-state.service";
+} from '../../../../../types/main';
+import { ProductsRecord } from '../../../../../types/pocketbase-types';
+import { CustomInputComponent } from '../../../../components/custom-input/custom-input.component';
+import { DbService } from '../../../../services/db.service';
+import { ProductsStateService } from '../../../../services/products-state.service';
 
 @Component({
   standalone: true,
-  imports: [CustomInputComponent, CommonModule, FormsModule],
-  selector: "open-close-products-page",
-  templateUrl: "./open-close-products.page.html",
-  styleUrl: "./open-close-products.page.css",
+  imports: [CustomInputComponent, CommonModule, FormsModule,],
+  selector: 'open-close-products-page',
+  templateUrl: './open-close-products.page.html',
+  styleUrl: './open-close-products.page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OpenCloseProductsPage implements OnInit {
@@ -44,31 +37,27 @@ export class OpenCloseProductsPage implements OnInit {
 
   constructor(
     @Inject(DbService) private readonly db: DbService,
-    @Inject(AppStateService) private readonly stateService: AppStateService,
-    @Inject(DynamicUrlService)
-    private readonly dynamicUrlService: DynamicUrlService,
     @Inject(ProductsStateService)
     private readonly productsStateService: ProductsStateService,
-    @Inject(DailyProductStateService)
-    private readonly dailyStockStateService: DailyProductStateService,
-    private cdr: ChangeDetectorRef,
+    private cdr: ChangeDetectorRef
   ) {
     this.mergedProductWithSKUs = this.productsStateService.mergeProductsAndSKUs;
+    console.log(this.mergedProductWithSKUs);
     effect(() => {
-      this.productsStateService.mergeProductsAndSKUs;
+      const test = this.productsStateService.mergeProductsAndSKUs();
+      console.log(test);
       this.initData();
       this.cdr.detectChanges();
     });
   }
 
   initData() {
-    this.mergedProductWithSKUs().forEach((product) => {
+    for (const product of this.mergedProductWithSKUs()) {
       this.localproductSKUBalances[product.id] = {};
-
-      for (let sku of product.skus) {
-        this.localproductSKUBalances[product.id][sku] = null;
+      for (const sku of product.skusArray) {
+        this.localproductSKUBalances[product.id][sku.id] = null;
       }
-    });
+    }
   }
 
   generateImageURL(product: ProductsRecord): string {

@@ -32,9 +32,9 @@ import { ToastService } from "../../../../services/toast.service";
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OpenCloseFinancialPage implements OnInit {
-  @Output() accountBalances = new EventEmitter<AccountBalances[]>();
+  @Output() accountBalances = new EventEmitter<AccountBalances>();
 
-  localaccountBalances: AccountBalances[] = [];
+  localaccountBalances: AccountBalances = {};
   currentPage = 1;
 
   mergedCompanyAccounts: Signal<MergedAccountWithType[]>;
@@ -54,9 +54,11 @@ export class OpenCloseFinancialPage implements OnInit {
     return this.db.generateURL(account, account.icons[iconID]);
   }
 
-  async onSave(): Promise<void> {
+  async onSubmit(): Promise<void> {
+    console.log("Submitting financial data");
     this.accountBalances.emit(this.localaccountBalances);
   }
+
 
   ngOnInit(): void { }
 }
