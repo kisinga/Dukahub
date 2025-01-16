@@ -1,6 +1,8 @@
-In order to deploy to Azure
+# Deploy to Azure
 
-create a storage account, and into it create a file share. Note down it's name for use at a later stage
+## Initial COnfiguration
+
+Create a storage account, and into it create a file share. Note down it's name for use at a later stage
 
 create a web app
 Basics Tab
@@ -41,3 +43,13 @@ For now manually upload html files to pb_public folder in the shared sirectory.
 It's contents will be served when someone visits the homepage.
 Moving forward, I should find a way of mounting this folder and allowiing something from the build stage be persisted INTO it,
 or manually have a separate folder being the publicly served folder
+
+## On expired Tokens
+
+Regenerate your PAT
+
+Navigate to the project settings --> Actions --> Secrets
+
+Look for the secret starting with AZUREAPPSERVICE_CONTAINERPASSWORD_XXxx..xxXX
+Confirm the secret with what is referenced in the webhooks under "password". Replace that value with your new PAT
+![Project settings](/assets/image.png)
