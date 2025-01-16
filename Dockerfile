@@ -3,7 +3,7 @@ FROM golang:1.22.3-alpine AS go-builder
 WORKDIR /app
 RUN apk add --no-cache git
 COPY go.mod go.sum ./
-COPY vendor ./vendor
+RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -ldflags="-w -s" -o pantrify
 

@@ -10,7 +10,7 @@ Run inside docker in prod mode
 docker build -t pantrify . && docker run -p 80:80 -v "$(pwd)"/data:/data pantrify
 ```
 
-In case you want to force fetch latest changes (e.g recent update to db utils has been cached)
+In case you want to force fetch latest changes
 
 ```bash
     GOPROXY=direct go get -u
