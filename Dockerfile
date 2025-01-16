@@ -1,9 +1,9 @@
 # Builder stage for Go
-FROM golang:1.22.3-alpine AS go-builder
+FROM golang:1.23.4-alpine AS go-builder
 WORKDIR /app
 RUN apk add --no-cache git
 COPY go.mod go.sum ./
-RUN go mod download -v
+RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o pantrify
 
