@@ -5,7 +5,7 @@ RUN apk add --no-cache git
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -ldflags="-w -s" -o pantrify
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o pantrify
 
 # Build stage for frontend
 FROM node:18-alpine AS node-builder
