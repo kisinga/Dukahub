@@ -4,7 +4,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// var _ models.Model = (*UsersRecord)(nil)
+var _ core.Model = (*UsersRecord)(nil)
 
 func (UsersRecord) TableName() string {
 	return string(Users)

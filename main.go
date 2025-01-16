@@ -42,10 +42,13 @@ func main() {
 
 	pb.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		e.Router.POST("/toggledayoperationstate", handlers.toggledayoperationstate.Handle)
-		e.Router.GET("/*", apis.Static(os.DirFS(public), true))
 		return e.Next()
 	})
 
+	pb.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		e.Router.GET("/{path...}", apis.Static(os.DirFS(public), true))
+		return e.Next()
+	})
 	// connect to the database
 	wg.Add(1)
 	go func() {

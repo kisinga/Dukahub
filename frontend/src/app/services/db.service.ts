@@ -33,7 +33,7 @@ export class DbService {
   }
 
   login(email: string, password: string) {
-    return this.pb.collection("users").authWithPassword(email, password, {
+    return this.pb.collection("admins").authWithPassword(email, password, {
       expand: "company",
     });
   }
