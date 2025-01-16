@@ -1,19 +1,19 @@
 package handlers
 
 import (
-	dbUtils "github.com/kisinga/pocketbase-utils"
-	"github.com/labstack/echo/v5"
+	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 type ToggleDayOperationStateHandler struct {
-	crudUtils dbUtils.DB
+	crudUtils *pocketbase.PocketBase
 }
 
-func NewToggleDayOperationStateHandler(db dbUtils.DB) *ToggleDayOperationStateHandler {
+func NewToggleDayOperationStateHandler(db *pocketbase.PocketBase) *ToggleDayOperationStateHandler {
 	return &ToggleDayOperationStateHandler{crudUtils: db}
 }
 
-func (h *ToggleDayOperationStateHandler) Handle(c echo.Context) error {
+func (h *ToggleDayOperationStateHandler) Handle(e *core.RequestEvent) error {
 	// handle the request here
 	return nil
 }

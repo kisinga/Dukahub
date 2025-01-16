@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	handlersPackage "github.com/kisinga/pantrify/handlers"
-	dbUtils "github.com/kisinga/pocketbase-utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -32,11 +31,8 @@ func main() {
 	// create a global waitgroup in case we want to run several "main" threads
 	var wg sync.WaitGroup
 
-	// create a global db instance through the dbUtils package
-	mydb := dbUtils.New(pb)
-
 	// By creating global handlers, we can easily match them to the routes
-	handlers, err := createHandlers(mydb)
+	handlers, err := createHandlers(pb)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,25 +40,25 @@ func main() {
 	public := publicFolder()
 	log.Default().Printf("Serving index file: %s", public)
 
-	pb.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+	pb.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		e.Router.POST("/toggledayoperationstate", handlers.toggledayoperationstate.Handle)
-		e.Router.GET("/*", apis.StaticDirectoryHandler(os.DirFS(public), true))
-		return nil
+		e.Router.GET("/*", apis.Static(os.DirFS(public), true))
+		return e.Next()
 	})
 
 	// connect to the database
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		mydb.Connect()
+		pb.Start()
 	}()
 
 	wg.Wait()
 }
 
-func createHandlers(utils dbUtils.DB) (customHandlers, error) {
+func createHandlers(pb *pocketbase.PocketBase) (customHandlers, error) {
 
-	toggleDayOperationsHandler := handlersPackage.NewToggleDayOperationStateHandler(utils)
+	toggleDayOperationsHandler := handlersPackage.NewToggleDayOperationStateHandler(pb)
 
 	return customHandlers{
 		toggledayoperationstate: toggleDayOperationsHandler,
