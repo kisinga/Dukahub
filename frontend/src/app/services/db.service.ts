@@ -1,6 +1,8 @@
 import { Injectable } from "@angular/core";
 import PocketBase, { FileOptions, RecordFullListOptions } from "pocketbase";
+import { DbOperation } from "../../types/main";
 import {
+  Collections,
   CompaniesRecord,
   DailyFinancialsRecord,
   DailyFinancialsResponse,
@@ -13,7 +15,7 @@ import {
 })
 export class DbService {
   private pb = new PocketBase(
-    "https://pantrify.azurewebsites.net",
+    "http://127.0.0.1:8090",
   ) as TypedPocketBase;
 
   getAuthStore() {
@@ -40,6 +42,55 @@ export class DbService {
 
   logout(): void {
     this.pb.authStore.clear();
+  }
+
+  perform<T>(operation: DbOperation, collection: Collections, bodyParams?: { [key: string]: any; } | FormData, options?: RecordFullListOptions): Promise<T> | Promise<Array<T>> | Promise<boolean> | Error {
+    switch (operation) {
+      case DbOperation.list_search:
+        return this.pb.collection(collection).getFullList<T>(options);
+
+      case DbOperation.view:
+        if (!bodyParams) return new Error("Missing record ID");
+        const viewId = bodyParams instanceof FormData
+          ? bodyParams.get('id')?.toString()
+          : bodyParams?.["id"];
+        if (!viewId) return new Error("Missing record ID");
+        return this.pb.collection(collection).getOne<T>(viewId);
+
+      case DbOperation.create:
+        if (!bodyParams) return new Error("Missing creation data");
+        return this.pb.collection(collection).create<T>(bodyParams);
+
+      case DbOperation.update:
+        if (!bodyParams) return new Error("Missing update data");
+        let updateId: string;
+        let updateData: any;
+        if (bodyParams instanceof FormData) {
+          updateId = bodyParams.get('id')?.toString() || '';
+          bodyParams.delete('id');
+          updateData = bodyParams;
+        } else {
+          const { id, ...rest } = bodyParams;
+          updateId = id;
+          updateData = rest;
+        }
+        if (!updateId) return new Error("Missing record ID");
+        return this.pb.collection(collection).update<T>(updateId, updateData);
+
+      case DbOperation.delete:
+        if (!bodyParams) return new Error("Missing record ID");
+        const deleteId = bodyParams instanceof FormData
+          ? bodyParams.get('id')?.toString()
+          : bodyParams?.["id"];
+        if (!deleteId) return new Error("Missing record ID");
+        return this.pb.collection(collection).delete(deleteId);
+
+      case DbOperation.batch_op:
+        return new Error("Batch operations not implemented");
+
+      default:
+        return new Error("Invalid operation");
+    }
   }
 
   async fetchProducts(options?: RecordFullListOptions) {

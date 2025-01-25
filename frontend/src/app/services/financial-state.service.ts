@@ -4,10 +4,11 @@ import {
   Injectable,
   signal
 } from "@angular/core";
-import { MergedAccountWithType } from "../../types/main";
+import { DbOperation, MergedAccountWithType } from "../../types/main";
 import {
   AccountsResponse,
-  AccountTypesResponse
+  AccountTypesResponse,
+  Collections
 } from "../../types/pocketbase-types";
 import { AppStateService } from "./app-state.service";
 import { DbService } from "./db.service";
@@ -47,13 +48,41 @@ export class FinancialStateService {
     this.refreshData();
   }
 
+  async handleOperation<T>(operation: Promise<T> | Promise<Array<T>> | Promise<boolean> | Error) {
+    // Handle synchronous errors
+    if (operation instanceof Error) {
+      console.error(operation.message);
+      return operation; // Return the Error instead of null
+    }
+
+    // Handle asynchronous operations
+    try {
+      return await operation;
+    } catch (error) {
+      console.error('Operation failed:', error);
+      return error instanceof Error ? error : new Error(String(error));
+    }
+  }
+
   async refreshData() {
-    this.db.fetchAccountTypes().then((accountNames) => {
-      this.allGeneralAccountNames.set(accountNames);
+
+    const result = await this.handleOperation<AccountTypesResponse>(
+      this.db.perform<AccountTypesResponse>(DbOperation.list_search, Collections.AccountTypes)
+    );
+
+    if (result) {
+      this.allGeneralAccountNames.set(result as AccountTypesResponse[]);
       if (this.stateService.selectedCompany()) {
         this.initData();
       }
-    });
+    }
+
+    // this.db.fetchAccountTypes().then((accountNames) => {
+    //   this.allGeneralAccountNames.set(accountNames);
+    //   if (this.stateService.selectedCompany()) {
+    //     this.initData();
+    //   }
+    // });
   }
 
   initData() {

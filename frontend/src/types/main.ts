@@ -22,3 +22,12 @@ export type MergedAccountWithType = AccountsResponse & {
 export type MergedProductWithSKUs = ProductsResponse & {
   skusArray: SkusResponse[];
 };
+
+export enum DbOperation {
+  list_search = 1,
+  view,
+  create,
+  update,
+  delete,
+  batch_op
+}
