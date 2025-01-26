@@ -8,8 +8,7 @@ import {
   Signal,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { OpenClose } from "../../../../types/main";
-import { DailyAccountsRecord, DailyAccountsResponse } from "../../../../types/pocketbase-types";
+import { DailyAccountsRecord, DailyAccountsResponse, OpenCloseDetailsStatusOptions } from "../../../../types/pocketbase-types";
 import { TruncatePipe } from "../../../pipes/truncate.pipe";
 import { AppStateService } from "../../../services/app-state.service";
 import { DynamicUrlService } from "../../../services/dynamic-url.service";
@@ -48,7 +47,7 @@ export class MainPage {
       purchases: 498600,
     },
   ];
-  openCloseState: Signal<OpenClose>;
+  openCloseState: Signal<OpenCloseDetailsStatusOptions>;
   registerStatus = "Open";
   constructor(
     @Inject(AppStateService) private readonly stateService: AppStateService,

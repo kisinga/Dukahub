@@ -37,11 +37,20 @@
           </div>
         </td>
         <td class="p-4">
+          <!-- depending on whether the status is open or closed, update the corresponding balance -->
+          @if (openCloseState() === 'open') {
           <input
-            [(ngModel)]="localaccountBalances[account.id]"
+            [(ngModel)]="localaccountBalances[$index].closing_bal"
             type="number"
             class="input input-bordered input-sm w-full max-w-[120px]"
           />
+          }@else {
+          <input
+            [(ngModel)]="localaccountBalances[$index].opening_bal"
+            type="number"
+            class="input input-bordered input-sm w-full max-w-[120px]"
+          />
+          }
         </td>
       </tr>
       }

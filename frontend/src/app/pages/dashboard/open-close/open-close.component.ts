@@ -8,10 +8,10 @@ import {
   ViewChild,
 } from "@angular/core";
 import {
-  AccountBalances,
-  OpenClose,
-  ProductSKUBalances,
+  DbOperation,
+  ProductSKUBalances
 } from "../../../../types/main";
+import { Collections, DailyAccountsRecord, OpenCloseDetailsStatusOptions } from "../../../../types/pocketbase-types";
 import { DbService } from "../../../services/db.service";
 import { OpenCloseStateService } from "../../../services/open-close-state.service";
 import { ToastService } from "../../../services/toast.service";
@@ -26,7 +26,7 @@ import { OpenCloseProductsPage } from "./open-close-products/open-close-products
   styleUrl: "./open-close.component.scss",
 })
 export class OpenCloseComponent {
-  openCloseState: Signal<OpenClose>;
+  openCloseState: Signal<OpenCloseDetailsStatusOptions>;
   customStrings = {
     bannerMessage: "",
     header: "",
@@ -34,7 +34,7 @@ export class OpenCloseComponent {
   };
 
   activePage = 1;
-  accountBalances: AccountBalances = {};
+  accountBalances: DailyAccountsRecord[] = [];
   productSKUBalances: ProductSKUBalances = {};
   @ViewChild(OpenCloseFinancialPage) openCloseFinancialPage!: OpenCloseFinancialPage;
 
@@ -62,10 +62,10 @@ export class OpenCloseComponent {
       this.cdr.detectChanges();
     });
   }
-  onFinancialDataReceived(data: AccountBalances) {
+  onFinancialDataReceived(data: DailyAccountsRecord[]) {
     this.accountBalances = data;
     this.activePage = 2;
-    console.log("financial data received", data);
+    console.log("financial data received::", data);
   }
 
   onProductDataReceived(data: ProductSKUBalances) {
@@ -92,11 +92,10 @@ export class OpenCloseComponent {
   submitAllData() {
     console.log(this.accountBalances);
     console.log(this.productSKUBalances);
-    this.db
-      .toggleDayOperationState({
-        accountBalances: this.accountBalances,
-        productSKUBalances: this.productSKUBalances,
-      })
+    this.db.execute(Collections.DailyAccounts, {
+      operation: DbOperation.create,
+      createparams: this.accountBalances,
+    })
       .then((res) => {
         console.log(res);
         this.toastService.show("Data submitted successfully");

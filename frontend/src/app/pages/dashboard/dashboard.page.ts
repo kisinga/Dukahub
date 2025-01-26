@@ -18,10 +18,10 @@ import {
   RouterOutlet,
 } from "@angular/router";
 import { FileOptions } from "pocketbase";
-import { OpenClose } from "../../../types/main";
 import {
   AdminsResponse,
-  CompaniesResponse
+  CompaniesResponse,
+  OpenCloseDetailsStatusOptions
 } from "../../../types/pocketbase-types";
 import { AppStateService } from "../../services/app-state.service";
 import { DbService } from "../../services/db.service";
@@ -46,7 +46,7 @@ export class DashboardPage implements OnInit {
   companies: Signal<CompaniesResponse[]>;
   user: (AdminsResponse & { avatarURL?: string }) | undefined;
   dateString = "";
-  openCloseState: Signal<OpenClose>;
+  openCloseState: Signal<OpenCloseDetailsStatusOptions>;
   @ViewChild("dropdownContainer") dropdownContainer!: ElementRef;
 
   constructor(

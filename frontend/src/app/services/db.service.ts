@@ -26,6 +26,7 @@ export class DbService {
     return this.pb.collection(Collections.Admins).authWithPassword(email, password, {
       expand: "company",
     });
+
   }
 
   logout(): void {
@@ -67,8 +68,8 @@ export class DbService {
         return [];
 
       case DbOperation.batch_op:
+        this.pb.createBatch()
         throw new Error("Not fully implemented")
-
       // // Validate batch parameters
       // if (!Array.isArray(params.ids)) {
       //   throw new Error('Batch operation requires array of IDs');

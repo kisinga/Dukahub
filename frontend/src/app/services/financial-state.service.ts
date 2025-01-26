@@ -36,7 +36,7 @@ export class FinancialStateService {
     });
   });
 
-  mergedCompanyAccounts = computed(() => {
+  mergedCompanyAccounts = computed<MergedAccountWithType[]>(() => {
     return this.allMergedCompanyAccounts().filter(
       (account) => account.company === this.stateService.selectedCompany()?.id,
     );

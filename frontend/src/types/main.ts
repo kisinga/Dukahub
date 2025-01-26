@@ -6,15 +6,11 @@ import {
   SkusResponse
 } from "./pocketbase-types";
 
-export type OpenClose = "open" | "closed";
-
 // ProductID: SKUID: Balance
 export type ProductSKUBalances = {
   [key: string]: { [key: string]: number | null };
 };
 
-// AccountID: Balance
-export type AccountBalances = { [key: string]: number | null };
 
 export type MergedAccountWithType = CompanyAccountsResponse & {
   accountType: AccountTypesResponse;
