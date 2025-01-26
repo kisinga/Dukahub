@@ -1,7 +1,7 @@
 import { RecordFullListOptions } from "pocketbase";
 import {
   AccountTypesResponse,
-  AccountsResponse,
+  CompanyAccountsResponse,
   ProductsResponse,
   SkusResponse
 } from "./pocketbase-types";
@@ -16,7 +16,7 @@ export type ProductSKUBalances = {
 // AccountID: Balance
 export type AccountBalances = { [key: string]: number | null };
 
-export type MergedAccountWithType = AccountsResponse & {
+export type MergedAccountWithType = CompanyAccountsResponse & {
   accountType: AccountTypesResponse;
 };
 

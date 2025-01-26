@@ -6,7 +6,7 @@ import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
 import { AppStateService } from './app/services/app-state.service';
 import { DbService } from './app/services/db.service';
-import { UsersResponse } from './types/pocketbase-types';
+import { AdminsResponse } from './types/pocketbase-types';
 
 function initializeAppFactory(dbService: DbService, stateService: AppStateService, router: Router) {
   return () => new Promise<void>((resolve) => {
@@ -14,7 +14,7 @@ function initializeAppFactory(dbService: DbService, stateService: AppStateServic
     authStore.onChange((auth) => {
       if (auth) {
         console.log('Authenticated');
-        stateService.setUser(authStore.model! as UsersResponse)
+        stateService.setUser(authStore.record as AdminsResponse)
         resolve();
 
       } else {

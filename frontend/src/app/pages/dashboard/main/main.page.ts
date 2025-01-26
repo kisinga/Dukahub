@@ -1,3 +1,4 @@
+import { CommonModule } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -6,13 +7,12 @@ import {
   Inject,
   Signal,
 } from "@angular/core";
-import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { DailyFinancialsRecord } from "../../../../types/pocketbase-types";
+import { OpenClose } from "../../../../types/main";
+import { DailyAccountsRecord, DailyAccountsResponse } from "../../../../types/pocketbase-types";
 import { TruncatePipe } from "../../../pipes/truncate.pipe";
 import { AppStateService } from "../../../services/app-state.service";
 import { DynamicUrlService } from "../../../services/dynamic-url.service";
-import { OpenClose } from "../../../../types/main";
 import { OpenCloseStateService } from "../../../services/open-close-state.service";
 
 @Component({
@@ -23,7 +23,7 @@ import { OpenCloseStateService } from "../../../services/open-close-state.servic
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MainPage {
-  weeklySales: Signal<DailyFinancialsRecord[]>;
+  weeklySales: Signal<DailyAccountsRecord[]>;
   totalWeeklySales = 0;
   totalWeeklyPurchases = 0;
   totalSalesToday = 0;
@@ -103,7 +103,7 @@ export class MainPage {
   }
 
   // calculate total weekly sales
-  calculateTotalWeeklySales(weeklySales: DailyFinancialsRecord[]): number {
+  calculateTotalWeeklySales(weeklySales: DailyAccountsResponse[]): number {
     console.log("Calculating total weekly sales");
     let totalClosingBalances = weeklySales.reduce(
       (acc, curr) => acc + (curr.closing_bal ?? 0),

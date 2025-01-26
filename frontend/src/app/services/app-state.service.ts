@@ -1,10 +1,10 @@
 import { computed, effect, Inject, Injectable, signal } from "@angular/core";
 import { DbOperation } from "../../types/main";
 import {
+  AdminsResponse,
   Collections,
   CompaniesResponse,
-  DailyFinancialsResponse,
-  UsersResponse
+  DailyAccountsResponse
 } from "../../types/pocketbase-types";
 import { DbService } from "./db.service";
 import { DynamicUrlService } from "./dynamic-url.service";
@@ -25,8 +25,8 @@ export class AppStateService {
   });
   urlCompany = signal<string>("");
 
-  weeklySales = signal<DailyFinancialsResponse[]>([]);
-  user = signal<UsersResponse | undefined>(undefined);
+  weeklySales = signal<DailyAccountsResponse[]>([]);
+  user = signal<AdminsResponse | undefined>(undefined);
   loadingUser = signal<boolean>(true);
 
   readonly isAuthenticated = computed(() => !!this.user());
@@ -52,7 +52,7 @@ export class AppStateService {
     });
   }
 
-  setUser(user: UsersResponse) {
+  setUser(user: AdminsResponse) {
     this.user.set(user);
     this.loadingUser.set(false);
   }
@@ -98,7 +98,7 @@ export class AppStateService {
 
   fetchWeeklySales(
     companyID: string,
-  ): Promise<DailyFinancialsResponse[]> {
+  ): Promise<DailyAccountsResponse[]> {
     // use the date today to fetch independent sales arrays for the week
     // the week starts on a Monday
     let today = new Date();
@@ -113,7 +113,7 @@ export class AppStateService {
       && created <= "${sundayUTC}"
       && company = "${companyID}"`,
     };
-    return this.db.execute<DailyFinancialsResponse>(Collections.DailyFinancials, {
+    return this.db.execute<DailyAccountsResponse>(Collections.DailyAccounts, {
       operation: DbOperation.list_search,
       options: options
     }).then(sales => {

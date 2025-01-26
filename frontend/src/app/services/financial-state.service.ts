@@ -6,9 +6,9 @@ import {
 } from "@angular/core";
 import { DbOperation, MergedAccountWithType } from "../../types/main";
 import {
-  AccountsResponse,
   AccountTypesResponse,
-  Collections
+  Collections,
+  CompanyAccountsResponse
 } from "../../types/pocketbase-types";
 import { AppStateService } from "./app-state.service";
 import { DbService } from "./db.service";
@@ -18,7 +18,7 @@ import { DbService } from "./db.service";
 })
 export class FinancialStateService {
   private allGeneralAccountNames = signal<AccountTypesResponse[]>([]);
-  private allPlainCompanyAccounts = signal<AccountsResponse[]>([]);
+  private allPlainCompanyAccounts = signal<CompanyAccountsResponse[]>([]);
 
   private allMergedCompanyAccounts = computed<MergedAccountWithType[]>(() => {
     return this.allPlainCompanyAccounts().map((account) => {
@@ -54,10 +54,15 @@ export class FinancialStateService {
     this.db.execute<AccountTypesResponse>(Collections.AccountTypes, {
       operation: DbOperation.list_search,
     }).then(result => {
-      this.allGeneralAccountNames.set(result as AccountTypesResponse[]);
-      if (this.stateService.selectedCompany()) {
-        this.initData();
+      if (Array.isArray(result)) {
+        this.allGeneralAccountNames.set(result);
+        if (this.stateService.selectedCompany()) {
+          this.initData();
+        }
+      } else {
+        console.log("Invalid response", result)
       }
+
     })
   }
 
@@ -65,11 +70,13 @@ export class FinancialStateService {
     let queryOptions = {
       filter: `company = "${this.stateService.selectedCompany()?.id}"`,
     };
-    this.db.execute<AccountsResponse>(Collections.Accounts, {
+    this.db.execute<CompanyAccountsResponse>(Collections.CompanyAccounts, {
       operation: DbOperation.list_search,
       options: queryOptions
     }).then((accounts) => {
-      this.allPlainCompanyAccounts.set(accounts as AccountsResponse[]);
-    });
+      this.allPlainCompanyAccounts.set(accounts as CompanyAccountsResponse[]);
+    }).catch(error => {
+      console.log(error, queryOptions)
+    })
   }
 }

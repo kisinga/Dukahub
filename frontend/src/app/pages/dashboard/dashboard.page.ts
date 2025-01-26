@@ -20,10 +20,9 @@ import {
 import { FileOptions } from "pocketbase";
 import { OpenClose } from "../../../types/main";
 import {
-  CompaniesResponse,
-  UsersResponse,
+  AdminsResponse,
+  CompaniesResponse
 } from "../../../types/pocketbase-types";
-import { TruncatePipe } from "../../pipes/truncate.pipe";
 import { AppStateService } from "../../services/app-state.service";
 import { DbService } from "../../services/db.service";
 import { OpenCloseStateService } from "../../services/open-close-state.service";
@@ -35,8 +34,7 @@ import { OpenCloseStateService } from "../../services/open-close-state.service";
     RouterOutlet,
     FormsModule,
     ReactiveFormsModule,
-    RouterLinkActive,
-    TruncatePipe,
+    RouterLinkActive
   ],
   templateUrl: "./dashboard.page.html",
   styleUrl: "./dashboard.page.css",
@@ -46,7 +44,7 @@ export class DashboardPage implements OnInit {
   loadingUser: Signal<boolean>;
   selectedCompanyIndex: Signal<number>;
   companies: Signal<CompaniesResponse[]>;
-  user: (UsersResponse & { avatarURL?: string }) | undefined;
+  user: (AdminsResponse & { avatarURL?: string }) | undefined;
   dateString = "";
   openCloseState: Signal<OpenClose>;
   @ViewChild("dropdownContainer") dropdownContainer!: ElementRef;
