@@ -48,50 +48,28 @@ export class FinancialStateService {
     this.refreshData();
   }
 
-  async handleOperation<T>(operation: Promise<T> | Promise<Array<T>> | Promise<boolean> | Error) {
-    // Handle synchronous errors
-    if (operation instanceof Error) {
-      console.error(operation.message);
-      return operation; // Return the Error instead of null
-    }
 
-    // Handle asynchronous operations
-    try {
-      return await operation;
-    } catch (error) {
-      console.error('Operation failed:', error);
-      return error instanceof Error ? error : new Error(String(error));
-    }
-  }
 
-  async refreshData() {
-
-    const result = await this.handleOperation<AccountTypesResponse>(
-      this.db.perform<AccountTypesResponse>(DbOperation.list_search, Collections.AccountTypes)
-    );
-
-    if (result) {
+  refreshData() {
+    this.db.execute<AccountTypesResponse>(Collections.AccountTypes, {
+      operation: DbOperation.list_search,
+    }).then(result => {
       this.allGeneralAccountNames.set(result as AccountTypesResponse[]);
       if (this.stateService.selectedCompany()) {
         this.initData();
       }
-    }
-
-    // this.db.fetchAccountTypes().then((accountNames) => {
-    //   this.allGeneralAccountNames.set(accountNames);
-    //   if (this.stateService.selectedCompany()) {
-    //     this.initData();
-    //   }
-    // });
+    })
   }
 
   initData() {
     let queryOptions = {
       filter: `company = "${this.stateService.selectedCompany()?.id}"`,
     };
-
-    this.db.fetchAccounts(queryOptions).then((accounts) => {
-      this.allPlainCompanyAccounts.set(accounts);
+    this.db.execute<AccountsResponse>(Collections.Accounts, {
+      operation: DbOperation.list_search,
+      options: queryOptions
+    }).then((accounts) => {
+      this.allPlainCompanyAccounts.set(accounts as AccountsResponse[]);
     });
   }
 }

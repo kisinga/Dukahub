@@ -1,13 +1,10 @@
 import { Injectable } from "@angular/core";
 import PocketBase, { FileOptions, RecordFullListOptions } from "pocketbase";
-import { DbOperation } from "../../types/main";
+import { BaseRecord, DbOperation, OperationParams } from "../../types/main";
 import {
   Collections,
-  CompaniesRecord,
-  DailyFinancialsRecord,
   DailyFinancialsResponse,
-  TypedPocketBase,
-  UsersResponse,
+  TypedPocketBase
 } from "../../types/pocketbase-types";
 
 @Injectable({
@@ -22,20 +19,12 @@ export class DbService {
     return this.pb.authStore;
   }
 
-  async fetchExpandUser(userID: string) {
-    return await this.pb
-      .collection("users")
-      .getOne<UsersResponse<CompaniesRecord>>(userID, {
-        expand: "company",
-      });
-  }
-
   async toggleDayOperationState(data: any) {
     return this.pb.send("/daily_financials", data);
   }
 
   login(email: string, password: string) {
-    return this.pb.collection("admins").authWithPassword(email, password, {
+    return this.pb.collection(Collections.Admins).authWithPassword(email, password, {
       expand: "company",
     });
   }
@@ -44,116 +33,153 @@ export class DbService {
     this.pb.authStore.clear();
   }
 
-  perform<T>(operation: DbOperation, collection: Collections, bodyParams?: { [key: string]: any; } | FormData, options?: RecordFullListOptions): Promise<T> | Promise<Array<T>> | Promise<boolean> | Error {
-    switch (operation) {
+  async execute<T extends BaseRecord>(
+    collection: Collections,
+    params: OperationParams<T>
+  ): Promise<T | T[]> {
+    switch (params.operation) {
       case DbOperation.list_search:
-        return this.pb.collection(collection).getFullList<T>(options);
+        const records = await this.pb.collection(collection)
+          .getFullList<T>(params.options);
+        return records;
 
       case DbOperation.view:
-        if (!bodyParams) return new Error("Missing record ID");
-        const viewId = bodyParams instanceof FormData
-          ? bodyParams.get('id')?.toString()
-          : bodyParams?.["id"];
-        if (!viewId) return new Error("Missing record ID");
-        return this.pb.collection(collection).getOne<T>(viewId);
+        const singleRecord = await this.pb.collection(collection)
+          .getOne<T>(params.id);
+        return singleRecord;
 
       case DbOperation.create:
-        if (!bodyParams) return new Error("Missing creation data");
-        return this.pb.collection(collection).create<T>(bodyParams);
+        // Handle FormData and regular objects differently
+        const createData = params.createparams instanceof FormData
+          ? params.createparams
+          : params.createparams as T;
+        const newRecord = await this.pb.collection(collection)
+          .create<T>(createData);
+        return newRecord;
 
       case DbOperation.update:
-        if (!bodyParams) return new Error("Missing update data");
-        let updateId: string;
-        let updateData: any;
-        if (bodyParams instanceof FormData) {
-          updateId = bodyParams.get('id')?.toString() || '';
-          bodyParams.delete('id');
-          updateData = bodyParams;
-        } else {
-          const { id, ...rest } = bodyParams;
-          updateId = id;
-          updateData = rest;
-        }
-        if (!updateId) return new Error("Missing record ID");
-        return this.pb.collection(collection).update<T>(updateId, updateData);
+        const updatedRecord = await this.pb.collection(collection)
+          .update<T>(params.updateParams.id, params.updateParams.data);
+        return updatedRecord;
 
       case DbOperation.delete:
-        if (!bodyParams) return new Error("Missing record ID");
-        const deleteId = bodyParams instanceof FormData
-          ? bodyParams.get('id')?.toString()
-          : bodyParams?.["id"];
-        if (!deleteId) return new Error("Missing record ID");
-        return this.pb.collection(collection).delete(deleteId);
+        await this.pb.collection(collection)
+          .delete(params.id);
+        return [];
 
       case DbOperation.batch_op:
-        return new Error("Batch operations not implemented");
+        throw new Error("Not fully implemented")
 
+      // // Validate batch parameters
+      // if (!Array.isArray(params.ids)) {
+      //   throw new Error('Batch operation requires array of IDs');
+      // }
+
+      // // Explicit type annotation for IDs
+      // const stringIds = params.ids.filter((id: unknown): id is string =>
+      //   typeof id === 'string'
+      // );
+
+      // if (stringIds.length !== params.ids.length) {
+      //   return { error: new Error('All batch IDs must be strings') };
+      // }
+
+      // // Handle different batch types
+      // switch (params.batchTypes) {
+      //   case batchTypes.delete:
+      //     const deleteResults = await Promise.all(
+      //       stringIds.map(async (id: string) => {
+      //         await this.pb.collection(collection).delete(id);
+      //         return id;
+      //       })
+      //     );
+      //     // return { data: deleteResults as T[] };
+      //     throw new Error("Not fully implemented")
+
+      //   case batchTypes.update:
+      //     throw new Error("Not fully implemented")
+
+      //   if (!params.data) {
+      //     return { error: new Error('Batch update requires data') };
+      //   }
+      //   const updateResults = await Promise.all(
+      //     stringIds.map(async (id: string) => {
+      //       return this.pb.collection(collection).update<T>(id, params.data!);
+      //     })
+      //   );
+      //   return { data: updateResults };
+
+      // default:
+      //   return { error: new Error('Unsupported batch operation type') };
+      // }
       default:
-        return new Error("Invalid operation");
+        throw new Error('Invalid operation');
     }
+
   }
 
-  async fetchProducts(options?: RecordFullListOptions) {
-    return await this.pb.collection("products").getFullList(options);
-  }
 
-  async fetchProduct(productID: string) {
-    return await this.pb.collection("products").getOne(productID);
-  }
+  // async fetchProducts(options?: RecordFullListOptions) {
+  //   return await this.pb.collection("products").getFullList(options);
+  // }
 
-  async createProduct(product: any) {
-    return await this.pb.collection("products").create(product);
-  }
+  // async fetchProduct(productID: string) {
+  //   return await this.pb.collection("products").getOne(productID);
+  // }
 
-  async updateProduct(productID: string, product: any) {
-    return await this.pb.collection("products").update(productID, product);
-  }
+  // async createProduct(product: any) {
+  //   return await this.pb.collection("products").create(product);
+  // }
 
-  async deleteProduct(productID: string) {
-    return await this.pb.collection("products").delete(productID);
-  }
+  // async updateProduct(productID: string, product: any) {
+  //   return await this.pb.collection("products").update(productID, product);
+  // }
 
-  async fetchSkus(options?: RecordFullListOptions) {
-    return await this.pb.collection("skus").getFullList(options);
-  }
+  // async deleteProduct(productID: string) {
+  //   return await this.pb.collection("products").delete(productID);
+  // }
 
-  async fetchDailyStocks(options?: RecordFullListOptions) {
-    return await this.pb.collection("daily_stocks").getFullList(options);
-  }
+  // async fetchSkus(options?: RecordFullListOptions) {
+  //   return await this.pb.collection("skus").getFullList(options);
+  // }
 
-  async updateDailyStock(recordID: string, record: any) {
-    return await this.pb.collection("daily_stocks").update(recordID, record);
-  }
+  // async fetchDailyStocks(options?: RecordFullListOptions) {
+  //   return await this.pb.collection("daily_stocks").getFullList(options);
+  // }
 
-  async fetchDailyFinancialRecords(options?: RecordFullListOptions) {
-    return await this.pb.collection("daily_financials").getFullList(options);
-  }
+  // async updateDailyStock(recordID: string, record: any) {
+  //   return await this.pb.collection("daily_stocks").update(recordID, record);
+  // }
 
-  async updateDailyFinancialRecord(
-    recordID: string,
-    record: DailyFinancialsRecord,
-  ) {
-    // console.log('RecordID:', recordID, 'Record:', record);
-    return await this.pb
-      .collection("daily_financials")
-      .update(recordID, record);
-  }
+  // async fetchDailyFinancialRecords(options?: RecordFullListOptions) {
+  //   return await this.pb.collection("daily_financials").getFullList(options);
+  // }
 
-  async createDailyFinancialRecord(record: DailyFinancialsRecord) {
-    return await this.pb.collection("daily_financials").create(record);
-  }
+  // async updateDailyFinancialRecord(
+  //   recordID: string,
+  //   record: DailyFinancialsRecord,
+  // ) {
+  //   // console.log('RecordID:', recordID, 'Record:', record);
+  //   return await this.pb
+  //     .collection("daily_financials")
+  //     .update(recordID, record);
+  // }
 
-  async fetchAccountTypes() {
-    return await this.pb.collection("account_types").getFullList();
-  }
+  // async createDailyFinancialRecord(record: DailyFinancialsRecord) {
+  //   return await this.pb.collection("daily_financials").create(record);
+  // }
 
-  async fetchAccounts(options?: RecordFullListOptions) {
-    return await this.pb.collection("accounts").getFullList(options);
-  }
+  // async fetchAccountTypes() {
+  //   return await this.pb.collection("account_types").getFullList();
+  // }
 
-  async fetchUserCompanies() {
-    return await this.pb.collection("companies").getFullList();
-  }
+  // async fetchAccounts(options?: RecordFullListOptions) {
+  //   return await this.pb.collection("accounts").getFullList(options);
+  // }
+
+  // async fetchUserCompanies() {
+  //   return await this.pb.collection("companies").getFullList();
+  // }
 
   // helper function exposing the built-in PocketBase function to generate URLs for files
   // since pb is private

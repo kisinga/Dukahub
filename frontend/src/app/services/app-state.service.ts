@@ -1,5 +1,7 @@
 import { computed, effect, Inject, Injectable, signal } from "@angular/core";
+import { DbOperation } from "../../types/main";
 import {
+  Collections,
   CompaniesResponse,
   DailyFinancialsResponse,
   UsersResponse
@@ -57,25 +59,33 @@ export class AppStateService {
 
   setup() {
     console.log("Setting up");
-    this.db.fetchUserCompanies().then((company) => {
-      this.userCompanies.set(company);
+
+    this.db.execute<CompaniesResponse>(Collections.Companies, {
+      operation: DbOperation.list_search,
+    }).then((response) => {
+      if (!Array.isArray(response)) {
+        console.log("Invalid response")
+        return
+      }
+
+      this.userCompanies.set(response);
       if (this.user()) {
         if (this.urlCompany() !== "") {
           // make sure the company exists in the list of companies
-          let co = company.find((c) => c.id === this.urlCompany());
+          let co = response.find((c) => c.id === this.urlCompany());
           if (co) {
             this.selectedCompanyIndex.set(
-              company.findIndex((c) => c.id === this.urlCompany()),
+              response.findIndex((c) => c.id === this.urlCompany()),
             );
           } else {
             console.log("provided Company not found");
             this.selectedCompanyIndex.set(
-              company.findIndex((c) => c.id === this.user()!!.defaultCompany),
+              response.findIndex((c) => c.id === this.user()!!.defaultCompany),
             );
           }
         } else {
           this.selectedCompanyIndex.set(
-            company.findIndex((c) => c.id === this.user()!!.defaultCompany),
+            response.findIndex((c) => c.id === this.user()!!.defaultCompany),
           );
         }
       }
@@ -86,7 +96,7 @@ export class AppStateService {
     this.selectedCompanyIndex.set(index);
   }
 
-  async fetchWeeklySales(
+  fetchWeeklySales(
     companyID: string,
   ): Promise<DailyFinancialsResponse[]> {
     // use the date today to fetch independent sales arrays for the week
@@ -103,8 +113,17 @@ export class AppStateService {
       && created <= "${sundayUTC}"
       && company = "${companyID}"`,
     };
-    let sales = await this.db.fetchWeeklySales(options);
+    return this.db.execute<DailyFinancialsResponse>(Collections.DailyFinancials, {
+      operation: DbOperation.list_search,
+      options: options
+    }).then(sales => {
+      if (Array.isArray(sales)) {
+        return sales;
+      } else {
+        console.log("Invalid response:", sales)
+        return []
+      }
+    })
 
-    return sales;
   }
 }

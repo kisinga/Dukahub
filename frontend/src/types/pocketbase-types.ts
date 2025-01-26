@@ -20,7 +20,7 @@ export enum Collections {
   Sales = "sales",
   Skus = "skus",
   Transactions = "transactions",
-  Users = "users",
+  Admins = "admins",
 }
 
 // Alias types for improved usability

@@ -1,6 +1,6 @@
 import { computed, effect, Inject, Injectable, signal } from '@angular/core';
-import { MergedProductWithSKUs } from '../../types/main';
-import { ProductsResponse, SkusResponse } from '../../types/pocketbase-types';
+import { DbOperation, MergedProductWithSKUs } from '../../types/main';
+import { Collections, ProductsResponse, SkusResponse } from '../../types/pocketbase-types';
 import { AppStateService } from './app-state.service';
 import { DbService } from './db.service';
 
@@ -45,11 +45,21 @@ export class ProductsStateService {
     let queryOptions = {
       filter: 'company = ' + companyID,
     };
-    const productsData = await this.db.fetchProducts(queryOptions);
-    console.log(productsData);
-    const skuData = await this.db.fetchSkus();
-    console.log(skuData);
-    this.products.set(productsData);
-    this.SKUs.set(skuData);
+
+    const productsData = await this.db.execute<ProductsResponse>(Collections.Products, {
+      operation: DbOperation.list_search,
+      options: queryOptions
+    })
+
+    const skuData = await this.db.execute<SkusResponse>(Collections.Products, {
+      operation: DbOperation.list_search,
+    })
+    if (Array.isArray(productsData) && Array.isArray(skuData)) {
+      this.products.set(productsData);
+      this.SKUs.set(skuData);
+    } else {
+      console.log("Invalid response")
+    }
+
   }
 }
