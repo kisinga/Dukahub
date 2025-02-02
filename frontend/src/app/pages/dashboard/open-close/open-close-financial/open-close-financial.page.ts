@@ -55,6 +55,8 @@ export class OpenCloseFinancialPage implements OnInit {
 
     this.openCloseState = this.openCloseStateService.openCloseState;
 
+
+
     effect(() => {
       const accounts = this.financialStateService.mergedCompanyAccounts();
       accounts.forEach(account => {
@@ -82,8 +84,7 @@ export class OpenCloseFinancialPage implements OnInit {
     return this.db.generateURL(account, account.icons[iconID]);
   }
 
-  async onSubmit(): Promise<void> {
-    console.log("Submitting financial data");
+  async onSubmit() {
     this.accountBalances.emit(this.localaccountBalances);
   }
 

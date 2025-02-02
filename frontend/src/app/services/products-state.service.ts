@@ -15,8 +15,7 @@ export class ProductsStateService {
     if (this.SKUs().length > 0 && this.products().length > 0) {
       return this.products().map((product) => {
         // for every product, get the skus that match the product skus array
-        let skus = this.SKUs().filter((sku) => product.skus.includes(sku.id));
-
+        let skus = this.SKUs().filter((sku) => product.skus.includes(sku.id))
         return {
           ...product,
           skusArray: skus,
@@ -43,7 +42,7 @@ export class ProductsStateService {
   async initData(companyID: string) {
     console.log('init data', companyID);
     let queryOptions = {
-      filter: 'company = ' + companyID,
+      filter: `company = "${companyID}"`,
     };
 
     const productsData = await this.db.execute<ProductsResponse>(Collections.Products, {
@@ -51,10 +50,13 @@ export class ProductsStateService {
       options: queryOptions
     })
 
-    const skuData = await this.db.execute<SkusResponse>(Collections.Products, {
+    const skuData = await this.db.execute<SkusResponse>(Collections.Skus, {
       operation: DbOperation.list_search,
     })
+
     if (Array.isArray(productsData) && Array.isArray(skuData)) {
+      console.log("Products and SKUs data received", productsData, skuData)
+
       this.products.set(productsData);
       this.SKUs.set(skuData);
     } else {

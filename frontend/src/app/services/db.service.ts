@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import PocketBase, { FileOptions } from "pocketbase";
-import { BaseRecord, DbOperation, OperationParams } from "../../types/main";
+import { BaseRecord, BatchOp, BatchOperationType, DbOperation, OperationParams } from "../../types/main";
 import {
   Collections,
   TypedPocketBase
@@ -36,7 +36,7 @@ export class DbService {
   async execute<T extends BaseRecord>(
     collection: Collections,
     params: OperationParams<T>
-  ): Promise<T | T[]> {
+  ): Promise<T | T[] | BatchService> {
     switch (params.operation) {
       case DbOperation.list_search:
         const records = await this.pb.collection(collection)
@@ -67,51 +67,10 @@ export class DbService {
           .delete(params.id);
         return [];
 
-      case DbOperation.batch_op:
-        this.pb.createBatch()
-        throw new Error("Not fully implemented")
-      // // Validate batch parameters
-      // if (!Array.isArray(params.ids)) {
-      //   throw new Error('Batch operation requires array of IDs');
-      // }
+      case DbOperation.batch_service: {
+        return new BatchService(this.pb);
+      }
 
-      // // Explicit type annotation for IDs
-      // const stringIds = params.ids.filter((id: unknown): id is string =>
-      //   typeof id === 'string'
-      // );
-
-      // if (stringIds.length !== params.ids.length) {
-      //   return { error: new Error('All batch IDs must be strings') };
-      // }
-
-      // // Handle different batch types
-      // switch (params.batchTypes) {
-      //   case batchTypes.delete:
-      //     const deleteResults = await Promise.all(
-      //       stringIds.map(async (id: string) => {
-      //         await this.pb.collection(collection).delete(id);
-      //         return id;
-      //       })
-      //     );
-      //     // return { data: deleteResults as T[] };
-      //     throw new Error("Not fully implemented")
-
-      //   case batchTypes.update:
-      //     throw new Error("Not fully implemented")
-
-      //   if (!params.data) {
-      //     return { error: new Error('Batch update requires data') };
-      //   }
-      //   const updateResults = await Promise.all(
-      //     stringIds.map(async (id: string) => {
-      //       return this.pb.collection(collection).update<T>(id, params.data!);
-      //     })
-      //   );
-      //   return { data: updateResults };
-
-      // default:
-      //   return { error: new Error('Unsupported batch operation type') };
-      // }
       default:
         throw new Error('Invalid operation');
     }
@@ -130,4 +89,61 @@ export class DbService {
     return this.pb.files.getURL(record, filename, queryParams);
   }
 
+}
+
+export class BatchService {
+  private ops: BatchOp<any>[] = [];
+  private pb: PocketBase
+
+  constructor(pb: PocketBase) {
+    this.pb = pb;
+  }
+
+  // Add an operation to the batch.
+  add<T extends BaseRecord>(op: BatchOp<T>) {
+    this.ops.push(op);
+  }
+
+  // Send all queued operations. Note: This method hides the underlying
+  // PocketBase batch API and exposes only the result.
+  async send(): Promise<any[]> {
+    // Create a new batch instance (global across collections).
+    const batch = this.pb.createBatch();
+
+    // Queue each operation into the batch.
+    for (const op of this.ops) {
+      switch (op.type) {
+        case BatchOperationType.create: {
+          // For create operations, use the collection from the op.
+          batch.collection(op.collection).create(op.data);
+          break;
+        }
+        case BatchOperationType.update: {
+          batch.collection(op.collection).update(op.id, op.data);
+          break;
+        }
+        case BatchOperationType.delete: {
+          batch.collection(op.collection).delete(op.id);
+          break;
+        }
+        case BatchOperationType.upsert: {
+          if (op.id) {
+            batch.collection(op.collection).update(op.id, op.data);
+          } else {
+            batch.collection(op.collection).create(op.data);
+          }
+          break;
+        }
+        default:
+          throw new Error("Unsupported batch operation type");
+      }
+    }
+
+    // Send the batch of operations.
+    // Note: The JS client uses `send()` instead of `commit()`.
+    const responses = await batch.send();
+    // Clear the queued operations.
+    this.ops = [];
+    return responses;
+  }
 }

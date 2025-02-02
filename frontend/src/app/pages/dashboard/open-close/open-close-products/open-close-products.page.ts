@@ -7,58 +7,65 @@ import {
   EventEmitter,
   Inject,
   Output,
+  signal,
   Signal,
   type OnInit,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
-  MergedProductWithSKUs,
-  ProductSKUBalances,
+  MergedProductWithSKUs
 } from '../../../../../types/main';
-import { ProductsRecord } from '../../../../../types/pocketbase-types';
-import { CustomInputComponent } from '../../../../components/custom-input/custom-input.component';
+import { DailyStockTakesRecord, OpenCloseDetailsStatusOptions, ProductsRecord } from '../../../../../types/pocketbase-types';
+import { AppStateService } from '../../../../services/app-state.service';
 import { DbService } from '../../../../services/db.service';
+import { OpenCloseStateService } from '../../../../services/open-close-state.service';
 import { ProductsStateService } from '../../../../services/products-state.service';
 
 @Component({
   standalone: true,
-  imports: [CustomInputComponent, CommonModule, FormsModule,],
+  imports: [CommonModule, FormsModule],
   selector: 'open-close-products-page',
   templateUrl: './open-close-products.page.html',
   styleUrl: './open-close-products.page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OpenCloseProductsPage implements OnInit {
-  @Output() productSKUBalances = new EventEmitter<ProductSKUBalances>();
+  @Output() dailyStockRecords = new EventEmitter<DailyStockTakesRecord[]>();
 
-  localproductSKUBalances: ProductSKUBalances = {};
+  localpDailyStockRecords: DailyStockTakesRecord[] = [];
   loadingProducts = false;
-  mergedProductWithSKUs: Signal<MergedProductWithSKUs[]>;
+  mergedProductWithSKUs = signal<MergedProductWithSKUs[]>([]);
+  openCloseState: Signal<OpenCloseDetailsStatusOptions>;
 
   constructor(
     @Inject(DbService) private readonly db: DbService,
-    @Inject(ProductsStateService)
-    private readonly productsStateService: ProductsStateService,
+    @Inject(ProductsStateService) private readonly productsStateService: ProductsStateService,
+    @Inject(OpenCloseStateService) private readonly openCloseStateService: OpenCloseStateService,
+    @Inject(AppStateService) private readonly stateService: AppStateService,
     private cdr: ChangeDetectorRef
   ) {
-    this.mergedProductWithSKUs = this.productsStateService.mergeProductsAndSKUs;
-    console.log(this.mergedProductWithSKUs);
+    this.openCloseState = this.openCloseStateService.openCloseState;
+
     effect(() => {
-      const test = this.productsStateService.mergeProductsAndSKUs();
-      console.log(test);
-      this.initData();
-      this.cdr.detectChanges();
-    });
+      const result = this.productsStateService.mergeProductsAndSKUs();
+      result.forEach(product => {
+        this.localpDailyStockRecords.push({
+          product: product.id,
+          sku: product.skusArray[0].id,
+          company: product.company,
+          date: new Date().toISOString(),
+          user: this.stateService.user()?.id!!,
+          id: "",
+          opening_bal: 0,
+          closing_bal: 0
+        });
+      });
+
+      this.mergedProductWithSKUs.set(result);
+    }, { allowSignalWrites: true });
   }
 
-  initData() {
-    for (const product of this.mergedProductWithSKUs()) {
-      this.localproductSKUBalances[product.id] = {};
-      for (const sku of product.skusArray) {
-        this.localproductSKUBalances[product.id][sku.id] = null;
-      }
-    }
-  }
+
 
   generateImageURL(product: ProductsRecord): string {
     return this.db.generateURL(product, product.image);
@@ -66,7 +73,7 @@ export class OpenCloseProductsPage implements OnInit {
   ngOnInit(): void { }
 
   onSubmit() {
-    console.log(this.productSKUBalances);
-    console.log(this.localproductSKUBalances);
+    this.dailyStockRecords.emit(this.localpDailyStockRecords);
   }
 }
+

@@ -8,11 +8,11 @@ import {
   ViewChild,
 } from "@angular/core";
 import {
-  DbOperation,
-  ProductSKUBalances
+  BatchOperationType,
+  DbOperation
 } from "../../../../types/main";
-import { Collections, DailyAccountsRecord, OpenCloseDetailsStatusOptions } from "../../../../types/pocketbase-types";
-import { DbService } from "../../../services/db.service";
+import { Collections, DailyAccountsRecord, DailyStockTakesRecord, OpenCloseDetailsStatusOptions } from "../../../../types/pocketbase-types";
+import { BatchService, DbService } from "../../../services/db.service";
 import { OpenCloseStateService } from "../../../services/open-close-state.service";
 import { ToastService } from "../../../services/toast.service";
 import { OpenCloseFinancialPage } from "./open-close-financial/open-close-financial.page";
@@ -35,8 +35,9 @@ export class OpenCloseComponent {
 
   activePage = 1;
   accountBalances: DailyAccountsRecord[] = [];
-  productSKUBalances: ProductSKUBalances = {};
+  dailyStockRecords: DailyStockTakesRecord[] = [];
   @ViewChild(OpenCloseFinancialPage) openCloseFinancialPage!: OpenCloseFinancialPage;
+  @ViewChild(OpenCloseProductsPage) openCloseProductsPage!: OpenCloseProductsPage;
 
   constructor(
     @Inject(ToastService) private readonly toastService: ToastService,
@@ -64,24 +65,22 @@ export class OpenCloseComponent {
   }
   onFinancialDataReceived(data: DailyAccountsRecord[]) {
     this.accountBalances = data;
-    this.activePage = 2;
     console.log("financial data received::", data);
   }
 
-  onProductDataReceived(data: ProductSKUBalances) {
-    this.productSKUBalances = data;
-    this.activePage = 2;
-    console.log("product data received", data);
+  onProductDataReceived(data: DailyStockTakesRecord[]) {
+    this.dailyStockRecords = data;
+    console.log("product data received::", data);
   }
 
   nextStep() {
-    if (this.activePage < 2) {
+    if (this.activePage == 1) {
       this.openCloseFinancialPage.onSubmit();
-      this.activePage++;
     } else {
-      // this.openCloseProductsPage.onSubmit();
+      this.openCloseProductsPage.onSubmit();
       this.submitAllData();
     }
+    this.activePage++;
   }
 
   previousStep() {
@@ -89,13 +88,36 @@ export class OpenCloseComponent {
       this.activePage--;
     }
   }
-  submitAllData() {
+  async submitAllData() {
     console.log(this.accountBalances);
-    console.log(this.productSKUBalances);
-    this.db.execute(Collections.DailyAccounts, {
-      operation: DbOperation.create,
-      createparams: this.accountBalances,
+    console.log(this.dailyStockRecords);
+
+    const batchOp: BatchService = await this.db.execute(Collections.DailyAccounts, {
+      operation: DbOperation.batch_service,
+    }) as BatchService
+
+
+    this.accountBalances.forEach((account) => {
+      batchOp.add(
+        {
+          collection: Collections.DailyAccounts,
+          type: BatchOperationType.create,
+          data: account
+        }
+      )
     })
+
+    this.dailyStockRecords.forEach((product) => {
+      batchOp.add(
+        {
+          collection: Collections.DailyStockTakes,
+          type: BatchOperationType.create,
+          data: product
+        }
+      )
+    })
+
+    batchOp.send()
       .then((res) => {
         console.log(res);
         this.toastService.show("Data submitted successfully");

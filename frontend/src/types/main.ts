@@ -1,6 +1,7 @@
 import { RecordFullListOptions } from "pocketbase";
 import {
   AccountTypesResponse,
+  Collections,
   CompanyAccountsResponse,
   ProductsResponse,
   SkusResponse
@@ -26,7 +27,7 @@ export enum DbOperation {
   create,
   update,
   delete,
-  batch_op
+  batch_service
 }
 
 export type BaseRecord = Record<string, any>;
@@ -44,26 +45,53 @@ export type OperationParams<T extends BaseRecord> =
   | { operation: DbOperation.create; createparams: createParams }
   | { operation: DbOperation.update; updateParams: updateParams<T> }
   | { operation: DbOperation.delete; id: string }
-  | { operation: DbOperation.batch_op; batchTypes: batchTypes, ids: string[] };
+  | { operation: DbOperation.batch_service; };
 
 type createParams = BaseRecord | FormData
 type updateParams<T> = { id: string; data: Partial<T> | FormData }
 
-export type BatchOperation<T extends BaseRecord> =
-  | {
-    type: 'delete';
-    ids: string[];
-    returns: string[]; // Return deleted IDs
-  }
-  | {
-    type: 'create';
-    items: T[];
-    returns: T[];
-  }
-  | {
-    type: 'update';
-    updates: Array<{ id: string; data: Partial<T> }>;
-    returns: T[];
-  };
+// Types for individual batch operations.
+export enum BatchOperationType {
+  create,
+  update,
+  delete,
+  upsert,
+}
+
+export interface BatchOpCreate<T extends BaseRecord> {
+  collection: Collections;
+  type: BatchOperationType.create;
+  // You might accept FormData as well, if needed.
+  data: T | FormData;
+}
+
+export interface BatchOpUpdate<T extends BaseRecord> {
+  collection: Collections;
+  type: BatchOperationType.update;
+  id: string;
+  data: Partial<T> | FormData;
+}
+
+export interface BatchOpDelete {
+  collection: Collections;
+  type: BatchOperationType.delete;
+  id: string;
+}
+
+export interface BatchOpUpsert<T extends BaseRecord> {
+  collection: Collections;
+  type: BatchOperationType.upsert;
+  // If id exists, perform update; otherwise, create.
+  id?: string;
+  data: Partial<T> | FormData;
+}
+
+export type BatchOp<T extends BaseRecord> =
+  | BatchOpCreate<T>
+  | BatchOpUpdate<T>
+  | BatchOpDelete
+  | BatchOpUpsert<T>;
+
+// The BatchService class.
 
 export type PBRecordData<T extends Record<string, any>> = T | FormData;
