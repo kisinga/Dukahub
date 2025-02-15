@@ -1,5 +1,6 @@
-/data
-/bin
+pb_data/
+*_templ.go
 
-# all vscode go debug binaries
-__debug_bin**
+# the bianry
+
+pocketbase-htmx
