@@ -1,4 +1,4 @@
-module github.com/gobeli/pocketbase-htmx
+module github.com/kisinga/dukahub
 
 go 1.23
 

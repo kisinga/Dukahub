@@ -6,11 +6,8 @@
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "env": {
-        "PUBLIC_FOLDER_PATH": "./frontend/dist/browser"
-      },
       "program": "${workspaceFolder}/main.go",
-      "args": ["serve", "--dir=./data"]
+      "args": ["serve"]
     }
   ]
 }

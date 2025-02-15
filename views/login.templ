@@ -1,0 +1,57 @@
+package views
+
+import "github.com/kisinga/dukahub/models"
+
+templ Login(form models.LoginFormValue, err error) {
+	@BaseLayout() {
+		<div class="hero min-h-screen bg-base-200">
+			<div class="hero-content flex-col lg:flex-row-reverse">
+				<div class="text-center lg:text-left">
+					<h1 class="text-5xl font-bold">Login now!</h1>
+					<p class="py-6">
+						Welcome back! Enter your credentials to access your account.
+					</p>
+				</div>
+				<form id="loginForm" hx-on:submit="loginUser(event)" class="card-body">
+					<div class="form-control">
+						<label class="label" for="email">
+							<span class="label-text">Email</span>
+						</label>
+						<input type="email" id="email" name="email" placeholder="email" class="input input-bordered" required/>
+					</div>
+					<div class="form-control">
+						<label class="label" for="password">
+							<span class="label-text">Password</span>
+						</label>
+						<input type="password" id="password" name="password" placeholder="password" class="input input-bordered" required/>
+					</div>
+					<div class="form-control mt-6">
+						<button type="submit" class="btn btn-primary">Login</button>
+					</div>
+					<div id="error-message" class="alert hidden mt-4"></div>
+				</form>
+			</div>
+		</div>
+		<script type="module">
+            import { DbService } from "./public/pb.js";
+
+            window.loginUser = DbService.loginUser; // Attach to global scope for HTMX
+        </script>
+		<script>
+                // HTMX Event Listeners to Show Login Status
+                document.body.addEventListener("loginSuccess", () => {
+                    const msg = document.getElementById("error-message");
+                    msg.classList.remove("alert-error", "hidden");
+                    msg.classList.add("alert-success");
+                    msg.innerHTML = `<span>Login successful! Redirecting...</span>`;
+                });
+
+                document.body.addEventListener("loginFailed", (event) => {
+                    const msg = document.getElementById("error-message");
+                    msg.classList.remove("alert-success", "hidden");
+                    msg.classList.add("alert-error");
+                    msg.innerHTML = `<span>${event.detail.error}</span>`;
+                });
+        </script>
+	}
+}
