@@ -1,0 +1,121 @@
+package views
+
+templ DashboardLayout() {
+	@BaseLayout() {
+		<style>
+    /* Ensure main content isn’t hidden behind the fixed bottom nav */
+    main {
+      padding-bottom: 70px;
+    }
+  </style>
+		<div class="d-flex flex-column min-vh-100">
+			<!-- Navbar -->
+			<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm py-3">
+				<div class="container-fluid">
+					<!-- Left Section: Company Dropdown & Status Badge -->
+					<div class="d-flex align-items-center">
+						<!-- Company Dropdown -->
+						<div class="dropdown me-3">
+							<button
+								class="btn btn-light rounded-circle p-0"
+								type="button"
+								id="companyDropdown"
+								data-bs-toggle="dropdown"
+								aria-expanded="false"
+								style="width: 40px; height: 40px;"
+							>
+								<img
+									src="https://static.vecteezy.com/system/resources/previews/006/487/917/non_2x/man-avatar-icon-free-vector.jpg"
+									alt="Company Logo"
+									class="rounded-circle"
+									style="width: 100%; height: 100%;"
+								/>
+							</button>
+							<ul class="dropdown-menu" aria-labelledby="companyDropdown" style="max-height: 80vh; overflow-y: auto;">
+								<li><a class="dropdown-item text-truncate" href="#">Company 1</a></li>
+								<li><a class="dropdown-item text-truncate" href="#">Company 2</a></li>
+								<li><a class="dropdown-item text-truncate" href="#">Company 3</a></li>
+							</ul>
+						</div>
+						<!-- Status Badge -->
+						<a href="#" class="text-decoration-none">
+							<span class="badge bg-success rounded-pill fs-6">OPEN</span>
+						</a>
+					</div>
+					<!-- Center Section: Desktop Nav (Visible on lg and up) -->
+					<div class="collapse navbar-collapse justify-content-center d-none d-lg-block">
+						<ul class="navbar-nav">
+							<li class="nav-item mx-2">
+								<a class="nav-link" href="#">Transactions</a>
+							</li>
+							<li class="nav-item mx-2">
+								<a class="nav-link" href="#">Home</a>
+							</li>
+							<li class="nav-item mx-2">
+								<a class="nav-link" href="#">Stock</a>
+							</li>
+						</ul>
+					</div>
+					<!-- Right Section: User Dropdown -->
+					<div class="dropdown">
+						<button
+							class="btn btn-light rounded-circle p-0"
+							type="button"
+							id="userDropdown"
+							data-bs-toggle="dropdown"
+							aria-expanded="false"
+							style="width: 32px; height: 32px;"
+						>
+							<img
+								src="https://static.vecteezy.com/system/resources/previews/006/487/917/non_2x/man-avatar-icon-free-vector.jpg"
+								alt="User Avatar"
+								class="rounded-circle"
+								style="width: 100%; height: 100%;"
+							/>
+						</button>
+						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+							<li><a class="dropdown-item" href="#">Profile</a></li>
+							<li><a class="dropdown-item" href="#">Company Settings</a></li>
+							<li><hr class="dropdown-divider"/></li>
+							<li><a class="dropdown-item" href="#">Logout</a></li>
+						</ul>
+					</div>
+				</div>
+			</nav>
+			<!-- Main Content Area -->
+			<main class="flex-grow-1 overflow-auto p-4">
+				<div class="container">
+					<h1 class="mb-4">Dashboard</h1>
+					<p>Welcome to your sleek, minimalistic dashboard. Enjoy your content and stay productive!</p>
+					{ children... }
+				</div>
+			</main>
+			<!-- Bottom Navigation (Mobile Only) -->
+			<div class="d-lg-none fixed-bottom bg-white shadow-sm d-flex justify-content-around align-items-center py-2">
+				<!-- Partners -->
+				<a href="#" class="text-center text-primary">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="mb-1" viewBox="0 0 24 24">
+						<path fill-rule="evenodd" d="M11.622 1.602a.75.75 0 0 1 .756 0l2.25 1.313a.75.75 0 0 1-.756 1.295L12 3.118 10.128 4.21a.75.75 0 1 1-.756-1.295l2.25-1.313ZM5.898 5.81a.75.75 0 0 1-.27 1.025l-1.14.665 1.14.665a.75.75 0 1 1-.756 1.295L3.75 8.806v.944a.75.75 0 0 1-1.5 0V7.5a.75.75 0 0 1 .372-.648l2.25-1.312a.75.75 0 0 1 1.026.27Zm12.204 0a.75.75 0 0 1 1.026-.27l2.25 1.312a.75.75 0 0 1 .372.648v2.25a.75.75 0 0 1-1.5 0v-.944l-1.122.654a.75.75 0 1 1-.756-1.295l1.14-.665-1.14-.665a.75.75 0 0 1-.27-1.025Zm-9 5.25a.75.75 0 0 1 1.026-.27L12 11.882l1.872-1.092a.75.75 0 1 1 .756 1.295l-1.878 1.096V15a.75.75 0 0 1-1.5 0v-1.82l-1.878-1.095a.75.75 0 0 1-.27-1.025ZM3 13.5a.75.75 0 0 1 .75.75v1.82l1.878 1.095a.75.75 0 1 1-.756 1.295l-2.25-1.312a.75.75 0 0 1-.372-.648v-2.25A.75.75 0 0 1 3 13.5Zm18 0a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-.372.648l-2.25 1.312a.75.75 0 1 1-.756-1.295l1.878-1.096V14.25a.75.75 0 0 1 .75-.75Zm-9 5.25a.75.75 0 0 1 .75.75v.944l1.122-.654a.75.75 0 1 1 .756 1.295l-2.25 1.313a.75.75 0 0 1-.756 0l-2.25-1.313a.75.75 0 1 1 .756-1.295l1.122.654V19.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd"></path>
+					</svg>
+					<span class="small d-block">Partners</span>
+				</a>
+				<!-- Home -->
+				<a href="#" class="text-center text-primary">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="mb-1" viewBox="0 0 24 24">
+						<path d="M5.223 2.25c-.497 0-.974.198-1.325.55l-1.3 1.298A3.75 3.75 0 0 0 7.5 9.75c.627.47 1.406.75 2.25.75.844 0 1.624-.28 2.25-.75.626.47 1.406.75 2.25.75.844 0 1.623-.28 2.25-.75a3.75 3.75 0 0 0 4.902-5.652l-1.3-1.299a1.875 1.875 0 0 0-1.325-.549H5.223Z"></path>
+						<path fill-rule="evenodd" d="M3 20.25v-8.755c1.42.674 3.08.673 4.5 0A5.234 5.234 0 0 0 9.75 12c.804 0 1.568-.182 2.25-.506a5.234 5.234 0 0 0 2.25.506c.804 0 1.567-.182 2.25-.506 1.42.674 3.08.675 4.5.001v8.755h.75a.75.75 0 0 1 0 1.5H2.25a.75.75 0 0 1 0-1.5H3Zm3-6a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75v3a.75.75 0 0 1-.75.75h-3a.75.75 0 0 1-.75-.75v-3Zm8.25-.75a.75.75 0 0 0-.75.75v5.25c0 .414.336.75.75.75h3a.75.75 0 0 0 .75-.75v-5.25a.75.75 0 0 0-.75-.75h-3Z" clip-rule="evenodd"></path>
+					</svg>
+					<span class="small d-block">Home</span>
+				</a>
+				<!-- Stock -->
+				<a href="#" class="text-center text-primary">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="mb-1" viewBox="0 0 24 24">
+						<path fill-rule="evenodd" d="M7.502 6h7.128A3.375 3.375 0 0 1 18 9.375v9.375a3 3 0 0 0 3-3V6.108c0-1.505-1.125-2.811-2.664-2.94a48.972 48.972 0 0 0-.673-.05A3 3 0 0 0 15 1.5h-1.5a3 3 0 0 0-2.663 1.618c-.225.015-.45.032-.673.05C8.662 3.295 7.554 4.542 7.502 6ZM13.5 3A1.5 1.5 0 0 0 12 4.5h4.5A1.5 1.5 0 0 0 15 3h-1.5Z" clip-rule="evenodd"></path>
+						<path fill-rule="evenodd" d="M3 9.375C3 8.339 3.84 7.5 4.875 7.5h9.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-9.75A1.875 1.875 0 0 1 3 20.625V9.375ZM6 12a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V12Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 15a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V15Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 18a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V18Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd"></path>
+					</svg>
+					<span class="small d-block">Stock</span>
+				</a>
+			</div>
+		</div>
+	}
+}

@@ -24,6 +24,11 @@ func main() {
 		se.Router.GET("/", func(c *core.RequestEvent) error {
 			return lib.Render(c, views.BaseLayout())
 		})
+
+		se.Router.GET("/dashboard", func(c *core.RequestEvent) error {
+			return lib.Render(c, views.DashboardLayout())
+		})
+
 		se.Router.GET("/login", func(c *core.RequestEvent) error {
 			return lib.Render(c, views.Login(models.LoginFormValue{}, nil))
 		})
