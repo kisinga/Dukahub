@@ -30,17 +30,19 @@ templ Login(form models.LoginFormValue, err error) {
 									<div style="width: 60px; height: 60px; background: linear-gradient(45deg, #6a11cb, #2575fc); border-radius: 50%; margin: 0 auto 10px auto;"></div>
 									<h3 style="font-weight: bold; color: #333;">Welcome Back</h3>
 								</div>
-								<form hx-on:submit="loginUser(event)">
+								<form id="loginForm" hx-on:submit="loginUser(event)">
 									<div class="mb-3">
 										<label for="email" class="form-label" style="font-weight: 500; color: #555;">Email address</label>
 										<input
 											type="email"
 											id="email"
+											name="email"
 											placeholder="Enter email"
 											class="form-control rounded-pill"
 											style="box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);"
 											onfocus="this.style.boxShadow='0 0 5px rgba(81, 203, 238, 1)'"
 											onblur="this.style.boxShadow='inset 0 1px 3px rgba(0,0,0,0.1)'"
+											required
 										/>
 									</div>
 									<div class="mb-3">
@@ -48,11 +50,13 @@ templ Login(form models.LoginFormValue, err error) {
 										<input
 											type="password"
 											id="password"
+											name="password"
 											placeholder="Password"
 											class="form-control rounded-pill"
 											style="box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);"
 											onfocus="this.style.boxShadow='0 0 5px rgba(81, 203, 238, 1)'"
 											onblur="this.style.boxShadow='inset 0 1px 3px rgba(0,0,0,0.1)'"
+											required
 										/>
 									</div>
 									<div class="d-grid mb-3">
@@ -64,6 +68,7 @@ templ Login(form models.LoginFormValue, err error) {
 											Login
 										</button>
 									</div>
+									<div id="error-message" class="alert d-none" style="padding: 0.5rem; border-radius: 5px;"></div>
 									<div class="text-center">
 										<a href="#" style="font-size: 0.9rem; color: #6a11cb; text-decoration: none;">Forgot password?</a>
 									</div>
@@ -84,7 +89,7 @@ templ Login(form models.LoginFormValue, err error) {
                 // HTMX Event Listeners to Show Login Status
                 document.body.addEventListener("loginSuccess", () => {
                     const msg = document.getElementById("error-message");
-                    msg.classList.remove("alert-error", "d-none");
+                    msg.classList.remove("alert-danger", "d-none");
                     msg.classList.add("alert-success");
                     msg.innerHTML = `<span>Login successful! Redirecting...</span>`;
                 });
@@ -92,7 +97,7 @@ templ Login(form models.LoginFormValue, err error) {
                 document.body.addEventListener("loginFailed", (event) => {
                     const msg = document.getElementById("error-message");
                     msg.classList.remove("alert-success", "d-none");
-                    msg.classList.add("alert-error");
+                    msg.classList.add("alert-danger");
                     msg.innerHTML = `<span>${event.detail.error}</span>`;
                 });
         </script>

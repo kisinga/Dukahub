@@ -33,7 +33,8 @@ export const DbService = {
     const formData = new FormData(event.target);
     const email = formData.get("email");
     const password = formData.get("password");
-
+    console.log(email, password);
+    console.log("Form Data Entries:", [...formData.entries()]);
     try {
       const authData = await pb
         .collection("admins")
@@ -43,7 +44,7 @@ export const DbService = {
       // Update UI via HTMX
       htmx.trigger("#error-message", "loginSuccess", { success: true });
 
-      setTimeout(() => (window.location.href = "/dashboard"), 500);
+      // setTimeout(() => (window.location.href = "/dashboard"), 500);
     } catch (error) {
       htmx.trigger("#error-message", "loginFailed", { error: error.message });
     }
