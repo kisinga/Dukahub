@@ -6,7 +6,7 @@ import (
 
 	"github.com/kisinga/dukahub/lib"
 	"github.com/kisinga/dukahub/models"
-	"github.com/kisinga/dukahub/views"
+	"github.com/kisinga/dukahub/views/pages"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -22,15 +22,15 @@ func main() {
 		se.Router.GET("/public/{path...}", apis.Static(os.DirFS("public"), false))
 
 		se.Router.GET("/", func(c *core.RequestEvent) error {
-			return lib.Render(c, views.BaseLayout())
+			return lib.Render(c, pages.Home())
 		})
 
 		se.Router.GET("/dashboard", func(c *core.RequestEvent) error {
-			return lib.Render(c, views.DashboardLayout())
+			return lib.Render(c, pages.Dashboard())
 		})
 
 		se.Router.GET("/login", func(c *core.RequestEvent) error {
-			return lib.Render(c, views.Login(models.LoginFormValue{}, nil))
+			return lib.Render(c, pages.Login(models.LoginFormValue{}, nil))
 		})
 
 		return se.Next()

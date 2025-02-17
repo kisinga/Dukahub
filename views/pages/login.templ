@@ -1,6 +1,9 @@
-package views
+package pages
 
-import "github.com/kisinga/dukahub/models"
+import (
+	"github.com/kisinga/dukahub/models"
+	"github.com/kisinga/dukahub/views/layouts"
+)
 
 templ Login(form models.LoginFormValue, err error) {
 	<style>
@@ -14,7 +17,7 @@ templ Login(form models.LoginFormValue, err error) {
       transition: all 0.3s ease;
     }
   </style>
-	@BaseLayout() {
+	@layouts.BaseLayout() {
 		<div style="min-height: 100vh; background: linear-gradient(135deg, #f6f9fc, #e9eff5); display: flex; align-items: center; justify-content: center;">
 			<div class="container">
 				<div class="row justify-content-center">
