@@ -5,6 +5,10 @@ import "github.com/kisinga/dukahub/views/layouts"
 templ Dashboard() {
 	@layouts.BaseLayout() {
 		@layouts.DashboardLayout() {
+			<script type="module">
+				import { DbService } from "./public/pb.js";
+				const timeoutId = DbService.scheduleTokenRefresh();
+			</script>
 		}
 	}
 }

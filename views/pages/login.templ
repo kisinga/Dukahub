@@ -83,7 +83,7 @@ templ Login(form models.LoginFormValue, err error) {
 		<script type="module">
             import { DbService } from "./public/pb.js";
 
-            window.loginUser = DbService.loginUser; // Attach to global scope for HTMX
+            window.loginUser = DbService.loginUser;
         </script>
 		<script>
                 // HTMX Event Listeners to Show Login Status
