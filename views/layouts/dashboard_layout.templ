@@ -1,13 +1,15 @@
 package layouts
 
-templ DashboardLayout() {
+import "github.com/kisinga/dukahub/models"
+
+templ DashboardLayout(admin *models.Admins) {
 	@BaseLayout() {
 		<style>
     /* Ensure main content isn’t hidden behind the fixed bottom nav */
-    main {
-      padding-bottom: 70px;
-    }
-  </style>
+			main {
+			padding-bottom: 70px;
+			}
+		</style>
 		<div class="d-flex flex-column min-vh-100">
 			<!-- Navbar -->
 			<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm py-3">
@@ -85,7 +87,7 @@ templ DashboardLayout() {
 			<!-- Main Content Area -->
 			<main class="flex-grow-1 overflow-auto p-4">
 				<div class="container">
-					<h1 class="mb-4">Dashboard</h1>
+					<h1 class="mb-4">{ admin.Name() }</h1>
 					<p>Welcome to your sleek, minimalistic dashboard. Enjoy your content and stay productive!</p>
 					{ children... }
 				</div>

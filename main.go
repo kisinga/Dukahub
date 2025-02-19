@@ -17,8 +17,9 @@ const AuthCookieName = "Auth"
 
 func main() {
 	app := pocketbase.New()
+	helper := &lib.DbHelper{Pb: app}
 
-	app.OnRecordAuthRequest().BindFunc(func(e *core.RecordAuthRequestEvent) error {
+	app.OnRecordAuthRequest("admins").BindFunc(func(e *core.RecordAuthRequestEvent) error {
 		// Set HTTP-Only Auth Cookie
 		e.RequestEvent.SetCookie(&http.Cookie{
 			Name:     "pb_auth",
@@ -51,19 +52,23 @@ func main() {
 			if err != nil {
 				return e.Redirect(http.StatusFound, "/login")
 			}
-			println("User:", user)
+
+			// Store user ID in request context
+			e.Set("userID", user.Id)
+
 			return e.Next()
 		})
 
 		dashboardGroup.GET("/", func(c *core.RequestEvent) error {
-
-			return lib.Render(c, pages.Dashboard())
+			userID := c.Get("userID")
+			admin, err := helper.FetchAdminsById(userID.(string))
+			if err != nil {
+				return c.Redirect(http.StatusFound, "/login")
+			}
+			return lib.Render(c, pages.Dashboard(admin))
 		})
 
 		se.Router.GET("/login", func(c *core.RequestEvent) error {
-			// if c.Auth == nil {
-			// 	return c.Redirect(307, "/dashboard")
-			// }
 			return lib.Render(c, pages.Login(models.LoginFormValue{}, nil))
 		})
 
