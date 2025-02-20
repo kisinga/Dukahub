@@ -2,7 +2,7 @@ package layouts
 
 import "github.com/kisinga/dukahub/models"
 
-templ DashboardLayout(admin *models.Admins) {
+templ DashboardLayout(data models.DashboardData) {
 	@BaseLayout() {
 		<style>
     /* Ensure main content isn’t hidden behind the fixed bottom nav */
@@ -27,7 +27,7 @@ templ DashboardLayout(admin *models.Admins) {
 								style="width: 40px; height: 40px;"
 							>
 								<img
-									src="https://static.vecteezy.com/system/resources/previews/006/487/917/non_2x/man-avatar-icon-free-vector.jpg"
+									src={ data.Activecompany.Logo() }
 									alt="Company Logo"
 									class="rounded-circle"
 									style="width: 100%; height: 100%;"
@@ -69,7 +69,7 @@ templ DashboardLayout(admin *models.Admins) {
 							style="width: 32px; height: 32px;"
 						>
 							<img
-								src="https://static.vecteezy.com/system/resources/previews/006/487/917/non_2x/man-avatar-icon-free-vector.jpg"
+								src={ data.Admin.Avatar() }
 								alt="User Avatar"
 								class="rounded-circle"
 								style="width: 100%; height: 100%;"
@@ -87,7 +87,7 @@ templ DashboardLayout(admin *models.Admins) {
 			<!-- Main Content Area -->
 			<main class="flex-grow-1 overflow-auto p-4">
 				<div class="container">
-					<h1 class="mb-4">{ admin.Name() }</h1>
+					<h1 class="mb-4">{ data.Admin.Name() }</h1>
 					<p>Welcome to your sleek, minimalistic dashboard. Enjoy your content and stay productive!</p>
 					{ children... }
 				</div>

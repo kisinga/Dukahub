@@ -37,6 +37,8 @@ We use <https://github.com/snonky/pocketbase-gogen/tree/v0.5.0> to generate type
 pocketbase-gogen template ./pb_data ./models/pbschema/template.go
 &&
 pocketbase-gogen generate ./models/pbschema/template.go ./models/generated.go
+&&
+pocketbase-gogen generate ./models/pbschema/template.go ./models/generated.go --utils
 ```
 
 ## Account setup requirements

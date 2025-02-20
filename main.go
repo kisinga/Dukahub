@@ -61,11 +61,20 @@ func main() {
 
 		dashboardGroup.GET("/", func(c *core.RequestEvent) error {
 			userID := c.Get("userID")
-			admin, err := helper.FetchAdminsById(userID.(string))
+			data, err := helper.FetchDashboardData(userID.(string))
 			if err != nil {
 				return c.Redirect(http.StatusFound, "/login")
 			}
-			return lib.Render(c, pages.Dashboard(admin))
+			return lib.Render(c, pages.Dashboard(*data))
+		})
+
+		dashboardGroup.PUT("/activecompany", func(c *core.RequestEvent) error {
+			userID := c.Get("userID")
+			data, err := helper.FetchDashboardData(userID.(string))
+			if err != nil {
+				return c.Redirect(http.StatusFound, "/login")
+			}
+			return lib.Render(c, pages.Dashboard(*data))
 		})
 
 		se.Router.GET("/login", func(c *core.RequestEvent) error {

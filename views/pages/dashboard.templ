@@ -5,11 +5,12 @@ import (
 	"github.com/kisinga/dukahub/views/layouts"
 )
 
-templ Dashboard(admin *models.Admins) {
+templ Dashboard(data models.DashboardData) {
 	@layouts.BaseLayout() {
-		@layouts.DashboardLayout(admin) {
+		@layouts.DashboardLayout(data) {
 			<script type="module">
 				import { DbService } from "./public/pb.js";
+				DbService.refreshAuthToken();
 				const timeoutId = DbService.scheduleTokenRefresh();
 			</script>
 		}

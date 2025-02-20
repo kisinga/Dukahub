@@ -1,0 +1,21 @@
+package components
+
+import "github.com/kisinga/dukahub/models"
+
+templ CompanySelector(companies []models.Companies, activeCompany models.Companies) {
+	<div class="container mt-4">
+		<div class="dropdown">
+			<!-- Dropdown Toggle -->
+			<button class="btn btn-outline-secondary dropdown-toggle" type="button" id="companySelector" data-bs-toggle="dropdown">
+				<img id="selectedLogo" class="rounded-circle me-2" style="width: 20px; height: 20px;"/>
+				<span id="selectedName">Select Company</span>
+			</button>
+			<!-- Dropdown Menu -->
+			<ul class="dropdown-menu">
+				for _, company := range companies {
+					<li><div class="dropdown-item" hx-get="" hx-trigger="load">{ company.Name() }</div></li>
+				}
+			</ul>
+		</div>
+	</div>
+}
