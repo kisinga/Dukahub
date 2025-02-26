@@ -68,6 +68,15 @@ func main() {
 			return lib.Render(c, pages.Dashboard(*data))
 		})
 
+		dashboardGroup.GET("/new_sale", func(c *core.RequestEvent) error {
+			userID := c.Get("userID")
+			data, err := helper.FetchDashboardData(userID.(string))
+			if err != nil {
+				return c.Redirect(http.StatusFound, "/login")
+			}
+			return lib.Render(c, pages.Newsale(*data))
+		})
+
 		dashboardGroup.PUT("/activecompany", func(c *core.RequestEvent) error {
 			userID := c.Get("userID")
 			data, err := helper.FetchDashboardData(userID.(string))

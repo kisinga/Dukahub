@@ -2,20 +2,96 @@ package components
 
 import "github.com/kisinga/dukahub/models"
 
-templ CompanySelector(companies []models.Companies, activeCompany models.Companies) {
+templ CompanySelector(companies []*models.Companies, activeCompany models.Companies) {
 	<div class="container mt-4">
-		<div class="dropdown">
-			<!-- Dropdown Toggle -->
-			<button class="btn btn-outline-secondary dropdown-toggle" type="button" id="companySelector" data-bs-toggle="dropdown">
-				<img id="selectedLogo" class="rounded-circle me-2" style="width: 20px; height: 20px;"/>
-				<span id="selectedName">Select Company</span>
+		<div class="dropdown me-3">
+			<button
+				class="btn btn-light rounded-circle p-0"
+				type="button"
+				id="companyDropdown"
+				data-bs-toggle="dropdown"
+				aria-expanded="false"
+				style="width: 40px; height: 40px;"
+			>
+				<img
+					id="selectedLogo"
+					src={ activeCompany.Logo() }
+					alt="Company Logo"
+					class="rounded-circle"
+					style="width: 32px; height: 32px; object-fit: cover;"
+				/>
+				<span id="selectedName" class="visually-hidden">{ activeCompany.Name() }</span>
 			</button>
-			<!-- Dropdown Menu -->
-			<ul class="dropdown-menu">
-				for _, company := range companies {
-					<li><div class="dropdown-item" hx-get="" hx-trigger="load">{ company.Name() }</div></li>
-				}
+			<ul
+				class="dropdown-menu dropdown-menu-end"
+				aria-labelledby="companyDropdown"
+				style="max-height: 90vh; overflow-y: auto;"
+			>
+				<li id="companyDropdownMenu">
+					for _, company := range companies {
+						<li>
+							<a
+								class="dropdown-item d-flex align-items-center company-select-item"
+								href="#"
+								role="menuitem"
+								data-company-name={ company.Name() }
+								data-company-logo={ company.Logo() }
+							>
+								<img
+									src="{{ $company.Logo() }}"
+									alt="{{ $company.Name() }} Logo"
+									class="rounded-circle me-2"
+									style="width: 24px; height: 24px; object-fit: cover;"
+								/>
+								<span>{{ company.Name() }}</span>
+							</a>
+						</li>
+					}
+				</li>
 			</ul>
 		</div>
 	</div>
+	<style>
+    .dropdown-menu {
+        margin: 0;
+        padding: 0;
+    }
+
+    .dropdown-item {
+        padding: 8px 15px;
+        margin: 2px 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+    }
+
+    .dropdown-item.active {
+        background-color: #e9ecef;
+    }
+
+    .company-select-item img {
+        width: 24px;
+        height: 24px;
+        object-fit: cover;
+    }
+</style>
+	// <div class="container mt-4">
+	// 	<div class="dropdown">
+	// 		<!-- Dropdown Toggle -->
+	// 		<button class="btn btn-outline-secondary dropdown-toggle" type="button" id="companySelector" data-bs-toggle="dropdown">
+	// 			<img id="selectedLogo" class="rounded-circle me-2" style="width: 20px; height: 20px;"/>
+	// 			<span id="selectedName">Select Company</span>
+	// 		</button>
+	// 		<!-- Dropdown Menu -->
+	// 		<ul class="dropdown-menu">
+	// 			for _, company := range companies {
+	// 				<li><div class="dropdown-item">{ company.Name() }</div></li>
+	// 			}
+	// 		</ul>
+	// 	</div>
+	// </div>
 }

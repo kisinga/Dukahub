@@ -1,6 +1,7 @@
 package layouts
 
 import "github.com/kisinga/dukahub/models"
+import "github.com/kisinga/dukahub/views/components"
 
 templ DashboardLayout(data models.DashboardData) {
 	@BaseLayout() {
@@ -17,28 +18,30 @@ templ DashboardLayout(data models.DashboardData) {
 					<!-- Left Section: Company Dropdown & Status Badge -->
 					<div class="d-flex align-items-center">
 						<!-- Company Dropdown -->
-						<div class="dropdown me-3">
-							<button
-								class="btn btn-light rounded-circle p-0"
-								type="button"
-								id="companyDropdown"
-								data-bs-toggle="dropdown"
-								aria-expanded="false"
-								style="width: 40px; height: 40px;"
-							>
-								<img
-									src={ data.Activecompany.Logo() }
-									alt="Company Logo"
-									class="rounded-circle"
-									style="width: 100%; height: 100%;"
-								/>
-							</button>
-							<ul class="dropdown-menu" aria-labelledby="companyDropdown" style="max-height: 80vh; overflow-y: auto;">
-								<li><a class="dropdown-item text-truncate" href="#">Company 1</a></li>
-								<li><a class="dropdown-item text-truncate" href="#">Company 2</a></li>
-								<li><a class="dropdown-item text-truncate" href="#">Company 3</a></li>
-							</ul>
-						</div>
+						@components.CompanySelector(data.Admin.Company(), data.Activecompany) {
+						}
+						// <div class="dropdown me-3">
+						// 	<button
+						// 		class="btn btn-light rounded-circle p-0"
+						// 		type="button"
+						// 		id="companyDropdown"
+						// 		data-bs-toggle="dropdown"
+						// 		aria-expanded="false"
+						// 		style="width: 40px; height: 40px;"
+						// 	>
+						// 		<img
+						// 			src={ data.Activecompany.Logo() }
+						// 			alt="Company Logo"
+						// 			class="rounded-circle"
+						// 			style="width: 100%; height: 100%;"
+						// 		/>
+						// 	</button>
+						// 	<ul class="dropdown-menu" aria-labelledby="companyDropdown" style="max-height: 80vh; overflow-y: auto;">
+						// 		<li><a class="dropdown-item text-truncate" href="#">Company 1</a></li>
+						// 		<li><a class="dropdown-item text-truncate" href="#">Company 2</a></li>
+						// 		<li><a class="dropdown-item text-truncate" href="#">Company 3</a></li>
+						// 	</ul>
+						// </div>
 						<!-- Status Badge -->
 						<a href="#" class="text-decoration-none">
 							<span class="badge bg-success rounded-pill fs-6">OPEN</span>
@@ -87,8 +90,6 @@ templ DashboardLayout(data models.DashboardData) {
 			<!-- Main Content Area -->
 			<main class="flex-grow-1 overflow-auto p-4">
 				<div class="container">
-					<h1 class="mb-4">{ data.Admin.Name() }</h1>
-					<p>Welcome to your sleek, minimalistic dashboard. Enjoy your content and stay productive!</p>
 					{ children... }
 				</div>
 			</main>
