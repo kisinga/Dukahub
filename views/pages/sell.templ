@@ -1,0 +1,15 @@
+package pages
+
+import (
+	"github.com/kisinga/dukahub/models"
+	"github.com/kisinga/dukahub/views/components"
+	"github.com/kisinga/dukahub/views/layouts"
+)
+
+templ Newsale(data models.DashboardData) {
+	@layouts.BaseLayout() {
+		@layouts.DashboardLayout(data) {
+			@components.Scanner()
+		}
+	}
+}

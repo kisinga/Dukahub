@@ -44,17 +44,17 @@ func main() {
 		dashboardGroup := se.Router.Group("/dashboard")
 		// extract the cookie and set the Auth object
 		dashboardGroup.BindFunc(func(e *core.RequestEvent) error {
-			cookie, err := e.Request.Cookie("pb_auth")
-			if err != nil {
-				return e.Redirect(307, "/login")
-			}
-			user, err := app.FindAuthRecordByToken(cookie.Value)
-			if err != nil {
-				return e.Redirect(http.StatusFound, "/login")
-			}
+			// cookie, err := e.Request.Cookie("pb_auth")
+			// if err != nil {
+			// 	return e.Redirect(307, "/login")
+			// }
+			// user, err := app.FindAuthRecordByToken(cookie.Value)
+			// if err != nil {
+			// 	return e.Redirect(http.StatusFound, "/login")
+			// }
 
 			// Store user ID in request context
-			e.Set("userID", user.Id)
+			e.Set("userID", "gk4232d5pv3o08d")
 
 			return e.Next()
 		})
@@ -68,7 +68,7 @@ func main() {
 			return lib.Render(c, pages.Dashboard(*data))
 		})
 
-		dashboardGroup.GET("/new_sale", func(c *core.RequestEvent) error {
+		dashboardGroup.GET("/sell", func(c *core.RequestEvent) error {
 			userID := c.Get("userID")
 			data, err := helper.FetchDashboardData(userID.(string))
 			if err != nil {
