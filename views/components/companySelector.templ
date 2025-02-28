@@ -1,6 +1,7 @@
 package components
 
 import "github.com/kisinga/dukahub/models"
+import "fmt"
 
 templ CompanySelector(companies []*models.Companies, activeCompany models.Companies) {
 	<div class="dropdown">
@@ -38,7 +39,7 @@ templ CompanySelector(companies []*models.Companies, activeCompany models.Compan
 			for _, company := range companies {
 				<li>
 					<a
-						href="#"
+						href={ templ.SafeURL(fmt.Sprintf("/dashboard/%s", company.Id)) }
 						class="dropdown-item d-flex align-items-center py-2 px-3 {if company.Id == activeCompany.Id}active{end}"
 						data-company-id={ company.Id }
 					>
