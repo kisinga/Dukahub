@@ -1,0 +1,105 @@
+package pages
+
+import (
+	"github.com/kisinga/dukahub/models"
+	"github.com/kisinga/dukahub/views/layouts"
+)
+
+templ Login(form models.LoginFormValue, err error) {
+	<style>
+    /* Minimal internal CSS for hover effects and transitions */
+    .btn-login:hover {
+      transform: scale(1.03);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .card, .btn, .form-control {
+      transition: all 0.3s ease;
+    }
+  </style>
+	@layouts.BaseLayout() {
+		<div style="min-height: 100vh; background: linear-gradient(135deg, #f6f9fc, #e9eff5); display: flex; align-items: center; justify-content: center;">
+			<div class="container">
+				<div class="row justify-content-center">
+					<!-- Responsive column for a centered, attractive form -->
+					<div class="col-12 col-md-5">
+						<div class="card card-hover" style="border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: none;">
+							<div class="card-body" style="padding: 2rem;">
+								<div class="text-center mb-4">
+									<!-- A little flair: a simple circular logo -->
+									<div style="width: 60px; height: 60px; background: linear-gradient(45deg, #6a11cb, #2575fc); border-radius: 50%; margin: 0 auto 10px auto;"></div>
+									<h3 style="font-weight: bold; color: #333;">Welcome Back</h3>
+								</div>
+								<form id="loginForm" hx-on:submit="loginUser(event)">
+									<div class="mb-3">
+										<label for="email" class="form-label" style="font-weight: 500; color: #555;">Email address</label>
+										<input
+											type="email"
+											id="email"
+											name="email"
+											placeholder="Enter email"
+											class="form-control rounded-pill"
+											style="box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);"
+											onfocus="this.style.boxShadow='0 0 5px rgba(81, 203, 238, 1)'"
+											onblur="this.style.boxShadow='inset 0 1px 3px rgba(0,0,0,0.1)'"
+											required
+										/>
+									</div>
+									<div class="mb-3">
+										<label for="password" class="form-label" style="font-weight: 500; color: #555;">Password</label>
+										<input
+											type="password"
+											id="password"
+											name="password"
+											placeholder="Password"
+											class="form-control rounded-pill"
+											style="box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);"
+											onfocus="this.style.boxShadow='0 0 5px rgba(81, 203, 238, 1)'"
+											onblur="this.style.boxShadow='inset 0 1px 3px rgba(0,0,0,0.1)'"
+											required
+										/>
+									</div>
+									<div class="d-grid mb-3">
+										<button
+											type="submit"
+											class="btn btn-login rounded-pill text-white"
+											style="background: linear-gradient(45deg, #6a11cb, #2575fc); border: none;"
+										>
+											Login
+										</button>
+									</div>
+									<div id="error-message" class="alert d-none" style="padding: 0.5rem; border-radius: 5px;"></div>
+									<div class="text-center">
+										<a href="#" style="font-size: 0.9rem; color: #6a11cb; text-decoration: none;">Forgot password?</a>
+									</div>
+								</form>
+							</div>
+						</div>
+						<p class="text-center mt-3" style="font-size: 0.85rem; color: #999;">&copy; 2025 Dukahub</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script type="module">
+            import { DbService } from "/public/pb.js";
+
+            window.loginUser = DbService.loginUser;
+        </script>
+		<script>
+                // HTMX Event Listeners to Show Login Status
+                document.body.addEventListener("loginSuccess", () => {
+                    const msg = document.getElementById("error-message");
+                    msg.classList.remove("alert-danger", "d-none");
+                    msg.classList.add("alert-success");
+                    msg.innerHTML = `<span>Login successful! Redirecting...</span>`;
+                });
+
+                document.body.addEventListener("loginFailed", (event) => {
+                    const msg = document.getElementById("error-message");
+                    msg.classList.remove("alert-success", "d-none");
+                    msg.classList.add("alert-danger");
+                    msg.innerHTML = `<span>${event.detail.error}</span>`;
+                });
+        </script>
+	}
+}

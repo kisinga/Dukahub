@@ -1,7 +1,7 @@
 Run bare metal
 
 ```bash
-go run *.go --dir=data serve & cd frontend && npm run watch
+make dev
 ```
 
 Run inside docker in prod mode
@@ -31,21 +31,14 @@ The packagae.json file contains the build:css script that builds the css file us
 
 # HOW TO GENERATE TYPES
 
-We use <https://github.com/patmood/pocketbase-typegen> to generate types for our database.
-
-Navigate to the runnning instnce of the pocketbase instance ==> Settings ==> Export collections
-Example <https://pantrify.azurewebsites.net/_/?#/settings/export-collections>
-
-Copy the json to the root of the project ==> models and run this command
+We use <https://github.com/snonky/pocketbase-gogen/tree/v0.5.0> to generate types for our database.
 
 ```bash
-npx pocketbase-typegen --json ../../../models/pb_schema.json --out pocketbase-types.ts
-```
-
-Or from root of frontend
-
-```bash
-npx pocketbase-typegen --json ../models/pb_schema.json --out ./src/types/pocketbase-types.ts
+pocketbase-gogen template ./pb_data ./models/pbschema/template.go
+&&
+pocketbase-gogen generate ./models/pbschema/template.go ./models/generated.go
+&&
+pocketbase-gogen generate ./models/pbschema/template.go ./models/generated.go --utils
 ```
 
 ## Account setup requirements

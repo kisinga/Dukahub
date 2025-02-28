@@ -1,0 +1,237 @@
+package pages
+
+import (
+	"github.com/kisinga/dukahub/models"
+	"github.com/kisinga/dukahub/views/layouts"
+)
+
+templ Dashboard(data models.DashboardData) {
+	@layouts.BaseLayout() {
+		@layouts.DashboardLayout(data) {
+			<style>
+    .table-responsive-sm {
+      overflow-x: auto;
+    }
+    .stats-table th {
+      text-align: center;
+      vertical-align: middle;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .stats-cell {
+      transition: all 0.2s;
+      min-width: 100px;
+      height: 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .stats-cell:hover {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+    .stat-value {
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+    .period-badge {
+      font-size: 0.75rem;
+      border-radius: 20px;
+      padding: 0.15rem 0.5rem;
+    }
+    .header-btn {
+      border: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 5px;
+      background-color: rgba(255,255,255,0.3);
+    }
+    @media (max-width: 576px) {
+      .stats-cell {
+        height: 90px;
+        min-width: 90px;
+      }
+      .stat-value {
+        font-size: 1rem;
+      }
+    }
+  </style>
+			<div class="container py-3">
+				<div class="card shadow-sm">
+					<div class="card-body p-0">
+						<div class="table-responsive-sm">
+							<table class="table table-borderless mb-0 stats-table">
+								<thead>
+									<tr>
+										<th class="bg-primary text-white p-0">
+											<div class="position-relative d-flex flex-column align-items-center p-3">
+												<!-- Main title -->
+												<span class="fs-4 mb-2">Purchases</span>
+												<!-- Visual indicator for tappable area -->
+												<div class="d-flex align-items-center justify-content-center">
+													<button
+														class="btn btn-light btn-sm rounded-circle shadow-sm"
+														type="button"
+														aria-label="Add new Purchase"
+														data-bs-toggle="tooltip"
+														data-bs-placement="bottom"
+														title="Add new Purchase"
+													>
+														<i class="bi bi-plus-lg fw-bold"></i>
+													</button>
+												</div>
+												<!-- Full clickable overlay for mobile friendliness -->
+												<a href="purchase" class="stretched-link" aria-label="Go to sales page"></a>
+											</div>
+										</th>
+										<th class="bg-success text-white p-0">
+											<div class="position-relative d-flex flex-column align-items-center p-3">
+												<!-- Main title -->
+												<span class="fs-4 mb-2">Sales</span>
+												<!-- Visual indicator for tappable area -->
+												<div class="d-flex align-items-center justify-content-center">
+													<button
+														class="btn btn-light btn-sm rounded-circle shadow-sm"
+														type="button"
+														aria-label="Add new sale"
+														data-bs-toggle="tooltip"
+														data-bs-placement="bottom"
+														title="Add new sale"
+													>
+														<i class="bi bi-plus-lg fw-bold"></i>
+													</button>
+												</div>
+												<!-- Full clickable overlay for mobile friendliness -->
+												<a href="sell" class="stretched-link" aria-label="Go to sales page"></a>
+											</div>
+										</th>
+										<th class="bg-danger text-white p-0">
+											<div class="position-relative d-flex flex-column align-items-center p-3">
+												<!-- Main title -->
+												<span class="fs-4 mb-2">Expenses</span>
+												<!-- Visual indicator for tappable area -->
+												<div class="d-flex align-items-center justify-content-center">
+													<button
+														class="btn btn-light btn-sm rounded-circle shadow-sm"
+														type="button"
+														aria-label="Add new Expense"
+														data-bs-toggle="tooltip"
+														data-bs-placement="bottom"
+														title="Add new Expense"
+													>
+														<i class="bi bi-plus-lg fw-bold"></i>
+													</button>
+												</div>
+												<!-- Full clickable overlay for mobile friendliness -->
+												<a href="expense" class="stretched-link" aria-label="Go to sales page"></a>
+											</div>
+										</th>
+									</tr>
+								</thead>
+								<tbody>
+									<!-- Today -->
+									<tr>
+										<td class="p-2">
+											<div class="stats-cell bg-white rounded shadow-sm">
+												<div class="stat-value text-primary">$3,482</div>
+												<span class="period-badge border border-primary text-primary mt-2">Today</span>
+											</div>
+										</td>
+										<td class="p-2">
+											<div class="stats-cell bg-white rounded shadow-sm">
+												<div class="stat-value text-success">$5,392</div>
+												<span class="period-badge border border-success text-success mt-2">Today</span>
+											</div>
+										</td>
+										<td class="p-2">
+											<div class="stats-cell bg-white rounded shadow-sm">
+												<div class="stat-value text-danger">$1,843</div>
+												<span class="period-badge border border-danger text-danger mt-2">Today</span>
+											</div>
+										</td>
+									</tr>
+									<!-- This Week -->
+									<tr>
+										<td class="p-2">
+											<div class="stats-cell bg-white rounded shadow-sm">
+												<div class="stat-value text-primary">$24,571</div>
+												<span class="period-badge border border-primary text-primary mt-2">This Week</span>
+											</div>
+										</td>
+										<td class="p-2">
+											<div class="stats-cell bg-white rounded shadow-sm">
+												<div class="stat-value text-success">$37,845</div>
+												<span class="period-badge border border-success text-success mt-2">This Week</span>
+											</div>
+										</td>
+										<td class="p-2">
+											<div class="stats-cell bg-white rounded shadow-sm">
+												<div class="stat-value text-danger">$14,273</div>
+												<span class="period-badge border border-danger text-danger mt-2">This Week</span>
+											</div>
+										</td>
+									</tr>
+									<!-- This Month -->
+									<tr>
+										<td class="p-2">
+											<div class="stats-cell bg-white rounded shadow-sm">
+												<div class="stat-value text-primary">$98,412</div>
+												<span class="period-badge border border-primary text-primary mt-2">This Month</span>
+											</div>
+										</td>
+										<td class="p-2">
+											<div class="stats-cell bg-white rounded shadow-sm">
+												<div class="stat-value text-success">$145,320</div>
+												<span class="period-badge border border-success text-success mt-2">This Month</span>
+											</div>
+										</td>
+										<td class="p-2">
+											<div class="stats-cell bg-white rounded shadow-sm">
+												<div class="stat-value text-danger">$54,689</div>
+												<span class="period-badge border border-danger text-danger mt-2">This Month</span>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+				<!-- Optional: Quick Actions Toolbar -->
+				<div class="row g-2 mt-3">
+					<div class="col-6 col-md-3">
+						<button class="btn btn-outline-primary btn-sm w-100 py-2 d-flex align-items-center justify-content-center">
+							<i class="bi bi-people me-2"></i> Customers
+						</button>
+					</div>
+					<div class="col-6 col-md-3">
+						<button class="btn btn-outline-primary btn-sm w-100 py-2 d-flex align-items-center justify-content-center">
+							<i class="bi bi-cart-plus me-2"></i> New Sale
+						</button>
+					</div>
+					<div class="col-6 col-md-3">
+						<button class="btn btn-outline-primary btn-sm w-100 py-2 d-flex align-items-center justify-content-center">
+							<i class="bi bi-box-seam me-2"></i> Inventory
+						</button>
+					</div>
+					<div class="col-6 col-md-3">
+						<button class="btn btn-outline-primary btn-sm w-100 py-2 d-flex align-items-center justify-content-center">
+							<i class="bi bi-graph-up me-2"></i> Reports
+						</button>
+					</div>
+				</div>
+			</div>
+			<script type="module">
+				import { DbService } from "/public/pb.js";
+				DbService.refreshAuthToken();
+				const timeoutId = DbService.scheduleTokenRefresh();
+			</script>
+		}
+	}
+}

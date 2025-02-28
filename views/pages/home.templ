@@ -1,0 +1,92 @@
+package pages
+
+import "github.com/kisinga/dukahub/views/layouts"
+
+templ Home() {
+	@layouts.BaseLayout() {
+		<!-- Navigation Bar -->
+		<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top" style="border-bottom: 2px solid #e0e0e0;">
+			<div class="container">
+				<a class="navbar-brand text-primary fw-bold" href="/" style="font-size: 1.5rem;">SimpleStock</a>
+				<button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+					<ul class="navbar-nav me-3">
+						<li class="nav-item">
+							<a class="nav-link" href="#features">Features</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="#pricing">Pricing</a>
+						</li>
+					</ul>
+					<a href="/login" class="btn btn-outline-primary" style="border-radius: 50px;">Login</a>
+				</div>
+			</div>
+		</nav>
+		<!-- Hero Section -->
+		<header class="d-flex align-items-center" style="min-height: 100vh; background: linear-gradient(135deg, #e3f2fd, #ffffff);">
+			<div class="container text-center">
+				<h1 class="display-4 fw-bold text-primary" style="font-size: 3rem;">Empower Your Business</h1>
+				<p class="lead text-secondary my-4" style="font-size: 1.25rem;">
+					Simple, Powerful Stock Management for Small Businesses
+				</p>
+				<a href="/signup" class="btn btn-primary btn-lg" style="border-radius: 50px; padding: 0.75rem 1.5rem;">Get Started</a>
+			</div>
+		</header>
+		<!-- Features Section -->
+		<section id="features" class="py-5 bg-white">
+			<div class="container">
+				<h2 class="text-center text-primary fw-bold mb-5" style="font-size: 2.5rem;">Why SimpleStock?</h2>
+				<div class="row g-4">
+					<!-- Feature Card 1 -->
+					<div class="col-md-6 col-lg-4">
+						<div class="card h-100 shadow-sm border-0" style="border-radius: 15px;">
+							<div class="card-body">
+								<h5 class="card-title text-secondary">Streamlined Stock Management</h5>
+								<p class="card-text">
+									Manage your daily stock effortlessly with tools tailored for small businesses.
+								</p>
+							</div>
+						</div>
+					</div>
+					<!-- Feature Card 2 -->
+					<div class="col-md-6 col-lg-4">
+						<div class="card h-100 shadow-sm border-0" style="border-radius: 15px;">
+							<div class="card-body">
+								<h5 class="card-title text-secondary">Customer Relationships</h5>
+								<p class="card-text">
+									Track customer interactions, invoices, and payments all in one place.
+								</p>
+							</div>
+						</div>
+					</div>
+					<!-- Feature Card 3 -->
+					<div class="col-md-6 col-lg-4">
+						<div class="card h-100 shadow-sm border-0" style="border-radius: 15px;">
+							<div class="card-body">
+								<h5 class="card-title text-secondary">Insights and Analytics</h5>
+								<p class="card-text">
+									Gain valuable insights into your most popular products and sales trends.
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+		<!-- Call to Action -->
+		<section class="py-5" style="background-color: #0d6efd;">
+			<div class="container text-center">
+				<h2 class="text-white fw-bold mb-4" style="font-size: 2.5rem;">Start Managing Smarter</h2>
+				<a href="/signup" class="btn btn-light btn-lg" style="border-radius: 50px; padding: 0.75rem 1.5rem;">Sign Up Now</a>
+			</div>
+		</section>
+		<!-- Footer -->
+		<footer class="py-3" style="background-color: #343a40;">
+			<div class="container text-center">
+				<p class="mb-0 text-white" style="font-size: 0.9rem;">© 2025 Dukahub. All rights reserved.</p>
+			</div>
+		</footer>
+	}
+}

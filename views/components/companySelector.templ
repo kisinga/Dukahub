@@ -1,0 +1,74 @@
+package components
+
+import "github.com/kisinga/dukahub/models"
+import "fmt"
+
+templ CompanySelector(companies []*models.Companies, activeCompany models.Companies) {
+	<div class="dropdown">
+		<button
+			class="btn  d-flex align-items-center justify-content-center p-0 border-0"
+			type="button"
+			id="companyDropdown"
+			data-bs-toggle="dropdown"
+			aria-expanded="false"
+			style="
+      width: 44px; 
+      height: 44px; 
+      border-radius: 50%;
+      background-color: #f8f9fa;
+      transition: all 0.2s ease;
+    "
+			onmouseover="this.style.boxShadow='0 0 0 4px rgba(13, 110, 253, 0.15)'"
+			onmouseout="this.style.boxShadow='none'"
+		>
+			<img
+				id="selectedLogo"
+				src={ activeCompany.Logo() }
+				alt="Company Logo"
+				class="rounded-circle"
+				style="width: 36px; height: 36px; object-fit: cover;"
+			/>
+			<span id="selectedName" class="visually-hidden">{ activeCompany.Name() }</span>
+		</button>
+		<ul
+			class="dropdown-menu  border-light shadow-sm py-2"
+			aria-labelledby="companyDropdown"
+			style="min-width: 240px; max-height: 75vh; overflow-y: auto;"
+		>
+			<li><h6 class="dropdown-header fs-7 text-secondary">Switch Company</h6></li>
+			for _, company := range companies {
+				<li>
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/dashboard/%s", company.Id)) }
+						class="dropdown-item d-flex align-items-center py-2 px-3 {if company.Id == activeCompany.Id}active{end}"
+						data-company-id={ company.Id }
+					>
+						<div class="company-icon-wrapper me-2 d-flex align-items-center justify-content-center">
+							<img
+								src={ company.Logo() }
+								alt={ company.Name() }
+								class="rounded-circle"
+								style="width: 32px; height: 32px; object-fit: cover;"
+							/>
+						</div>
+						<span class="company-name text-truncate" style="max-width: 150px;">
+							{ company.Name() }
+						</span>
+						if (company.Id == activeCompany.Id) {
+							<i class="bi bi-check-lg ms-auto"></i>
+						}
+					</a>
+				</li>
+			}
+			<li><hr class="dropdown-divider mx-3 my-2"/></li>
+			<li>
+				<a href="/dashboard/settings/companies" class="dropdown-item d-flex align-items-center py-2 px-3">
+					<div class="icon-wrapper me-2 d-flex align-items-center justify-content-center">
+						<i class="bi bi-gear-fill" style="font-size: 1.1rem;"></i>
+					</div>
+					<span>Manage Companies</span>
+				</a>
+			</li>
+		</ul>
+	</div>
+}

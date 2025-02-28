@@ -1,0 +1,477 @@
+package components
+
+templ Scanner() {
+	<div class="container-fluid mt-3 mb-5">
+		<!-- Header -->
+		<div class="row mb-3">
+			<div class="col-12">
+				<h2>New Sale</h2>
+				<p class="text-muted">Scan products or enter manually</p>
+			</div>
+		</div>
+		<!-- Camera and Product Input Section -->
+		<div class="row">
+			<!-- Camera viewfinder (will be shown on mobile) -->
+			<div class="col-12 mb-3" id="camera-container" style="display: none">
+				<div class="card border-0 shadow-sm">
+					<div class="camera-wrapper position-relative" style="aspect-ratio: 4/3">
+						<video
+							id="camera-view"
+							class="w-100 h-100 bg-light rounded"
+							autoplay
+							playsinline
+						></video>
+						<div
+							class="scan-area position-absolute"
+							style="top: 0; left: 0; right: 0; bottom: 0; pointer-events: none"
+						>
+							<div
+								class="scanning-line bg-danger"
+								style="
+                height: 2px;
+                width: 100%;
+                position: absolute;
+                top: 50%;
+                opacity: 0.7;
+              "
+							></div>
+						</div>
+						<button
+							id="capture-button"
+							class="btn btn-light position-absolute bottom-0 end-0 m-3 rounded-circle"
+							style="width: 50px; height: 50px"
+						>
+							<i class="bi bi-camera"></i>
+						</button>
+					</div>
+					<div
+						class="card-footer bg-white border-0 d-flex justify-content-between py-2"
+					>
+						<button id="flash-toggle" class="btn btn-sm btn-outline-secondary">
+							<i class="bi bi-lightning"></i> Flash
+						</button>
+						<button id="camera-toggle" class="btn btn-sm btn-outline-secondary">
+							<i class="bi bi-arrow-repeat"></i> Switch
+						</button>
+					</div>
+				</div>
+			</div>
+			<div id="predictions"></div>
+			<!-- Manual product entry -->
+			<div class="col-12 col-md-6 mb-3">
+				<div class="card border-0 shadow-sm">
+					<div class="card-header bg-white border-0">
+						<h5 class="mb-0">Add Products</h5>
+					</div>
+					<div class="card-body">
+						<div class="input-group mb-3">
+							<input
+								type="text"
+								class="form-control"
+								placeholder="Scan or enter product code"
+								id="product-input"
+							/>
+							<button class="btn btn-primary" type="button" id="add-product-btn">
+								Add
+							</button>
+						</div>
+						<div class="d-grid d-md-block">
+							<button
+								id="scan-toggle"
+								class="btn btn-outline-primary mb-2 mb-md-0 me-md-2"
+							>
+								<i class="bi bi-upc-scan"></i> Toggle Scanner
+							</button>
+							<button class="btn btn-outline-secondary">
+								<i class="bi bi-search"></i> Browse Products
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Current sale -->
+			<div class="col-12 col-md-6 mb-3">
+				<div class="card border-0 shadow-sm">
+					<div
+						class="card-header bg-white border-0 d-flex justify-content-between align-items-center"
+					>
+						<h5 class="mb-0">Current Sale</h5>
+						<span class="badge bg-primary">Items: <span id="item-count">0</span></span>
+						>
+					</div>
+					<div class="card-body p-0">
+						<div
+							class="table-responsive"
+							style="max-height: 300px; overflow-y: auto"
+						>
+							<table class="table table-hover mb-0">
+								<thead class="table-light sticky-top">
+									<tr>
+										<th>Item</th>
+										<th class="text-center">Qty</th>
+										<th class="text-end">Price</th>
+										<th class="text-end">Action</th>
+									</tr>
+								</thead>
+								<tbody id="sale-items">
+									<!-- Items will be added here -->
+									<tr class="text-center text-muted">
+										<td colspan="4" class="py-4">No items added yet</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="card-footer bg-white border-0">
+						<div class="d-flex justify-content-between align-items-center mb-3">
+							<span class="fw-bold">Subtotal</span>
+							<span id="subtotal">$0.00</span>
+						</div>
+						<div class="d-flex justify-content-between align-items-center mb-3">
+							<span>Tax (10%)</span>
+							<span id="tax">$0.00</span>
+						</div>
+						<div class="d-flex justify-content-between align-items-center mb-3">
+							<span class="fw-bold fs-5">Total</span>
+							<span class="fw-bold fs-5" id="total">$0.00</span>
+						</div>
+						<div class="d-grid">
+							<button class="btn btn-success btn-lg" id="checkout-btn" disabled>
+								<i class="bi bi-credit-card me-1"></i> Proceed to Payment
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+  // Check if device is mobile
+  const isMobile = () => {
+    return (
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      ) || window.innerWidth <= 768
+    );
+  };
+
+  // DOM Elements
+  const cameraContainer = document.getElementById("camera-container");
+  const cameraView = document.getElementById("camera-view");
+  const scanToggle = document.getElementById("scan-toggle");
+  const productInput = document.getElementById("product-input");
+  const addProductBtn = document.getElementById("add-product-btn");
+  const saleItems = document.getElementById("sale-items");
+  const itemCount = document.getElementById("item-count");
+  const subtotal = document.getElementById("subtotal");
+  const tax = document.getElementById("tax");
+  const total = document.getElementById("total");
+  const checkoutBtn = document.getElementById("checkout-btn");
+
+  // Camera stream reference
+  let stream = null;
+
+  // Initialize camera on mobile
+  const initCamera = async () => {
+    try {
+      // Load TensorFlow model first
+      await loadModel();
+
+      // Request camera access
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+        audio: false,
+      });
+
+      // Display camera feed in video element
+      cameraView.srcObject = stream;
+      cameraContainer.style.display = "block";
+
+      // Add animation to scanning line
+      const scanLine = document.querySelector(".scanning-line");
+      let position = 10;
+      let direction = 1;
+
+      setInterval(() => {
+        position += direction * 2;
+        if (position >= 90 || position <= 10) {
+          direction *= -1;
+        }
+        scanLine.style.top = `${position}%`;
+      }, 50);
+
+      // Start periodic detection
+      setInterval(detectProduct, 5000); // Check for products every second
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+      alert("Could not access the camera. Please check permissions.");
+    }
+  };
+
+  // Stop camera stream
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      stream = null;
+      cameraView.srcObject = null;
+      cameraContainer.style.display = "none";
+    }
+  };
+
+  // Toggle camera
+  const toggleCamera = () => {
+    if (stream) {
+      stopCamera();
+    } else {
+      initCamera();
+    }
+  };
+
+  // Add sample product to the sale
+  const addProduct = (code) => {
+    // In a real app, you'd look up the product details from a database
+    // For demo purposes, we'll create some sample data
+    const products = {
+      123456: { name: "Coffee Mug", price: 12.99 },
+      234567: { name: "T-Shirt", price: 24.99 },
+      345678: { name: "Notebook", price: 8.5 },
+    };
+
+    // Use the entered code or a sample code if not found
+    const productCode = code || productInput.value.trim();
+
+    // Handle TensorFlow detected products
+    if (productCode.startsWith("tf_")) {
+      const labelIndex = parseInt(productCode.split("_")[1]);
+      const productName =
+        labels[labelIndex] || `Unknown Product (${labelIndex})`;
+      const product = { name: productName, price: 9.99 };
+
+      // Clear "no items" row if present
+      if (saleItems.querySelector('tr td[colspan="4"]')) {
+        saleItems.innerHTML = "";
+      }
+
+      // Add product row
+      const row = document.createElement("tr");
+      row.innerHTML = `
+      <td>${product.name}</td>
+      <td class="text-center">1</td>
+      <td class="text-end">$${product.price.toFixed(2)}</td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-outline-danger remove-item">
+          <i class="bi bi-x"></i>
+        </button>
+      </td>
+    `;
+      saleItems.appendChild(row);
+
+      // Update totals
+      updateTotals();
+      return;
+    }
+
+    // Regular product lookup
+    const product = products[productCode] || {
+      name: `Product ${productCode}`,
+      price: 9.99,
+    };
+
+    // Clear "no items" row if present
+    if (saleItems.querySelector('tr td[colspan="4"]')) {
+      saleItems.innerHTML = "";
+    }
+
+    // Add product row
+    const row = document.createElement("tr");
+    row.innerHTML = `
+    <td>${product.name}</td>
+    <td class="text-center">1</td>
+    <td class="text-end">$${product.price.toFixed(2)}</td>
+    <td class="text-end">
+      <button class="btn btn-sm btn-outline-danger remove-item">
+        <i class="bi bi-x"></i>
+      </button>
+    </td>
+  `;
+    saleItems.appendChild(row);
+
+    // Update totals
+    updateTotals();
+
+    // Clear input
+    productInput.value = "";
+    productInput.focus();
+  };
+
+  // Update sale totals
+  const updateTotals = () => {
+    const items = saleItems.querySelectorAll("tr:not([colspan])");
+    itemCount.textContent = items.length;
+
+    // Calculate subtotal
+    let subTotal = 0;
+    items.forEach((item) => {
+      const priceText = item.querySelector("td:nth-child(3)").textContent;
+      const price = parseFloat(priceText.replace("$", ""));
+      subTotal += price;
+    });
+
+    // Update display
+    subtotal.textContent = `$${subTotal.toFixed(2)}`;
+
+    const taxAmount = subTotal * 0.1;
+    tax.textContent = `$${taxAmount.toFixed(2)}`;
+
+    const totalAmount = subTotal + taxAmount;
+    total.textContent = `$${totalAmount.toFixed(2)}`;
+
+    // Enable checkout button if we have items
+    checkoutBtn.disabled = items.length === 0;
+  };
+
+  // Event Listeners
+  document.addEventListener("DOMContentLoaded", () => {
+    // Initialize camera on mobile
+    if (isMobile()) {
+      initCamera();
+    }
+
+    // Toggle scanner button
+    scanToggle.addEventListener("click", toggleCamera);
+
+    // Add product button
+    addProductBtn.addEventListener("click", () => addProduct());
+
+    // Handle Enter key in product input
+    productInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        addProduct();
+      }
+    });
+
+    // Handle remove item buttons
+    saleItems.addEventListener("click", (e) => {
+      if (e.target.closest(".remove-item")) {
+        e.target.closest("tr").remove();
+
+        // Add "no items" message if no items left
+        if (saleItems.querySelectorAll("tr").length === 0) {
+          saleItems.innerHTML = `
+                    <tr class="text-center text-muted">
+                    <td colspan="4" class="py-4">No items added yet</td>
+                    </tr>
+                `;
+        }
+
+        updateTotals();
+      }
+    });
+  });
+</script>
+	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+	<script>
+  let model = null;
+  let labels = [];
+
+  const loadModel = async () => {
+    try {
+      // Load the MobileNet model
+      model = await mobilenet.load();
+      console.log("TensorFlow model loaded successfully");
+
+      // Access the model's labels
+      const labels = model.model.classNames;
+      console.log("Labels loaded successfully");
+
+      return true;
+    } catch (error) {
+      console.error("Error loading TensorFlow model:", error);
+      return false;
+    }
+  };
+
+  // Function to detect products from camera feed
+  const detectProduct = async () => {
+    if (!model || !cameraView.srcObject) return;
+
+    // Create a canvas to capture the current frame
+    const canvas = document.createElement("canvas");
+    canvas.width = cameraView.videoWidth;
+    canvas.height = cameraView.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(cameraView, 0, 0, canvas.width, canvas.height);
+
+    // Process the image for TensorFlow
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    // Run inference
+    const predictions = await model.classify(imgData);
+    displayPredictions(predictions);
+
+    // Find the class with highest confidence
+    let maxConfidence = 0;
+    let detectedClass = -1;
+
+    for (let i = 0; i < predictions.length; i++) {
+      if (predictions[i] > maxConfidence) {
+        maxConfidence = predictions[i];
+        detectedClass = i;
+      }
+    }
+
+    // If confidence is high enough, add the product
+    if (maxConfidence > 0.7 && detectedClass !== -1) {
+      const productCode = `tf_${detectedClass}`;
+      addProduct(productCode);
+
+      // Show detection feedback
+      showDetectionFeedback(labels[detectedClass], maxConfidence);
+    }
+  };
+
+  const displayPredictions = (predictions) => {
+    const predictionsContainer = document.getElementById("predictions");
+    predictionsContainer.innerHTML = ""; // Clear previous predictions
+
+    predictions.forEach((prediction) => {
+      const predictionElement = document.createElement("div");
+      predictionElement.className = "prediction";
+
+      const labelElement = document.createElement("span");
+      labelElement.className = "label";
+      labelElement.textContent = prediction.className;
+
+      const probabilityElement = document.createElement("span");
+      probabilityElement.className = "probability";
+      probabilityElement.textContent = ` - ${(
+        prediction.probability * 100
+      ).toFixed(2)}%`;
+
+      predictionElement.appendChild(labelElement);
+      predictionElement.appendChild(probabilityElement);
+      predictionsContainer.appendChild(predictionElement);
+    });
+  };
+
+  // Show visual feedback for detection
+  const showDetectionFeedback = (label, confidence) => {
+    const feedback = document.createElement("div");
+    feedback.className =
+      "detection-feedback position-absolute top-0 start-0 m-3 bg-dark text-white p-2 rounded";
+    feedback.style.opacity = "0.8";
+    feedback.innerHTML = `Detected: ${label} (${(confidence * 100).toFixed(
+      1
+    )}%)`;
+
+    cameraContainer.appendChild(feedback);
+    setTimeout(() => feedback.remove(), 2000);
+  };
+</script>
+	<script type="module">
+  import { DbService } from "/public/pb.js";
+  DbService.refreshAuthToken();
+  const timeoutId = DbService.scheduleTokenRefresh();
+</script>
+}
