@@ -1,17 +1,51 @@
 # syntax=docker/dockerfile:1.4
-FROM golang:latest AS builder
+
+# Build stage for Go application
+FROM golang:alpine AS builder
 WORKDIR /app
 
-# Copy the application source code and Makefile
-COPY . ./
+# Install build dependencies
+RUN apk add --no-cache make git
 
-# Download dependencies (if go.mod and go.sum exist)
-RUN if [ -f go.mod ] && [ -f go.sum ]; then go mod download; fi
+# Copy and download dependencies
+COPY go.mod go.sum ./
+RUN go mod download
 
-# Install templ (if needed)
+# Install templ
 RUN go install github.com/a-h/templ/cmd/templ@latest
 
-# Build the application using the Makefile
+# Copy the rest of the application
+COPY . .
+
+# Build the application
 RUN make build
 
-CMD ["/backend", "serve", "--http=0.0.0.0:8080"]
+# Runtime stage
+FROM alpine:latest
+WORKDIR /app
+
+# Install necessary packages for SSL and SSH
+RUN apk add --no-cache ca-certificates openssh-server
+
+# Set up SSH for Azure integration
+RUN ssh-keygen -A
+RUN echo "root:Docker!" | chpasswd
+
+# Copy our entry script
+COPY docker-entry.sh /docker-entry.sh
+RUN chmod +x /docker-entry.sh
+
+# Copy the binary from the builder stage
+COPY --from=builder /app/backend /app/backend
+
+# Set up data volume
+VOLUME /data
+
+# Set environment variables
+ENV PUBLIC_FOLDER_PATH="/public"
+
+# Expose ports
+EXPOSE 80 2222
+
+# Command to run
+CMD ["/docker-entry.sh"]
