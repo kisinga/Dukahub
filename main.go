@@ -45,6 +45,7 @@ func main() {
 			return lib.Render(c, pages.Login(models.LoginFormValue{}, nil))
 		})
 
+		// route for when someone navigates to dashboard without a company
 		se.Router.GET("/dashboard/{$}", func(e *core.RequestEvent) error {
 			cookie, err := e.Request.Cookie("pb_auth")
 			if err != nil {
@@ -67,24 +68,26 @@ func main() {
 		})
 
 		dashboardGroup := se.Router.Group("/dashboard/{companyID}")
-		// extract the cookie and set the Auth object
+
+		// For every dashboard route, check if user is logged in and forward the userID through the context
 		dashboardGroup.BindFunc(func(e *core.RequestEvent) error {
-			// cookie, err := e.Request.Cookie("pb_auth")
-			// if err != nil {
-			// 	return e.Redirect(307, "/login")
-			// }
-			// user, err := app.FindAuthRecordByToken(cookie.Value)
-			// if err != nil {
-			// 	return e.Redirect(http.StatusFound, "/login")
-			// }
+			cookie, err := e.Request.Cookie("pb_auth")
+			if err != nil {
+				return e.Redirect(307, "/login")
+			}
+			user, err := app.FindAuthRecordByToken(cookie.Value)
+			if err != nil {
+				return e.Redirect(http.StatusFound, "/login")
+			}
 
 			// Store user ID in request context
-			e.Set("userID", "gk4232d5pv3o08d")
+			e.Set("userID", user.Id)
 
 			return e.Next()
 		})
 
-		dashboardGroup.GET("/{path...}", func(c *core.RequestEvent) error {
+		// root dashboard route with a valid companyID
+		dashboardGroup.GET("/", func(c *core.RequestEvent) error {
 			userID := c.Get("userID")
 			companyID := c.Request.PathValue("companyID")
 			data, err := helper.FetchDashboardData(userID.(string), companyID)
