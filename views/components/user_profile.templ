@@ -1,0 +1,43 @@
+package components
+
+templ UserProfile(avatarURL string) {
+	<div class="dropdown navbar-dropdown">
+		<button
+			class="btn navbar-btn d-flex align-items-center justify-content-center p-0 border-0"
+			type="button"
+			id="userDropdown"
+			data-bs-toggle="dropdown"
+			aria-expanded="false"
+		>
+			<div class="avatar-container">
+				<img
+					src={ avatarURL }
+					alt="User Avatar"
+					class="rounded-circle avatar-img"
+				/>
+			</div>
+		</button>
+		<ul class="dropdown-menu dropdown-menu-end navbar-dropdown-menu shadow-sm" aria-labelledby="userDropdown">
+			<li><h6 class="dropdown-header fs-7 text-secondary">Account</h6></li>
+			<li>
+				<a class="dropdown-item d-flex align-items-center py-2 px-3" href="#">
+					<i class="bi bi-person-fill me-2"></i>
+					<span>Profile</span>
+				</a>
+			</li>
+			<li>
+				<a class="dropdown-item d-flex align-items-center py-2 px-3" href="#">
+					<i class="bi bi-building-fill me-2"></i>
+					<span>Company Settings</span>
+				</a>
+			</li>
+			<li><hr class="dropdown-divider mx-3 my-2"/></li>
+			<li>
+				<a class="dropdown-item d-flex align-items-center py-2 px-3" href="#">
+					<i class="bi bi-box-arrow-right me-2"></i>
+					<span>Logout</span>
+				</a>
+			</li>
+		</ul>
+	</div>
+}
