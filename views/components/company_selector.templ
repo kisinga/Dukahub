@@ -4,36 +4,27 @@ import "github.com/kisinga/dukahub/models"
 import "fmt"
 
 templ CompanySelector(companies []*models.Companies, activeCompany models.Companies) {
-	<div class="dropdown">
+	<div class="dropdown navbar-dropdown">
 		<button
-			class="btn  d-flex align-items-center justify-content-center p-0 border-0"
+			class="btn navbar-btn d-flex align-items-center justify-content-center p-0 border-0"
 			type="button"
 			id="companyDropdown"
 			data-bs-toggle="dropdown"
 			aria-expanded="false"
-			style="
-      width: 44px; 
-      height: 44px; 
-      border-radius: 50%;
-      background-color: #f8f9fa;
-      transition: all 0.2s ease;
-    "
-			onmouseover="this.style.boxShadow='0 0 0 4px rgba(13, 110, 253, 0.15)'"
-			onmouseout="this.style.boxShadow='none'"
 		>
-			<img
-				id="selectedLogo"
-				src={ activeCompany.Logo() }
-				alt="Company Logo"
-				class="rounded-circle"
-				style="width: 36px; height: 36px; object-fit: cover;"
-			/>
+			<div class="avatar-container">
+				<img
+					id="selectedLogo"
+					src={ activeCompany.Logo() }
+					alt="Company Logo"
+					class="rounded-circle avatar-img"
+				/>
+			</div>
 			<span id="selectedName" class="visually-hidden">{ activeCompany.Name() }</span>
 		</button>
 		<ul
-			class="dropdown-menu  border-light shadow-sm py-2"
+			class="dropdown-menu navbar-dropdown-menu shadow-sm"
 			aria-labelledby="companyDropdown"
-			style="min-width: 240px; max-height: 75vh; overflow-y: auto;"
 		>
 			<li><h6 class="dropdown-header fs-7 text-secondary">Switch Company</h6></li>
 			for _, company := range companies {
@@ -43,15 +34,14 @@ templ CompanySelector(companies []*models.Companies, activeCompany models.Compan
 						class="dropdown-item d-flex align-items-center py-2 px-3 {if company.Id == activeCompany.Id}active{end}"
 						data-company-id={ company.Id }
 					>
-						<div class="company-icon-wrapper me-2 d-flex align-items-center justify-content-center">
+						<div class="avatar-container-sm me-2">
 							<img
 								src={ company.Logo() }
 								alt={ company.Name() }
-								class="rounded-circle"
-								style="width: 32px; height: 32px; object-fit: cover;"
+								class="rounded-circle avatar-img"
 							/>
 						</div>
-						<span class="company-name text-truncate" style="max-width: 150px;">
+						<span class="text-truncate menu-item-text">
 							{ company.Name() }
 						</span>
 						if (company.Id == activeCompany.Id) {
@@ -63,10 +53,10 @@ templ CompanySelector(companies []*models.Companies, activeCompany models.Compan
 			<li><hr class="dropdown-divider mx-3 my-2"/></li>
 			<li>
 				<a href="/dashboard/settings/companies" class="dropdown-item d-flex align-items-center py-2 px-3">
-					<div class="icon-wrapper me-2 d-flex align-items-center justify-content-center">
-						<i class="bi bi-gear-fill" style="font-size: 1.1rem;"></i>
+					<div class="avatar-container-sm me-2 d-flex align-items-center justify-content-center">
+						<i class="bi bi-gear-fill"></i>
 					</div>
-					<span>Manage Companies</span>
+					<span class="menu-item-text">Manage Companies</span>
 				</a>
 			</li>
 		</ul>

@@ -18,10 +18,10 @@ templ DashboardLayout(data models.DashboardData) {
 				<div class="d-flex align-items-center">
 					<!-- Company Dropdown -->
 					@components.CompanySelector(data.Admin.Company(), data.Activecompany)
-					<a href="register" class="text-decoration-none">
-						<span class="badge bg-success rounded-pill fs-6">OPEN</span>
-					</a>
 				</div>
+				<a href="register" class="text-decoration-none">
+					<span class="badge bg-success rounded-pill fs-6">OPEN</span>
+				</a>
 				<!-- Center Section: Desktop Nav (Visible on lg and up) -->
 				<div class="collapse navbar-collapse justify-content-center d-none d-lg-block">
 					<ul class="navbar-nav">
@@ -37,29 +37,7 @@ templ DashboardLayout(data models.DashboardData) {
 					</ul>
 				</div>
 				<!-- Right Section: User Dropdown -->
-				<div class="dropdown">
-					<button
-						class="btn btn-light rounded-circle p-0"
-						type="button"
-						id="userDropdown"
-						data-bs-toggle="dropdown"
-						aria-expanded="false"
-						style="width: 32px; height: 32px;"
-					>
-						<img
-							src={ data.Admin.Avatar() }
-							alt="User Avatar"
-							class="rounded-circle"
-							style="width: 100%; height: 100%;"
-						/>
-					</button>
-					<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-						<li><a class="dropdown-item" href="#">Profile</a></li>
-						<li><a class="dropdown-item" href="#">Company Settings</a></li>
-						<li><hr class="dropdown-divider"/></li>
-						<li><a class="dropdown-item" href="#">Logout</a></li>
-					</ul>
-				</div>
+				@components.UserProfile(data.Admin.Avatar())
 			</div>
 		</nav>
 		<!-- Main Content Area -->
