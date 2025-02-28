@@ -21,4 +21,4 @@ EOL
 /usr/sbin/sshd
 
 # Start the main application
-exec /app/backend serve --http=0.0.0.0:80
+exec backend serve --http=0.0.0.0:80

@@ -22,7 +22,6 @@ RUN make build
 
 # Runtime stage
 FROM alpine:latest
-WORKDIR /app
 
 # Install necessary packages for SSL and SSH
 RUN apk add --no-cache ca-certificates openssh-server
@@ -31,18 +30,16 @@ RUN apk add --no-cache ca-certificates openssh-server
 RUN ssh-keygen -A
 RUN echo "root:Docker!" | chpasswd
 
-# Copy our entry script
+# Setup SSH config and entry script
 COPY docker-entry.sh /docker-entry.sh
 RUN chmod +x /docker-entry.sh
 
 # Copy the binary from the builder stage
-COPY --from=builder /app/backend /app/backend
+COPY --from=builder /app/backend /usr/local/bin/backend
+RUN chmod +x /usr/local/bin/backend
 
-# Set up data volume
-VOLUME /data
-
-# Set environment variables
-ENV PUBLIC_FOLDER_PATH="/public"
+# Mount pb_data from host OS 
+VOLUME /pb_data
 
 # Expose ports
 EXPOSE 80 2222
