@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -40,8 +41,32 @@ func main() {
 		se.Router.GET("/", func(c *core.RequestEvent) error {
 			return lib.Render(c, pages.Home())
 		})
+		se.Router.GET("/login", func(c *core.RequestEvent) error {
+			return lib.Render(c, pages.Login(models.LoginFormValue{}, nil))
+		})
 
-		dashboardGroup := se.Router.Group("/dashboard")
+		se.Router.GET("/dashboard/{$}", func(e *core.RequestEvent) error {
+			cookie, err := e.Request.Cookie("pb_auth")
+			if err != nil {
+				return e.Redirect(307, "/login")
+			}
+
+			record, err := app.FindAuthRecordByToken(cookie.Value)
+			if err != nil {
+				return e.Redirect(http.StatusFound, "/login")
+			}
+			// route using the first company
+			companies := record.GetStringSlice("company")
+			if len(companies) == 0 {
+				// no company, log error
+				log.Println("No company found for user:", record.Id)
+				// redirect to login
+				return e.Redirect(307, "/login")
+			}
+			return e.Redirect(307, fmt.Sprintf("/dashboard/%s", companies[0]))
+		})
+
+		dashboardGroup := se.Router.Group("/dashboard/{companyID}")
 		// extract the cookie and set the Auth object
 		dashboardGroup.BindFunc(func(e *core.RequestEvent) error {
 			// cookie, err := e.Request.Cookie("pb_auth")
@@ -59,9 +84,10 @@ func main() {
 			return e.Next()
 		})
 
-		dashboardGroup.GET("/", func(c *core.RequestEvent) error {
+		dashboardGroup.GET("/{path...}", func(c *core.RequestEvent) error {
 			userID := c.Get("userID")
-			data, err := helper.FetchDashboardData(userID.(string))
+			companyID := c.Request.PathValue("companyID")
+			data, err := helper.FetchDashboardData(userID.(string), companyID)
 			if err != nil {
 				return c.Redirect(http.StatusFound, "/login")
 			}
@@ -70,24 +96,11 @@ func main() {
 
 		dashboardGroup.GET("/sell", func(c *core.RequestEvent) error {
 			userID := c.Get("userID")
-			data, err := helper.FetchDashboardData(userID.(string))
+			data, err := helper.FetchDashboardData(userID.(string), "")
 			if err != nil {
 				return c.Redirect(http.StatusFound, "/login")
 			}
 			return lib.Render(c, pages.Newsale(*data))
-		})
-
-		dashboardGroup.PUT("/activecompany", func(c *core.RequestEvent) error {
-			userID := c.Get("userID")
-			data, err := helper.FetchDashboardData(userID.(string))
-			if err != nil {
-				return c.Redirect(http.StatusFound, "/login")
-			}
-			return lib.Render(c, pages.Dashboard(*data))
-		})
-
-		se.Router.GET("/login", func(c *core.RequestEvent) error {
-			return lib.Render(c, pages.Login(models.LoginFormValue{}, nil))
 		})
 
 		return se.Next()

@@ -69,12 +69,13 @@ export const DbService = {
         .authWithPassword(email, password, { expand: "company" });
 
       pb.authStore.save(authData.token, authData.record);
+      console.log(authData);
 
       // Update UI via HTMX
       htmx.trigger("#error-message", "loginSuccess", { success: true });
 
       setTimeout(() => {
-        window.location.href = "/dashboard";
+        window.location.href = `/dashboard/${authData.record.company[0]}`;
       }, 500);
     } catch (error) {
       console.error("Login failed:", error);

@@ -53,17 +53,32 @@ func (helper *DbHelper) FetchCompaniesById(id string) (*models.Companies, error)
 
 }
 
-func (helper *DbHelper) FetchDashboardData(userID string) (*models.DashboardData, error) {
+func (helper *DbHelper) FetchDashboardData(userID string, companyID string) (*models.DashboardData, error) {
 	admin, error := helper.FetchAdminsById(userID)
 	if error != nil {
 		return nil, error
 	}
-	// Fetch user companies
+	if companyID == "" {
+		// Fetch company stats
+		return &models.DashboardData{
+			Admin:         *admin,
+			CompanyStats:  []models.CompanyStats{},
+			Activecompany: *admin.Company()[0],
+		}, nil
+	}
 
-	// Fetch company stats
-	return &models.DashboardData{
-		Admin:         *admin,
-		CompanyStats:  []models.CompanyStats{},
-		Activecompany: *admin.Company()[0],
-	}, nil
+	if len(admin.Company()) == 0 {
+		return nil, fmt.Errorf("Admin has no company")
+	}
+	for _, company := range admin.Company() {
+		if company.Id == companyID {
+			return &models.DashboardData{
+				Admin:         *admin,
+				CompanyStats:  []models.CompanyStats{},
+				Activecompany: *company,
+			}, nil
+		}
+	}
+	return nil, fmt.Errorf("Company not found")
+
 }
