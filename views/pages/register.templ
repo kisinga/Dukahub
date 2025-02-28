@@ -1,0 +1,13 @@
+package pages
+
+import (
+	"github.com/kisinga/dukahub/models"
+	"github.com/kisinga/dukahub/views/layouts"
+)
+
+templ Register(data models.DashboardData) {
+	@layouts.BaseLayout() {
+		@layouts.DashboardLayout(data) {
+		}
+	}
+}

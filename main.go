@@ -106,6 +106,15 @@ func main() {
 			return lib.Render(c, pages.Newsale(*data))
 		})
 
+		dashboardGroup.GET("/register", func(c *core.RequestEvent) error {
+			userID := c.Get("userID")
+			data, err := helper.FetchDashboardData(userID.(string), "")
+			if err != nil {
+				return c.Redirect(http.StatusFound, "/login")
+			}
+			return lib.Render(c, pages.Register(*data))
+		})
+
 		return se.Next()
 	})
 
