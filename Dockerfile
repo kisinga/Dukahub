@@ -41,8 +41,6 @@ COPY --from=builder /app/backend /app/backend
 # Set up data volume
 VOLUME /data
 
-# Set environment variables
-ENV PUBLIC_FOLDER_PATH="/public"
 
 # Expose ports
 EXPOSE 80 2222
