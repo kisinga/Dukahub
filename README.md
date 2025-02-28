@@ -10,6 +10,12 @@ Run inside docker in prod mode. Omit if you don't need raw ssh access
 docker build -t dukahub . && docker run -p 80:80 -p 2222:2222  -v "$(pwd)"/pb_data:/pb_data dukahub
 ```
 
+NOTE: You need to disable secure cookie off in main.go
+
+```go
+	Secure: false,
+```
+
 In case you need raw ssh access
 
 ```bash

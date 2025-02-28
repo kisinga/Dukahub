@@ -1,10 +1,11 @@
 package main
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/kisinga/dukahub/lib"
 	"github.com/kisinga/dukahub/models"
@@ -15,6 +16,9 @@ import (
 )
 
 const AuthCookieName = "Auth"
+
+//go:embed public
+var embeddedFiles embed.FS
 
 func main() {
 	app := pocketbase.New()
@@ -27,16 +31,15 @@ func main() {
 			Value:    e.Token,
 			Path:     "/",
 			HttpOnly: true,
-			Secure:   true, // Use HTTPS in production
+			Secure:   true,
 			SameSite: http.SameSiteLaxMode,
 		})
-		println("Auth Token:", e.Token)
 		return e.Next()
 	})
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		// serves static files from the provided public dir (if exists)
-		se.Router.GET("/public/{path...}", apis.Static(os.DirFS("public"), false))
+		se.Router.GET("/public/{path...}", apis.Static(GetPublicFS(), false))
 
 		se.Router.GET("/", func(c *core.RequestEvent) error {
 			return lib.Render(c, pages.Home())
@@ -49,11 +52,13 @@ func main() {
 		se.Router.GET("/dashboard/{$}", func(e *core.RequestEvent) error {
 			cookie, err := e.Request.Cookie("pb_auth")
 			if err != nil {
+				log.Println("No auth cookie found")
 				return e.Redirect(307, "/login")
 			}
 
 			record, err := app.FindAuthRecordByToken(cookie.Value)
 			if err != nil {
+				log.Println("No auth record found")
 				return e.Redirect(http.StatusFound, "/login")
 			}
 			// route using the first company
@@ -121,4 +126,16 @@ func main() {
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// GetPublicFS returns a filesystem with just the public directory.
+// This is necessary because we embed the whole "public" directory,
+// but the HTTP handler needs the filesystem to be rooted at "public".
+func GetPublicFS() fs.FS {
+	// Strip the "public" prefix to get the root filesystem
+	publicFS, err := fs.Sub(embeddedFiles, "public")
+	if err != nil {
+		panic(err)
+	}
+	return publicFS
 }
