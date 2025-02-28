@@ -4,10 +4,16 @@ Run bare metal
 make dev
 ```
 
-Run inside docker in prod mode
+Run inside docker in prod mode. Omit if you don't need raw ssh access
 
 ```bash
-docker build -t pantrify . && docker run -p 80:80 -v "$(pwd)"/data:/data pantrify
+docker build -t dukahub . && docker run -p 80:80 -p 2222:2222  -v "$(pwd)"/pb_data:/pb_data dukahub
+```
+
+In case you need raw ssh access
+
+```bash
+ssh -p 2222 root@localhost
 ```
 
 In case you want to force fetch latest changes
