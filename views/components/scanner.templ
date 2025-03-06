@@ -96,8 +96,11 @@ templ Scanner() {
 						class="card-header bg-white border-0 d-flex justify-content-between align-items-center"
 					>
 						<h5 class="mb-0">Current Sale</h5>
-						<span class="badge bg-primary">Items: <span id="item-count">0</span></span>
-						>
+						<span class="badge bg-primary">
+							Items:
+							<span id="item-count">0</span>
+						</span>
+						<!-- Removed extra closing bracket that was here -->
 					</div>
 					<div class="card-body p-0">
 						<div
@@ -145,6 +148,8 @@ templ Scanner() {
 			</div>
 		</div>
 	</div>
+	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 	<script>
   // Check if device is mobile
   const isMobile = () => {
@@ -170,11 +175,40 @@ templ Scanner() {
 
   // Camera stream reference
   let stream = null;
+  let model = null; 
+  let modelLabels = [];
+  let maxPredictions = 0;
+
+  // Load the Teachable Machine model
+  const loadModel = async () => {
+    try {
+      const modelURL = "/public/model.json";
+      const metadataURL = "/public/metadata.json";
+
+      // Load the model and metadata
+      model = await tmImage.load(modelURL, metadataURL);
+      maxPredictions = model.getTotalClasses();
+      
+      // Create labels array from model classes
+      modelLabels = [];
+      for (let i = 0; i < maxPredictions; i++) {
+        modelLabels.push(model.getClassLabels()[i]);
+      }
+
+      console.log("Teachable Machine model loaded successfully");
+      console.log("Labels loaded successfully:", modelLabels);
+
+      return true;
+    } catch (error) {
+      console.error("Error loading Teachable Machine model:", error);
+      return false;
+    }
+  };
 
   // Initialize camera on mobile
   const initCamera = async () => {
     try {
-      // Load TensorFlow model first
+      // Load model first
       await loadModel();
 
       // Request camera access
@@ -201,7 +235,7 @@ templ Scanner() {
       }, 50);
 
       // Start periodic detection
-      setInterval(detectProduct, 5000); // Check for products every second
+      setInterval(detectProduct, 1000); // Check for products every second
     } catch (error) {
       console.error("Error accessing camera:", error);
       alert("Could not access the camera. Please check permissions.");
@@ -227,7 +261,7 @@ templ Scanner() {
     }
   };
 
-  // Add sample product to the sale
+  // Add product to the sale (keeping your existing code)
   const addProduct = (code) => {
     // In a real app, you'd look up the product details from a database
     // For demo purposes, we'll create some sample data
@@ -240,11 +274,10 @@ templ Scanner() {
     // Use the entered code or a sample code if not found
     const productCode = code || productInput.value.trim();
 
-    // Handle TensorFlow detected products
-    if (productCode.startsWith("tf_")) {
+    // Handle detected products
+    if (productCode.startsWith("tm_")) {
       const labelIndex = parseInt(productCode.split("_")[1]);
-      const productName =
-        labels[labelIndex] || `Unknown Product (${labelIndex})`;
+      const productName = modelLabels[labelIndex] || `Unknown Product (${labelIndex})`;
       const product = { name: productName, price: 9.99 };
 
       // Clear "no items" row if present
@@ -255,15 +288,15 @@ templ Scanner() {
       // Add product row
       const row = document.createElement("tr");
       row.innerHTML = `
-      <td>${product.name}</td>
-      <td class="text-center">1</td>
-      <td class="text-end">$${product.price.toFixed(2)}</td>
-      <td class="text-end">
-        <button class="btn btn-sm btn-outline-danger remove-item">
-          <i class="bi bi-x"></i>
-        </button>
-      </td>
-    `;
+        <td>${product.name}</td>
+        <td class="text-center">1</td>
+        <td class="text-end">$${product.price.toFixed(2)}</td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-danger remove-item">
+            <i class="bi bi-x"></i>
+          </button>
+        </td>
+      `;
       saleItems.appendChild(row);
 
       // Update totals
@@ -271,7 +304,7 @@ templ Scanner() {
       return;
     }
 
-    // Regular product lookup
+    // Regular product lookup 
     const product = products[productCode] || {
       name: `Product ${productCode}`,
       price: 9.99,
@@ -285,15 +318,15 @@ templ Scanner() {
     // Add product row
     const row = document.createElement("tr");
     row.innerHTML = `
-    <td>${product.name}</td>
-    <td class="text-center">1</td>
-    <td class="text-end">$${product.price.toFixed(2)}</td>
-    <td class="text-end">
-      <button class="btn btn-sm btn-outline-danger remove-item">
-        <i class="bi bi-x"></i>
-      </button>
-    </td>
-  `;
+      <td>${product.name}</td>
+      <td class="text-center">1</td>
+      <td class="text-end">$${product.price.toFixed(2)}</td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-outline-danger remove-item">
+          <i class="bi bi-x"></i>
+        </button>
+      </td>
+    `;
     saleItems.appendChild(row);
 
     // Update totals
@@ -304,7 +337,7 @@ templ Scanner() {
     productInput.focus();
   };
 
-  // Update sale totals
+  // Update sale totals 
   const updateTotals = () => {
     const items = saleItems.querySelectorAll("tr:not([colspan])");
     itemCount.textContent = items.length;
@@ -328,6 +361,83 @@ templ Scanner() {
 
     // Enable checkout button if we have items
     checkoutBtn.disabled = items.length === 0;
+  };
+
+  // Function to detect products from camera feed 
+  const detectProduct = async () => {
+    if (!model || !cameraView.srcObject) return;
+
+    try {
+      // Predict with Teachable Machine
+      const predictions = await model.predict(cameraView);
+      
+      // Display predictions
+      displayPredictions(predictions);
+      
+      // Find the highest confidence prediction
+      let maxConfidence = 0;
+      let detectedClass = -1;
+      
+      for (let i = 0; i < predictions.length; i++) {
+        if (predictions[i].probability > maxConfidence) {
+          maxConfidence = predictions[i].probability;
+          detectedClass = i;
+        }
+      }
+      
+      // If confidence is high enough, add the product
+      if (maxConfidence > 0.7 && detectedClass !== -1) {
+        const productCode = `tm_${detectedClass}`;
+        addProduct(productCode);
+        showDetectionFeedback(modelLabels[detectedClass], maxConfidence);
+      }
+    } catch (error) {
+      console.error("Error during product detection:", error);
+    }
+  };
+
+  // Modified to work with Teachable Machine format
+  const displayPredictions = (predictions) => {
+    const predictionsContainer = document.getElementById("predictions");
+    predictionsContainer.innerHTML = ""; // Clear previous predictions
+
+    // Sort by probability (descending)
+    predictions.sort((a, b) => b.probability - a.probability);
+
+    // Display top 5
+    for (let i = 0; i < Math.min(5, predictions.length); i++) {
+      const prediction = predictions[i];
+      const predictionElement = document.createElement("div");
+      predictionElement.className = "prediction";
+
+      const labelElement = document.createElement("span");
+      labelElement.className = "label";
+      labelElement.textContent = prediction.className;
+
+      const probabilityElement = document.createElement("span");
+      probabilityElement.className = "probability";
+      probabilityElement.textContent = ` - ${(
+        prediction.probability * 100
+      ).toFixed(2)}%`;
+
+      predictionElement.appendChild(labelElement);
+      predictionElement.appendChild(probabilityElement);
+      predictionsContainer.appendChild(predictionElement);
+    }
+  };
+
+  // Show visual feedback for detection (keeping your existing code)
+  const showDetectionFeedback = (label, confidence) => {
+    const feedback = document.createElement("div");
+    feedback.className =
+      "detection-feedback position-absolute top-0 start-0 m-3 bg-dark text-white p-2 rounded";
+    feedback.style.opacity = "0.8";
+    feedback.innerHTML = `Detected: ${label} (${(confidence * 100).toFixed(
+      1
+    )}%)`;
+
+    cameraContainer.appendChild(feedback);
+    setTimeout(() => feedback.remove(), 2000);
   };
 
   // Event Listeners
@@ -358,120 +468,15 @@ templ Scanner() {
         // Add "no items" message if no items left
         if (saleItems.querySelectorAll("tr").length === 0) {
           saleItems.innerHTML = `
-                    <tr class="text-center text-muted">
-                    <td colspan="4" class="py-4">No items added yet</td>
-                    </tr>
-                `;
+              <tr class="text-center text-muted">
+                <td colspan="4" class="py-4">No items added yet</td>
+              </tr>
+            `;
         }
 
         updateTotals();
       }
     });
   });
-</script>
-	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
-	<script>
-  let model = null;
-  let labels = [];
-
-  const loadModel = async () => {
-    try {
-      // Load the MobileNet model
-      model = await mobilenet.load();
-      console.log("TensorFlow model loaded successfully");
-
-      // Access the model's labels
-      const labels = model.model.classNames;
-      console.log("Labels loaded successfully");
-
-      return true;
-    } catch (error) {
-      console.error("Error loading TensorFlow model:", error);
-      return false;
-    }
-  };
-
-  // Function to detect products from camera feed
-  const detectProduct = async () => {
-    if (!model || !cameraView.srcObject) return;
-
-    // Create a canvas to capture the current frame
-    const canvas = document.createElement("canvas");
-    canvas.width = cameraView.videoWidth;
-    canvas.height = cameraView.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(cameraView, 0, 0, canvas.width, canvas.height);
-
-    // Process the image for TensorFlow
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-    // Run inference
-    const predictions = await model.classify(imgData);
-    displayPredictions(predictions);
-
-    // Find the class with highest confidence
-    let maxConfidence = 0;
-    let detectedClass = -1;
-
-    for (let i = 0; i < predictions.length; i++) {
-      if (predictions[i] > maxConfidence) {
-        maxConfidence = predictions[i];
-        detectedClass = i;
-      }
-    }
-
-    // If confidence is high enough, add the product
-    if (maxConfidence > 0.7 && detectedClass !== -1) {
-      const productCode = `tf_${detectedClass}`;
-      addProduct(productCode);
-
-      // Show detection feedback
-      showDetectionFeedback(labels[detectedClass], maxConfidence);
-    }
-  };
-
-  const displayPredictions = (predictions) => {
-    const predictionsContainer = document.getElementById("predictions");
-    predictionsContainer.innerHTML = ""; // Clear previous predictions
-
-    predictions.forEach((prediction) => {
-      const predictionElement = document.createElement("div");
-      predictionElement.className = "prediction";
-
-      const labelElement = document.createElement("span");
-      labelElement.className = "label";
-      labelElement.textContent = prediction.className;
-
-      const probabilityElement = document.createElement("span");
-      probabilityElement.className = "probability";
-      probabilityElement.textContent = ` - ${(
-        prediction.probability * 100
-      ).toFixed(2)}%`;
-
-      predictionElement.appendChild(labelElement);
-      predictionElement.appendChild(probabilityElement);
-      predictionsContainer.appendChild(predictionElement);
-    });
-  };
-
-  // Show visual feedback for detection
-  const showDetectionFeedback = (label, confidence) => {
-    const feedback = document.createElement("div");
-    feedback.className =
-      "detection-feedback position-absolute top-0 start-0 m-3 bg-dark text-white p-2 rounded";
-    feedback.style.opacity = "0.8";
-    feedback.innerHTML = `Detected: ${label} (${(confidence * 100).toFixed(
-      1
-    )}%)`;
-
-    cameraContainer.appendChild(feedback);
-    setTimeout(() => feedback.remove(), 2000);
-  };
-</script>
-	<script type="module">
-  import { DbService } from "/public/pb.js";
-  DbService.refreshAuthToken();
-  const timeoutId = DbService.scheduleTokenRefresh();
 </script>
 }
