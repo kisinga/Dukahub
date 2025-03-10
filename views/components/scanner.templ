@@ -386,7 +386,7 @@ templ Scanner() {
       }
       
       // If confidence is high enough, add the product
-      if (maxConfidence > 0.7 && detectedClass !== -1) {
+      if (maxConfidence > 0.8 && detectedClass !== -1) {
         const productCode = `tm_${detectedClass}`;
         addProduct(productCode);
         showDetectionFeedback(modelLabels[detectedClass], maxConfidence);
@@ -396,7 +396,6 @@ templ Scanner() {
     }
   };
 
-  // Modified to work with Teachable Machine format
   const displayPredictions = (predictions) => {
     const predictionsContainer = document.getElementById("predictions");
     predictionsContainer.innerHTML = ""; // Clear previous predictions
@@ -426,7 +425,7 @@ templ Scanner() {
     }
   };
 
-  // Show visual feedback for detection (keeping your existing code)
+  // Show visual feedback for detection 
   const showDetectionFeedback = (label, confidence) => {
     const feedback = document.createElement("div");
     feedback.className =
