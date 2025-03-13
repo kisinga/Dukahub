@@ -6,4 +6,8 @@ Posche sells performance
 Rolex sells status
 apple sells creativity
 
+The product is just a vehicle for an emotion.
 What feeling do I want to evoke in my customers?
+
+Remember:
+Businesses compete on prices. Brands compete on value. Experience. Emotion.
