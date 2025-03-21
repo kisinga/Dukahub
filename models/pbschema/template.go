@@ -51,14 +51,13 @@ type Admins struct {
 	// system: emailVisibility
 	emailVisibility bool
 	// system: verified
-	verified bool
-	username string
-	name     string
-	avatar   string
-	// select: LevelSelectType(admin, salesperson, accountant)
-	level          int
+	verified       bool
+	username       string
+	name           string
+	avatar         string
 	company        []*Companies
 	defaultCompany *Companies
+	level          float64
 	created        types.DateTime
 	updated        types.DateTime
 }
@@ -116,13 +115,14 @@ type Skus struct {
 type Products struct {
 	// collection-name: products
 	// system: id
-	Id      string
-	name    string
-	skus    []*Skus
-	company *Companies
-	image   string
-	created types.DateTime
-	updated types.DateTime
+	Id       string
+	name     string
+	skus     []*Skus
+	company  *Companies
+	photos   []string
+	category []*ProductCategories
+	created  types.DateTime
+	updated  types.DateTime
 }
 
 type Partners struct {
@@ -175,13 +175,14 @@ type Purchases struct {
 type Companies struct {
 	// collection-name: companies
 	// system: id
-	Id       string
-	logo     string
-	location string
-	name     string
-	phone    string
-	created  types.DateTime
-	updated  types.DateTime
+	Id           string
+	logo         string
+	location     string
+	name         string
+	phone        string
+	admin_config string
+	created      types.DateTime
+	updated      types.DateTime
 }
 
 type CompanyAccounts struct {
@@ -261,6 +262,28 @@ type ProductSkuFigures struct {
 	price   float64
 	sku     *Skus
 	product *Products
+	created types.DateTime
+	updated types.DateTime
+}
+
+type Models struct {
+	// collection-name: models
+	// system: id
+	Id       string
+	company  *Companies
+	metadata string
+	model    string
+	weights  string
+	created  types.DateTime
+	updated  types.DateTime
+}
+
+type ProductCategories struct {
+	// collection-name: product_categories
+	// system: id
+	Id      string
+	name    string
+	company *Companies
 	created types.DateTime
 	updated types.DateTime
 }

@@ -43,7 +43,7 @@ The packagae.json file contains the build:css script that builds the css file us
 
 # HOW TO GENERATE TYPES
 
-We use <https://github.com/snonky/pocketbase-gogen/tree/v0.5.0> to generate types for our database.
+We use <https://github.com/snonky/pocketbase-gogen/tree/v0.5.2> to generate types for our database.
 
 ```bash
 pocketbase-gogen template ./pb_data ./models/pbschema/template.go

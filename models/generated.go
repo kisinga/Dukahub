@@ -6,25 +6,6 @@ import (
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
-type LevelSelectType int
-
-const (
-	Admin LevelSelectType = iota
-	Salesperson
-	Accountant
-)
-
-var zzLevelSelectTypeSelectNameMap = map[string]LevelSelectType{
-	"admin":       0,
-	"salesperson": 1,
-	"accountant":  2,
-}
-var zzLevelSelectTypeSelectIotaMap = map[LevelSelectType]string{
-	0: "admin",
-	1: "salesperson",
-	2: "accountant",
-}
-
 type Admins struct {
 	core.BaseRecordProxy
 }
@@ -55,23 +36,6 @@ func (p *Admins) Avatar() string {
 
 func (p *Admins) SetAvatar(avatar string) {
 	p.Set("avatar", avatar)
-}
-
-func (p *Admins) Level() LevelSelectType {
-	option := p.GetString("level")
-	i, ok := zzLevelSelectTypeSelectNameMap[option]
-	if !ok {
-		panic("Unknown select value")
-	}
-	return i
-}
-
-func (p *Admins) SetLevel(level LevelSelectType) {
-	i, ok := zzLevelSelectTypeSelectIotaMap[level]
-	if !ok {
-		panic("Unknown select value")
-	}
-	p.Set("level", i)
 }
 
 func (p *Admins) Company() []*Companies {
@@ -107,10 +71,26 @@ func (p *Admins) DefaultCompany() *Companies {
 }
 
 func (p *Admins) SetDefaultCompany(defaultCompany *Companies) {
-	p.Record.Set("defaultCompany", defaultCompany.Id)
+	var id string
+	if defaultCompany != nil {
+		id = defaultCompany.Id
+	}
+	p.Record.Set("defaultCompany", id)
 	e := p.Expand()
-	e["defaultCompany"] = defaultCompany.Record
+	if defaultCompany != nil {
+		e["defaultCompany"] = defaultCompany.Record
+	} else {
+		delete(e, "defaultCompany")
+	}
 	p.SetExpand(e)
+}
+
+func (p *Admins) Level() float64 {
+	return p.GetFloat("level")
+}
+
+func (p *Admins) SetLevel(level float64) {
+	p.Set("level", level)
 }
 
 func (p *Admins) Created() types.DateTime {
@@ -147,9 +127,17 @@ func (p *DailyStockTakes) Product() *Products {
 }
 
 func (p *DailyStockTakes) SetProduct(product *Products) {
-	p.Record.Set("product", product.Id)
+	var id string
+	if product != nil {
+		id = product.Id
+	}
+	p.Record.Set("product", id)
 	e := p.Expand()
-	e["product"] = product.Record
+	if product != nil {
+		e["product"] = product.Record
+	} else {
+		delete(e, "product")
+	}
 	p.SetExpand(e)
 }
 
@@ -163,9 +151,17 @@ func (p *DailyStockTakes) Company() *Companies {
 }
 
 func (p *DailyStockTakes) SetCompany(company *Companies) {
-	p.Record.Set("company", company.Id)
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
 	e := p.Expand()
-	e["company"] = company.Record
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
 	p.SetExpand(e)
 }
 
@@ -179,9 +175,17 @@ func (p *DailyStockTakes) User() *Admins {
 }
 
 func (p *DailyStockTakes) SetUser(user *Admins) {
-	p.Record.Set("user", user.Id)
+	var id string
+	if user != nil {
+		id = user.Id
+	}
+	p.Record.Set("user", id)
 	e := p.Expand()
-	e["user"] = user.Record
+	if user != nil {
+		e["user"] = user.Record
+	} else {
+		delete(e, "user")
+	}
 	p.SetExpand(e)
 }
 
@@ -203,9 +207,17 @@ func (p *DailyStockTakes) Sku() *Skus {
 }
 
 func (p *DailyStockTakes) SetSku(sku *Skus) {
-	p.Record.Set("sku", sku.Id)
+	var id string
+	if sku != nil {
+		id = sku.Id
+	}
+	p.Record.Set("sku", id)
 	e := p.Expand()
-	e["sku"] = sku.Record
+	if sku != nil {
+		e["sku"] = sku.Record
+	} else {
+		delete(e, "sku")
+	}
 	p.SetExpand(e)
 }
 
@@ -275,9 +287,17 @@ func (p *DailyAccounts) Account() *CompanyAccounts {
 }
 
 func (p *DailyAccounts) SetAccount(account *CompanyAccounts) {
-	p.Record.Set("account", account.Id)
+	var id string
+	if account != nil {
+		id = account.Id
+	}
+	p.Record.Set("account", id)
 	e := p.Expand()
-	e["account"] = account.Record
+	if account != nil {
+		e["account"] = account.Record
+	} else {
+		delete(e, "account")
+	}
 	p.SetExpand(e)
 }
 
@@ -299,9 +319,17 @@ func (p *DailyAccounts) Company() *Companies {
 }
 
 func (p *DailyAccounts) SetCompany(company *Companies) {
-	p.Record.Set("company", company.Id)
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
 	e := p.Expand()
-	e["company"] = company.Record
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
 	p.SetExpand(e)
 }
 
@@ -315,9 +343,17 @@ func (p *DailyAccounts) User() *Admins {
 }
 
 func (p *DailyAccounts) SetUser(user *Admins) {
-	p.Record.Set("user", user.Id)
+	var id string
+	if user != nil {
+		id = user.Id
+	}
+	p.Record.Set("user", id)
 	e := p.Expand()
-	e["user"] = user.Record
+	if user != nil {
+		e["user"] = user.Record
+	} else {
+		delete(e, "user")
+	}
 	p.SetExpand(e)
 }
 
@@ -474,18 +510,49 @@ func (p *Products) Company() *Companies {
 }
 
 func (p *Products) SetCompany(company *Companies) {
-	p.Record.Set("company", company.Id)
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
 	e := p.Expand()
-	e["company"] = company.Record
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
 	p.SetExpand(e)
 }
 
-func (p *Products) Image() string {
-	return p.GetString("image")
+func (p *Products) Photos() []string {
+	return p.GetStringSlice("photos")
 }
 
-func (p *Products) SetImage(image string) {
-	p.Set("image", image)
+func (p *Products) SetPhotos(photos []string) {
+	p.Set("photos", photos)
+}
+
+func (p *Products) Category() []*ProductCategories {
+	rels := p.ExpandedAll("category")
+	proxies := make([]*ProductCategories, len(rels))
+	for i := range len(rels) {
+		proxies[i] = &ProductCategories{}
+		proxies[i].Record = rels[i]
+	}
+	return proxies
+}
+
+func (p *Products) SetCategory(category []*ProductCategories) {
+	records := make([]*core.Record, len(category))
+	ids := make([]string, len(category))
+	for i, r := range category {
+		records[i] = r.Record
+		ids[i] = r.Record.Id
+	}
+	p.Record.Set("category", ids)
+	e := p.Expand()
+	e["category"] = records
+	p.SetExpand(e)
 }
 
 func (p *Products) Created() types.DateTime {
@@ -538,9 +605,17 @@ func (p *Partners) Company() *Companies {
 }
 
 func (p *Partners) SetCompany(company *Companies) {
-	p.Record.Set("company", company.Id)
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
 	e := p.Expand()
-	e["company"] = company.Record
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
 	p.SetExpand(e)
 }
 
@@ -621,9 +696,17 @@ func (p *Invoices) Partner() *Partners {
 }
 
 func (p *Invoices) SetPartner(partner *Partners) {
-	p.Record.Set("partner", partner.Id)
+	var id string
+	if partner != nil {
+		id = partner.Id
+	}
+	p.Record.Set("partner", id)
 	e := p.Expand()
-	e["partner"] = partner.Record
+	if partner != nil {
+		e["partner"] = partner.Record
+	} else {
+		delete(e, "partner")
+	}
 	p.SetExpand(e)
 }
 
@@ -670,9 +753,17 @@ func (p *Invoices) Company() *Companies {
 }
 
 func (p *Invoices) SetCompany(company *Companies) {
-	p.Record.Set("company", company.Id)
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
 	e := p.Expand()
-	e["company"] = company.Record
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
 	p.SetExpand(e)
 }
 
@@ -686,9 +777,17 @@ func (p *Invoices) User() *Admins {
 }
 
 func (p *Invoices) SetUser(user *Admins) {
-	p.Record.Set("user", user.Id)
+	var id string
+	if user != nil {
+		id = user.Id
+	}
+	p.Record.Set("user", id)
 	e := p.Expand()
-	e["user"] = user.Record
+	if user != nil {
+		e["user"] = user.Record
+	} else {
+		delete(e, "user")
+	}
 	p.SetExpand(e)
 }
 
@@ -774,9 +873,17 @@ func (p *Purchases) Product() *Products {
 }
 
 func (p *Purchases) SetProduct(product *Products) {
-	p.Record.Set("product", product.Id)
+	var id string
+	if product != nil {
+		id = product.Id
+	}
+	p.Record.Set("product", id)
 	e := p.Expand()
-	e["product"] = product.Record
+	if product != nil {
+		e["product"] = product.Record
+	} else {
+		delete(e, "product")
+	}
 	p.SetExpand(e)
 }
 
@@ -798,9 +905,17 @@ func (p *Purchases) Sku() *Skus {
 }
 
 func (p *Purchases) SetSku(sku *Skus) {
-	p.Record.Set("sku", sku.Id)
+	var id string
+	if sku != nil {
+		id = sku.Id
+	}
+	p.Record.Set("sku", id)
 	e := p.Expand()
-	e["sku"] = sku.Record
+	if sku != nil {
+		e["sku"] = sku.Record
+	} else {
+		delete(e, "sku")
+	}
 	p.SetExpand(e)
 }
 
@@ -814,9 +929,17 @@ func (p *Purchases) Company() *Companies {
 }
 
 func (p *Purchases) SetCompany(company *Companies) {
-	p.Record.Set("company", company.Id)
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
 	e := p.Expand()
-	e["company"] = company.Record
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
 	p.SetExpand(e)
 }
 
@@ -830,9 +953,17 @@ func (p *Purchases) User() *Admins {
 }
 
 func (p *Purchases) SetUser(user *Admins) {
-	p.Record.Set("user", user.Id)
+	var id string
+	if user != nil {
+		id = user.Id
+	}
+	p.Record.Set("user", id)
 	e := p.Expand()
-	e["user"] = user.Record
+	if user != nil {
+		e["user"] = user.Record
+	} else {
+		delete(e, "user")
+	}
 	p.SetExpand(e)
 }
 
@@ -846,9 +977,17 @@ func (p *Purchases) Invoice() *Invoices {
 }
 
 func (p *Purchases) SetInvoice(invoice *Invoices) {
-	p.Record.Set("invoice", invoice.Id)
+	var id string
+	if invoice != nil {
+		id = invoice.Id
+	}
+	p.Record.Set("invoice", id)
 	e := p.Expand()
-	e["invoice"] = invoice.Record
+	if invoice != nil {
+		e["invoice"] = invoice.Record
+	} else {
+		delete(e, "invoice")
+	}
 	p.SetExpand(e)
 }
 
@@ -862,9 +1001,17 @@ func (p *Purchases) Transaction() *Transactions {
 }
 
 func (p *Purchases) SetTransaction(transaction *Transactions) {
-	p.Record.Set("transaction", transaction.Id)
+	var id string
+	if transaction != nil {
+		id = transaction.Id
+	}
+	p.Record.Set("transaction", id)
 	e := p.Expand()
-	e["transaction"] = transaction.Record
+	if transaction != nil {
+		e["transaction"] = transaction.Record
+	} else {
+		delete(e, "transaction")
+	}
 	p.SetExpand(e)
 }
 
@@ -932,6 +1079,14 @@ func (p *Companies) SetPhone(phone string) {
 	p.Set("phone", phone)
 }
 
+func (p *Companies) AdminConfig() string {
+	return p.GetString("admin_config")
+}
+
+func (p *Companies) SetAdminConfig(adminConfig string) {
+	p.Set("admin_config", adminConfig)
+}
+
 func (p *Companies) Created() types.DateTime {
 	return p.GetDateTime("created")
 }
@@ -982,9 +1137,17 @@ func (p *CompanyAccounts) Type() *AccountTypes {
 }
 
 func (p *CompanyAccounts) SetType(type_ *AccountTypes) {
-	p.Record.Set("type", type_.Id)
+	var id string
+	if type_ != nil {
+		id = type_.Id
+	}
+	p.Record.Set("type", id)
 	e := p.Expand()
-	e["type"] = type_.Record
+	if type_ != nil {
+		e["type"] = type_.Record
+	} else {
+		delete(e, "type")
+	}
 	p.SetExpand(e)
 }
 
@@ -998,9 +1161,17 @@ func (p *CompanyAccounts) Company() *Companies {
 }
 
 func (p *CompanyAccounts) SetCompany(company *Companies) {
-	p.Record.Set("company", company.Id)
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
 	e := p.Expand()
-	e["company"] = company.Record
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
 	p.SetExpand(e)
 }
 
@@ -1070,9 +1241,17 @@ func (p *Transactions) Company() *Companies {
 }
 
 func (p *Transactions) SetCompany(company *Companies) {
-	p.Record.Set("company", company.Id)
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
 	e := p.Expand()
-	e["company"] = company.Record
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
 	p.SetExpand(e)
 }
 
@@ -1086,9 +1265,17 @@ func (p *Transactions) Account() *CompanyAccounts {
 }
 
 func (p *Transactions) SetAccount(account *CompanyAccounts) {
-	p.Record.Set("account", account.Id)
+	var id string
+	if account != nil {
+		id = account.Id
+	}
+	p.Record.Set("account", id)
 	e := p.Expand()
-	e["account"] = account.Record
+	if account != nil {
+		e["account"] = account.Record
+	} else {
+		delete(e, "account")
+	}
 	p.SetExpand(e)
 }
 
@@ -1175,9 +1362,17 @@ func (p *Sales) Sku() *Skus {
 }
 
 func (p *Sales) SetSku(sku *Skus) {
-	p.Record.Set("sku", sku.Id)
+	var id string
+	if sku != nil {
+		id = sku.Id
+	}
+	p.Record.Set("sku", id)
 	e := p.Expand()
-	e["sku"] = sku.Record
+	if sku != nil {
+		e["sku"] = sku.Record
+	} else {
+		delete(e, "sku")
+	}
 	p.SetExpand(e)
 }
 
@@ -1191,9 +1386,17 @@ func (p *Sales) Product() *Products {
 }
 
 func (p *Sales) SetProduct(product *Products) {
-	p.Record.Set("Product", product.Id)
+	var id string
+	if product != nil {
+		id = product.Id
+	}
+	p.Record.Set("Product", id)
 	e := p.Expand()
-	e["Product"] = product.Record
+	if product != nil {
+		e["Product"] = product.Record
+	} else {
+		delete(e, "Product")
+	}
 	p.SetExpand(e)
 }
 
@@ -1207,9 +1410,17 @@ func (p *Sales) Company() *Companies {
 }
 
 func (p *Sales) SetCompany(company *Companies) {
-	p.Record.Set("company", company.Id)
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
 	e := p.Expand()
-	e["company"] = company.Record
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
 	p.SetExpand(e)
 }
 
@@ -1223,9 +1434,17 @@ func (p *Sales) Invoice() *Invoices {
 }
 
 func (p *Sales) SetInvoice(invoice *Invoices) {
-	p.Record.Set("invoice", invoice.Id)
+	var id string
+	if invoice != nil {
+		id = invoice.Id
+	}
+	p.Record.Set("invoice", id)
 	e := p.Expand()
-	e["invoice"] = invoice.Record
+	if invoice != nil {
+		e["invoice"] = invoice.Record
+	} else {
+		delete(e, "invoice")
+	}
 	p.SetExpand(e)
 }
 
@@ -1310,9 +1529,17 @@ func (p *Expenses) Transaction() *Transactions {
 }
 
 func (p *Expenses) SetTransaction(transaction *Transactions) {
-	p.Record.Set("transaction", transaction.Id)
+	var id string
+	if transaction != nil {
+		id = transaction.Id
+	}
+	p.Record.Set("transaction", id)
 	e := p.Expand()
-	e["transaction"] = transaction.Record
+	if transaction != nil {
+		e["transaction"] = transaction.Record
+	} else {
+		delete(e, "transaction")
+	}
 	p.SetExpand(e)
 }
 
@@ -1407,9 +1634,17 @@ func (p *OpenCloseDetails) User() *Admins {
 }
 
 func (p *OpenCloseDetails) SetUser(user *Admins) {
-	p.Record.Set("user", user.Id)
+	var id string
+	if user != nil {
+		id = user.Id
+	}
+	p.Record.Set("user", id)
 	e := p.Expand()
-	e["user"] = user.Record
+	if user != nil {
+		e["user"] = user.Record
+	} else {
+		delete(e, "user")
+	}
 	p.SetExpand(e)
 }
 
@@ -1463,9 +1698,17 @@ func (p *ProductSkuFigures) Sku() *Skus {
 }
 
 func (p *ProductSkuFigures) SetSku(sku *Skus) {
-	p.Record.Set("sku", sku.Id)
+	var id string
+	if sku != nil {
+		id = sku.Id
+	}
+	p.Record.Set("sku", id)
 	e := p.Expand()
-	e["sku"] = sku.Record
+	if sku != nil {
+		e["sku"] = sku.Record
+	} else {
+		delete(e, "sku")
+	}
 	p.SetExpand(e)
 }
 
@@ -1479,9 +1722,17 @@ func (p *ProductSkuFigures) Product() *Products {
 }
 
 func (p *ProductSkuFigures) SetProduct(product *Products) {
-	p.Record.Set("product", product.Id)
+	var id string
+	if product != nil {
+		id = product.Id
+	}
+	p.Record.Set("product", id)
 	e := p.Expand()
-	e["product"] = product.Record
+	if product != nil {
+		e["product"] = product.Record
+	} else {
+		delete(e, "product")
+	}
 	p.SetExpand(e)
 }
 
@@ -1498,5 +1749,133 @@ func (p *ProductSkuFigures) Updated() types.DateTime {
 }
 
 func (p *ProductSkuFigures) SetUpdated(updated types.DateTime) {
+	p.Set("updated", updated)
+}
+
+type Models struct {
+	core.BaseRecordProxy
+}
+
+func (p *Models) CollectionName() string {
+	return "models"
+}
+
+func (p *Models) Company() *Companies {
+	var proxy *Companies
+	if rel := p.ExpandedOne("company"); rel != nil {
+		proxy = &Companies{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *Models) SetCompany(company *Companies) {
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
+	e := p.Expand()
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
+	p.SetExpand(e)
+}
+
+func (p *Models) Metadata() string {
+	return p.GetString("metadata")
+}
+
+func (p *Models) SetMetadata(metadata string) {
+	p.Set("metadata", metadata)
+}
+
+func (p *Models) Model() string {
+	return p.GetString("model")
+}
+
+func (p *Models) SetModel(model string) {
+	p.Set("model", model)
+}
+
+func (p *Models) Weights() string {
+	return p.GetString("weights")
+}
+
+func (p *Models) SetWeights(weights string) {
+	p.Set("weights", weights)
+}
+
+func (p *Models) Created() types.DateTime {
+	return p.GetDateTime("created")
+}
+
+func (p *Models) SetCreated(created types.DateTime) {
+	p.Set("created", created)
+}
+
+func (p *Models) Updated() types.DateTime {
+	return p.GetDateTime("updated")
+}
+
+func (p *Models) SetUpdated(updated types.DateTime) {
+	p.Set("updated", updated)
+}
+
+type ProductCategories struct {
+	core.BaseRecordProxy
+}
+
+func (p *ProductCategories) CollectionName() string {
+	return "product_categories"
+}
+
+func (p *ProductCategories) Name() string {
+	return p.GetString("name")
+}
+
+func (p *ProductCategories) SetName(name string) {
+	p.Set("name", name)
+}
+
+func (p *ProductCategories) Company() *Companies {
+	var proxy *Companies
+	if rel := p.ExpandedOne("company"); rel != nil {
+		proxy = &Companies{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *ProductCategories) SetCompany(company *Companies) {
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
+	e := p.Expand()
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
+	p.SetExpand(e)
+}
+
+func (p *ProductCategories) Created() types.DateTime {
+	return p.GetDateTime("created")
+}
+
+func (p *ProductCategories) SetCreated(created types.DateTime) {
+	p.Set("created", created)
+}
+
+func (p *ProductCategories) Updated() types.DateTime {
+	return p.GetDateTime("updated")
+}
+
+func (p *ProductCategories) SetUpdated(updated types.DateTime) {
 	p.Set("updated", updated)
 }

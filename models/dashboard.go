@@ -4,4 +4,5 @@ type DashboardData struct {
 	Admin         Admins
 	CompanyStats  []CompanyStats
 	Activecompany Companies
+	Model         Models
 }

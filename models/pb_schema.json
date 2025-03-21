@@ -296,7 +296,10 @@
                 "protected": false,
                 "required": false,
                 "system": false,
-                "thumbs": null,
+                "thumbs": [
+                    "100x100",
+                    "200x200"
+                ],
                 "type": "file"
             },
             {
@@ -943,14 +946,18 @@
                 "maxSize": 5242880,
                 "mimeTypes": [
                     "image/png",
-                    "image/jpeg"
+                    "image/jpeg",
+                    "image/avif"
                 ],
                 "name": "logo",
                 "presentable": false,
                 "protected": false,
-                "required": false,
+                "required": true,
                 "system": false,
-                "thumbs": null,
+                "thumbs": [
+                    "100x100",
+                    "200x200"
+                ],
                 "type": "file"
             },
             {
@@ -1667,6 +1674,111 @@
         "system": false
     },
     {
+        "id": "pbc_3552922951",
+        "listRule": null,
+        "viewRule": null,
+        "createRule": null,
+        "updateRule": null,
+        "deleteRule": null,
+        "name": "models",
+        "type": "base",
+        "fields": [
+            {
+                "autogeneratePattern": "[a-z0-9]{15}",
+                "hidden": false,
+                "id": "text3208210256",
+                "max": 15,
+                "min": 15,
+                "name": "id",
+                "pattern": "^[a-z0-9]+$",
+                "presentable": false,
+                "primaryKey": true,
+                "required": true,
+                "system": true,
+                "type": "text"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "ekjku0lrs17viq2",
+                "hidden": false,
+                "id": "relation1337919823",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "company",
+                "presentable": false,
+                "required": true,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "file1326724116",
+                "maxSelect": 1,
+                "maxSize": 0,
+                "mimeTypes": [
+                    "application/json"
+                ],
+                "name": "metadata",
+                "presentable": false,
+                "protected": false,
+                "required": true,
+                "system": false,
+                "thumbs": [],
+                "type": "file"
+            },
+            {
+                "hidden": false,
+                "id": "file3616895705",
+                "maxSelect": 1,
+                "maxSize": 0,
+                "mimeTypes": [],
+                "name": "model",
+                "presentable": false,
+                "protected": false,
+                "required": true,
+                "system": false,
+                "thumbs": [],
+                "type": "file"
+            },
+            {
+                "hidden": false,
+                "id": "file449999704",
+                "maxSelect": 1,
+                "maxSize": 0,
+                "mimeTypes": [],
+                "name": "weights",
+                "presentable": false,
+                "protected": false,
+                "required": true,
+                "system": false,
+                "thumbs": [],
+                "type": "file"
+            },
+            {
+                "hidden": false,
+                "id": "autodate2990389176",
+                "name": "created",
+                "onCreate": true,
+                "onUpdate": false,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            },
+            {
+                "hidden": false,
+                "id": "autodate3332085495",
+                "name": "updated",
+                "onCreate": true,
+                "onUpdate": true,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            }
+        ],
+        "indexes": [],
+        "system": false
+    },
+    {
         "id": "0wzfzkbefir2b9h",
         "listRule": null,
         "viewRule": null,
@@ -1878,6 +1990,83 @@
         "system": false
     },
     {
+        "id": "pbc_3283744169",
+        "listRule": null,
+        "viewRule": null,
+        "createRule": null,
+        "updateRule": null,
+        "deleteRule": null,
+        "name": "product_categories",
+        "type": "base",
+        "fields": [
+            {
+                "autogeneratePattern": "[a-z0-9]{15}",
+                "hidden": false,
+                "id": "text3208210256",
+                "max": 15,
+                "min": 15,
+                "name": "id",
+                "pattern": "^[a-z0-9]+$",
+                "presentable": false,
+                "primaryKey": true,
+                "required": true,
+                "system": true,
+                "type": "text"
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text1579384326",
+                "max": 0,
+                "min": 0,
+                "name": "name",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": false,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "ekjku0lrs17viq2",
+                "hidden": false,
+                "id": "relation1337919823",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "company",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "autodate2990389176",
+                "name": "created",
+                "onCreate": true,
+                "onUpdate": false,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            },
+            {
+                "hidden": false,
+                "id": "autodate3332085495",
+                "name": "updated",
+                "onCreate": true,
+                "onUpdate": true,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            }
+        ],
+        "indexes": [
+            "CREATE INDEX `idx_08KPO1uEPP` ON `product_categories` (\n  `company`,\n  `name`\n)"
+        ],
+        "system": false
+    },
+    {
         "id": "urjz2gu9085ncfv",
         "listRule": null,
         "viewRule": null,
@@ -2042,20 +2231,31 @@
             {
                 "hidden": false,
                 "id": "v9b58oto",
-                "maxSelect": 1,
+                "maxSelect": 99,
                 "maxSize": 5242880,
                 "mimeTypes": [
-                    "image/jpeg",
-                    "image/png",
-                    "image/vnd.mozilla.apng"
+                    "image/jpeg"
                 ],
-                "name": "image",
+                "name": "photos",
                 "presentable": false,
                 "protected": false,
                 "required": true,
                 "system": false,
                 "thumbs": null,
                 "type": "file"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "pbc_3283744169",
+                "hidden": false,
+                "id": "relation105650625",
+                "maxSelect": 999,
+                "minSelect": 0,
+                "name": "category",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
             },
             {
                 "hidden": false,
@@ -2080,7 +2280,7 @@
         ],
         "indexes": [
             "CREATE INDEX `idx_Z31pwd0` ON `products` (`name`)",
-            "CREATE INDEX `idx_6Yv4sOe` ON `products` (`company`)"
+            "CREATE INDEX `idx_6Yv4sOe` ON `products` (\n  `company`,\n  `name`\n)"
         ],
         "system": false
     },

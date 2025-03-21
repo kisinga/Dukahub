@@ -4,3 +4,6 @@ pb_data/
 # the bianry
 
 backend
+
+# all .DS_Store files in all folders
+**/.DS_Store
