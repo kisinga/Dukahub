@@ -10,7 +10,7 @@ import (
 // and returns a pointer to the zip file
 func (helper *DbHelper) ExportPhotos(companyID string) (*bytes.Buffer, error) {
 	// Fetch all the products for the company
-	products, error := helper.fetchRawProductsById(companyID)
+	products, error := helper.fetchRawProductsByCompanyId(companyID)
 	if error != nil {
 		return nil, error
 	}
@@ -29,14 +29,23 @@ func (helper *DbHelper) ExportPhotos(companyID string) (*bytes.Buffer, error) {
 	blobs := make([]*blob.Reader, len(products))
 	// retrieve a file reader for the each photo
 	for _, product := range products {
-		photoKey := product.BaseFilesPath() + "/" + product.GetString("photos")
-		r, err := fsys.GetFile(photoKey)
-		if err != nil {
-			helper.Logger.Printf("Error getting file %s: %v", photoKey, err)
+		photosKeys := product.GetStringSlice("photos")
+		if len(photosKeys) == 0 {
+			helper.Logger.Println("No photos found for product")
 			continue
 		}
-		blobs = append(blobs, r)
-		defer r.Close()
+
+		for _, photoKey := range photosKeys {
+			// generate the file path
+			photoPath := product.BaseFilesPath() + "/" + photoKey
+			r, err := fsys.GetFile(photoPath)
+			if err != nil {
+				helper.Logger.Printf("Error getting file %s: %v", photoPath, err)
+				continue
+			}
+			blobs = append(blobs, r)
+			defer r.Close()
+		}
 	}
 
 	// create a zip file

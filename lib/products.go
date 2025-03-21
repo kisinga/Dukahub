@@ -15,7 +15,7 @@ func (helper *DbHelper) FetchProductsById(id string) (*models.Products, error) {
 	return models.WrapRecord[models.Products](record)
 }
 
-func (helper *DbHelper) fetchRawProductsById(companyID string) ([]*core.Record, error) {
+func (helper *DbHelper) fetchRawProductsByCompanyId(companyID string) ([]*core.Record, error) {
 	records, error := helper.Pb.FindRecordsByFilter(
 		"products",
 		fmt.Sprintf("company = '%s'", companyID),
