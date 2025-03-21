@@ -8,7 +8,7 @@ import (
 )
 
 type Proxy interface {
-	Admins | DailyStockTakes | DailyAccounts | AccountTypes | Skus | Products | Partners | Invoices | Purchases | Companies | CompanyAccounts | Transactions | Sales | Expenses | OpenCloseDetails | ProductSkuFigures
+	Admins | DailyStockTakes | DailyAccounts | AccountTypes | Skus | Products | Partners | Invoices | Purchases | Companies | CompanyAccounts | Transactions | Sales | Expenses | OpenCloseDetails | ProductSkuFigures | Models | ProductCategories
 }
 
 // This interface constrains a type parameter of
@@ -74,7 +74,7 @@ func NewProxy[P Proxy, PP ProxyP[P]](app core.App) (PP, error) {
 
 // Wraps a record in a newly created proxy
 //
-//	proxy := WrapProxy[ProxyType](record)
+//	proxy := WrapRecord[ProxyType](record)
 func WrapRecord[P Proxy, PP ProxyP[P]](record *core.Record) (PP, error) {
 	collectionName := record.Collection().Name
 	proxyCollectionName := PP.CollectionName(nil)
@@ -136,6 +136,9 @@ var Relations = map[string]map[string][]RelationField{
 		},
 		"companies": {
 			{"company", false},
+		},
+		"product_categories": {
+			{"category", true},
 		},
 	},
 	"partners": {
@@ -226,6 +229,16 @@ var Relations = map[string]map[string][]RelationField{
 		},
 		"products": {
 			{"product", false},
+		},
+	},
+	"models": {
+		"companies": {
+			{"company", false},
+		},
+	},
+	"product_categories": {
+		"companies": {
+			{"company", false},
 		},
 	},
 }

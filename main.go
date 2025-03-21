@@ -3,9 +3,11 @@ package main
 import (
 	"embed"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/kisinga/dukahub/lib"
 	"github.com/kisinga/dukahub/models"
@@ -22,7 +24,7 @@ var embeddedFiles embed.FS
 
 func main() {
 	app := pocketbase.New()
-	helper := &lib.DbHelper{Pb: app}
+	helper := &lib.DbHelper{Pb: app, Logger: log.Default()}
 
 	app.OnRecordAuthRequest("admins").BindFunc(func(e *core.RecordAuthRequestEvent) error {
 		// Set HTTP-Only Auth Cookie
@@ -104,7 +106,8 @@ func main() {
 
 		dashboardGroup.GET("/sell", func(c *core.RequestEvent) error {
 			userID := c.Get("userID")
-			data, err := helper.FetchDashboardData(userID.(string), "")
+			companyID := c.Request.PathValue("companyID")
+			data, err := helper.FetchDashboardData(userID.(string), companyID)
 			if err != nil {
 				return c.Redirect(http.StatusFound, "/login")
 			}
@@ -113,11 +116,35 @@ func main() {
 
 		dashboardGroup.GET("/register", func(c *core.RequestEvent) error {
 			userID := c.Get("userID")
-			data, err := helper.FetchDashboardData(userID.(string), "")
+			companyID := c.Request.PathValue("companyID")
+			data, err := helper.FetchDashboardData(userID.(string), companyID)
 			if err != nil {
 				return c.Redirect(http.StatusFound, "/login")
 			}
 			return lib.Render(c, pages.Register(*data))
+		})
+
+		dashboardGroup.GET("/export", func(c *core.RequestEvent) error {
+			companyID := c.Request.PathValue("companyID")
+
+			buf, err := helper.ExportPhotos(companyID)
+			if err != nil {
+				// Redirect on error
+				c.Response.Header().Set("Location", "/login")
+				c.Response.WriteHeader(http.StatusFound)
+				return nil
+			}
+
+			// Set the proper headers for a downloadable zip file.
+			c.Response.Header().Set("Content-Type", "application/zip")
+			c.Response.Header().Set("Content-Disposition", "attachment; filename=\"export.zip\"")
+			c.Response.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
+
+			// Write the zip content directly from the *bytes.Buffer.
+			if _, err := io.Copy(c.Response, buf); err != nil {
+				return err
+			}
+			return nil
 		})
 
 		return se.Next()
