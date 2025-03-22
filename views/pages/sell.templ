@@ -9,7 +9,7 @@ import (
 templ Newsale(data models.DashboardData) {
 	@layouts.BaseLayout() {
 		@layouts.DashboardLayout(data) {
-			@components.Scanner("data.Model")
+			@components.Scanner(data.Model)
 		}
 	}
 }

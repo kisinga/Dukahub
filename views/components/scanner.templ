@@ -1,6 +1,9 @@
 package components
 
-templ Scanner(model string) {
+import "github.com/kisinga/dukahub/models"
+
+templ Scanner(model models.Models) {
+	@templ.JSONScript("model", model)
 	<div class="container-fluid mt-3 mb-5">
 		<!-- Header -->
 		<div class="row mb-3">
@@ -179,11 +182,14 @@ templ Scanner(model string) {
   let modelLabels = [];
   let maxPredictions = 0;
 
+  const scriptTag = document.getElementById('model');
+  const modelSRC = JSON.parse(scriptTag.textContent);
+
   // Load the Teachable Machine model
   const loadModel = async () => {
     try {
-      const modelURL = "/api/files/models/181sze8j84ruyq7/model_mmwm3j0osa.json";
-      const metadataURL = "/public/metadata.json";
+      const modelURL = modelSRC.model;
+      const metadataURL = modelSRC.metadata;
 
       // Load the model and metadata
       model = await tmImage.load(modelURL, metadataURL);
