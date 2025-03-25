@@ -7,6 +7,7 @@ let maxPredictions = 0;
 let cameraView = null;
 let cameraContainer = null;
 let successCallback = null;
+let detected = false;
 
 const scriptTag = document.getElementById("model");
 const modelSRC = JSON.parse(scriptTag.textContent);
@@ -47,6 +48,7 @@ export const initCamera = async (
   cameraView = _cameraView;
   cameraContainer = _cameraContainer;
   successCallback = _successCallback;
+  detected = false;
   try {
     // Load model first
     await loadModel();
@@ -77,7 +79,12 @@ export const initCamera = async (
     }, 50);
 
     // Start periodic detection
-    setInterval(detectProduct, 1000); // Check for products every second
+    setInterval(() => {
+      console.log(detected);
+      if (!detected) {
+        detectProduct();
+      }
+    }, 1000); // Check for products every second
   } catch (error) {
     console.error("Error accessing camera:", error);
     alert("Could not access the camera. Please check permissions.");
@@ -137,13 +144,12 @@ const detectProduct = async () => {
         .getOne(detectedClass)
         .then((product) => {
           console.log("Product found:", product);
+          detected = true;
           successCallback(product);
         })
         .catch((error) => {
           console.error("Error fetching product:", error);
         });
-
-      const productCode = detectedClass;
     }
   } catch (error) {
     console.error("Error during product detection:", error);
