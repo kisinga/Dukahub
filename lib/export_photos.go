@@ -55,7 +55,7 @@ func (helper *DbHelper) ExportPhotos(companyID string) (*bytes.Buffer, error) {
 			// Add file to our collection with its original filename
 			files = append(files, FileInfo{
 				Reader:   r,
-				Filename: photoKey, // This preserves the original filename and extension
+				Filename: photoPath, // This preserves the original filename and extension
 			})
 		}
 	}
