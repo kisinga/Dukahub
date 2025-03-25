@@ -29,13 +29,7 @@ templ Scanner(model models.Models) {
 						>
 							<div
 								class="scanning-line bg-danger"
-								style="
-                height: 2px;
-                width: 100%;
-                position: absolute;
-                top: 50%;
-                opacity: 0.7;
-              "
+								style="height: 2px; width: 100%;position: absolute;top: 50%;opacity: 0.7;"
 							></div>
 						</div>
 						<button
@@ -46,32 +40,23 @@ templ Scanner(model models.Models) {
 							<i class="bi bi-camera"></i>
 						</button>
 					</div>
-					<div
-						class="card-footer bg-white border-0 d-flex justify-content-between py-2"
-					>
-						<button id="flash-toggle" class="btn btn-sm btn-outline-secondary">
-							<i class="bi bi-lightning"></i> Flash
-						</button>
-						<button id="camera-toggle" class="btn btn-sm btn-outline-secondary">
-							<i class="bi bi-arrow-repeat"></i> Switch
-						</button>
-					</div>
 				</div>
 			</div>
 			<div id="predictions"></div>
 			<!-- Manual product entry -->
 			<div class="col-12 col-md-6 mb-3">
 				<div class="card border-0 shadow-sm">
-					<div class="card-header bg-white border-0">
-						<h5 class="mb-0">Add Products</h5>
-					</div>
 					<div class="card-body">
 						<div class="input-group mb-3">
 							<input
-								type="text"
 								class="form-control"
-								placeholder="Scan or enter product code"
-								id="product-input"
+								type="search"
+								name="search"
+								placeholder="Search products"
+								hx-post="/search"
+								hx-trigger="input changed delay:500ms, search"
+								hx-target="#search-results"
+								hx-indicator=".htmx-indicator"
 							/>
 							<button class="btn btn-primary" type="button" id="add-product-btn">
 								Add
@@ -98,8 +83,10 @@ templ Scanner(model models.Models) {
 	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 	@templ.JSONScript("model", model)
-	<script src="/public/scanner.js"></script>
-	<script>
+	<script type="module">
+	import { initCamera, toggleCamera } from "/public/scanner.js";
+	import { addProduct } from "/public/products.js";
+
     const isMobile = () => {
       return (
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
@@ -119,8 +106,8 @@ templ Scanner(model models.Models) {
     document.addEventListener("DOMContentLoaded", () => {
       // Initialize camera on mobile
       if (isMobile()) {
-        initCamera();
-      }
+    		initCamera(cameraView, cameraContainer);
+	    }
       // Toggle scanner button
       scanToggle.addEventListener("click", toggleCamera);
 

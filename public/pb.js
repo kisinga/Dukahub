@@ -4,7 +4,7 @@ const pb = new PocketBase("/");
 /**
  * Database service wrapper for PocketBase operations
  */
-export const DbService = {
+const DbService = {
   get authStore() {
     return pb.authStore;
   },
@@ -211,4 +211,4 @@ async function handleTokenRefresh() {
 }
 
 // Export helper functions
-export { DbService as default, pb as pocketBaseClient };
+export { DbService as DbService, pb as pocketBaseClient };

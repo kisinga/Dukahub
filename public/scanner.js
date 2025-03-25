@@ -1,14 +1,18 @@
+import { pocketBaseClient } from "./pb.js";
+
 // Camera stream reference
 let stream = null;
 let model = null;
 let modelLabels = [];
 let maxPredictions = 0;
+let cameraView = null;
+let cameraContainer = null;
 
 const scriptTag = document.getElementById("model");
 const modelSRC = JSON.parse(scriptTag.textContent);
 
 // Load the Teachable Machine model
-const loadModel = async () => {
+export const loadModel = async () => {
   try {
     const modelURL = modelSRC.model;
     const metadataURL = modelSRC.metadata;
@@ -34,7 +38,10 @@ const loadModel = async () => {
 };
 
 // Initialize camera on mobile
-const initCamera = async () => {
+export const initCamera = async (_cameraView, _cameraContainer) => {
+  // Set variables
+  cameraView = _cameraView;
+  cameraContainer = _cameraContainer;
   try {
     // Load model first
     await loadModel();
@@ -44,6 +51,8 @@ const initCamera = async () => {
       video: { facingMode: "environment" },
       audio: false,
     });
+    //sleep for 1 second
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Display camera feed in video element
     cameraView.srcObject = stream;
@@ -71,7 +80,7 @@ const initCamera = async () => {
 };
 
 // Stop camera stream
-const stopCamera = () => {
+export const stopCamera = () => {
   if (stream) {
     stream.getTracks().forEach((track) => track.stop());
     stream = null;
@@ -81,7 +90,7 @@ const stopCamera = () => {
 };
 
 // Toggle camera
-const toggleCamera = () => {
+export const toggleCamera = () => {
   if (stream) {
     stopCamera();
   } else {
@@ -112,17 +121,31 @@ const detectProduct = async () => {
     }
 
     // If confidence is high enough, add the product
-    if (maxConfidence > 0.8 && detectedClass !== -1) {
-      const productCode = `tm_${detectedClass}`;
-      addProduct(productCode);
+    if (maxConfidence > 0.9 && detectedClass !== -1) {
       showDetectionFeedback(modelLabels[detectedClass], maxConfidence);
+      // const productCode = `tm_${detectedClass}`;
+      // addProduct(productCode);
+      // use the detected class label as the id and perform a db lookup
+      detectedClass = "w90difdjpx83qzx";
+      pocketBaseClient
+        .collection("products")
+        .getOne(detectedClass)
+        .then((product) => {
+          console.log("Product found:", product);
+          addProduct(product.id);
+        })
+        .catch((error) => {
+          console.error("Error fetching product:", error);
+        });
+
+      const productCode = detectedClass;
     }
   } catch (error) {
     console.error("Error during product detection:", error);
   }
 };
 
-const displayPredictions = (predictions) => {
+export const displayPredictions = (predictions) => {
   const predictionsContainer = document.getElementById("predictions");
   predictionsContainer.innerHTML = ""; // Clear previous predictions
 
@@ -152,7 +175,7 @@ const displayPredictions = (predictions) => {
 };
 
 // Show visual feedback for detection
-const showDetectionFeedback = (label, confidence) => {
+export const showDetectionFeedback = (label, confidence) => {
   const feedback = document.createElement("div");
   feedback.className =
     "detection-feedback position-absolute top-0 start-0 m-3 bg-dark text-white p-2 rounded";

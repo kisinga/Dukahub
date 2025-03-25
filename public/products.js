@@ -1,5 +1,5 @@
 // Add product to the sale (keeping your existing code)
-const addProduct = (code) => {
+export const addProduct = (code) => {
   // In a real app, you'd look up the product details from a database
   // For demo purposes, we'll create some sample data
   const products = {
