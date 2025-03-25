@@ -79,6 +79,23 @@ templ Scanner(model models.Models) {
 			<!-- Products Table -->
 			@ProductsTable(true, "Sale Items", []models.Products{}, "Product", "Price", "Quantity", "Actions")
 		</div>
+		<div class="modal fade" id="scanModal" tabindex="-1" aria-labelledby="scanModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="scanModalLabel">Add product</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						...
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary">Save changes</button>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
@@ -95,6 +112,41 @@ templ Scanner(model models.Models) {
       );
     };
 
+	const modalUpdater = (state, message) => {
+		const modal = document.getElementById("scanModal");
+		const modalLabel = document.getElementById("scanModalLabel");
+		const modalBody = modal.querySelector(".modal-body");
+		const modalFooter = modal.querySelector(".modal-footer");
+
+		// if the modal is already open, close it
+		if (modal.classList.contains("show")) {
+			const bsModal = bootstrap.Modal.getInstance(modal);
+			bsModal.hide();
+		}
+
+		if (state) {
+			modalLabel.textContent = "Product Found";
+			modalBody.innerHTML = `<p>${message}</p>`;
+			modalFooter.innerHTML = `<button type="button" class="btn btn-primary" data-bs-dismiss="modal">Add Product</button>`;
+		} else {
+			modalLabel.textContent = "Error";
+			modalBody.innerHTML = `<p>${message}</p>`;
+			modalFooter.innerHTML = `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>`;
+		}
+
+		const bsModal = new bootstrap.Modal(modal);
+		bsModal.show();
+	}
+
+	const successCallback = (product) => {
+		const productName = product.name || "Unknown Product";
+		const productPrice = product.price || "Unknown Price";
+		const productQuantity = product.quantity || 1;
+
+		const message = `Product: ${productName}<br>Price: ${productPrice}<br>Quantity: ${productQuantity}`;
+		modalUpdater(true, message);
+	}
+
     // DOM Elements
     const cameraContainer = document.getElementById("camera-container");
     const cameraView = document.getElementById("camera-view");
@@ -106,7 +158,7 @@ templ Scanner(model models.Models) {
     document.addEventListener("DOMContentLoaded", () => {
       // Initialize camera on mobile
       if (isMobile()) {
-    		initCamera(cameraView, cameraContainer);
+    		initCamera(cameraView, cameraContainer, successCallback);
 	    }
       // Toggle scanner button
       scanToggle.addEventListener("click", toggleCamera);
@@ -115,5 +167,7 @@ templ Scanner(model models.Models) {
       addProductBtn.addEventListener("click", () => addProduct());
 
     });
+
+
   </script>
 }

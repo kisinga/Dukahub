@@ -1,5 +1,4 @@
 import { pocketBaseClient } from "./pb.js";
-
 // Camera stream reference
 let stream = null;
 let model = null;
@@ -7,6 +6,7 @@ let modelLabels = [];
 let maxPredictions = 0;
 let cameraView = null;
 let cameraContainer = null;
+let successCallback = null;
 
 const scriptTag = document.getElementById("model");
 const modelSRC = JSON.parse(scriptTag.textContent);
@@ -38,10 +38,15 @@ export const loadModel = async () => {
 };
 
 // Initialize camera on mobile
-export const initCamera = async (_cameraView, _cameraContainer) => {
+export const initCamera = async (
+  _cameraView,
+  _cameraContainer,
+  _successCallback
+) => {
   // Set variables
   cameraView = _cameraView;
   cameraContainer = _cameraContainer;
+  successCallback = _successCallback;
   try {
     // Load model first
     await loadModel();
@@ -132,7 +137,7 @@ const detectProduct = async () => {
         .getOne(detectedClass)
         .then((product) => {
           console.log("Product found:", product);
-          addProduct(product.id);
+          successCallback(product);
         })
         .catch((error) => {
           console.error("Error fetching product:", error);
