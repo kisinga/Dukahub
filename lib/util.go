@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"sync"
 )
 
 type ThumnailSize struct {
@@ -28,14 +29,26 @@ func generateFileUrl(collection, recordId, fileName string) string {
 	return val
 }
 
+// Buffer pool to reuse buffers during io.CopyBuffer.
+var bufPool = sync.Pool{
+	New: func() interface{} {
+		// Allocate an 32KB buffer (tune as needed)
+		return make([]byte, 32*1024)
+	},
+}
+
 func createZip(files []FileInfo, logger *log.Logger) (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
 	zipWriter := zip.NewWriter(buf)
 	defer zipWriter.Close()
 
 	for _, file := range files {
+		header := &zip.FileHeader{
+			Name:   file.Filename,
+			Method: zip.Store, // Change to zip.Deflate for compression.
+		}
 		// Create a new file in the zip with the original filename
-		zipFile, err := zipWriter.Create(file.Filename)
+		zipFile, err := zipWriter.CreateHeader(header)
 		if err != nil {
 			logger.Printf("Error creating zip entry for %s: %v", file.Filename, err)
 			continue
@@ -44,6 +57,11 @@ func createZip(files []FileInfo, logger *log.Logger) (*bytes.Buffer, error) {
 			logger.Printf("Blob reader is nil for file %s", file.Filename)
 			continue
 		}
+		// Use a preallocated buffer from our pool.
+		buf := bufPool.Get().([]byte)
+		_, err = io.CopyBuffer(zipFile, file.Reader, buf)
+		bufPool.Put(buf) // return the buffer
+
 		// Copy the file content to the zip
 		_, err = io.Copy(zipFile, file.Reader)
 		if err != nil {
