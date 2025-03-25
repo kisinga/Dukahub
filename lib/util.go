@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-
-	"gocloud.dev/blob"
 )
 
 type ThumnailSize struct {
@@ -30,31 +28,27 @@ func generateFileUrl(collection, recordId, fileName string) string {
 	return val
 }
 
-func createZip(blobs []*blob.Reader, logger *log.Logger) (*bytes.Buffer, error) {
+func createZip(files []FileInfo, logger *log.Logger) (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
 	zipWriter := zip.NewWriter(buf)
+	defer zipWriter.Close()
 
-	// Iterate over the blobs, create a new entry for each one.
-	for i, br := range blobs {
-		// Use a generic file name; adjust as needed if you have actual filenames.
-		fileName := fmt.Sprintf("file%d", i)
-		entryWriter, err := zipWriter.Create(fileName)
+	for _, file := range files {
+		// Create a new file in the zip with the original filename
+		zipFile, err := zipWriter.Create(file.Filename)
 		if err != nil {
-			return nil, fmt.Errorf("error creating zip entry for %s: %w", fileName, err)
-		}
-		if br == nil {
-			logger.Printf("Blob reader is nil for file %s", fileName)
+			logger.Printf("Error creating zip entry for %s: %v", file.Filename, err)
 			continue
 		}
-		// Copy the blob's content into the zip entry.
-		if _, err := io.Copy(entryWriter, br); err != nil {
-			return nil, fmt.Errorf("error copying data to zip entry for %s: %w", fileName, err)
+		if file.Reader == nil {
+			logger.Printf("Blob reader is nil for file %s", file.Filename)
+			continue
 		}
-	}
-
-	// Finalize the zip archive.
-	if err := zipWriter.Close(); err != nil {
-		return nil, fmt.Errorf("error closing zip writer: %w", err)
+		// Copy the file content to the zip
+		_, err = io.Copy(zipFile, file.Reader)
+		if err != nil {
+			logger.Printf("Error copying content for %s: %v", file.Filename, err)
+		}
 	}
 
 	return buf, nil

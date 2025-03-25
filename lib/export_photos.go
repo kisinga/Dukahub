@@ -6,6 +6,11 @@ import (
 	"gocloud.dev/blob"
 )
 
+type FileInfo struct {
+	Reader   *blob.Reader
+	Filename string
+}
+
 // A function that fetches photos for all the products of a company and zips them
 // and returns a pointer to the zip file
 func (helper *DbHelper) ExportPhotos(companyID string) (*bytes.Buffer, error) {
@@ -26,8 +31,11 @@ func (helper *DbHelper) ExportPhotos(companyID string) (*bytes.Buffer, error) {
 	}
 	defer fsys.Close()
 
-	blobs := make([]*blob.Reader, len(products))
-	// retrieve a file reader for the each photo
+	// Create a slice to store file information (reader and filename)
+
+	files := []FileInfo{}
+
+	// retrieve a file reader for each photo
 	for _, product := range products {
 		photosKeys := product.GetStringSlice("photos")
 		if len(photosKeys) == 0 {
@@ -43,11 +51,22 @@ func (helper *DbHelper) ExportPhotos(companyID string) (*bytes.Buffer, error) {
 				helper.Logger.Printf("Error getting file %s: %v", photoPath, err)
 				continue
 			}
-			blobs = append(blobs, r)
-			defer r.Close()
+
+			// Add file to our collection with its original filename
+			files = append(files, FileInfo{
+				Reader:   r,
+				Filename: photoKey, // This preserves the original filename and extension
+			})
 		}
 	}
 
+	// Close all file readers when the function returns
+	defer func() {
+		for _, file := range files {
+			file.Reader.Close()
+		}
+	}()
+
 	// create a zip file
-	return createZip(blobs, helper.Logger)
+	return createZip(files, helper.Logger)
 }
