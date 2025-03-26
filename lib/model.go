@@ -3,7 +3,7 @@ package lib
 import "github.com/kisinga/dukahub/models"
 
 func (helper *DbHelper) FetchModel(companyID string) (*models.Models, error) {
-	record, error := helper.Pb.FindFirstRecordByData(models.CName[models.Models](), "company", companyID)
+	record, error := helper.pb.FindFirstRecordByData(models.CName[models.Models](), "company", companyID)
 	if error != nil {
 		return nil, error
 	}

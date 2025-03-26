@@ -4,7 +4,7 @@ const pb = new PocketBase("/");
 /**
  * Database service wrapper for PocketBase operations
  */
-export const DbService = {
+const DbService = {
   get authStore() {
     return pb.authStore;
   },
@@ -52,7 +52,7 @@ export const DbService = {
    * @param {Event} event - Form submission event
    * @returns {Promise<void>}
    */
-  async loginUser(event) {
+  async loginUser(event, userType) {
     event.preventDefault();
 
     const formData = new FormData(event.target);
@@ -63,20 +63,39 @@ export const DbService = {
       if (!email || !password) {
         throw new Error("Email and password are required");
       }
+      if (!userType) {
+        throw new Error("User type is required");
+      }
 
-      const authData = await pb
-        .collection("admins")
-        .authWithPassword(email, password, { expand: "company" });
+      if (userType === "admin") {
+        const authData = await pb
+          .collection("admins")
+          .authWithPassword(email, password);
 
-      pb.authStore.save(authData.token, authData.record);
-      console.log(authData);
+        pb.authStore.save(authData.token, authData.record);
+        console.log(authData);
 
-      // Update UI via HTMX
-      htmx.trigger("#error-message", "loginSuccess", { success: true });
+        // Update UI via HTMX
+        htmx.trigger("#error-message", "loginSuccess", { success: true });
 
-      setTimeout(() => {
-        window.location.href = `/dashboard/${authData.record.company[0]}`;
-      }, 500);
+        setTimeout(() => {
+          window.location.href = `/admin-dashboard`;
+        }, 500);
+      } else if (userType === "user") {
+        const authData = await pb
+          .collection("users")
+          .authWithPassword(email, password, { expand: "company" });
+
+        pb.authStore.save(authData.token, authData.record);
+        console.log(authData);
+
+        // Update UI via HTMX
+        htmx.trigger("#error-message", "loginSuccess", { success: true });
+
+        setTimeout(() => {
+          window.location.href = `/dashboard/${authData.record.company[0]}`;
+        }, 500);
+      }
     } catch (error) {
       console.error("Login failed:", error);
       htmx.trigger("#error-message", "loginFailed", {
@@ -211,4 +230,4 @@ async function handleTokenRefresh() {
 }
 
 // Export helper functions
-export { DbService as default, pb as pocketBaseClient };
+export { DbService as DbService, pb as pocketBaseClient };

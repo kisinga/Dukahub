@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-
-	"gocloud.dev/blob"
+	"sync"
 )
 
 type ThumnailSize struct {
@@ -30,31 +29,44 @@ func generateFileUrl(collection, recordId, fileName string) string {
 	return val
 }
 
-func createZip(blobs []*blob.Reader, logger *log.Logger) (*bytes.Buffer, error) {
+// Buffer pool to reuse buffers during io.CopyBuffer.
+var bufPool = sync.Pool{
+	New: func() interface{} {
+		// Allocate an 32KB buffer (tune as needed)
+		return make([]byte, 32*1024)
+	},
+}
+
+func createZip(files []FileInfo, logger *log.Logger) (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
 	zipWriter := zip.NewWriter(buf)
+	defer zipWriter.Close()
 
-	// Iterate over the blobs, create a new entry for each one.
-	for i, br := range blobs {
-		// Use a generic file name; adjust as needed if you have actual filenames.
-		fileName := fmt.Sprintf("file%d", i)
-		entryWriter, err := zipWriter.Create(fileName)
-		if err != nil {
-			return nil, fmt.Errorf("error creating zip entry for %s: %w", fileName, err)
+	for _, file := range files {
+		header := &zip.FileHeader{
+			Name:   file.Filename,
+			Method: zip.Store, // Change to zip.Deflate for compression.
 		}
-		if br == nil {
-			logger.Printf("Blob reader is nil for file %s", fileName)
+		// Create a new file in the zip with the original filename
+		zipFile, err := zipWriter.CreateHeader(header)
+		if err != nil {
+			logger.Printf("Error creating zip entry for %s: %v", file.Filename, err)
 			continue
 		}
-		// Copy the blob's content into the zip entry.
-		if _, err := io.Copy(entryWriter, br); err != nil {
-			return nil, fmt.Errorf("error copying data to zip entry for %s: %w", fileName, err)
+		if file.Reader == nil {
+			logger.Printf("Blob reader is nil for file %s", file.Filename)
+			continue
 		}
-	}
+		// Use a preallocated buffer from our pool.
+		buf := bufPool.Get().([]byte)
+		_, err = io.CopyBuffer(zipFile, file.Reader, buf)
+		bufPool.Put(buf) // return the buffer
 
-	// Finalize the zip archive.
-	if err := zipWriter.Close(); err != nil {
-		return nil, fmt.Errorf("error closing zip writer: %w", err)
+		// Copy the file content to the zip
+		_, err = io.Copy(zipFile, file.Reader)
+		if err != nil {
+			logger.Printf("Error copying content for %s: %v", file.Filename, err)
+		}
 	}
 
 	return buf, nil

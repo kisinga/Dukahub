@@ -1,6 +1,8 @@
 package components
 
-templ Scanner(model string) {
+import "github.com/kisinga/dukahub/models"
+
+templ Scanner(model *models.Models) {
 	<div class="container-fluid mt-3 mb-5">
 		<!-- Header -->
 		<div class="row mb-3">
@@ -27,13 +29,7 @@ templ Scanner(model string) {
 						>
 							<div
 								class="scanning-line bg-danger"
-								style="
-                height: 2px;
-                width: 100%;
-                position: absolute;
-                top: 50%;
-                opacity: 0.7;
-              "
+								style="height: 2px; width: 100%;position: absolute;top: 50%;opacity: 0.7;"
 							></div>
 						</div>
 						<button
@@ -44,32 +40,23 @@ templ Scanner(model string) {
 							<i class="bi bi-camera"></i>
 						</button>
 					</div>
-					<div
-						class="card-footer bg-white border-0 d-flex justify-content-between py-2"
-					>
-						<button id="flash-toggle" class="btn btn-sm btn-outline-secondary">
-							<i class="bi bi-lightning"></i> Flash
-						</button>
-						<button id="camera-toggle" class="btn btn-sm btn-outline-secondary">
-							<i class="bi bi-arrow-repeat"></i> Switch
-						</button>
-					</div>
 				</div>
 			</div>
 			<div id="predictions"></div>
 			<!-- Manual product entry -->
 			<div class="col-12 col-md-6 mb-3">
 				<div class="card border-0 shadow-sm">
-					<div class="card-header bg-white border-0">
-						<h5 class="mb-0">Add Products</h5>
-					</div>
 					<div class="card-body">
 						<div class="input-group mb-3">
 							<input
-								type="text"
 								class="form-control"
-								placeholder="Scan or enter product code"
-								id="product-input"
+								type="search"
+								name="search"
+								placeholder="Search products"
+								hx-post="/search"
+								hx-trigger="input changed delay:500ms, search"
+								hx-target="#search-results"
+								hx-indicator=".htmx-indicator"
 							/>
 							<button class="btn btn-primary" type="button" id="add-product-btn">
 								Add
@@ -89,60 +76,22 @@ templ Scanner(model string) {
 					</div>
 				</div>
 			</div>
-			<!-- Current sale -->
-			<div class="col-12 col-md-6 mb-3">
-				<div class="card border-0 shadow-sm">
-					<div
-						class="card-header bg-white border-0 d-flex justify-content-between align-items-center"
-					>
-						<h5 class="mb-0">Current Sale</h5>
-						<span class="badge bg-primary">
-							Items:
-							<span id="item-count">0</span>
-						</span>
-						<!-- Removed extra closing bracket that was here -->
+			<!-- Products Table -->
+			@ProductsTable(true, "Sale Items", []models.Products{}, "Product", "Price", "Quantity", "Actions")
+		</div>
+		<div class="modal fade" id="scanModal" tabindex="-1" aria-labelledby="scanModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="scanModalLabel">Add product</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
-					<div class="card-body p-0">
-						<div
-							class="table-responsive"
-							style="max-height: 300px; overflow-y: auto"
-						>
-							<table class="table table-hover mb-0">
-								<thead class="table-light sticky-top">
-									<tr>
-										<th>Item</th>
-										<th class="text-center">Qty</th>
-										<th class="text-end">Price</th>
-										<th class="text-end">Action</th>
-									</tr>
-								</thead>
-								<tbody id="sale-items">
-									<!-- Items will be added here -->
-									<tr class="text-center text-muted">
-										<td colspan="4" class="py-4">No items added yet</td>
-									</tr>
-								</tbody>
-							</table>
-						</div>
+					<div class="modal-body">
+						...
 					</div>
-					<div class="card-footer bg-white border-0">
-						<div class="d-flex justify-content-between align-items-center mb-3">
-							<span class="fw-bold">Subtotal</span>
-							<span id="subtotal">$0.00</span>
-						</div>
-						<div class="d-flex justify-content-between align-items-center mb-3">
-							<span>Tax (10%)</span>
-							<span id="tax">$0.00</span>
-						</div>
-						<div class="d-flex justify-content-between align-items-center mb-3">
-							<span class="fw-bold fs-5">Total</span>
-							<span class="fw-bold fs-5" id="total">$0.00</span>
-						</div>
-						<div class="d-grid">
-							<button class="btn btn-success btn-lg" id="checkout-btn" disabled>
-								<i class="bi bi-credit-card me-1"></i> Proceed to Payment
-							</button>
-						</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary">Save changes</button>
 					</div>
 				</div>
 			</div>
@@ -150,332 +99,75 @@ templ Scanner(model string) {
 	</div>
 	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
-	<script>
-  // Check if device is mobile
-  const isMobile = () => {
-    return (
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent
-      ) || window.innerWidth <= 768
-    );
-  };
+	@templ.JSONScript("model", model)
+	<script type="module">
+	import { initCamera, toggleCamera } from "/public/scanner.js";
+	import { addProduct } from "/public/products.js";
 
-  // DOM Elements
-  const cameraContainer = document.getElementById("camera-container");
-  const cameraView = document.getElementById("camera-view");
-  const scanToggle = document.getElementById("scan-toggle");
-  const productInput = document.getElementById("product-input");
-  const addProductBtn = document.getElementById("add-product-btn");
-  const saleItems = document.getElementById("sale-items");
-  const itemCount = document.getElementById("item-count");
-  const subtotal = document.getElementById("subtotal");
-  const tax = document.getElementById("tax");
-  const total = document.getElementById("total");
-  const checkoutBtn = document.getElementById("checkout-btn");
-
-  // Camera stream reference
-  let stream = null;
-  let model = null; 
-  let modelLabels = [];
-  let maxPredictions = 0;
-
-  // Load the Teachable Machine model
-  const loadModel = async () => {
-    try {
-      const modelURL = "/api/files/models/181sze8j84ruyq7/model_mmwm3j0osa.json";
-      const metadataURL = "/public/metadata.json";
-
-      // Load the model and metadata
-      model = await tmImage.load(modelURL, metadataURL);
-      maxPredictions = model.getTotalClasses();
-      
-      // Create labels array from model classes
-      modelLabels = [];
-      for (let i = 0; i < maxPredictions; i++) {
-        modelLabels.push(model.getClassLabels()[i]);
-      }
-
-      console.log("Teachable Machine model loaded successfully");
-      console.log("Labels loaded successfully:", modelLabels);
-
-      return true;
-    } catch (error) {
-      console.error("Error loading Teachable Machine model:", error);
-      return false;
-    }
-  };
-
-  // Initialize camera on mobile
-  const initCamera = async () => {
-    try {
-      // Load model first
-      await loadModel();
-
-      // Request camera access
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-        audio: false,
-      });
-
-      // Display camera feed in video element
-      cameraView.srcObject = stream;
-      cameraContainer.style.display = "block";
-
-      // Add animation to scanning line
-      const scanLine = document.querySelector(".scanning-line");
-      let position = 10;
-      let direction = 1;
-
-      setInterval(() => {
-        position += direction * 2;
-        if (position >= 90 || position <= 10) {
-          direction *= -1;
-        }
-        scanLine.style.top = `${position}%`;
-      }, 50);
-
-      // Start periodic detection
-      setInterval(detectProduct, 1000); // Check for products every second
-    } catch (error) {
-      console.error("Error accessing camera:", error);
-      alert("Could not access the camera. Please check permissions.");
-    }
-  };
-
-  // Stop camera stream
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      stream = null;
-      cameraView.srcObject = null;
-      cameraContainer.style.display = "none";
-    }
-  };
-
-  // Toggle camera
-  const toggleCamera = () => {
-    if (stream) {
-      stopCamera();
-    } else {
-      initCamera();
-    }
-  };
-
-  // Add product to the sale (keeping your existing code)
-  const addProduct = (code) => {
-    // In a real app, you'd look up the product details from a database
-    // For demo purposes, we'll create some sample data
-    const products = {
-      123456: { name: "Coffee Mug", price: 12.99 },
-      234567: { name: "T-Shirt", price: 24.99 },
-      345678: { name: "Notebook", price: 8.5 },
+    const isMobile = () => {
+      return (
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        ) || window.innerWidth <= 768
+      );
     };
 
-    // Use the entered code or a sample code if not found
-    const productCode = code || productInput.value.trim();
+	const modalUpdater = (state, message) => {
+		const modal = document.getElementById("scanModal");
+		const modalLabel = document.getElementById("scanModalLabel");
+		const modalBody = modal.querySelector(".modal-body");
+		const modalFooter = modal.querySelector(".modal-footer");
 
-    // Handle detected products
-    if (productCode.startsWith("tm_")) {
-      const labelIndex = parseInt(productCode.split("_")[1]);
-      const productName = modelLabels[labelIndex] || `Unknown Product (${labelIndex})`;
-      const product = { name: productName, price: 9.99 };
+		// if the modal is already open, close it
+		if (modal.classList.contains("show")) {
+			const bsModal = bootstrap.Modal.getInstance(modal);
+			bsModal.hide();
+		}
 
-      // Clear "no items" row if present
-      if (saleItems.querySelector('tr td[colspan="4"]')) {
-        saleItems.innerHTML = "";
-      }
+		if (state) {
+			modalLabel.textContent = "Product Found";
+			modalBody.innerHTML = `<p>${message}</p>`;
+			modalFooter.innerHTML = `<button type="button" class="btn btn-primary" data-bs-dismiss="modal">Add Product</button>`;
+		} else {
+			modalLabel.textContent = "Error";
+			modalBody.innerHTML = `<p>${message}</p>`;
+			modalFooter.innerHTML = `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>`;
+		}
 
-      // Add product row
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${product.name}</td>
-        <td class="text-center">1</td>
-        <td class="text-end">$${product.price.toFixed(2)}</td>
-        <td class="text-end">
-          <button class="btn btn-sm btn-outline-danger remove-item">
-            <i class="bi bi-x"></i>
-          </button>
-        </td>
-      `;
-      saleItems.appendChild(row);
+		const bsModal = new bootstrap.Modal(modal);
+		bsModal.show();
+	}
 
-      // Update totals
-      updateTotals();
-      return;
-    }
+	const successCallback = (product) => {
+		const productName = product.name || "Unknown Product";
+		const productPrice = product.price || "Unknown Price";
+		const productQuantity = product.quantity || 1;
 
-    // Regular product lookup 
-    const product = products[productCode] || {
-      name: `Product ${productCode}`,
-      price: 9.99,
-    };
+		const message = `Product: ${productName}<br>Price: ${productPrice}<br>Quantity: ${productQuantity}`;
+		modalUpdater(true, message);
+	}
 
-    // Clear "no items" row if present
-    if (saleItems.querySelector('tr td[colspan="4"]')) {
-      saleItems.innerHTML = "";
-    }
+    // DOM Elements
+    const cameraContainer = document.getElementById("camera-container");
+    const cameraView = document.getElementById("camera-view");
+    const scanToggle = document.getElementById("scan-toggle");
+    const productInput = document.getElementById("product-input");
+    const addProductBtn = document.getElementById("add-product-btn");
 
-    // Add product row
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${product.name}</td>
-      <td class="text-center">1</td>
-      <td class="text-end">$${product.price.toFixed(2)}</td>
-      <td class="text-end">
-        <button class="btn btn-sm btn-outline-danger remove-item">
-          <i class="bi bi-x"></i>
-        </button>
-      </td>
-    `;
-    saleItems.appendChild(row);
+    // Event Listeners
+    document.addEventListener("DOMContentLoaded", () => {
+      // Initialize camera on mobile
+      if (isMobile()) {
+    		initCamera(cameraView, cameraContainer, successCallback);
+	    }
+      // Toggle scanner button
+      scanToggle.addEventListener("click", toggleCamera);
 
-    // Update totals
-    updateTotals();
+      // Add product button
+      addProductBtn.addEventListener("click", () => addProduct());
 
-    // Clear input
-    productInput.value = "";
-    productInput.focus();
-  };
-
-  // Update sale totals 
-  const updateTotals = () => {
-    const items = saleItems.querySelectorAll("tr:not([colspan])");
-    itemCount.textContent = items.length;
-
-    // Calculate subtotal
-    let subTotal = 0;
-    items.forEach((item) => {
-      const priceText = item.querySelector("td:nth-child(3)").textContent;
-      const price = parseFloat(priceText.replace("$", ""));
-      subTotal += price;
     });
 
-    // Update display
-    subtotal.textContent = `$${subTotal.toFixed(2)}`;
 
-    const taxAmount = subTotal * 0.1;
-    tax.textContent = `$${taxAmount.toFixed(2)}`;
-
-    const totalAmount = subTotal + taxAmount;
-    total.textContent = `$${totalAmount.toFixed(2)}`;
-
-    // Enable checkout button if we have items
-    checkoutBtn.disabled = items.length === 0;
-  };
-
-  // Function to detect products from camera feed 
-  const detectProduct = async () => {
-    if (!model || !cameraView.srcObject) return;
-
-    try {
-      // Predict with Teachable Machine
-      const predictions = await model.predict(cameraView);
-      
-      // Display predictions
-      displayPredictions(predictions);
-      
-      // Find the highest confidence prediction
-      let maxConfidence = 0;
-      let detectedClass = -1;
-      
-      for (let i = 0; i < predictions.length; i++) {
-        if (predictions[i].probability > maxConfidence) {
-          maxConfidence = predictions[i].probability;
-          detectedClass = i;
-        }
-      }
-      
-      // If confidence is high enough, add the product
-      if (maxConfidence > 0.8 && detectedClass !== -1) {
-        const productCode = `tm_${detectedClass}`;
-        addProduct(productCode);
-        showDetectionFeedback(modelLabels[detectedClass], maxConfidence);
-      }
-    } catch (error) {
-      console.error("Error during product detection:", error);
-    }
-  };
-
-  const displayPredictions = (predictions) => {
-    const predictionsContainer = document.getElementById("predictions");
-    predictionsContainer.innerHTML = ""; // Clear previous predictions
-
-    // Sort by probability (descending)
-    predictions.sort((a, b) => b.probability - a.probability);
-
-    // Display top 5
-    for (let i = 0; i < Math.min(5, predictions.length); i++) {
-      const prediction = predictions[i];
-      const predictionElement = document.createElement("div");
-      predictionElement.className = "prediction";
-
-      const labelElement = document.createElement("span");
-      labelElement.className = "label";
-      labelElement.textContent = prediction.className;
-
-      const probabilityElement = document.createElement("span");
-      probabilityElement.className = "probability";
-      probabilityElement.textContent = ` - ${(
-        prediction.probability * 100
-      ).toFixed(2)}%`;
-
-      predictionElement.appendChild(labelElement);
-      predictionElement.appendChild(probabilityElement);
-      predictionsContainer.appendChild(predictionElement);
-    }
-  };
-
-  // Show visual feedback for detection 
-  const showDetectionFeedback = (label, confidence) => {
-    const feedback = document.createElement("div");
-    feedback.className =
-      "detection-feedback position-absolute top-0 start-0 m-3 bg-dark text-white p-2 rounded";
-    feedback.style.opacity = "0.8";
-    feedback.innerHTML = `Detected: ${label} (${(confidence * 100).toFixed(
-      1
-    )}%)`;
-
-    cameraContainer.appendChild(feedback);
-    setTimeout(() => feedback.remove(), 2000);
-  };
-
-  // Event Listeners
-  document.addEventListener("DOMContentLoaded", () => {
-    // Initialize camera on mobile
-    if (isMobile()) {
-      initCamera();
-    }
-
-    // Toggle scanner button
-    scanToggle.addEventListener("click", toggleCamera);
-
-    // Add product button
-    addProductBtn.addEventListener("click", () => addProduct());
-
-    // Handle Enter key in product input
-    productInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        addProduct();
-      }
-    });
-
-    // Handle remove item buttons
-    saleItems.addEventListener("click", (e) => {
-      if (e.target.closest(".remove-item")) {
-        e.target.closest("tr").remove();
-
-        // Add "no items" message if no items left
-        if (saleItems.querySelectorAll("tr").length === 0) {
-          saleItems.innerHTML = `
-              <tr class="text-center text-muted">
-                <td colspan="4" class="py-4">No items added yet</td>
-              </tr>
-            `;
-        }
-
-        updateTotals();
-      }
-    });
-  });
-</script>
+  </script>
 }

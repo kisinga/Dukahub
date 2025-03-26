@@ -5,7 +5,7 @@ import (
 	"github.com/kisinga/dukahub/views/layouts"
 )
 
-templ Login(form models.LoginFormValue, err error) {
+templ Login(userType models.LoginUserType) {
 	<style>
     /* Minimal internal CSS for hover effects and transitions */
     .btn-login:hover {
@@ -30,7 +30,7 @@ templ Login(form models.LoginFormValue, err error) {
 									<div style="width: 60px; height: 60px; background: linear-gradient(45deg, #6a11cb, #2575fc); border-radius: 50%; margin: 0 auto 10px auto;"></div>
 									<h3 style="font-weight: bold; color: #333;">Welcome Back</h3>
 								</div>
-								<form id="loginForm" hx-on:submit="loginUser(event)">
+								<form id="loginForm" hx-on:submit={ templ.JSFuncCall("loginUser", templ.JSExpression("event"), userType.String()) }>
 									<div class="mb-3">
 										<label for="email" class="form-label" style="font-weight: 500; color: #555;">Email address</label>
 										<input

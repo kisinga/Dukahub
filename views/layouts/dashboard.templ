@@ -3,7 +3,7 @@ package layouts
 import "github.com/kisinga/dukahub/models"
 import "github.com/kisinga/dukahub/views/components"
 
-templ DashboardLayout(data models.DashboardData) {
+templ DashboardLayout(data *models.DashboardData) {
 	<style>
     	/* Ensure main content isn’t hidden behind the fixed bottom nav */
 			main {
@@ -17,7 +17,7 @@ templ DashboardLayout(data models.DashboardData) {
 				<!-- Left Section: Company Dropdown & Status Badge -->
 				<div class="d-flex align-items-center">
 					<!-- Company Dropdown -->
-					@components.CompanySelector(data.Admin.Company(), data.Activecompany)
+					@components.CompanySelector(data.User.Company(), data.Activecompany)
 				</div>
 				<a href="register" class="text-decoration-none">
 					<span class="badge bg-success rounded-pill fs-6">OPEN</span>
@@ -37,7 +37,7 @@ templ DashboardLayout(data models.DashboardData) {
 					</ul>
 				</div>
 				<!-- Right Section: User Dropdown -->
-				@components.UserProfile(data.Admin.Avatar())
+				@components.UserProfile(data.User.Avatar())
 			</div>
 		</nav>
 		<!-- Main Content Area -->

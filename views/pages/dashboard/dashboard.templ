@@ -1,11 +1,11 @@
-package pages
+package dashboard
 
 import (
 	"github.com/kisinga/dukahub/models"
 	"github.com/kisinga/dukahub/views/layouts"
 )
 
-templ Dashboard(data models.DashboardData) {
+templ Home(data *models.DashboardData) {
 	@layouts.BaseLayout() {
 		@layouts.DashboardLayout(data) {
 			<style>
@@ -228,7 +228,8 @@ templ Dashboard(data models.DashboardData) {
 				</div>
 			</div>
 			<script type="module">
-				import { DbService } from "/public/pb.js";
+				import { DbService, pocketBaseClient } from "/public/pb.js";
+				
 				DbService.refreshAuthToken();
 				const timeoutId = DbService.scheduleTokenRefresh();
 			</script>
