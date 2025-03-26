@@ -1,6 +1,33 @@
 package dashboard
 
-import "github.com/kisinga/dukahub/models"
+import (
+	"github.com/kisinga/dukahub/models"
+	"github.com/kisinga/dukahub/views/layouts"
+)
 
-templ CompanySettings(companies []models.Companies) {
+templ CompanySettings(user *models.Users, activeCompany *models.Companies) {
+	@layouts.BaseLayout() {
+		@layouts.DashboardLayout(user, activeCompany) {
+			// Show a table of the user companies for now
+			<div class="container">
+				<h1>Company Settings</h1>
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>Company Name</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, company := range user.Company() {
+							<tr>
+								<td>{ company.Name() }</td>
+								<td><a href="/company/{{ .ID }}/edit">Edit</a></td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	}
 }
