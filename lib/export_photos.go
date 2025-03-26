@@ -3,7 +3,7 @@ package lib
 import (
 	"bytes"
 
-	"gocloud.dev/blob"
+	"github.com/pocketbase/pocketbase/tools/filesystem/blob"
 )
 
 type FileInfo struct {
