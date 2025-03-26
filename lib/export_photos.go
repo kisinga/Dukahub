@@ -25,7 +25,7 @@ func (helper *DbHelper) ExportPhotos(companyID string) (*bytes.Buffer, error) {
 	}
 
 	// initialize the filesystem
-	fsys, err := helper.Pb.NewFilesystem()
+	fsys, err := helper.pb.NewFilesystem()
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,7 @@ import (
 )
 
 func (helper *DbHelper) FetchProductsById(id string) (*models.Products, error) {
-	record, error := helper.Pb.FindRecordById("products", id)
+	record, error := helper.pb.FindRecordById("products", id)
 	if error != nil {
 		return nil, error
 	}
@@ -16,7 +16,7 @@ func (helper *DbHelper) FetchProductsById(id string) (*models.Products, error) {
 }
 
 func (helper *DbHelper) fetchRawProductsByCompanyId(companyID string) ([]*core.Record, error) {
-	records, error := helper.Pb.FindRecordsByFilter(
+	records, error := helper.pb.FindRecordsByFilter(
 		"products",
 		fmt.Sprintf("company = '%s'", companyID),
 		"-created",
@@ -28,7 +28,7 @@ func (helper *DbHelper) fetchRawProductsByCompanyId(companyID string) ([]*core.R
 }
 
 func (helper *DbHelper) FetchProductsByCompanyId(companyID string, generatePhotoURL bool) ([]*models.Products, error) {
-	records, error := helper.Pb.FindRecordsByFilter(
+	records, error := helper.pb.FindRecordsByFilter(
 		"products",
 		fmt.Sprintf("company = '%s'", companyID),
 		"-created",

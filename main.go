@@ -2,18 +2,14 @@ package main
 
 import (
 	"embed"
-	"fmt"
-	"io"
 	"io/fs"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/kisinga/dukahub/lib"
 	"github.com/kisinga/dukahub/models"
+	"github.com/kisinga/dukahub/resolvers"
 	"github.com/kisinga/dukahub/views/pages"
-	admindashboard "github.com/kisinga/dukahub/views/pages/adminDashboard"
-	"github.com/kisinga/dukahub/views/pages/dashboard"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -26,7 +22,7 @@ var embeddedFiles embed.FS
 
 func main() {
 	app := pocketbase.New()
-	helper := &lib.DbHelper{Pb: app, Logger: log.Default()}
+	helper := lib.NewDbHelper(app, log.Default())
 
 	app.OnRecordAuthRequest("users").BindFunc(func(e *core.RecordAuthRequestEvent) error {
 		// Set HTTP-Only Auth Cookie
@@ -54,6 +50,8 @@ func main() {
 		return e.Next()
 	})
 
+	resolvers := resolvers.NewResolvers(*helper)
+
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		// serves static files from the provided public dir (if exists)
 		se.Router.GET("/public/{path...}", apis.Static(GetPublicFS(), false))
@@ -70,126 +68,26 @@ func main() {
 		})
 
 		adminDashboardGroup := se.Router.Group("/admin-dashboard")
-		adminDashboardGroup.BindFunc(func(e *core.RequestEvent) error {
-			cookie, err := e.Request.Cookie("pb_admins_auth")
-			if err != nil {
-				return e.Redirect(307, "/admin-login")
-			}
-			user, err := app.FindAuthRecordByToken(cookie.Value)
-			if err != nil {
-				return e.Redirect(http.StatusFound, "/admin-login")
-			}
+		adminDashboardGroup.BindFunc(resolvers.AdminDashboardAuthCheck)
 
-			// Store user ID in request context
-			e.Set("adminID", user.Id)
+		adminDashboardGroup.GET("/", resolvers.DashboardHome)
 
-			return e.Next()
-		})
-
-		adminDashboardGroup.GET("/", func(c *core.RequestEvent) error {
-			adminID := c.Get("adminID")
-			admin, err := helper.FetchAdminById(adminID.(string))
-			if err != nil {
-				return c.Redirect(http.StatusFound, "/admin-login")
-			}
-			return lib.Render(c, admindashboard.Home(admin))
-		})
-
-		adminDashboardGroup.GET("/export/{companyID}", func(c *core.RequestEvent) error {
-			companyID := c.Request.PathValue("companyID")
-
-			buf, err := helper.ExportPhotos(companyID)
-			if err != nil {
-				// Redirect on error
-				c.Response.Header().Set("Location", "/admin-dashboard")
-				c.Response.WriteHeader(http.StatusFound)
-				return nil
-			}
-
-			// Set the proper headers for a downloadable zip file.
-			c.Response.Header().Set("Content-Type", "application/zip")
-			c.Response.Header().Set("Content-Disposition", "attachment; filename=\"export.zip\"")
-			c.Response.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
-
-			// Write the zip content directly from the *bytes.Buffer.
-			if _, err := io.Copy(c.Response, buf); err != nil {
-				return err
-			}
-			return nil
-		})
+		adminDashboardGroup.GET("/export/{companyID}", resolvers.DashboardExport)
 
 		// route for when someone navigates to dashboard without a company
-		se.Router.GET("/dashboard/{$}", func(e *core.RequestEvent) error {
-			cookie, err := e.Request.Cookie("pb_auth")
-			if err != nil {
-				log.Println("No auth cookie found")
-				return e.Redirect(307, "/login")
-			}
+		se.Router.GET("/dashboard/{$}", resolvers.DashboardRoot)
 
-			record, err := app.FindAuthRecordByToken(cookie.Value)
-			if err != nil {
-				log.Println("No auth record found")
-				return e.Redirect(http.StatusFound, "/login")
-			}
-			// route using the first company
-			companies := record.GetStringSlice("company")
-			if len(companies) == 0 {
-				// no company, log error
-				log.Println("No company found for user:", record.Id)
-				// redirect to login
-				return e.Redirect(307, "/login")
-			}
-			return e.Redirect(307, fmt.Sprintf("/dashboard/%s", companies[0]))
-		})
 		dashboardGroup := se.Router.Group("/dashboard/{companyID}")
 
 		// For every dashboard route, check if user is logged in and forward the userID through the context
-		dashboardGroup.BindFunc(func(e *core.RequestEvent) error {
-			cookie, err := e.Request.Cookie("pb_users_auth")
-			if err != nil {
-				return e.Redirect(307, "/login")
-			}
-			user, err := app.FindAuthRecordByToken(cookie.Value)
-			if err != nil {
-				return e.Redirect(http.StatusFound, "/login")
-			}
-
-			// Store user ID in request context
-			e.Set("userID", user.Id)
-
-			return e.Next()
-		})
+		dashboardGroup.BindFunc(resolvers.DashboardAuthCheck)
 
 		// root dashboard route with a valid companyID
-		dashboardGroup.GET("/", func(c *core.RequestEvent) error {
-			userID := c.Get("userID")
-			companyID := c.Request.PathValue("companyID")
-			data, err := helper.FetchDashboardData(userID.(string), companyID)
-			if err != nil {
-				return c.Redirect(http.StatusFound, "/login")
-			}
-			return lib.Render(c, dashboard.Home(*data))
-		})
+		dashboardGroup.GET("/", resolvers.DashboardHome)
 
-		dashboardGroup.GET("/sell", func(c *core.RequestEvent) error {
-			userID := c.Get("userID")
-			companyID := c.Request.PathValue("companyID")
-			data, err := helper.FetchDashboardData(userID.(string), companyID)
-			if err != nil {
-				return c.Redirect(http.StatusFound, "/login")
-			}
-			return lib.Render(c, dashboard.Newsale(*data))
-		})
+		dashboardGroup.GET("/sell", resolvers.Sell)
 
-		dashboardGroup.GET("/register", func(c *core.RequestEvent) error {
-			userID := c.Get("userID")
-			companyID := c.Request.PathValue("companyID")
-			data, err := helper.FetchDashboardData(userID.(string), companyID)
-			if err != nil {
-				return c.Redirect(http.StatusFound, "/login")
-			}
-			return lib.Render(c, pages.Register(*data))
-		})
+		dashboardGroup.GET("/register", resolvers.Register)
 
 		return se.Next()
 	})

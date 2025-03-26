@@ -8,11 +8,11 @@ import (
 )
 
 func (helper *DbHelper) FetchUserById(id string) (*models.Users, error) {
-	record, error := helper.Pb.FindRecordById(models.CName[models.Users](), id)
+	record, error := helper.pb.FindRecordById(models.CName[models.Users](), id)
 	if error != nil {
 		return nil, error
 	}
-	expanded := helper.Pb.ExpandRecords([]*core.Record{record}, []string{"company"}, nil)
+	expanded := helper.pb.ExpandRecords([]*core.Record{record}, []string{"company"}, nil)
 	if len(expanded) > 0 {
 		return nil, fmt.Errorf("Error expanding company data")
 	}

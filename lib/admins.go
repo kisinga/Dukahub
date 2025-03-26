@@ -3,7 +3,7 @@ package lib
 import "github.com/kisinga/dukahub/models"
 
 func (helper *DbHelper) FetchAdminById(id string) (*models.Admins, error) {
-	record, error := helper.Pb.FindRecordById(models.CName[models.Admins](), id)
+	record, error := helper.pb.FindRecordById(models.CName[models.Admins](), id)
 	if error != nil {
 		return nil, error
 	}
