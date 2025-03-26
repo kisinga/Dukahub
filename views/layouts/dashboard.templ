@@ -3,7 +3,7 @@ package layouts
 import "github.com/kisinga/dukahub/models"
 import "github.com/kisinga/dukahub/views/components"
 
-templ DashboardLayout(data models.DashboardData) {
+templ DashboardLayout(data *models.DashboardData) {
 	<style>
     	/* Ensure main content isn’t hidden behind the fixed bottom nav */
 			main {

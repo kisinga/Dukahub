@@ -44,7 +44,7 @@ func (r *Resolvers) Home(c *core.RequestEvent) error {
 	if err != nil {
 		return c.Redirect(http.StatusFound, "/login")
 	}
-	return lib.Render(c, dashboard.Home(*data))
+	return lib.Render(c, dashboard.Home(data))
 }
 
 func (r *Resolvers) Root(e *core.RequestEvent) error {
@@ -77,7 +77,7 @@ func (r *Resolvers) Sell(c *core.RequestEvent) error {
 	if err != nil {
 		return c.Redirect(http.StatusFound, "/login")
 	}
-	return lib.Render(c, dashboard.Newsale(*data))
+	return lib.Render(c, dashboard.Newsale(data))
 }
 
 func (r *Resolvers) Register(c *core.RequestEvent) error {
@@ -87,5 +87,5 @@ func (r *Resolvers) Register(c *core.RequestEvent) error {
 	if err != nil {
 		return c.Redirect(http.StatusFound, "/login")
 	}
-	return lib.Render(c, pages.Register(*data))
+	return lib.Render(c, pages.Register(data))
 }

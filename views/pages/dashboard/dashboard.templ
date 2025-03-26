@@ -5,7 +5,7 @@ import (
 	"github.com/kisinga/dukahub/views/layouts"
 )
 
-templ Home(data models.DashboardData) {
+templ Home(data *models.DashboardData) {
 	@layouts.BaseLayout() {
 		@layouts.DashboardLayout(data) {
 			<style>

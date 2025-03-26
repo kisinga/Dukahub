@@ -1,8 +1,8 @@
 package models
 
 type DashboardData struct {
-	User          Users
+	User          *Users
 	CompanyStats  []CompanyStats
-	Activecompany Companies
-	Model         Models
+	Activecompany *Companies
+	Model         *Models
 }

@@ -14,9 +14,9 @@ func (helper *DbHelper) FetchDashboardData(userID string, companyID string) (*mo
 	if companyID == "" {
 		// Fetch company stats
 		return &models.DashboardData{
-			User:          *user,
+			User:          user,
 			CompanyStats:  []models.CompanyStats{},
-			Activecompany: *user.Company()[0],
+			Activecompany: user.Company()[0],
 		}, nil
 	}
 
@@ -28,15 +28,14 @@ func (helper *DbHelper) FetchDashboardData(userID string, companyID string) (*mo
 	model, error := helper.FetchModel(companyID)
 	if error != nil {
 		helper.Logger.Println("Error fetching model: ", error)
-		model = &models.Models{}
 	}
 	for _, company := range user.Company() {
 		if company.Id == companyID {
 			return &models.DashboardData{
-				User:          *user,
+				User:          user,
 				CompanyStats:  []models.CompanyStats{},
-				Activecompany: *company,
-				Model:         *model,
+				Activecompany: company,
+				Model:         model,
 			}, nil
 		}
 	}
