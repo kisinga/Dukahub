@@ -8,7 +8,7 @@ import (
 
 templ Newsale(data *models.DashboardData) {
 	@layouts.BaseLayout() {
-		@layouts.DashboardLayout(data) {
+		@layouts.DashboardLayout(data.User, data.Activecompany) {
 			@components.Scanner(data.Model)
 		}
 	}

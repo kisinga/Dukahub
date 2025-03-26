@@ -52,7 +52,7 @@ templ CompanySelector(companies []*models.Companies, activeCompany *models.Compa
 			}
 			<li><hr class="dropdown-divider mx-3 my-2"/></li>
 			<li>
-				<a href="/dashboard/settings/companies" class="dropdown-item d-flex align-items-center py-2 px-3">
+				<a href={ templ.SafeURL(fmt.Sprintf("/dashboard/%s/company-settings", activeCompany.Id)) } class="dropdown-item d-flex align-items-center py-2 px-3">
 					<div class="avatar-container-sm me-2 d-flex align-items-center justify-content-center">
 						<i class="bi bi-gear-fill"></i>
 					</div>

@@ -87,6 +87,8 @@ func main() {
 
 		dashboardGroup.GET("/sell", resolvers.Dashboard.Sell)
 
+		dashboardGroup.GET("/company-settings", resolvers.Dashboard.CompanySettings)
+
 		dashboardGroup.GET("/register", resolvers.Dashboard.Register)
 
 		return se.Next()

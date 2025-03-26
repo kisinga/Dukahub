@@ -7,7 +7,7 @@ import (
 )
 
 func (helper *DbHelper) FetchDashboardData(userID string, companyID string) (*models.DashboardData, error) {
-	user, error := helper.FetchUserById(userID)
+	user, error := helper.FetchExpandedUserById(userID)
 	if error != nil {
 		return nil, error
 	}

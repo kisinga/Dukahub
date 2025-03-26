@@ -7,7 +7,7 @@ import (
 
 templ Home(data *models.DashboardData) {
 	@layouts.BaseLayout() {
-		@layouts.DashboardLayout(data) {
+		@layouts.DashboardLayout(data.User, data.Activecompany) {
 			<style>
     .table-responsive-sm {
       overflow-x: auto;

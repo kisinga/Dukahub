@@ -7,7 +7,7 @@ import (
 
 templ Register(data *models.DashboardData) {
 	@layouts.BaseLayout() {
-		@layouts.DashboardLayout(data) {
+		@layouts.DashboardLayout(data.User, data.Activecompany) {
 		}
 	}
 }

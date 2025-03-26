@@ -6,3 +6,9 @@ type DashboardData struct {
 	Activecompany *Companies
 	Model         *Models
 }
+
+type CompanySettings struct {
+	User          *Users
+	Activecompany *Companies
+	Companies     []Companies
+}
