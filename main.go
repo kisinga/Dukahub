@@ -29,7 +29,20 @@ func main() {
 	app.OnRecordAuthRequest("users").BindFunc(func(e *core.RecordAuthRequestEvent) error {
 		// Set HTTP-Only Auth Cookie
 		e.RequestEvent.SetCookie(&http.Cookie{
-			Name:     "pb_auth",
+			Name:     "pb_users_auth",
+			Value:    e.Token,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteLaxMode,
+		})
+		return e.Next()
+	})
+
+	app.OnRecordAuthRequest("users").BindFunc(func(e *core.RecordAuthRequestEvent) error {
+		// Set HTTP-Only Auth Cookie
+		e.RequestEvent.SetCookie(&http.Cookie{
+			Name:     "pb_admins_auth",
 			Value:    e.Token,
 			Path:     "/",
 			HttpOnly: true,
@@ -47,7 +60,11 @@ func main() {
 			return lib.Render(c, pages.Home())
 		})
 		se.Router.GET("/login", func(c *core.RequestEvent) error {
-			return lib.Render(c, pages.Login(models.LoginFormValue{}, nil))
+			return lib.Render(c, pages.Login(models.Dashboard))
+		})
+
+		se.Router.GET("/admin-login", func(c *core.RequestEvent) error {
+			return lib.Render(c, pages.Login(models.AdminDashboard))
 		})
 
 		// route for when someone navigates to dashboard without a company
@@ -74,11 +91,35 @@ func main() {
 			return e.Redirect(307, fmt.Sprintf("/dashboard/%s", companies[0]))
 		})
 
+		adminDashboardGroup := se.Router.Group("/admin-dashboard")
+		adminDashboardGroup.GET("/export", func(c *core.RequestEvent) error {
+			companyID := c.Request.PathValue("companyID")
+
+			buf, err := helper.ExportPhotos(companyID)
+			if err != nil {
+				// Redirect on error
+				c.Response.Header().Set("Location", "/login")
+				c.Response.WriteHeader(http.StatusFound)
+				return nil
+			}
+
+			// Set the proper headers for a downloadable zip file.
+			c.Response.Header().Set("Content-Type", "application/zip")
+			c.Response.Header().Set("Content-Disposition", "attachment; filename=\"export.zip\"")
+			c.Response.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
+
+			// Write the zip content directly from the *bytes.Buffer.
+			if _, err := io.Copy(c.Response, buf); err != nil {
+				return err
+			}
+			return nil
+		})
+
 		dashboardGroup := se.Router.Group("/dashboard/{companyID}")
 
 		// For every dashboard route, check if user is logged in and forward the userID through the context
 		dashboardGroup.BindFunc(func(e *core.RequestEvent) error {
-			cookie, err := e.Request.Cookie("pb_auth")
+			cookie, err := e.Request.Cookie("pb_users_auth")
 			if err != nil {
 				return e.Redirect(307, "/login")
 			}
