@@ -8,7 +8,7 @@ import (
 )
 
 type Proxy interface {
-	Admins | DailyStockTakes | DailyAccounts | AccountTypes | Skus | Products | Partners | Invoices | Purchases | Companies | CompanyAccounts | Transactions | Sales | Expenses | OpenCloseDetails | ProductSkuFigures | Models | ProductCategories
+	Users | DailyStockTakes | DailyAccounts | AccountTypes | Skus | Products | Partners | Invoices | Purchases | Companies | CompanyAccounts | Transactions | SalesDetails | Expenses | OpenCloseDetails | ProductSkuFigures | Models | ProductCategories | ProductBalances | Sales | Admins | JobQueue
 }
 
 // This interface constrains a type parameter of
@@ -99,14 +99,14 @@ type RelationField struct {
 //	 -> collection names that it is related to
 //	  -> list of fields that contain the relation values
 var Relations = map[string]map[string][]RelationField{
-	"admins": {
+	"users": {
 		"companies": {
 			{"company", true},
 			{"defaultCompany", false},
 		},
 	},
 	"daily_stock_takes": {
-		"admins": {
+		"users": {
 			{"user", false},
 		},
 		"skus": {
@@ -120,7 +120,7 @@ var Relations = map[string]map[string][]RelationField{
 		},
 	},
 	"daily_accounts": {
-		"admins": {
+		"users": {
 			{"user", false},
 		},
 		"companies": {
@@ -147,7 +147,7 @@ var Relations = map[string]map[string][]RelationField{
 		},
 	},
 	"invoices": {
-		"admins": {
+		"users": {
 			{"user", false},
 		},
 		"partners": {
@@ -161,7 +161,7 @@ var Relations = map[string]map[string][]RelationField{
 		},
 	},
 	"purchases": {
-		"admins": {
+		"users": {
 			{"user", false},
 		},
 		"skus": {
@@ -189,6 +189,9 @@ var Relations = map[string]map[string][]RelationField{
 		},
 	},
 	"transactions": {
+		"users": {
+			{"author", false},
+		},
 		"companies": {
 			{"company", false},
 		},
@@ -196,18 +199,12 @@ var Relations = map[string]map[string][]RelationField{
 			{"account", false},
 		},
 	},
-	"sales": {
+	"sales_details": {
 		"skus": {
 			{"sku", false},
 		},
 		"products": {
 			{"Product", false},
-		},
-		"invoices": {
-			{"invoice", false},
-		},
-		"companies": {
-			{"company", false},
 		},
 		"transactions": {
 			{"transaction", true},
@@ -219,7 +216,7 @@ var Relations = map[string]map[string][]RelationField{
 		},
 	},
 	"open_close_details": {
-		"admins": {
+		"users": {
 			{"user", false},
 		},
 	},
@@ -237,6 +234,33 @@ var Relations = map[string]map[string][]RelationField{
 		},
 	},
 	"product_categories": {
+		"companies": {
+			{"company", false},
+		},
+	},
+	"product_balances": {
+		"skus": {
+			{"sku", false},
+		},
+		"products": {
+			{"product", false},
+		},
+	},
+	"sales": {
+		"users": {
+			{"salesperson", false},
+		},
+		"companies": {
+			{"company", false},
+		},
+		"sales_details": {
+			{"sales_details", false},
+		},
+	},
+	"job_queue": {
+		"users": {
+			{"user", false},
+		},
 		"companies": {
 			{"company", false},
 		},

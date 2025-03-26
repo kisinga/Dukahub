@@ -38,8 +38,8 @@ package pbschema
 
 import "github.com/pocketbase/pocketbase/tools/types"
 
-type Admins struct {
-	// collection-name: admins
+type Users struct {
+	// collection-name: users
 	// system: id
 	Id string
 	// system: password
@@ -68,7 +68,7 @@ type DailyStockTakes struct {
 	Id          string
 	product     *Products
 	company     *Companies
-	user        *Admins
+	user        *Users
 	date        types.DateTime
 	sku         *Skus
 	opening_bal float64
@@ -86,7 +86,7 @@ type DailyAccounts struct {
 	account     *CompanyAccounts
 	notes       string
 	company     *Companies
-	user        *Admins
+	user        *Users
 	date        types.DateTime
 	created     types.DateTime
 	updated     types.DateTime
@@ -147,7 +147,7 @@ type Invoices struct {
 	status  int
 	bal     float64
 	company *Companies
-	user    *Admins
+	user    *Users
 	// select: TypeSelectType(sale, purchase)
 	type_        int
 	transactions []*Transactions
@@ -164,7 +164,7 @@ type Purchases struct {
 	quantity    float64
 	sku         *Skus
 	company     *Companies
-	user        *Admins
+	user        *Users
 	invoice     *Invoices
 	transaction *Transactions
 	date        types.DateTime
@@ -210,19 +210,18 @@ type Transactions struct {
 	amount         float64
 	transaction_id string
 	date           types.DateTime
+	author         *Users
 	created        types.DateTime
 	updated        types.DateTime
 }
 
-type Sales struct {
-	// collection-name: sales
+type SalesDetails struct {
+	// collection-name: sales_details
 	// system: id
 	Id          string
-	amount      float64
+	price       float64
 	sku         *Skus
 	Product     *Products
-	company     *Companies
-	invoice     *Invoices
 	transaction []*Transactions
 	date        types.DateTime
 	created     types.DateTime
@@ -249,7 +248,7 @@ type OpenCloseDetails struct {
 	status     int
 	open_time  types.DateTime
 	close_time types.DateTime
-	user       *Admins
+	user       *Users
 	created    types.DateTime
 	updated    types.DateTime
 }
@@ -284,6 +283,61 @@ type ProductCategories struct {
 	Id      string
 	name    string
 	company *Companies
+	created types.DateTime
+	updated types.DateTime
+}
+
+type ProductBalances struct {
+	// collection-name: product_balances
+	// system: id
+	Id      string
+	sku     *Skus
+	product *Products
+	balance float64
+	created types.DateTime
+	updated types.DateTime
+}
+
+type Sales struct {
+	// collection-name: sales
+	// system: id
+	Id            string
+	company       *Companies
+	salesperson   *Users
+	total         float64
+	sales_details *SalesDetails
+	created       types.DateTime
+	updated       types.DateTime
+}
+
+type Admins struct {
+	// collection-name: admins
+	// system: id
+	Id string
+	// system: password
+	password string
+	// system: tokenKey
+	tokenKey string
+	// system: email
+	email string
+	// system: emailVisibility
+	emailVisibility bool
+	// system: verified
+	verified bool
+	created  types.DateTime
+	updated  types.DateTime
+}
+
+type JobQueue struct {
+	// collection-name: job_queue
+	// system: id
+	Id      string
+	name    string
+	company *Companies
+	user    *Users
+	// select: TypeSelectType(train)
+	type_   int
+	status  float64
 	created types.DateTime
 	updated types.DateTime
 }

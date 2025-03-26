@@ -7,8 +7,8 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func (helper *DbHelper) FetchAdminsById(id string) (*models.Admins, error) {
-	record, error := helper.Pb.FindRecordById(models.CName[models.Admins](), id)
+func (helper *DbHelper) FetchUsersById(id string) (*models.Users, error) {
+	record, error := helper.Pb.FindRecordById(models.CName[models.Users](), id)
 	if error != nil {
 		return nil, error
 	}
@@ -17,14 +17,14 @@ func (helper *DbHelper) FetchAdminsById(id string) (*models.Admins, error) {
 		return nil, fmt.Errorf("Error expanding company data")
 	}
 
-	admin, error := models.WrapRecord[models.Admins](record)
+	user, error := models.WrapRecord[models.Users](record)
 
-	admin.SetAvatar(generateImageUrl(models.CName[models.Admins](), admin.Id, admin.Avatar(), ThumnailSize{Width: 100, Height: 100}))
+	user.SetAvatar(generateImageUrl(models.CName[models.Users](), user.Id, user.Avatar(), ThumnailSize{Width: 100, Height: 100}))
 
-	for _, company := range admin.Company() {
+	for _, company := range user.Company() {
 		company.SetLogo(generateImageUrl(models.CName[models.Companies](), company.Id, company.Logo(), ThumnailSize{Width: 100, Height: 100}))
 	}
 
-	return admin, nil
+	return user, nil
 
 }

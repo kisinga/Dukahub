@@ -1,7 +1,7 @@
 package models
 
 type DashboardData struct {
-	Admin         Admins
+	User          Users
 	CompanyStats  []CompanyStats
 	Activecompany Companies
 	Model         Models

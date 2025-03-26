@@ -26,7 +26,7 @@ func main() {
 	app := pocketbase.New()
 	helper := &lib.DbHelper{Pb: app, Logger: log.Default()}
 
-	app.OnRecordAuthRequest("admins").BindFunc(func(e *core.RecordAuthRequestEvent) error {
+	app.OnRecordAuthRequest("users").BindFunc(func(e *core.RecordAuthRequestEvent) error {
 		// Set HTTP-Only Auth Cookie
 		e.RequestEvent.SetCookie(&http.Cookie{
 			Name:     "pb_auth",

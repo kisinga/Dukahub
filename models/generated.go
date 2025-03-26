@@ -6,39 +6,39 @@ import (
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
-type Admins struct {
+type Users struct {
 	core.BaseRecordProxy
 }
 
-func (p *Admins) CollectionName() string {
-	return "admins"
+func (p *Users) CollectionName() string {
+	return "users"
 }
 
-func (p *Admins) Username() string {
+func (p *Users) Username() string {
 	return p.GetString("username")
 }
 
-func (p *Admins) SetUsername(username string) {
+func (p *Users) SetUsername(username string) {
 	p.Set("username", username)
 }
 
-func (p *Admins) Name() string {
+func (p *Users) Name() string {
 	return p.GetString("name")
 }
 
-func (p *Admins) SetName(name string) {
+func (p *Users) SetName(name string) {
 	p.Set("name", name)
 }
 
-func (p *Admins) Avatar() string {
+func (p *Users) Avatar() string {
 	return p.GetString("avatar")
 }
 
-func (p *Admins) SetAvatar(avatar string) {
+func (p *Users) SetAvatar(avatar string) {
 	p.Set("avatar", avatar)
 }
 
-func (p *Admins) Company() []*Companies {
+func (p *Users) Company() []*Companies {
 	rels := p.ExpandedAll("company")
 	proxies := make([]*Companies, len(rels))
 	for i := range len(rels) {
@@ -48,7 +48,7 @@ func (p *Admins) Company() []*Companies {
 	return proxies
 }
 
-func (p *Admins) SetCompany(company []*Companies) {
+func (p *Users) SetCompany(company []*Companies) {
 	records := make([]*core.Record, len(company))
 	ids := make([]string, len(company))
 	for i, r := range company {
@@ -61,7 +61,7 @@ func (p *Admins) SetCompany(company []*Companies) {
 	p.SetExpand(e)
 }
 
-func (p *Admins) DefaultCompany() *Companies {
+func (p *Users) DefaultCompany() *Companies {
 	var proxy *Companies
 	if rel := p.ExpandedOne("defaultCompany"); rel != nil {
 		proxy = &Companies{}
@@ -70,7 +70,7 @@ func (p *Admins) DefaultCompany() *Companies {
 	return proxy
 }
 
-func (p *Admins) SetDefaultCompany(defaultCompany *Companies) {
+func (p *Users) SetDefaultCompany(defaultCompany *Companies) {
 	var id string
 	if defaultCompany != nil {
 		id = defaultCompany.Id
@@ -85,27 +85,27 @@ func (p *Admins) SetDefaultCompany(defaultCompany *Companies) {
 	p.SetExpand(e)
 }
 
-func (p *Admins) Level() float64 {
+func (p *Users) Level() float64 {
 	return p.GetFloat("level")
 }
 
-func (p *Admins) SetLevel(level float64) {
+func (p *Users) SetLevel(level float64) {
 	p.Set("level", level)
 }
 
-func (p *Admins) Created() types.DateTime {
+func (p *Users) Created() types.DateTime {
 	return p.GetDateTime("created")
 }
 
-func (p *Admins) SetCreated(created types.DateTime) {
+func (p *Users) SetCreated(created types.DateTime) {
 	p.Set("created", created)
 }
 
-func (p *Admins) Updated() types.DateTime {
+func (p *Users) Updated() types.DateTime {
 	return p.GetDateTime("updated")
 }
 
-func (p *Admins) SetUpdated(updated types.DateTime) {
+func (p *Users) SetUpdated(updated types.DateTime) {
 	p.Set("updated", updated)
 }
 
@@ -165,16 +165,16 @@ func (p *DailyStockTakes) SetCompany(company *Companies) {
 	p.SetExpand(e)
 }
 
-func (p *DailyStockTakes) User() *Admins {
-	var proxy *Admins
+func (p *DailyStockTakes) User() *Users {
+	var proxy *Users
 	if rel := p.ExpandedOne("user"); rel != nil {
-		proxy = &Admins{}
+		proxy = &Users{}
 		proxy.Record = rel
 	}
 	return proxy
 }
 
-func (p *DailyStockTakes) SetUser(user *Admins) {
+func (p *DailyStockTakes) SetUser(user *Users) {
 	var id string
 	if user != nil {
 		id = user.Id
@@ -333,16 +333,16 @@ func (p *DailyAccounts) SetCompany(company *Companies) {
 	p.SetExpand(e)
 }
 
-func (p *DailyAccounts) User() *Admins {
-	var proxy *Admins
+func (p *DailyAccounts) User() *Users {
+	var proxy *Users
 	if rel := p.ExpandedOne("user"); rel != nil {
-		proxy = &Admins{}
+		proxy = &Users{}
 		proxy.Record = rel
 	}
 	return proxy
 }
 
-func (p *DailyAccounts) SetUser(user *Admins) {
+func (p *DailyAccounts) SetUser(user *Users) {
 	var id string
 	if user != nil {
 		id = user.Id
@@ -767,16 +767,16 @@ func (p *Invoices) SetCompany(company *Companies) {
 	p.SetExpand(e)
 }
 
-func (p *Invoices) User() *Admins {
-	var proxy *Admins
+func (p *Invoices) User() *Users {
+	var proxy *Users
 	if rel := p.ExpandedOne("user"); rel != nil {
-		proxy = &Admins{}
+		proxy = &Users{}
 		proxy.Record = rel
 	}
 	return proxy
 }
 
-func (p *Invoices) SetUser(user *Admins) {
+func (p *Invoices) SetUser(user *Users) {
 	var id string
 	if user != nil {
 		id = user.Id
@@ -943,16 +943,16 @@ func (p *Purchases) SetCompany(company *Companies) {
 	p.SetExpand(e)
 }
 
-func (p *Purchases) User() *Admins {
-	var proxy *Admins
+func (p *Purchases) User() *Users {
+	var proxy *Users
 	if rel := p.ExpandedOne("user"); rel != nil {
-		proxy = &Admins{}
+		proxy = &Users{}
 		proxy.Record = rel
 	}
 	return proxy
 }
 
-func (p *Purchases) SetUser(user *Admins) {
+func (p *Purchases) SetUser(user *Users) {
 	var id string
 	if user != nil {
 		id = user.Id
@@ -1320,6 +1320,30 @@ func (p *Transactions) SetDate(date types.DateTime) {
 	p.Set("date", date)
 }
 
+func (p *Transactions) Author() *Users {
+	var proxy *Users
+	if rel := p.ExpandedOne("author"); rel != nil {
+		proxy = &Users{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *Transactions) SetAuthor(author *Users) {
+	var id string
+	if author != nil {
+		id = author.Id
+	}
+	p.Record.Set("author", id)
+	e := p.Expand()
+	if author != nil {
+		e["author"] = author.Record
+	} else {
+		delete(e, "author")
+	}
+	p.SetExpand(e)
+}
+
 func (p *Transactions) Created() types.DateTime {
 	return p.GetDateTime("created")
 }
@@ -1336,23 +1360,23 @@ func (p *Transactions) SetUpdated(updated types.DateTime) {
 	p.Set("updated", updated)
 }
 
-type Sales struct {
+type SalesDetails struct {
 	core.BaseRecordProxy
 }
 
-func (p *Sales) CollectionName() string {
-	return "sales"
+func (p *SalesDetails) CollectionName() string {
+	return "sales_details"
 }
 
-func (p *Sales) Amount() float64 {
-	return p.GetFloat("amount")
+func (p *SalesDetails) Price() float64 {
+	return p.GetFloat("price")
 }
 
-func (p *Sales) SetAmount(amount float64) {
-	p.Set("amount", amount)
+func (p *SalesDetails) SetPrice(price float64) {
+	p.Set("price", price)
 }
 
-func (p *Sales) Sku() *Skus {
+func (p *SalesDetails) Sku() *Skus {
 	var proxy *Skus
 	if rel := p.ExpandedOne("sku"); rel != nil {
 		proxy = &Skus{}
@@ -1361,7 +1385,7 @@ func (p *Sales) Sku() *Skus {
 	return proxy
 }
 
-func (p *Sales) SetSku(sku *Skus) {
+func (p *SalesDetails) SetSku(sku *Skus) {
 	var id string
 	if sku != nil {
 		id = sku.Id
@@ -1376,7 +1400,7 @@ func (p *Sales) SetSku(sku *Skus) {
 	p.SetExpand(e)
 }
 
-func (p *Sales) Product() *Products {
+func (p *SalesDetails) Product() *Products {
 	var proxy *Products
 	if rel := p.ExpandedOne("Product"); rel != nil {
 		proxy = &Products{}
@@ -1385,7 +1409,7 @@ func (p *Sales) Product() *Products {
 	return proxy
 }
 
-func (p *Sales) SetProduct(product *Products) {
+func (p *SalesDetails) SetProduct(product *Products) {
 	var id string
 	if product != nil {
 		id = product.Id
@@ -1400,55 +1424,7 @@ func (p *Sales) SetProduct(product *Products) {
 	p.SetExpand(e)
 }
 
-func (p *Sales) Company() *Companies {
-	var proxy *Companies
-	if rel := p.ExpandedOne("company"); rel != nil {
-		proxy = &Companies{}
-		proxy.Record = rel
-	}
-	return proxy
-}
-
-func (p *Sales) SetCompany(company *Companies) {
-	var id string
-	if company != nil {
-		id = company.Id
-	}
-	p.Record.Set("company", id)
-	e := p.Expand()
-	if company != nil {
-		e["company"] = company.Record
-	} else {
-		delete(e, "company")
-	}
-	p.SetExpand(e)
-}
-
-func (p *Sales) Invoice() *Invoices {
-	var proxy *Invoices
-	if rel := p.ExpandedOne("invoice"); rel != nil {
-		proxy = &Invoices{}
-		proxy.Record = rel
-	}
-	return proxy
-}
-
-func (p *Sales) SetInvoice(invoice *Invoices) {
-	var id string
-	if invoice != nil {
-		id = invoice.Id
-	}
-	p.Record.Set("invoice", id)
-	e := p.Expand()
-	if invoice != nil {
-		e["invoice"] = invoice.Record
-	} else {
-		delete(e, "invoice")
-	}
-	p.SetExpand(e)
-}
-
-func (p *Sales) Transaction() []*Transactions {
+func (p *SalesDetails) Transaction() []*Transactions {
 	rels := p.ExpandedAll("transaction")
 	proxies := make([]*Transactions, len(rels))
 	for i := range len(rels) {
@@ -1458,7 +1434,7 @@ func (p *Sales) Transaction() []*Transactions {
 	return proxies
 }
 
-func (p *Sales) SetTransaction(transaction []*Transactions) {
+func (p *SalesDetails) SetTransaction(transaction []*Transactions) {
 	records := make([]*core.Record, len(transaction))
 	ids := make([]string, len(transaction))
 	for i, r := range transaction {
@@ -1471,27 +1447,27 @@ func (p *Sales) SetTransaction(transaction []*Transactions) {
 	p.SetExpand(e)
 }
 
-func (p *Sales) Date() types.DateTime {
+func (p *SalesDetails) Date() types.DateTime {
 	return p.GetDateTime("date")
 }
 
-func (p *Sales) SetDate(date types.DateTime) {
+func (p *SalesDetails) SetDate(date types.DateTime) {
 	p.Set("date", date)
 }
 
-func (p *Sales) Created() types.DateTime {
+func (p *SalesDetails) Created() types.DateTime {
 	return p.GetDateTime("created")
 }
 
-func (p *Sales) SetCreated(created types.DateTime) {
+func (p *SalesDetails) SetCreated(created types.DateTime) {
 	p.Set("created", created)
 }
 
-func (p *Sales) Updated() types.DateTime {
+func (p *SalesDetails) Updated() types.DateTime {
 	return p.GetDateTime("updated")
 }
 
-func (p *Sales) SetUpdated(updated types.DateTime) {
+func (p *SalesDetails) SetUpdated(updated types.DateTime) {
 	p.Set("updated", updated)
 }
 
@@ -1624,16 +1600,16 @@ func (p *OpenCloseDetails) SetCloseTime(closeTime types.DateTime) {
 	p.Set("close_time", closeTime)
 }
 
-func (p *OpenCloseDetails) User() *Admins {
-	var proxy *Admins
+func (p *OpenCloseDetails) User() *Users {
+	var proxy *Users
 	if rel := p.ExpandedOne("user"); rel != nil {
-		proxy = &Admins{}
+		proxy = &Users{}
 		proxy.Record = rel
 	}
 	return proxy
 }
 
-func (p *OpenCloseDetails) SetUser(user *Admins) {
+func (p *OpenCloseDetails) SetUser(user *Users) {
 	var id string
 	if user != nil {
 		id = user.Id
@@ -1877,5 +1853,325 @@ func (p *ProductCategories) Updated() types.DateTime {
 }
 
 func (p *ProductCategories) SetUpdated(updated types.DateTime) {
+	p.Set("updated", updated)
+}
+
+type ProductBalances struct {
+	core.BaseRecordProxy
+}
+
+func (p *ProductBalances) CollectionName() string {
+	return "product_balances"
+}
+
+func (p *ProductBalances) Sku() *Skus {
+	var proxy *Skus
+	if rel := p.ExpandedOne("sku"); rel != nil {
+		proxy = &Skus{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *ProductBalances) SetSku(sku *Skus) {
+	var id string
+	if sku != nil {
+		id = sku.Id
+	}
+	p.Record.Set("sku", id)
+	e := p.Expand()
+	if sku != nil {
+		e["sku"] = sku.Record
+	} else {
+		delete(e, "sku")
+	}
+	p.SetExpand(e)
+}
+
+func (p *ProductBalances) Product() *Products {
+	var proxy *Products
+	if rel := p.ExpandedOne("product"); rel != nil {
+		proxy = &Products{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *ProductBalances) SetProduct(product *Products) {
+	var id string
+	if product != nil {
+		id = product.Id
+	}
+	p.Record.Set("product", id)
+	e := p.Expand()
+	if product != nil {
+		e["product"] = product.Record
+	} else {
+		delete(e, "product")
+	}
+	p.SetExpand(e)
+}
+
+func (p *ProductBalances) Balance() float64 {
+	return p.GetFloat("balance")
+}
+
+func (p *ProductBalances) SetBalance(balance float64) {
+	p.Set("balance", balance)
+}
+
+func (p *ProductBalances) Created() types.DateTime {
+	return p.GetDateTime("created")
+}
+
+func (p *ProductBalances) SetCreated(created types.DateTime) {
+	p.Set("created", created)
+}
+
+func (p *ProductBalances) Updated() types.DateTime {
+	return p.GetDateTime("updated")
+}
+
+func (p *ProductBalances) SetUpdated(updated types.DateTime) {
+	p.Set("updated", updated)
+}
+
+type Sales struct {
+	core.BaseRecordProxy
+}
+
+func (p *Sales) CollectionName() string {
+	return "sales"
+}
+
+func (p *Sales) Company() *Companies {
+	var proxy *Companies
+	if rel := p.ExpandedOne("company"); rel != nil {
+		proxy = &Companies{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *Sales) SetCompany(company *Companies) {
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
+	e := p.Expand()
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
+	p.SetExpand(e)
+}
+
+func (p *Sales) Salesperson() *Users {
+	var proxy *Users
+	if rel := p.ExpandedOne("salesperson"); rel != nil {
+		proxy = &Users{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *Sales) SetSalesperson(salesperson *Users) {
+	var id string
+	if salesperson != nil {
+		id = salesperson.Id
+	}
+	p.Record.Set("salesperson", id)
+	e := p.Expand()
+	if salesperson != nil {
+		e["salesperson"] = salesperson.Record
+	} else {
+		delete(e, "salesperson")
+	}
+	p.SetExpand(e)
+}
+
+func (p *Sales) Total() float64 {
+	return p.GetFloat("total")
+}
+
+func (p *Sales) SetTotal(total float64) {
+	p.Set("total", total)
+}
+
+func (p *Sales) SalesDetails() *SalesDetails {
+	var proxy *SalesDetails
+	if rel := p.ExpandedOne("sales_details"); rel != nil {
+		proxy = &SalesDetails{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *Sales) SetSalesDetails(salesDetails *SalesDetails) {
+	var id string
+	if salesDetails != nil {
+		id = salesDetails.Id
+	}
+	p.Record.Set("sales_details", id)
+	e := p.Expand()
+	if salesDetails != nil {
+		e["sales_details"] = salesDetails.Record
+	} else {
+		delete(e, "sales_details")
+	}
+	p.SetExpand(e)
+}
+
+func (p *Sales) Created() types.DateTime {
+	return p.GetDateTime("created")
+}
+
+func (p *Sales) SetCreated(created types.DateTime) {
+	p.Set("created", created)
+}
+
+func (p *Sales) Updated() types.DateTime {
+	return p.GetDateTime("updated")
+}
+
+func (p *Sales) SetUpdated(updated types.DateTime) {
+	p.Set("updated", updated)
+}
+
+type Admins struct {
+	core.BaseRecordProxy
+}
+
+func (p *Admins) CollectionName() string {
+	return "admins"
+}
+
+func (p *Admins) Created() types.DateTime {
+	return p.GetDateTime("created")
+}
+
+func (p *Admins) SetCreated(created types.DateTime) {
+	p.Set("created", created)
+}
+
+func (p *Admins) Updated() types.DateTime {
+	return p.GetDateTime("updated")
+}
+
+func (p *Admins) SetUpdated(updated types.DateTime) {
+	p.Set("updated", updated)
+}
+
+type TypeSelectType3 int
+
+const Train TypeSelectType3 = iota
+
+var zzTypeSelectType3SelectNameMap = map[string]TypeSelectType3{"train": 0}
+var zzTypeSelectType3SelectIotaMap = map[TypeSelectType3]string{0: "train"}
+
+type JobQueue struct {
+	core.BaseRecordProxy
+}
+
+func (p *JobQueue) CollectionName() string {
+	return "job_queue"
+}
+
+func (p *JobQueue) Name() string {
+	return p.GetString("name")
+}
+
+func (p *JobQueue) SetName(name string) {
+	p.Set("name", name)
+}
+
+func (p *JobQueue) Company() *Companies {
+	var proxy *Companies
+	if rel := p.ExpandedOne("company"); rel != nil {
+		proxy = &Companies{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *JobQueue) SetCompany(company *Companies) {
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
+	e := p.Expand()
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
+	p.SetExpand(e)
+}
+
+func (p *JobQueue) User() *Users {
+	var proxy *Users
+	if rel := p.ExpandedOne("user"); rel != nil {
+		proxy = &Users{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *JobQueue) SetUser(user *Users) {
+	var id string
+	if user != nil {
+		id = user.Id
+	}
+	p.Record.Set("user", id)
+	e := p.Expand()
+	if user != nil {
+		e["user"] = user.Record
+	} else {
+		delete(e, "user")
+	}
+	p.SetExpand(e)
+}
+
+func (p *JobQueue) Type() TypeSelectType3 {
+	option := p.GetString("type")
+	i, ok := zzTypeSelectType3SelectNameMap[option]
+	if !ok {
+		panic("Unknown select value")
+	}
+	return i
+}
+
+func (p *JobQueue) SetType(type_ TypeSelectType3) {
+	i, ok := zzTypeSelectType3SelectIotaMap[type_]
+	if !ok {
+		panic("Unknown select value")
+	}
+	p.Set("type", i)
+}
+
+func (p *JobQueue) Status() float64 {
+	return p.GetFloat("status")
+}
+
+func (p *JobQueue) SetStatus(status float64) {
+	p.Set("status", status)
+}
+
+func (p *JobQueue) Created() types.DateTime {
+	return p.GetDateTime("created")
+}
+
+func (p *JobQueue) SetCreated(created types.DateTime) {
+	p.Set("created", created)
+}
+
+func (p *JobQueue) Updated() types.DateTime {
+	return p.GetDateTime("updated")
+}
+
+func (p *JobQueue) SetUpdated(updated types.DateTime) {
 	p.Set("updated", updated)
 }

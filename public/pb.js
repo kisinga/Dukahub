@@ -65,7 +65,7 @@ const DbService = {
       }
 
       const authData = await pb
-        .collection("admins")
+        .collection("users")
         .authWithPassword(email, password, { expand: "company" });
 
       pb.authStore.save(authData.token, authData.record);
