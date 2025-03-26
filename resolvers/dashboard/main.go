@@ -1,11 +1,9 @@
-package resolvers
+package dashboard
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/kisinga/dukahub/lib"
 	"github.com/kisinga/dukahub/views/pages"
@@ -13,7 +11,17 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func (r *Resolvers) DashboardAuthCheck(e *core.RequestEvent) error {
+type Resolvers struct {
+	helper *lib.DbHelper
+}
+
+func NewResolvers(helper *lib.DbHelper) *Resolvers {
+	return &Resolvers{
+		helper: helper,
+	}
+}
+
+func (r *Resolvers) AuthCheck(e *core.RequestEvent) error {
 	cookie, err := e.Request.Cookie("pb_users_auth")
 	if err != nil {
 		return e.Redirect(307, "/login")
@@ -29,7 +37,7 @@ func (r *Resolvers) DashboardAuthCheck(e *core.RequestEvent) error {
 	return e.Next()
 }
 
-func (r *Resolvers) DashboardHome(c *core.RequestEvent) error {
+func (r *Resolvers) Home(c *core.RequestEvent) error {
 	userID := c.Get("userID")
 	companyID := c.Request.PathValue("companyID")
 	data, err := r.helper.FetchDashboardData(userID.(string), companyID)
@@ -39,30 +47,7 @@ func (r *Resolvers) DashboardHome(c *core.RequestEvent) error {
 	return lib.Render(c, dashboard.Home(*data))
 }
 
-func (r *Resolvers) DashboardExport(c *core.RequestEvent) error {
-	companyID := c.Request.PathValue("companyID")
-
-	buf, err := r.helper.ExportPhotos(companyID)
-	if err != nil {
-		// Redirect on error
-		c.Response.Header().Set("Location", "/admin-dashboard")
-		c.Response.WriteHeader(http.StatusFound)
-		return nil
-	}
-
-	// Set the proper headers for a downloadable zip file.
-	c.Response.Header().Set("Content-Type", "application/zip")
-	c.Response.Header().Set("Content-Disposition", "attachment; filename=\"export.zip\"")
-	c.Response.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
-
-	// Write the zip content directly from the *bytes.Buffer.
-	if _, err := io.Copy(c.Response, buf); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *Resolvers) DashboardRoot(e *core.RequestEvent) error {
+func (r *Resolvers) Root(e *core.RequestEvent) error {
 	cookie, err := e.Request.Cookie("pb_auth")
 	if err != nil {
 		log.Println("No auth cookie found")

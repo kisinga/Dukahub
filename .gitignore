@@ -7,3 +7,6 @@ backend
 
 # all .DS_Store files in all folders
 **/.DS_Store
+
+# all debug binaries
+*__debug*

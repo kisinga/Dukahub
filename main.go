@@ -50,7 +50,7 @@ func main() {
 		return e.Next()
 	})
 
-	resolvers := resolvers.NewResolvers(*helper)
+	resolvers := resolvers.NewResolvers(helper)
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		// serves static files from the provided public dir (if exists)
@@ -68,26 +68,26 @@ func main() {
 		})
 
 		adminDashboardGroup := se.Router.Group("/admin-dashboard")
-		adminDashboardGroup.BindFunc(resolvers.AdminDashboardAuthCheck)
+		adminDashboardGroup.BindFunc(resolvers.Admin.AuthCheck)
 
-		adminDashboardGroup.GET("/", resolvers.DashboardHome)
+		adminDashboardGroup.GET("/", resolvers.Admin.Home)
 
-		adminDashboardGroup.GET("/export/{companyID}", resolvers.DashboardExport)
+		adminDashboardGroup.GET("/export/{companyID}", resolvers.Admin.Export)
 
 		// route for when someone navigates to dashboard without a company
-		se.Router.GET("/dashboard/{$}", resolvers.DashboardRoot)
+		se.Router.GET("/dashboard/{$}", resolvers.Dashboard.Root)
 
 		dashboardGroup := se.Router.Group("/dashboard/{companyID}")
 
 		// For every dashboard route, check if user is logged in and forward the userID through the context
-		dashboardGroup.BindFunc(resolvers.DashboardAuthCheck)
+		dashboardGroup.BindFunc(resolvers.Dashboard.AuthCheck)
 
 		// root dashboard route with a valid companyID
-		dashboardGroup.GET("/", resolvers.DashboardHome)
+		dashboardGroup.GET("/", resolvers.Dashboard.Home)
 
-		dashboardGroup.GET("/sell", resolvers.Sell)
+		dashboardGroup.GET("/sell", resolvers.Dashboard.Sell)
 
-		dashboardGroup.GET("/register", resolvers.Register)
+		dashboardGroup.GET("/register", resolvers.Dashboard.Register)
 
 		return se.Next()
 	})
