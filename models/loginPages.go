@@ -1,17 +1,17 @@
 package models
 
-type LoginPages int
+type LoginUserType int
 
 const (
-	AdminDashboard LoginPages = iota
+	AdminDashboard LoginUserType = iota
 	Dashboard
 )
 
-var pages = map[LoginPages]string{
-	AdminDashboard: "/admin/dashboard",
-	Dashboard:      "/dashboard",
+var pages = map[LoginUserType]string{
+	AdminDashboard: "admin",
+	Dashboard:      "user",
 }
 
-func (p LoginPages) String() string {
+func (p LoginUserType) String() string {
 	return pages[p]
 }

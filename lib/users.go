@@ -7,7 +7,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func (helper *DbHelper) FetchUsersById(id string) (*models.Users, error) {
+func (helper *DbHelper) FetchUserById(id string) (*models.Users, error) {
 	record, error := helper.Pb.FindRecordById(models.CName[models.Users](), id)
 	if error != nil {
 		return nil, error

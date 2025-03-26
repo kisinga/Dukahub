@@ -12,6 +12,8 @@ import (
 	"github.com/kisinga/dukahub/lib"
 	"github.com/kisinga/dukahub/models"
 	"github.com/kisinga/dukahub/views/pages"
+	admindashboard "github.com/kisinga/dukahub/views/pages/adminDashboard"
+	"github.com/kisinga/dukahub/views/pages/dashboard"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -39,7 +41,7 @@ func main() {
 		return e.Next()
 	})
 
-	app.OnRecordAuthRequest("users").BindFunc(func(e *core.RecordAuthRequestEvent) error {
+	app.OnRecordAuthRequest("admins").BindFunc(func(e *core.RecordAuthRequestEvent) error {
 		// Set HTTP-Only Auth Cookie
 		e.RequestEvent.SetCookie(&http.Cookie{
 			Name:     "pb_admins_auth",
@@ -67,6 +69,55 @@ func main() {
 			return lib.Render(c, pages.Login(models.AdminDashboard))
 		})
 
+		adminDashboardGroup := se.Router.Group("/admin-dashboard")
+		adminDashboardGroup.BindFunc(func(e *core.RequestEvent) error {
+			cookie, err := e.Request.Cookie("pb_admins_auth")
+			if err != nil {
+				return e.Redirect(307, "/admin-login")
+			}
+			user, err := app.FindAuthRecordByToken(cookie.Value)
+			if err != nil {
+				return e.Redirect(http.StatusFound, "/admin-login")
+			}
+
+			// Store user ID in request context
+			e.Set("adminID", user.Id)
+
+			return e.Next()
+		})
+
+		adminDashboardGroup.GET("/", func(c *core.RequestEvent) error {
+			adminID := c.Get("adminID")
+			admin, err := helper.FetchAdminById(adminID.(string))
+			if err != nil {
+				return c.Redirect(http.StatusFound, "/admin-login")
+			}
+			return lib.Render(c, admindashboard.Home(admin))
+		})
+
+		adminDashboardGroup.GET("/export/{companyID}", func(c *core.RequestEvent) error {
+			companyID := c.Request.PathValue("companyID")
+
+			buf, err := helper.ExportPhotos(companyID)
+			if err != nil {
+				// Redirect on error
+				c.Response.Header().Set("Location", "/admin-dashboard")
+				c.Response.WriteHeader(http.StatusFound)
+				return nil
+			}
+
+			// Set the proper headers for a downloadable zip file.
+			c.Response.Header().Set("Content-Type", "application/zip")
+			c.Response.Header().Set("Content-Disposition", "attachment; filename=\"export.zip\"")
+			c.Response.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
+
+			// Write the zip content directly from the *bytes.Buffer.
+			if _, err := io.Copy(c.Response, buf); err != nil {
+				return err
+			}
+			return nil
+		})
+
 		// route for when someone navigates to dashboard without a company
 		se.Router.GET("/dashboard/{$}", func(e *core.RequestEvent) error {
 			cookie, err := e.Request.Cookie("pb_auth")
@@ -90,31 +141,6 @@ func main() {
 			}
 			return e.Redirect(307, fmt.Sprintf("/dashboard/%s", companies[0]))
 		})
-
-		adminDashboardGroup := se.Router.Group("/admin-dashboard")
-		adminDashboardGroup.GET("/export", func(c *core.RequestEvent) error {
-			companyID := c.Request.PathValue("companyID")
-
-			buf, err := helper.ExportPhotos(companyID)
-			if err != nil {
-				// Redirect on error
-				c.Response.Header().Set("Location", "/login")
-				c.Response.WriteHeader(http.StatusFound)
-				return nil
-			}
-
-			// Set the proper headers for a downloadable zip file.
-			c.Response.Header().Set("Content-Type", "application/zip")
-			c.Response.Header().Set("Content-Disposition", "attachment; filename=\"export.zip\"")
-			c.Response.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
-
-			// Write the zip content directly from the *bytes.Buffer.
-			if _, err := io.Copy(c.Response, buf); err != nil {
-				return err
-			}
-			return nil
-		})
-
 		dashboardGroup := se.Router.Group("/dashboard/{companyID}")
 
 		// For every dashboard route, check if user is logged in and forward the userID through the context
@@ -142,7 +168,7 @@ func main() {
 			if err != nil {
 				return c.Redirect(http.StatusFound, "/login")
 			}
-			return lib.Render(c, pages.Dashboard(*data))
+			return lib.Render(c, dashboard.Home(*data))
 		})
 
 		dashboardGroup.GET("/sell", func(c *core.RequestEvent) error {
@@ -152,7 +178,7 @@ func main() {
 			if err != nil {
 				return c.Redirect(http.StatusFound, "/login")
 			}
-			return lib.Render(c, pages.Newsale(*data))
+			return lib.Render(c, dashboard.Newsale(*data))
 		})
 
 		dashboardGroup.GET("/register", func(c *core.RequestEvent) error {
@@ -163,29 +189,6 @@ func main() {
 				return c.Redirect(http.StatusFound, "/login")
 			}
 			return lib.Render(c, pages.Register(*data))
-		})
-
-		dashboardGroup.GET("/export", func(c *core.RequestEvent) error {
-			companyID := c.Request.PathValue("companyID")
-
-			buf, err := helper.ExportPhotos(companyID)
-			if err != nil {
-				// Redirect on error
-				c.Response.Header().Set("Location", "/login")
-				c.Response.WriteHeader(http.StatusFound)
-				return nil
-			}
-
-			// Set the proper headers for a downloadable zip file.
-			c.Response.Header().Set("Content-Type", "application/zip")
-			c.Response.Header().Set("Content-Disposition", "attachment; filename=\"export.zip\"")
-			c.Response.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
-
-			// Write the zip content directly from the *bytes.Buffer.
-			if _, err := io.Copy(c.Response, buf); err != nil {
-				return err
-			}
-			return nil
 		})
 
 		return se.Next()

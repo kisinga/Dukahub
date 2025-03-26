@@ -324,6 +324,7 @@ type Admins struct {
 	emailVisibility bool
 	// system: verified
 	verified bool
+	avatar   string
 	created  types.DateTime
 	updated  types.DateTime
 }

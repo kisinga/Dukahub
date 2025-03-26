@@ -2048,6 +2048,14 @@ func (p *Admins) CollectionName() string {
 	return "admins"
 }
 
+func (p *Admins) Avatar() string {
+	return p.GetString("avatar")
+}
+
+func (p *Admins) SetAvatar(avatar string) {
+	p.Set("avatar", avatar)
+}
+
 func (p *Admins) Created() types.DateTime {
 	return p.GetDateTime("created")
 }

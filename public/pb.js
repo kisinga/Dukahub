@@ -79,7 +79,7 @@ const DbService = {
         htmx.trigger("#error-message", "loginSuccess", { success: true });
 
         setTimeout(() => {
-          window.location.href = `/admin-dashboard}`;
+          window.location.href = `/admin-dashboard`;
         }, 500);
       } else if (userType === "user") {
         const authData = await pb
