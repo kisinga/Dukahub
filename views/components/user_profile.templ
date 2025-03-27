@@ -10,11 +10,19 @@ templ UserProfile(avatarURL string) {
 			aria-expanded="false"
 		>
 			<div class="avatar-container">
-				<img
-					src={ avatarURL }
-					alt="User Avatar"
-					class="rounded-circle avatar-img"
-				/>
+				if avatarURL != "" {
+					<img
+						src={ avatarURL }
+						alt="User Avatar"
+						class="avatar rounded-circle"
+					/>
+				} else {
+					<img
+						src="/public/assets/default_avatar.png"
+						alt="User Avatar"
+						class="avatar rounded-circle"
+					/>
+				}
 			</div>
 		</button>
 		<ul class="dropdown-menu dropdown-menu-end navbar-dropdown-menu shadow-sm" aria-labelledby="userDropdown">
@@ -25,12 +33,7 @@ templ UserProfile(avatarURL string) {
 					<span>Profile</span>
 				</a>
 			</li>
-			<li>
-				<a class="dropdown-item d-flex align-items-center py-2 px-3" href="#">
-					<i class="bi bi-building-fill me-2"></i>
-					<span>Company Settings</span>
-				</a>
-			</li>
+			<li></li>
 			<li><hr class="dropdown-divider mx-3 my-2"/></li>
 			<li>
 				<a class="dropdown-item d-flex align-items-center py-2 px-3" href="#">
