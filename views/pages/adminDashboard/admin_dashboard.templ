@@ -5,6 +5,129 @@ import "github.com/kisinga/dukahub/models"
 
 templ Home(admin *models.Admins) {
 	@layouts.BaseLayout("Admin Dashboard") {
-		@layouts.AdminDashboard(admin)
+		@layouts.AdminDashboard(admin) {
+			<!-- Main Content Cards -->
+			<div class="row">
+				<!-- Chart Card -->
+				<div class="col-lg-8 mb-4">
+					<div class="card h-100">
+						<div
+							class="card-header d-flex justify-content-between align-items-center"
+						>
+							<h5 class="card-title mb-0">Performance Overview</h5>
+							<div class="dropdown">
+								<button
+									class="btn btn-sm btn-light"
+									type="button"
+									id="chartOptions"
+									data-bs-toggle="dropdown"
+									aria-expanded="false"
+								>
+									<i class="bi bi-three-dots-vertical"></i>
+								</button>
+								<ul
+									class="dropdown-menu dropdown-menu-end"
+									aria-labelledby="chartOptions"
+								>
+									<li><a class="dropdown-item" href="#">Download</a></li>
+									<li><a class="dropdown-item" href="#">Share</a></li>
+									<li><a class="dropdown-item" href="#">Print</a></li>
+								</ul>
+							</div>
+						</div>
+						<div class="card-body">
+							<div class="chart-placeholder" style="height: 300px">
+								<div
+									class="d-flex justify-content-center align-items-center h-100 bg-light rounded"
+								>
+									<p class="text-muted mb-0">Chart Placeholder</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- Activity Card -->
+				<div class="col-lg-4 mb-4">
+					<div class="card h-100">
+						<div
+							class="card-header d-flex justify-content-between align-items-center"
+						>
+							<h5 class="card-title mb-0">Recent Activity</h5>
+							<div class="dropdown">
+								<button
+									class="btn btn-sm btn-light"
+									type="button"
+									id="activityOptions"
+									data-bs-toggle="dropdown"
+									aria-expanded="false"
+								>
+									<i class="bi bi-three-dots-vertical"></i>
+								</button>
+								<ul
+									class="dropdown-menu dropdown-menu-end"
+									aria-labelledby="activityOptions"
+								>
+									<li><a class="dropdown-item" href="#">View All</a></li>
+									<li><a class="dropdown-item" href="#">Mark as Read</a></li>
+								</ul>
+							</div>
+						</div>
+						<div class="card-body p-0">
+							<div
+								class="list-group list-group-flush"
+							>
+								<div class="list-group-item">
+									<div class="d-flex align-items-center">
+										<div class="flex-shrink-0">
+											<i class="bi bi-person-plus text-primary"></i>
+										</div>
+										<div class="flex-grow-1 ms-3">
+											<p class="mb-0">New user registered</p>
+											<small class="text-muted">2 hours ago</small>
+										</div>
+									</div>
+								</div>
+								<div class="list-group-item">
+									<div class="d-flex align-items-center">
+										<div class="flex-shrink-0">
+											<i class="bi bi-cart-plus text-success"></i>
+										</div>
+										<div class="flex-grow-1 ms-3">
+											<p class="mb-0">New order placed</p>
+											<small class="text-muted">4 hours ago</small>
+										</div>
+									</div>
+								</div>
+								<div class="list-group-item">
+									<div class="d-flex align-items-center">
+										<div class="flex-shrink-0">
+											<i class="bi bi-envelope text-warning"></i>
+										</div>
+										<div class="flex-grow-1 ms-3">
+											<p class="mb-0">New message received</p>
+											<small class="text-muted">1 day ago</small>
+										</div>
+									</div>
+								</div>
+								<div class="list-group-item">
+									<div class="d-flex align-items-center">
+										<div class="flex-shrink-0">
+											<i class="bi bi-gear text-info"></i>
+										</div>
+										<div class="flex-grow-1 ms-3">
+											<p class="mb-0">Settings updated</p>
+											<small class="text-muted">2 days ago</small>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="card-footer text-center">
+							<a href="#" class="btn btn-sm btn-primary">View All</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		}
 	}
 }
