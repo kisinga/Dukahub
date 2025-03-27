@@ -6,7 +6,7 @@ import (
 )
 
 templ Home(data *models.DashboardData) {
-	@layouts.BaseLayout() {
+	@layouts.BaseLayout("Dashboard") {
 		@layouts.DashboardLayout(data.User, data.Activecompany) {
 			<style>
     .table-responsive-sm {

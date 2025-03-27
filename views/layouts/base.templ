@@ -1,6 +1,6 @@
 package layouts
 
-templ BaseLayout() {
+templ BaseLayout(title string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -17,7 +17,7 @@ templ BaseLayout() {
 			<script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
 			// pocketbase
 			<script src="https://cdn.jsdelivr.net/npm/pocketbase@0.25.1/dist/pocketbase.umd.js"></script>
-			<title>Dukahub</title>
+			<title>{ title }</title>
 		</head>
 		<body class="transition">
 			<main class="max-w-screen-md m-auto">

@@ -6,7 +6,7 @@ import (
 )
 
 templ CompanySettings(user *models.Users, activeCompany *models.Companies) {
-	@layouts.BaseLayout() {
+	@layouts.BaseLayout("Company Settings") {
 		@layouts.DashboardLayout(user, activeCompany) {
 			// Show a table of the user companies for now
 			<div class="container">

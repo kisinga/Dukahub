@@ -4,7 +4,7 @@ import "github.com/kisinga/dukahub/views/layouts"
 import "github.com/kisinga/dukahub/models"
 
 templ Home(admin *models.Admins) {
-	@layouts.BaseLayout() {
+	@layouts.BaseLayout("Admin Dashboard") {
 		@layouts.AdminDashboard(admin)
 	}
 }
