@@ -332,7 +332,7 @@ templ AdminDashboard(admin *models.Admins) {
 						</ul>
 					</div>
 					<!-- Profile -->
-					@components.UserProfile(admin.Avatar())
+					@components.UserProfile(admin.Avatar(), admin.Email())
 				</div>
 			</div>
 			<!-- Content Area -->

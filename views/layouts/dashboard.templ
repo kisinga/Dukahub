@@ -37,7 +37,7 @@ templ DashboardLayout(user *models.Users, activeCompany *models.Companies) {
 					</ul>
 				</div>
 				<!-- Right Section: User Dropdown -->
-				@components.UserProfile(user.Avatar())
+				@components.UserProfile(user.Avatar(), user.Email())
 			</div>
 		</nav>
 		<!-- Main Content Area -->
