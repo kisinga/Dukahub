@@ -3,71 +3,196 @@ package pages
 import "github.com/kisinga/dukahub/views/layouts"
 
 templ Home() {
-	@layouts.BaseLayout() {
+	@layouts.BaseLayout("Dukahub") {
 		<!-- Navigation Bar -->
-		<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top" style="border-bottom: 2px solid #e0e0e0;">
+		<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
 			<div class="container">
-				<a class="navbar-brand text-primary fw-bold" href="/" style="font-size: 1.5rem;">SimpleStock</a>
-				<button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+				<a class="navbar-brand fw-bold d-flex align-items-center" href="/">
+					<img src="/public/assets/favicon.svg" alt="SimpleStock" height="32" class="me-2"/>
+					<span class="text-primary">SimpleStock</span>
+				</a>
+				<button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
 					<span class="navbar-toggler-icon"></span>
 				</button>
 				<div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-					<ul class="navbar-nav me-3">
+					<ul class="navbar-nav me-auto ms-lg-4">
 						<li class="nav-item">
-							<a class="nav-link" href="#features">Features</a>
+							<a class="nav-link px-3" href="#features">Features</a>
 						</li>
 						<li class="nav-item">
-							<a class="nav-link" href="#pricing">Pricing</a>
+							<a class="nav-link px-3" href="#how-it-works">How It Works</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link px-3" href="#pricing">Pricing</a>
 						</li>
 					</ul>
-					<a href="/login" class="btn btn-outline-primary" style="border-radius: 50px;">Login</a>
+					<div class="d-flex">
+						<a href="/login" class="btn btn-outline-primary me-2 px-4 rounded-pill">Login</a>
+						<a href="/signup" class="btn btn-primary px-4 rounded-pill">Get Started</a>
+					</div>
 				</div>
 			</div>
 		</nav>
 		<!-- Hero Section -->
-		<header class="d-flex align-items-center" style="min-height: 100vh; background: linear-gradient(135deg, #e3f2fd, #ffffff);">
-			<div class="container text-center">
-				<h1 class="display-4 fw-bold text-primary" style="font-size: 3rem;">Empower Your Business</h1>
-				<p class="lead text-secondary my-4" style="font-size: 1.25rem;">
-					Simple, Powerful Stock Management for Small Businesses
-				</p>
-				<a href="/signup" class="btn btn-primary btn-lg" style="border-radius: 50px; padding: 0.75rem 1.5rem;">Get Started</a>
+		<header class="py-5 position-relative overflow-hidden" style="background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);">
+			<div class="container py-5">
+				<div class="row align-items-center">
+					<div class="col-lg-6 mb-5 mb-lg-0">
+						<span class="badge bg-primary-subtle text-primary mb-3 px-3 py-2 rounded-pill fw-medium">AI-Powered Inventory</span>
+						<h1 class="display-4 fw-bold text-primary mb-3">Transform Your Business with Smart Inventory</h1>
+						<p class="lead text-secondary mb-4">
+							Point, scan, and sell. Use your smartphone to instantly recognize products, track inventory, and boost sales—no manual entry required.
+						</p>
+						<div class="d-flex flex-wrap gap-2">
+							<a href="/signup" class="btn btn-primary btn-lg px-4 rounded-pill">Start for Free</a>
+							<a href="#demo" class="btn btn-outline-primary btn-lg px-4 rounded-pill">Watch Demo</a>
+						</div>
+						<div class="mt-4 d-flex align-items-center">
+							<div class="d-flex">
+								<div class="avatar-container-sm bg-white border" style="margin-left: -8px; z-index: 5;">
+									<img src="/public/assets/default_avatar.png" alt="User" class="avatar-img"/>
+								</div>
+								<div class="avatar-container-sm bg-white border" style="margin-left: -8px; z-index: 4;">
+									<img src="/public/assets/default_avatar.png" alt="User" class="avatar-img"/>
+								</div>
+								<div class="avatar-container-sm bg-white border" style="margin-left: -8px; z-index: 3;">
+									<img src="/public/assets/default_avatar.png" alt="User" class="avatar-img"/>
+								</div>
+								<div class="avatar-container-sm bg-white border" style="margin-left: -8px; z-index: 2;">
+									<img src="/public/assets/default_avatar.png" alt="User" class="avatar-img"/>
+								</div>
+							</div>
+							<div class="ms-2">
+								<p class="mb-0 small"><span class="fw-bold text-primary">1,000+</span> businesses trust SimpleStock</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-6">
+						<div class="position-relative">
+							<img src="/assets/hero-app.png" alt="SimpleStock App" class="img-fluid rounded-4 shadow-lg"/>
+							<div class="position-absolute top-0 end-0 translate-middle-y bg-white p-3 rounded-4 shadow-sm">
+								<div class="d-flex align-items-center">
+									<div class="text-success me-2">
+										<i class="bi bi-check-circle-fill fs-4"></i>
+									</div>
+									<div>
+										<p class="mb-0 fw-medium">AI Product Recognition</p>
+										<p class="mb-0 small text-muted">Instant & accurate</p>
+									</div>
+								</div>
+							</div>
+							<div class="position-absolute bottom-0 start-0 translate-middle-y bg-white p-3 rounded-4 shadow-sm">
+								<div class="d-flex align-items-center">
+									<div class="text-primary me-2">
+										<i class="bi bi-phone fs-4"></i>
+									</div>
+									<div>
+										<p class="mb-0 fw-medium">Works Offline</p>
+										<p class="mb-0 small text-muted">No constant internet needed</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="position-absolute bottom-0 end-0 d-none d-lg-block">
+				<svg width="400" height="400" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.05;">
+					<path fill="#0d6efd" d="M41.3,-51.2C54.4,-42.9,66.7,-30.8,72.3,-15.9C77.9,-1,76.8,16.7,68.6,30.1C60.4,43.5,45.2,52.7,29.4,58.9C13.6,65.1,-2.8,68.2,-18.2,64.7C-33.5,61.2,-47.7,51,-58.5,36.9C-69.2,22.7,-76.5,4.6,-73.8,-12.3C-71.1,-29.2,-58.4,-44.9,-43.9,-53.6C-29.5,-62.3,-13.2,-63.9,1,-65.2C15.2,-66.4,28.1,-59.4,41.3,-51.2Z" transform="translate(100 100)"></path>
+				</svg>
 			</div>
 		</header>
 		<!-- Features Section -->
 		<section id="features" class="py-5 bg-white">
-			<div class="container">
-				<h2 class="text-center text-primary fw-bold mb-5" style="font-size: 2.5rem;">Why SimpleStock?</h2>
+			<div class="container py-5">
+				<div class="text-center mb-5">
+					<span class="badge bg-primary-subtle text-primary mb-2 px-3 py-2 rounded-pill">Features</span>
+					<h2 class="display-5 fw-bold text-primary">Powerful AI in Your Pocket</h2>
+					<p class="lead text-secondary mx-auto" style="max-width: 600px;">
+						Transform your smartphone into a complete business management tool
+					</p>
+				</div>
 				<div class="row g-4">
 					<!-- Feature Card 1 -->
 					<div class="col-md-6 col-lg-4">
-						<div class="card h-100 shadow-sm border-0" style="border-radius: 15px;">
-							<div class="card-body">
-								<h5 class="card-title text-secondary">Streamlined Stock Management</h5>
-								<p class="card-text">
-									Manage your daily stock effortlessly with tools tailored for small businesses.
+						<div class="card h-100 border-0 shadow-sm hover-shadow" style="border-radius: 12px; transition: all 0.3s ease;">
+							<div class="card-body p-4">
+								<div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle p-3 rounded-3 mb-3">
+									<i class="bi bi-camera text-primary fs-4"></i>
+								</div>
+								<h5 class="fw-bold">Camera-Based Recognition</h5>
+								<p class="text-secondary">
+									Simply point your phone at products to instantly identify and log them—no barcodes or manual entry needed.
 								</p>
 							</div>
 						</div>
 					</div>
 					<!-- Feature Card 2 -->
 					<div class="col-md-6 col-lg-4">
-						<div class="card h-100 shadow-sm border-0" style="border-radius: 15px;">
-							<div class="card-body">
-								<h5 class="card-title text-secondary">Customer Relationships</h5>
-								<p class="card-text">
-									Track customer interactions, invoices, and payments all in one place.
+						<div class="card h-100 border-0 shadow-sm hover-shadow" style="border-radius: 12px; transition: all 0.3s ease;">
+							<div class="card-body p-4">
+								<div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle p-3 rounded-3 mb-3">
+									<i class="bi bi-lightning text-primary fs-4"></i>
+								</div>
+								<h5 class="fw-bold">Works Offline</h5>
+								<p class="text-secondary">
+									Process transactions even without internet, with custom AI models cached on your device for seamless operation.
 								</p>
 							</div>
 						</div>
 					</div>
 					<!-- Feature Card 3 -->
 					<div class="col-md-6 col-lg-4">
-						<div class="card h-100 shadow-sm border-0" style="border-radius: 15px;">
-							<div class="card-body">
-								<h5 class="card-title text-secondary">Insights and Analytics</h5>
-								<p class="card-text">
-									Gain valuable insights into your most popular products and sales trends.
+						<div class="card h-100 border-0 shadow-sm hover-shadow" style="border-radius: 12px; transition: all 0.3s ease;">
+							<div class="card-body p-4">
+								<div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle p-3 rounded-3 mb-3">
+									<i class="bi bi-graph-up text-primary fs-4"></i>
+								</div>
+								<h5 class="fw-bold">Smart Insights</h5>
+								<p class="text-secondary">
+									Gain valuable data on sales trends, inventory levels, and customer preferences to make better business decisions.
+								</p>
+							</div>
+						</div>
+					</div>
+					<!-- Feature Card 4 -->
+					<div class="col-md-6 col-lg-4">
+						<div class="card h-100 border-0 shadow-sm hover-shadow" style="border-radius: 12px; transition: all 0.3s ease;">
+							<div class="card-body p-4">
+								<div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle p-3 rounded-3 mb-3">
+									<i class="bi bi-person-plus text-primary fs-4"></i>
+								</div>
+								<h5 class="fw-bold">Easy to Train</h5>
+								<p class="text-secondary">
+									Teach the system your unique inventory in minutes by simply taking a few pictures of each product.
+								</p>
+							</div>
+						</div>
+					</div>
+					<!-- Feature Card 5 -->
+					<div class="col-md-6 col-lg-4">
+						<div class="card h-100 border-0 shadow-sm hover-shadow" style="border-radius: 12px; transition: all 0.3s ease;">
+							<div class="card-body p-4">
+								<div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle p-3 rounded-3 mb-3">
+									<i class="bi bi-cash-coin text-primary fs-4"></i>
+								</div>
+								<h5 class="fw-bold">M-Pesa Integration</h5>
+								<p class="text-secondary">
+									Seamlessly connect with popular payment systems to process transactions instantly and securely.
+								</p>
+							</div>
+						</div>
+					</div>
+					<!-- Feature Card 6 -->
+					<div class="col-md-6 col-lg-4">
+						<div class="card h-100 border-0 shadow-sm hover-shadow" style="border-radius: 12px; transition: all 0.3s ease;">
+							<div class="card-body p-4">
+								<div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle p-3 rounded-3 mb-3">
+									<i class="bi bi-shield-check text-primary fs-4"></i>
+								</div>
+								<h5 class="fw-bold">Loss Prevention</h5>
+								<p class="text-secondary">
+									Track inventory accurately and detect potential theft or losses with intelligent monitoring tools.
 								</p>
 							</div>
 						</div>
@@ -75,17 +200,358 @@ templ Home() {
 				</div>
 			</div>
 		</section>
-		<!-- Call to Action -->
-		<section class="py-5" style="background-color: #0d6efd;">
-			<div class="container text-center">
-				<h2 class="text-white fw-bold mb-4" style="font-size: 2.5rem;">Start Managing Smarter</h2>
-				<a href="/signup" class="btn btn-light btn-lg" style="border-radius: 50px; padding: 0.75rem 1.5rem;">Sign Up Now</a>
+		<!-- How It Works Section -->
+		<section id="how-it-works" class="py-5" style="background-color: #f8f9fa;">
+			<div class="container py-5">
+				<div class="text-center mb-5">
+					<span class="badge bg-primary-subtle text-primary mb-2 px-3 py-2 rounded-pill">How It Works</span>
+					<h2 class="display-5 fw-bold text-primary">Simple as 1-2-3</h2>
+					<p class="lead text-secondary mx-auto" style="max-width: 600px;">
+						Get started in minutes with no technical knowledge required
+					</p>
+				</div>
+				<div class="row g-4 align-items-center">
+					<div class="col-md-6">
+						<img src="/public/assets/workflow.svg" alt="How SimpleStock Works" class="img-fluid rounded-4 shadow"/>
+					</div>
+					<div class="col-md-6">
+						<div class="card mb-3 border-0 shadow-sm bg-white" style="border-radius: 12px;">
+							<div class="card-body p-4">
+								<div class="d-flex">
+									<div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold" style="width: 40px; height: 40px; min-width: 40px;">1</div>
+									<div class="ms-3">
+										<h5 class="fw-bold">Train Your System</h5>
+										<p class="text-secondary mb-0">
+											Take a few pictures of each product and assign names and prices. Your AI model learns instantly.
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="card mb-3 border-0 shadow-sm bg-white" style="border-radius: 12px;">
+							<div class="card-body p-4">
+								<div class="d-flex">
+									<div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold" style="width: 40px; height: 40px; min-width: 40px;">2</div>
+									<div class="ms-3">
+										<h5 class="fw-bold">Point and Recognize</h5>
+										<p class="text-secondary mb-0">
+											Just point your camera at products during transactions. The system identifies them in real-time.
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="card border-0 shadow-sm bg-white" style="border-radius: 12px;">
+							<div class="card-body p-4">
+								<div class="d-flex">
+									<div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold" style="width: 40px; height: 40px; min-width: 40px;">3</div>
+									<div class="ms-3">
+										<h5 class="fw-bold">Track and Grow</h5>
+										<p class="text-secondary mb-0">
+											Use automatic reports and insights to track inventory, monitor sales, and grow your business.
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+		<!-- Testimonials Section -->
+		<section class="py-5 bg-white">
+			<div class="container py-5">
+				<div class="text-center mb-5">
+					<span class="badge bg-primary-subtle text-primary mb-2 px-3 py-2 rounded-pill">Testimonials</span>
+					<h2 class="display-5 fw-bold text-primary">Loved by Business Owners</h2>
+					<p class="lead text-secondary mx-auto" style="max-width: 600px;">
+						See what our customers have to say about SimpleStock
+					</p>
+				</div>
+				<div class="row g-4">
+					<div class="col-md-6 col-lg-4">
+						<div class="card h-100 border-0 shadow-sm" style="border-radius: 12px;">
+							<div class="card-body p-4">
+								<div class="d-flex mb-3">
+									<i class="bi bi-star-fill text-warning"></i>
+									<i class="bi bi-star-fill text-warning mx-1"></i>
+									<i class="bi bi-star-fill text-warning"></i>
+									<i class="bi bi-star-fill text-warning mx-1"></i>
+									<i class="bi bi-star-fill text-warning"></i>
+								</div>
+								<p class="text-secondary">
+									"SimpleStock completely changed how we manage our small grocery store. No more typing product names or scanning barcodes—we just point our phone and it recognizes everything!"
+								</p>
+								<div class="d-flex align-items-center mt-4">
+									<div class="avatar-container">
+										<img src="/assets/testimonial1.jpg" alt="Jane Cooper" class="avatar-img"/>
+									</div>
+									<div class="ms-3">
+										<h6 class="mb-0 fw-bold">Jane Cooper</h6>
+										<p class="small text-secondary mb-0">Corner Grocery, Nairobi</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-6 col-lg-4">
+						<div class="card h-100 border-0 shadow-sm" style="border-radius: 12px;">
+							<div class="card-body p-4">
+								<div class="d-flex mb-3">
+									<i class="bi bi-star-fill text-warning"></i>
+									<i class="bi bi-star-fill text-warning mx-1"></i>
+									<i class="bi bi-star-fill text-warning"></i>
+									<i class="bi bi-star-fill text-warning mx-1"></i>
+									<i class="bi bi-star-fill text-warning"></i>
+								</div>
+								<p class="text-secondary">
+									"I was spending hours each week manually tracking inventory. Now SimpleStock handles it all automatically. I even use it to track services in my salon with picture cards!"
+								</p>
+								<div class="d-flex align-items-center mt-4">
+									<div class="avatar-container">
+										<img src="/assets/testimonial2.jpg" alt="Robert Johnson" class="avatar-img"/>
+									</div>
+									<div class="ms-3">
+										<h6 class="mb-0 fw-bold">Robert Johnson</h6>
+										<p class="small text-secondary mb-0">Style Salon, Mombasa</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-6 col-lg-4">
+						<div class="card h-100 border-0 shadow-sm" style="border-radius: 12px;">
+							<div class="card-body p-4">
+								<div class="d-flex mb-3">
+									<i class="bi bi-star-fill text-warning"></i>
+									<i class="bi bi-star-fill text-warning mx-1"></i>
+									<i class="bi bi-star-fill text-warning"></i>
+									<i class="bi bi-star-fill text-warning mx-1"></i>
+									<i class="bi bi-star-fill text-warning"></i>
+								</div>
+								<p class="text-secondary">
+									"The insights feature has been a game-changer. I can now see which products sell best, when to restock, and even who my best customers are. All with an app on my phone!"
+								</p>
+								<div class="d-flex align-items-center mt-4">
+									<div class="avatar-container">
+										<img src="/assets/testimonial3.jpg" alt="Sarah Mwangi" class="avatar-img"/>
+									</div>
+									<div class="ms-3">
+										<h6 class="mb-0 fw-bold">Sarah Mwangi</h6>
+										<p class="small text-secondary mb-0">Electronics Shop, Kisumu</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+		<!-- Pricing Section -->
+		<section id="pricing" class="py-5" style="background-color: #f8f9fa;">
+			<div class="container py-5">
+				<div class="text-center mb-5">
+					<span class="badge bg-primary-subtle text-primary mb-2 px-3 py-2 rounded-pill">Pricing</span>
+					<h2 class="display-5 fw-bold text-primary">Simple, Transparent Pricing</h2>
+					<p class="lead text-secondary mx-auto" style="max-width: 600px;">
+						Start for free, upgrade as your business grows
+					</p>
+				</div>
+				<div class="row g-4 justify-content-center">
+					<!-- Free Plan -->
+					<div class="col-md-6 col-lg-4">
+						<div class="card h-100 border-0 shadow-sm" style="border-radius: 12px;">
+							<div class="card-body p-4">
+								<h5 class="text-primary fw-bold mb-3">Free</h5>
+								<h2 class="display-5 fw-bold mb-3">0<span class="fs-6 fw-normal text-secondary">/month</span></h2>
+								<p class="text-secondary mb-4">Perfect for small businesses just getting started</p>
+								<ul class="list-unstyled mb-4">
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>Up to 50 products</span>
+									</li>
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>Basic sales reports</span>
+									</li>
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>Single user</span>
+									</li>
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>M-Pesa integration</span>
+									</li>
+									<li class="mb-2 d-flex align-items-center text-muted">
+										<i class="bi bi-x-circle-fill me-2"></i>
+										<span>Advanced insights</span>
+									</li>
+								</ul>
+								<a href="/signup" class="btn btn-outline-primary w-100 rounded-pill">Get Started</a>
+							</div>
+						</div>
+					</div>
+					<!-- Pro Plan -->
+					<div class="col-md-6 col-lg-4">
+						<div class="card h-100 border-0 shadow" style="border-radius: 12px; transform: scale(1.05);">
+							<div class="card-body p-4">
+								<div class="d-flex justify-content-between align-items-center mb-3">
+									<h5 class="text-primary fw-bold mb-0">Pro</h5>
+									<span class="badge bg-primary">Popular</span>
+								</div>
+								<h2 class="display-5 fw-bold mb-3">1,499<span class="fs-6 fw-normal text-secondary">/month</span></h2>
+								<p class="text-secondary mb-4">For growing businesses with more needs</p>
+								<ul class="list-unstyled mb-4">
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>Unlimited products</span>
+									</li>
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>Advanced reporting</span>
+									</li>
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>Up to 5 users</span>
+									</li>
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>Credit sales tracking</span>
+									</li>
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>Smart inventory alerts</span>
+									</li>
+								</ul>
+								<a href="/signup?plan=pro" class="btn btn-primary w-100 rounded-pill">Choose Pro</a>
+							</div>
+						</div>
+					</div>
+					<!-- Enterprise Plan -->
+					<div class="col-md-6 col-lg-4">
+						<div class="card h-100 border-0 shadow-sm" style="border-radius: 12px;">
+							<div class="card-body p-4">
+								<h5 class="text-primary fw-bold mb-3">Enterprise</h5>
+								<h2 class="display-5 fw-bold mb-3">Custom</h2>
+								<p class="text-secondary mb-4">For larger businesses with specific requirements</p>
+								<ul class="list-unstyled mb-4">
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>Everything in Pro</span>
+									</li>
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>Unlimited users</span>
+									</li>
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>Multi-location support</span>
+									</li>
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>API access</span>
+									</li>
+									<li class="mb-2 d-flex align-items-center">
+										<i class="bi bi-check-circle-fill text-success me-2"></i>
+										<span>Dedicated support</span>
+									</li>
+								</ul>
+								<a href="/contact" class="btn btn-outline-primary w-100 rounded-pill">Contact Us</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+		<!-- CTA Section -->
+		<section class="py-5 bg-primary text-white">
+			<div class="container py-5 text-center">
+				<h2 class="display-5 fw-bold mb-4">Ready to Transform Your Business?</h2>
+				<p class="lead mb-4 mx-auto" style="max-width: 700px;">
+					Join thousands of businesses using SimpleStock to streamline operations, increase sales, and grow profitably.
+				</p>
+				<div class="d-flex justify-content-center flex-wrap gap-3">
+					<a href="/signup" class="btn btn-light btn-lg px-4 rounded-pill">Get Started Free</a>
+					<a href="/demo" class="btn btn-outline-light btn-lg px-4 rounded-pill">Request Demo</a>
+				</div>
+				<div class="mt-4">
+					<p class="mb-0 opacity-75">No credit card required. Cancel anytime.</p>
+				</div>
 			</div>
 		</section>
 		<!-- Footer -->
-		<footer class="py-3" style="background-color: #343a40;">
-			<div class="container text-center">
-				<p class="mb-0 text-white" style="font-size: 0.9rem;">© 2025 Dukahub. All rights reserved.</p>
+		<footer class="py-5 bg-dark text-white">
+			<div class="container">
+				<div class="row g-4">
+					<div class="col-md-4 mb-4 mb-md-0">
+						<a class="d-inline-flex align-items-center text-white text-decoration-none mb-3" href="/">
+							<img src="/public/assets/favicon.svg" alt="SimpleStock" height="32" class="me-2"/>
+							<span class="fw-bold fs-5">SimpleStock</span>
+						</a>
+						<p class="text-white-50">
+							AI-powered inventory management that transforms how small businesses operate.
+						</p>
+						<div class="d-flex gap-3 mt-3">
+							<a href="#" class="text-white-50 hover-white">
+								<i class="bi bi-facebook fs-5"></i>
+							</a>
+							<a href="#" class="text-white-50 hover-white">
+								<i class="bi bi-twitter fs-5"></i>
+							</a>
+							<a href="#" class="text-white-50 hover-white">
+								<i class="bi bi-instagram fs-5"></i>
+							</a>
+							<a href="#" class="text-white-50 hover-white">
+								<i class="bi bi-linkedin fs-5"></i>
+							</a>
+						</div>
+					</div>
+					<div class="col-md-2 col-6">
+						<h6 class="fw-bold mb-3">Product</h6>
+						<ul class="list-unstyled">
+							<li class="mb-2"><a href="#features" class="text-white-50 text-decoration-none">Features</a></li>
+							<li class="mb-2"><a href="#pricing" class="text-white-50 text-decoration-none">Pricing</a></li>
+							<li class="mb-2"><a href="/demo" class="text-white-50 text-decoration-none">Demo</a></li>
+							<li class="mb-2"><a href="/roadmap" class="text-white-50 text-decoration-none">Roadmap</a></li>
+						</ul>
+					</div>
+					<div class="col-md-2 col-6">
+						<h6 class="fw-bold mb-3">Company</h6>
+						<ul class="list-unstyled">
+							<li class="mb-2"><a href="/about" class="text-white-50 text-decoration-none">About Us</a></li>
+							<li class="mb-2"><a href="/blog" class="text-white-50 text-decoration-none">Blog</a></li>
+							<li class="mb-2"><a href="/careers" class="text-white-50 text-decoration-none">Careers</a></li>
+							<li class="mb-2"><a href="/contact" class="text-white-50 text-decoration-none">Contact</a></li>
+						</ul>
+					</div>
+					<div class="col-md-4">
+						<h6 class="fw-bold mb-3">Stay Updated</h6>
+						<p class="text-white-50 mb-3">Get the latest news and updates from SimpleStock</p>
+						<form class="d-flex">
+							<input type="email" class="form-control me-2 bg-dark border-secondary text-white" placeholder="Your email"/>
+							<button type="submit" class="btn btn-primary px-3 rounded-pill">Subscribe</button>
+						</form>
+					</div>
+				</div>
+				<hr class="my-4 border-secondary"/>
+				<div class="row align-items-center">
+					<div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+						<p class="mb-0 text-white-50">© 2025 Dukahub. All rights reserved.</p>
+					</div>
+					<div class="col-md-6 text-center text-md-end">
+						<ul class="list-inline mb-0">
+							<li class="list-inline-item">
+								<a href="/terms" class="text-white-50 text-decoration-none">Terms</a>
+							</li>
+							<li class="list-inline-item ms-3">
+								<a href="/privacy" class="text-white-50 text-decoration-none">Privacy</a>
+							</li>
+							<li class="list-inline-item ms-3">
+								<a href="/cookies" class="text-white-50 text-decoration-none">Cookies</a>
+							</li>
+						</ul>
+					</div>
+				</div>
 			</div>
 		</footer>
 	}

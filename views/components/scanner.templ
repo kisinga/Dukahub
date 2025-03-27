@@ -101,8 +101,8 @@ templ Scanner(model *models.Models) {
 	<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 	@templ.JSONScript("model", model)
 	<script type="module">
-	import { initCamera, toggleCamera } from "/public/scanner.js";
-	import { addProduct } from "/public/products.js";
+	import { initCamera, toggleCamera } from "/public/js/scanner.js";
+	import { addProduct } from "/public/js/products.js";
 
     const isMobile = () => {
       return (

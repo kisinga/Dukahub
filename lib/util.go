@@ -17,6 +17,9 @@ type ThumnailSize struct {
 // replace the existing logos with valid urls
 // use this format http://127.0.0.1:8090/api/files/COLLECTION_ID_OR_NAME/RECORD_ID/FILENAME?thumb=100x300
 func generateImageUrl(collection, recordId, fileName string, size ThumnailSize) string {
+	if fileName == "" {
+		return ""
+	}
 	if size.Width == 0 || size.Height == 0 {
 		return generateFileUrl(collection, recordId, fileName)
 	}
@@ -24,6 +27,9 @@ func generateImageUrl(collection, recordId, fileName string, size ThumnailSize) 
 }
 
 func generateFileUrl(collection, recordId, fileName string) string {
+	if fileName == "" {
+		return ""
+	}
 	val := fmt.Sprintf("/api/files/%s/%s/%s", collection, recordId, fileName)
 	fmt.Println("File URL: ", val)
 	return val

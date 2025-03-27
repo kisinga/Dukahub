@@ -17,7 +17,7 @@ templ Login(userType models.LoginUserType) {
       transition: all 0.3s ease;
     }
   </style>
-	@layouts.BaseLayout() {
+	@layouts.BaseLayout("Login") {
 		<div style="min-height: 100vh; background: linear-gradient(135deg, #f6f9fc, #e9eff5); display: flex; align-items: center; justify-content: center;">
 			<div class="container">
 				<div class="row justify-content-center">
@@ -81,7 +81,7 @@ templ Login(userType models.LoginUserType) {
 			</div>
 		</div>
 		<script type="module">
-            import { DbService } from "/public/pb.js";
+            import { DbService } from "/public/js/pb.js";
 
             window.loginUser = DbService.loginUser;
         </script>
