@@ -228,7 +228,7 @@ templ Home(data *models.DashboardData) {
 				</div>
 			</div>
 			<script type="module">
-				import { DbService, pocketBaseClient } from "/public/pb.js";
+				import { DbService, pocketBaseClient } from "/public/js/pb.js";
 				
 				DbService.refreshAuthToken();
 				const timeoutId = DbService.scheduleTokenRefresh();
