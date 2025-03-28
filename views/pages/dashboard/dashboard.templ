@@ -9,230 +9,630 @@ templ Home(data *models.DashboardData) {
 	@layouts.BaseLayout("Dashboard") {
 		@layouts.DashboardLayout(data.User, data.Activecompany) {
 			<style>
-    .table-responsive-sm {
-      overflow-x: auto;
+  :root {
+    --primary-color: #4361ee;
+    --primary-light: rgba(67, 97, 238, 0.1);
+    --success-color: #36b37e;
+    --success-light: rgba(54, 179, 126, 0.1);
+    --danger-color: #ff5c75;
+    --danger-light: rgba(255, 92, 117, 0.1);
+    --text-color: #2d3748;
+    --text-light: #718096;
+    --card-radius: 14px;
+    --transition-bezier: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  body {
+    background-color: #f7fafc;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+  }
+
+  .stats-container {
+    padding: 0.75rem;
+    max-width: 100%;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+
+  .stats-header {
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #232526 0%, #414345 100%);
+    border-radius: 16px 16px 0 0;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .stats-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3z'%3E%3C/path%3E%3C/svg%3E");
+    opacity: 0.1;
+  }
+
+  .stats-title {
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+    position: relative;
+  }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    z-index: 1;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #4ade80;
+    margin-right: 6px;
+    box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
     }
-    .stats-table th {
-      text-align: center;
-      vertical-align: middle;
-      position: sticky;
-      top: 0;
-      z-index: 1;
+    70% {
+      box-shadow: 0 0 0 6px rgba(74, 222, 128, 0);
     }
-    .stats-cell {
-      transition: all 0.2s;
-      min-width: 100px;
-      height: 100px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+    100% {
+      box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
     }
-    .stats-cell:hover {
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      transform: translateY(-2px);
+  }
+
+  .status-text {
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+
+  /* Responsive grid layout for mobile that keeps 3 columns */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .category-pill {
+    background: white;
+    border-radius: 20px;
+    padding: 0.4rem 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-size: 0.7rem;
+    font-weight: 600;
+    height: 28px;
+  }
+
+  .purchases-pill {
+    color: var(--primary-color);
+    background: var(--primary-light);
+  }
+
+  .sales-pill {
+    color: var(--success-color);
+    background: var(--success-light);
+  }
+
+  .expenses-pill {
+    color: var(--danger-color);
+    background: var(--danger-light);
+  }
+
+  .stats-card {
+    background: white;
+    border-radius: var(--card-radius);
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    transition: all 0.3s var(--transition-bezier);
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+  }
+
+  .stats-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    transition: all 0.3s ease;
+  }
+
+  .stats-card.purchases::after {
+    background: var(--primary-color);
+  }
+
+  .stats-card.sales::after {
+    background: var(--success-color);
+  }
+
+  .stats-card.expenses::after {
+    background: var(--danger-color);
+  }
+
+  .stats-card:hover, .stats-card:active {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+  }
+
+  .stats-card.active {
+    transform: scale(1.02);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .stat-amount {
+    font-size: 1rem;
+    font-weight: 800;
+    margin-bottom: 0.3rem;
+    position: relative;
+    display: inline-block;
+  }
+
+  .purchases .stat-amount {
+    color: var(--primary-color);
+  }
+
+  .sales .stat-amount {
+    color: var(--success-color);
+  }
+
+  .expenses .stat-amount {
+    color: var(--danger-color);
+  }
+
+  .stat-period {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.4rem;
+    border-radius: 10px;
+    display: inline-block;
+  }
+
+  .purchases .stat-period {
+    color: var(--primary-color);
+    background-color: var(--primary-light);
+  }
+
+  .sales .stat-period {
+    color: var(--success-color);
+    background-color: var(--success-light);
+  }
+
+  .expenses .stat-period {
+    color: var(--danger-color);
+    background-color: var(--danger-light);
+  }
+
+  .account-details-container {
+    overflow: hidden;
+    height: 0;
+    opacity: 0;
+    transition: height 0.5s ease-in-out, opacity 0.4s ease-in-out;
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    position: relative;
+  }
+
+  .account-details-container.show {
+    height: auto;
+    opacity: 1;
+    margin-top: 0.75rem;
+  }
+
+  .account-details {
+    background: white;
+    border-radius: var(--card-radius);
+    padding: 1rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+    animation: fadeSlideUp 0.5s var(--transition-bezier) forwards;
+  }
+
+  @keyframes fadeSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
     }
-    .stat-value {
-      font-weight: 700;
-      font-size: 1.2rem;
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
-    .period-badge {
-      font-size: 0.75rem;
-      border-radius: 20px;
-      padding: 0.15rem 0.5rem;
+  }
+
+  .account-details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    position: relative;
+  }
+
+  .account-details-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-color);
+    position: relative;
+    padding-bottom: 6px;
+  }
+
+  .account-details-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 30px;
+    height: 2px;
+    border-radius: 1px;
+  }
+
+  .account-details-title.purchases::after {
+    background-color: var(--primary-color);
+  }
+
+  .account-details-title.sales::after {
+    background-color: var(--success-color);
+  }
+
+  .account-details-title.expenses::after {
+    background-color: var(--danger-color);
+  }
+
+  .close-details {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    padding: 0;
+  }
+
+  .account-items {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .account-item {
+    background-color: #f8fafc;
+    border-radius: 10px;
+    padding: 0.75rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.2s ease;
+  }
+
+  .account-item:hover, .account-item:active {
+    background-color: #f1f5f9;
+    transform: translateY(-2px);
+  }
+
+  .account-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.7rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+  }
+
+  .account-icon svg {
+    margin-bottom: 0.25rem;
+    width: 20px;
+    height: 20px;
+  }
+
+  .account-value {
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .action-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+  }
+
+  .action-button {
+    background: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.6rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s var(--transition-bezier);
+    font-weight: 600;
+    font-size: 0.7rem;
+    color: var(--text-color);
+  }
+
+  .action-button:hover, .action-button:active {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .action-button svg {
+    margin-bottom: 0.25rem;
+    width: 16px;
+    height: 16px;
+  }
+
+  .action-button.customers svg {
+    color: #4361ee;
+  }
+
+  .action-button.new-sale svg {
+    color: #36b37e;
+  }
+
+  .action-button.inventory svg {
+    color: #ff9f1c;
+  }
+
+  .action-button.reports svg {
+    color: #4cc9f0;
+  }
+
+  /* Make sure text doesn't overflow on tiny screens */
+  @media (max-width: 330px) {
+    .stat-period {
+      font-size: 0.6rem;
     }
-    .header-btn {
-      border: none;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-top: 5px;
-      background-color: rgba(255,255,255,0.3);
+    .account-icon {
+      font-size: 0.65rem;
     }
-    @media (max-width: 576px) {
-      .stats-cell {
-        height: 90px;
-        min-width: 90px;
-      }
-      .stat-value {
-        font-size: 1rem;
-      }
+    .action-button {
+      font-size: 0.65rem;
     }
-  </style>
-			<div class="container py-3">
-				<div class="card shadow-sm">
-					<div class="card-body p-0">
-						<div class="table-responsive-sm">
-							<table class="table table-borderless mb-0 stats-table">
-								<thead>
-									<tr>
-										<th class="bg-primary text-white p-0">
-											<div class="position-relative d-flex flex-column align-items-center p-3">
-												<!-- Main title -->
-												<span class="fs-4 mb-2">Purchases</span>
-												<!-- Visual indicator for tappable area -->
-												<div class="d-flex align-items-center justify-content-center">
-													<button
-														class="btn btn-light btn-sm rounded-circle shadow-sm"
-														type="button"
-														aria-label="Add new Purchase"
-														data-bs-toggle="tooltip"
-														data-bs-placement="bottom"
-														title="Add new Purchase"
-													>
-														<i class="bi bi-plus-lg fw-bold"></i>
-													</button>
-												</div>
-												<!-- Full clickable overlay for mobile friendliness -->
-												<a href="purchase" class="stretched-link" aria-label="Go to sales page"></a>
-											</div>
-										</th>
-										<th class="bg-success text-white p-0">
-											<div class="position-relative d-flex flex-column align-items-center p-3">
-												<!-- Main title -->
-												<span class="fs-4 mb-2">Sales</span>
-												<!-- Visual indicator for tappable area -->
-												<div class="d-flex align-items-center justify-content-center">
-													<button
-														class="btn btn-light btn-sm rounded-circle shadow-sm"
-														type="button"
-														aria-label="Add new sale"
-														data-bs-toggle="tooltip"
-														data-bs-placement="bottom"
-														title="Add new sale"
-													>
-														<i class="bi bi-plus-lg fw-bold"></i>
-													</button>
-												</div>
-												<!-- Full clickable overlay for mobile friendliness -->
-												<a href="sell" class="stretched-link" aria-label="Go to sales page"></a>
-											</div>
-										</th>
-										<th class="bg-danger text-white p-0">
-											<div class="position-relative d-flex flex-column align-items-center p-3">
-												<!-- Main title -->
-												<span class="fs-4 mb-2">Expenses</span>
-												<!-- Visual indicator for tappable area -->
-												<div class="d-flex align-items-center justify-content-center">
-													<button
-														class="btn btn-light btn-sm rounded-circle shadow-sm"
-														type="button"
-														aria-label="Add new Expense"
-														data-bs-toggle="tooltip"
-														data-bs-placement="bottom"
-														title="Add new Expense"
-													>
-														<i class="bi bi-plus-lg fw-bold"></i>
-													</button>
-												</div>
-												<!-- Full clickable overlay for mobile friendliness -->
-												<a href="expense" class="stretched-link" aria-label="Go to sales page"></a>
-											</div>
-										</th>
-									</tr>
-								</thead>
-								<tbody>
-									<!-- Today -->
-									<tr>
-										<td class="p-2">
-											<div class="stats-cell bg-white rounded shadow-sm">
-												<div class="stat-value text-primary">$3,482</div>
-												<span class="period-badge border border-primary text-primary mt-2">Today</span>
-											</div>
-										</td>
-										<td class="p-2">
-											<div class="stats-cell bg-white rounded shadow-sm">
-												<div class="stat-value text-success">$5,392</div>
-												<span class="period-badge border border-success text-success mt-2">Today</span>
-											</div>
-										</td>
-										<td class="p-2">
-											<div class="stats-cell bg-white rounded shadow-sm">
-												<div class="stat-value text-danger">$1,843</div>
-												<span class="period-badge border border-danger text-danger mt-2">Today</span>
-											</div>
-										</td>
-									</tr>
-									<!-- This Week -->
-									<tr>
-										<td class="p-2">
-											<div class="stats-cell bg-white rounded shadow-sm">
-												<div class="stat-value text-primary">$24,571</div>
-												<span class="period-badge border border-primary text-primary mt-2">This Week</span>
-											</div>
-										</td>
-										<td class="p-2">
-											<div class="stats-cell bg-white rounded shadow-sm">
-												<div class="stat-value text-success">$37,845</div>
-												<span class="period-badge border border-success text-success mt-2">This Week</span>
-											</div>
-										</td>
-										<td class="p-2">
-											<div class="stats-cell bg-white rounded shadow-sm">
-												<div class="stat-value text-danger">$14,273</div>
-												<span class="period-badge border border-danger text-danger mt-2">This Week</span>
-											</div>
-										</td>
-									</tr>
-									<!-- This Month -->
-									<tr>
-										<td class="p-2">
-											<div class="stats-cell bg-white rounded shadow-sm">
-												<div class="stat-value text-primary">$98,412</div>
-												<span class="period-badge border border-primary text-primary mt-2">This Month</span>
-											</div>
-										</td>
-										<td class="p-2">
-											<div class="stats-cell bg-white rounded shadow-sm">
-												<div class="stat-value text-success">$145,320</div>
-												<span class="period-badge border border-success text-success mt-2">This Month</span>
-											</div>
-										</td>
-										<td class="p-2">
-											<div class="stats-cell bg-white rounded shadow-sm">
-												<div class="stat-value text-danger">$54,689</div>
-												<span class="period-badge border border-danger text-danger mt-2">This Month</span>
-											</div>
-										</td>
-									</tr>
-								</tbody>
-							</table>
+  }
+</style>
+			<div class="stats-container">
+				<!-- Category Pills - Now more compact -->
+				<div class="stats-grid" style="margin-top: 0.75rem">
+					<div class="category-pill purchases-pill">Purchases</div>
+					// <a href="sell" class="stretched-link" aria-label="Go to sales page">
+					// </a>
+					<div class="category-pill sales-pill">Sales</div>
+					<div class="category-pill expenses-pill">Expenses</div>
+				</div>
+				<!-- Today Stats - The one row we're focusing on -->
+				<div class="stats-grid">
+					<div class="stats-card purchases" data-category="purchases" data-period="today">
+						<div class="stat-amount">$3,482</div>
+						<div class="stat-period">Today</div>
+					</div>
+					<div class="stats-card sales" data-category="sales" data-period="today">
+						<div class="stat-amount">$5,392</div>
+						<div class="stat-period">Today</div>
+					</div>
+					<div class="stats-card expenses" data-category="expenses" data-period="today">
+						<div class="stat-amount">$1,843</div>
+						<div class="stat-period">Today</div>
+					</div>
+				</div>
+				<!-- Account Details Panel (Hidden by default) -->
+				<div id="accountDetailsContainer" class="account-details-container">
+					<div id="accountDetails" class="account-details">
+						<div class="account-details-header">
+							<h4 id="accountDetailsTitle" class="account-details-title">Account Breakdown</h4>
+							<button id="closeDetails" class="close-details">
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+									<path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"></path>
+								</svg>
+							</button>
+						</div>
+						<div id="accountItems" class="account-items">
+							<!-- Will be populated dynamically -->
 						</div>
 					</div>
 				</div>
-				<!-- Optional: Quick Actions Toolbar -->
-				<div class="row g-2 mt-3">
-					<div class="col-6 col-md-3">
-						<button class="btn btn-outline-primary btn-sm w-100 py-2 d-flex align-items-center justify-content-center">
-							<i class="bi bi-people me-2"></i> Customers
-						</button>
-					</div>
-					<div class="col-6 col-md-3">
-						<button class="btn btn-outline-primary btn-sm w-100 py-2 d-flex align-items-center justify-content-center">
-							<i class="bi bi-cart-plus me-2"></i> New Sale
-						</button>
-					</div>
-					<div class="col-6 col-md-3">
-						<button class="btn btn-outline-primary btn-sm w-100 py-2 d-flex align-items-center justify-content-center">
-							<i class="bi bi-box-seam me-2"></i> Inventory
-						</button>
-					</div>
-					<div class="col-6 col-md-3">
-						<button class="btn btn-outline-primary btn-sm w-100 py-2 d-flex align-items-center justify-content-center">
-							<i class="bi bi-graph-up me-2"></i> Reports
-						</button>
-					</div>
+				<!-- Quick Actions Toolbar - Now more compact for mobile -->
+				<div class="action-buttons">
+					<button class="action-button customers">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+							<path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7Zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path>
+							<path d="M5 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM2.5 8C1.1 8 0 9.1 0 10.5c0 1.4 1.1 2.5 2.5 2.5.9 0 1.7-.5 2.1-1.2"></path>
+						</svg>
+						Users
+					</button>
+					<button class="action-button new-sale">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+							<path d="M0 2.5A.5.5 0 0 1 .5 2H2a.5.5 0 0 1 .485.379L2.89 4H14.5a.5.5 0 0 1 .485.621l-1.5 6A.5.5 0 0 1 13 11H4a.5.5 0 0 1-.485-.379L1.61 3H.5a.5.5 0 0 1-.5-.5zM3.14 5l1.25 5h8.22l1.25-5H3.14zM5 13a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm7 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"></path>
+						</svg>
+						Sale
+					</button>
+					<button class="action-button inventory">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+							<path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6z"></path>
+						</svg>
+						Stock
+					</button>
+					<button class="action-button reports">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+							<path d="M0 0h1v15h15v1H0V0Zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5Z"></path>
+						</svg>
+						Stats
+					</button>
 				</div>
 			</div>
-			<script type="module">
-				import { DbService, pocketBaseClient } from "/public/js/pb.js";
-				
-				DbService.refreshAuthToken();
-				const timeoutId = DbService.scheduleTokenRefresh();
-			</script>
+			<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const statsCards = document.querySelectorAll('.stats-card');
+    const accountDetailsContainer = document.getElementById('accountDetailsContainer');
+    const accountDetailsTitle = document.getElementById('accountDetailsTitle');
+    const accountItems = document.getElementById('accountItems');
+    const closeDetailsBtn = document.getElementById('closeDetails');
+    
+    let activeCard = null;
+    
+    // Account data templates - Simplified for mobile
+    const accountData = {
+      purchases: {
+        today: [
+          { name: 'MPESA', value: '$1,200', icon: 'phone' },
+          { name: 'CASH', value: '$782', icon: 'cash' },
+          { name: 'BANK', value: '$1,500', icon: 'bank' }
+        ]
+      },
+      sales: {
+        today: [
+          { name: 'MPESA', value: '$2,200', icon: 'phone' },
+          { name: 'CASH', value: '$1,300', icon: 'cash' },
+          { name: 'BANK', value: '$1,892', icon: 'bank' }
+        ]
+      },
+      expenses: {
+        today: [
+          { name: 'MPESA', value: '$684', icon: 'phone' },
+          { name: 'CASH', value: '$559', icon: 'cash' },
+          { name: 'BANK', value: '$600', icon: 'bank' }
+        ]
+      }
+    };
+    
+    // Icons for account types - Simplified for mobile
+    const icons = {
+      phone: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/>
+        <path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+      </svg>`,
+      cash: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1H1zm7 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+        <path d="M0 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V5z"/>
+      </svg>`,
+      bank: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 0 0 3h16L8 0zm0 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM2 6.5h1v7H2v-7zm11 0h1v7h-1v-7z"/>
+        <path d="M1 9h14v4H1V9z"/>
+      </svg>`
+    };
+    
+    // Function to update account details - Mobile optimized
+    function updateAccountDetails(category, period) {
+      // Set title with proper case
+      const formattedCategory = category.charAt(0).toUpperCase() + category.slice(1);
+      
+      accountDetailsTitle.textContent = `${formattedCategory} Accounts`;
+      accountDetailsTitle.className = `account-details-title ${category}`;
+      
+      // Update content
+      const items = accountData[category][period];
+      accountItems.innerHTML = '';
+      
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'account-item';
+        div.innerHTML = `
+          <div class="account-icon">
+            ${icons[item.icon]}
+            ${item.name}
+          </div>
+          <div class="account-value ${category === 'purchases' ? 'text-primary' : 
+                                  category === 'sales' ? 'text-success' : 'text-danger'}">
+            ${item.value}
+          </div>
+        `;
+        accountItems.appendChild(div);
+      });
+    }
+    
+    // Handle clicking on stats cards - Mobile optimized with better touch handling
+    statsCards.forEach(card => {
+      card.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const category = this.dataset.category;
+        const period = this.dataset.period;
+        
+        // Remove active class from previous card
+        if (activeCard) {
+          activeCard.classList.remove('active');
+        }
+        
+        // If clicking the same card, toggle details
+        if (activeCard === this && accountDetailsContainer.classList.contains('show')) {
+          accountDetailsContainer.classList.remove('show');
+          this.classList.remove('active');
+          activeCard = null;
+          return;
+        }
+        
+        // Add active class to current card
+        this.classList.add('active');
+        activeCard = this;
+        
+        // Update and show account details
+        updateAccountDetails(category, period);
+        
+        // Position the details container right after this card's row
+        const cardRow = this.closest('.stats-grid');
+        if (cardRow.nextElementSibling === accountDetailsContainer) {
+          // If already in the right place, just show it
+          accountDetailsContainer.classList.add('show');
+        } else {
+          // Move it to the right place and show it
+          accountDetailsContainer.classList.remove('show');
+          cardRow.after(accountDetailsContainer);
+          
+          // Force browser reflow to ensure the animation works properly
+          void accountDetailsContainer.offsetWidth;
+          
+          accountDetailsContainer.classList.add('show');
+        }
+        
+        // Scroll to make sure the details are visible - smoother on mobile
+        setTimeout(() => {
+          accountDetailsContainer.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'nearest',
+            inline: 'nearest'
+          });
+        }, 100);
+      });
+    });
+    
+    // Close details button
+    closeDetailsBtn.addEventListener('click', function() {
+      accountDetailsContainer.classList.remove('show');
+      if (activeCard) {
+        activeCard.classList.remove('active');
+        activeCard = null;
+      }
+    });
+  });
+</script>
 		}
 	}
 }
