@@ -37,36 +37,6 @@ templ Home(data *models.DashboardData) {
     overflow-x: hidden;
   }
 
-  .stats-header {
-    padding: 0.75rem 1rem;
-    background: linear-gradient(135deg, #232526 0%, #414345 100%);
-    border-radius: 16px 16px 0 0;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .stats-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3z'%3E%3C/path%3E%3C/svg%3E");
-    opacity: 0.1;
-  }
-
-  .stats-title {
-    color: white;
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0;
-    position: relative;
-  }
-
   .status-indicator {
     display: flex;
     align-items: center;
@@ -108,6 +78,7 @@ templ Home(data *models.DashboardData) {
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
     margin-bottom: 0.75rem;
+    position: relative;
   }
 
   .category-pill {
@@ -118,9 +89,9 @@ templ Home(data *models.DashboardData) {
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    font-size: 0.7rem;
+    font-size: 1rem;
     font-weight: 600;
-    height: 28px;
+    height: 35px;
   }
 
   .purchases-pill {
@@ -180,6 +151,39 @@ templ Home(data *models.DashboardData) {
   .stats-card.active {
     transform: scale(1.02);
     box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+  }
+
+  /* NEW: Connector ribbon styling */
+  .stats-card.active::before {
+    content: '';
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 16px;
+    height: 18px;
+    background-color: inherit;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    z-index: 10;
+    animation: fadeInConnector 0.3s forwards;
+  }
+
+  @keyframes fadeInConnector {
+    from { opacity: 0; transform: translateX(-50%) translateY(-5px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  .purchases.active::before {
+    background-color: var(--primary-color);
+  }
+
+  .sales.active::before {
+    background-color: var(--success-color);
+  }
+
+  .expenses.active::before {
+    background-color: var(--danger-color);
   }
 
   .stat-amount {
@@ -225,6 +229,27 @@ templ Home(data *models.DashboardData) {
     background-color: var(--danger-light);
   }
 
+  /* NEW: Caret indicator */
+  .caret-indicator {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+  }
+
+  .stats-card:hover .caret-indicator {
+    opacity: 1;
+    transform: translateX(-50%) translateY(2px);
+  }
+
+  .stats-card.active .caret-indicator {
+    transform: translateX(-50%) rotate(180deg);
+    opacity: 1;
+  }
+
   .account-details-container {
     overflow: hidden;
     height: 0;
@@ -233,12 +258,13 @@ templ Home(data *models.DashboardData) {
     margin-top: 0;
     margin-bottom: 0.75rem;
     position: relative;
+    z-index: 1;
   }
 
   .account-details-container.show {
     height: auto;
     opacity: 1;
-    margin-top: 0.75rem;
+    margin-top: 0.25rem;
   }
 
   .account-details {
@@ -249,6 +275,29 @@ templ Home(data *models.DashboardData) {
     position: relative;
     overflow: hidden;
     animation: fadeSlideUp 0.5s var(--transition-bezier) forwards;
+  }
+
+  /* NEW: Adding connection styling to account details */
+  .account-details::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    z-index: 2;
+  }
+
+  .account-details.purchases::before {
+    background-color: var(--primary-color);
+  }
+
+  .account-details.sales::before {
+    background-color: var(--success-color);
+  }
+
+  .account-details.expenses::before {
+    background-color: var(--danger-color);
   }
 
   @keyframes fadeSlideUp {
@@ -423,24 +472,40 @@ templ Home(data *models.DashboardData) {
 				<!-- Category Pills - Now more compact -->
 				<div class="stats-grid" style="margin-top: 0.75rem">
 					<div class="category-pill purchases-pill">Purchases</div>
-					// <a href="sell" class="stretched-link" aria-label="Go to sales page">
-					// </a>
 					<div class="category-pill sales-pill">Sales</div>
 					<div class="category-pill expenses-pill">Expenses</div>
 				</div>
 				<!-- Today Stats - The one row we're focusing on -->
 				<div class="stats-grid">
 					<div class="stats-card purchases" data-category="purchases" data-period="today">
-						<div class="stat-amount">$3,482</div>
+						<div class="stat-amount">3,482</div> &nbsp;
 						<div class="stat-period">Today</div>
+						<!-- NEW: Caret indicator -->
+						<div class="caret-indicator">
+							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+								<path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"></path>
+							</svg>
+						</div>
 					</div>
 					<div class="stats-card sales" data-category="sales" data-period="today">
-						<div class="stat-amount">$5,392</div>
+						<div class="stat-amount">5,392</div>&nbsp;
 						<div class="stat-period">Today</div>
+						<!-- NEW: Caret indicator -->
+						<div class="caret-indicator">
+							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+								<path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"></path>
+							</svg>
+						</div>
 					</div>
 					<div class="stats-card expenses" data-category="expenses" data-period="today">
-						<div class="stat-amount">$1,843</div>
+						<div class="stat-amount">1,843</div>&nbsp;
 						<div class="stat-period">Today</div>
+						<!-- NEW: Caret indicator -->
+						<div class="caret-indicator">
+							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+								<path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"></path>
+							</svg>
+						</div>
 					</div>
 				</div>
 				<!-- Account Details Panel (Hidden by default) -->
@@ -495,6 +560,7 @@ templ Home(data *models.DashboardData) {
     const accountDetailsTitle = document.getElementById('accountDetailsTitle');
     const accountItems = document.getElementById('accountItems');
     const closeDetailsBtn = document.getElementById('closeDetails');
+    const accountDetails = document.getElementById('accountDetails');
     
     let activeCard = null;
     
@@ -550,6 +616,9 @@ templ Home(data *models.DashboardData) {
       // Update content
       const items = accountData[category][period];
       accountItems.innerHTML = '';
+      
+      // NEW: Update the account details class to match the category for the border color
+      accountDetails.className = `account-details ${category}`;
       
       items.forEach(item => {
         const div = document.createElement('div');
@@ -611,6 +680,13 @@ templ Home(data *models.DashboardData) {
           
           accountDetailsContainer.classList.add('show');
         }
+        
+        // Calculate which column the active card is in (1, 2, or 3)
+        const cardIndex = Array.from(cardRow.children).indexOf(this);
+        
+        // NEW: Position the card's ribbon connector accurately 
+        // This matches the expanding panel with the correct card
+        this.style.setProperty('--card-index', cardIndex);
         
         // Scroll to make sure the details are visible - smoother on mobile
         setTimeout(() => {

@@ -4,9 +4,10 @@ import "github.com/kisinga/dukahub/models"
 import "fmt"
 
 templ CompanySelector(companies []*models.Companies, activeCompany *models.Companies) {
+	<!-- Company Selector Dropdown -->
 	<div class="dropdown navbar-dropdown">
 		<button
-			class="btn navbar-btn d-flex align-items-center justify-content-center p-0 border-0"
+			class="btn navbar-btn"
 			type="button"
 			id="companyDropdown"
 			data-bs-toggle="dropdown"
@@ -17,31 +18,31 @@ templ CompanySelector(companies []*models.Companies, activeCompany *models.Compa
 					id="selectedLogo"
 					src={ activeCompany.Logo() }
 					alt="Company Logo"
-					class="rounded-circle avatar-img"
+					class="avatar-img"
 				/>
 			</div>
 			<span id="selectedName" class="visually-hidden">{ activeCompany.Name() }</span>
 		</button>
 		<ul
-			class="dropdown-menu navbar-dropdown-menu shadow-sm"
+			class="dropdown-menu dropdown-menu-end navbar-dropdown-menu"
 			aria-labelledby="companyDropdown"
 		>
-			<li><h6 class="dropdown-header fs-7 text-secondary">Switch Company</h6></li>
+			<li><h6 class="dropdown-header">Switch Company</h6></li>
 			for _, company := range companies {
 				<li>
 					<a
 						href={ templ.SafeURL(fmt.Sprintf("/dashboard/%s", company.Id)) }
-						class="dropdown-item d-flex align-items-center py-2 px-3 {if company.Id == activeCompany.Id}active{end}"
+						class="dropdown-item d-flex align-items-center {if company.Id == activeCompany.Id}active{end}"
 						data-company-id={ company.Id }
 					>
 						<div class="avatar-container-sm me-2">
 							<img
 								src={ company.Logo() }
 								alt={ company.Name() }
-								class="rounded-circle avatar-img"
+								class="avatar-img"
 							/>
 						</div>
-						<span class="text-truncate menu-item-text">
+						<span class="menu-item-text">
 							{ company.Name() }
 						</span>
 						if (company.Id == activeCompany.Id) {
@@ -50,15 +51,24 @@ templ CompanySelector(companies []*models.Companies, activeCompany *models.Compa
 					</a>
 				</li>
 			}
-			<li><hr class="dropdown-divider mx-3 my-2"/></li>
+			<li><hr class="dropdown-divider"/></li>
 			<li>
-				<a href={ templ.SafeURL(fmt.Sprintf("/dashboard/%s/company-settings", activeCompany.Id)) } class="dropdown-item d-flex align-items-center py-2 px-3">
+				<a href={ templ.SafeURL(fmt.Sprintf("/dashboard/%s/company-settings", activeCompany.Id)) } class="dropdown-item d-flex align-items-center">
 					<div class="avatar-container-sm me-2 d-flex align-items-center justify-content-center">
-						<i class="bi bi-gear-fill"></i>
+						<i class="bi bi-gear"></i>
 					</div>
 					<span class="menu-item-text">Manage Companies</span>
 				</a>
 			</li>
+			<li>
+				<a href="/companies/new" class="dropdown-item d-flex align-items-center">
+					<div class="avatar-container-sm me-2 d-flex align-items-center justify-content-center">
+						<i class="bi bi-plus-lg"></i>
+					</div>
+					<span class="menu-item-text">Add New Company</span>
+				</a>
+			</li>
 		</ul>
 	</div>
+	<link rel="stylesheet" href="/public/styles/dropdown.css"/>
 }
