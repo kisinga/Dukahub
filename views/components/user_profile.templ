@@ -1,9 +1,10 @@
 package components
 
 templ UserProfile(avatarURL string, email string) {
+	<!-- User Profile Dropdown -->
 	<div class="dropdown navbar-dropdown">
 		<button
-			class="btn navbar-btn d-flex align-items-center justify-content-center p-0 border-0"
+			class="btn navbar-btn"
 			type="button"
 			id="userDropdown"
 			data-bs-toggle="dropdown"
@@ -14,36 +15,37 @@ templ UserProfile(avatarURL string, email string) {
 					<img
 						src={ avatarURL }
 						alt="User Avatar"
-						style="width: auto; height: 40px"
-						class="avatar rounded-circle"
+						class="avatar-img"
 					/>
 				} else {
 					<img
 						src="/public/assets/default_avatar.png"
 						alt="User Avatar"
-						style="width: auto; height: 40px"
-						class="avatar rounded-circle"
+						class="avatar-img"
 					/>
 				}
 			</div>
 		</button>
-		<ul class="dropdown-menu dropdown-menu-end navbar-dropdown-menu shadow-sm" aria-labelledby="userDropdown">
-			// title with the email
-			<h6 class="dropdown-header fs-7 text-secondary">{ email }</h6>
+		<ul
+			class="dropdown-menu dropdown-menu-end navbar-dropdown-menu"
+			aria-labelledby="userDropdown"
+		>
+			<li><h6 class="dropdown-header">{ email }</h6></li>
 			<li>
-				<a class="dropdown-item d-flex align-items-center py-2 px-3" href="#">
-					<i class="bi bi-person-fill me-2"></i>
-					<span>Profile</span>
+				<a class="dropdown-item d-flex align-items-center" href="#">
+					<i class="bi bi-person me-2"></i>
+					<span class="menu-item-text">Profile</span>
 				</a>
 			</li>
-			<li></li>
-			<li><hr class="dropdown-divider mx-3 my-2"/></li>
+			<li><hr class="dropdown-divider"/></li>
 			<li>
-				<a class="dropdown-item d-flex align-items-center py-2 px-3" href="#">
+				<a class="dropdown-item d-flex align-items-center" href="/logout">
 					<i class="bi bi-box-arrow-right me-2"></i>
-					<span>Logout</span>
+					<span class="menu-item-text">Logout</span>
 				</a>
 			</li>
 		</ul>
 	</div>
+	// import dropdown.css
+	<link rel="stylesheet" href="/public/styles/dropdown.css"/>
 }
