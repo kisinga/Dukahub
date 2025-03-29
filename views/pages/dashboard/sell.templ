@@ -7,15 +7,33 @@ import (
 )
 
 var sellConfig = models.LayoutConfig{
-	Title: "Admin Dashboard",
-	JS:    nil,
-	CSS:   nil,
+	Title: "Sell",
+	JS: templ.Raw(`
+	<script type="module">
+	import { initCamera, toggleCamera } from "/public/js/scanner.js";
+	import { addProduct } from "/public/js/products.js";
+	</script>
+	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+`),
+	CSS: BaseCSS,
 }
 
 templ Newsale(data *models.DashboardData) {
-	@layouts.BaseLayout(config) {
+	@layouts.BaseLayout(sellConfig) {
 		@layouts.DashboardLayout(data.User, data.Activecompany) {
-			@components.Scanner(data.Model)
+			<div class="container-fluid mt-3 mb-5">
+				<!-- Header -->
+				<div class="row mb-3">
+					<div class="col-12">
+						<h2>New Sale</h2>
+						<p class="text-muted">Scan products or enter manually</p>
+					</div>
+				</div>
+				@components.Scanner() {
+				}
+				@templ.JSONScript("model", data.Model)
+			</div>
 		}
 	}
 }

@@ -4,9 +4,6 @@ let stream = null;
 let model = null;
 let modelLabels = [];
 let maxPredictions = 0;
-let cameraView = null;
-let cameraContainer = null;
-let successCallback = null;
 let detected = false;
 
 const scriptTag = document.getElementById("model");
@@ -39,15 +36,7 @@ export const loadModel = async () => {
 };
 
 // Initialize camera on mobile
-export const initCamera = async (
-  _cameraView,
-  _cameraContainer,
-  _successCallback
-) => {
-  // Set variables
-  cameraView = _cameraView;
-  cameraContainer = _cameraContainer;
-  successCallback = _successCallback;
+export const initCamera = async () => {
   detected = false;
   try {
     // Load model first
@@ -186,7 +175,7 @@ export const displayPredictions = (predictions) => {
 };
 
 // Show visual feedback for detection
-export const showDetectionFeedback = (label, confidence) => {
+const showDetectionFeedback = (label, confidence) => {
   const feedback = document.createElement("div");
   feedback.className =
     "detection-feedback position-absolute top-0 start-0 m-3 bg-dark text-white p-2 rounded";
@@ -196,3 +185,66 @@ export const showDetectionFeedback = (label, confidence) => {
   cameraContainer.appendChild(feedback);
   setTimeout(() => feedback.remove(), 2000);
 };
+
+const isMobile = () => {
+  return (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    ) || window.innerWidth <= 768
+  );
+};
+
+const modalUpdater = (state, message) => {
+  const modal = document.getElementById("scanModal");
+  const modalLabel = document.getElementById("scanModalLabel");
+  const modalBody = modal.querySelector(".modal-body");
+  const modalFooter = modal.querySelector(".modal-footer");
+
+  // if the modal is already open, close it
+  if (modal.classList.contains("show")) {
+    const bsModal = bootstrap.Modal.getInstance(modal);
+    bsModal.hide();
+  }
+
+  if (state) {
+    modalLabel.textContent = "Product Found";
+    modalBody.innerHTML = `<p>${message}</p>`;
+    modalFooter.innerHTML = `<button type="button" class="btn btn-primary" data-bs-dismiss="modal">Add Product</button>`;
+  } else {
+    modalLabel.textContent = "Error";
+    modalBody.innerHTML = `<p>${message}</p>`;
+    modalFooter.innerHTML = `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>`;
+  }
+
+  const bsModal = new bootstrap.Modal(modal);
+  bsModal.show();
+};
+
+const successCallback = (product) => {
+  const productName = product.name || "Unknown Product";
+  const productPrice = product.price || "Unknown Price";
+  const productQuantity = product.quantity || 1;
+
+  const message = `Product: ${productName}<br>Price: ${productPrice}<br>Quantity: ${productQuantity}`;
+  modalUpdater(true, message);
+};
+
+// DOM Elements
+const cameraContainer = document.getElementById("camera-container");
+const cameraView = document.getElementById("camera-view");
+const scanToggle = document.getElementById("scan-toggle");
+const productInput = document.getElementById("product-input");
+const addProductBtn = document.getElementById("add-product-btn");
+
+// Event Listeners
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize camera on mobile
+  if (isMobile()) {
+    initCamera(cameraView, cameraContainer, successCallback);
+  }
+  // Toggle scanner button
+  scanToggle.addEventListener("click", toggleCamera);
+
+  // Add product button
+  addProductBtn.addEventListener("click", () => addProduct());
+});
