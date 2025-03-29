@@ -1,0 +1,501 @@
+/* Animations */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.hover-underline::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: 0;
+  left: 50%;
+  background-color: var(--bs-primary);
+  transition: 0.3s ease;
+}
+
+.hover-underline:hover::after {
+  width: 80%;
+  left: 10%;
+}
+
+.fade-in-up {
+  animation: fadeInUp 1s ease both;
+  animation-play-state: paused;
+}
+
+.fade-in-left {
+  animation: fadeInLeft 1s ease both;
+  animation-play-state: paused;
+}
+
+.fade-in-right {
+  animation: fadeInRight 1s ease both;
+  animation-play-state: paused;
+}
+
+.social-icon {
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.social-icon:hover {
+  color: white !important;
+  transform: translateY(-3px);
+}
+
+.pulsate {
+  animation: pulsate 2s infinite;
+}
+
+.avatar-stack {
+  display: flex;
+}
+
+.avatar-stack .avatar-container-sm {
+  margin-left: -8px;
+  border-radius: 50%;
+  overflow: hidden;
+  width: 36px;
+  height: 36px;
+  z-index: 1;
+}
+
+.avatar-stack .avatar-container-sm:first-child {
+  margin-left: 0;
+}
+
+.avatar-stack .avatar-1 {
+  z-index: 5;
+}
+.avatar-stack .avatar-2 {
+  z-index: 4;
+}
+.avatar-stack .avatar-3 {
+  z-index: 3;
+}
+.avatar-stack .avatar-4 {
+  z-index: 2;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feature-card-animate {
+  animation: floatCard 6s ease-in-out infinite;
+}
+
+.feature-card-animate-delay {
+  animation: floatCard 7s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.notification-animate {
+  animation: floatCard 8s ease-in-out infinite;
+  animation-delay: 2s;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+.floating-shape {
+  position: absolute;
+  background-color: rgba(13, 110, 253, 0.1);
+  border-radius: 50%;
+}
+
+.shape-1 {
+  width: 300px;
+  height: 300px;
+  top: -150px;
+  left: -150px;
+  animation: float 15s infinite;
+}
+
+.shape-2 {
+  width: 200px;
+  height: 200px;
+  bottom: -100px;
+  right: 10%;
+  animation: float 20s infinite;
+  animation-delay: 2s;
+}
+
+.shape-3 {
+  width: 150px;
+  height: 150px;
+  top: 20%;
+  right: -75px;
+  animation: float 18s infinite;
+  animation-delay: 5s;
+}
+
+.device-rotate {
+  animation: deviceRotate 10s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.device-rotate {
+  animation: deviceRotate 10s ease-in-out infinite;
+  transform-origin: center;
+}
+.footer-links a {
+  transition: transform 0.3s ease, color 0.3s ease, padding-left 0.3s ease;
+}
+
+.footer-links a:hover {
+  color: white !important;
+  transform: translateX(5px);
+  padding-left: 5px;
+}
+
+.step-number {
+  transition: all 0.3s ease;
+}
+
+.hover-lift:hover .step-number {
+  transform: scale(1.1);
+}
+
+.animate-badge {
+  animation: badgePulse 3s infinite;
+}
+
+.back-to-top {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--bs-primary);
+  color: white;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+  z-index: 999;
+}
+
+.back-to-top.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.back-to-top i {
+  font-size: 24px;
+}
+
+.play-button-animate {
+  animation: pulse 2s infinite;
+  transition: all 0.3s ease;
+}
+
+.play-button-animate:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.workflow-animate {
+  animation: workflowSlide 15s infinite;
+}
+
+.app-screens-animate {
+  animation: screenFloat 8s ease-in-out infinite;
+}
+
+.badge-animate {
+  animation: rotate 10s linear infinite;
+}
+
+.metric-animate {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.8s ease forwards;
+  animation-delay: calc(var(--idx, 0) * 0.2s);
+}
+
+.feature-icon-animate {
+  transition: all 0.3s ease;
+}
+
+.hover-lift:hover .feature-icon-animate {
+  transform: scale(1.1);
+  background-color: rgba(13, 110, 253, 0.2);
+}
+
+.trust-badge {
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+  max-height: 40px;
+}
+
+.trust-badge:hover {
+  opacity: 1;
+}
+
+.hero-device {
+  position: relative;
+  perspective: 1000px;
+}
+
+.slider-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.slider-dot.active {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+.ribbon {
+  width: 150px;
+  height: 150px;
+  overflow: hidden;
+  position: absolute;
+  z-index: 1;
+}
+
+.ribbon-top-right {
+  top: -10px;
+  right: -10px;
+}
+
+.ribbon-top-right::before,
+.ribbon-top-right::after {
+  content: "";
+  position: absolute;
+  border-top-color: transparent;
+  border-right-color: transparent;
+}
+
+.ribbon-top-right span {
+  position: absolute;
+  display: block;
+  width: 225px;
+  padding: 8px 0;
+  background-color: #81c784;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  text-transform: uppercase;
+  text-align: center;
+  transform: rotate(45deg);
+  right: -25px;
+  top: 45px;
+}
+
+.ribbon-top-right span.bg-primary {
+  background-color: var(--bs-primary);
+}
+
+.ribbon-top-right span.bg-dark {
+  background-color: #343a40;
+}
+
+.newsletter-form {
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* Keyframe Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulsate {
+  0% {
+    box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(13, 110, 253, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+  }
+}
+
+@keyframes floatCard {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(10px, 10px) rotate(5deg);
+  }
+  50% {
+    transform: translate(5px, 15px) rotate(0deg);
+  }
+  75% {
+    transform: translate(-5px, 10px) rotate(-5deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+@keyframes deviceRotate {
+  0% {
+    transform: rotateZ(0deg);
+  }
+  25% {
+    transform: rotateZ(1deg);
+  }
+  50% {
+    transform: rotateZ(0deg);
+  }
+  75% {
+    transform: rotateZ(-1deg);
+  }
+  100% {
+    transform: rotateZ(0deg);
+  }
+}
+
+@keyframes badgePulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(255, 255, 255, 0);
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes workflowSlide {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 0%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+@keyframes screenFloat {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .hero-device {
+    perspective: 600px;
+  }
+
+  .notification-animate {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .feature-card-animate,
+  .feature-card-animate-delay {
+    position: static !important;
+    transform: none !important;
+    margin-top: 20px;
+    animation: none;
+  }
+
+  .device-rotate {
+    animation: none;
+  }
+}
+
+/* Intersection Observer for animations */
+@media (prefers-reduced-motion: no-preference) {
+  .fade-in-up,
+  .fade-in-left,
+  .fade-in-right {
+    opacity: 0;
+  }
+
+  .animate-on-scroll {
+    animation-play-state: running;
+  }
+}

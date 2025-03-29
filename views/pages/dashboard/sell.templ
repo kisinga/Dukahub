@@ -6,8 +6,14 @@ import (
 	"github.com/kisinga/dukahub/views/layouts"
 )
 
+var sellConfig = models.LayoutConfig{
+	Title: "Admin Dashboard",
+	JS:    nil,
+	CSS:   nil,
+}
+
 templ Newsale(data *models.DashboardData) {
-	@layouts.BaseLayout("Sell") {
+	@layouts.BaseLayout(config) {
 		@layouts.DashboardLayout(data.User, data.Activecompany) {
 			@components.Scanner(data.Model)
 		}

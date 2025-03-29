@@ -5,8 +5,14 @@ import (
 	"github.com/kisinga/dukahub/views/layouts"
 )
 
+var registerConfig = models.LayoutConfig{
+	Title: "Dukahub Register",
+	JS:    nil,
+	CSS:   nil,
+}
+
 templ Register(data *models.DashboardData) {
-	@layouts.BaseLayout("Register") {
+	@layouts.BaseLayout(registerConfig) {
 		@layouts.DashboardLayout(data.User, data.Activecompany) {
 		}
 	}

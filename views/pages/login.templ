@@ -5,6 +5,17 @@ import (
 	"github.com/kisinga/dukahub/views/layouts"
 )
 
+var loginConfig = models.LayoutConfig{
+	Title: "Dukahub Login",
+	JS: templ.Raw(`
+			<script type="module">
+            import { DbService } from "/public/js/pb.js";
+            window.loginUser = DbService.loginUser;
+        	</script>
+		`),
+	CSS: templ.Raw(`<link rel="stylesheet" href="/public/styles/home.css"/>`),
+}
+
 templ Login(userType models.LoginUserType) {
 	<style>
     /* Minimal internal CSS for hover effects and transitions */
@@ -17,7 +28,7 @@ templ Login(userType models.LoginUserType) {
       transition: all 0.3s ease;
     }
   </style>
-	@layouts.BaseLayout("Login") {
+	@layouts.BaseLayout(loginConfig) {
 		<div style="min-height: 100vh; background: linear-gradient(135deg, #f6f9fc, #e9eff5); display: flex; align-items: center; justify-content: center;">
 			<div class="container">
 				<div class="row justify-content-center">
@@ -80,11 +91,6 @@ templ Login(userType models.LoginUserType) {
 				</div>
 			</div>
 		</div>
-		<script type="module">
-            import { DbService } from "/public/js/pb.js";
-
-            window.loginUser = DbService.loginUser;
-        </script>
 		<script>
                 // HTMX Event Listeners to Show Login Status
                 document.body.addEventListener("loginSuccess", () => {

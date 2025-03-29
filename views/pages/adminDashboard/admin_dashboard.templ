@@ -1,52 +1,21 @@
 package admindashboard
 
-import "github.com/kisinga/dukahub/views/layouts"
-import "github.com/kisinga/dukahub/models"
+import (
+	"github.com/kisinga/dukahub/models"
+	"github.com/kisinga/dukahub/views/layouts"
+)
+
+var config = models.LayoutConfig{
+	Title: "Dashboard",
+	JS:    templ.Raw(`<script src="/public/js/admin-dashboard.js"></script>`),
+	CSS:   templ.Raw(`<link rel="stylesheet" href="/public/styles/admin-dashboard.css"/>`),
+}
 
 templ Home(admin *models.Admins) {
-	@layouts.BaseLayout("Admin Dashboard") {
+	@layouts.BaseLayout(config) {
 		@layouts.AdminDashboard(admin) {
 			<!-- Main Content Cards -->
 			<div class="row">
-				<style>
-    .table-container {
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      overflow: hidden;
-      margin-bottom: 2rem;
-    }
-    .table thead {
-      background-color: #f8f9fa;
-    }
-    .pill-outdated {
-      background-color: #dc3545;
-      color: white;
-      cursor: pointer;
-    }
-    .pill-valid {
-      background-color: #198754;
-      color: white;
-      cursor: pointer;
-    }
-    .pagination {
-      justify-content: center;
-    }
-    .modal-card {
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-    .card-header {
-      background-color: #f8f9fa;
-      border-bottom: 1px solid #dee2e6;
-    }
-    .info-item {
-      padding: 10px 0;
-      border-bottom: 1px solid #eee;
-    }
-    .info-item:last-child {
-      border-bottom: none;
-    }
-  </style>
 				<div>
 					<div class="container mt-5">
 						<h2 class="mb-4">Companies Dashboard</h2>
