@@ -90,6 +90,7 @@ const scannerStatusElement = document.getElementById("scanner-status"); // Text 
  * Performs product search using PocketBase.
  * @param {string} searchTerm The term to search for.
  */
+
 async function performProductSearch(searchTerm) {
   if (!searchResultsContainer || !searchIndicator) return;
 
@@ -181,14 +182,13 @@ function updateScannerVisuals(isScanning) {
     cameraSection.style.display = "block"; // Show the camera card section
     cameraContainer.classList.add("scanning"); // Add class to enable animation
     if (scanToggleText) scanToggleText.textContent = "Stop Scanner";
-    scanToggleButton.classList.remove("btn-outline-primary");
+    // scanToggleButton.classList.remove("btn-outline-primary");
     scanToggleButton.classList.add("btn-danger"); // Red button for stop action
   } else {
     // Keep camera section visible even when stopped, hide only if toggled off explicitly?
     // Or hide it: cameraSection.style.display = 'none';
     cameraContainer.classList.remove("scanning"); // Remove class to stop animation
     if (scanToggleText) scanToggleText.textContent = "Start Scanner";
-    scanToggleButton.classList.add("btn-outline-primary");
     scanToggleButton.classList.remove("btn-danger");
   }
 }
@@ -288,6 +288,10 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     if (scanToggleButton) scanToggleButton.disabled = true;
     return; // Stop initialization
+  }
+
+  if (searchIndicator) {
+    searchIndicator.style.display = "none";
   }
 
   // 2. Initialize the scanner service (loads model etc.)

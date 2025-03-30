@@ -1,115 +1,94 @@
 package components
 
-import "github.com/kisinga/dukahub/models"
-
 templ Scanner() {
-	<!-- Main Row for Input/Scanner and Table -->
-	<div class="row gy-4">
-		// gy-4 adds vertical gap between rows/cols
-		<!-- Left Column: Manual Search & Actions -->
-		<div class="col-12 col-lg-5">
-			<div class="card border-0 shadow-sm">
-				<div class="card-body">
-					<h5 class="card-title mb-3">Add Product</h5>
-					<!-- Search Input Group -->
-					<div class="input-group mb-1 position-relative">
-						// Reduced margin, relative positioning for results
-						<span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-						<input
-							class="form-control border-start-0"
-							type="search"
-							id="product-search-input"
-							name="search"
-							placeholder="Search or Scan..."
-							aria-label="Search products"
-							autocomplete="off"
-						/>
-						// Simple spinner indicator next to input
-						<div id="search-indicator" class="spinner-border spinner-border-sm text-primary position-absolute end-0 top-50 translate-middle-y me-5" role="status" style="display: none; z-index: 5;">
-							// Adjusted position
-							<span class="visually-hidden">Loading...</span>
+	<div class="product-scanner">
+		<!-- Top Section: Search & Scanner Toggle -->
+		<div class="row g-3 mb-4">
+			<div class="col-12">
+				<div class="card border-0 shadow-sm">
+					<div class="card-body p-3 p-md-4">
+						<div class="d-flex justify-content-between align-items-center mb-3">
+							<h5 class="card-title mb-0">Add Product</h5>
+							<button id="scan-toggle" class="btn btn-sm btn-primary rounded-pill">
+								<i class="bi bi-upc-scan me-1"></i>
+								<span id="scan-toggle-text">Scanner</span>
+							</button>
 						</div>
-						<button class="btn btn-primary" type="button" id="add-product-btn" title="Add Manually">
-							<i class="bi bi-plus-lg"></i> <span class="d-none d-sm-inline">Add</span>
-						</button>
-					</div>
-					<!-- Search Results Dropdown -->
-					<div id="search-results" class="list-group list-group-flush">
-						<!-- JS will populate this -->
-						// Example item structure (for JS reference):
-						// <a href="#" class="list-group-item list-group-item-action">Product Name 1</a>
-						// <li class="list-group-item text-muted">No products found.</li>
-					</div>
-					<!-- Action Buttons -->
-					<div class="mt-3 pt-3 border-top">
-						// Separator
-						<div class="d-grid gap-2 d-md-flex justify-content-md-start">
-							<button
-								id="scan-toggle"
-								class="btn btn-outline-primary"
-							>
-								<i class="bi bi-upc-scan"></i> <span id="scan-toggle-text">Start Scanner</span>
-							</button>
-							<button class="btn btn-outline-secondary">
-								// Keep Browse? Or remove if search is primary?
-								<i class="bi bi-list-ul"></i> Browse All
-							</button>
+						<!-- Search Input Group -->
+						<div class="search-container position-relative mb-3">
+							<div class="input-group">
+								<span class="input-group-text border-end-0 bg-light text-muted">
+									<i class="bi bi-search"></i>
+								</span>
+								<input
+									class="form-control border-start-0 search-input"
+									type="search"
+									id="product-search-input"
+									name="search"
+									placeholder="Search products..."
+									aria-label="Search products"
+									autocomplete="off"
+								/>
+								<button class="btn btn-primary rounded-end" type="button" id="add-product-btn">
+									<i class="bi bi-plus-lg"></i>
+									<span class="d-none d-sm-inline">Add</span>
+								</button>
+							</div>
+							<!-- Loading Indicator -->
+							<div id="search-indicator" class="search-spinner">
+								<div class="spinner-border spinner-border-sm text-primary" role="status">
+									<span class="visually-hidden">Searching...</span>
+								</div>
+							</div>
+							<!-- Search Results Dropdown -->
+							<div id="search-results" class="search-results-dropdown">
+								<!-- JS will populate this -->
+							</div>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-		<!-- Right Column: Camera View -->
-		<div class="col-12 col-lg-7" id="camera-section" style="display: none;">
-			// Initially hidden, shown by JS
-			<div class="card border-0 shadow-sm">
-				<div class="card-body">
-					<h5 class="card-title mb-3">Scanner View</h5>
-					<div id="camera-container" class="mb-2">
-						// Add class via JS when scanning starts
-						<div class="camera-wrapper position-relative" style="aspect-ratio: 16/10;">
-							// Adjusted aspect ratio
-							<video
-								id="camera-view"
-								class="w-100 h-100"
-								autoplay
-								playsinline
-								muted
-							></video>
-							<div class="scanning-line"></div> // Animation handled by CSS
+		<!-- Middle Section: Camera View (Expandable) -->
+		<div id="camera-section" class="row g-3 mb-4">
+			<div class="col-12">
+				<div class="card border-0 shadow-sm scanner-card">
+					<div class="card-body p-3 p-md-4">
+						<div class="d-flex justify-content-between align-items-center mb-3">
+							<h5 class="card-title mb-0">Scanner</h5>
+							<div class="scanner-status-badge" id="scanner-status-badge">Inactive</div>
 						</div>
+						<div id="camera-container" class="camera-container">
+							<div class="camera-wrapper">
+								<video id="camera-view" autoplay playsinline muted></video>
+								<div class="scanning-overlay">
+									<div class="scanning-line"></div>
+									<div class="scanning-target"></div>
+								</div>
+							</div>
+						</div>
+						<div id="predictions" class="predictions-container mt-2"></div>
+						<div id="scanner-status" class="text-muted small mt-2">Scanner inactive.</div>
 					</div>
-					<div id="predictions"></div> // Area for prediction text
-					<div id="scanner-status" class="text-muted">Scanner inactive.</div> // Status messages here
 				</div>
 			</div>
 		</div>
-		<!-- Bottom Row: Products Table -->
-		<div class="col-12 mt-4">
-			// Add margin top
-			// Assuming ProductsTable component exists and accepts these params
-			@ProductsTable(true, "Sale Items", []models.Products{}, "Product", "Price", "Quantity", "Actions")
-		</div>
-	</div> // End Main Row
-	<!-- Scan Result Modal -->
+	</div>
+	<!-- Product Action Modal -->
 	<div class="modal fade" id="scanModal" tabindex="-1" aria-labelledby="scanModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-dialog-centered">
-			// Centered modal
-			<div class="modal-content border-0 shadow-lg">
-				// Nicer shadow
-				<div class="modal-header border-bottom-0">
-					// Cleaner header
-					<h5 class="modal-title" id="scanModalLabel">Product Action</h5>
+			<div class="modal-content border-0 rounded-4 shadow-lg">
+				<div class="modal-header border-bottom-0 px-4 pt-4 pb-0">
+					<h5 class="modal-title" id="scanModalLabel">Product Found</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
-				<div class="modal-body" id="scanModalBody">
+				<div class="modal-body px-4 py-3" id="scanModalBody">
 					<!-- JS will populate this -->
-					<p>Loading product details...</p>
 				</div>
-				<div class="modal-footer border-top-0" id="scanModalFooter">
-					// Cleaner footer
+				<div class="modal-footer border-top-0 px-4 pb-4 pt-0" id="scanModalFooter">
 					<!-- JS will populate buttons -->
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary" id="modal-add-product-btn">Add to Sale</button>
 				</div>
 			</div>
 		</div>

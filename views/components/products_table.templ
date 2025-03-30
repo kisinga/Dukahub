@@ -1,85 +1,72 @@
 package components
 
 import "github.com/kisinga/dukahub/models"
-import "strconv"
 
 templ ProductsTable(trackTotal bool, title string, products []models.Products, columns ...string) {
-	<div class="col-12 col-md-6 mb-3">
-		<div class="card border-0 shadow-sm">
-			<div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-				<h5 class="mb-0">{ title }</h5>
-				<span class="badge bg-primary">
-					Items: <span id="item-count">{ strconv.Itoa(len(products)) } </span>
-				</span>
-			</div>
-			<div class="card-body p-0">
-				<div class="table-responsive" style="max-height: 300px; overflow-y: auto">
-					<table class="table table-hover mb-0">
-						<thead class="table-light sticky-top">
-							<tr>
-								for _, col := range columns {
-									<th>{ col }</th>
-								}
-							</tr>
-						</thead>
-						<tbody id="sale-items">
-							<!-- Items will be added here dynamically -->
-							<tr class="text-center text-muted">
-								<td colspan="{{ len .columns }}" class="py-4">No items added yet</td>
-							</tr>
-						</tbody>
-					</table>
+	<div class="row g-3">
+		<div class="col-12">
+			<div class="table-card card border-0 shadow-sm">
+				<div class="card-header bg-light border-0 d-flex justify-content-between align-items-center p-3">
+					<h5 class="mb-0">{ title }</h5> // Use the title parameter
+					<span class="badge bg-primary rounded-pill fs-6">
+						// Slightly larger badge
+						Items: <span id="item-count">0</span>
+					</span>
 				</div>
-			</div>
-			if trackTotal {
-				<div class="card-footer bg-white border-0">
-					<div class="d-flex justify-content-between align-items-center mb-3">
-						<span class="fw-bold">Subtotal</span>
-						<span id="subtotal">$0.00</span>
-					</div>
-					<div class="d-flex justify-content-between align-items-center mb-3">
-						<span>Tax (10%)</span>
-						<span id="tax">$0.00</span>
-					</div>
-					<div class="d-flex justify-content-between align-items-center mb-3">
-						<span class="fw-bold fs-5">Total</span>
-						<span class="fw-bold fs-5" id="total">$0.00</span>
-					</div>
-					<div class="d-grid">
-						<button class="btn btn-success btn-lg" id="checkout-btn" disabled>
-							<i class="bi bi-credit-card me-1"></i> Proceed to Payment
-						</button>
+				<div class="card-body p-0">
+					<div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+						// Increased max-height
+						<table class="table table-hover mb-0 align-middle">
+							// align-middle for vertical centering
+							<thead class="table-light sticky-top">
+								<tr>
+									<th style="width: 40%;">Product</th> // Add widths for better layout
+									<th class="text-end" style="width: 15%;">Price</th>
+									<th class="text-center" style="width: 15%;">Quantity</th>
+									<th class="text-end" style="width: 20%;">Total</th>
+									<th class="text-end" style="width: 10%;"></th> // Actions column (no header text needed)
+								</tr>
+							</thead>
+							<tbody id="sale-items">
+								// JS will populate this or show the "No items" row
+								<tr class="no-items-row text-center text-muted">
+									<td colspan="5" class="py-5">
+										// Adjusted colspan, more padding
+										<i class="bi bi-cart-x fs-1"></i>
+										<p class="mt-2 mb-0">No items added yet</p>
+									</td>
+								</tr>
+							</tbody>
+						</table>
 					</div>
 				</div>
-			}
+				// Only show footer if trackTotal is true (using the parameter now)
+				if trackTotal {
+					<div class="card-footer bg-light p-3 p-md-4 rounded-bottom">
+						<div class="total-section mb-3">
+							// Add margin bottom
+							<div class="total-row">
+								<span class="fw-medium">Subtotal</span>
+								<span id="subtotal">$0.00</span>
+							</div>
+							<div class="total-row">
+								<span>Tax (10%)</span> // Make tax rate configurable if needed
+								<span id="tax">$0.00</span>
+							</div>
+							<div class="total-row grand-total">
+								<span>Total</span>
+								<span id="total">$0.00</span>
+							</div>
+						</div>
+						<div class="d-grid">
+							<button class="btn btn-success btn-lg checkout-btn" id="checkout-btn" disabled>
+								<i class="bi bi-credit-card me-2"></i>Proceed to Checkout
+							</button>
+						</div>
+					</div>
+				}
+			</div>
 		</div>
 	</div>
-	<script>
-        const saleItems = document.getElementById("sale-items");
-        const itemCount = document.getElementById("item-count");
-        const subtotal = document.getElementById("subtotal");
-        const tax = document.getElementById("tax");
-        const total = document.getElementById("total");
-        const checkoutBtn = document.getElementById("checkout-btn");
-
-    // Event Listeners
-    document.addEventListener("DOMContentLoaded", () => {
-      // Handle remove item buttons
-      saleItems.addEventListener("click", (e) => {
-        if (e.target.closest(".remove-item")) {
-          e.target.closest("tr").remove();
-
-          // Add "no items" message if no items left
-          if (saleItems.querySelectorAll("tr").length === 0) {
-            saleItems.innerHTML = `
-                <tr class="text-center text-muted">
-                  <td colspan="4" class="py-4">No items added yet</td>
-                </tr>
-              `;
-          }
-          updateTotals();
-        }
-      });
-    });
-     </script>
+	// NO <script> block here anymore!
 }
