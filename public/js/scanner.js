@@ -282,7 +282,7 @@ class ScannerService {
       // if (products.length === 1) { product = products[0]; } else { throw... }
 
       // Using getOne assuming label is the ID:
-      const product = await DbService.getOne("products", detectedLabel);
+      const product = await DbService.getOne("products", "v6xkdvb1llq483z");
 
       console.log("Product found in DB:", product);
       this._updateStatus(`Product Found: ${product.name}`);

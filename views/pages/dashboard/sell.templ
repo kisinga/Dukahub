@@ -32,8 +32,20 @@ templ Newsale(data *models.DashboardData) {
 						<p class="text-muted">Scan products or enter manually</p>
 					</div>
 				</div>
-				@components.Scanner() {
-				}
+				<div class="container-fluid mt-4">
+					<div class="row">
+						<!-- Left Column: Scanner/Search -->
+						<div class="col-lg-5 col-md-6 mb-4">
+							<!-- Render the Scanner Component -->
+							@components.Scanner()
+						</div>
+						<!-- Right Column: Sales Table -->
+						<div class="col-lg-7 col-md-6">
+							<!-- Render the Sales Table Component -->
+							@components.SalesProductsTable(true, "Current Sale")
+						</div>
+					</div>
+				</div>
 				@templ.JSONScript("scanner-page-data", ScannerPageData{
 					ModelInfo: *data.Model,
 					// Populate other fields if added to ScannerPageData

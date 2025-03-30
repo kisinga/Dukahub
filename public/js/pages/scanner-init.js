@@ -1,8 +1,8 @@
 // /public/js/pages/scanner-init.js
 
 // --- Imports ---
-import { DbService } from "/public/js/pb.js"; // Import DbService for search
-import { addProduct } from "/public/js/products.js"; // Your function to add products
+import { DbService } from "/public/js/pb.js"; // Assuming DbService is correctly set up
+import { SaleManager } from "/public/js/saleManager.js"; // Import SaleManager
 import { ScannerService } from "/public/js/scanner.js";
 
 // --- Utilities ---
@@ -12,7 +12,7 @@ import { ScannerService } from "/public/js/scanner.js";
  * @param {number} delay Delay in milliseconds.
  * @returns {Function} Debounced function.
  */
-function debounce(func, delay) {
+export function debounce(func, delay) {
   let timeoutId;
   return function (...args) {
     clearTimeout(timeoutId);
@@ -64,50 +64,90 @@ const scannerConfig = {
   },
 };
 
+const saleManagerConfig = {
+  tableBodySelector: "#sale-items",
+  noItemsRowSelector: "#no-items-row",
+  itemCountSelector: "#item-count",
+  subtotalSelector: "#subtotal",
+  taxSelector: "#tax",
+  totalSelector: "#total",
+  checkoutButtonSelector: "#checkout-btn",
+  taxRate: 0.1, // 10% Tax Rate - make configurable if needed
+  // currencyFormat: new Intl.NumberFormat(...) // Optional: customize currency
+};
 // --- Instantiate Services ---
 const scanner = new ScannerService(scannerConfig);
+const saleManager = new SaleManager(saleManagerConfig); // Instantiate SaleManager
 
 // --- UI Elements Cache ---
 const searchInput = document.getElementById("product-search-input");
 const searchResultsContainer = document.getElementById("search-results");
 const searchIndicator = document.getElementById("search-indicator");
-const cameraSection = document.getElementById("camera-section"); // The whole right column card
-const cameraContainer = document.getElementById("camera-container"); // The div wrapping the video/scanline
+const cameraSection = document.getElementById("camera-section");
+const cameraContainer = document.getElementById("camera-container");
 const scanToggleButton = document.getElementById("scan-toggle");
-const scanToggleText = document.getElementById("scan-toggle-text"); // Span inside the button
-const addProductButton = document.getElementById("add-product-btn");
+const scanToggleText = document.getElementById("scan-toggle-text");
+const scannerStatusElement = document.getElementById("scanner-status");
+const checkoutButton = document.getElementById("checkout-btn");
+const checkoutStatusElement = document.getElementById("checkout-status");
+
+// Modal Elements
 const scanModalElement = document.getElementById("scanModal");
 const scanModalInstance = scanModalElement
   ? new bootstrap.Modal(scanModalElement)
   : null;
 const scanModalLabel = document.getElementById("scanModalLabel");
-const scanModalBody = scanModalElement?.querySelector(".modal-body");
-const scanModalFooter = scanModalElement?.querySelector(".modal-footer");
-const scannerStatusElement = document.getElementById("scanner-status"); // Text status below camera
+const scanModalBody = scanModalElement?.querySelector("#scanModalBody");
+const scanModalFooter = scanModalElement?.querySelector("#scanModalFooter");
+const modalProductName = document.getElementById("modal-product-name");
+const modalProductId = document.getElementById("modal-product-id");
+const modalQuantityInput = document.getElementById("modal-quantity");
+const modalPriceInput = document.getElementById("modal-price");
+const modalAddButton = document.getElementById("modal-add-product-btn");
+const modalAddAndKeepScanningButton = document.getElementById(
+  "modal-add-and-scan-btn"
+);
+const modalOriginalProductData = document.getElementById(
+  "modal-original-product-data"
+);
 
+const modalSkuSelect = document.getElementById("modal-sku-select"); // Added
+const modalSkuSection = document.getElementById("modal-sku-section"); // Added
+const modalErrorMessage = document.getElementById("modal-error-message"); // Added
+const decreaseQtyButton = document.getElementById("decrease-qty");
+const increaseQtyButton = document.getElementById("increase-qty");
+const modalTotalPrice = document.getElementById("modal-total-price");
+const formatCurrency = saleManager.config.currencyFormat.format;
 // --- Search Functionality ---
 /**
  * Performs product search using PocketBase.
  * @param {string} searchTerm The term to search for.
  */
 
+// --- Search Functionality ---
+/** Performs product search using PocketBase. */
 async function performProductSearch(searchTerm) {
-  if (!searchResultsContainer || !searchIndicator) return;
-
-  const trimmedSearchTerm = searchTerm.trim();
-
-  // Clear previous results immediately unless search term is empty
-  searchResultsContainer.innerHTML = "";
-  searchResultsContainer.classList.remove("show");
-
-  if (trimmedSearchTerm === "") {
-    searchIndicator.style.display = "none"; // Ensure indicator is hidden
-    return; // No search if term is empty
+  if (!searchResultsContainer || !searchIndicator || !companyId) {
+    if (!companyId) console.warn("Cannot search: Company ID is missing.");
+    searchResultsContainer.innerHTML = ""; // Clear results if no company ID
+    searchResultsContainer.classList.remove("show");
+    return;
   }
 
-  searchIndicator.style.display = "inline-block"; // Show indicator
+  const trimmedSearchTerm = searchTerm.trim();
+  searchResultsContainer.innerHTML = ""; // Clear previous results
+  searchResultsContainer.classList.remove("show"); // Hide
+
+  if (trimmedSearchTerm.length < 2) {
+    // Minimum search term length
+    searchIndicator.style.display = "none";
+    return;
+  }
+
+  searchIndicator.style.display = "inline-block";
 
   try {
+    // Search by name OR code (adjust field names if different)
     const filter = `name ~ '${trimmedSearchTerm.replace(
       /'/g,
       "''"
@@ -118,239 +158,362 @@ async function performProductSearch(searchTerm) {
       perPage: 10, // Limit results for dropdown
     });
 
+    renderSearchResults(products, searchResultsContainer);
     if (products && products.length > 0) {
-      renderSearchResults(products, searchResultsContainer);
-      searchResultsContainer.classList.add("show"); // Show results container
+      searchResultsContainer.classList.add("show");
     } else {
       searchResultsContainer.innerHTML =
-        '<li class="list-group-item text-muted fst-italic">No products found.</li>';
-      searchResultsContainer.classList.add("show"); // Show "no results" message
+        '<li class="list-group-item text-muted fst-italic px-3 py-2">No products found.</li>';
+      searchResultsContainer.classList.add("show");
     }
   } catch (error) {
     console.error("Product search failed:", error);
     searchResultsContainer.innerHTML =
-      '<li class="list-group-item text-danger">Search failed. Please try again.</li>';
-    searchResultsContainer.classList.add("show"); // Show error
+      '<li class="list-group-item text-danger px-3 py-2">Search failed. Please try again.</li>';
+    searchResultsContainer.classList.add("show");
   } finally {
-    searchIndicator.style.display = "none"; // Hide indicator
+    searchIndicator.style.display = "none";
   }
 }
 
-/**
- * Renders the search results in the specified container.
- * @param {Array<object>} products List of product records.
- * @param {HTMLElement} container The element to render results into.
- */
+/** Renders search results. */
 function renderSearchResults(products, container) {
-  container.innerHTML = ""; // Clear previous (redundant but safe)
+  container.innerHTML = ""; // Clear previous
   products.forEach((product) => {
-    const a = document.createElement("a");
-    a.href = "#"; // Prevent page jump
-    a.classList.add("list-group-item", "list-group-item-action");
-    // Display more info if available, e.g., price or code
-    a.textContent = `${product.name} ${
-      product.price ? `($${product.price})` : ""
-    }`;
-    a.dataset.productId = product.id;
-    a.dataset.productName = product.name; // Store name for input fill
+    const li = document.createElement("li");
+    li.classList.add(
+      "list-group-item",
+      "list-group-item-action",
+      "px-3",
+      "py-2"
+    );
+    li.style.cursor = "pointer";
+    li.innerHTML = `
+        <div>${product.name} ${
+      product.code
+        ? `<span class="text-muted small">(${product.code})</span>`
+        : ""
+    }</div>
+        <div class="fw-bold small">${formatCurrency(product.price ?? 0)}</div>
+    `;
+    li.dataset.productId = product.id;
 
-    a.addEventListener("click", (e) => {
+    li.addEventListener("click", (e) => {
       e.preventDefault();
-      console.log("Selected product:", product);
-      searchInput.value = a.dataset.productName; // Fill input with just the name
+      console.log("Selected product from search:", product);
+      // Add directly to sale with default quantity 1 and standard price
+      saleManager.addItem(product, 1, product.price);
+      searchInput.value = ""; // Clear search input
       container.classList.remove("show"); // Hide results
-      // Automatically trigger the add action for the selected product
-      addProduct(product.id); // Call your addProduct function
-      searchInput.value = ""; // Clear search input after adding
+      searchInput.focus(); // Optional: focus back on input
     });
-    container.appendChild(a);
+    container.appendChild(li);
   });
 }
+// --- Modal Helper Functions ---
 
+/** Calculates and updates the total price displayed in the modal */
+function updateModalTotal() {
+  // Ensure all required elements are available
+  if (!modalQuantityInput || !modalPriceInput || !modalTotalPrice) {
+    console.warn("Modal total calculation skipped: Missing elements.");
+    return;
+  }
+  // Use || 0 or || 0.00 to handle potential NaN values during initial load or invalid input
+  const quantity = parseInt(modalQuantityInput.value, 10) || 0;
+  const price = parseFloat(modalPriceInput.value) || 0.0;
+  const total = quantity * price;
+
+  // Use the existing currency formatter
+  modalTotalPrice.textContent = formatCurrency(total);
+}
+
+/** Shows an error message within the modal */
+function showModalError(message) {
+  if (modalErrorMessage) {
+    modalErrorMessage.textContent = message;
+    modalErrorMessage.classList.remove("d-none"); // Make it visible
+  } else {
+    console.error("Modal error display failed: Element not found.");
+    alert(message); // Fallback to alert
+  }
+}
+
+/** Hides the error message within the modal */
+function hideModalError() {
+  if (modalErrorMessage) {
+    modalErrorMessage.textContent = "";
+    modalErrorMessage.classList.add("d-none"); // Hide it
+  }
+}
 // Debounced search function
-const debouncedSearch = debounce(performProductSearch, 400); // Adjust delay as needed
+const debouncedSearch = debounce(performProductSearch, 350);
 
 // --- Scanner UI Update Function ---
-/**
- * Updates the scanner related UI elements based on the scanning state.
- * @param {boolean} isScanning - The current scanning state from ScannerService.
- */
+/** Updates scanner UI based on state. */
 function updateScannerVisuals(isScanning) {
-  if (!cameraSection || !cameraContainer || !scanToggleButton) return;
+  if (!cameraSection || !scanToggleButton || !scanToggleText) return;
 
   if (isScanning) {
-    cameraSection.style.display = "block"; // Show the camera card section
-    cameraContainer.classList.add("scanning"); // Add class to enable animation
-    if (scanToggleText) scanToggleText.textContent = "Stop Scanner";
-    // scanToggleButton.classList.remove("btn-outline-primary");
-    scanToggleButton.classList.add("btn-danger"); // Red button for stop action
+    cameraSection.style.display = "block"; // Show camera section
+    scanToggleText.textContent = "Stop Scanner";
+    scanToggleButton.classList.remove("btn-outline-primary");
+    scanToggleButton.classList.add("btn-danger");
+    scanToggleButton.title = "Stop the product scanner";
   } else {
-    // Keep camera section visible even when stopped, hide only if toggled off explicitly?
-    // Or hide it: cameraSection.style.display = 'none';
-    cameraContainer.classList.remove("scanning"); // Remove class to stop animation
-    if (scanToggleText) scanToggleText.textContent = "Start Scanner";
+    // Keep camera section hidden unless explicitly toggled on
+    // cameraSection.style.display = "none"; // Hide when stopped
+    scanToggleText.textContent = "Start Scanner";
     scanToggleButton.classList.remove("btn-danger");
+    scanToggleButton.classList.add("btn-outline-primary");
+    scanToggleButton.title = "Start the product scanner";
   }
 }
 
 // --- Callback Functions (UI Logic) ---
+/** Handles successful product detection from ScannerService */
 function handleProductDetected(product) {
   console.log("Callback: Product Detected!", product);
-  // ScannerService should have already stopped scanning before calling this
 
   if (
     !scanModalInstance ||
-    !scanModalLabel ||
-    !scanModalBody ||
-    !scanModalFooter
+    !modalProductName ||
+    !modalProductId ||
+    !modalQuantityInput ||
+    !modalPriceInput ||
+    !modalOriginalProductData ||
+    !modalSkuSelect || // Check new elements
+    !modalSkuSection ||
+    !modalErrorMessage
   ) {
-    console.error("Scan modal elements not found for displaying result.");
-    alert(`Product Found: ${product.name}`); // Fallback
-    addProduct(product.id); // Add product even if modal fails
+    console.error(
+      "Scan modal elements not found. Cannot display product details."
+    );
+    // Fallback: Maybe add directly or show an alert
+    // saleManager.addItem(product, 1, product.price);
+    alert(`Product Found: ${product.name}. Modal UI elements missing.`);
     return;
   }
 
-  scanModalLabel.textContent = "Product Found";
-  scanModalBody.innerHTML = `
-        <p>Detected: <strong>${product.name || "Unknown Product"}</strong></p>
-        <p>Price: ${product.price ?? "N/A"}</p>
-        <p class="text-muted small">ID: ${product.id}</p>
-    `;
-  scanModalFooter.innerHTML = `
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" id="modal-add-product-btn">Add to Sale</button>
-    `;
+  // Reset modal state
+  modalProductName.textContent = product.name || "Unknown Product";
+  modalProductId.textContent = product.id;
+  modalQuantityInput.value = 1;
+  modalPriceInput.value = (product.price ?? 0.01).toFixed(2); // Use base price initially
+  modalOriginalProductData.value = JSON.stringify(product);
+  modalErrorMessage.textContent = ""; // Clear previous errors
+  modalSkuSelect.innerHTML =
+    '<option selected disabled value="">Select variation...</option>'; // Reset options
 
-  const modalAddBtn = document.getElementById("modal-add-product-btn");
-  if (modalAddBtn) {
-    modalAddBtn.replaceWith(modalAddBtn.cloneNode(true)); // Clear old listeners
-    document
-      .getElementById("modal-add-product-btn")
-      .addEventListener("click", () => {
-        console.log("Adding detected product from modal:", product.id);
-        addProduct(product.id);
-        scanModalInstance.hide();
-        // Optional: Automatically restart scanner?
-        // scanner.start();
-      });
+  // --- SKU Logic ---
+  // Assume product.skus is an array like [{ id: 'sku123', name: 'Red-L', price: 12.99 }, ...]
+  // Adjust 'product.skus' and field names (id, name, price) if your data structure differs
+  const skus = product.variants || product.skus; // Check common names for variations/skus array
+
+  if (skus && Array.isArray(skus) && skus.length > 0) {
+    // Populate SKU dropdown
+    skus.forEach((sku) => {
+      const option = document.createElement("option");
+      option.value = sku.id; // Use SKU ID as value
+      option.textContent = `${sku.name || sku.id} (${formatCurrency(
+        sku.price ?? 0
+      )})`;
+      // Store price directly on the option for easy retrieval
+      option.dataset.price = sku.price ?? product.price ?? 0;
+      modalSkuSelect.appendChild(option);
+    });
+
+    // Show SKU section
+    modalSkuSection.classList.remove("d-none");
+  } else {
+    // Hide SKU section if no SKUs
+    modalSkuSection.classList.add("d-none");
   }
+
+  scanModalLabel.textContent = "Product Found";
   scanModalInstance.show();
 }
 
+/** Handles errors from ScannerService */
 function handleScannerError(errorMessage) {
   console.error("Callback: Scanner Error!", errorMessage);
   // Ensure scanner is stopped visually and functionally
   if (scanner.isScanning) {
-    scanner.stop(); // Tell the service to stop
+    scanner.stop(); // Tell the service to stop if it hasn't already
+  }
+  updateScannerVisuals(false); // Ensure UI reflects stopped state
+
+  // Display error in a generic way (could use the modal too)
+  if (scannerStatusElement) {
+    scannerStatusElement.innerHTML = `<span class="text-danger">Error: ${errorMessage}</span>`;
   } else {
-    // If already stopped but error occurred (e.g., init fail), ensure UI reflects stopped state
-    updateScannerVisuals(false);
+    alert(`Scanner Error: ${errorMessage}`); // Fallback alert
   }
-
-  if (
-    !scanModalInstance ||
-    !scanModalLabel ||
-    !scanModalBody ||
-    !scanModalFooter
-  ) {
-    console.error("Scan modal elements not found for displaying error.");
-    alert(`Scanner Error: ${errorMessage}`); // Fallback
-    return;
-  }
-
-  scanModalLabel.textContent = "Scanner Error";
-  scanModalBody.innerHTML = `<p class="text-danger">${errorMessage}</p>`;
-  scanModalFooter.innerHTML = `
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-    `;
-  scanModalInstance.show();
+  // Optionally show the modal with the error
+  // showModalMessage("Scanner Error", `<p class="text-danger">${errorMessage}</p>`, true);
 }
 
-/**
- * Updates the status text and syncs the overall scanner UI visuals.
- * @param {string} statusMessage - Message from ScannerService.
- */
+/** Updates the status text and syncs UI visuals */
 function updateScannerStatus(statusMessage) {
   console.log("Callback: Scanner Status:", statusMessage);
   if (scannerStatusElement) {
     scannerStatusElement.textContent = statusMessage;
   }
-  // Update button text/style, camera visibility, and animation based on actual scanner state
+  // Update button text/style, camera visibility based on actual scanner state
   updateScannerVisuals(scanner.isScanning);
+}
+
+/** Generic function to show messages in the modal */
+function showModalMessage(title, bodyHtml, isError = false) {
+  if (
+    !scanModalInstance ||
+    !scanModalLabel ||
+    !scanModalBody ||
+    !scanModalFooter
+  ) {
+    console.error("Cannot show modal message: Modal elements missing.");
+    alert(`${title}: ${bodyHtml.replace(/<[^>]*>/g, "")}`); // Fallback alert
+    return;
+  }
+  scanModalLabel.textContent = title;
+  scanModalBody.innerHTML = bodyHtml;
+  scanModalFooter.innerHTML = `
+        <button type="button" class="btn btn-${
+          isError ? "danger" : "secondary"
+        }" data-bs-dismiss="modal">Close</button>
+    `;
+  scanModalInstance.show();
+}
+
+// --- Checkout Functionality ---
+async function handleCheckout() {
+  if (!checkoutButton || !checkoutStatusElement) return;
+
+  const saleData = saleManager.getSaleData();
+  console.log("Preparing checkout:", saleData);
+
+  if (!saleData || saleData.items.length === 0) {
+    checkoutStatusElement.innerHTML = `<span class="text-warning">Cannot checkout an empty sale.</span>`;
+    return;
+  }
+
+  checkoutButton.disabled = true;
+  checkoutStatusElement.innerHTML = `<div class="spinner-border spinner-border-sm text-primary" role="status"></div><span class="ms-2">Processing sale...</span>`;
+
+  try {
+    // *** Replace with your actual backend endpoint ***
+    const response = await fetch("/api/sales", {
+      // EXAMPLE ENDPOINT
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // Add any necessary auth headers (e.g., JWT token)
+        // 'Authorization': `Bearer ${your_token}`
+      },
+      body: JSON.stringify(saleData),
+    });
+
+    if (!response.ok) {
+      // Try to get error message from backend response
+      let errorMsg = `HTTP error ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMsg = errorData.message || errorData.error || errorMsg;
+      } catch (e) {
+        /* Ignore JSON parsing error */
+      }
+      throw new Error(errorMsg);
+    }
+
+    const result = await response.json(); // Assuming backend returns { success: true, saleId: '...' }
+
+    console.log("Checkout successful:", result);
+    checkoutStatusElement.innerHTML = `<span class="text-success">Sale completed successfully! (ID: ${
+      result.saleId || "N/A"
+    })</span>`;
+
+    // Clear the sale after successful checkout
+    saleManager.clearSale();
+
+    // Optional: Redirect or show a persistent success message
+    // setTimeout(() => { window.location.href = '/sales/receipt/' + result.saleId; }, 2000);
+    setTimeout(() => {
+      checkoutStatusElement.innerHTML = "";
+    }, 5000); // Clear status after 5s
+  } catch (error) {
+    console.error("Checkout failed:", error);
+    checkoutStatusElement.innerHTML = `<span class="text-danger">Checkout failed: ${error.message}. Please try again.</span>`;
+    checkoutButton.disabled = false; // Re-enable button on failure
+  }
 }
 
 // --- Initialization and Event Listeners ---
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Check essential config from Go
-  if (!scannerConfig.modelUrl || !scannerConfig.metadataUrl) {
-    handleScannerError(
-      "Scanner configuration (model/metadata URL) is missing. Cannot initialize."
-    );
+  // 1. Check essential config
+  const canScan = scannerConfig.modelUrl && scannerConfig.metadataUrl;
+  if (!canScan) {
+    updateScannerStatus("Scanner disabled: Missing configuration.");
     if (scanToggleButton) scanToggleButton.disabled = true;
-    return; // Stop initialization
+  } else {
+    if (scanToggleButton) scanToggleButton.disabled = true; // Keep disabled until init finishes
   }
 
-  if (searchIndicator) {
-    searchIndicator.style.display = "none";
+  if (!companyId) {
+    console.warn("Company ID missing. Product search will be disabled.");
+    if (searchInput) searchInput.disabled = true;
+    if (searchInput)
+      searchInput.placeholder = "Search disabled (missing company ID)";
   }
 
-  // 2. Initialize the scanner service (loads model etc.)
-  scanner
-    .initialize()
-    .then((success) => {
-      if (success) {
-        if (scanToggleButton) scanToggleButton.disabled = false;
-        updateScannerStatus("Scanner ready."); // Initial status update
-      } else {
+  // 2. Initialize Scanner (if configured)
+  if (canScan) {
+    scanner
+      .initialize()
+      .then((success) => {
+        if (success) {
+          if (scanToggleButton) scanToggleButton.disabled = false;
+          updateScannerStatus("Scanner ready."); // Update status via callback
+        } else {
+          if (scanToggleButton) scanToggleButton.disabled = true;
+          // Error handled by onError callback during init
+        }
+      })
+      .catch((err) => {
+        handleScannerError(`Unexpected initialization error: ${err.message}`);
         if (scanToggleButton) scanToggleButton.disabled = true;
-        // Error should have been handled by the onError callback during init
-      }
-    })
-    .catch((err) => {
-      // Catch any unexpected error during async initialize
-      handleScannerError(`Unexpected initialization error: ${err.message}`);
-      if (scanToggleButton) scanToggleButton.disabled = true;
-    });
+      });
+  }
 
-  // 3. Attach listener to the Scan Toggle button
+  // 3. Attach Listener: Scan Toggle Button
   if (scanToggleButton) {
     scanToggleButton.addEventListener("click", () => {
-      scanner.toggle(); // Let the service handle state change
-      // UI updates will happen via the onStatusChange callback
-    });
-  } else {
-    console.warn("Scan toggle button (#scan-toggle) not found.");
-  }
-
-  // 4. Attach listener for the Manual Add button
-  if (addProductButton && searchInput) {
-    addProductButton.addEventListener("click", () => {
-      const searchTerm = searchInput.value.trim();
-      if (searchTerm) {
-        console.log("Manual add button clicked for:", searchTerm);
-        // Here, you need logic to determine the product ID from the search term.
-        // Option 1: Assume the user selected from dropdown (ID might be stored elsewhere)
-        // Option 2: Perform a quick search/lookup for an exact match? Risky.
-        // Option 3: Require selection from dropdown (most reliable)
-        alert("Please select a product from the search results list to add."); // Placeholder action
-        // If you have the ID (e.g., from a hidden input populated by dropdown click):
-        // const productId = document.getElementById('selected-product-id')?.value;
-        // if (productId) {
-        //     addProduct(productId);
-        //     searchInput.value = ''; // Clear input
-        // }
+      if (!scanner.isInitialized && canScan) {
+        console.warn("Scanner not ready yet, please wait for initialization.");
+        return;
+      }
+      if (!canScan) {
+        console.warn("Scanner cannot be started due to missing configuration.");
+        return;
+      }
+      scanner.toggle(); // Service handles state and callbacks update UI
+      // Toggle camera section visibility based on the *intended* state
+      if (!scanner.isScanning) {
+        // If it *was* scanning, it's now stopping
+        cameraSection.style.display = "none";
       } else {
-        console.log("Manual add: No product specified in search input.");
+        // If it *was not* scanning, it's now starting
+        cameraSection.style.display = "block";
       }
     });
   }
 
-  // 5. Attach listener for Search Input
-  if (searchInput) {
+  // 4. Attach Listener: Search Input
+  if (searchInput && companyId) {
+    // Only add listener if search is enabled
     searchInput.addEventListener("input", (event) => {
       debouncedSearch(event.target.value);
     });
-    // Clear results if input is cleared manually
+    // Clear results if input is cleared manually (e.g., hitting 'x')
     searchInput.addEventListener("search", (event) => {
       if (!event.target.value) {
         searchResultsContainer.innerHTML = "";
@@ -359,7 +522,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 6. Add Click Outside Listener for search results
+  // 5. Attach Listener: Click Outside Search Results
   document.addEventListener("click", (event) => {
     if (
       searchResultsContainer &&
@@ -367,23 +530,245 @@ document.addEventListener("DOMContentLoaded", () => {
       !searchInput.contains(event.target) &&
       !searchResultsContainer.contains(event.target)
     ) {
-      searchResultsContainer.classList.remove("show");
+      searchResultsContainer.classList.remove("show"); // Hide results
     }
   });
 
-  // 7. Optional: Modal close event
+  // Add listener for SKU selection change
+  if (modalSkuSelect && modalPriceInput) {
+    modalSkuSelect.addEventListener("change", (event) => {
+      const selectedOption = event.target.selectedOptions[0];
+      if (selectedOption && selectedOption.dataset.price) {
+        const newPrice = parseFloat(selectedOption.dataset.price);
+        modalPriceInput.value = newPrice.toFixed(2);
+        modalErrorMessage.textContent = ""; // Clear error on valid selection
+      } else if (event.target.value === "") {
+        // Handle "Select variation..." being re-selected
+        // Reset to base product price? Or show error?
+        try {
+          const product = JSON.parse(modalOriginalProductData.value);
+          modalPriceInput.value = (product.price ?? 0.01).toFixed(2);
+        } catch (e) {
+          modalPriceInput.value = "0.00"; // Fallback
+        }
+        modalErrorMessage.textContent = "Please select a product variation.";
+      }
+    });
+  }
+  // --- Attach Listeners for Modal Quantity Buttons ---
+  if (decreaseQtyButton && modalQuantityInput) {
+    decreaseQtyButton.addEventListener("click", () => {
+      let currentVal = parseInt(modalQuantityInput.value, 10);
+      // Use min value from input attribute if available, otherwise default to 1
+      const minVal = parseInt(modalQuantityInput.min, 10) || 1;
+      if (isNaN(currentVal)) currentVal = minVal; // Handle NaN
+
+      if (currentVal > minVal) {
+        modalQuantityInput.value = currentVal - 1;
+        updateModalTotal(); // Update total display
+        // Manually trigger an 'input' event so other listeners react if needed
+        modalQuantityInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    });
+  }
+
+  if (increaseQtyButton && modalQuantityInput) {
+    increaseQtyButton.addEventListener("click", () => {
+      let currentVal = parseInt(modalQuantityInput.value, 10);
+      if (isNaN(currentVal)) currentVal = 0; // Handle NaN
+
+      modalQuantityInput.value = currentVal + 1;
+      updateModalTotal(); // Update total display
+      // Manually trigger an 'input' event
+      modalQuantityInput.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  }
+
+  // --- Attach Listeners for Direct Input Changes ---
+  if (modalQuantityInput) {
+    modalQuantityInput.addEventListener("input", () => {
+      // Optional: Add validation here if needed (e.g., prevent negative numbers if min isn't enough)
+      updateModalTotal();
+    });
+  }
+
+  if (modalPriceInput) {
+    modalPriceInput.addEventListener("input", () => {
+      // Optional: Add validation here if needed
+      updateModalTotal();
+    });
+  }
+
+  // --- Update SKU Change Listener ---
+  if (modalSkuSelect && modalPriceInput) {
+    modalSkuSelect.addEventListener("change", (event) => {
+      hideModalError(); // Clear any previous errors on change
+      const selectedOption = event.target.selectedOptions[0];
+      let basePrice = 0;
+      // Get base price safely
+      try {
+        const product = JSON.parse(modalOriginalProductData.value);
+        basePrice = product.price ?? 0.01;
+      } catch (e) {
+        /* ignore */
+      }
+
+      if (selectedOption && selectedOption.dataset.price) {
+        const newPrice = parseFloat(selectedOption.dataset.price);
+        modalPriceInput.value = newPrice.toFixed(2);
+      } else if (event.target.value === "") {
+        // Handle "Choose variation..." being re-selected
+        modalPriceInput.value = basePrice.toFixed(2); // Reset to base price
+        showModalError("Please select a product variation.");
+      } else {
+        // Fallback if dataset.price is missing for some reason
+        modalPriceInput.value = basePrice.toFixed(2);
+      }
+      updateModalTotal(); // Update total whenever SKU changes price
+    });
+  }
+
+  // --- Update Modal Add Button Listeners ---
+  if (
+    modalAddButton &&
+    modalAddAndKeepScanningButton &&
+    modalOriginalProductData &&
+    modalQuantityInput &&
+    modalPriceInput &&
+    modalSkuSelect && // Still need this for validation logic
+    modalErrorMessage && // Used by helper functions now
+    scanModalInstance &&
+    saleManager
+  ) {
+    // Define the core action function separately
+    const processModalAdd = (keepScanning) => {
+      hideModalError(); // Clear previous errors first
+
+      try {
+        const productJson = modalOriginalProductData.value;
+        if (!productJson) throw new Error("Original product data missing.");
+        const product = JSON.parse(productJson);
+
+        const quantity = parseInt(modalQuantityInput.value, 10);
+        const price = parseFloat(modalPriceInput.value);
+
+        // --- Validation ---
+        if (
+          isNaN(quantity) ||
+          quantity < parseInt(modalQuantityInput.min || "1", 10)
+        ) {
+          showModalError(
+            `Please enter a valid quantity (${
+              modalQuantityInput.min || 1
+            } or more).`
+          );
+          modalQuantityInput.focus();
+          modalQuantityInput.select();
+          return; // Stop processing
+        }
+        if (isNaN(price) || price <= 0) {
+          // Allow 0 price? Assuming > 0 needed based on min="0.01"
+          showModalError("Please enter a valid unit price (greater than 0).");
+          modalPriceInput.focus();
+          modalPriceInput.select();
+          return; // Stop processing
+        }
+
+        // SKU Validation (if applicable)
+        const skus = product.variants || product.skus;
+        const skuRequired = skus && Array.isArray(skus) && skus.length > 0;
+        const selectedSkuValue = modalSkuSelect.value;
+
+        if (skuRequired && !selectedSkuValue) {
+          showModalError("Please select a product variation (SKU).");
+          modalSkuSelect.focus();
+          return; // Stop processing
+        }
+
+        // --- Prepare item data (same as before) ---
+        let itemNameToAdd = product.name;
+        let itemProductData = { ...product };
+        if (skuRequired && selectedSkuValue) {
+          const selectedSkuData = skus.find(
+            (sku) => sku.id === selectedSkuValue
+          );
+          if (selectedSkuData) {
+            itemNameToAdd = `${product.name} - ${
+              selectedSkuData.name || selectedSkuValue
+            }`;
+            itemProductData.selectedSkuId = selectedSkuValue;
+            itemProductData.selectedSkuName = selectedSkuData.name;
+          }
+        }
+        itemProductData.name = itemNameToAdd;
+
+        console.log(
+          `Adding from modal: Qty=${quantity}, Price=${price}`,
+          itemProductData
+        );
+
+        saleManager.addItem(itemProductData, quantity, price);
+        scanModalInstance.hide(); // Hide modal on success
+
+        // --- Restart scanner logic (same as before) ---
+        const canScan = scannerConfig.modelUrl && scannerConfig.metadataUrl;
+        if (keepScanning && canScan && scanner && !scanner.isScanning) {
+          console.log("Modal action complete, restarting scanner...");
+          setTimeout(() => {
+            if (!scanner.isScanning) {
+              scanner.start();
+            }
+          }, 300);
+        } else if (keepScanning && (!canScan || !scanner)) {
+          console.warn(
+            "Cannot restart scanner (not configured, not initialized, or keepScanning=false)"
+          );
+        }
+      } catch (e) {
+        console.error("Error processing modal data:", e);
+        // Use the helper function to show the error
+        showModalError(`Error: ${e.message || "Could not add product."}`);
+      }
+    };
+
+    // Attach listeners (same as before)
+    modalAddButton.addEventListener("click", () => {
+      processModalAdd(false);
+    });
+
+    modalAddAndKeepScanningButton.addEventListener("click", () => {
+      processModalAdd(true);
+    });
+  } else {
+    console.warn(
+      "One or more required modal elements or services not found. Modal 'Add' buttons may not function correctly."
+    );
+    // Disable buttons if elements are missing
+    if (modalAddButton) modalAddButton.disabled = true;
+    if (modalAddAndKeepScanningButton)
+      modalAddAndKeepScanningButton.disabled = true;
+  }
+
+  // --- Update Modal Close Event ---
   scanModalElement?.addEventListener("hidden.bs.modal", () => {
     console.log("Scan modal closed.");
-    // Reset modal body/footer?
-    if (scanModalBody) scanModalBody.innerHTML = "<p>...</p>";
-    if (scanModalFooter)
-      scanModalFooter.innerHTML =
-        '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
-    // Decide whether to restart scanning
-    // if (!scanner.isScanning) { scanner.start(); }
+    // Clear sensitive data and reset fields when modal closes fully
+    if (modalOriginalProductData) modalOriginalProductData.value = "";
+    if (modalQuantityInput) modalQuantityInput.value = "1"; // Reset to 1
+    if (modalPriceInput) modalPriceInput.value = "0.00"; // Reset price
+    if (modalSkuSelect)
+      modalSkuSelect.innerHTML =
+        '<option selected disabled value="">Choose variation...</option>'; // Reset SKU select
+    if (modalSkuSection) modalSkuSection.classList.add("d-none"); // Ensure SKU section is hidden
+    if (modalTotalPrice) modalTotalPrice.textContent = formatCurrency(0); // Reset total display
+    hideModalError(); // Ensure error is hidden
   });
-
-  // Initial UI state for scanner (assuming it starts off)
-  updateScannerVisuals(false);
-  if (cameraSection) cameraSection.style.display = "none"; // Keep camera hidden initially
+  // 8. Attach Listener: Checkout Button
+  if (checkoutButton) {
+    checkoutButton.addEventListener("click", handleCheckout);
+  }
+  scanner.start();
+  // Initial UI state
+  updateScannerVisuals(true); // Scanner starts off
+  // if (cameraSection) cameraSection.style.display = "none"; // Hide camera initially
 });

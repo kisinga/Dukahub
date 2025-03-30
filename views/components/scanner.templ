@@ -1,5 +1,6 @@
 package components
 
+// Scanner component - includes search, toggle, camera view, and modal
 templ Scanner() {
 	<div class="product-scanner">
 		<!-- Top Section: Search & Scanner Toggle -->
@@ -7,88 +8,211 @@ templ Scanner() {
 			<div class="col-12">
 				<div class="card border-0 shadow-sm">
 					<div class="card-body p-3 p-md-4">
-						<div class="d-flex justify-content-between align-items-center mb-3">
-							<h5 class="card-title mb-0">Add Product</h5>
-							<button id="scan-toggle" class="btn btn-sm btn-primary rounded-pill">
+						<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+							<h5 class="card-title mb-2 mb-sm-0 me-2">Add Product</h5>
+							<button id="scan-toggle" class="btn btn-sm btn-outline-primary rounded-pill" disabled>
 								<i class="bi bi-upc-scan me-1"></i>
-								<span id="scan-toggle-text">Scanner</span>
+								<span id="scan-toggle-text">Scanner Loading...</span>
 							</button>
 						</div>
 						<!-- Search Input Group -->
-						<div class="search-container position-relative mb-3">
+						<div class="search-container position-relative mb-2">
 							<div class="input-group">
-								<span class="input-group-text border-end-0 bg-light text-muted">
+								<span class="input-group-text border-end-0 bg-light text-muted px-2">
 									<i class="bi bi-search"></i>
 								</span>
 								<input
-									class="form-control border-start-0 search-input"
+									class="form-control border-start-0 search-input shadow-none"
 									type="search"
 									id="product-search-input"
 									name="search"
-									placeholder="Search products..."
+									placeholder="Product name"
 									aria-label="Search products"
 									autocomplete="off"
 								/>
-								<button class="btn btn-primary rounded-end" type="button" id="add-product-btn">
-									<i class="bi bi-plus-lg"></i>
-									<span class="d-none d-sm-inline">Add</span>
-								</button>
+								<!-- Add button removed - selection from results adds directly -->
 							</div>
 							<!-- Loading Indicator -->
-							<div id="search-indicator" class="search-spinner">
+							<div id="search-indicator" class="search-spinner" style="display: none;">
 								<div class="spinner-border spinner-border-sm text-primary" role="status">
 									<span class="visually-hidden">Searching...</span>
 								</div>
 							</div>
 							<!-- Search Results Dropdown -->
-							<div id="search-results" class="search-results-dropdown">
+							<ul
+								id="search-results"
+								class="list-group search-results-dropdown position-absolute w-100 shadow-sm"
+								style="z-index: 1000; max-height: 250px; overflow-y: auto;"
+							>
 								<!-- JS will populate this -->
-							</div>
+							</ul>
 						</div>
+						<div class="form-text">Select a product to sell it.</div>
 					</div>
 				</div>
 			</div>
 		</div>
-		<!-- Middle Section: Camera View (Expandable) -->
-		<div id="camera-section" class="row g-3 mb-4">
+		<!-- Middle Section: Camera View (Initially Hidden) -->
+		<div id="camera-section" class="row g-3 mb-4" style="display: none;">
 			<div class="col-12">
 				<div class="card border-0 shadow-sm scanner-card">
 					<div class="card-body p-3 p-md-4">
 						<div class="d-flex justify-content-between align-items-center mb-3">
 							<h5 class="card-title mb-0">Scanner</h5>
-							<div class="scanner-status-badge" id="scanner-status-badge">Inactive</div>
+							<!-- Status text moved below -->
 						</div>
-						<div id="camera-container" class="camera-container">
-							<div class="camera-wrapper">
-								<video id="camera-view" autoplay playsinline muted></video>
-								<div class="scanning-overlay">
-									<div class="scanning-line"></div>
-									<div class="scanning-target"></div>
+						<div id="camera-container" class="camera-container mb-2">
+							<div class="camera-wrapper position-relative overflow-hidden rounded bg-dark">
+								<video id="camera-view" class="w-100" autoplay playsinline muted></video>
+								<div class="scanning-overlay position-absolute top-0 start-0 w-100 h-100">
+									<div class="scanning-line position-absolute bg-success" style="left: 0; top: 10%; width: 100%; height: 3px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.7); display: none;"></div>
+									<!-- Optional: Add target box if desired -->
+									<!-- <div class="scanning-target position-absolute border border-secondary" style="top: 10%; left: 10%; width: 80%; height: 80%;"></div> -->
 								</div>
+								<!-- Detection Feedback Area -->
+								<div id="detection-feedback-area" class="position-absolute top-0 start-0 p-2 w-100"></div>
 							</div>
 						</div>
-						<div id="predictions" class="predictions-container mt-2"></div>
-						<div id="scanner-status" class="text-muted small mt-2">Scanner inactive.</div>
+						<div id="predictions" class="predictions-container small text-muted mb-2"></div>
+						<div id="scanner-status" class="text-muted small">Scanner inactive.</div>
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
-	<!-- Product Action Modal -->
-	<div class="modal fade" id="scanModal" tabindex="-1" aria-labelledby="scanModalLabel" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content border-0 rounded-4 shadow-lg">
-				<div class="modal-header border-bottom-0 px-4 pt-4 pb-0">
-					<h5 class="modal-title" id="scanModalLabel">Product Found</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+	<div
+		class="modal fade"
+		id="scanModal"
+		tabindex="-1"
+		aria-labelledby="scanModalLabel"
+		aria-hidden="true"
+	>
+		<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+			<div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+				<!-- Header with subtle gradient background -->
+				<div
+					class="modal-header border-bottom-0 px-4 pt-4 pb-2"
+					style="background: linear-gradient(to right, #f8f9fa, #edf1f7);"
+				>
+					<h5 class="modal-title fw-bold fs-4" id="scanModalLabel">
+						<i class="bi bi-box-seam me-2 text-primary"></i>Product Details
+					</h5>
+					<button
+						type="button"
+						class="btn-close p-3"
+						data-bs-dismiss="modal"
+						aria-label="Close"
+					></button>
 				</div>
-				<div class="modal-body px-4 py-3" id="scanModalBody">
-					<!-- JS will populate this -->
+				<div class="modal-body p-4" id="scanModalBody">
+					<!-- Product Info Area with enhanced styling -->
+					<div id="modal-product-info" class="mb-4 pb-3 border-bottom">
+						<div class="d-flex align-items-center mb-2">
+							<div class="bg-light rounded-circle p-2 me-3">
+								<i class="bi bi-tags text-primary fs-5"></i>
+							</div>
+							<div>
+								<h6 class="mb-1 fs-5 fw-semibold" id="modal-product-name">Loading...</h6>
+								<p class="text-muted small mb-0">
+									ID: <span id="modal-product-id" class="fw-medium">...</span>
+								</p>
+							</div>
+						</div>
+					</div>
+					<!-- SKU Selection with enhanced styling -->
+					<div id="modal-sku-section" class="mb-4 d-none">
+						<label for="modal-sku-select" class="form-label fw-medium mb-2">
+							<i class="bi bi-diagram-3 me-2 text-secondary"></i>Select Variation
+						</label>
+						<select
+							class="form-select form-select-lg border-0 bg-light shadow-sm"
+							id="modal-sku-select"
+							aria-label="Select product variation or SKU"
+						>
+							<option selected disabled value="">Choose variation...</option>
+						</select>
+					</div>
+					<!-- Quantity and Price Inputs with card-like appearance -->
+					<div class="row g-4 mb-4">
+						<div class="col-12 col-sm-6">
+							<div class="p-3 rounded-4 bg-light shadow-sm h-100">
+								<label for="modal-quantity" class="form-label fw-medium mb-2">
+									<i class="bi bi-123 me-2 text-secondary"></i>Quantity
+								</label>
+								<div class="input-group input-group-lg">
+									<button class="btn btn-outline-secondary border-0" type="button" id="decrease-qty">
+										<i class="bi bi-dash-lg"></i>
+									</button>
+									<input
+										type="number"
+										class="form-control text-center border-0 bg-white"
+										id="modal-quantity"
+										value="1"
+										min="1"
+										step="1"
+										required
+										aria-label="Quantity"
+									/>
+									<button class="btn btn-outline-secondary border-0" type="button" id="increase-qty">
+										<i class="bi bi-plus-lg"></i>
+									</button>
+								</div>
+							</div>
+						</div>
+						<div class="col-12 col-sm-6">
+							<div class="p-3 rounded-4 bg-light shadow-sm h-100">
+								<label for="modal-price" class="form-label fw-medium mb-2">
+									<i class="bi bi-currency-dollar me-2 text-secondary"></i>Unit Price
+								</label>
+								<div class="input-group input-group-lg">
+									<input
+										type="number"
+										class="form-control border-0 bg-white"
+										id="modal-price"
+										value="0.00"
+										min="0"
+										step="1"
+										required
+										aria-label="Unit Price"
+									/>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- Total display section -->
+					<div class="bg-light p-3 rounded-4 mb-4 text-end">
+						<span class="text-muted">Total:</span>
+						<span class="fs-4 ms-2 fw-bold text-primary" id="modal-total-price">$0.00</span>
+					</div>
+					<input type="hidden" id="modal-original-product-data"/>
+					<div id="modal-error-message" class="text-danger small mt-2 bg-light p-2 rounded-3 d-none"></div>
 				</div>
-				<div class="modal-footer border-top-0 px-4 pb-4 pt-0" id="scanModalFooter">
-					<!-- JS will populate buttons -->
-					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary" id="modal-add-product-btn">Add to Sale</button>
+				<!-- Footer with full-width buttons for better mobile experience -->
+				<div
+					class="modal-footer flex-column border-top-0 px-4 py-3 gap-2"
+					style="background: linear-gradient(to right, #f8f9fa, #edf1f7);"
+				>
+					<button
+						type="button"
+						class="btn btn-primary btn-lg w-100 py-3 shadow-sm"
+						id="modal-add-product-btn"
+					>
+						<i class="bi bi-cart-plus me-2"></i>Add to Sale
+					</button>
+					<button
+						type="button"
+						class="btn btn-outline-primary btn-lg w-100 py-2"
+						id="modal-add-and-scan-btn"
+					>
+						<i class="bi bi-plus-circle me-2"></i>Add & Scan Next
+					</button>
+					<button
+						type="button"
+						class="btn btn-link text-secondary w-100"
+						data-bs-dismiss="modal"
+					>
+						Cancel
+					</button>
 				</div>
 			</div>
 		</div>
