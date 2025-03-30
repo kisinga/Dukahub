@@ -8,6 +8,7 @@ import (
 
 type ScannerPageData struct {
 	ModelInfo models.Models `json:"modelInfo"` // Your existing model data
+	CompanyID string        `json:"companyId"` // ID of the company
 }
 
 var sellConfig = models.LayoutConfig{
@@ -36,6 +37,7 @@ templ Newsale(data *models.DashboardData) {
 				@templ.JSONScript("scanner-page-data", ScannerPageData{
 					ModelInfo: *data.Model,
 					// Populate other fields if added to ScannerPageData
+					CompanyID: data.Activecompany.Id,
 				})
 			</div>
 		}

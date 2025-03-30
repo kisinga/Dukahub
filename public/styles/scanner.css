@@ -1,0 +1,111 @@
+#search-results {
+  position: absolute;
+  top: 100%; /* Position below the input group */
+  left: 0;
+  right: 0;
+  z-index: 1050; /* Ensure it's above other elements but below modals */
+  max-height: 250px;
+  overflow-y: auto;
+  background-color: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-top: none; /* Avoid double border with input */
+  border-radius: 0 0 var(--bs-border-radius) var(--bs-border-radius);
+  box-shadow: var(--bs-box-shadow-sm);
+  display: none; /* Hidden by default, shown by JS */
+  margin-top: -1px; /* Overlap slightly to connect visually */
+}
+#search-results.show {
+  display: block;
+}
+#search-results .list-group-item {
+  cursor: pointer;
+  border-left: none;
+  border-right: none;
+  padding: 0.6rem 1rem; /* Adjust padding */
+}
+#search-results .list-group-item:first-child {
+  border-top: none;
+  border-radius: 0;
+}
+#search-results .list-group-item:last-child {
+  border-bottom: none;
+  border-radius: 0 0 var(--bs-border-radius) var(--bs-border-radius);
+}
+#search-results .list-group-item-action:hover,
+#search-results .list-group-item-action:focus {
+  background-color: var(--bs-light);
+}
+
+/* Camera View Styling */
+#camera-container .camera-wrapper {
+  background-color: #f8f9fa; /* Light background */
+  border-radius: var(--bs-border-radius);
+  overflow: hidden; /* Ensure video stays within bounds */
+}
+#camera-view {
+  display: block; /* Remove extra space below video */
+  object-fit: cover; /* Cover the area nicely */
+}
+.scanning-line {
+  position: absolute;
+  left: 5%; /* Inset slightly */
+  right: 5%;
+  height: 3px;
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    #ff0000,
+    transparent
+  );
+  box-shadow: 0 0 8px 1px rgba(255, 0, 0, 0.7);
+  border-radius: 2px;
+  animation: scan-anim 2.5s infinite ease-in-out;
+  display: none; /* Hidden by default, shown by JS when scanning */
+}
+#camera-container.scanning .scanning-line {
+  display: block; /* Show when scanning */
+}
+
+@keyframes scan-anim {
+  0% {
+    top: 10%;
+    opacity: 0.7;
+  }
+  50% {
+    top: 90%;
+    opacity: 1;
+  }
+  100% {
+    top: 10%;
+    opacity: 0.7;
+  }
+}
+
+/* Predictions Area */
+#predictions {
+  font-size: 0.8rem;
+  color: var(--bs-secondary);
+  margin-top: 0.5rem;
+  min-height: 4em; /* Reserve some space */
+}
+#predictions .prediction {
+  margin-bottom: 0.2rem;
+}
+#predictions .label {
+  font-weight: 500;
+}
+#predictions .probability {
+  color: var(--bs-gray-600);
+}
+
+/* Status Message */
+#scanner-status {
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  color: var(--bs-secondary);
+}
+
+/* Ensure cards have consistent height in a row */
+.row > [class*="col-"] > .card {
+  height: 100%;
+}

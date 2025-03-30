@@ -3,7 +3,6 @@ import { DbService } from "./pb.js"; // Use the refactored DbService
 
 // Ensure Teachable Machine library is loaded globally or imported if using modules
 // Assuming tmImage is available globally for this example.
-// If using npm: import * as tmImage from '@teachablemachine/image';
 
 /**
  * Manages the camera scanning functionality using Teachable Machine.
