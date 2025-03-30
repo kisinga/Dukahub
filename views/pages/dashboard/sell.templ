@@ -9,10 +9,7 @@ import (
 var sellConfig = models.LayoutConfig{
 	Title: "Sell",
 	JS: templ.Raw(`
-	<script type="module">
-	import { initCamera, toggleCamera } from "/public/js/scanner.js";
-	import { addProduct } from "/public/js/products.js";
-	</script>
+	<script type="module" src="/public/js/pages/scanner-init.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 `),
@@ -32,7 +29,7 @@ templ Newsale(data *models.DashboardData) {
 				</div>
 				@components.Scanner() {
 				}
-				@templ.JSONScript("model", data.Model)
+				@templ.JSONScript("scanner-page-data", data.Model)
 			</div>
 		}
 	}

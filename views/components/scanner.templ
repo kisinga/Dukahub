@@ -43,16 +43,19 @@ templ Scanner() {
 						<input
 							class="form-control"
 							type="search"
+							id="product-search-input"
 							name="search"
-							placeholder="Search products"
-							hx-post="/search"
-							hx-trigger="input changed delay:500ms, search"
-							hx-target="#search-results"
-							hx-indicator=".htmx-indicator"
+							placeholder="Search products..."
+							aria-label="Search products"
+							autocomplete="off"
 						/>
 						<button class="btn btn-primary" type="button" id="add-product-btn">
 							Add
 						</button>
+					</div>
+					<!-- Container for search results -->
+					<div id="search-results" class="list-group list-group-flush mb-3" style="max-height: 200px; overflow-y: auto;">
+						<!-- Search results will be populated here -->
 					</div>
 					<div class="d-grid d-md-block">
 						<button
@@ -68,6 +71,8 @@ templ Scanner() {
 				</div>
 			</div>
 		</div>
+		<!-- Optional: Add a simple loading indicator -->
+		<div class="htmx-indicator spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none; position: absolute; right: 80px; top: 25px;"></div>
 		<!-- Products Table -->
 		@ProductsTable(true, "Sale Items", []models.Products{}, "Product", "Price", "Quantity", "Actions")
 	</div>

@@ -32,7 +32,7 @@ body {
   z-index: 1;
 }
 
-.status-dot {
+.status-dot-open {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -40,6 +40,14 @@ body {
   margin-right: 6px;
   box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
   animation: pulse 2s infinite;
+}
+.status-dot-closed {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ff5c75;
+  margin-right: 6px;
+  box-shadow: 0 0 8px rgba(250, 186, 36, 0.6);
 }
 
 @keyframes pulse {

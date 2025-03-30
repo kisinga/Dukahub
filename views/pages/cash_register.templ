@@ -3,12 +3,13 @@ package pages
 import (
 	"github.com/kisinga/dukahub/models"
 	"github.com/kisinga/dukahub/views/layouts"
+	"github.com/kisinga/dukahub/views/pages/dashboard"
 )
 
 var registerConfig = models.LayoutConfig{
 	Title: "Dukahub Register",
 	JS:    nil,
-	CSS:   nil,
+	CSS:   dashboard.BaseCSS,
 }
 
 templ Register(data *models.DashboardData) {
