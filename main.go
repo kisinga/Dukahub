@@ -89,7 +89,7 @@ func main() {
 
 		dashboardGroup.GET("/company-settings", resolvers.Dashboard.CompanySettings)
 
-		dashboardGroup.GET("/register", resolvers.Dashboard.Register)
+		dashboardGroup.GET("/cash-register", resolvers.Dashboard.Register)
 
 		return se.Next()
 	})

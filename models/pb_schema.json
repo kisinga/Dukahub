@@ -1196,6 +1196,34 @@
                 "type": "json"
             },
             {
+                "cascadeDelete": false,
+                "collectionId": "ekjku0lrs17viq2",
+                "hidden": false,
+                "id": "relation1039629577",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "parent_company",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "select3484634567",
+                "maxSelect": 1,
+                "name": "company_type",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "select",
+                "values": [
+                    "headquaters",
+                    "branch",
+                    "store"
+                ]
+            },
+            {
                 "hidden": false,
                 "id": "autodate2990389176",
                 "name": "created",
@@ -1616,6 +1644,136 @@
         "system": false
     },
     {
+        "id": "pbc_2301675586",
+        "listRule": null,
+        "viewRule": null,
+        "createRule": null,
+        "updateRule": null,
+        "deleteRule": null,
+        "name": "daily_summaries",
+        "type": "base",
+        "fields": [
+            {
+                "autogeneratePattern": "[a-z0-9]{15}",
+                "hidden": false,
+                "id": "text3208210256",
+                "max": 15,
+                "min": 15,
+                "name": "id",
+                "pattern": "^[a-z0-9]+$",
+                "presentable": false,
+                "primaryKey": true,
+                "required": true,
+                "system": true,
+                "type": "text"
+            },
+            {
+                "hidden": false,
+                "id": "date2862495610",
+                "max": "",
+                "min": "",
+                "name": "date",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "date"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "ekjku0lrs17viq2",
+                "hidden": false,
+                "id": "relation1337919823",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "company",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "number2834556534",
+                "max": null,
+                "min": null,
+                "name": "total_sales",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "number381439464",
+                "max": null,
+                "min": null,
+                "name": "total_purchases",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "number2590638058",
+                "max": null,
+                "min": null,
+                "name": "total_expenses",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "json2842886674",
+                "maxSize": 0,
+                "name": "top_selling_products",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "json"
+            },
+            {
+                "hidden": false,
+                "id": "number3988810005",
+                "max": null,
+                "min": null,
+                "name": "profit_margin",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "autodate2990389176",
+                "name": "created",
+                "onCreate": true,
+                "onUpdate": false,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            },
+            {
+                "hidden": false,
+                "id": "autodate3332085495",
+                "name": "updated",
+                "onCreate": true,
+                "onUpdate": true,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            }
+        ],
+        "indexes": [],
+        "system": false
+    },
+    {
         "id": "1curvt6zp6ey2fx",
         "listRule": null,
         "viewRule": null,
@@ -1673,6 +1831,309 @@
                 "maxSelect": 1,
                 "minSelect": 0,
                 "name": "transaction",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "autodate2990389176",
+                "name": "created",
+                "onCreate": true,
+                "onUpdate": false,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            },
+            {
+                "hidden": false,
+                "id": "autodate3332085495",
+                "name": "updated",
+                "onCreate": true,
+                "onUpdate": true,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            }
+        ],
+        "indexes": [],
+        "system": false
+    },
+    {
+        "id": "pbc_3573984430",
+        "listRule": null,
+        "viewRule": null,
+        "createRule": null,
+        "updateRule": null,
+        "deleteRule": null,
+        "name": "inventory",
+        "type": "base",
+        "fields": [
+            {
+                "autogeneratePattern": "[a-z0-9]{15}",
+                "hidden": false,
+                "id": "text3208210256",
+                "max": 15,
+                "min": 15,
+                "name": "id",
+                "pattern": "^[a-z0-9]+$",
+                "presentable": false,
+                "primaryKey": true,
+                "required": true,
+                "system": true,
+                "type": "text"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "ekjku0lrs17viq2",
+                "hidden": false,
+                "id": "relation1337919823",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "company",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "3fzy73gqs5dwae7",
+                "hidden": false,
+                "id": "relation261109956",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "sku",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "d1ksfafmwyjtbza",
+                "hidden": false,
+                "id": "relation3544843437",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "product",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "number42691612",
+                "max": null,
+                "min": null,
+                "name": "current_quantity",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "number982622816",
+                "max": null,
+                "min": null,
+                "name": "reorder_point",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "number2437584093",
+                "max": null,
+                "min": null,
+                "name": "cost_price",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "number1411228060",
+                "max": null,
+                "min": null,
+                "name": "retail_price",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "autodate2990389176",
+                "name": "created",
+                "onCreate": true,
+                "onUpdate": false,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            },
+            {
+                "hidden": false,
+                "id": "autodate3332085495",
+                "name": "updated",
+                "onCreate": true,
+                "onUpdate": true,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            }
+        ],
+        "indexes": [],
+        "system": false
+    },
+    {
+        "id": "pbc_1970302304",
+        "listRule": null,
+        "viewRule": null,
+        "createRule": null,
+        "updateRule": null,
+        "deleteRule": null,
+        "name": "inventory_transactions",
+        "type": "base",
+        "fields": [
+            {
+                "autogeneratePattern": "[a-z0-9]{15}",
+                "hidden": false,
+                "id": "text3208210256",
+                "max": 15,
+                "min": 15,
+                "name": "id",
+                "pattern": "^[a-z0-9]+$",
+                "presentable": false,
+                "primaryKey": true,
+                "required": true,
+                "system": true,
+                "type": "text"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "d1ksfafmwyjtbza",
+                "hidden": false,
+                "id": "relation3544843437",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "product",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "3fzy73gqs5dwae7",
+                "hidden": false,
+                "id": "relation261109956",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "sku",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "number1307554610",
+                "max": null,
+                "min": null,
+                "name": "quantity_change",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "number1550017227",
+                "max": null,
+                "min": null,
+                "name": "quantity_after",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "date1222445531",
+                "max": "",
+                "min": "",
+                "name": "transaction_date",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "date"
+            },
+            {
+                "hidden": false,
+                "id": "select819098566",
+                "maxSelect": 1,
+                "name": "reason_code",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "select",
+                "values": [
+                    "sale",
+                    "purchase",
+                    "return",
+                    "adjustment",
+                    "loss",
+                    "damage"
+                ]
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text373677737",
+                "max": 0,
+                "min": 0,
+                "name": "reference_id",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": false,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text4213026697",
+                "max": 0,
+                "min": 0,
+                "name": "reference_type",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": false,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "_pb_users_auth_",
+                "hidden": false,
+                "id": "relation2375276105",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "user",
                 "presentable": false,
                 "required": false,
                 "system": false,
@@ -2296,13 +2757,13 @@
         "system": false
     },
     {
-        "id": "pbc_2490904605",
+        "id": "pbc_430852116",
         "listRule": null,
         "viewRule": null,
         "createRule": null,
         "updateRule": null,
         "deleteRule": null,
-        "name": "product_balances",
+        "name": "product_analytics",
         "type": "base",
         "fields": [
             {
@@ -2321,19 +2782,6 @@
             },
             {
                 "cascadeDelete": false,
-                "collectionId": "3fzy73gqs5dwae7",
-                "hidden": false,
-                "id": "relation261109956",
-                "maxSelect": 1,
-                "minSelect": 0,
-                "name": "sku",
-                "presentable": false,
-                "required": false,
-                "system": false,
-                "type": "relation"
-            },
-            {
-                "cascadeDelete": false,
                 "collectionId": "d1ksfafmwyjtbza",
                 "hidden": false,
                 "id": "relation3544843437",
@@ -2346,11 +2794,86 @@
                 "type": "relation"
             },
             {
+                "autogeneratePattern": "",
                 "hidden": false,
-                "id": "number2901680126",
+                "id": "text3317178062",
+                "max": 0,
+                "min": 0,
+                "name": "period",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": false,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "ekjku0lrs17viq2",
+                "hidden": false,
+                "id": "relation1337919823",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "company",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "number1051399876",
                 "max": null,
                 "min": null,
-                "name": "balance",
+                "name": "units_sold",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "number3910233221",
+                "max": null,
+                "min": null,
+                "name": "revenue",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "number405181692",
+                "max": null,
+                "min": null,
+                "name": "cost",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "number4122618561",
+                "max": null,
+                "min": null,
+                "name": "profit",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "number3047420215",
+                "max": null,
+                "min": null,
+                "name": "avg_selling_price",
                 "onlyInt": false,
                 "presentable": false,
                 "required": false,
@@ -2456,104 +2979,6 @@
         "indexes": [
             "CREATE INDEX `idx_08KPO1uEPP` ON `product_categories` (\n  `company`,\n  `name`\n)"
         ],
-        "system": false
-    },
-    {
-        "id": "urjz2gu9085ncfv",
-        "listRule": null,
-        "viewRule": null,
-        "createRule": null,
-        "updateRule": null,
-        "deleteRule": null,
-        "name": "product_sku_figures",
-        "type": "base",
-        "fields": [
-            {
-                "autogeneratePattern": "[a-z0-9]{15}",
-                "hidden": false,
-                "id": "text3208210256",
-                "max": 15,
-                "min": 15,
-                "name": "id",
-                "pattern": "^[a-z0-9]+$",
-                "presentable": false,
-                "primaryKey": true,
-                "required": true,
-                "system": true,
-                "type": "text"
-            },
-            {
-                "hidden": false,
-                "id": "vkdgmtkw",
-                "max": null,
-                "min": null,
-                "name": "bal",
-                "onlyInt": false,
-                "presentable": false,
-                "required": false,
-                "system": false,
-                "type": "number"
-            },
-            {
-                "hidden": false,
-                "id": "d9ikjrxv",
-                "max": null,
-                "min": null,
-                "name": "price",
-                "onlyInt": false,
-                "presentable": false,
-                "required": false,
-                "system": false,
-                "type": "number"
-            },
-            {
-                "cascadeDelete": false,
-                "collectionId": "3fzy73gqs5dwae7",
-                "hidden": false,
-                "id": "bbmldnzm",
-                "maxSelect": 1,
-                "minSelect": 0,
-                "name": "sku",
-                "presentable": false,
-                "required": true,
-                "system": false,
-                "type": "relation"
-            },
-            {
-                "cascadeDelete": false,
-                "collectionId": "d1ksfafmwyjtbza",
-                "hidden": false,
-                "id": "chotpnyz",
-                "maxSelect": 1,
-                "minSelect": 0,
-                "name": "product",
-                "presentable": false,
-                "required": true,
-                "system": false,
-                "type": "relation"
-            },
-            {
-                "hidden": false,
-                "id": "autodate2990389176",
-                "name": "created",
-                "onCreate": true,
-                "onUpdate": false,
-                "presentable": false,
-                "system": false,
-                "type": "autodate"
-            },
-            {
-                "hidden": false,
-                "id": "autodate3332085495",
-                "name": "updated",
-                "onCreate": true,
-                "onUpdate": true,
-                "presentable": false,
-                "system": false,
-                "type": "autodate"
-            }
-        ],
-        "indexes": [],
         "system": false
     },
     {
@@ -2828,13 +3253,137 @@
         "system": false
     },
     {
+        "id": "pbc_2515225243",
+        "listRule": null,
+        "viewRule": null,
+        "createRule": null,
+        "updateRule": null,
+        "deleteRule": null,
+        "name": "sales_details",
+        "type": "base",
+        "fields": [
+            {
+                "autogeneratePattern": "[a-z0-9]{15}",
+                "hidden": false,
+                "id": "text3208210256",
+                "max": 15,
+                "min": 15,
+                "name": "id",
+                "pattern": "^[a-z0-9]+$",
+                "presentable": false,
+                "primaryKey": true,
+                "required": true,
+                "system": true,
+                "type": "text"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "pbc_2697449135",
+                "hidden": false,
+                "id": "relation909906965",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "sales_transaction",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "number2683508278",
+                "max": null,
+                "min": null,
+                "name": "quantity",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "3fzy73gqs5dwae7",
+                "hidden": false,
+                "id": "relation261109956",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "sku",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "number1106926802",
+                "max": null,
+                "min": null,
+                "name": "unit_price",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "d1ksfafmwyjtbza",
+                "hidden": false,
+                "id": "relation3544843437",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "product",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "cascadeDelete": false,
+                "collectionId": "sn52jgugcgkwdj0",
+                "hidden": false,
+                "id": "relation1916208593",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "transaction",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "autodate2990389176",
+                "name": "created",
+                "onCreate": true,
+                "onUpdate": false,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            },
+            {
+                "hidden": false,
+                "id": "autodate3332085495",
+                "name": "updated",
+                "onCreate": true,
+                "onUpdate": true,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            }
+        ],
+        "indexes": [],
+        "system": false
+    },
+    {
         "id": "pbc_2697449135",
         "listRule": null,
         "viewRule": null,
         "createRule": null,
         "updateRule": null,
         "deleteRule": null,
-        "name": "sales",
+        "name": "sales_transactions",
         "type": "base",
         "fields": [
             {
@@ -2882,7 +3431,7 @@
                 "id": "number3257917790",
                 "max": null,
                 "min": null,
-                "name": "total",
+                "name": "total_amount",
                 "onlyInt": false,
                 "presentable": false,
                 "required": false,
@@ -2890,72 +3439,26 @@
                 "type": "number"
             },
             {
-                "cascadeDelete": false,
-                "collectionId": "lfevqoz2tczdgn7",
                 "hidden": false,
-                "id": "relation2095020010",
+                "id": "select1580793482",
                 "maxSelect": 1,
-                "minSelect": 0,
-                "name": "sales_details",
+                "name": "payment_status",
                 "presentable": false,
                 "required": false,
                 "system": false,
-                "type": "relation"
+                "type": "select",
+                "values": [
+                    "paid",
+                    "partial",
+                    "pending"
+                ]
             },
             {
                 "hidden": false,
-                "id": "autodate2990389176",
-                "name": "created",
-                "onCreate": true,
-                "onUpdate": false,
-                "presentable": false,
-                "system": false,
-                "type": "autodate"
-            },
-            {
-                "hidden": false,
-                "id": "autodate3332085495",
-                "name": "updated",
-                "onCreate": true,
-                "onUpdate": true,
-                "presentable": false,
-                "system": false,
-                "type": "autodate"
-            }
-        ],
-        "indexes": [],
-        "system": false
-    },
-    {
-        "id": "lfevqoz2tczdgn7",
-        "listRule": "@request.auth.id != \"\"&& @request.auth.verified = true ",
-        "viewRule": "@request.auth.id != \"\"&& @request.auth.verified = true ",
-        "createRule": "@request.auth.id != \"\"&& @request.auth.verified = true ",
-        "updateRule": "@request.auth.id != \"\"&& @request.auth.verified = true ",
-        "deleteRule": "@request.auth.id != \"\"&& @request.auth.verified = true ",
-        "name": "sales_details",
-        "type": "base",
-        "fields": [
-            {
-                "autogeneratePattern": "[a-z0-9]{15}",
-                "hidden": false,
-                "id": "text3208210256",
-                "max": 15,
-                "min": 15,
-                "name": "id",
-                "pattern": "^[a-z0-9]+$",
-                "presentable": false,
-                "primaryKey": true,
-                "required": true,
-                "system": true,
-                "type": "text"
-            },
-            {
-                "hidden": false,
-                "id": "k2kntscg",
+                "id": "number3165886577",
                 "max": null,
                 "min": null,
-                "name": "price",
+                "name": "remaining_balance",
                 "onlyInt": false,
                 "presentable": false,
                 "required": false,
@@ -2964,38 +3467,12 @@
             },
             {
                 "cascadeDelete": false,
-                "collectionId": "3fzy73gqs5dwae7",
+                "collectionId": "thqjzi02lhkpwpa",
                 "hidden": false,
-                "id": "1icxjw3y",
+                "id": "relation2168032777",
                 "maxSelect": 1,
                 "minSelect": 0,
-                "name": "sku",
-                "presentable": false,
-                "required": true,
-                "system": false,
-                "type": "relation"
-            },
-            {
-                "cascadeDelete": false,
-                "collectionId": "d1ksfafmwyjtbza",
-                "hidden": false,
-                "id": "renlxaqn",
-                "maxSelect": 1,
-                "minSelect": 0,
-                "name": "Product",
-                "presentable": false,
-                "required": true,
-                "system": false,
-                "type": "relation"
-            },
-            {
-                "cascadeDelete": false,
-                "collectionId": "sn52jgugcgkwdj0",
-                "hidden": false,
-                "id": "gvpvogn1",
-                "maxSelect": 2147483647,
-                "minSelect": 0,
-                "name": "transaction",
+                "name": "customer",
                 "presentable": false,
                 "required": false,
                 "system": false,
@@ -3003,12 +3480,38 @@
             },
             {
                 "hidden": false,
-                "id": "iye6liym",
+                "id": "select1855809928",
+                "maxSelect": 1,
+                "name": "transaction_type",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "select",
+                "values": [
+                    "sale",
+                    "return",
+                    "exchange"
+                ]
+            },
+            {
+                "convertURLs": false,
+                "hidden": false,
+                "id": "editor18589324",
+                "maxSize": 0,
+                "name": "notes",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "editor"
+            },
+            {
+                "hidden": false,
+                "id": "date1222445531",
                 "max": "",
                 "min": "",
-                "name": "date",
+                "name": "transaction_date",
                 "presentable": false,
-                "required": true,
+                "required": false,
                 "system": false,
                 "type": "date"
             },
@@ -3033,9 +3536,7 @@
                 "type": "autodate"
             }
         ],
-        "indexes": [
-            "CREATE INDEX `idx_Zk9VSDk` ON `sales_details` (\n  `Product`,\n  `transaction`\n)"
-        ],
+        "indexes": [],
         "system": false
     },
     {
@@ -3229,6 +3730,60 @@
                 "required": false,
                 "system": false,
                 "type": "relation"
+            },
+            {
+                "hidden": false,
+                "id": "select4213026697",
+                "maxSelect": 1,
+                "name": "reference_type",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "select",
+                "values": [
+                    "sale",
+                    "purchase",
+                    "expense",
+                    "adjustment"
+                ]
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text373677737",
+                "max": 0,
+                "min": 0,
+                "name": "reference_id",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": false,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "hidden": false,
+                "id": "number3278057665",
+                "max": null,
+                "min": null,
+                "name": "tax_rate",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
+            },
+            {
+                "hidden": false,
+                "id": "number3262847721",
+                "max": null,
+                "min": null,
+                "name": "tax_amount",
+                "onlyInt": false,
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "number"
             },
             {
                 "hidden": false,

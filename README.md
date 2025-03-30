@@ -53,26 +53,4 @@ pocketbase-gogen generate ./models/pbschema/template.go ./models/generated.go
 pocketbase-gogen generate ./models/pbschema/template.go ./models/generated.go --utils
 ```
 
-## Account setup requirements
-
-username
-email
-password
-avatar
-
-Company name
-Company location
-Company phone number
-Company logo
-
-Financial accounts
-Account name
-Account number
-Account type
-
-Each company MUST have at least:
-one financial account
-one user account
-one product
-
-Each company can have multiple accounts
+## [DB](/documentation/DB.md)

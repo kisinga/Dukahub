@@ -1,233 +1,225 @@
-// db.js - PocketBase Client Wrapper
-const pb = new PocketBase("/");
+// Initialize PocketBase Client
+const POCKETBASE_URL = "/";
+const pb = new PocketBase(POCKETBASE_URL);
 
 /**
- * Database service wrapper for PocketBase operations
+ * PocketBase Service for interacting with the database.
+ * Focuses solely on data operations and authentication state.
  */
-const DbService = {
+class PocketBaseService {
+  constructor(pocketbaseInstance) {
+    this.pb = pocketbaseInstance;
+
+    // Automatically refresh token when needed by the SDK
+    this.pb.autoRefreshThreshold = 5 * 60; // Refresh 5 minutes before expiry (SDK default is 10min)
+
+    // Listen to auth changes to potentially update UI elsewhere
+    this.pb.authStore.onChange((token, model) => {
+      console.log("AuthStore changed:", token, model);
+      // You could dispatch a custom event here for other parts of the app
+      // document.dispatchEvent(new CustomEvent('authChange', { detail: { token, model } }));
+    }, true); // `true` triggers the callback immediately with the current state
+  }
+
   get authStore() {
-    return pb.authStore;
-  },
+    return this.pb.authStore;
+  }
+
+  get client() {
+    return this.pb; // Expose the raw client if needed for advanced use cases
+  }
 
   /**
-   * Executes various database operations
-   * @param {string} collection - Name of the collection
-   * @param {object} params - Operation parameters
-   * @param {string} params.operation - Operation to perform (list_search, view, create, update, delete)
-   * @returns {Promise<object>} Result of the operation
+   * Checks if a user or admin is currently authenticated.
+   * @returns {boolean} True if authenticated, false otherwise.
    */
-  async execute(collection, params) {
-    try {
-      if (!params?.operation) {
-        throw new Error("Missing operation parameter");
-      }
-
-      const result = await pb.collection(collection)[params.operation](params);
-      return { success: true, data: result };
-    } catch (error) {
-      console.error(`Database operation failed: ${error.message}`);
-      return { success: false, error: error.message };
-    }
-  },
+  isAuthenticated() {
+    return this.pb.authStore.isValid;
+  }
 
   /**
-   * Refreshes the authentication token
-   * @returns {Promise<void>}
+   * Retrieves a list of records from a collection with filtering, sorting, etc.
+   * @param {string} collection - Name of the collection.
+   * @param {object} [options] - PocketBase JS SDK options (filter, sort, page, perPage, etc.).
+   * @returns {Promise<Array<object>>} List of records.
+   * @throws {Error} If the API request fails.
    */
-  async refreshAuthToken() {
+  async getList(collection, options = {}) {
     try {
-      await handleTokenRefresh();
+      // Use getFullList for simplicity if pagination isn't immediately needed,
+      // or use getList for paginated results. Let's use getFullList for now.
+      // Adjust batch size as needed.
+      const records = await this.pb.collection(collection).getFullList(options);
+      return records;
     } catch (error) {
-      console.error("Token refresh failed:", error);
-      handleTokenRefreshFailure();
+      console.error(
+        `Failed to get list from collection "${collection}":`,
+        error
+      );
+      // Re-throw the error so the caller can handle it appropriately
+      throw this._handlePocketBaseError(error);
     }
-  },
-
-  scheduleTokenRefresh() {
-    return scheduleTokenRefresh();
-  },
+  }
 
   /**
-   * Handles login functionality
-   * @param {Event} event - Form submission event
-   * @returns {Promise<void>}
+   * Retrieves a single record by its ID.
+   * @param {string} collection - Name of the collection.
+   * @param {string} id - The ID of the record.
+   * @param {object} [options] - PocketBase JS SDK options (e.g., expand).
+   * @returns {Promise<object>} The record.
+   * @throws {Error} If the API request fails or record not found.
    */
-  async loginUser(event, userType) {
-    event.preventDefault();
-
-    const formData = new FormData(event.target);
-    const email = formData.get("email");
-    const password = formData.get("password");
-
+  async getOne(collection, id, options = {}) {
     try {
-      if (!email || !password) {
-        throw new Error("Email and password are required");
-      }
-      if (!userType) {
-        throw new Error("User type is required");
-      }
-
-      if (userType === "admin") {
-        const authData = await pb
-          .collection("admins")
-          .authWithPassword(email, password);
-
-        pb.authStore.save(authData.token, authData.record);
-        console.log(authData);
-
-        // Update UI via HTMX
-        htmx.trigger("#error-message", "loginSuccess", { success: true });
-
-        setTimeout(() => {
-          window.location.href = `/admin-dashboard`;
-        }, 500);
-      } else if (userType === "user") {
-        const authData = await pb
-          .collection("users")
-          .authWithPassword(email, password, { expand: "company" });
-
-        pb.authStore.save(authData.token, authData.record);
-        console.log(authData);
-
-        // Update UI via HTMX
-        htmx.trigger("#error-message", "loginSuccess", { success: true });
-
-        setTimeout(() => {
-          window.location.href = `/dashboard/${authData.record.company[0]}`;
-        }, 500);
-      }
+      const record = await this.pb.collection(collection).getOne(id, options);
+      return record;
     } catch (error) {
-      console.error("Login failed:", error);
-      htmx.trigger("#error-message", "loginFailed", {
-        error: error.message,
-        email: email,
-      });
+      console.error(
+        `Failed to get record "${id}" from collection "${collection}":`,
+        error
+      );
+      throw this._handlePocketBaseError(error);
     }
-  },
+  }
 
   /**
-   * Logs out the current user
+   * Creates a new record.
+   * @param {string} collection - Name of the collection.
+   * @param {object} data - Data for the new record.
+   * @param {object} [options] - PocketBase JS SDK options.
+   * @returns {Promise<object>} The newly created record.
+   * @throws {Error} If the API request fails.
+   */
+  async create(collection, data, options = {}) {
+    try {
+      const record = await this.pb.collection(collection).create(data, options);
+      return record;
+    } catch (error) {
+      console.error(
+        `Failed to create record in collection "${collection}":`,
+        error
+      );
+      throw this._handlePocketBaseError(error);
+    }
+  }
+
+  /**
+   * Updates an existing record.
+   * @param {string} collection - Name of the collection.
+   * @param {string} id - The ID of the record to update.
+   * @param {object} data - Data to update.
+   * @param {object} [options] - PocketBase JS SDK options.
+   * @returns {Promise<object>} The updated record.
+   * @throws {Error} If the API request fails.
+   */
+  async update(collection, id, data, options = {}) {
+    try {
+      const record = await this.pb
+        .collection(collection)
+        .update(id, data, options);
+      return record;
+    } catch (error) {
+      console.error(
+        `Failed to update record "${id}" in collection "${collection}":`,
+        error
+      );
+      throw this._handlePocketBaseError(error);
+    }
+  }
+
+  /**
+   * Deletes a record.
+   * @param {string} collection - Name of the collection.
+   * @param {string} id - The ID of the record to delete.
+   * @returns {Promise<boolean>} True if deletion was successful.
+   * @throws {Error} If the API request fails.
+   */
+  async delete(collection, id) {
+    try {
+      await this.pb.collection(collection).delete(id);
+      return true;
+    } catch (error) {
+      console.error(
+        `Failed to delete record "${id}" from collection "${collection}":`,
+        error
+      );
+      throw this._handlePocketBaseError(error);
+    }
+  }
+
+  /**
+   * Authenticates an admin user.
+   * @param {string} email
+   * @param {string} password
+   * @returns {Promise<object>} Admin record.
+   * @throws {Error} If authentication fails.
+   */
+  async authAdmin(email, password) {
+    try {
+      const authData = await this.pb
+        .collection("admins")
+        .authWithPassword(email, password);
+      // AuthStore is automatically updated by the SDK
+      console.log("Admin authenticated:", authData.record);
+      return authData.record;
+    } catch (error) {
+      console.error("Admin authentication failed:", error);
+      throw this._handlePocketBaseError(error);
+    }
+  }
+
+  /**
+   * Authenticates a regular user.
+   * @param {string} email
+   * @param {string} password
+   * @param {object} [options] - PocketBase JS SDK options (e.g., expand).
+   * @returns {Promise<object>} User record.
+   * @throws {Error} If authentication fails.
+   */
+  async authUser(email, password, options = {}) {
+    try {
+      const authData = await this.pb
+        .collection("users")
+        .authWithPassword(email, password, options);
+      // AuthStore is automatically updated by the SDK
+      console.log("User authenticated:", authData.record);
+      return authData.record;
+    } catch (error) {
+      console.error("User authentication failed:", error);
+      throw this._handlePocketBaseError(error);
+    }
+  }
+
+  /**
+   * Logs out the current user/admin.
    */
   logout() {
-    pb.authStore.clear();
-    localStorage.removeItem("pb_auth");
-    window.location.href = "/login";
-  },
-};
+    this.pb.authStore.clear();
+    // Consider redirecting or dispatching an event in the calling code, not here.
+    console.log("User logged out.");
+  }
 
-/**
- * Schedules token refresh based on token expiry
- * @returns {number} Timeout ID
- */
-function scheduleTokenRefresh() {
-  try {
-    const token = pb.authStore.token;
-    if (!token) {
-      console.warn("No authentication token found");
-      return null;
+  /**
+   * Handles PocketBase errors, potentially formatting them.
+   * @param {any} error - The original error object.
+   * @returns {Error} A potentially formatted error.
+   */
+  _handlePocketBaseError(error) {
+    // PocketBase errors often have a `response` property with details
+    if (error && error.response && error.response.message) {
+      return new Error(
+        `PocketBase Error: ${error.message} (Status: ${error.status}) - ${error.response.message}`
+      );
     }
-
-    // Decode JWT token to get expiry time
-    const tokenPayload = token.split(".")[1];
-    const decodedToken = JSON.parse(atob(tokenPayload));
-
-    if (!decodedToken.exp) {
-      throw new Error("Expiry time not found in token");
+    if (error instanceof Error) {
+      return error; // Re-throw standard errors
     }
-
-    const expiresAt = decodedToken.exp * 1000; // Convert to milliseconds
-    const now = Date.now();
-    const refreshBefore = expiresAt - now - 5 * 60 * 1000; // Refresh 5 minutes before expiry
-
-    if (refreshBefore <= 0) {
-      console.log("Token already expired, refreshing immediately");
-      handleTokenRefresh();
-      return null;
-    }
-
-    console.log(`Scheduling token refresh in ${refreshBefore}ms`);
-
-    const timeoutId = setTimeout(() => {
-      handleTokenRefresh();
-    }, refreshBefore);
-
-    return timeoutId;
-  } catch (error) {
-    console.error("Failed to schedule token refresh:", error);
-    return null;
+    return new Error("An unknown PocketBase error occurred.");
   }
 }
 
-/**
- * Handles token refresh failure
- */
-function handleTokenRefreshFailure() {
-  console.warn("All token refresh attempts failed. Logging out user.");
-  DbService.logout();
-}
+// Create a singleton instance
+const DbService = new PocketBaseService(pb);
 
-/**
- * Handles token refresh and scheduling
- * @returns {Promise<void>}
- */
-async function handleTokenRefresh() {
-  try {
-    const token = pb.authStore.token;
-    if (!token) {
-      console.warn("No authentication token found");
-      return;
-    }
-
-    // Decode JWT token to get current expiry time
-    const tokenPayload = token.split(".")[1];
-    const decodedToken = JSON.parse(atob(tokenPayload));
-
-    if (!decodedToken.exp) {
-      throw new Error("Expiry time not found in token");
-    }
-
-    const expiresAt = decodedToken.exp * 1000; // Convert to milliseconds
-    const now = Date.now();
-
-    // Only refresh if token will expire in the next 5 minutes
-    if (expiresAt - now > 5 * 60 * 1000) {
-      console.log("Token refresh not needed yet");
-      return;
-    }
-
-    console.log("Initiating token refresh...");
-
-    // Use retry logic for token refresh
-    const maxRetries = 3;
-    let attempts = 0;
-
-    for (attempts = 1; attempts <= maxRetries; attempts++) {
-      try {
-        const response = await pb.collection("admins").authRefresh();
-        pb.authStore.save(response.token, response.record);
-        console.log("Token refreshed successfully");
-        return scheduleTokenRefresh();
-      } catch (error) {
-        console.error(
-          `Token refresh attempt ${attempts} failed:`,
-          error.message
-        );
-
-        if (attempts >= maxRetries) {
-          throw new Error("Token refresh failed after maximum retries");
-        }
-
-        // Wait before retrying with exponential backoff
-        const delay = 1000 * Math.pow(2, attempts);
-        console.log(`Waiting ${delay}ms before retrying...`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
-    }
-  } catch (error) {
-    console.error("Token refresh failed:", error);
-    handleTokenRefreshFailure();
-  }
-}
-
-// Export helper functions
-export { DbService as DbService, pb as pocketBaseClient };
+// Export the singleton instance
+export { DbService };

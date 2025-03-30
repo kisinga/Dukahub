@@ -36,7 +36,7 @@ func (r *Resolvers) AuthCheck(e *core.RequestEvent) error {
 }
 
 func (r *Resolvers) Root(e *core.RequestEvent) error {
-	cookie, err := e.Request.Cookie("pb_auth")
+	cookie, err := e.Request.Cookie("pb_users_auth")
 	if err != nil {
 		log.Println("No auth cookie found")
 		return e.Redirect(307, "/login")
