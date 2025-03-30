@@ -1,5 +1,5 @@
 dev: 
-	npx nodemon --signal SIGTERM -e "templ go js" -x "templ generate && go run main.go serve" -i "**/*_templ.go"
+	npx nodemon --signal SIGTERM -e "templ go js css" -x "templ generate && go run main.go serve" -i "**/*_templ.go"
 
 generate: 
 	templ generate

@@ -6,6 +6,10 @@ import (
 	"github.com/kisinga/dukahub/views/layouts"
 )
 
+type ScannerPageData struct {
+	ModelInfo models.Models `json:"modelInfo"` // Your existing model data
+}
+
 var sellConfig = models.LayoutConfig{
 	Title: "Sell",
 	JS: templ.Raw(`
@@ -29,7 +33,10 @@ templ Newsale(data *models.DashboardData) {
 				</div>
 				@components.Scanner() {
 				}
-				@templ.JSONScript("scanner-page-data", data.Model)
+				@templ.JSONScript("scanner-page-data", ScannerPageData{
+					ModelInfo: *data.Model,
+					// Populate other fields if added to ScannerPageData
+				})
 			</div>
 		}
 	}

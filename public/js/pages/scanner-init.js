@@ -18,8 +18,8 @@ try {
 // --- Configuration for ScannerService ---
 // Use the data read from the JSON script tag
 const scannerConfig = {
-  modelUrl: pageData.model, // Use optional chaining for safety
-  metadataUrl: pageData.metadata,
+  modelUrl: pageData.modelInfo?.model, // Use optional chaining for safety
+  metadataUrl: pageData.modelInfo?.metadata,
   confidenceThreshold: 0.9,
   detectionIntervalMs: 1200,
   selectors: {
