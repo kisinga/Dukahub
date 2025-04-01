@@ -1,36 +1,44 @@
-// Initialize PocketBase Client
-const POCKETBASE_URL = "/";
+// /public/js/pb.js (or your preferred filename)
+
+// Initialize PocketBase Client (assuming it's served locally or adjust URL)
+const POCKETBASE_URL = "/"; // Or your PocketBase server URL
 const pb = new PocketBase(POCKETBASE_URL);
 
 /**
  * PocketBase Service for interacting with the database.
- * Focuses solely on data operations and authentication state.
+ * Provides a simplified and consistent interface for common PocketBase operations.
  */
 class PocketBaseService {
   constructor(pocketbaseInstance) {
+    if (!pocketbaseInstance) {
+      throw new Error("PocketBase instance is required.");
+    }
     this.pb = pocketbaseInstance;
 
-    // Automatically refresh token when needed by the SDK
-    this.pb.autoRefreshThreshold = 5 * 60; // Refresh 5 minutes before expiry (SDK default is 10min)
+    // Configure auto-refresh (optional, SDK defaults are often fine)
+    // this.pb.autoRefreshThreshold = 5 * 60; // Example: Refresh 5 min before expiry
 
-    // Listen to auth changes to potentially update UI elsewhere
+    // Optional: Listen to auth changes for debugging or global state updates
     this.pb.authStore.onChange((token, model) => {
-      console.log("AuthStore changed:", token, model);
-      // You could dispatch a custom event here for other parts of the app
-      // document.dispatchEvent(new CustomEvent('authChange', { detail: { token, model } }));
-    }, true); // `true` triggers the callback immediately with the current state
+      console.log(
+        "AuthStore changed:",
+        model ? `User/Admin ${model.id}` : "Logged out"
+      );
+      // If needed, dispatch a global event for other parts of the app:
+      // document.dispatchEvent(new CustomEvent('authChange', { detail: { model } }));
+    }, true); // `true` triggers immediately
   }
 
+  /**
+   * Provides access to the PocketBase AuthStore.
+   * @returns {import("pocketbase").AuthStore}
+   */
   get authStore() {
     return this.pb.authStore;
   }
 
-  get client() {
-    return this.pb; // Expose the raw client if needed for advanced use cases
-  }
-
   /**
-   * Checks if a user or admin is currently authenticated.
+   * Checks if a user or admin is currently authenticated and the token is valid.
    * @returns {boolean} True if authenticated, false otherwise.
    */
   isAuthenticated() {
@@ -38,69 +46,107 @@ class PocketBaseService {
   }
 
   /**
-   * Retrieves a list of records from a collection with filtering, sorting, etc.
-   * @param {string} collection - Name of the collection.
-   * @param {object} [options] - PocketBase JS SDK options (filter, sort, page, perPage, etc.).
-   * @returns {Promise<Array<object>>} List of records.
-   * @throws {Error} If the API request fails.
+   * Gets the currently authenticated admin or user model.
+   * @returns {import("pocketbase").Record | import("pocketbase").Admin | null}
    */
-  async getList(collection, options = {}) {
+  getCurrentUser() {
+    return this.pb.authStore.model;
+  }
+
+  // --- Private Helper for Request Execution and Error Handling ---
+
+  /**
+   * Executes a PocketBase SDK request function and handles errors consistently.
+   * @private
+   * @param {Promise<T>} requestPromise - The promise returned by a PocketBase SDK method.
+   * @returns {Promise<T>} The result of the successful request.
+   * @throws {Error} A formatted error if the request fails.
+   */
+  async _request(requestPromise) {
     try {
-      // Use getFullList for simplicity if pagination isn't immediately needed,
-      // or use getList for paginated results. Let's use getFullList for now.
-      // Adjust batch size as needed.
-      const records = await this.pb.collection(collection).getFullList(options);
-      return records;
+      return await requestPromise;
     } catch (error) {
-      console.error(
-        `Failed to get list from collection "${collection}":`,
-        error
-      );
-      // Re-throw the error so the caller can handle it appropriately
+      // Log the raw error for detailed debugging
+      console.error("PocketBase request error:", error);
+      // Throw a potentially more user-friendly/standardized error
       throw this._handlePocketBaseError(error);
     }
+  }
+
+  /**
+   * Formats PocketBase errors into a standard Error object.
+   * @private
+   * @param {any} error - The original error object from PocketBase SDK.
+   * @returns {Error} A formatted error object.
+   */
+  _handlePocketBaseError(error) {
+    // PocketBase ClientResponseError provides more details
+    if (
+      error &&
+      typeof error === "object" &&
+      error.status &&
+      error.data?.message
+    ) {
+      // Use the message from the PB response data if available
+      return new Error(
+        `PocketBase Error (${error.status}): ${error.data.message}`
+      );
+    }
+    if (error instanceof Error) {
+      // It might be a network error or other standard error
+      return error;
+    }
+    // Fallback for unknown errors
+    return new Error("An unknown PocketBase error occurred.");
+  }
+
+  // --- CRUD Operations ---
+
+  /**
+   * Retrieves a list of all records matching the options.
+   * Consider using getPaginatedList for large collections.
+   * @param {string} collection - Name of the collection.
+   * @param {import("pocketbase").RecordListOptions} [options] - PocketBase JS SDK options (filter, sort, expand, etc.).
+   * @returns {Promise<Array<import("pocketbase").Record>>} List of records.
+   */
+  getList(collection, options = {}) {
+    return this._request(this.pb.collection(collection).getFullList(options));
+  }
+
+  /**
+   * Retrieves a paginated list of records.
+   * @param {string} collection - Name of the collection.
+   * @param {number} [page=1] - Page number to fetch.
+   * @param {number} [perPage=30] - Number of records per page.
+   * @param {import("pocketbase").RecordListOptions} [options] - PocketBase JS SDK options (filter, sort, expand, etc.).
+   * @returns {Promise<import("pocketbase").ListResult<import("pocketbase").Record>>} Paginated list result.
+   */
+  getPaginatedList(collection, page = 1, perPage = 30, options = {}) {
+    return this._request(
+      this.pb.collection(collection).getList(page, perPage, options)
+    );
   }
 
   /**
    * Retrieves a single record by its ID.
    * @param {string} collection - Name of the collection.
    * @param {string} id - The ID of the record.
-   * @param {object} [options] - PocketBase JS SDK options (e.g., expand).
-   * @returns {Promise<object>} The record.
-   * @throws {Error} If the API request fails or record not found.
+   * @param {import("pocketbase").RecordOptions} [options] - PocketBase JS SDK options (e.g., expand).
+   * @returns {Promise<import("pocketbase").Record>} The record.
    */
-  async getOne(collection, id, options = {}) {
-    try {
-      const record = await this.pb.collection(collection).getOne(id, options);
-      return record;
-    } catch (error) {
-      console.error(
-        `Failed to get record "${id}" from collection "${collection}":`,
-        error
-      );
-      throw this._handlePocketBaseError(error);
-    }
+  getOne(collection, id, options = {}) {
+    return this._request(this.pb.collection(collection).getOne(id, options));
   }
 
   /**
    * Creates a new record.
    * @param {string} collection - Name of the collection.
    * @param {object} data - Data for the new record.
-   * @param {object} [options] - PocketBase JS SDK options.
-   * @returns {Promise<object>} The newly created record.
-   * @throws {Error} If the API request fails.
+   * @param {import("pocketbase").RecordOptions} [options] - PocketBase JS SDK options.
+   * @returns {Promise<import("pocketbase").Record>} The newly created record.
    */
-  async create(collection, data, options = {}) {
-    try {
-      const record = await this.pb.collection(collection).create(data, options);
-      return record;
-    } catch (error) {
-      console.error(
-        `Failed to create record in collection "${collection}":`,
-        error
-      );
-      throw this._handlePocketBaseError(error);
-    }
+  create(collection, data, options = {}) {
+    return this._request(this.pb.collection(collection).create(data, options));
   }
 
   /**
@@ -108,23 +154,13 @@ class PocketBaseService {
    * @param {string} collection - Name of the collection.
    * @param {string} id - The ID of the record to update.
    * @param {object} data - Data to update.
-   * @param {object} [options] - PocketBase JS SDK options.
-   * @returns {Promise<object>} The updated record.
-   * @throws {Error} If the API request fails.
+   * @param {import("pocketbase").RecordOptions} [options] - PocketBase JS SDK options.
+   * @returns {Promise<import("pocketbase").Record>} The updated record.
    */
-  async update(collection, id, data, options = {}) {
-    try {
-      const record = await this.pb
-        .collection(collection)
-        .update(id, data, options);
-      return record;
-    } catch (error) {
-      console.error(
-        `Failed to update record "${id}" in collection "${collection}":`,
-        error
-      );
-      throw this._handlePocketBaseError(error);
-    }
+  update(collection, id, data, options = {}) {
+    return this._request(
+      this.pb.collection(collection).update(id, data, options)
+    );
   }
 
   /**
@@ -132,62 +168,41 @@ class PocketBaseService {
    * @param {string} collection - Name of the collection.
    * @param {string} id - The ID of the record to delete.
    * @returns {Promise<boolean>} True if deletion was successful.
-   * @throws {Error} If the API request fails.
    */
   async delete(collection, id) {
-    try {
-      await this.pb.collection(collection).delete(id);
-      return true;
-    } catch (error) {
-      console.error(
-        `Failed to delete record "${id}" from collection "${collection}":`,
-        error
-      );
-      throw this._handlePocketBaseError(error);
-    }
+    await this._request(this.pb.collection(collection).delete(id));
+    return true; // PocketBase delete resolves with no content on success
   }
+
+  // --- Authentication ---
 
   /**
    * Authenticates an admin user.
    * @param {string} email
    * @param {string} password
-   * @returns {Promise<object>} Admin record.
-   * @throws {Error} If authentication fails.
+   * @returns {Promise<import("pocketbase").Admin>} Admin record.
    */
   async authAdmin(email, password) {
-    try {
-      const authData = await this.pb
-        .collection("admins")
-        .authWithPassword(email, password);
-      // AuthStore is automatically updated by the SDK
-      console.log("Admin authenticated:", authData.record);
-      return authData.record;
-    } catch (error) {
-      console.error("Admin authentication failed:", error);
-      throw this._handlePocketBaseError(error);
-    }
+    const authData = await this._request(
+      this.pb.collection("admins").authWithPassword(email, password)
+    );
+    console.log("Admin authenticated:", authData.record);
+    return authData.record; // Return the admin record model
   }
 
   /**
    * Authenticates a regular user.
    * @param {string} email
    * @param {string} password
-   * @param {object} [options] - PocketBase JS SDK options (e.g., expand).
-   * @returns {Promise<object>} User record.
-   * @throws {Error} If authentication fails.
+   * @param {import("pocketbase").RecordOptions} [options] - PocketBase JS SDK options (e.g., expand).
+   * @returns {Promise<import("pocketbase").Record>} User record.
    */
   async authUser(email, password, options = {}) {
-    try {
-      const authData = await this.pb
-        .collection("users")
-        .authWithPassword(email, password, options);
-      // AuthStore is automatically updated by the SDK
-      console.log("User authenticated:", authData.record);
-      return authData.record;
-    } catch (error) {
-      console.error("User authentication failed:", error);
-      throw this._handlePocketBaseError(error);
-    }
+    const authData = await this._request(
+      this.pb.collection("users").authWithPassword(email, password, options)
+    );
+    console.log("User authenticated:", authData.record);
+    return authData.record; // Return the user record model
   }
 
   /**
@@ -195,31 +210,17 @@ class PocketBaseService {
    */
   logout() {
     this.pb.authStore.clear();
-    // Consider redirecting or dispatching an event in the calling code, not here.
     console.log("User logged out.");
-  }
-
-  /**
-   * Handles PocketBase errors, potentially formatting them.
-   * @param {any} error - The original error object.
-   * @returns {Error} A potentially formatted error.
-   */
-  _handlePocketBaseError(error) {
-    // PocketBase errors often have a `response` property with details
-    if (error && error.response && error.response.message) {
-      return new Error(
-        `PocketBase Error: ${error.message} (Status: ${error.status}) - ${error.response.message}`
-      );
-    }
-    if (error instanceof Error) {
-      return error; // Re-throw standard errors
-    }
-    return new Error("An unknown PocketBase error occurred.");
+    // Consider dispatching 'authChange' event or handling redirect in UI code
   }
 }
 
-// Create a singleton instance
+// --- Singleton Instance ---
+// Create and export a single instance of the service
 const DbService = new PocketBaseService(pb);
 
-// Export the singleton instance
+// Export the singleton instance for use in other modules
 export { DbService };
+
+// Optional: Export the class itself if needed for testing or extension
+// export { PocketBaseService };

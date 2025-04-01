@@ -1,151 +1,129 @@
-// /public/js/pages/login.js
+// /public/js/pages/login_alpine.js
 
 import { DbService } from "/public/js/pb.js";
 
-// --- Wait for DOM Ready ---
-document.addEventListener("DOMContentLoaded", () => {
-  // --- Read Page Data ---
-  let pageData = {};
-  try {
-    const dataElement = document.getElementById("login-page-data");
-    if (!dataElement) throw new Error("Login page data script tag not found.");
-    pageData = JSON.parse(dataElement.textContent);
-    console.log("Login page data loaded:", pageData); // Debug log
-  } catch (error) {
-    console.error("Failed to read or parse page data:", error);
-    showMessage(
-      "Error loading page configuration. Login may not work correctly."
-    );
-    // Disable form if config fails
-    loginForm?.querySelectorAll("input, button").forEach((el) => {
-      el.disabled = true;
-    });
-    return; // Stop execution if data is missing
-  }
+document.addEventListener("alpine:init", () => {
+  Alpine.data("loginForm", () => ({
+    // --- State Properties ---
+    userType: null, // Will be loaded from JSON script
+    email: "",
+    password: "",
+    isLoading: false,
+    message: "",
+    isError: true, // Default message type to error
+    initError: "", // Specific error during initialization
 
-  // --- DOM Elements ---
-  const loginForm = document.getElementById("loginForm");
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
-  const errorMessageDiv = document.getElementById("error-message");
-  const submitButton = document.getElementById("login-submit-btn");
-  const submitButtonSpinner = submitButton?.querySelector(".spinner-border");
-  const submitButtonText = submitButton?.querySelector(
-    "span:not(.spinner-border)"
-  );
-
-  // --- Helper Functions (showMessage, hideMessage, showLoading - keep as before) ---
-  function showLoading(isLoading) {
-    if (!submitButton || !submitButtonSpinner || !submitButtonText) return;
-    if (isLoading) {
-      submitButton.disabled = true;
-      submitButtonSpinner.classList.remove("d-none");
-      submitButtonText.textContent = "Logging in...";
-    } else {
-      submitButton.disabled = false;
-      submitButtonSpinner.classList.add("d-none");
-      submitButtonText.textContent = "Login";
-    }
-  }
-
-  function showMessage(message, isError = true) {
-    if (!errorMessageDiv) return;
-    errorMessageDiv.textContent = message;
-    errorMessageDiv.classList.remove("d-none", "alert-success", "alert-danger");
-    errorMessageDiv.classList.add(isError ? "alert-danger" : "alert-success");
-  }
-
-  function hideMessage() {
-    if (!errorMessageDiv) return;
-    errorMessageDiv.classList.add("d-none");
-    errorMessageDiv.textContent = "";
-  }
-
-  // --- Event Listener ---
-  loginForm?.addEventListener("submit", async (event) => {
-    // --- CRITICAL: Prevent default FIRST ---
-    event.preventDefault();
-    console.log("Form submission intercepted."); // Debug log
-
-    hideMessage(); // Clear previous messages
-
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-    const userType = pageData.userType;
-
-    if (!email || !password) {
-      showMessage("Email and password are required.");
-      return;
-    }
-    if (!userType) {
-      showMessage("User type configuration error.");
-      console.error("User type missing from pageData:", pageData); // Debug log
-      return;
-    }
-
-    showLoading(true);
-    console.log(`Attempting login for ${userType}...`); // Debug log
-
-    try {
-      let authRecord;
-      let redirectUrl;
-
-      if (userType === "admin") {
-        authRecord = await DbService.authAdmin(email, password);
-        redirectUrl = `/admin-dashboard`; // Adjust as needed
-        console.log("Admin login successful:", authRecord); // Debug log
-      } else if (userType === "user") {
-        authRecord = await DbService.authUser(email, password, {
-          expand: "company", // Ensure your PocketBase rules allow expanding 'company' for users
-        });
-        console.log("User login successful (with expand):", authRecord); // Debug log
-
-        // --- Robust check for company ID ---
-        const company = authRecord?.expand?.company?.[0]; // Get the first company object
-        if (!company || !company.id) {
-          console.warn(
-            "User logged in, but company info missing, not expanded, or has no ID.",
-            authRecord.expand // Log the expand object for inspection
-          );
-          // Option 1: Show error and stop
-          // throw new Error("Could not determine your company dashboard.");
-          // Option 2: Redirect to a generic dashboard
-          redirectUrl = "/dashboard"; // Fallback dashboard
-          console.log("Using fallback redirect URL:", redirectUrl);
-        } else {
-          redirectUrl = `/dashboard/${company.id}`; // Construct the specific URL
-          console.log("Constructed redirect URL:", redirectUrl);
+    // --- Initialization Method ---
+    init() {
+      console.log("Alpine component initializing...");
+      try {
+        const dataElement = document.getElementById("login-page-data");
+        if (!dataElement)
+          throw new Error("Login page data script tag not found.");
+        const pageData = JSON.parse(dataElement.textContent);
+        if (!pageData || !pageData.userType) {
+          throw new Error("User type missing or invalid in page data.");
         }
-      } else {
-        throw new Error(`Invalid user type: ${userType}`);
+        this.userType = pageData.userType;
+        console.log("Login page data loaded:", pageData);
+
+        // Use $nextTick to ensure the element is rendered before focusing
+        this.$nextTick(() => {
+          // Use the focus plugin via $focus global magic property
+          this.$focus.focus(this.$refs.emailInput);
+          console.log("Initial focus set on email input.");
+        });
+      } catch (error) {
+        console.error("Failed to initialize login form:", error);
+        this.initError = "Error loading page configuration. Login is disabled.";
+        // Keep isLoading false, but initError will disable the form
+      }
+    },
+
+    // --- Form Submission Handler ---
+    async handleSubmit() {
+      // Prevent submission if already loading or init failed
+      if (this.isLoading || this.initError) return;
+
+      // Clear previous messages
+      this.message = "";
+      this.isError = true;
+
+      // Basic client-side validation (though HTML5 'required' helps)
+      if (!this.email || !this.password) {
+        this.message = "Email and password are required.";
+        return;
+      }
+      if (!this.userType) {
+        // Should be caught by init, but double-check
+        this.message = "User type configuration error.";
+        console.error("User type missing during submit:", this.userType);
+        return;
       }
 
-      showMessage("Login successful! Redirecting...", false);
-      console.log("Redirecting in 800ms to:", redirectUrl); // Debug log
+      this.isLoading = true;
+      console.log(`Attempting login for ${this.userType}...`);
 
-      // Redirect after a short delay
-      setTimeout(() => {
-        if (redirectUrl) {
-          window.location.href = redirectUrl;
+      try {
+        let authRecord;
+        let redirectUrl;
+
+        if (this.userType === "admin") {
+          authRecord = await DbService.authAdmin(this.email, this.password);
+          redirectUrl = `/admin-dashboard`; // Adjust as needed
+          console.log("Admin login successful:", authRecord);
+        } else if (this.userType === "user") {
+          authRecord = await DbService.authUser(this.email, this.password, {
+            expand: "company", // Ensure PocketBase rules allow this
+          });
+          console.log("User login successful (with expand):", authRecord);
+
+          // Robust check for company ID
+          const company = authRecord?.expand?.company?.[0];
+          if (!company || !company.id) {
+            console.warn(
+              "User logged in, but company info missing or invalid.",
+              authRecord.expand
+            );
+            // Option 1: Show error (more explicit)
+            // throw new Error("Could not determine your company dashboard.");
+            // Option 2: Redirect to a generic dashboard (current choice)
+            redirectUrl = "/dashboard"; // Fallback dashboard
+            console.log("Using fallback redirect URL:", redirectUrl);
+          } else {
+            redirectUrl = `/dashboard/${company.id}`;
+            console.log("Constructed redirect URL:", redirectUrl);
+          }
         } else {
-          // This should ideally not happen if logic above is correct
-          console.error("Redirect URL was not set!");
-          showMessage(
-            "Login succeeded but redirect failed. Please contact support."
-          );
-          showLoading(false); // Allow retry if redirect fails
+          throw new Error(`Invalid user type: ${this.userType}`);
         }
-      }, 800);
-    } catch (error) {
-      console.error("Login failed:", error);
-      // Use the error message from the DbService exception or a generic one
-      const displayError = error.message || "An unknown login error occurred.";
-      showMessage(displayError);
-      showLoading(false); // Re-enable button on failure
-    }
-  });
 
-  // Add initial focus to email field
-  emailInput?.focus();
-  console.log("Login page script initialized."); // Debug log
-}); // End DOMContentLoaded
+        this.isError = false; // Success message
+        this.message = "Login successful! Redirecting...";
+        console.log("Redirecting in 800ms to:", redirectUrl);
+
+        // Redirect after a short delay
+        setTimeout(() => {
+          if (redirectUrl) {
+            window.location.href = redirectUrl;
+          } else {
+            console.error("Redirect URL was not set!");
+            this.message =
+              "Login succeeded but redirect failed. Please contact support.";
+            this.isError = true; // It's an error state now
+            this.isLoading = false; // Allow retry if redirect fails
+          }
+        }, 800);
+
+        // Note: Don't set isLoading = false here if redirecting,
+        // otherwise the button might flicker back to enabled state briefly.
+      } catch (error) {
+        console.error("Login failed:", error);
+        // Use the error message from the DbService/PocketBase or a generic one
+        this.message = error?.message || "An unknown login error occurred.";
+        this.isError = true;
+        this.isLoading = false; // Re-enable button on failure
+      }
+    },
+  }));
+});
