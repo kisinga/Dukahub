@@ -13,23 +13,12 @@ type LoginPageData struct {
 var loginConfig = models.LayoutConfig{
 	Title: "Dukahub Login",
 	JS: templ.Raw(`
-		<script type="module" src="/public/js/pages/login-init.js"></script>
+		<script type="module" src="/public/js/pages/login.js"></script>
 		`),
 	CSS: templ.Raw(`<link rel="stylesheet" href="/public/styles/login.css"/>`),
 }
 
 templ Login(userType models.LoginUserType) {
-	<style>
-    /* Minimal internal CSS for hover effects and transitions */
-    .btn-login:hover {
-      transform: scale(1.03);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-    }
-
-    .card, .btn, .form-control {
-      transition: all 0.3s ease;
-    }
-  </style>
 	@layouts.BaseLayout(loginConfig) {
 		<div class="login-background">
 			<div class="container">

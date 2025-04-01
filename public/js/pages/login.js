@@ -1,4 +1,4 @@
-// /public/js/pages/login-init.js
+// /public/js/pages/login.js
 
 import { DbService } from "/public/js/pb.js";
 
