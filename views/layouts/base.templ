@@ -26,7 +26,6 @@ templ BaseLayout(config models.LayoutConfig) {
 			<main class="max-w-screen-md m-auto">
 				{ children... }
 			</main>
-			<script src="/public/js/main.js"></script>
 			if config.JS != nil {
 				@config.JS
 			}
