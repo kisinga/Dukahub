@@ -20,18 +20,22 @@ function newSaleComponentLogic() {
       this.initialized = true;
       console.log("Initializing NewSale Alpine component...");
       this.loadPageData(); // Loads companyId and modelInfo
+      // Get store references AFTER they are registered in alpine:init
+      const scannerStore = Alpine.store("scanner");
+      const modalStore = Alpine.store("modal");
 
       // Initialize stores that need DOM elements or initial data
-      // Stores are assumed to be registered by alpine:init before this runs
-      Alpine.store("scanner")?.initScanner(
+      // Use optional chaining just in case stores aren't ready (though they should be)
+      scannerStore?.initScanner(
         this.modelInfo, // Pass the whole modelInfo object
         this.$refs.cameraView
       );
-      Alpine.store("modal")?.initModal(this.$refs.scanModal);
+      modalStore?.initModal(this.$refs.scanModal);
 
       if (!this.companyId) {
         console.warn("Company ID missing.");
       }
+      this.startScannerOnMobile();
     },
 
     loadPageData() {
@@ -51,7 +55,45 @@ function newSaleComponentLogic() {
         this.modelInfo = null;
       }
     },
+    startScannerOnMobile() {
+      const isMobile = navigator.maxTouchPoints > 0; // Detect touch capability
+      console.log(
+        `Device check: isMobile = ${isMobile} (maxTouchPoints: ${navigator.maxTouchPoints})`
+      );
 
+      if (isMobile) {
+        const scannerStore = Alpine.store("scanner");
+        // Check if scanner is configured and not already starting/running/in error
+        if (
+          scannerStore?.isConfigured &&
+          !scannerStore.isScanning &&
+          scannerStore.status !== "error"
+        ) {
+          console.log(
+            "Mobile device detected, attempting to auto-start scanner..."
+          );
+          // Use a small timeout to ensure the UI has settled after init
+          setTimeout(() => {
+            // Re-check state before starting, in case user clicked manually
+            if (
+              scannerStore.isConfigured &&
+              !scannerStore.isScanning &&
+              scannerStore.status !== "error"
+            ) {
+              scannerStore.start();
+            }
+          }, 100); // 100ms delay, adjust if needed
+        } else if (scannerStore && !scannerStore.isConfigured) {
+          console.log("Mobile device detected, but scanner is not configured.");
+        } else {
+          console.log(
+            "Mobile device detected, but scanner is already active or in error state."
+          );
+        }
+      } else {
+        console.log("Desktop device detected, scanner requires manual start.");
+      }
+    },
     // --- Search Methods ---
     async searchProducts() {
       if (!this.companyId || this.searchTerm.trim().length < 2) {
