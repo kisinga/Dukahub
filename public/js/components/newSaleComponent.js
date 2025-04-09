@@ -106,7 +106,7 @@ function newSaleComponentLogic() {
       try {
         const term = this.searchTerm.trim().replace(/'/g, "''");
         // --- Corrected Filter with Company ID ---
-        const filter = `name ~ '${term}' || barcode ~ '${term}' && company = '${this.companyId}'`;
+        const filter = `(name ~ '${term}' || barcode ~ '${term}') && company = '${this.companyId}'`;
         // --- End Correction ---
         const products = await DbService.getList("products", {
           filter: filter,
