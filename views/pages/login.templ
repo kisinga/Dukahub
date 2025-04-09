@@ -12,10 +12,14 @@ type LoginPageData struct {
 
 var loginConfig = models.LayoutConfig{
 	Title: "Dukahub Login",
-	JS: templ.Raw(`
+	JS: []templ.Component{
+		templ.Raw(`
 		<script type="module" src="/public/js/pages/login.js"></script>
 		`),
-	CSS: templ.Raw(`<link rel="stylesheet" href="/public/styles/login.css"/>`),
+	},
+	CSS: []templ.Component{
+		templ.Raw(`<link rel="stylesheet" href="/public/styles/login.css"/>`),
+	},
 }
 
 templ Login(userType models.LoginUserType) {

@@ -18,7 +18,9 @@ templ BaseLayout(config models.LayoutConfig) {
 			<title>{ config.Title }</title>
 			<link rel="stylesheet" href="/public/styles/main.css"/>
 			if config.CSS != nil {
-				@config.CSS
+				for _, styleComp := range config.CSS {
+					@styleComp
+				}
 			}
 		</head>
 		<body>
@@ -26,7 +28,9 @@ templ BaseLayout(config models.LayoutConfig) {
 				{ children... }
 			</div>
 			if config.JS != nil {
-				@config.JS
+				for _, scriptComp := range config.JS {
+					@scriptComp
+				}
 			}
 			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 		</body>

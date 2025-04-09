@@ -7,8 +7,12 @@ import (
 
 var config = models.LayoutConfig{
 	Title: "Dashboard",
-	JS:    templ.Raw(`<script src="/public/js/admin-dashboard.js"></script>`),
-	CSS:   templ.Raw(`<link rel="stylesheet" href="/public/styles/admin-dashboard.css"/>`),
+	JS: []templ.Component{
+		templ.Raw(`<script src="/public/js/admin-dashboard.js"></script>`),
+	},
+	CSS: []templ.Component{
+		templ.Raw(`<link rel="stylesheet" href="/public/styles/admin-dashboard.css"/>`),
+	},
 }
 
 templ Home(admin *models.Admins) {

@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"github.com/kisinga/dukahub/models"
+	"github.com/kisinga/dukahub/views/components"
 	"github.com/kisinga/dukahub/views/layouts"
 )
 
@@ -14,29 +15,23 @@ type NewSalePageData struct {
 // Update JS includes for Alpine
 var sellConfig = models.LayoutConfig{
 	Title: "New Sale",
-	JS: templ.Raw(`
-	
-	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.3/dist/teachablemachine-image.min.js"></script>
-
-	<script type="module" src="/public/js/pages/newSale.js"></script>
-	`),
-	CSS: BaseCSS,
+	JS: []templ.Component{
+		templ.Raw(`<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>`),
+		templ.Raw(`<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.3/dist/teachablemachine-image.min.js"></script>`),
+		templ.Raw(`<script type="module" src="/public/js/pages/newSale.js"></script>`),
+	},
+	CSS: append(
+		BaseCSS,
+		templ.Raw(`<link rel="stylesheet" href="/public/styles/components/product_confirm.css">`),
+	),
 }
 
 templ Newsale(data *models.DashboardData) {
 	@layouts.BaseLayout(sellConfig) {
 		@layouts.DashboardLayout(data.User, data.Activecompany) {
 			// Main Alpine component container
-			<div x-data="newSale()" class="container-fluid mt-3 mb-5">
-				// Header
-				<div class="row mb-3">
-					<div class="col-12">
-						<h2>New Sale</h2>
-						<p class="text-muted">Scan products or enter manually</p>
-					</div>
-				</div>
-				<div class="container-fluid mt-4">
+			<div x-data="newSale()">
+				<div class="container-fluid mt-2">
 					<div class="row g-4">
 						// --- Left Column: Scanner/Search ---
 						<div class="col-lg-5 col-md-6">
@@ -116,7 +111,6 @@ templ Newsale(data *models.DashboardData) {
 												</template>
 											</ul>
 										</div>
-										<div class="form-text">Search or scan to add products.</div>
 									</div>
 								</div>
 								// --- Middle Section: Camera View ---
@@ -152,7 +146,8 @@ templ Newsale(data *models.DashboardData) {
 						// --- Right Column: Sales Table ---
 						<div class="col-lg-7 col-md-6">
 							<div class="table-card card border-0 shadow-sm">
-								<div class="card-header bg-light border-0 d-flex justify-content-between align-items-center p-3 flex-wrap">
+								<div class="card-header ...">
+									// Header with item count remains same
 									<h5 class="mb-0 me-3">Current Sale</h5>
 									<span class="badge bg-primary rounded-pill fs-6">
 										Items: <span x-text="$store.sale.itemCount">0</span>
@@ -163,44 +158,44 @@ templ Newsale(data *models.DashboardData) {
 										<table class="table table-hover mb-0 align-middle">
 											<thead class="table-light sticky-top">
 												<tr>
-													<th style="width: 35%;">Product</th>
+													<th style="width: 35%;">Product / SKU</th> // Updated Header
 													<th class="text-end" style="width: 15%;">Unit Price</th>
 													<th class="text-center" style="width: 15%;">Quantity</th>
-													<th class="text-end" style="width: 20%;">Total</th>
-													<th class="text-center" style="width: 15%;">Actions</th>
+													<th class="text-end" style="width: 15%;">Total</th> // Total per line (excl. tax)
+													<th class="text-center" style="width: 5%;"></th> // Actions column width adjusted
 												</tr>
 											</thead>
 											<tbody>
 												<template x-if="$store.sale.items.length === 0">
-													<tr class="text-center text-muted">
-														<td colspan="5" class="py-5">
-															<i class="bi bi-cart-x fs-1"></i>
-															<p class="mt-2 mb-0">No items added yet</p>
-														</td>
-													</tr>
+													// ... (No items row) ...
 												</template>
-												<template x-for="item in $store.sale.items" :key="item.product.id + '-' + item.price">
+												<template x-for="item in $store.sale.items" :key="item.product.id + '-' + (item.product.selectedSkuId || '') + '-' + item.price">
 													<tr>
-														<td x-text="item.product.name || 'N/A'"></td>
+														<td>
+															<span x-text="item.product.name || 'N/A'"></span>
+															<template x-if="item.product.selectedSkuName">
+																<span class="text-muted small d-block" x-text="'SKU: ' + item.product.selectedSkuName"></span>
+															</template>
+														</td>
 														<td class="text-end" x-text="item.price.toFixed(2)"></td>
 														<td class="text-center">
 															<input
 																type="number"
 																class="form-control form-control-sm quantity-input text-center mx-auto"
 																:value="item.quantity"
-																@change="$store.sale.updateItemQuantity(item.product.id, $event.target.value)"
+																@change="$store.sale.updateItemQuantity(item.product.id, $event.target.value, item.product.selectedSkuId, item.price)"
 																min="1"
 																step="1"
-																:data-product-id="item.product.id"
 																style="max-width: 80px;"
 																:aria-label="'Quantity for ' + item.product.name"
 															/>
 														</td>
+														// --- Line Total (Excluding Tax) ---
 														<td class="text-end fw-medium" x-text="(item.quantity * item.price).toFixed(2)"></td>
 														<td class="text-center">
 															<button
 																class="btn btn-sm btn-outline-danger remove-item-btn border-0"
-																@click="$store.sale.removeItem(item.product.id)"
+																@click="$store.sale.removeItem(item.product.id, item.product.selectedSkuId, item.price)"
 																:title="'Remove ' + item.product.name"
 															>
 																<i class="bi bi-trash"></i>
@@ -220,7 +215,8 @@ templ Newsale(data *models.DashboardData) {
 											<span x-text="$store.sale.subtotal.toFixed(2)">0.00</span>
 										</div>
 										<div class="d-flex justify-content-between mb-1">
-											<span>Tax (<span x-text="($store.sale.taxRate * 100)"></span>%)</span>
+											// --- Label changed to reflect total tax ---
+											<span>Total Tax</span>
 											<span x-text="$store.sale.tax.toFixed(2)">0.00</span>
 										</div>
 										<hr class="my-2"/>
@@ -249,144 +245,7 @@ templ Newsale(data *models.DashboardData) {
 					</div>
 				</div>
 				// --- Scan Modal ---
-				<div
-					class="modal fade"
-					x-ref="scanModal"
-					tabindex="-1"
-					aria-labelledby="scanModalLabel"
-					aria-hidden="true"
-					@hidden.bs.modal="$store.modal.reset()"
-				>
-					<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-						<div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
-							<div
-								class="modal-header border-bottom-0 px-4 pt-4 pb-2"
-								style="background: linear-gradient(to right, #f8f9fa, #edf1f7);"
-							>
-								<h5 class="modal-title fw-bold fs-4" id="scanModalLabel">
-									<i class="bi bi-box-seam me-2 text-primary"></i>
-									<span x-text="$store.modal.product ? 'Product Details' : 'Loading...'"></span>
-								</h5>
-								<button type="button" class="btn-close p-3" data-bs-dismiss="modal" aria-label="Close"></button>
-							</div>
-							// Only render body if product exists in modal store
-							<template x-if="$store.modal.product">
-								<div class="modal-body p-4">
-									<div class="mb-4 pb-3 border-bottom">
-										<div class="d-flex align-items-center mb-2">
-											<div class="bg-light rounded-circle p-2 me-3">
-												<i class="bi bi-tags text-primary fs-5"></i>
-											</div>
-											<div>
-												<h6 class="mb-1 fs-5 fw-semibold" x-text="$store.modal.product.name"></h6>
-												<p class="text-muted small mb-0">
-													ID: <span class="fw-medium" x-text="$store.modal.product.id"></span>
-												</p>
-											</div>
-										</div>
-									</div>
-									// SKU Section
-									<div x-show="$store.modal.hasVariations" class="mb-4" style="display: none;">
-										<label for="modal-sku-select" class="form-label fw-medium mb-2">
-											<i class="bi bi-diagram-3 me-2 text-secondary"></i>Select Variation
-										</label>
-										<select
-											class="form-select form-select-lg border-0 bg-light shadow-sm"
-											x-model="$store.modal.selectedSkuId"
-											@change="$store.modal.updatePriceFromSku($event.target.value)"
-											aria-label="Select product variation or SKU"
-										>
-											<option disabled value="">Choose variation...</option>
-											<template x-for="sku in $store.modal.product.variants || $store.modal.product.skus" :key="sku.id">
-												<option :value="sku.id" x-text="`${sku.name || sku.id} (${($store.modal.getSkuPrice(sku.id)).toFixed(2)})`"></option>
-											</template>
-										</select>
-									</div>
-									// Quantity and Price
-									<div class="row g-4 mb-4">
-										<div class="col-12 col-sm-6">
-											<div class="p-3 rounded-4 bg-light shadow-sm h-100">
-												<label class="form-label fw-medium mb-2">
-													<i class="bi bi-123 me-2 text-secondary"></i>Quantity
-												</label>
-												<div class="input-group input-group-lg">
-													<button class="btn btn-outline-secondary border-0" type="button" @click="$store.modal.adjustQuantity(-1)">
-														<i class="bi bi-dash-lg"></i>
-													</button>
-													<input
-														type="number"
-														class="form-control text-center border-0 bg-white"
-														x-model.number="$store.modal.quantity"
-														min="1"
-														step="1"
-														required
-														aria-label="Quantity"
-													/>
-													<button class="btn btn-outline-secondary border-0" type="button" @click="$store.modal.adjustQuantity(1)">
-														<i class="bi bi-plus-lg"></i>
-													</button>
-												</div>
-											</div>
-										</div>
-										<div class="col-12 col-sm-6">
-											<div class="p-3 rounded-4 bg-light shadow-sm h-100">
-												<label class="form-label fw-medium mb-2">
-													<i class="bi bi-tag me-2 text-secondary"></i>Unit Price
-												</label>
-												<div class="input-group input-group-lg">
-													<input
-														type="number"
-														class="form-control border-0 bg-white"
-														x-model.number="$store.modal.price"
-														min="0"
-														step="0.01"
-														required
-														aria-label="Unit Price"
-													/>
-												</div>
-											</div>
-										</div>
-									</div>
-									// Total display section
-									<div class="bg-light p-3 rounded-4 mb-4 text-end">
-										<span class="text-muted">Total:</span>
-										<span class="fs-4 ms-2 fw-bold text-primary" x-text="$store.modal.lineTotal.toFixed(2)">0.00</span>
-									</div>
-									<div x-show="$store.modal.errorMessage" class="text-danger small mt-2 bg-light p-2 rounded-3 d-none" x-text="$store.modal.errorMessage"></div>
-								</div>
-							</template>
-							// Footer
-							<div
-								class="modal-footer flex-column border-top-0 px-4 py-3 gap-2"
-								style="background: linear-gradient(to right, #f8f9fa, #edf1f7);"
-							>
-								<button
-									type="button"
-									class="btn btn-primary btn-lg w-100 py-3 shadow-sm"
-									@click="$store.modal.addItemToSale(false)"
-									:disabled="!$store.modal.isValidToAdd"
-								>
-									<i class="bi bi-cart-plus me-2"></i>Add to Sale
-								</button>
-								<button
-									type="button"
-									class="btn btn-outline-primary btn-lg w-100 py-2"
-									@click="$store.modal.addItemToSale(true)"
-									:disabled="!$store.modal.isValidToAdd || !$store.scanner.isConfigured"
-								>
-									<i class="bi bi-plus-circle me-2"></i>Add & Scan Next
-								</button>
-								<button
-									type="button"
-									class="btn btn-link text-secondary w-100"
-									data-bs-dismiss="modal"
-								>
-									Cancel
-								</button>
-							</div>
-						</div>
-					</div>
-				</div>
+				@components.ProductConfirmModal()
 				// --- Pass Data to JS ---
 				@templ.JSONScript("page-data", NewSalePageData{
 					CompanyID: data.Activecompany.Id,

@@ -332,8 +332,10 @@ const scannerStoreLogic = {
     this.updateStatus("verifying_detection");
     try {
       /* ... copy try/catch block from previous _handleDetection ... */
-      const product = await DbService.getOne("products", detectedLabel);
-      console.log("Product verified:", product.name);
+      const product = await DbService.getOne("products", "v6xkdvb1llq483z", {
+        expand: "skus",
+      });
+      console.log("Product verified:", product);
       Alpine.store("modal").open(product); // Call modal store
     } catch (error) {
       /* ... copy error handling ... */

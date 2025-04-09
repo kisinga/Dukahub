@@ -1,0 +1,22 @@
+/* Add to your main.css or relevant style block */
+.scan-modal-footer .btn {
+  transition: transform 0.15s ease-out; /* Add transition for transform */
+}
+
+/* Scale up slightly on hover when NOT disabled */
+.scan-modal-footer .btn:not(:disabled):hover {
+  transform: scale(1.02);
+}
+
+/* Optional: Add a subtle focus ring */
+.scan-modal-footer .btn:not(:disabled):focus {
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.3);
+}
+
+/* Style for the error message */
+.modal-invalid-feedback {
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 0.875em;
+  color: var(--bs-danger-text-emphasis);
+}

@@ -97,35 +97,44 @@ function newSaleComponentLogic() {
     // --- Search Methods ---
     async searchProducts() {
       if (!this.companyId || this.searchTerm.trim().length < 2) {
-        /* ... clear results ... */ return;
+        this.searchResults = [];
+        this.isSearching = false;
+        return;
       }
       this.isSearching = true;
       this.searchResults = [];
       try {
-        /* ... copy search try/catch block ... */
         const term = this.searchTerm.trim().replace(/'/g, "''");
-        const filter = `(name ~ '${term}' || code ~ '${term}') && company = '${this.companyId}'`;
+        // --- Corrected Filter with Company ID ---
+        const filter = `name ~ '${term}' || barcode ~ '${term}' && company = '${this.companyId}'`;
+        // --- End Correction ---
         const products = await DbService.getList("products", {
-          filter,
+          filter: filter,
           sort: "name",
           perPage: 10,
+          // --- Expand SKUs directly in search results ---
+          expand: "skus",
+          // --- End Expand ---
         });
         this.searchResults =
           products.length === 0
             ? [{ id: "not_found", name: "No products found." }]
             : products;
       } catch (error) {
-        /* ... copy error handling ... */
         console.error("Product search failed:", error);
         this.searchResults = [{ id: "error", name: "Search failed." }];
       } finally {
         this.isSearching = false;
       }
     },
+
     handleSearchResultClick(product) {
-      Alpine.store("sale").addItem(product, 1, product.price ?? 0); // Call sale store
-      this.searchTerm = "";
-      this.searchResults = [];
+      console.log("Selected from search, opening modal:", product);
+      // --- Open Modal instead of adding directly ---
+      Alpine.store("modal").open(product);
+      // --- End Change ---
+      this.searchTerm = ""; // Clear search term
+      this.searchResults = []; // Hide results dropdown
     },
 
     // --- Checkout Method ---

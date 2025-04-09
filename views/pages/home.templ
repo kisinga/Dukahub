@@ -7,8 +7,12 @@ import (
 
 var homeConfig = models.LayoutConfig{
 	Title: "Dukahub",
-	JS:    templ.Raw(`<script src="/public/js/home.js"></script>`),
-	CSS:   templ.Raw(`<link rel="stylesheet" href="/public/styles/home.css"/>`),
+	JS: []templ.Component{
+		templ.Raw(`<script src="/public/js/home.js"></script>`),
+	},
+	CSS: []templ.Component{
+		templ.Raw(`<link rel="stylesheet" href="/public/styles/home.css"/>`),
+	},
 }
 
 templ Home() {
