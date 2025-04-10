@@ -335,6 +335,20 @@ const scannerStoreLogic = {
       const product = await DbService.getOne("products", "v6xkdvb1llq483z", {
         expand: "skus",
       });
+
+      // fetch the inventory details for the found product
+      const inventory = await DbService.getList("inventory", {
+        filter: `product = '${product.id}'`,
+        perPage: 1,
+      });
+
+      // attach the inventory to the product
+      if (inventory.length > 0) {
+        product.inventory = inventory[0]; // Assuming you want the first inventory item
+      } else {
+        product.inventory = null; // No inventory found
+      }
+
       console.log("Product verified:", product);
       Alpine.store("modal").open(product); // Call modal store
     } catch (error) {

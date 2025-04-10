@@ -111,7 +111,7 @@ function newSaleComponentLogic() {
         const products = await DbService.getList("products", {
           filter: filter,
           sort: "name",
-          perPage: 10,
+          perPage: 3,
           // --- Expand SKUs directly in search results ---
           expand: "skus",
           // --- End Expand ---
@@ -120,6 +120,26 @@ function newSaleComponentLogic() {
           products.length === 0
             ? [{ id: "not_found", name: "No products found." }]
             : products;
+
+        // fetch all the inventory details for the found products
+        const inventoryPromises = products.map((product) =>
+          DbService.getList("inventory", {
+            filter: `product = '${product.id}'`,
+            perPage: 1,
+          })
+        );
+        const inventoryResults = await Promise.all(inventoryPromises);
+
+        // each inventory result maps to an sku in the product
+        this.searchResults.forEach((product, index) => {
+          const inventory = inventoryResults[index];
+          if (inventory.length > 0) {
+            product.inventory = inventory; // Assuming you want the first inventory item
+          } else {
+            product.inventory = null; // No inventory found
+          }
+        });
+        console.log("Search results:", this.searchResults);
       } catch (error) {
         console.error("Product search failed:", error);
         this.searchResults = [{ id: "error", name: "Search failed." }];
