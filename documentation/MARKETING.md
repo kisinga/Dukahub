@@ -11,3 +11,12 @@ What feeling do I want to evoke in my customers?
 
 Remember:
 Businesses compete on prices. Brands compete on value. Experience. Emotion.
+
+| Business Type                  | Barcode Fit | Image Fit           | Financial Fit | Priority   |
+| ------------------------------ | ----------- | ------------------- | ------------- | ---------- |
+| **Pharmacies**                 | ✅✅        | ✅ (boxed items)    | ✅✅✅        | ⭐⭐⭐⭐⭐ |
+| **Agrovets**                   | ✅          | ✅ (recognizable)   | ✅✅          | ⭐⭐⭐⭐   |
+| **Mini Marts / Grocery Shops** | ✅✅        | ✅ (repeat items)   | ✅✅          | ⭐⭐⭐⭐   |
+| **Salons / Tailors**           | ❌          | ✅ (static images)  | ✅            | ⭐⭐⭐     |
+| **Mama Mboga**                 | ❌          | ✅✅ (simple items) | ❌            | ⭐⭐       |
+| **Retail Clothing**            | ❌❌        | ❌ (unique items)   | ✅            | ❌         |

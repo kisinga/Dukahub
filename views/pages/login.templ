@@ -12,36 +12,46 @@ type LoginPageData struct {
 
 var loginConfig = models.LayoutConfig{
 	Title: "Dukahub Login",
-	JS: templ.Raw(`
-		<script type="module" src="/public/js/pages/login-init.js"></script>
+	JS: []templ.Component{
+		templ.Raw(`
+		<script type="module" src="/public/js/pages/login.js"></script>
 		`),
-	CSS: templ.Raw(`<link rel="stylesheet" href="/public/styles/login.css"/>`),
+	},
+	CSS: []templ.Component{
+		templ.Raw(`<link rel="stylesheet" href="/public/styles/login.css"/>`),
+	},
 }
 
 templ Login(userType models.LoginUserType) {
-	<style>
-    /* Minimal internal CSS for hover effects and transitions */
-    .btn-login:hover {
-      transform: scale(1.03);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-    }
-
-    .card, .btn, .form-control {
-      transition: all 0.3s ease;
-    }
-  </style>
 	@layouts.BaseLayout(loginConfig) {
 		<div class="login-background">
 			<div class="container">
 				<div class="row justify-content-center">
 					<div class="col-12 col-md-5">
-						<div class="card login-card">
+						<!-- Alpine Component Root -->
+						<div
+							class="card login-card"
+							x-data="loginForm"
+							x-init="init()"
+						>
 							<div class="card-body login-card-body">
 								<div class="text-center mb-4">
 									<div class="login-logo"></div>
 									<h3 class="login-heading">Welcome Back</h3>
 								</div>
-								<form id="loginForm" method="post" novalidate>
+								<!-- Display initialization errors -->
+								<div
+									x-show="initError"
+									x-text="initError"
+									class="alert alert-danger login-error-message"
+								></div>
+								<!-- Login Form with Alpine bindings -->
+								<form
+									method="post"
+									novalidate
+									@submit.prevent="handleSubmit"
+									:disabled="!!initError"
+								>
 									<div class="mb-3">
 										<label for="email" class="form-label login-label">Email address</label>
 										<input
@@ -51,8 +61,11 @@ templ Login(userType models.LoginUserType) {
 											placeholder="Enter email"
 											class="form-control login-input rounded-pill"
 											required
+											x-model="email"
+											x-ref="emailInput"
+											:disabled="isLoading || !!initError"
 										/>
-										<div class="invalid-feedback">Please enter a valid email.</div>
+										<!-- Optional: Add Alpine-based validation feedback if needed -->
 									</div>
 									<div class="mb-3">
 										<label for="password" class="form-label login-label">Password</label>
@@ -63,20 +76,33 @@ templ Login(userType models.LoginUserType) {
 											placeholder="Password"
 											class="form-control login-input rounded-pill"
 											required
+											x-model="password"
+											:disabled="isLoading || !!initError"
 										/>
-										<div class="invalid-feedback">Password is required.</div>
+										<!-- Optional: Add Alpine-based validation feedback if needed -->
 									</div>
 									<div class="d-grid mb-3">
 										<button
 											type="submit"
 											class="btn btn-login rounded-pill text-white"
-											id="login-submit-btn"
+											:disabled="isLoading || !email || !password || !!initError"
 										>
-											<span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-											<span>Login</span>
+											<span
+												class="spinner-border spinner-border-sm"
+												role="status"
+												aria-hidden="true"
+												:class="{ 'd-none': !isLoading }"
+											></span>
+											<span x-text="isLoading ? 'Logging in...' : 'Login'">Login</span>
 										</button>
 									</div>
-									<div id="error-message" class="alert d-none login-error-message"></div>
+									<!-- Error/Success Message Area -->
+									<div
+										x-show="message"
+										class="alert login-error-message"
+										:class="{ 'alert-danger': isError, 'alert-success': !isError }"
+										x-text="message"
+									></div>
 									<div class="text-center">
 										<a href="#" class="login-forgot-link">Forgot password?</a>
 									</div>
@@ -88,6 +114,7 @@ templ Login(userType models.LoginUserType) {
 				</div>
 			</div>
 		</div>
+		<!-- Page Data Script (remains the same) -->
 		@templ.JSONScript("login-page-data", LoginPageData{
 			UserType: userType.String(), // Convert enum/type to string
 		})

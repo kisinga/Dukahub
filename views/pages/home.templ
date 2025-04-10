@@ -7,854 +7,341 @@ import (
 
 var homeConfig = models.LayoutConfig{
 	Title: "Dukahub",
-	JS:    templ.Raw(`<script src="/public/js/home.js"></script>`),
-	CSS:   templ.Raw(`<link rel="stylesheet" href="/public/styles/home.css"/>`),
+	JS: []templ.Component{
+		templ.Raw(`<script type="module" src="/public/js/home.js"></script>`),
+	},
+	CSS: []templ.Component{
+		templ.Raw(`<link rel="stylesheet" href="/public/styles/home.css"/>`),
+	},
 }
 
 templ Home() {
 	@layouts.BaseLayout(homeConfig) {
-		<!-- Navigation Bar -->
-		<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
-			<div class="container">
-				<a class="navbar-brand fw-bold d-flex align-items-center" href="/">
-					<img src="/public/assets/favicon.svg" alt="SimpleStock" height="32" class="me-2"/>
-					<span class="text-primary">SimpleStock</span>
-				</a>
-				<button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-					<span class="navbar-toggler-icon"></span>
-				</button>
-				<div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-					<ul class="navbar-nav me-auto ms-lg-4">
-						<li class="nav-item">
-							<a class="nav-link px-3 position-relative hover-underline" href="#features">Features</a>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link px-3 position-relative hover-underline" href="#how-it-works">How It Works</a>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link px-3 position-relative hover-underline" href="#testimonials">Success Stories</a>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link px-3 position-relative hover-underline" href="#pricing">Pricing</a>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link px-3 position-relative hover-underline" href="#faq">FAQ</a>
-						</li>
-					</ul>
-					<div class="d-flex">
-						<a href="/login" class="btn btn-outline-primary me-2 px-4 rounded-pill hover-lift">Login</a>
-						<a href="/signup" class="btn btn-primary px-4 rounded-pill hover-lift pulsate">Get Started</a>
+		<div x-data>
+			<!-- Navigation Bar -->
+			<!-- Navigation Bar -->
+			<header class="navbar">
+				<div class="container nav-container">
+					<!-- Updated Nav Brand -->
+					<a href="/" class="nav-brand">
+						<img
+							src="/public/assets/favicon.svg"
+							alt="Dukahub Logo"
+							class="logo-image"
+						/>
+						<span class="brand-text">Dukahub</span>
+					</a>
+					<!-- End Updated Nav Brand -->
+					<!-- Mobile Menu Toggle Button -->
+					<button
+						class="mobile-menu-toggle"
+						aria-label="Toggle menu"
+						@click="$dispatch('toggle-menu')"
+						x-data="{ menuOpen: false }"
+						@toggle-menu.window="menuOpen = !menuOpen"
+						:aria-expanded="menuOpen.toString()"
+					>
+						<i :class="menuOpen ? 'fas fa-times' : 'fas fa-bars'"></i>
+					</button>
+					<!-- Navigation Links (Acts as Mobile Menu Container) -->
+					<nav
+						class="nav-links"
+						x-data="{ open: false }"
+						@toggle-menu.window="open = !open"
+						:class="{ 'active': open }"
+						x-cloak
+					>
+						<!-- Regular Links -->
+						<a href="#how-it-works" @click="open = false">How It Works</a>
+						<a href="#features" @click="open = false">Features</a>
+						<a href="#pricing" @click="open = false">Pricing</a>
+						<a href="#faq" @click="open = false">FAQ</a>
+						<!-- Mobile-Only Action Buttons (Inside the nav) -->
+						<div class="nav-actions-mobile">
+							<a href="/login" class="btn btn-outline" @click="open = false">Login</a>
+							<a href="/signup" class="btn btn-primary" @click="open = false">Get Started</a>
+						</div>
+					</nav>
+					<!-- Desktop-Only Action Buttons (Outside the nav) -->
+					<div class="nav-actions-desktop">
+						<a href="/login" class="btn btn-outline">Login</a>
+						<a href="/signup" class="btn btn-primary">Get Started</a>
 					</div>
 				</div>
-			</div>
-		</nav>
-		<!-- Hero Section -->
-		<header class="py-5 position-relative overflow-hidden" style="background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);">
-			<!-- Animated background shapes -->
-			<div class="position-absolute w-100 h-100 top-0 start-0 overflow-hidden">
-				<div class="floating-shape shape-1"></div>
-				<div class="floating-shape shape-2"></div>
-				<div class="floating-shape shape-3"></div>
-			</div>
-			<div class="container py-5 position-relative">
-				<div class="row align-items-center">
-					<div class="col-lg-6 mb-5 mb-lg-0 fade-in-left">
-						<span class="badge bg-primary-subtle text-primary mb-3 px-3 py-2 rounded-pill fw-medium animate-badge">AI-Powered Inventory</span>
-						<h1 class="display-4 fw-bold mb-3">
-							<span class="text-primary">Transform Your Business</span> with Smart Inventory
-						</h1>
-						<p class="lead mb-4 text-secondary">
-							Point, scan, and sell. Use your smartphone to instantly recognize products, track inventory, and boost sales—no manual entry required.
+			</header>
+			<main>
+				<!-- Hero Section -->
+				<section id="hero" class="hero-section">
+					<div class="container hero-content" x-intersect.once="$el.classList.add('is-visible')">
+						<h1 class="hero-title">Digitize Your Shop with AI & Barcodes — Sell Faster, Even Offline.</h1>
+						<p class="subtitle">Dukahub makes inventory and sales simple for Kenyan SMEs. Point, scan, or snap a photo to record sales in seconds.</p>
+						<div class="hero-actions">
+							<a href="/signup?plan=pro&trial=true" class="btn btn-primary btn-large">Start Your 14-Day Free Pro Trial Now <i class="fas fa-arrow-right icon-right"></i></a>
+							<a href="#video-demo" class="btn btn-outline btn-large"><i class="fas fa-play-circle icon-left"></i> Watch Demo</a>
+						</div>
+						<p class="trust-tagline"><i class="fas fa-lock"></i> Secure, <i class="fas fa-check-circle"></i> Simple, and Built for Kenyan SMEs.</p>
+					</div>
+				</section>
+				<!-- About Section (Remains similar) -->
+				<section id="about" class="about-section section-padding">
+					<div class="container text-center" x-intersect.once="$el.classList.add('is-visible')">
+						<h2 class="section-title">Stop Guessing, Start Knowing</h2>
+						<p class="section-description">
+							Tired of manual record-keeping, lost sales data, and stock
+							uncertainty? Dukahub gives Kenyan small businesses like yours a
+							simple, affordable way to track every sale, manage inventory
+							accurately, and gain real-time insights – all from your phone.
 						</p>
-						<div class="d-flex flex-wrap gap-2">
-							<a href="/signup" class="btn btn-primary btn-lg px-4 rounded-pill hover-lift pulsate">Start for Free</a>
-							<a href="#demo" class="btn btn-outline-primary btn-lg px-4 rounded-pill hover-lift d-flex align-items-center">
-								<i class="bi bi-play-circle-fill me-2"></i> Watch Demo
-							</a>
-						</div>
-						<div class="mt-4 pt-2">
-							<div class="d-flex align-items-center">
-								<div class="d-flex">
-									<div class="avatar-stack">
-										<div class="avatar-container-sm bg-white border avatar-1">
-											<img src="/public/assets/avatar1.png" alt="User" class="avatar-img"/>
-										</div>
-										<div class="avatar-container-sm bg-white border avatar-2">
-											<img src="/public/assets/avatar2.png" alt="User" class="avatar-img"/>
-										</div>
-										<div class="avatar-container-sm bg-white border avatar-3">
-											<img src="/public/assets/avatar3.png" alt="User" class="avatar-img"/>
-										</div>
-										<div class="avatar-container-sm bg-white border avatar-4">
-											<img src="/public/assets/avatar4.png" alt="User" class="avatar-img"/>
-										</div>
-									</div>
-									<div class="ms-3">
-										<div class="d-flex align-items-center">
-											<div class="me-2">
-												<div class="d-flex text-warning">
-													<i class="bi bi-star-fill"></i>
-													<i class="bi bi-star-fill"></i>
-													<i class="bi bi-star-fill"></i>
-													<i class="bi bi-star-fill"></i>
-													<i class="bi bi-star-fill"></i>
-												</div>
-											</div>
-											<p class="mb-0 small">
-												<span class="fw-bold text-primary counter-animate">1,500+</span> businesses trust SimpleStock
-											</p>
-										</div>
-									</div>
-								</div>
+					</div>
+				</section>
+				<!-- Problem/Solution Section (Remains similar) -->
+				<section id="problem-solution" class="problem-solution-section section-padding alt-bg">
+					<div class="container">
+						<div class="comparison-grid">
+							<div class="comparison-card before" x-intersect.once="$el.classList.add('is-visible')">
+								<img src="/public/assets/manual_inventory_stress.png" alt="Business owner struggling with manual paper records" class="comparison-image"/>
+								<h3 class="comparison-title">The Old Way: Paper Chaos</h3>
+								<p>Hours spent writing, messy calculations, stock errors, and no clear view of performance.</p>
+							</div>
+							<div class="comparison-card after" x-intersect.once="$el.classList.add('is-visible')">
+								<img src="/public/assets/simplestock_delight.png" alt="Business owner happily using Dukahub on a device" class="comparison-image"/>
+								<h3 class="comparison-title">The Dukahub Way: Digital Clarity</h3>
+								<p>Record sales in seconds, track inventory effortlessly, get instant reports, and manage with confidence.</p>
 							</div>
 						</div>
 					</div>
-					<div class="col-lg-6 fade-in-right">
-						<div class="position-relative hero-device">
-							<img src="/assets/hero-app.png" alt="SimpleStock App" class="img-fluid rounded-4 shadow-lg device-rotate"/>
-							<div class="position-absolute top-0 end-0 translate-middle-y bg-white p-3 rounded-4 shadow-sm feature-card-animate">
-								<div class="d-flex align-items-center">
-									<div class="text-success me-2">
-										<i class="bi bi-check-circle-fill fs-4"></i>
-									</div>
-									<div>
-										<p class="mb-0 fw-medium">AI Product Recognition</p>
-										<p class="mb-0 small text-muted">Instant & accurate</p>
-									</div>
-								</div>
+				</section>
+				<!-- How It Works Section (Remains similar) -->
+				<section id="how-it-works" class="how-it-works-section section-padding">
+					<div class="container">
+						<h2 class="section-title" x-intersect.once="$el.classList.add('is-visible')">Get Started in Minutes</h2>
+						<div class="steps-container">
+							<div class="step" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.1s;">
+								<div class="step-icon"><i class="fas fa-camera"></i></div>
+								<h3>1. Add Products</h3>
+								<p>Scan barcodes or take 5 simple photos of each item/service.</p>
 							</div>
-							<div class="position-absolute bottom-0 start-0 translate-middle-y bg-white p-3 rounded-4 shadow-sm feature-card-animate-delay">
-								<div class="d-flex align-items-center">
-									<div class="text-primary me-2">
-										<i class="bi bi-phone fs-4"></i>
-									</div>
-									<div>
-										<p class="mb-0 fw-medium">Works Offline</p>
-										<p class="mb-0 small text-muted">No constant internet needed</p>
-									</div>
-								</div>
+							<div class="step" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.2s;">
+								<div class="step-icon"><i class="fas fa-robot"></i></div>
+								<h3>2. AI Learns (Optional)</h3>
+								<p>Our system learns to recognize items from photos automatically.</p>
 							</div>
-							<!-- Added notification animation -->
-							<div class="position-absolute top-50 start-50 translate-middle bg-white p-3 rounded-4 shadow-sm notification-animate">
-								<div class="d-flex align-items-center">
-									<div class="text-warning me-2">
-										<i class="bi bi-bell-fill fs-4"></i>
-									</div>
-									<div>
-										<p class="mb-0 fw-medium">Low Stock Alert</p>
-										<p class="mb-0 small text-muted">Milk needs reordering</p>
-									</div>
-								</div>
+							<div class="step" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.3s;">
+								<div class="step-icon"><i class="fas fa-cash-register"></i></div>
+								<h3>3. Sell Easily</h3>
+								<p>Point your phone to scan or recognize items. Record sales quickly, even offline.</p>
 							</div>
 						</div>
 					</div>
-				</div>
-				<!-- Trust badges -->
-				<div class="row mt-5 pt-3 align-items-center text-center fade-in-up">
-					<div class="col-12">
-						<p class="text-uppercase text-secondary small fw-bold mb-4">Trusted by businesses across Africa</p>
-					</div>
-					<div class="col">
-						<img src="/assets/trust-badge-1.svg" alt="Trust badge" class="img-fluid opacity-75 trust-badge" height="40"/>
-					</div>
-					<div class="col">
-						<img src="/assets/trust-badge-2.svg" alt="Trust badge" class="img-fluid opacity-75 trust-badge" height="40"/>
-					</div>
-					<div class="col">
-						<img src="/assets/trust-badge-3.svg" alt="Trust badge" class="img-fluid opacity-75 trust-badge" height="40"/>
-					</div>
-					<div class="col">
-						<img src="/assets/trust-badge-4.svg" alt="Trust badge" class="img-fluid opacity-75 trust-badge" height="40"/>
-					</div>
-					<div class="col">
-						<img src="/assets/trust-badge-5.svg" alt="Trust badge" class="img-fluid opacity-75 trust-badge" height="40"/>
-					</div>
-				</div>
-			</div>
-			<div class="position-absolute bottom-0 end-0 d-none d-lg-block">
-				<svg width="400" height="400" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.05;">
-					<path fill="#0d6efd" d="M41.3,-51.2C54.4,-42.9,66.7,-30.8,72.3,-15.9C77.9,-1,76.8,16.7,68.6,30.1C60.4,43.5,45.2,52.7,29.4,58.9C13.6,65.1,-2.8,68.2,-18.2,64.7C-33.5,61.2,-47.7,51,-58.5,36.9C-69.2,22.7,-76.5,4.6,-73.8,-12.3C-71.1,-29.2,-58.4,-44.9,-43.9,-53.6C-29.5,-62.3,-13.2,-63.9,1,-65.2C15.2,-66.4,28.1,-59.4,41.3,-51.2Z" transform="translate(100 100)"></path>
-				</svg>
-			</div>
-		</header>
-		<!-- Features Section -->
-		<section id="features" class="py-5 bg-white">
-			<div class="container py-5">
-				<div class="text-center mb-5 fade-in-up">
-					<span class="badge bg-primary-subtle text-primary mb-2 px-3 py-2 rounded-pill animate-badge">Features</span>
-					<h2 class="display-5 fw-bold text-primary">Powerful AI in Your Pocket</h2>
-					<p class="lead text-secondary mx-auto" style="max-width: 600px;">
-						Transform your smartphone into a complete business management tool
-					</p>
-				</div>
-				<div class="row g-4">
-					<!-- Feature Card 1 -->
-					<div class="col-md-6 col-lg-4 fade-in-up" data-delay="100">
-						<div class="card h-100 border-0 shadow-sm hover-lift" style="border-radius: 16px; transition: all 0.3s ease;">
-							<div class="card-body p-4">
-								<div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle p-3 rounded-3 mb-3 feature-icon-animate">
-									<i class="bi bi-camera text-primary fs-4"></i>
-								</div>
-								<h5 class="fw-bold">Camera-Based Recognition</h5>
-								<p class="text-secondary">
-									Simply point your phone at products to instantly identify and log them—no barcodes or manual entry needed.
-								</p>
-								<a href="#learn-more" class="text-decoration-none text-primary fw-medium d-flex align-items-center mt-2">
-									Learn more <i class="bi bi-arrow-right ms-2"></i>
-								</a>
-							</div>
-						</div>
-					</div>
-					<!-- Feature Card 2 -->
-					<div class="col-md-6 col-lg-4 fade-in-up" data-delay="200">
-						<div class="card h-100 border-0 shadow-sm hover-lift" style="border-radius: 16px; transition: all 0.3s ease;">
-							<div class="card-body p-4">
-								<div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle p-3 rounded-3 mb-3 feature-icon-animate">
-									<i class="bi bi-lightning text-primary fs-4"></i>
-								</div>
-								<h5 class="fw-bold">Works Offline</h5>
-								<p class="text-secondary">
-									Process transactions even without internet, with custom AI models cached on your device for seamless operation.
-								</p>
-								<a href="#learn-more" class="text-decoration-none text-primary fw-medium d-flex align-items-center mt-2">
-									Learn more <i class="bi bi-arrow-right ms-2"></i>
-								</a>
-							</div>
-						</div>
-					</div>
-					<!-- Feature Card 3 -->
-					<div class="col-md-6 col-lg-4 fade-in-up" data-delay="300">
-						<div class="card h-100 border-0 shadow-sm hover-lift" style="border-radius: 16px; transition: all 0.3s ease;">
-							<div class="card-body p-4">
-								<div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle p-3 rounded-3 mb-3 feature-icon-animate">
-									<i class="bi bi-graph-up text-primary fs-4"></i>
-								</div>
-								<h5 class="fw-bold">Smart Insights</h5>
-								<p class="text-secondary">
-									Gain valuable data on sales trends, inventory levels, and customer preferences to make better business decisions.
-								</p>
-								<a href="#learn-more" class="text-decoration-none text-primary fw-medium d-flex align-items-center mt-2">
-									Learn more <i class="bi bi-arrow-right ms-2"></i>
-								</a>
-							</div>
-						</div>
-					</div>
-					<!-- Feature Card 4 -->
-					<div class="col-md-6 col-lg-4 fade-in-up" data-delay="400">
-						<div class="card h-100 border-0 shadow-sm hover-lift" style="border-radius: 16px; transition: all 0.3s ease;">
-							<div class="card-body p-4">
-								<div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle p-3 rounded-3 mb-3 feature-icon-animate">
-									<i class="bi bi-person-plus text-primary fs-4"></i>
-								</div>
-								<h5 class="fw-bold">Easy to Train</h5>
-								<p class="text-secondary">
-									Teach the system your unique inventory in minutes by simply taking a few pictures of each product.
-								</p>
-								<a href="#learn-more" class="text-decoration-none text-primary fw-medium d-flex align-items-center mt-2">
-									Learn more <i class="bi bi-arrow-right ms-2"></i>
-								</a>
-							</div>
-						</div>
-					</div>
-					<!-- Feature Card 5 -->
-					<div class="col-md-6 col-lg-4 fade-in-up" data-delay="500">
-						<div class="card h-100 border-0 shadow-sm hover-lift" style="border-radius: 16px; transition: all 0.3s ease;">
-							<div class="card-body p-4">
-								<div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle p-3 rounded-3 mb-3 feature-icon-animate">
-									<i class="bi bi-cash-coin text-primary fs-4"></i>
-								</div>
-								<h5 class="fw-bold">M-Pesa Integration</h5>
-								<p class="text-secondary">
-									Seamlessly connect with popular payment systems to process transactions instantly and securely.
-								</p>
-								<a href="#learn-more" class="text-decoration-none text-primary fw-medium d-flex align-items-center mt-2">
-									Learn more <i class="bi bi-arrow-right ms-2"></i>
-								</a>
-							</div>
-						</div>
-					</div>
-					<!-- Feature Card 6 -->
-					<div class="col-md-6 col-lg-4 fade-in-up" data-delay="600">
-						<div class="card h-100 border-0 shadow-sm hover-lift" style="border-radius: 16px; transition: all 0.3s ease;">
-							<div class="card-body p-4">
-								<div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle p-3 rounded-3 mb-3 feature-icon-animate">
-									<i class="bi bi-shield-check text-primary fs-4"></i>
-								</div>
-								<h5 class="fw-bold">Loss Prevention</h5>
-								<p class="text-secondary">
-									Track inventory accurately and detect potential theft or losses with intelligent monitoring tools.
-								</p>
-								<a href="#learn-more" class="text-decoration-none text-primary fw-medium d-flex align-items-center mt-2">
-									Learn more <i class="bi bi-arrow-right ms-2"></i>
-								</a>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="text-center mt-5">
-					<a href="/features" class="btn btn-outline-primary rounded-pill px-4 py-2 hover-lift">
-						View All Features <i class="bi bi-arrow-right ms-2"></i>
-					</a>
-				</div>
-			</div>
-		</section>
-		<!-- How It Works Section -->
-		<section id="how-it-works" class="py-5" style="background-color: #f8f9fa;">
-			<div class="container py-5">
-				<div class="text-center mb-5 fade-in-up">
-					<span class="badge bg-primary-subtle text-primary mb-2 px-3 py-2 rounded-pill animate-badge">How It Works</span>
-					<h2 class="display-5 fw-bold text-primary">Simple as 1-2-3</h2>
-					<p class="lead text-secondary mx-auto" style="max-width: 600px;">
-						Get started in minutes with no technical knowledge required
-					</p>
-				</div>
-				<div class="row g-4 align-items-center">
-					<div class="col-md-6 fade-in-left">
-						<div class="position-relative">
-							<img src="/public/assets/workflow.svg" alt="How SimpleStock Works" class="img-fluid rounded-4 shadow workflow-animate"/>
-							<!-- Added play button overlay -->
-							<a href="#video-modal" data-bs-toggle="modal" class="position-absolute top-50 start-50 translate-middle text-white play-button-animate">
-								<div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-									<i class="bi bi-play-fill fs-1"></i>
-								</div>
+				</section>
+				<!-- Demo Video Placeholder Section -->
+				<section id="video-demo" class="video-demo-section section-padding alt-bg">
+					<div class="container text-center" x-intersect.once="$el.classList.add('is-visible')">
+						<h2 class="section-title">See Dukahub in Action</h2>
+						<p class="section-description">Watch this short video to see how easy it is to manage your business.</p>
+						<div class="video-placeholder">
+							<a href="#" aria-label="Play Demo Video">
+								<img src="placeholder-video-thumb.png" alt="Video Placeholder Thumbnail" style="border-radius: var(--border-radius); box-shadow: var(--card-shadow); max-width: 700px; margin: auto;"/>
+								<div class="play-button-overlay"><i class="fas fa-play-circle"></i></div>
 							</a>
 						</div>
 					</div>
-					<div class="col-md-6 fade-in-right">
-						<div class="card mb-4 border-0 shadow-sm bg-white hover-lift" style="border-radius: 16px;">
-							<div class="card-body p-4">
-								<div class="d-flex">
-									<div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold step-number" style="width: 50px; height: 50px; min-width: 50px;">1</div>
-									<div class="ms-3">
-										<h5 class="fw-bold">Train Your System</h5>
-										<p class="text-secondary mb-0">
-											Take a few pictures of each product and assign names and prices. Your AI model learns instantly.
-										</p>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="card mb-4 border-0 shadow-sm bg-white hover-lift" style="border-radius: 16px;">
-							<div class="card-body p-4">
-								<div class="d-flex">
-									<div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold step-number" style="width: 50px; height: 50px; min-width: 50px;">2</div>
-									<div class="ms-3">
-										<h5 class="fw-bold">Point and Recognize</h5>
-										<p class="text-secondary mb-0">
-											Just point your camera at products during transactions. The system identifies them in real-time.
-										</p>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="card border-0 shadow-sm bg-white hover-lift" style="border-radius: 16px;">
-							<div class="card-body p-4">
-								<div class="d-flex">
-									<div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold step-number" style="width: 50px; height: 50px; min-width: 50px;">3</div>
-									<div class="ms-3">
-										<h5 class="fw-bold">Track and Grow</h5>
-										<p class="text-secondary mb-0">
-											Use automatic reports and insights to track inventory, monitor sales, and grow your business.
-										</p>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="mt-4 text-center text-md-start">
-							<a href="/signup" class="btn btn-primary rounded-pill px-4 py-2 hover-lift">
-								Get Started Now <i class="bi bi-arrow-right ms-2"></i>
-							</a>
+				</section>
+				<!-- Who Serves Section (Remains similar) -->
+				<section id="who-we-serve" class="who-serve-section section-padding">
+					<div class="container">
+						<h2 class="section-title" x-intersect.once="$el.classList.add('is-visible')">Made for Kenyan Businesses Like Yours</h2>
+						<div class="business-types" x-intersect.once="$el.classList.add('is-visible')">
+							<div class="business-type"><span class="icon">💊</span><p>Pharmacies</p></div>
+							<div class="business-type"><span class="icon">🌱</span><p>Agrovets</p></div>
+							<div class="business-type"><span class="icon">🛒</span><p>Mini Marts</p></div>
+							<div class="business-type"><span class="icon">✂️</span><p>Salons/Tailors</p></div>
+							<div class="business-type"><span class="icon">🥬</span><p>Mama Mbogas</p></div>
 						</div>
 					</div>
-				</div>
-			</div>
-		</section>
-		<!-- Testimonials Section -->
-		<section id="testimonials" class="py-5 bg-white">
-			<div class="container py-5">
-				<div class="text-center mb-5 fade-in-up">
-					<span class="badge bg-primary-subtle text-primary mb-2 px-3 py-2 rounded-pill animate-badge">Testimonials</span>
-					<h2 class="display-5 fw-bold text-primary">Loved by Business Owners</h2>
-					<p class="lead text-secondary mx-auto" style="max-width: 600px;">
-						See what our customers have to say about SimpleStock
-					</p>
-				</div>
-				<div class="testimonial-slider position-relative">
-					<div class="row g-4">
-						<div class="col-md-6 col-lg-4 fade-in-up" data-delay="100">
-							<div class="card h-100 border-0 shadow-sm hover-lift" style="border-radius: 16px;">
-								<div class="card-body p-4">
-									<div class="d-flex mb-3">
-										<i class="bi bi-star-fill text-warning"></i>
-										<i class="bi bi-star-fill text-warning mx-1"></i>
-										<i class="bi bi-star-fill text-warning"></i>
-										<i class="bi bi-star-fill text-warning mx-1"></i>
-										<i class="bi bi-star-fill text-warning"></i>
-									</div>
-									<p class="text-secondary">
-										"SimpleStock completely changed how we manage our small grocery store. No more typing product names or scanning barcodes—we just point our phone and it recognizes everything!"
-									</p>
-									<div class="d-flex align-items-center mt-4">
-										<div class="avatar-container">
-											<img src="/assets/testimonial1.jpg" alt="Jane Cooper" class="avatar-img"/>
-										</div>
-										<div class="ms-3">
-											<h6 class="mb-0 fw-bold">Jane Cooper</h6>
-											<p class="small text-secondary mb-0">Corner Grocery, Nairobi</p>
-										</div>
-									</div>
-								</div>
+				</section>
+				<!-- Core Features Section -->
+				<section id="features" class="features-section section-padding alt-bg">
+					<div class="container">
+						<h2 class="section-title" x-intersect.once="$el.classList.add('is-visible')">Everything You Need to Manage Your Business</h2>
+						<div class="features-grid">
+							<div class="feature-card" x-data="{ tooltipVisible: false }" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.1s;">
+								<div class="feature-icon"><i class="fas fa-camera-retro"></i></div>
+								<h3>
+									AI & Barcode Sales
+									<span class="tooltip-trigger" @mouseover="tooltipVisible = true" @mouseleave="tooltipVisible = false" @click.prevent="tooltipVisible = !tooltipVisible">?</span>
+									<div x-show="tooltipVisible" x-transition class="tooltip-content" @click.outside="tooltipVisible = false">Scan barcodes (fastest!) or let our AI recognize items from photos you take. Perfect for items without barcodes.</div>
+								</h3>
+								<p>Fast sales entry using barcode scanning or AI image recognition. Adjust prices easily at POS.</p>
 							</div>
-						</div>
-						<div class="col-md-6 col-lg-4 fade-in-up" data-delay="200">
-							<div class="card h-100 border-0 shadow-sm hover-lift" style="border-radius: 16px;">
-								<div class="card-body p-4">
-									<div class="d-flex mb-3">
-										<i class="bi bi-star-fill text-warning"></i>
-										<i class="bi bi-star-fill text-warning mx-1"></i>
-										<i class="bi bi-star-fill text-warning"></i>
-										<i class="bi bi-star-fill text-warning mx-1"></i>
-										<i class="bi bi-star-fill text-warning"></i>
-									</div>
-									<p class="text-secondary">
-										"I was spending hours each week manually tracking inventory. Now SimpleStock handles it all automatically. I even use it to track services in my salon with picture cards!"
-									</p>
-									<div class="d-flex align-items-center mt-4">
-										<div class="avatar-container">
-											<img src="/assets/testimonial2.jpg" alt="Robert Johnson" class="avatar-img"/>
-										</div>
-										<div class="ms-3">
-											<h6 class="mb-0 fw-bold">Robert Johnson</h6>
-											<p class="small text-secondary mb-0">Style Salon, Mombasa</p>
-										</div>
-									</div>
-								</div>
+							<div class="feature-card" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.2s;">
+								<div class="feature-icon"><i class="fas fa-boxes"></i></div>
+								<h3>Simple Inventory</h3>
+								<p>Track stock accurately. Add products via barcode/photos. Handles bundled items (SKU conversion).</p>
 							</div>
-						</div>
-						<div class="col-md-6 col-lg-4 fade-in-up" data-delay="300">
-							<div class="card h-100 border-0 shadow-sm hover-lift" style="border-radius: 16px;">
-								<div class="card-body p-4">
-									<div class="d-flex mb-3">
-										<i class="bi bi-star-fill text-warning"></i>
-										<i class="bi bi-star-fill text-warning mx-1"></i>
-										<i class="bi bi-star-fill text-warning"></i>
-										<i class="bi bi-star-fill text-warning mx-1"></i>
-										<i class="bi bi-star-fill text-warning"></i>
-									</div>
-									<p class="text-secondary">
-										"The insights feature has been a game-changer. I can now see which products sell best, when to restock, and even who my best customers are. All with an app on my phone!"
-									</p>
-									<div class="d-flex align-items-center mt-4">
-										<div class="avatar-container">
-											<img src="/assets/testimonial3.jpg" alt="Sarah Mwangi" class="avatar-img"/>
-										</div>
-										<div class="ms-3">
-											<h6 class="mb-0 fw-bold">Sarah Mwangi</h6>
-											<p class="small text-secondary mb-0">Electronics Shop, Kisumu</p>
-										</div>
-									</div>
-								</div>
+							<div class="feature-card" x-data="{ tooltipVisible: false }" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.3s;">
+								<div class="feature-icon"><i class="fas fa-wifi-slash"></i></div>
+								<h3>
+									Reliable Offline Mode
+									<span class="tooltip-trigger" @mouseover="tooltipVisible = true" @mouseleave="tooltipVisible = false" @click.prevent="tooltipVisible = !tooltipVisible">?</span>
+									<div x-show="tooltipVisible" x-transition class="tooltip-content" @click.outside="tooltipVisible = false">Record up to 30 sales without internet. Data syncs carefully one-by-one when you're back online to prevent errors.</div>
+								</h3>
+								<p>Continue selling even without internet. Data syncs automatically & safely when connection returns.</p>
+							</div>
+							<div class="feature-card" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.4s;">
+								<div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+								<h3>Actionable Insights</h3>
+								<p>Understand your business better with reports on sales trends, top items, and seasonal performance.</p>
+							</div>
+							<div class="feature-card" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.5s;">
+								<div class="feature-icon"><i class="fas fa-cut"></i></div>
+								<h3>Service Business Ready</h3>
+								<p>Use visual cards for services (salons, repairs). Track service sales and popularity like products.</p>
+							</div>
+							<div class="feature-card" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.6s;">
+								<div class="feature-icon"><i class="fas fa-bell"></i></div>
+								<h3>Smart Alerts (Pro)</h3>
+								<p>Get notified for low stock and soon-to-expire products to reduce waste and lost sales.</p>
 							</div>
 						</div>
 					</div>
-					<div class="slider-controls d-flex justify-content-center mt-4">
-						<button class="btn btn-sm btn-outline-primary rounded-circle mx-1 slider-dot active" aria-label="Page 1"></button>
-						<button class="btn btn-sm btn-outline-primary rounded-circle mx-1 slider-dot" aria-label="Page 2"></button>
-						<button class="btn btn-sm btn-outline-primary rounded-circle mx-1 slider-dot" aria-label="Page 3"></button>
-					</div>
-				</div>
-				<div class="text-center mt-5">
-					<a href="/case-studies" class="btn btn-outline-primary rounded-pill px-4 py-2 hover-lift">
-						View All Success Stories <i class="bi bi-arrow-right ms-2"></i>
-					</a>
-				</div>
-			</div>
-		</section>
-		<!-- Pricing Section -->
-		<section id="pricing" class="py-5" style="background-color: #f8f9fa;">
-			<div class="container py-5">
-				<div class="text-center mb-5 fade-in-up">
-					<span class="badge bg-primary-subtle text-primary mb-2 px-3 py-2 rounded-pill animate-badge">Pricing</span>
-					<h2 class="display-5 fw-bold text-primary">Simple, Transparent Pricing</h2>
-					<p class="lead text-secondary mx-auto" style="max-width: 600px;">
-						Start for free, upgrade as your business grows
-					</p>
-					<div class="d-flex justify-content-center mt-4">
-						<div class="bg-white p-1 rounded-pill shadow-sm d-inline-flex">
-							<button class="btn btn-primary rounded-pill px-4 me-2">Monthly</button>
-							<button class="btn btn-outline-primary rounded-pill px-4">Yearly <span class="badge bg-success ms-2">Save 20%</span></button>
+				</section>
+				<!-- Pricing Section -->
+				<section id="pricing" class="pricing-section section-padding" x-data="{ yearly: false }">
+					<div class="container">
+						<h2 class="section-title" x-intersect.once="$el.classList.add('is-visible')">Simple, Transparent Pricing</h2>
+						<p class="section-description" x-intersect.once="$el.classList.add('is-visible')">Start free, upgrade as your business grows. No hidden fees.</p>
+						<div class="pricing-toggle" x-intersect.once="$el.classList.add('is-visible')">
+							<button :class="{ 'active': !yearly }" @click="yearly = false" class="btn toggle-btn">Monthly</button>
+							<button :class="{ 'active': yearly }" @click="yearly = true" class="btn toggle-btn">Yearly <span class="save-badge">Save 20%</span></button>
 						</div>
-					</div>
-				</div>
-				<div class="row g-4 justify-content-center">
-					<!-- Free Plan -->
-					<div class="col-md-6 col-lg-4 fade-in-up" data-delay="100">
-						<div class="card h-100 border-0 shadow-sm hover-lift" style="border-radius: 16px;">
-							<div class="card-body p-4">
-								<div class="ribbon ribbon-top-right"><span>Free</span></div>
-								<h5 class="text-primary fw-bold mb-3">Free</h5>
-								<h2 class="display-5 fw-bold mb-3">0<span class="fs-6 fw-normal text-secondary">/month</span></h2>
-								<p class="text-secondary mb-4">Perfect for small businesses just getting started</p>
-								<ul class="list-unstyled mb-4">
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span>Up to 50 products</span>
-									</li>
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span>Basic sales reports</span>
-									</li>
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span>Single user</span>
-									</li>
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span>M-Pesa integration</span>
-									</li>
-									<li class="mb-3 d-flex align-items-center text-muted">
-										<i class="bi bi-x-circle-fill me-2"></i>
-										<span>Advanced insights</span>
-									</li>
+						<div class="pricing-plans">
+							<div class="plan" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.1s;">
+								<div class="plan-header"><h3>Free</h3><p class="price">KES 0 <span class="period">/month</span></p></div>
+								<p class="plan-description">Perfect for getting started.</p>
+								<ul class="features-list">
+									<li><i class="fas fa-check-circle"></i> Up to 50 products</li>
+									<li><i class="fas fa-check-circle"></i> Basic sales reports</li>
+									<li><i class="fas fa-check-circle"></i> Single user</li>
+									<li><i class="fas fa-check-circle"></i> M-Pesa integration</li>
+									<li><i class="fas fa-check-circle"></i> Offline Mode</li>
+									<li class="dimmed"><i class="fas fa-times-circle"></i> Advanced insights</li>
+									<li class="dimmed"><i class="fas fa-times-circle"></i> Credit sales tracking</li>
+									<li class="dimmed"><i class="fas fa-times-circle"></i> Smart inventory alerts</li>
 								</ul>
-								<a href="/signup" class="btn btn-outline-primary w-100 rounded-pill py-2 hover-lift">Get Started</a>
+								<a href="/signup?plan=free" class="btn btn-outline plan-cta">Get Started Free</a>
 							</div>
-						</div>
-					</div>
-					<!-- Pro Plan -->
-					<div class="col-md-6 col-lg-4 fade-in-up" data-delay="200">
-						<div class="card h-100 border-0 shadow" style="border-radius: 16px; transform: scale(1.05);">
-							<div class="card-body p-4">
-								<div class="ribbon ribbon-top-right"><span class="bg-primary">Popular</span></div>
-								<div class="d-flex justify-content-between align-items-center mb-3">
-									<h5 class="text-primary fw-bold mb-0">Pro</h5>
-									<span class="badge bg-primary">Most Popular</span>
-								</div>
-								<h2 class="display-5 fw-bold mb-3">1,499<span class="fs-6 fw-normal text-secondary">/month</span></h2>
-								<p class="text-secondary mb-4">For growing businesses with more needs</p>
-								<ul class="list-unstyled mb-4">
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span><strong>Unlimited</strong> products</span>
-									</li>
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span>Advanced reporting</span>
-									</li>
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span>Up to 5 users</span>
-									</li>
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span>Credit sales tracking</span>
-									</li>
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span>Smart inventory alerts</span>
-									</li>
+							<div class="plan popular" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.2s;">
+								<span class="popular-badge">Popular</span>
+								<div class="plan-header"><h3>Pro <span class="popular-text-label">(Recommended)</span></h3><p class="price"><span x-show="!yearly">KES 1,500</span><span x-show="yearly">KES 14,400</span><span class="period" x-show="!yearly">/month</span><span class="period" x-show="yearly">/year</span></p></div>
+								<p class="plan-description">For growing businesses.</p>
+								<ul class="features-list">
+									<li><i class="fas fa-check-circle"></i> <strong>Unlimited</strong> products</li>
+									<li><i class="fas fa-check-circle"></i> Advanced reporting</li>
+									<li><i class="fas fa-check-circle"></i> Up to 5 users</li>
+									<li><i class="fas fa-check-circle"></i> M-Pesa integration</li>
+									<li><i class="fas fa-check-circle"></i> Offline Mode</li>
+									<li><i class="fas fa-check-circle"></i> Credit sales tracking</li>
+									<li><i class="fas fa-check-circle"></i> Smart inventory alerts</li>
 								</ul>
-								<a href="/signup?plan=pro" class="btn btn-primary w-100 rounded-pill py-2 hover-lift pulsate">Choose Pro</a>
+								<a href="/signup?plan=pro&trial=true" class="btn btn-primary plan-cta">Start 14-Day Pro Trial Now</a>
 							</div>
-						</div>
-					</div>
-					<!-- Enterprise Plan -->
-					<div class="col-md-6 col-lg-4 fade-in-up" data-delay="300">
-						<div class="card h-100 border-0 shadow-sm hover-lift" style="border-radius: 16px;">
-							<div class="card-body p-4">
-								<div class="ribbon ribbon-top-right"><span class="bg-dark">Enterprise</span></div>
-								<h5 class="text-primary fw-bold mb-3">Enterprise</h5>
-								<h2 class="display-5 fw-bold mb-3">Custom</h2>
-								<p class="text-secondary mb-4">For larger businesses with specific requirements</p>
-								<ul class="list-unstyled mb-4">
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span>Everything in Pro</span>
-									</li>
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span><strong>Unlimited</strong> users</span>
-									</li>
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span>Multi-location support</span>
-									</li>
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span>API access</span>
-									</li>
-									<li class="mb-3 d-flex align-items-center">
-										<i class="bi bi-check-circle-fill text-success me-2"></i>
-										<span>Dedicated support</span>
-									</li>
+							<div class="plan" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.3s;">
+								<div class="plan-header"><h3>Enterprise</h3><p class="price">Custom</p></div>
+								<p class="plan-description">Tailored for larger businesses.</p>
+								<ul class="features-list">
+									<li><i class="fas fa-check-circle"></i> Everything in Pro</li>
+									<li><i class="fas fa-check-circle"></i> <strong>Unlimited</strong> users</li>
+									<li><i class="fas fa-check-circle"></i> Multi-location support</li>
+									<li><i class="fas fa-check-circle"></i> API access</li>
+									<li><i class="fas fa-check-circle"></i> Dedicated support</li>
+									<li><i class="fas fa-check-circle"></i> Offline Mode</li>
 								</ul>
-								<a href="/contact" class="btn btn-outline-primary w-100 rounded-pill py-2 hover-lift">Contact Us</a>
+								<a href="/contact" class="btn btn-outline plan-cta">Contact Us</a>
+							</div>
+						</div>
+						<p class="trial-note" x-intersect.once="$el.classList.add('is-visible')">Pro plan includes a 14-day free trial. No credit card required. <span class="upgrade-note">Easy upgrade anytime.</span></p>
+					</div>
+				</section>
+				<!-- Testimonials Section (Enhanced structure slightly) -->
+				<section id="testimonials" class="testimonials-section section-padding alt-bg">
+					<div class="container">
+						<h2 class="section-title" x-intersect.once="$el.classList.add('is-visible')">Don't Just Take Our Word For It</h2>
+						<div class="testimonial-grid">
+							<div class="testimonial-card" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.1s;">
+								<p class="quote">"Dukahub is so easy! Pointing my phone is faster than typing. Finally know my stock levels accurately."</p>
+								<p class="author">- Amina K.</p>
+								<p class="author-title">Mini Mart Owner, Nairobi</p>
+							</div>
+							<div class="testimonial-card" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.2s;">
+								<p class="quote">"The offline mode is a lifesaver during power cuts. Sales are recorded, and sync perfectly later. Highly recommend!"</p>
+								<p class="author">- David M.</p>
+								<p class="author-title">Agrovet Manager, Nakuru</p>
+							</div>
+							<div class="testimonial-card" x-intersect.once="$el.classList.add('is-visible')" style="transition-delay: 0.3s;">
+								<p class="quote">"We use it for our salon services with picture cards. Tracking popular services and sales is simple now."</p>
+								<p class="author">- Grace W.</p>
+								<p class="author-title">Salon Owner, Mombasa</p>
 							</div>
 						</div>
 					</div>
-				</div>
-				<div class="text-center mt-5 fade-in-up">
-					<p class="text-secondary">All plans include a 14-day free trial. No credit card required.</p>
-					<a href="/pricing" class="text-decoration-none text-primary fw-medium d-inline-flex align-items-center">
-						Compare all features <i class="bi bi-arrow-right ms-2"></i>
-					</a>
-				</div>
-			</div>
-		</section>
-		<!-- FAQ Section (NEW) -->
-		<section id="faq" class="py-5 bg-white">
-			<div class="container py-5">
-				<div class="text-center mb-5 fade-in-up">
-					<span class="badge bg-primary-subtle text-primary mb-2 px-3 py-2 rounded-pill animate-badge">FAQ</span>
-					<h2 class="display-5 fw-bold text-primary">Frequently Asked Questions</h2>
-					<p class="lead text-secondary mx-auto" style="max-width: 600px;">
-						Everything you need to know about SimpleStock
-					</p>
-				</div>
-				<div class="row justify-content-center">
-					<div class="col-lg-10 fade-in-up">
-						<div class="accordion accordion-flush" id="faqAccordion">
-							<div class="accordion-item mb-3 border rounded-4 overflow-hidden">
-								<h3 class="accordion-header">
-									<button class="accordion-button collapsed fw-medium" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
-										How does SimpleStock recognize products without barcodes?
-									</button>
-								</h3>
-								<div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-									<div class="accordion-body">
-										SimpleStock uses advanced AI and computer vision technology to recognize products based on their visual appearance. The system learns from images you take of your products, and can then identify them simply by pointing your smartphone camera at them. This works even for products without barcodes or packaging.
-									</div>
-								</div>
+				</section>
+				<!-- FAQ Section -->
+				<section id="faq" class="faq-section section-padding">
+					<div class="container faq-container">
+						<h2 class="section-title" x-intersect.once="$el.classList.add('is-visible')">Frequently Asked Questions</h2>
+						<div class="faq-accordion">
+							<div x-data="{ open: false }" class="faq-item" x-intersect.once="$el.classList.add('is-visible')">
+								<button @click="open = !open" class="faq-question"><span>How does the AI product recognition work?</span><span class="faq-icon"><i :class="open ? 'fas fa-minus' : 'fas fa-plus'"></i></span></button>
+								<div x-show="open" x-collapse class="faq-answer"><p>You take about 5 photos of each product from different angles using the app. Our AI system learns to identify the item visually. When making a sale, just point your camera, and the app recognizes it. This is great for items without barcodes. Barcode scanning is also supported and is usually faster if available.</p></div>
 							</div>
-							<div class="accordion-item mb-3 border rounded-4 overflow-hidden">
-								<h3 class="accordion-header">
-									<button class="accordion-button collapsed fw-medium" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
-										Does SimpleStock work without internet connection?
-									</button>
-								</h3>
-								<div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-									<div class="accordion-body">
-										Yes! SimpleStock is designed to work offline. The AI models for your inventory are stored locally on your device, so you can continue processing sales and tracking inventory even without internet access. When you regain connection, the app will automatically sync your data with the cloud.
-									</div>
-								</div>
+							<div x-data="{ open: false }" class="faq-item" x-intersect.once="$el.classList.add('is-visible')">
+								<button @click="open = !open" class="faq-question"><span>How does the offline mode work? Is it safe?</span><span class="faq-icon"><i :class="open ? 'fas fa-minus' : 'fas fa-plus'"></i></span></button>
+								<div x-show="open" x-collapse class="faq-answer"><p>You can record up to 30 sales transactions completely offline. The data is stored securely on your device. When you reconnect to the internet, the app syncs each transaction individually and carefully checks against your online inventory to prevent errors like selling out-of-stock items. It's designed for reliability in areas with unstable internet.</p></div>
 							</div>
-							<div class="accordion-item mb-3 border rounded-4 overflow-hidden">
-								<h3 class="accordion-header">
-									<button class="accordion-button collapsed fw-medium" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
-										How long does it take to set up SimpleStock for my business?
-									</button>
-								</h3>
-								<div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-									<div class="accordion-body">
-										Most businesses can be up and running with SimpleStock in less than an hour. The setup process is straightforward: download the app, create an account, and start adding your products by taking photos and entering basic details like name and price. The AI learns quickly, and you can start using the system for sales immediately after adding your products.
-									</div>
-								</div>
+							<div x-data="{ open: false }" class="faq-item" x-intersect.once="$el.classList.add('is-visible')">
+								<button @click="open = !open" class="faq-question"><span>Is my business data secure and private?</span><span class="faq-icon"><i :class="open ? 'fas fa-minus' : 'fas fa-plus'"></i></span></button>
+								<div x-show="open" x-collapse class="faq-answer"><p>Yes. Security is a top priority. We use industry-standard encryption for data stored on your device and when it's synced to our servers. Your specific business data (sales, inventory) is kept confidential and is not shared. We comply with data protection best practices.</p></div>
 							</div>
-							<div class="accordion-item mb-3 border rounded-4 overflow-hidden">
-								<h3 class="accordion-header">
-									<button class="accordion-button collapsed fw-medium" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
-										Can SimpleStock handle services as well as physical products?
-									</button>
-								</h3>
-								<div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-									<div class="accordion-body">
-										Absolutely! Many service businesses like salons, repair shops, and cleaning services use SimpleStock. You can create photo cards or icons for your services, and the system will recognize them just like physical products. This makes it easy to track service sales, manage appointments, and analyze your most popular offerings.
-									</div>
-								</div>
+							<div x-data="{ open: false }" class="faq-item" x-intersect.once="$el.classList.add('is-visible')">
+								<button @click="open = !open" class="faq-question"><span>How long does it take to set up?</span><span class="faq-icon"><i :class="open ? 'fas fa-minus' : 'fas fa-plus'"></i></span></button>
+								<div x-show="open" x-collapse class="faq-answer"><p>Most businesses are set up in under an hour. Download the app, sign up, and start adding products by scanning barcodes or taking photos. It's designed to be intuitive, even if you're not tech-savvy.</p></div>
 							</div>
-							<div class="accordion-item mb-3 border rounded-4 overflow-hidden">
-								<h3 class="accordion-header">
-									<button class="accordion-button collapsed fw-medium" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
-										Is SimpleStock secure for my business data?
-									</button>
-								</h3>
-								<div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-									<div class="accordion-body">
-										Security is our top priority. SimpleStock uses bank-level encryption for all data, both on your device and in the cloud. Your business information is never shared with third parties, and we maintain strict data protection protocols in compliance with global privacy standards. Additionally, you can enable two-factor authentication for added security.
-									</div>
-								</div>
+							<div x-data="{ open: false }" class="faq-item" x-intersect.once="$el.classList.add('is-visible')">
+								<button @click="open = !open" class="faq-question"><span>Can I use it for services (salon, repair)?</span><span class="faq-icon"><i :class="open ? 'fas fa-minus' : 'fas fa-plus'"></i></span></button>
+								<div x-show="open" x-collapse class="faq-answer"><p>Absolutely! Create simple visual cards or icons for your services (e.g., a picture for 'Haircut'). Add them like products, and the AI or you can select them during sales. You can track service sales and popularity easily.</p></div>
 							</div>
-						</div>
-						<div class="text-center mt-4">
-							<a href="/faq" class="btn btn-outline-primary rounded-pill px-4 py-2 hover-lift">
-								View All FAQs <i class="bi bi-arrow-right ms-2"></i>
-							</a>
 						</div>
 					</div>
-				</div>
-			</div>
-		</section>
-		<!-- CTA Section -->
-		<section class="py-5 bg-primary text-white position-relative overflow-hidden">
-			<div class="position-absolute top-0 end-0 d-none d-lg-block">
-				<svg width="600" height="600" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.1;">
-					<path fill="#ffffff" d="M41.3,-51.2C54.4,-42.9,66.7,-30.8,72.3,-15.9C77.9,-1,76.8,16.7,68.6,30.1C60.4,43.5,45.2,52.7,29.4,58.9C13.6,65.1,-2.8,68.2,-18.2,64.7C-33.5,61.2,-47.7,51,-58.5,36.9C-69.2,22.7,-76.5,4.6,-73.8,-12.3C-71.1,-29.2,-58.4,-44.9,-43.9,-53.6C-29.5,-62.3,-13.2,-63.9,1,-65.2C15.2,-66.4,28.1,-59.4,41.3,-51.2Z" transform="translate(100 100)"></path>
-				</svg>
-			</div>
-			<div class="position-absolute bottom-0 start-0 d-none d-lg-block">
-				<svg width="400" height="400" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.1;">
-					<path fill="#ffffff" d="M47.7,-57.2C59.5,-47.3,65.8,-30.9,67.1,-15C68.5,1,65,16.4,57.3,29.1C49.7,41.8,37.9,51.6,23.9,57.7C9.9,63.9,-6.3,66.3,-22.2,63C-38,59.8,-53.5,51,-63.4,37.1C-73.3,23.2,-77.6,4.2,-73.1,-12.5C-68.5,-29.2,-55.1,-43.5,-40.9,-52.9C-26.7,-62.3,-11.6,-66.7,3.2,-70.3C18,-73.9,35.9,-67.1,47.7,-57.2Z" transform="translate(100 100)"></path>
-				</svg>
-			</div>
-			<div class="container py-5 text-center position-relative">
-				<div class="row justify-content-center">
-					<div class="col-lg-8 fade-in-up">
-						<h2 class="display-4 fw-bold mb-4">Ready to Transform Your Business?</h2>
-						<p class="lead mb-4 mx-auto" style="max-width: 700px;">
-							Join thousands of businesses using SimpleStock to streamline operations, increase sales, and grow profitably.
+				</section>
+				<!-- Final CTA Section -->
+				<section id="cta" class="cta-section section-padding">
+					<div class="container text-center" x-intersect.once="$el.classList.add('is-visible')">
+						<h2 class="section-title">Ready to Simplify Your Business?</h2>
+						<p class="cta-description">
+							Stop losing track of sales and stock. Start making informed
+							decisions with Dukahub.
 						</p>
-						<div class="d-flex justify-content-center flex-wrap gap-3 mb-4">
-							<a href="/signup" class="btn btn-light btn-lg px-5 py-3 rounded-pill hover-lift pulsate fw-medium">
-								Get Started Free
-							</a>
-							<a href="/demo" class="btn btn-outline-light btn-lg px-5 py-3 rounded-pill hover-lift fw-medium">
-								<i class="bi bi-calendar-check me-2"></i> Schedule Demo
-							</a>
-						</div>
-						<div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-							<div class="d-flex align-items-center">
-								<i class="bi bi-check-circle-fill text-light me-2"></i>
-								<span>No credit card required</span>
-							</div>
-							<div class="d-flex align-items-center">
-								<i class="bi bi-check-circle-fill text-light me-2"></i>
-								<span>14-day free trial</span>
-							</div>
-							<div class="d-flex align-items-center">
-								<i class="bi bi-check-circle-fill text-light me-2"></i>
-								<span>Cancel anytime</span>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
-		<!-- Footer -->
-		<footer class="py-5 bg-dark text-white">
-			<div class="container">
-				<div class="row g-4">
-					<div class="col-lg-4 col-md-6 mb-4 mb-md-0">
-						<a class="d-inline-flex align-items-center text-white text-decoration-none mb-3" href="/">
-							<img src="/public/assets/favicon.svg" alt="SimpleStock" height="32" class="me-2"/>
-							<span class="fw-bold fs-5">SimpleStock</span>
+						<a href="/signup?plan=pro&trial=true" class="btn btn-light btn-large cta-button">
+							Start Your Free 14-Day Pro Trial Now <i class="fas fa-arrow-right icon-right"></i>
 						</a>
-						<p class="text-white-50">
-							AI-powered inventory management that transforms how small businesses operate.
-						</p>
-						<div class="d-flex gap-3 mt-3">
-							<a href="#" class="text-white-50 social-icon">
-								<i class="bi bi-facebook fs-5"></i>
-							</a>
-							<a href="#" class="text-white-50 social-icon">
-								<i class="bi bi-twitter fs-5"></i>
-							</a>
-							<a href="#" class="text-white-50 social-icon">
-								<i class="bi bi-instagram fs-5"></i>
-							</a>
-							<a href="#" class="text-white-50 social-icon">
-								<i class="bi bi-linkedin fs-5"></i>
-							</a>
-						</div>
+						<p class="cta-note">No credit card required. Cancel anytime.</p>
 					</div>
-					<div class="col-lg-2 col-md-3 col-6">
-						<h6 class="fw-bold mb-3 text-white">Product</h6>
-						<ul class="list-unstyled footer-links">
-							<li class="mb-2"><a href="#features" class="text-white-50 text-decoration-none">Features</a></li>
-							<li class="mb-2"><a href="#pricing" class="text-white-50 text-decoration-none">Pricing</a></li>
-							<li class="mb-2"><a href="/demo" class="text-white-50 text-decoration-none">Demo</a></li>
-							<li class="mb-2"><a href="/roadmap" class="text-white-50 text-decoration-none">Roadmap</a></li>
-							<li class="mb-2"><a href="/updates" class="text-white-50 text-decoration-none">Updates</a></li>
-						</ul>
+				</section>
+			</main>
+			<!-- Footer -->
+			<footer class="footer">
+				<div class="container footer-content">
+					<div class="footer-links">
+						<a href="/about">About Us</a>
+						<a href="/privacy">Privacy Policy</a>
+						<a href="/terms">Terms of Service</a>
+						<a href="/contact">Contact</a>
+						<a href="/support">Support</a> <!-- Added Support Link -->
 					</div>
-					<div class="col-lg-2 col-md-3 col-6">
-						<h6 class="fw-bold mb-3 text-white">Company</h6>
-						<ul class="list-unstyled footer-links">
-							<li class="mb-2"><a href="/about" class="text-white-50 text-decoration-none">About Us</a></li>
-							<li class="mb-2"><a href="/blog" class="text-white-50 text-decoration-none">Blog</a></li>
-							<li class="mb-2"><a href="/careers" class="text-white-50 text-decoration-none">Careers</a></li>
-							<li class="mb-2"><a href="/contact" class="text-white-50 text-decoration-none">Contact</a></li>
-							<li class="mb-2"><a href="/partners" class="text-white-50 text-decoration-none">Partners</a></li>
-						</ul>
-					</div>
-					<div class="col-lg-2 col-md-3 col-6">
-						<h6 class="fw-bold mb-3 text-white">Support</h6>
-						<ul class="list-unstyled footer-links">
-							<li class="mb-2"><a href="/help" class="text-white-50 text-decoration-none">Help Center</a></li>
-							<li class="mb-2"><a href="/tutorials" class="text-white-50 text-decoration-none">Tutorials</a></li>
-							<li class="mb-2"><a href="/documentation" class="text-white-50 text-decoration-none">Documentation</a></li>
-							<li class="mb-2"><a href="/community" class="text-white-50 text-decoration-none">Community</a></li>
-							<li class="mb-2"><a href="/status" class="text-white-50 text-decoration-none">System Status</a></li>
-						</ul>
-					</div>
-					<div class="col-lg-2 col-md-3 col-6">
-						<h6 class="fw-bold mb-3 text-white">Legal</h6>
-						<ul class="list-unstyled footer-links">
-							<li class="mb-2"><a href="/terms" class="text-white-50 text-decoration-none">Terms</a></li>
-							<li class="mb-2"><a href="/privacy" class="text-white-50 text-decoration-none">Privacy</a></li>
-							<li class="mb-2"><a href="/cookies" class="text-white-50 text-decoration-none">Cookies</a></li>
-							<li class="mb-2"><a href="/licenses" class="text-white-50 text-decoration-none">Licenses</a></li>
-							<li class="mb-2"><a href="/security" class="text-white-50 text-decoration-none">Security</a></li>
-						</ul>
-					</div>
+					<p class="copyright">© <span id="current-year"></span> Dukahub. All rights reserved. Built for Kenyan SMEs.</p>
 				</div>
-				<!-- Newsletter -->
-				<div class="row mt-5">
-					<div class="col-lg-6 mx-auto text-center">
-						<h6 class="fw-bold mb-3 text-white">Stay Updated</h6>
-						<p class="text-white-50 mb-3">Get the latest news and updates from SimpleStock</p>
-						<form class="d-flex newsletter-form">
-							<input type="email" class="form-control me-2 bg-dark border-secondary text-white" placeholder="Enter your email" required/>
-							<button type="submit" class="btn btn-primary px-4 rounded-pill hover-lift">Subscribe</button>
-						</form>
-					</div>
-				</div>
-				<hr class="my-5 border-secondary"/>
-				<div class="row align-items-center">
-					<div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
-						<p class="mb-0 text-white-50">© 2025 Dukahub. All rights reserved.</p>
-					</div>
-					<div class="col-md-6 text-center text-md-end">
-						<div class="d-flex justify-content-center justify-content-md-end flex-wrap">
-							<img src="/assets/payment-visa.svg" alt="Visa" class="payment-icon me-3" height="24"/>
-							<img src="/assets/payment-mastercard.svg" alt="Mastercard" class="payment-icon me-3" height="24"/>
-							<img src="/assets/payment-mpesa.svg" alt="M-Pesa" class="payment-icon me-3" height="24"/>
-							<img src="/assets/payment-paypal.svg" alt="PayPal" class="payment-icon" height="24"/>
-						</div>
-					</div>
-				</div>
-			</div>
-		</footer>
-		<!-- Back to top button -->
-		<a href="#" class="back-to-top d-flex align-items-center justify-content-center">
-			<i class="bi bi-arrow-up-short"></i>
-		</a>
-		<!-- Video Modal -->
-		<div class="modal fade" id="video-modal" tabindex="-1" aria-hidden="true">
-			<div class="modal-dialog modal-lg modal-dialog-centered">
-				<div class="modal-content border-0 bg-transparent">
-					<div class="modal-body p-0 position-relative">
-						<button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-2" data-bs-dismiss="modal" aria-label="Close"></button>
-						<div class="ratio ratio-16x9">
-							<iframe src="https://www.youtube.com/embed/VIDEO_ID" title="SimpleStock Demo" allowfullscreen></iframe>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<!-- Cookie consent -->
-		<div class="cookie-consent bg-dark text-white p-3 rounded-top fixed-bottom start-50 translate-middle-x" style="max-width: 400px; z-index: 1050; display: none;">
-			<div class="d-flex align-items-center">
-				<div class="me-3 fs-4">
-					<i class="bi bi-cookie"></i>
-				</div>
-				<div>
-					<p class="mb-2 small">We use cookies to enhance your experience. By continuing to visit this site you agree to our use of cookies.</p>
-					<div class="d-flex gap-2">
-						<button class="btn btn-sm btn-primary rounded-pill">Accept</button>
-						<button class="btn btn-sm btn-outline-light rounded-pill">Settings</button>
-					</div>
-				</div>
-			</div>
+			</footer>
 		</div>
 	}
 }

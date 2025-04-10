@@ -5,10 +5,10 @@ import (
 	"github.com/kisinga/dukahub/views/layouts"
 )
 
-var BaseCSS = templ.Raw(`
-  <link rel="stylesheet" href="/public/styles/dashboard-layout.css"/>
-  <link rel="stylesheet" href="/public/styles/dashboard-stats.css"/>
-  `)
+var BaseCSS = []templ.Component{
+	templ.Raw(`<link rel="stylesheet" href="/public/styles/dashboard-layout.css"/>`),
+	templ.Raw(`<link rel="stylesheet" href="/public/styles/dashboard-stats.css"/>`),
+}
 
 var config = models.LayoutConfig{
 	Title: "Dashboard",

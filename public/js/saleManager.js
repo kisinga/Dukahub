@@ -11,7 +11,7 @@ class SaleManager {
       taxSelector: config.taxSelector || "#tax",
       totalSelector: config.totalSelector || "#total",
       checkoutButtonSelector: config.checkoutButtonSelector || "#checkout-btn",
-      taxRate: config.taxRate || 0.1, // 10%
+      taxRate: config.taxRate || 0,
       currencyFormat:
         config.currencyFormat ||
         new Intl.NumberFormat("en-US", {
