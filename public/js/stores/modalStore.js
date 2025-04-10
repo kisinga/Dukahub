@@ -86,13 +86,27 @@ const modalStoreLogic = {
   },
   getSkuPrice(skuId) {
     if (!this.product || !skuId) return this.product?.price ?? 0;
-    // --- Access expanded SKUs ---
     const skus = this.product.expand?.skus;
-    // --- End Access ---
     const selectedSkuData = skus?.find((sku) => sku.id === skuId);
-    // --- Use SKU price if available, otherwise fallback to product base price ---
+    // get the related price from the inventory
+    const inventory = this.product?.inventory;
+    console.log(
+      "Selected SKU data:",
+      selectedSkuData,
+      "Inventory:",
+      inventory,
+      "SKU ID:",
+      skuId
+    );
+    if (inventory && inventory.length > 0) {
+      //  loop through the inventory to find the related sku
+      for (const item of inventory) {
+        if (item.sku === skuId) {
+          return item.retail_price ?? 0;
+        }
+      }
+    }
     return selectedSkuData?.price ?? this.product.price ?? 0;
-    // --- End Use SKU price ---
   },
 
   updatePriceFromSku(selectedSkuId) {
