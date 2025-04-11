@@ -100,7 +100,6 @@ templ Newsale(data *models.DashboardData) {
 																<span class="text-muted small" x-text="' (' + product.code + ')'"></span>
 															</template>
 														</div>
-														<div class="fw-bold small" x-text="(product.price ?? 0).toFixed(2)"></div>
 													</li>
 												</template>
 												<template x-if="searchResults.length === 1 && searchResults[0].id === 'error'">

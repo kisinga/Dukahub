@@ -63,6 +63,28 @@ const modalStoreLogic = {
     this.quantity = 1;
     this.price = productData.price ?? 0.01; // Base price initially
     this.selectedSkuId = "";
+    if (this.hasVariations) {
+      // Use the getter to check if SKUs are present
+      const skus = this.product.expand?.skus;
+      // Check if the array exists, has items, and the first item has an ID
+      if (skus && skus.length > 0 && skus[0] && skus[0].id) {
+        const firstSkuId = skus[0].id;
+        console.log(
+          `Pre-selecting first SKU: ID=${firstSkuId}, Name=${
+            skus[0].name || firstSkuId
+          }`
+        );
+        this.selectedSkuId = firstSkuId; // Set the selectedSkuId store property
+        this.updatePriceFromSku(firstSkuId); // Update the price based on this selection
+      } else {
+        console.warn(
+          "Product has variations array, but first SKU is invalid or missing ID.",
+          skus
+        );
+        // Optionally set an error message if selection is mandatory but first is invalid
+        // this.errorMessage = "Could not automatically select a variation.";
+      }
+    }
     this.isOpen = true;
     this._modalInstance.show();
     console.log("Modal opened with product:", Alpine.raw(this.product)); // Log raw product data
@@ -106,7 +128,7 @@ const modalStoreLogic = {
         }
       }
     }
-    return selectedSkuData?.price ?? this.product.price ?? 0;
+    return selectedSkuData?.price ?? 0;
   },
 
   updatePriceFromSku(selectedSkuId) {
