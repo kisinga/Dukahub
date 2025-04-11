@@ -63,6 +63,28 @@ const modalStoreLogic = {
     this.quantity = 1;
     this.price = productData.price ?? 0.01; // Base price initially
     this.selectedSkuId = "";
+    if (this.hasVariations) {
+      // Use the getter to check if SKUs are present
+      const skus = this.product.expand?.skus;
+      // Check if the array exists, has items, and the first item has an ID
+      if (skus && skus.length > 0 && skus[0] && skus[0].id) {
+        const firstSkuId = skus[0].id;
+        console.log(
+          `Pre-selecting first SKU: ID=${firstSkuId}, Name=${
+            skus[0].name || firstSkuId
+          }`
+        );
+        this.selectedSkuId = firstSkuId; // Set the selectedSkuId store property
+        this.updatePriceFromSku(firstSkuId); // Update the price based on this selection
+      } else {
+        console.warn(
+          "Product has variations array, but first SKU is invalid or missing ID.",
+          skus
+        );
+        // Optionally set an error message if selection is mandatory but first is invalid
+        // this.errorMessage = "Could not automatically select a variation.";
+      }
+    }
     this.isOpen = true;
     this._modalInstance.show();
     console.log("Modal opened with product:", Alpine.raw(this.product)); // Log raw product data
@@ -86,13 +108,27 @@ const modalStoreLogic = {
   },
   getSkuPrice(skuId) {
     if (!this.product || !skuId) return this.product?.price ?? 0;
-    // --- Access expanded SKUs ---
     const skus = this.product.expand?.skus;
-    // --- End Access ---
     const selectedSkuData = skus?.find((sku) => sku.id === skuId);
-    // --- Use SKU price if available, otherwise fallback to product base price ---
-    return selectedSkuData?.price ?? this.product.price ?? 0;
-    // --- End Use SKU price ---
+    // get the related price from the inventory
+    const inventory = this.product?.inventory;
+    console.log(
+      "Selected SKU data:",
+      selectedSkuData,
+      "Inventory:",
+      inventory,
+      "SKU ID:",
+      skuId
+    );
+    if (inventory && inventory.length > 0) {
+      //  loop through the inventory to find the related sku
+      for (const item of inventory) {
+        if (item.sku === skuId) {
+          return item.retail_price ?? 0;
+        }
+      }
+    }
+    return selectedSkuData?.price ?? 0;
   },
 
   updatePriceFromSku(selectedSkuId) {

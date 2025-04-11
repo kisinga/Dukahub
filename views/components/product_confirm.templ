@@ -9,130 +9,135 @@ templ ProductConfirmModal() {
 		aria-hidden="true"
 		@hidden.bs.modal="$store.modal.reset()"
 	>
-		<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-			<div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
-				<div class="modal-header ...">
-					<h5 class="modal-title ..." id="scanModalLabel">
-						<i class="bi bi-box-seam me-2 text-primary"></i>
-						// --- Check product exists before accessing name ---
-						<span x-text="$store.modal.product ? 'Product Details' : 'Loading...'"></span>
-					</h5>
-					<button type="button" class="btn-close ..." data-bs-dismiss="modal" aria-label="Close"></button>
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content border-0 shadow">
+				<!-- Product Identification Section -->
+				<div class="modal-header border-0 pb-0 pt-4 px-4">
+					<div class="w-100 text-center mb-2">
+						<h5 class="modal-title fw-bold mb-1" id="scanModalLabel" x-text="$store.modal.product ? $store.modal.product.name : 'Loading...'"></h5>
+						<p class="text-muted small mb-0" x-show="$store.modal.product">
+							Product ID: <span x-text="$store.modal.product.id"></span>
+						</p>
+					</div>
+					<button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
-				// --- Use x-if to wait for product data ---
 				<template x-if="$store.modal.product">
-					<div class="modal-body p-4">
-						// Product Info (Now safe to access product properties)
-						<div class="mb-4 pb-3 border-bottom">
-							<div class="d-flex align-items-center mb-2">
-								<div class="bg-light rounded-circle p-2 me-3"><i class="bi bi-tags text-primary fs-5"></i> </div>
-								<div>
-									<h6 class="mb-1 fs-5 fw-semibold" x-text="$store.modal.product.name"></h6>
-									<p class="text-muted small mb-0">ID: <span class="fw-medium" x-text="$store.modal.product.id"></span> </p>
-								</div>
-							</div>
-						</div>
-						// SKU Section - Also check hasVariations within the x-if
-						// Use x-show here if you prefer to keep the element in DOM but hidden
-						<div x-show="$store.modal.hasVariations" class="mb-4" style="display: none;">
-							<label for="modal-sku-select" class="form-label fw-medium mb-2"><i class="bi bi-diagram-3 me-2 text-secondary"></i>Select Variation </label>
+					<div class="modal-body pt-2 pb-3 px-4">
+						<!-- Divider that creates natural separation -->
+						<hr class="my-3 opacity-10"/>
+						<!-- Variations Selection - First decision point -->
+						<div x-show="$store.modal.hasVariations" class="text-center mb-4" style="display: none;">
+							<label class="form-label mb-2 d-block fw-medium">
+								<i class="bi bi-diagram-3 me-1 text-primary"></i>Select Variation
+							</label>
 							<select
-								class="form-select form-select-lg border-0 bg-light shadow-sm"
+								class="form-select mx-auto border bg-white"
+								style="max-width: 300px;"
 								x-model="$store.modal.selectedSkuId"
 								@change="$store.modal.updatePriceFromSku($event.target.value)"
-								aria-label="Select product variation or SKU"
+								aria-label="Select variation"
 							>
 								<option disabled value="">Choose variation...</option>
-								// --- Loop over expand.skus ---
 								<template x-for="sku in $store.modal.product.expand?.skus" :key="sku.id">
-									// --- Check if sku and sku.id exist before rendering option ---
 									<template x-if="sku && sku.id">
 										<option :value="sku.id" x-text="`${sku.name || sku.id} (${($store.modal.getSkuPrice(sku.id)).toFixed(2)})`"></option>
 									</template>
 								</template>
 							</select>
 						</div>
-						// Quantity and Price
-						<div class="row g-4 mb-4">
-							<div class="col-12 col-sm-6">
-								<div class="p-3 rounded-4 bg-light shadow-sm h-100">
-									<label class="form-label fw-medium mb-2">
-										<i class="bi bi-123 me-2 text-secondary"></i>Quantity
-									</label>
-									<div class="input-group input-group-lg">
-										<button class="btn btn-outline-secondary border-0" type="button" @click="$store.modal.adjustQuantity(-1)">
-											<i class="bi bi-dash-lg"></i>
-										</button>
-										<input
-											type="number"
-											class="form-control text-center border-0 bg-white"
-											x-model.number="$store.modal.quantity"
-											min="1"
-											step="1"
-											required
-											aria-label="Quantity"
-										/>
-										<button class="btn btn-outline-secondary border-0" type="button" @click="$store.modal.adjustQuantity(1)">
-											<i class="bi bi-plus-lg"></i>
-										</button>
-									</div>
-								</div>
-							</div>
-							<div class="col-12 col-sm-6">
-								<div class="p-3 rounded-4 bg-light shadow-sm h-100">
-									<label class="form-label fw-medium mb-2">
-										<i class="bi bi-tag me-2 text-secondary"></i>Unit Price
-									</label>
-									<div class="input-group input-group-lg">
-										<input
-											type="number"
-											class="form-control border-0 bg-white"
-											x-model.number="$store.modal.price"
-											min="0"
-											step="0.01"
-											required
-											aria-label="Unit Price"
-										/>
-									</div>
-								</div>
+						<!-- Price Input - Next key decision -->
+						<div class="mb-4 text-center">
+							<label class="form-label d-block mb-2 fw-medium">
+								<i class="bi bi-tag me-1 text-primary"></i>Price per Unit
+							</label>
+							<div class="input-group mx-auto" style="max-width: 200px;">
+								<input
+									type="number"
+									class="form-control border text-center bg-white"
+									x-model.number="$store.modal.price"
+									min="0"
+									step="0.01"
+									required
+									aria-label="Unit Price"
+								/>
 							</div>
 						</div>
-						// Total display section
-						<div class="bg-light p-3 rounded-4 mb-4 text-end">
-							<span class="text-muted">Total:</span>
-							<span class="fs-4 ms-2 fw-bold text-primary" x-text="$store.modal.lineTotal.toFixed(2)">0.00</span>
+						<!-- Quantity Section - Intuitive controls -->
+						<div class="mb-4 text-center">
+							<label class="form-label d-block mb-2 fw-medium">
+								<i class="bi bi-123 me-1 text-primary"></i>Quantity
+							</label>
+							<div class="d-flex align-items-center justify-content-center">
+								<button
+									class="btn btn-outline-secondary rounded-circle p-0 d-flex align-items-center justify-content-center"
+									style="width: 38px; height: 38px;"
+									type="button"
+									@click="$store.modal.adjustQuantity(-1)"
+								>
+									<i class="bi bi-dash"></i>
+								</button>
+								<input
+									type="number"
+									class="form-control mx-3 text-center border bg-white"
+									x-model.number="$store.modal.quantity"
+									min="1"
+									step="1"
+									required
+									aria-label="Quantity"
+									style="max-width: 80px;"
+								/>
+								<button
+									class="btn btn-outline-secondary rounded-circle p-0 d-flex align-items-center justify-content-center"
+									style="width: 38px; height: 38px;"
+									type="button"
+									@click="$store.modal.adjustQuantity(1)"
+								>
+									<i class="bi bi-plus"></i>
+								</button>
+							</div>
 						</div>
-						<div x-show="$store.modal.errorMessage" class="text-danger small mt-2 bg-light p-2 rounded-3 d-none" x-text="$store.modal.errorMessage"></div>
+						<!-- Divider to separate input from result -->
+						<hr class="my-4 opacity-10"/>
+						<!-- Total Display - Clear result of decisions -->
+						<div class="text-center mb-3">
+							<p class="text-muted mb-1">Total Amount:</p>
+							<h3 class="fw-bold text-primary mb-0" x-text="`${$store.modal.lineTotal.toFixed(2)}`">$0.00</h3>
+						</div>
+						<!-- Error Message -->
+						<div
+							x-show="$store.modal.errorMessage"
+							class="alert alert-danger py-2 small text-center mt-3"
+							x-text="$store.modal.errorMessage"
+						></div>
 					</div>
 				</template>
-				// Footer
-				<div
-					class="modal-footer flex-column border-top-0 px-4 py-3 gap-2"
-					style="background: linear-gradient(to right, #f8f9fa, #edf1f7);"
-				>
+				<!-- Action Buttons - Clear hierarchy -->
+				<div class="modal-footer flex-column border-0 pt-0 pb-4 px-4">
 					<button
 						type="button"
-						class="btn btn-primary btn-lg w-100 py-3 shadow-sm"
+						class="btn btn-primary w-100 py-2"
 						@click="$store.modal.addItemToSale(false)"
 						:disabled="!$store.modal.isValidToAdd"
 					>
 						<i class="bi bi-cart-plus me-2"></i>Add to Sale
 					</button>
-					<button
-						type="button"
-						class="btn btn-outline-primary btn-lg w-100 py-2"
-						@click="$store.modal.addItemToSale(true)"
-						:disabled="!$store.modal.isValidToAdd || !$store.scanner.isConfigured"
-					>
-						<i class="bi bi-plus-circle me-2"></i>Add & Scan Next
-					</button>
-					<button
-						type="button"
-						class="btn btn-link text-secondary w-100"
-						data-bs-dismiss="modal"
-					>
-						Cancel
-					</button>
+					<div class="d-flex w-100 gap-2 mt-2">
+						<button
+							type="button"
+							class="btn btn-outline-primary flex-fill"
+							@click="$store.modal.addItemToSale(true)"
+							:disabled="!$store.modal.isValidToAdd || !$store.scanner.isConfigured"
+						>
+							<i class="bi bi-plus-circle me-1"></i>Add & Scan Next
+						</button>
+						<button
+							type="button"
+							class="btn btn-outline-secondary"
+							data-bs-dismiss="modal"
+						>
+							Cancel
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

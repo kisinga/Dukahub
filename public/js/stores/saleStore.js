@@ -25,7 +25,7 @@ const saleStoreLogic = {
         typeof item.taxRate === "number" && !isNaN(item.taxRate)
           ? item.taxRate
           : this.defaultTaxRate;
-      const itemTax = lineSubtotal * (itemTaxRate / 100);
+      const itemTax = lineSubtotal * itemTaxRate;
 
       // --- Ensure itemTax is not NaN before adding ---
       return sum + (isNaN(itemTax) ? 0 : itemTax);
