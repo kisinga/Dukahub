@@ -26,12 +26,6 @@ function newSaleComponentLogic() {
     checkoutTarget: null, // 'pay' or 'credit' to show spinner on correct button
     initialized: false,
 
-    // --- Credit Modal State ---
-    creditSearchTerm: "",
-    creditSearchResults: [],
-    isSearchingCustomers: false,
-    selectedCustomer: null, // Holds the selected customer object {id, name, phone, ...}
-    creditModalStatus: { message: "", type: "" }, // Status inside the credit modal
     _creditModalInstance: null, // Bootstrap instance for credit modal
 
     // --- Debounced Search ---
@@ -56,16 +50,13 @@ function newSaleComponentLogic() {
       scannerStore?.initScanner(this.modelInfo, this.$refs.cameraView);
       modalStore?.initModal(this.$refs.scanModal); // Scan modal init
 
-      // --- Initialize Credit Modal Instance ---
+      // --- Initialize Credit Modal Instance (still needed to show/hide) ---
       if (this.$refs.creditModal && typeof bootstrap !== "undefined") {
         this._creditModalInstance = new bootstrap.Modal(this.$refs.creditModal);
-        // Optional: Add listener to clear state when credit modal closes
-        this.$refs.creditModal.addEventListener("hidden.bs.modal", () => {
-          this.resetCreditModalState();
-        });
+        // NOTE: The hidden.bs.modal listener is now inside the creditModalComponent's init
       } else {
         console.error(
-          "Credit modal element or Bootstrap not found for initialization."
+          "Credit modal element or Bootstrap not found for initialization in parent."
         );
       }
       // --- End Credit Modal Init ---
@@ -95,7 +86,6 @@ function newSaleComponentLogic() {
     resetCreditModalState() {
       this.creditSearchTerm = "";
       this.creditSearchResults = [];
-      this.isSearchingCustomers = false;
       this.selectedCustomer = null;
       this.creditModalStatus = { message: "", type: "" };
       // Don't reset isCheckingOut here, it's handled by the checkout flows
@@ -105,10 +95,8 @@ function newSaleComponentLogic() {
       if (!this.companyId || this.creditSearchTerm.trim().length < 1) {
         // Search on 1 char? Adjust if needed
         this.creditSearchResults = [];
-        this.isSearchingCustomers = false;
         return;
       }
-      this.isSearchingCustomers = true;
       this.creditSearchResults = [];
       console.log(`Searching customers for: ${this.creditSearchTerm}`);
 
@@ -131,8 +119,6 @@ function newSaleComponentLogic() {
         this.creditSearchResults = [
           { id: "error", name: "Customer search failed." },
         ];
-      } finally {
-        this.isSearchingCustomers = false;
       }
     },
 
@@ -268,17 +254,22 @@ function newSaleComponentLogic() {
       const saleStore = Alpine.store("sale");
       if (saleStore?.items.length === 0 || this.isCheckingOut) return;
 
-      this.checkoutTarget = isCreditSale ? "credit" : "pay"; // Set target for spinner
+      this.checkoutTarget = isCreditSale ? "credit" : "pay";
 
       if (isCreditSale) {
-        console.log("Initiating CREDIT sale...");
-        this.openCreditModal(); // Open modal, don't process yet
+        console.log("Opening CREDIT modal...");
+        if (this._creditModalInstance) {
+          // Optional: Clear any previous modal status before showing
+          Alpine.store("modal")?.resetCreditModalState?.(); // If store method exists
+          this._creditModalInstance.show();
+        } else {
+          console.error("Cannot open credit modal: instance not available.");
+        }
       } else {
         console.log("Initiating PAY sale...");
-        this.processCashCheckout(); // Process immediately
+        this.processCashCheckout();
       }
     },
-
     // Handles the direct PAY checkout process
     async processCashCheckout() {
       this.isCheckingOut = true; // Set general flag
@@ -316,56 +307,73 @@ function newSaleComponentLogic() {
         // submitSaleToBackend will reset isCheckingOut and checkoutTarget
       }
     },
+    handleCreditSaleConfirmation(detail) {
+      const customerId = detail?.customerId;
+      console.log(
+        `Received confirm-credit-sale event for customer: ${customerId}`
+      );
+      if (!customerId) {
+        console.error(
+          "Credit sale confirmation failed: No customer ID received."
+        );
+        // Optionally update credit modal status via store/direct access if needed
+        return;
+      }
+      // Call submit with credit flag and customer ID
+      this.submitSaleToBackend(true, customerId);
+    },
     // Centralized function to submit sale data to the backend
     async submitSaleToBackend(isCredit, customerId) {
+      // Prevent double submission if already checking out
+      if (this.isCheckingOut) {
+        console.warn("Submission prevented: Checkout already in progress.");
+        return;
+      }
+
       const saleStore = Alpine.store("sale");
+      if (!saleStore) {
+        console.error("Sale store not found.");
+        return;
+      } // Added check
       const saleData = saleStore.getSaleDataForCheckout();
 
-      // Add credit-specific info to the payload
       const payload = {
         ...saleData,
         isCredit: isCredit,
-        customerId: customerId, // Will be null for non-credit sales
+        customerId: customerId,
       };
-
       console.log("Submitting sale to backend:", payload);
 
-      // Reset specific status messages before fetch
+      this.isCheckingOut = true; // Set flag HERE
+      // Reset status messages before fetch
       this.checkoutStatus = { message: "", type: "" };
-      this.creditModalStatus = { message: "", type: "" };
-      // Show processing message based on target
+      // Access credit modal component's state if needed, or rely on its internal status
+      // For simplicity, let credit modal manage its own status display for processing
       if (this.checkoutTarget === "pay") {
         this.checkoutStatus = {
           message: "Processing sale...",
           type: "text-info",
         };
-      } else if (this.checkoutTarget === "credit") {
-        this.creditModalStatus = {
-          message: "Processing credit sale...",
-          type: "text-info",
-        };
       }
+      // Credit modal shows its own "Submitting..." message internally now
 
       try {
         const response = await fetch("/api/sales", {
-          // Your endpoint
-          method: "POST",
+          /* ... fetch options ... */ method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-
         if (!response.ok) {
+          /* ... error handling ... */
           let errorMsg = `HTTP error ${response.status}`;
           try {
             errorMsg = (await response.json()).message || errorMsg;
           } catch (e) {}
           throw new Error(errorMsg);
         }
-
         const result = await response.json();
         console.log("Checkout successful:", result);
 
-        // Display success message (use general status for PAY, modal status for CREDIT)
         const successMessage = `Sale completed! (ID: ${
           result.saleId || "N/A"
         })`;
@@ -375,42 +383,49 @@ function newSaleComponentLogic() {
             type: "text-success",
           };
         } else {
-          // For credit, we might want the main status updated too, or just clear modal
-          this.creditModalStatus = {
-            message: successMessage,
+          // Credit sale success: Close the modal, maybe show brief success in main status
+          if (this._creditModalInstance) this._creditModalInstance.hide();
+          this.checkoutStatus = {
+            message: "Credit sale completed.",
             type: "text-success",
           };
-          // Optionally update main status too:
-          // this.checkoutStatus = { message: "Credit sale completed.", type: "text-success" };
+          // Credit modal's internal status is cleared on hide by its own listener
         }
 
-        saleStore.clearSale(); // Clear the sale items
-
-        // Clear status message after a delay
+        saleStore.clearSale();
         setTimeout(() => {
           this.checkoutStatus = { message: "", type: "" };
-          // Don't clear creditModalStatus here if modal closes on success
         }, 5000);
-
-        // Indicate success by resolving promise (optional)
-        return result;
+        return result; // Success
       } catch (error) {
         console.error("Checkout submission failed:", error);
-        // Display error message (use general status for PAY, modal status for CREDIT)
         const errorMessage = `Checkout failed: ${error.message}.`;
         if (this.checkoutTarget === "pay") {
           this.checkoutStatus = { message: errorMessage, type: "text-danger" };
         } else {
-          this.creditModalStatus = {
-            message: errorMessage,
-            type: "text-danger",
-          };
+          // Show error within the credit modal (it's still open)
+          // Accessing other component's state directly is less ideal,
+          // but possible if needed, or dispatch another event back.
+          // Let's assume credit modal shows its own error for now.
+          // We need to update its status.
+          const creditModalComponent = this.$refs.creditModal.__x.$data; // Access component data (use with caution)
+          if (creditModalComponent) {
+            creditModalComponent.creditModalStatus = {
+              message: errorMessage,
+              type: "text-danger",
+            };
+          } else {
+            // Fallback if direct access fails
+            this.checkoutStatus = {
+              message: `Credit Sale Error: ${errorMessage}`,
+              type: "text-danger",
+            };
+          }
         }
-        // Re-throw error to signal failure to caller if needed
-        throw error;
+        // Don't re-throw here unless needed upstream
       } finally {
-        this.isCheckingOut = false; // Reset general flag
-        this.checkoutTarget = null; // Reset target
+        this.isCheckingOut = false; // Reset flag HERE
+        this.checkoutTarget = null;
       }
     },
   };
