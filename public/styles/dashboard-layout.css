@@ -94,7 +94,6 @@ body {
 /* Main content area */
 .main-content {
   flex: 1;
-  padding: 1.25rem;
   overflow-x: hidden;
   padding-bottom: calc(var(--bottom-nav-height) + 1rem);
 }

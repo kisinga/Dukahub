@@ -64,7 +64,6 @@ body {
   transition: all 0.3s;
   display: flex;
   flex-direction: column;
-  margin-left: var(--sidebar-width); /* Add margin for sidebar on desktop */
 }
 
 .main-content > main {
