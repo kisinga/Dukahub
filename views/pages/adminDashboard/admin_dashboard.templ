@@ -21,7 +21,7 @@ templ Home(admin *models.Admins, companies []models.CompanyDashboardData) {
 		@layouts.AdminDashboard(admin) {
 			<h5 class="mb-3">Companies Dashboard</h5>
 			<div class="table-container">
-				@components.CompaniesTable(companies)
+				@components.CompaniesTable(companies, 1, 1)
 			</div>
 			<!-- Pagination -->
 			<nav aria-label="Page navigation">
