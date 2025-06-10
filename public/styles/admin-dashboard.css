@@ -175,6 +175,28 @@ body {
   color: white;
   cursor: pointer;
 }
+
+/* Model Status Badges */
+.bg-pending {
+  background-color: #ffc107 !important; /* Bootstrap yellow for warning */
+  color: #212529 !important;
+}
+
+.bg-training {
+  background-color: #0dcaf0 !important; /* Bootstrap info for light blue */
+  color: #212529 !important;
+}
+
+.bg-trained {
+  background-color: #198754 !important; /* Bootstrap success for green */
+  color: #ffffff !important;
+}
+
+.bg-error {
+  background-color: #dc3545 !important; /* Bootstrap danger for red */
+  color: #ffffff !important;
+}
+
 .pagination {
   justify-content: center;
 }

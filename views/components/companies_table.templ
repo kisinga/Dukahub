@@ -10,17 +10,18 @@ templ CompaniesTable(companies []models.CompanyDashboardData, currentPage int, t
 	<div class="container mt-5">
 		<h2 class="mb-4">Companies</h2>
 		<div class="table-container">
-			<table class="table table-hover">
+			<table class="table table-hover table-bordered table-striped">
+				<caption>List of Companies and their Dashboard Data</caption>
 				<thead>
 					<tr>
-						<th scope="col">Company ID</th>
-						<th scope="col">Company Name</th>
-						<th scope="col">Products</th>
-						<th scope="col">Users</th>
-						<th scope="col">Accounts</th>
-						<th scope="col">Partners</th>
-						<th scope="col">Model</th>
-						<th scope="col">Actions</th>
+						<th scope="col" class="text-center">Company ID</th>
+						<th scope="col" class="text-center">Company Name</th>
+						<th scope="col" class="text-center">Products</th>
+						<th scope="col" class="text-center">Users</th>
+						<th scope="col" class="text-center">Accounts</th>
+						<th scope="col" class="text-center">Partners</th>
+						<th scope="col" class="text-center">Model Status</th>
+						<th scope="col" class="text-center">Actions</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -28,46 +29,49 @@ templ CompaniesTable(companies []models.CompanyDashboardData, currentPage int, t
 						<tr>
 							<td>{ data.Company.Id }</td>
 							<td>{ data.Company.Name() }</td>
-							<td>{ strconv.Itoa(data.ProductsCount) }</td>
-							<td>{ strconv.Itoa(data.UsersCount) }</td>
-							<td>{ strconv.Itoa(data.AccountsCount) }</td>
-							<td>{ strconv.Itoa(data.PartnersCount) }</td>
-							<td>
+							<td class="text-center">{ strconv.Itoa(data.ProductsCount) }</td>
+							<td class="text-center">{ strconv.Itoa(data.UsersCount) }</td>
+							<td class="text-center">{ strconv.Itoa(data.AccountsCount) }</td>
+							<td class="text-center">{ strconv.Itoa(data.PartnersCount) }</td>
+							<td class="text-center">
+								<span class={ "badge rounded-pill", templ.KV(fmt.Sprintf("bg-%s", data.ModelStatus.String()), true) }>{ data.ModelStatus.String() }</span>
 								<button
-									class="btn btn-sm btn-secondary model-btn"
-									data-company={ data.Company.Name() }
-									data-company-id={ data.Company.Id }
-									data-status={ data.ModelStatus }
-									data-train-date={ data.TrainDate }
-									data-new-items={ strconv.Itoa(data.NewItemsCount) }
-									data-new-images={ strconv.Itoa(data.NewImagesCount) }
-									data-total-images={ strconv.Itoa(data.TotalImagesCount) }
+									class="btn btn-sm btn-secondary model-btn mt-2"
 									data-bs-toggle="modal"
 									data-bs-target="#modelModal"
+									data-company={ data.ModelDetails.CompanyName }
+									data-company-id={ data.ModelDetails.CompanyId }
+									data-status={ data.ModelDetails.Status }
+									data-train-date={ data.ModelDetails.LastTrainDate }
+									data-new-items={ strconv.Itoa(data.ModelDetails.NewItems) }
+									data-new-images={ strconv.Itoa(data.ModelDetails.NewImages) }
+									data-total-images={ strconv.Itoa(data.ModelDetails.TotalImages) }
 								>
-									View Model
+									<i class="bi bi-eye"></i> View Details
 								</button>
 							</td>
-							<td>
+							<td class="text-center">
 								<button
-									class="btn btn-sm btn-info edit-company-btn"
+									class="btn btn-sm btn-info edit-company-btn me-2"
+									data-bs-toggle="modal"
+									data-bs-target="#editCompanyModal"
 									data-company-id={ data.Company.Id }
 									data-company-name={ data.Company.Name() }
 									data-company-location={ data.Company.Location() }
 									data-company-phone={ data.Company.Phone() }
-									data-bs-toggle="modal"
-									data-bs-target="#editCompanyModal"
+									title="Edit Company"
 								>
-									Edit
+									<i class="bi bi-pencil"></i> Edit
 								</button>
 								<button
 									class="btn btn-sm btn-danger delete-company-btn"
-									data-company-id={ data.Company.Id }
-									data-company-name={ data.Company.Name() }
 									data-bs-toggle="modal"
 									data-bs-target="#deleteCompanyModal"
+									data-company-id={ data.Company.Id }
+									data-company-name={ data.Company.Name() }
+									title="Delete Company"
 								>
-									Delete
+									<i class="bi bi-trash"></i> Delete
 								</button>
 							</td>
 						</tr>

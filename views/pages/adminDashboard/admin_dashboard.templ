@@ -176,7 +176,7 @@ templ Home(admin *models.Admins, companies []models.CompanyDashboardData, curren
     modalTitle.textContent = company;
     modelCompanyId.textContent = companyId;
     modelStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1);
-    modelStatus.className = `badge rounded-pill pill-${status} mt-2`;
+    modelStatus.className = `badge rounded-pill fs-6 bg-${status}`;
     trainDateElement.textContent = trainDate;
     newItemsElement.textContent = newItems;
     newImagesElement.textContent = newImages;

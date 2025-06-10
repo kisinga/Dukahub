@@ -116,34 +116,44 @@ func (r *Resolvers) Home(c *core.RequestEvent) error {
 		}
 
 		// Model Status and Train Date Placeholders (if not available in models.Companies)
-		modelStatus := "N/A"
+		modelStatusStr := "pending" // Default to pending
 		trainDate := "N/A"
-		newItemsCount := 0
-		newImagesCount := 0
-		totalImagesCount := 0
+		newItems := 0
+		newImages := 0
+		totalImages := 0
 
-		// Populate model data if available
-		if company.AdminConfig() != "" {
-			// Assuming AdminConfig contains model related info, parse it here
-			// For demonstration, let's just use placeholders
-			modelStatus = "Active"
-			trainDate = "2023-10-26"
-			newItemsCount = 10
-			newImagesCount = 5
-			totalImagesCount = 100
+		var modelStatus models.ModelStatus
+		switch modelStatusStr {
+		case "pending":
+			modelStatus = models.ModelStatusPending
+		case "training":
+			modelStatus = models.ModelStatusTraining
+		case "trained":
+			modelStatus = models.ModelStatusTrained
+		case "error":
+			modelStatus = models.ModelStatusError
+		default:
+			modelStatus = models.ModelStatusPending // Default or handle unknown
+		}
+
+		modelDetails := models.ModelDetails{
+			CompanyName:   company.Name(),
+			CompanyId:     company.Id,
+			Status:        modelStatus.String(), // Use the String() method for display
+			LastTrainDate: trainDate,
+			NewItems:      newItems,
+			NewImages:     newImages,
+			TotalImages:   totalImages,
 		}
 
 		dashboardData = append(dashboardData, models.CompanyDashboardData{
-			Company:          company,
-			ProductsCount:    productsCount,
-			UsersCount:       usersCount,
-			AccountsCount:    accountsCount,
-			PartnersCount:    partnersCount,
-			ModelStatus:      modelStatus,
-			TrainDate:        trainDate,
-			NewItemsCount:    newItemsCount,
-			NewImagesCount:   newImagesCount,
-			TotalImagesCount: totalImagesCount,
+			Company:       company,
+			ProductsCount: productsCount,
+			UsersCount:    usersCount,
+			AccountsCount: accountsCount,
+			PartnersCount: partnersCount,
+			ModelStatus:   modelStatus,
+			ModelDetails:  modelDetails,
 		})
 	}
 
