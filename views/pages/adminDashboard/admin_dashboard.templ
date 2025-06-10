@@ -2,8 +2,8 @@ package admindashboard
 
 import (
 	"github.com/kisinga/dukahub/models"
+	"github.com/kisinga/dukahub/views/components"
 	"github.com/kisinga/dukahub/views/layouts"
-	"strconv"
 )
 
 var config = models.LayoutConfig{
@@ -19,332 +19,183 @@ var config = models.LayoutConfig{
 templ Home(admin *models.Admins, companies []models.CompanyDashboardData) {
 	@layouts.BaseLayout(config) {
 		@layouts.AdminDashboard(admin) {
-			<!-- Main Content Cards -->
-			<div class="row">
-				<div>
-					<div class="container mt-5">
-						<h2 class="mb-4">Companies Dashboard</h2>
-						<div class="table-container">
-							<table class="table table-hover">
-								<thead>
-									<tr>
-										<th scope="col">Company ID</th>
-										<th scope="col">Company Name</th>
-										<th scope="col">Products</th>
-										<th scope="col">Users</th>
-										<th scope="col">Accounts</th>
-										<th scope="col">Partners</th>
-										<th scope="col">Model</th>
-										<th scope="col">Actions</th>
-									</tr>
-								</thead>
-								<tbody>
-									for _, data := range companies {
-										<tr>
-											<td>{ data.Company.Id }</td>
-											<td>{ data.Company.Name() }</td>
-											<td>{ strconv.Itoa(data.ProductsCount) }</td>
-											<td>{ strconv.Itoa(data.UsersCount) }</td>
-											<td>{ strconv.Itoa(data.AccountsCount) }</td>
-											<td>{ strconv.Itoa(data.PartnersCount) }</td>
-											<td>
-												<button
-													class="btn btn-sm btn-secondary model-btn"
-													data-company={ data.Company.Name() }
-													data-company-id={ data.Company.Id }
-													data-status={ data.ModelStatus }
-													data-train-date={ data.TrainDate }
-													data-new-items={ strconv.Itoa(data.NewItemsCount) }
-													data-new-images={ strconv.Itoa(data.NewImagesCount) }
-													data-total-images={ strconv.Itoa(data.TotalImagesCount) }
-													data-bs-toggle="modal"
-													data-bs-target="#modelModal"
-												>
-													View Model
-												</button>
-											</td>
-											<td>
-												<button
-													class="btn btn-sm btn-info edit-company-btn"
-													data-company-id={ data.Company.Id }
-													data-company-name={ data.Company.Name() }
-													data-company-location={ data.Company.Location() }
-													data-company-phone={ data.Company.Phone() }
-													data-bs-toggle="modal"
-													data-bs-target="#editCompanyModal"
-												>
-													Edit
-												</button>
-												<button
-													class="btn btn-sm btn-danger delete-company-btn"
-													data-company-id={ data.Company.Id }
-													data-company-name={ data.Company.Name() }
-													data-bs-toggle="modal"
-													data-bs-target="#deleteCompanyModal"
-												>
-													Delete
-												</button>
-											</td>
-										</tr>
-									}
-								</tbody>
-							</table>
+			<h5 class="mb-3">Companies Dashboard</h5>
+			<div class="table-container">
+				@components.CompaniesTable(companies)
+			</div>
+			<!-- Pagination -->
+			<nav aria-label="Page navigation">
+				<ul class="pagination">
+					<li class="page-item disabled">
+						<a class="page-link" href="#" aria-label="Previous">
+							<span aria-hidden="true">&laquo;</span>
+						</a>
+					</li>
+					<li class="page-item active">
+						<a class="page-link" href="#">1</a>
+					</li>
+					<li class="page-item"><a class="page-link" href="#">2</a></li>
+					<li class="page-item"><a class="page-link" href="#">3</a></li>
+					<li class="page-item">
+						<a class="page-link" href="#" aria-label="Next">
+							<span aria-hidden="true">&raquo;</span>
+						</a>
+					</li>
+				</ul>
+			</nav>
+			<button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#createCompanyModal">Create New Company</button>
+			<!-- Create Company Modal -->
+			<div
+				class="modal fade"
+				id="createCompanyModal"
+				tabindex="-1"
+				aria-labelledby="createCompanyModalLabel"
+				aria-hidden="true"
+			>
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="createCompanyModalLabel">Create New Company</h5>
+							<button
+								type="button"
+								class="btn-close"
+								data-bs-dismiss="modal"
+								aria-label="Close"
+							></button>
 						</div>
-						<!-- Pagination -->
-						<nav aria-label="Page navigation">
-							<ul class="pagination">
-								<li class="page-item disabled">
-									<a class="page-link" href="#" aria-label="Previous">
-										<span aria-hidden="true">&laquo;</span>
-									</a>
-								</li>
-								<li class="page-item active">
-									<a class="page-link" href="#">1</a>
-								</li>
-								<li class="page-item"><a class="page-link" href="#">2</a></li>
-								<li class="page-item"><a class="page-link" href="#">3</a></li>
-								<li class="page-item">
-									<a class="page-link" href="#" aria-label="Next">
-										<span aria-hidden="true">&raquo;</span>
-									</a>
-								</li>
-							</ul>
-						</nav>
-						<button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#createCompanyModal">Create New Company</button>
-					</div>
-					<!-- Create Company Modal -->
-					<div
-						class="modal fade"
-						id="createCompanyModal"
-						tabindex="-1"
-						aria-labelledby="createCompanyModalLabel"
-						aria-hidden="true"
-					>
-						<div class="modal-dialog modal-dialog-centered">
-							<div class="modal-content">
-								<div class="modal-header">
-									<h5 class="modal-title" id="createCompanyModalLabel">Create New Company</h5>
-									<button
-										type="button"
-										class="btn-close"
-										data-bs-dismiss="modal"
-										aria-label="Close"
-									></button>
+						<div class="modal-body">
+							<form id="createCompanyForm">
+								<div class="mb-3">
+									<label for="createCompanyName" class="form-label">Company Name</label>
+									<input type="text" class="form-control" id="createCompanyName" required/>
 								</div>
-								<div class="modal-body">
-									<form id="createCompanyForm">
-										<div class="mb-3">
-											<label for="createCompanyName" class="form-label">Company Name</label>
-											<input type="text" class="form-control" id="createCompanyName" required/>
-										</div>
-										<div class="mb-3">
-											<label for="createCompanyLocation" class="form-label">Location</label>
-											<input type="text" class="form-control" id="createCompanyLocation"/>
-										</div>
-										<div class="mb-3">
-											<label for="createCompanyPhone" class="form-label">Phone</label>
-											<input type="text" class="form-control" id="createCompanyPhone"/>
-										</div>
-										<div class="mb-3">
-											<label for="createCompanyLogo" class="form-label">Logo URL</label>
-											<input type="text" class="form-control" id="createCompanyLogo"/>
-										</div>
-									</form>
+								<div class="mb-3">
+									<label for="createCompanyLocation" class="form-label">Location</label>
+									<input type="text" class="form-control" id="createCompanyLocation"/>
 								</div>
-								<div class="modal-footer">
-									<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-									<button type="submit" form="createCompanyForm" class="btn btn-primary">Create Company</button>
+								<div class="mb-3">
+									<label for="createCompanyPhone" class="form-label">Phone</label>
+									<input type="text" class="form-control" id="createCompanyPhone"/>
 								</div>
-							</div>
+								<div class="mb-3">
+									<label for="createCompanyLogo" class="form-label">Logo URL</label>
+									<input type="text" class="form-control" id="createCompanyLogo"/>
+								</div>
+							</form>
 						</div>
-					</div>
-					<!-- Edit Company Modal -->
-					<div
-						class="modal fade"
-						id="editCompanyModal"
-						tabindex="-1"
-						aria-labelledby="editCompanyModalLabel"
-						aria-hidden="true"
-					>
-						<div class="modal-dialog modal-dialog-centered">
-							<div class="modal-content">
-								<div class="modal-header">
-									<h5 class="modal-title" id="editCompanyModalLabel">Edit Company</h5>
-									<button
-										type="button"
-										class="btn-close"
-										data-bs-dismiss="modal"
-										aria-label="Close"
-									></button>
-								</div>
-								<div class="modal-body">
-									<form id="editCompanyForm">
-										<input type="hidden" id="editCompanyId"/>
-										<div class="mb-3">
-											<label for="editCompanyName" class="form-label">Company Name</label>
-											<input type="text" class="form-control" id="editCompanyName" required/>
-										</div>
-										<div class="mb-3">
-											<label for="editCompanyLocation" class="form-label">Location</label>
-											<input type="text" class="form-control" id="editCompanyLocation"/>
-										</div>
-										<div class="mb-3">
-											<label for="editCompanyPhone" class="form-label">Phone</label>
-											<input type="text" class="form-control" id="editCompanyPhone"/>
-										</div>
-										<div class="mb-3">
-											<label for="editCompanyLogo" class="form-label">Logo URL</label>
-											<input type="text" class="form-control" id="editCompanyLogo"/>
-										</div>
-									</form>
-								</div>
-								<div class="modal-footer">
-									<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-									<button type="submit" form="editCompanyForm" class="btn btn-primary">Save Changes</button>
-								</div>
-							</div>
-						</div>
-					</div>
-					<!-- Delete Company Modal -->
-					<div
-						class="modal fade"
-						id="deleteCompanyModal"
-						tabindex="-1"
-						aria-labelledby="deleteCompanyModalLabel"
-						aria-hidden="true"
-					>
-						<div class="modal-dialog modal-dialog-centered">
-							<div class="modal-content">
-								<div class="modal-header">
-									<h5 class="modal-title" id="deleteCompanyModalLabel">Confirm Delete</h5>
-									<button
-										type="button"
-										class="btn-close"
-										data-bs-dismiss="modal"
-										aria-label="Close"
-									></button>
-								</div>
-								<div class="modal-body">
-									Are you sure you want to delete company "<span id="deleteCompanyName"></span>"? This action cannot be undone.
-									<input type="hidden" id="deleteCompanyId"/>
-								</div>
-								<div class="modal-footer">
-									<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-									<button type="button" class="btn btn-danger" id="confirmDeleteCompanyBtn">Delete</button>
-								</div>
-							</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+							<button type="submit" form="createCompanyForm" class="btn btn-primary">Create Company</button>
 						</div>
 					</div>
 				</div>
-				<!-- Model Modal -->
-				<div
-					class="modal fade"
-					id="modelModal"
-					tabindex="-1"
-					aria-labelledby="modelModalLabel"
-					aria-hidden="true"
-				>
-					<div class="modal-dialog modal-dialog-centered">
-						<div class="modal-content">
-							<div class="modal-header">
-								<h5 class="modal-title" id="modelModalLabel">Model Details for <span class="company-name"></span></h5>
-								<button
-									type="button"
-									class="btn-close"
-									data-bs-dismiss="modal"
-									aria-label="Close"
-								></button>
-							</div>
-							<div class="modal-body">
-								<p>Status: <span id="modelStatus" class="badge rounded-pill"></span></p>
-								<p>Last Trained: <span id="trainDate"></span></p>
-								<p>New Items: <span id="newItems"></span></p>
-								<p>New Images: <span id="newImages"></span></p>
-								<p>Total Images: <span id="totalImages"></span></p>
-							</div>
-							<div class="modal-footer">
-								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-								<button type="button" class="btn btn-primary" id="downloadImagesBtn">Download Images</button>
-							</div>
+			</div>
+			<!-- Edit Company Modal -->
+			<div
+				class="modal fade"
+				id="editCompanyModal"
+				tabindex="-1"
+				aria-labelledby="editCompanyModalLabel"
+				aria-hidden="true"
+			>
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="editCompanyModalLabel">Edit Company</h5>
+							<button
+								type="button"
+								class="btn-close"
+								data-bs-dismiss="modal"
+								aria-label="Close"
+							></button>
+						</div>
+						<div class="modal-body">
+							<form id="editCompanyForm">
+								<input type="hidden" id="editCompanyId"/>
+								<div class="mb-3">
+									<label for="editCompanyName" class="form-label">Company Name</label>
+									<input type="text" class="form-control" id="editCompanyName" required/>
+								</div>
+								<div class="mb-3">
+									<label for="editCompanyLocation" class="form-label">Location</label>
+									<input type="text" class="form-control" id="editCompanyLocation"/>
+								</div>
+								<div class="mb-3">
+									<label for="editCompanyPhone" class="form-label">Phone</label>
+									<input type="text" class="form-control" id="editCompanyPhone"/>
+								</div>
+								<div class="mb-3">
+									<label for="editCompanyLogo" class="form-label">Logo URL</label>
+									<input type="text" class="form-control" id="editCompanyLogo"/>
+								</div>
+							</form>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+							<button type="submit" form="editCompanyForm" class="btn btn-primary">Save Changes</button>
 						</div>
 					</div>
 				</div>
-				<!-- Activity Card -->
-				<div class="col-lg-4 mb-4">
-					<div class="card h-100">
-						<div
-							class="card-header d-flex justify-content-between align-items-center"
-						>
-							<h5 class="card-title mb-0">Recent Activity</h5>
-							<div class="dropdown">
-								<button
-									class="btn btn-sm btn-light"
-									type="button"
-									id="activityOptions"
-									data-bs-toggle="dropdown"
-									aria-expanded="false"
-								>
-									<i class="bi bi-three-dots-vertical"></i>
-								</button>
-								<ul
-									class="dropdown-menu dropdown-menu-end"
-									aria-labelledby="activityOptions"
-								>
-									<li><a class="dropdown-item" href="#">View All</a></li>
-									<li><a class="dropdown-item" href="#">Mark as Read</a></li>
-								</ul>
-							</div>
+			</div>
+			<!-- Delete Company Modal -->
+			<div
+				class="modal fade"
+				id="deleteCompanyModal"
+				tabindex="-1"
+				aria-labelledby="deleteCompanyModalLabel"
+				aria-hidden="true"
+			>
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="deleteCompanyModalLabel">Confirm Delete</h5>
+							<button
+								type="button"
+								class="btn-close"
+								data-bs-dismiss="modal"
+								aria-label="Close"
+							></button>
 						</div>
-						<div class="card-body p-0">
-							<div class="list-group list-group-flush">
-								<div class="list-group-item">
-									<div class="d-flex align-items-center">
-										<div class="flex-shrink-0">
-											<i class="bi bi-person-plus text-primary"></i>
-										</div>
-										<div class="flex-grow-1 ms-3">
-											<p class="mb-0">New user registered</p>
-											<small class="text-muted">2 hours ago</small>
-										</div>
-									</div>
-								</div>
-								<div class="list-group-item">
-									<div class="d-flex align-items-center">
-										<div class="flex-shrink-0">
-											<i class="bi bi-cart-plus text-success"></i>
-										</div>
-										<div class="flex-grow-1 ms-3">
-											<p class="mb-0">New order placed</p>
-											<small class="text-muted">4 hours ago</small>
-										</div>
-									</div>
-								</div>
-								<div class="list-group-item">
-									<div class="d-flex align-items-center">
-										<div class="flex-shrink-0">
-											<i class="bi bi-envelope text-warning"></i>
-										</div>
-										<div class="flex-grow-1 ms-3">
-											<p class="mb-0">New message received</p>
-											<small class="text-muted">1 day ago</small>
-										</div>
-									</div>
-								</div>
-								<div class="list-group-item">
-									<div class="d-flex align-items-center">
-										<div class="flex-shrink-0">
-											<i class="bi bi-gear text-info"></i>
-										</div>
-										<div class="flex-grow-1 ms-3">
-											<p class="mb-0">Settings updated</p>
-											<small class="text-muted">2 days ago</small>
-										</div>
-									</div>
-								</div>
-							</div>
+						<div class="modal-body">
+							Are you sure you want to delete company "<span id="deleteCompanyName"></span>"? This action cannot be undone.
+							<input type="hidden" id="deleteCompanyId"/>
 						</div>
-						<div class="card-footer text-center">
-							<a href="#" class="btn btn-sm btn-primary">View All</a>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-danger" id="confirmDeleteCompanyBtn">Delete</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Model Modal -->
+			<div
+				class="modal fade"
+				id="modelModal"
+				tabindex="-1"
+				aria-labelledby="modelModalLabel"
+				aria-hidden="true"
+			>
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="modelModalLabel">Model Details for <span class="company-name"></span></h5>
+							<button
+								type="button"
+								class="btn-close"
+								data-bs-dismiss="modal"
+								aria-label="Close"
+							></button>
+						</div>
+						<div class="modal-body">
+							<p>Status: <span id="modelStatus" class="badge rounded-pill"></span></p>
+							<p>Last Trained: <span id="trainDate"></span></p>
+							<p>New Items: <span id="newItems"></span></p>
+							<p>New Images: <span id="newImages"></span></p>
+							<p>Total Images: <span id="totalImages"></span></p>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+							<button type="button" class="btn btn-primary" id="downloadImagesBtn">Download Images</button>
 						</div>
 					</div>
 				</div>

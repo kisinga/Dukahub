@@ -111,3 +111,12 @@ func (r *Resolvers) Home(c *core.RequestEvent) error {
 
 	return lib.Render(c, admindashboard.Home(admin, dashboardData))
 }
+
+func (r *Resolvers) Analytics(c *core.RequestEvent) error {
+	adminID := c.Get("adminID")
+	admin, err := r.helper.FetchAdminById(adminID.(string))
+	if err != nil {
+		return c.Redirect(http.StatusFound, "/admin-login")
+	}
+	return lib.Render(c, admindashboard.Analytics(admin))
+}
