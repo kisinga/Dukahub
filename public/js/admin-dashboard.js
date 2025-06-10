@@ -1,46 +1,65 @@
-document.addEventListener("DOMContentLoaded", function () {
-  // Model Modal Logic
-  const modelModal = document.getElementById("modelModal");
-  modelModal.addEventListener("show.bs.modal", function (event) {
-    const button = event.relatedTarget;
-    const companyName = button.getAttribute("data-company");
-    const companyId = button.getAttribute("data-company-id");
-    const modelStatus = button.getAttribute("data-status");
-    const trainDate = button.getAttribute("data-train-date");
-    const newItems = button.getAttribute("data-new-items");
-    const newImages = button.getAttribute("data-new-images");
-    const totalImages = button.getAttribute("data-total-images");
+// This file contains Alpine.js data functions to manage different sections of the admin dashboard.
+// These functions are intended to be used with `x-data` attributes on the corresponding HTML elements.
+// Ensure Alpine.js is loaded before this script (e.g., <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>).
 
-    modelModal.querySelector(".company-name").textContent = companyName;
-    modelModal.querySelector("#modelStatus").textContent = modelStatus;
-    modelModal.querySelector("#trainDate").textContent = trainDate;
-    modelModal.querySelector("#newItems").textContent = newItems;
-    modelModal.querySelector("#newImages").textContent = newImages;
-    modelModal.querySelector("#totalImages").textContent = totalImages;
+/**
+ * Alpine.js handler for the Model Modal.
+ * Manages displaying model information when the Bootstrap modal is shown.
+ */
+function modelModalHandler() {
+  return {
+    companyName: "",
+    modelStatus: "",
+    trainDate: "",
+    newItems: "",
+    newImages: "",
+    totalImages: "",
 
-    const statusBadge = modelModal.querySelector("#modelStatus");
-    statusBadge.className = "badge rounded-pill";
-    if (modelStatus === "Trained") {
-      statusBadge.classList.add("bg-success");
-    } else if (modelStatus === "Untrained") {
-      statusBadge.classList.add("bg-danger");
-    } else {
-      statusBadge.classList.add("bg-warning");
-    }
-  });
+    init() {
+      // Listen for Bootstrap's 'show.bs.modal' event to populate data
+      this.$el.addEventListener("show.bs.modal", (event) => {
+        const button = event.relatedTarget;
+        this.companyName = button.getAttribute("data-company");
+        this.modelStatus = button.getAttribute("data-status");
+        this.trainDate = button.getAttribute("data-train-date");
+        this.newItems = button.getAttribute("data-new-items");
+        this.newImages = button.getAttribute("data-new-images");
+        this.totalImages = button.getAttribute("data-total-images");
+      });
+    },
 
-  // Create Company Form Submission
-  const createCompanyForm = document.getElementById("createCompanyForm");
-  if (createCompanyForm) {
-    createCompanyForm.addEventListener("submit", async function (event) {
-      event.preventDefault();
-      const companyName = document.getElementById("createCompanyName").value;
-      const companyLocation = document.getElementById(
-        "createCompanyLocation"
-      ).value;
-      const companyPhone = document.getElementById("createCompanyPhone").value;
-      const companyLogo = document.getElementById("createCompanyLogo").value;
+    /**
+     * Dynamically determines the Bootstrap badge class based on modelStatus.
+     * Use with `:class="getStatusBadgeClass()"` on the status element.
+     */
+    getStatusBadgeClass() {
+      if (this.modelStatus === "Trained") {
+        return "badge rounded-pill bg-success";
+      } else if (this.modelStatus === "Untrained") {
+        return "badge rounded-pill bg-danger";
+      } else {
+        return "badge rounded-pill bg-warning";
+      }
+    },
+  };
+}
 
+/**
+ * Alpine.js handler for the Create Company Form.
+ * Manages form input and submission for creating a new company.
+ * Apply this to your form element, e.g., <form id="createCompanyForm" x-data="createCompanyFormHandler()" x-on:submit.prevent="submitForm">.
+ */
+function createCompanyFormHandler() {
+  return {
+    companyName: "",
+    companyLocation: "",
+    companyPhone: "",
+    companyLogo: "", // Assuming this input exists in the form
+
+    /**
+     * Handles the form submission for creating a new company.
+     */
+    async submitForm() {
       try {
         const response = await fetch("/admin/companies", {
           method: "POST",
@@ -48,118 +67,128 @@ document.addEventListener("DOMContentLoaded", function () {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            name: companyName,
-            location: companyLocation,
-            phone: companyPhone,
-            logo: companyLogo,
+            name: this.companyName,
+            location: this.companyLocation,
+            phone: this.companyPhone,
+            logo: this.companyLogo,
           }),
         });
 
         if (response.ok) {
           alert("Company created successfully!");
-          location.reload();
+          location.reload(); // Reload to reflect new company
         } else {
           const errorData = await response.json();
           alert(`Error creating company: ${errorData.message}`);
         }
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Error creating company:", error);
         alert("An error occurred while creating the company.");
       }
-    });
-  }
+    },
+  };
+}
 
-  // Edit Company Modal Logic
-  const editCompanyModal = document.getElementById("editCompanyModal");
-  editCompanyModal.addEventListener("show.bs.modal", function (event) {
-    const button = event.relatedTarget;
-    const companyId = button.getAttribute("data-company-id");
-    const companyName = button.getAttribute("data-company-name");
-    const companyLocation = button.getAttribute("data-company-location");
-    const companyPhone = button.getAttribute("data-company-phone");
+/**
+ * Alpine.js handler for the Edit Company Modal and Form.
+ * Manages populating edit form with existing data and handling form submission for updates.
+ * Apply this to your edit modal element, e.g., <div id="editCompanyModal" x-data="editCompanyFormHandler()">.
+ */
+function editCompanyFormHandler() {
+  return {
+    companyId: "",
+    companyName: "",
+    companyLocation: "",
+    companyPhone: "",
+    companyLogo: "", // Assuming this input exists in the form for update
 
-    document.getElementById("editCompanyId").value = companyId;
-    document.getElementById("editCompanyName").value = companyName;
-    document.getElementById("editCompanyLocation").value = companyLocation;
-    document.getElementById("editCompanyPhone").value = companyPhone;
-  });
+    init() {
+      // Listen for Bootstrap's 'show.bs.modal' event to populate data
+      this.$el.addEventListener("show.bs.modal", (event) => {
+        const button = event.relatedTarget;
+        this.companyId = button.getAttribute("data-company-id");
+        this.companyName = button.getAttribute("data-company-name");
+        this.companyLocation = button.getAttribute("data-company-location");
+        this.companyPhone = button.getAttribute("data-company-phone");
+        // companyLogo might need to be set if available, or cleared for new input
+        this.companyLogo = ""; // Clear for new input or set from data-attribute if available
+      });
+    },
 
-  // Edit Company Form Submission
-  const editCompanyForm = document.getElementById("editCompanyForm");
-  if (editCompanyForm) {
-    editCompanyForm.addEventListener("submit", async function (event) {
-      event.preventDefault();
-      const companyId = document.getElementById("editCompanyId").value;
-      const companyName = document.getElementById("editCompanyName").value;
-      const companyLocation = document.getElementById(
-        "editCompanyLocation"
-      ).value;
-      const companyPhone = document.getElementById("editCompanyPhone").value;
-      const companyLogo = document.getElementById("editCompanyLogo").value;
-
+    /**
+     * Handles the form submission for updating an existing company.
+     * Use with x-on:submit.prevent="submitForm" on the form element inside the modal.
+     */
+    async submitForm() {
       try {
-        const response = await fetch(`/admin/companies/${companyId}`, {
+        const response = await fetch(`/admin/companies/${this.companyId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            name: companyName,
-            location: companyLocation,
-            phone: companyPhone,
-            logo: companyLogo,
+            name: this.companyName,
+            location: this.companyLocation,
+            phone: this.companyPhone,
+            logo: this.companyLogo,
           }),
         });
 
         if (response.ok) {
           alert("Company updated successfully!");
-          location.reload();
+          location.reload(); // Reload to reflect updated company
         } else {
           const errorData = await response.json();
           alert(`Error updating company: ${errorData.message}`);
         }
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Error updating company:", error);
         alert("An error occurred while updating the company.");
       }
-    });
-  }
+    },
+  };
+}
 
-  // Delete Company Modal Logic
-  const deleteCompanyModal = document.getElementById("deleteCompanyModal");
-  deleteCompanyModal.addEventListener("show.bs.modal", function (event) {
-    const button = event.relatedTarget;
-    const companyId = button.getAttribute("data-company-id");
-    const companyName = button.getAttribute("data-company-name");
+/**
+ * Alpine.js handler for the Delete Company Modal and Confirmation.
+ * Manages displaying company name to be deleted and handles the deletion confirmation.
+ * Apply this to your delete modal element, e.g., <div id="deleteCompanyModal" x-data="deleteCompanyHandler()">.
+ */
+function deleteCompanyHandler() {
+  return {
+    companyId: "",
+    companyNameToDelete: "",
 
-    document.getElementById("deleteCompanyId").value = companyId;
-    document.getElementById("companyNameToDelete").textContent = companyName;
-  });
+    init() {
+      // Listen for Bootstrap's 'show.bs.modal' event to populate data
+      this.$el.addEventListener("show.bs.modal", (event) => {
+        const button = event.relatedTarget;
+        this.companyId = button.getAttribute("data-company-id");
+        this.companyNameToDelete = button.getAttribute("data-company-name");
+      });
+    },
 
-  // Delete Company Confirmation
-  const confirmDeleteCompanyBtn = document.getElementById(
-    "confirmDeleteCompanyBtn"
-  );
-  if (confirmDeleteCompanyBtn) {
-    confirmDeleteCompanyBtn.addEventListener("click", async function () {
-      const companyId = document.getElementById("deleteCompanyId").value;
-
+    /**
+     * Handles the confirmation of deleting a company.
+     * Use with x-on:click="confirmDelete" on the confirm delete button.
+     */
+    async confirmDelete() {
       try {
-        const response = await fetch(`/admin/companies/${companyId}`, {
+        const response = await fetch(`/admin/companies/${this.companyId}`, {
           method: "DELETE",
         });
 
         if (response.ok) {
           alert("Company deleted successfully!");
-          location.reload();
+          location.reload(); // Reload to reflect deleted company
         } else {
           const errorData = await response.json();
           alert(`Error deleting company: ${errorData.message}`);
         }
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Error deleting company:", error);
         alert("An error occurred while deleting the company.");
       }
-    });
-  }
-});
+    },
+  };
+}

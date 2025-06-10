@@ -232,6 +232,21 @@ templ AdminDashboard(admin *models.Admins) {
             sidebar.classList.remove("show");
           }
         });
+
+        // Highlight active navigation link
+        const navLinks = document.querySelectorAll(".sidebar-nav .nav-link");
+        const currentPath = window.location.pathname;
+
+        navLinks.forEach(link => {
+          if (link.getAttribute("href") === currentPath) {
+            // Remove active class from previously active link, if any
+            const currentActive = document.querySelector(".sidebar-nav .nav-link.active");
+            if (currentActive) {
+              currentActive.classList.remove("active");
+            }
+            link.classList.add("active");
+          }
+        });
       });
     </script>
 	</div>
