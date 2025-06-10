@@ -60,6 +60,7 @@ type Users struct {
 	level          float64
 	created        types.DateTime
 	updated        types.DateTime
+	deleted_at     types.DateTime
 }
 
 type DailyStockTakes struct {
@@ -80,16 +81,19 @@ type DailyStockTakes struct {
 type DailyAccounts struct {
 	// collection-name: daily_accounts
 	// system: id
-	Id          string
-	opening_bal int
-	closing_bal int
-	account     *CompanyAccounts
-	notes       string
-	company     *Companies
-	user        *Users
-	date        types.DateTime
-	created     types.DateTime
-	updated     types.DateTime
+	Id                string
+	opening_bal       int
+	closing_bal       int
+	account           *CompanyAccounts
+	notes             string
+	company           *Companies
+	user              *Users
+	date              types.DateTime
+	created           types.DateTime
+	updated           types.DateTime
+	total_deposits    float64
+	total_withdrawals float64
+	deleted_at        types.DateTime
 }
 
 type AccountTypes struct {
@@ -115,14 +119,17 @@ type Skus struct {
 type Products struct {
 	// collection-name: products
 	// system: id
-	Id       string
-	name     string
-	skus     []*Skus
-	company  *Companies
-	photos   []string
-	category []*ProductCategories
-	created  types.DateTime
-	updated  types.DateTime
+	Id        string
+	name      string
+	skus      []*Skus
+	company   *Companies
+	photos    []string
+	category  []*ProductCategories
+	barcode   string
+	taxRate   float64
+	inventory *Inventory
+	created   types.DateTime
+	updated   types.DateTime
 }
 
 type Partners struct {
@@ -175,14 +182,23 @@ type Purchases struct {
 type Companies struct {
 	// collection-name: companies
 	// system: id
-	Id           string
-	logo         string
-	location     string
-	name         string
-	phone        string
-	admin_config string
-	created      types.DateTime
-	updated      types.DateTime
+	Id             string
+	logo           string
+	location       string
+	name           string
+	phone          string
+	admin_config   string
+	parent_company *Companies
+	// select: CompanyTypeSelectType(headquaters, branch, store)
+	company_type         int
+	address              string
+	contact_person_name  string
+	contact_person_email string
+	tax_id               string
+	industry             string
+	deleted_at           types.DateTime
+	created              types.DateTime
+	updated              types.DateTime
 }
 
 type CompanyAccounts struct {
@@ -197,6 +213,10 @@ type CompanyAccounts struct {
 	icon_id        int
 	created        types.DateTime
 	updated        types.DateTime
+	total_revenue  float64
+	total_expenses float64
+	net_profit     float64
+	deleted_at     types.DateTime
 }
 
 type Transactions struct {
@@ -211,6 +231,11 @@ type Transactions struct {
 	transaction_id string
 	date           types.DateTime
 	author         *Users
+	// select: ReferenceTypeSelectType(sale, purchase, expense, adjustment)
+	reference_type int
+	reference_id   string
+	tax_rate       float64
+	tax_amount     float64
 	created        types.DateTime
 	updated        types.DateTime
 }
@@ -218,14 +243,13 @@ type Transactions struct {
 type SalesDetails struct {
 	// collection-name: sales_details
 	// system: id
-	Id          string
-	price       float64
-	sku         *Skus
-	Product     *Products
-	transaction []*Transactions
-	date        types.DateTime
-	created     types.DateTime
-	updated     types.DateTime
+	Id         string
+	quantity   float64
+	sku        *Skus
+	unit_price float64
+	product    *Products
+	created    types.DateTime
+	updated    types.DateTime
 }
 
 type Expenses struct {
@@ -235,6 +259,7 @@ type Expenses struct {
 	amount      float64
 	purpose     string
 	transaction *Transactions
+	company     *Companies
 	created     types.DateTime
 	updated     types.DateTime
 }
@@ -251,18 +276,6 @@ type OpenCloseDetails struct {
 	user       *Users
 	created    types.DateTime
 	updated    types.DateTime
-}
-
-type ProductSkuFigures struct {
-	// collection-name: product_sku_figures
-	// system: id
-	Id      string
-	bal     float64
-	price   float64
-	sku     *Skus
-	product *Products
-	created types.DateTime
-	updated types.DateTime
 }
 
 type Models struct {
@@ -287,27 +300,32 @@ type ProductCategories struct {
 	updated types.DateTime
 }
 
-type ProductBalances struct {
-	// collection-name: product_balances
+type SalesTransactions struct {
+	// collection-name: sales_transactions
 	// system: id
-	Id      string
-	sku     *Skus
-	product *Products
-	balance float64
-	created types.DateTime
-	updated types.DateTime
-}
-
-type Sales struct {
-	// collection-name: sales
-	// system: id
-	Id            string
-	company       *Companies
-	salesperson   *Users
-	total         float64
-	sales_details *SalesDetails
-	created       types.DateTime
-	updated       types.DateTime
+	Id           string
+	company      *Companies
+	salesperson  *Users
+	total_amount float64
+	// select: PaymentStatusSelectType(paid, partial, pending)
+	payment_status    int
+	remaining_balance float64
+	customer          *Partners
+	// select: TransactionTypeSelectType(sale, return_, exchange)
+	transaction_type int
+	notes            string
+	transaction_date types.DateTime
+	sales_details    []*SalesDetails
+	transaction      *Transactions
+	net_profit       float64
+	tax_amount       float64
+	discount_amount  float64
+	// select: PaymentMethodSelectType(cash, card, mobile_money, bank_transfer)
+	payment_method   int
+	shipping_address string
+	deleted_at       types.DateTime
+	created          types.DateTime
+	updated          types.DateTime
 }
 
 type Admins struct {
@@ -341,4 +359,68 @@ type JobQueue struct {
 	status  float64
 	created types.DateTime
 	updated types.DateTime
+}
+
+type DailySummaries struct {
+	// collection-name: daily_summaries
+	// system: id
+	Id                   string
+	date                 types.DateTime
+	company              *Companies
+	total_sales          float64
+	total_purchases      float64
+	total_expenses       float64
+	top_selling_products string
+	profit_margin        float64
+	created              types.DateTime
+	updated              types.DateTime
+}
+
+type Inventory struct {
+	// collection-name: inventory
+	// system: id
+	Id               string
+	company          *Companies
+	sku              *Skus
+	product          *Products
+	current_quantity float64
+	reorder_point    float64
+	cost_price       float64
+	retail_price     float64
+	created          types.DateTime
+	updated          types.DateTime
+}
+
+type InventoryTransactions struct {
+	// collection-name: inventory_transactions
+	// system: id
+	Id               string
+	product          *Products
+	sku              *Skus
+	quantity_change  float64
+	quantity_after   float64
+	transaction_date types.DateTime
+	// select: ReasonCodeSelectType(sale, purchase, return_, adjustment, loss, damage)
+	reason_code    int
+	reference_id   string
+	reference_type string
+	user           *Users
+	created        types.DateTime
+	updated        types.DateTime
+}
+
+type ProductAnalytics struct {
+	// collection-name: product_analytics
+	// system: id
+	Id                string
+	product           *Products
+	period            string
+	company           *Companies
+	units_sold        float64
+	revenue           float64
+	cost              float64
+	profit            float64
+	avg_selling_price float64
+	created           types.DateTime
+	updated           types.DateTime
 }

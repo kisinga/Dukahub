@@ -109,6 +109,14 @@ func (p *Users) SetUpdated(updated types.DateTime) {
 	p.Set("updated", updated)
 }
 
+func (p *Users) DeletedAt() types.DateTime {
+	return p.GetDateTime("deleted_at")
+}
+
+func (p *Users) SetDeletedAt(deletedAt types.DateTime) {
+	p.Set("deleted_at", deletedAt)
+}
+
 type DailyStockTakes struct {
 	core.BaseRecordProxy
 }
@@ -381,6 +389,30 @@ func (p *DailyAccounts) SetUpdated(updated types.DateTime) {
 	p.Set("updated", updated)
 }
 
+func (p *DailyAccounts) TotalDeposits() float64 {
+	return p.GetFloat("total_deposits")
+}
+
+func (p *DailyAccounts) SetTotalDeposits(totalDeposits float64) {
+	p.Set("total_deposits", totalDeposits)
+}
+
+func (p *DailyAccounts) TotalWithdrawals() float64 {
+	return p.GetFloat("total_withdrawals")
+}
+
+func (p *DailyAccounts) SetTotalWithdrawals(totalWithdrawals float64) {
+	p.Set("total_withdrawals", totalWithdrawals)
+}
+
+func (p *DailyAccounts) DeletedAt() types.DateTime {
+	return p.GetDateTime("deleted_at")
+}
+
+func (p *DailyAccounts) SetDeletedAt(deletedAt types.DateTime) {
+	p.Set("deleted_at", deletedAt)
+}
+
 type AccountTypes struct {
 	core.BaseRecordProxy
 }
@@ -552,6 +584,46 @@ func (p *Products) SetCategory(category []*ProductCategories) {
 	p.Record.Set("category", ids)
 	e := p.Expand()
 	e["category"] = records
+	p.SetExpand(e)
+}
+
+func (p *Products) Barcode() string {
+	return p.GetString("barcode")
+}
+
+func (p *Products) SetBarcode(barcode string) {
+	p.Set("barcode", barcode)
+}
+
+func (p *Products) TaxRate() float64 {
+	return p.GetFloat("taxRate")
+}
+
+func (p *Products) SetTaxRate(taxRate float64) {
+	p.Set("taxRate", taxRate)
+}
+
+func (p *Products) Inventory() *Inventory {
+	var proxy *Inventory
+	if rel := p.ExpandedOne("inventory"); rel != nil {
+		proxy = &Inventory{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *Products) SetInventory(inventory *Inventory) {
+	var id string
+	if inventory != nil {
+		id = inventory.Id
+	}
+	p.Record.Set("inventory", id)
+	e := p.Expand()
+	if inventory != nil {
+		e["inventory"] = inventory.Record
+	} else {
+		delete(e, "inventory")
+	}
 	p.SetExpand(e)
 }
 
@@ -1039,6 +1111,25 @@ func (p *Purchases) SetUpdated(updated types.DateTime) {
 	p.Set("updated", updated)
 }
 
+type CompanyTypeSelectType int
+
+const (
+	Headquaters CompanyTypeSelectType = iota
+	Branch
+	Store
+)
+
+var zzCompanyTypeSelectTypeSelectNameMap = map[string]CompanyTypeSelectType{
+	"headquaters": 0,
+	"branch":      1,
+	"store":       2,
+}
+var zzCompanyTypeSelectTypeSelectIotaMap = map[CompanyTypeSelectType]string{
+	0: "headquaters",
+	1: "branch",
+	2: "store",
+}
+
 type Companies struct {
 	core.BaseRecordProxy
 }
@@ -1085,6 +1176,95 @@ func (p *Companies) AdminConfig() string {
 
 func (p *Companies) SetAdminConfig(adminConfig string) {
 	p.Set("admin_config", adminConfig)
+}
+
+func (p *Companies) ParentCompany() *Companies {
+	var proxy *Companies
+	if rel := p.ExpandedOne("parent_company"); rel != nil {
+		proxy = &Companies{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *Companies) SetParentCompany(parentCompany *Companies) {
+	var id string
+	if parentCompany != nil {
+		id = parentCompany.Id
+	}
+	p.Record.Set("parent_company", id)
+	e := p.Expand()
+	if parentCompany != nil {
+		e["parent_company"] = parentCompany.Record
+	} else {
+		delete(e, "parent_company")
+	}
+	p.SetExpand(e)
+}
+
+func (p *Companies) CompanyType() CompanyTypeSelectType {
+	option := p.GetString("company_type")
+	i, ok := zzCompanyTypeSelectTypeSelectNameMap[option]
+	if !ok {
+		panic("Unknown select value")
+	}
+	return i
+}
+
+func (p *Companies) SetCompanyType(companyType CompanyTypeSelectType) {
+	i, ok := zzCompanyTypeSelectTypeSelectIotaMap[companyType]
+	if !ok {
+		panic("Unknown select value")
+	}
+	p.Set("company_type", i)
+}
+
+func (p *Companies) Address() string {
+	return p.GetString("address")
+}
+
+func (p *Companies) SetAddress(address string) {
+	p.Set("address", address)
+}
+
+func (p *Companies) ContactPersonName() string {
+	return p.GetString("contact_person_name")
+}
+
+func (p *Companies) SetContactPersonName(contactPersonName string) {
+	p.Set("contact_person_name", contactPersonName)
+}
+
+func (p *Companies) ContactPersonEmail() string {
+	return p.GetString("contact_person_email")
+}
+
+func (p *Companies) SetContactPersonEmail(contactPersonEmail string) {
+	p.Set("contact_person_email", contactPersonEmail)
+}
+
+func (p *Companies) TaxId() string {
+	return p.GetString("tax_id")
+}
+
+func (p *Companies) SetTaxId(taxId string) {
+	p.Set("tax_id", taxId)
+}
+
+func (p *Companies) Industry() string {
+	return p.GetString("industry")
+}
+
+func (p *Companies) SetIndustry(industry string) {
+	p.Set("industry", industry)
+}
+
+func (p *Companies) DeletedAt() types.DateTime {
+	return p.GetDateTime("deleted_at")
+}
+
+func (p *Companies) SetDeletedAt(deletedAt types.DateTime) {
+	p.Set("deleted_at", deletedAt)
 }
 
 func (p *Companies) Created() types.DateTime {
@@ -1207,6 +1387,38 @@ func (p *CompanyAccounts) SetUpdated(updated types.DateTime) {
 	p.Set("updated", updated)
 }
 
+func (p *CompanyAccounts) TotalRevenue() float64 {
+	return p.GetFloat("total_revenue")
+}
+
+func (p *CompanyAccounts) SetTotalRevenue(totalRevenue float64) {
+	p.Set("total_revenue", totalRevenue)
+}
+
+func (p *CompanyAccounts) TotalExpenses() float64 {
+	return p.GetFloat("total_expenses")
+}
+
+func (p *CompanyAccounts) SetTotalExpenses(totalExpenses float64) {
+	p.Set("total_expenses", totalExpenses)
+}
+
+func (p *CompanyAccounts) NetProfit() float64 {
+	return p.GetFloat("net_profit")
+}
+
+func (p *CompanyAccounts) SetNetProfit(netProfit float64) {
+	p.Set("net_profit", netProfit)
+}
+
+func (p *CompanyAccounts) DeletedAt() types.DateTime {
+	return p.GetDateTime("deleted_at")
+}
+
+func (p *CompanyAccounts) SetDeletedAt(deletedAt types.DateTime) {
+	p.Set("deleted_at", deletedAt)
+}
+
 type TypeSelectType2 int
 
 const (
@@ -1221,6 +1433,28 @@ var zzTypeSelectType2SelectNameMap = map[string]TypeSelectType2{
 var zzTypeSelectType2SelectIotaMap = map[TypeSelectType2]string{
 	0: "debit",
 	1: "credit",
+}
+
+type ReferenceTypeSelectType int
+
+const (
+	Sale2 ReferenceTypeSelectType = iota
+	Purchase2
+	Expense
+	Adjustment
+)
+
+var zzReferenceTypeSelectTypeSelectNameMap = map[string]ReferenceTypeSelectType{
+	"sale":       0,
+	"purchase":   1,
+	"expense":    2,
+	"adjustment": 3,
+}
+var zzReferenceTypeSelectTypeSelectIotaMap = map[ReferenceTypeSelectType]string{
+	0: "sale",
+	1: "purchase",
+	2: "expense",
+	3: "adjustment",
 }
 
 type Transactions struct {
@@ -1344,6 +1578,47 @@ func (p *Transactions) SetAuthor(author *Users) {
 	p.SetExpand(e)
 }
 
+func (p *Transactions) ReferenceType() ReferenceTypeSelectType {
+	option := p.GetString("reference_type")
+	i, ok := zzReferenceTypeSelectTypeSelectNameMap[option]
+	if !ok {
+		panic("Unknown select value")
+	}
+	return i
+}
+
+func (p *Transactions) SetReferenceType(referenceType ReferenceTypeSelectType) {
+	i, ok := zzReferenceTypeSelectTypeSelectIotaMap[referenceType]
+	if !ok {
+		panic("Unknown select value")
+	}
+	p.Set("reference_type", i)
+}
+
+func (p *Transactions) ReferenceId() string {
+	return p.GetString("reference_id")
+}
+
+func (p *Transactions) SetReferenceId(referenceId string) {
+	p.Set("reference_id", referenceId)
+}
+
+func (p *Transactions) TaxRate() float64 {
+	return p.GetFloat("tax_rate")
+}
+
+func (p *Transactions) SetTaxRate(taxRate float64) {
+	p.Set("tax_rate", taxRate)
+}
+
+func (p *Transactions) TaxAmount() float64 {
+	return p.GetFloat("tax_amount")
+}
+
+func (p *Transactions) SetTaxAmount(taxAmount float64) {
+	p.Set("tax_amount", taxAmount)
+}
+
 func (p *Transactions) Created() types.DateTime {
 	return p.GetDateTime("created")
 }
@@ -1368,12 +1643,12 @@ func (p *SalesDetails) CollectionName() string {
 	return "sales_details"
 }
 
-func (p *SalesDetails) Price() float64 {
-	return p.GetFloat("price")
+func (p *SalesDetails) Quantity() float64 {
+	return p.GetFloat("quantity")
 }
 
-func (p *SalesDetails) SetPrice(price float64) {
-	p.Set("price", price)
+func (p *SalesDetails) SetQuantity(quantity float64) {
+	p.Set("quantity", quantity)
 }
 
 func (p *SalesDetails) Sku() *Skus {
@@ -1400,9 +1675,17 @@ func (p *SalesDetails) SetSku(sku *Skus) {
 	p.SetExpand(e)
 }
 
+func (p *SalesDetails) UnitPrice() float64 {
+	return p.GetFloat("unit_price")
+}
+
+func (p *SalesDetails) SetUnitPrice(unitPrice float64) {
+	p.Set("unit_price", unitPrice)
+}
+
 func (p *SalesDetails) Product() *Products {
 	var proxy *Products
-	if rel := p.ExpandedOne("Product"); rel != nil {
+	if rel := p.ExpandedOne("product"); rel != nil {
 		proxy = &Products{}
 		proxy.Record = rel
 	}
@@ -1414,45 +1697,14 @@ func (p *SalesDetails) SetProduct(product *Products) {
 	if product != nil {
 		id = product.Id
 	}
-	p.Record.Set("Product", id)
+	p.Record.Set("product", id)
 	e := p.Expand()
 	if product != nil {
-		e["Product"] = product.Record
+		e["product"] = product.Record
 	} else {
-		delete(e, "Product")
+		delete(e, "product")
 	}
 	p.SetExpand(e)
-}
-
-func (p *SalesDetails) Transaction() []*Transactions {
-	rels := p.ExpandedAll("transaction")
-	proxies := make([]*Transactions, len(rels))
-	for i := range len(rels) {
-		proxies[i] = &Transactions{}
-		proxies[i].Record = rels[i]
-	}
-	return proxies
-}
-
-func (p *SalesDetails) SetTransaction(transaction []*Transactions) {
-	records := make([]*core.Record, len(transaction))
-	ids := make([]string, len(transaction))
-	for i, r := range transaction {
-		records[i] = r.Record
-		ids[i] = r.Record.Id
-	}
-	p.Record.Set("transaction", ids)
-	e := p.Expand()
-	e["transaction"] = records
-	p.SetExpand(e)
-}
-
-func (p *SalesDetails) Date() types.DateTime {
-	return p.GetDateTime("date")
-}
-
-func (p *SalesDetails) SetDate(date types.DateTime) {
-	p.Set("date", date)
 }
 
 func (p *SalesDetails) Created() types.DateTime {
@@ -1515,6 +1767,30 @@ func (p *Expenses) SetTransaction(transaction *Transactions) {
 		e["transaction"] = transaction.Record
 	} else {
 		delete(e, "transaction")
+	}
+	p.SetExpand(e)
+}
+
+func (p *Expenses) Company() *Companies {
+	var proxy *Companies
+	if rel := p.ExpandedOne("company"); rel != nil {
+		proxy = &Companies{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *Expenses) SetCompany(company *Companies) {
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
+	e := p.Expand()
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
 	}
 	p.SetExpand(e)
 }
@@ -1637,94 +1913,6 @@ func (p *OpenCloseDetails) Updated() types.DateTime {
 }
 
 func (p *OpenCloseDetails) SetUpdated(updated types.DateTime) {
-	p.Set("updated", updated)
-}
-
-type ProductSkuFigures struct {
-	core.BaseRecordProxy
-}
-
-func (p *ProductSkuFigures) CollectionName() string {
-	return "product_sku_figures"
-}
-
-func (p *ProductSkuFigures) Bal() float64 {
-	return p.GetFloat("bal")
-}
-
-func (p *ProductSkuFigures) SetBal(bal float64) {
-	p.Set("bal", bal)
-}
-
-func (p *ProductSkuFigures) Price() float64 {
-	return p.GetFloat("price")
-}
-
-func (p *ProductSkuFigures) SetPrice(price float64) {
-	p.Set("price", price)
-}
-
-func (p *ProductSkuFigures) Sku() *Skus {
-	var proxy *Skus
-	if rel := p.ExpandedOne("sku"); rel != nil {
-		proxy = &Skus{}
-		proxy.Record = rel
-	}
-	return proxy
-}
-
-func (p *ProductSkuFigures) SetSku(sku *Skus) {
-	var id string
-	if sku != nil {
-		id = sku.Id
-	}
-	p.Record.Set("sku", id)
-	e := p.Expand()
-	if sku != nil {
-		e["sku"] = sku.Record
-	} else {
-		delete(e, "sku")
-	}
-	p.SetExpand(e)
-}
-
-func (p *ProductSkuFigures) Product() *Products {
-	var proxy *Products
-	if rel := p.ExpandedOne("product"); rel != nil {
-		proxy = &Products{}
-		proxy.Record = rel
-	}
-	return proxy
-}
-
-func (p *ProductSkuFigures) SetProduct(product *Products) {
-	var id string
-	if product != nil {
-		id = product.Id
-	}
-	p.Record.Set("product", id)
-	e := p.Expand()
-	if product != nil {
-		e["product"] = product.Record
-	} else {
-		delete(e, "product")
-	}
-	p.SetExpand(e)
-}
-
-func (p *ProductSkuFigures) Created() types.DateTime {
-	return p.GetDateTime("created")
-}
-
-func (p *ProductSkuFigures) SetCreated(created types.DateTime) {
-	p.Set("created", created)
-}
-
-func (p *ProductSkuFigures) Updated() types.DateTime {
-	return p.GetDateTime("updated")
-}
-
-func (p *ProductSkuFigures) SetUpdated(updated types.DateTime) {
 	p.Set("updated", updated)
 }
 
@@ -1856,95 +2044,75 @@ func (p *ProductCategories) SetUpdated(updated types.DateTime) {
 	p.Set("updated", updated)
 }
 
-type ProductBalances struct {
+type PaymentStatusSelectType int
+
+const (
+	Paid2 PaymentStatusSelectType = iota
+	Partial2
+	Pending2
+)
+
+var zzPaymentStatusSelectTypeSelectNameMap = map[string]PaymentStatusSelectType{
+	"paid":    0,
+	"partial": 1,
+	"pending": 2,
+}
+var zzPaymentStatusSelectTypeSelectIotaMap = map[PaymentStatusSelectType]string{
+	0: "paid",
+	1: "partial",
+	2: "pending",
+}
+
+type TransactionTypeSelectType int
+
+const (
+	Sale3 TransactionTypeSelectType = iota
+	Return
+	Exchange
+)
+
+var zzTransactionTypeSelectTypeSelectNameMap = map[string]TransactionTypeSelectType{
+	"sale":     0,
+	"return":   1,
+	"exchange": 2,
+}
+var zzTransactionTypeSelectTypeSelectIotaMap = map[TransactionTypeSelectType]string{
+	0: "sale",
+	1: "return",
+	2: "exchange",
+}
+
+type PaymentMethodSelectType int
+
+const (
+	Cash PaymentMethodSelectType = iota
+	Card
+	MobileMoney
+	BankTransfer
+)
+
+var zzPaymentMethodSelectTypeSelectNameMap = map[string]PaymentMethodSelectType{
+	"cash":          0,
+	"card":          1,
+	"mobile_money":  2,
+	"bank_transfer": 3,
+}
+var zzPaymentMethodSelectTypeSelectIotaMap = map[PaymentMethodSelectType]string{
+	0: "cash",
+	1: "card",
+	2: "mobile_money",
+	3: "bank_transfer",
+}
+
+type SalesTransactions struct {
 	core.BaseRecordProxy
 }
 
-func (p *ProductBalances) CollectionName() string {
-	return "product_balances"
+func (p *SalesTransactions) CollectionName() string {
+	return "sales_transactions"
 }
 
-func (p *ProductBalances) Sku() *Skus {
-	var proxy *Skus
-	if rel := p.ExpandedOne("sku"); rel != nil {
-		proxy = &Skus{}
-		proxy.Record = rel
-	}
-	return proxy
-}
-
-func (p *ProductBalances) SetSku(sku *Skus) {
-	var id string
-	if sku != nil {
-		id = sku.Id
-	}
-	p.Record.Set("sku", id)
-	e := p.Expand()
-	if sku != nil {
-		e["sku"] = sku.Record
-	} else {
-		delete(e, "sku")
-	}
-	p.SetExpand(e)
-}
-
-func (p *ProductBalances) Product() *Products {
-	var proxy *Products
-	if rel := p.ExpandedOne("product"); rel != nil {
-		proxy = &Products{}
-		proxy.Record = rel
-	}
-	return proxy
-}
-
-func (p *ProductBalances) SetProduct(product *Products) {
-	var id string
-	if product != nil {
-		id = product.Id
-	}
-	p.Record.Set("product", id)
-	e := p.Expand()
-	if product != nil {
-		e["product"] = product.Record
-	} else {
-		delete(e, "product")
-	}
-	p.SetExpand(e)
-}
-
-func (p *ProductBalances) Balance() float64 {
-	return p.GetFloat("balance")
-}
-
-func (p *ProductBalances) SetBalance(balance float64) {
-	p.Set("balance", balance)
-}
-
-func (p *ProductBalances) Created() types.DateTime {
-	return p.GetDateTime("created")
-}
-
-func (p *ProductBalances) SetCreated(created types.DateTime) {
-	p.Set("created", created)
-}
-
-func (p *ProductBalances) Updated() types.DateTime {
-	return p.GetDateTime("updated")
-}
-
-func (p *ProductBalances) SetUpdated(updated types.DateTime) {
-	p.Set("updated", updated)
-}
-
-type Sales struct {
-	core.BaseRecordProxy
-}
-
-func (p *Sales) CollectionName() string {
-	return "sales"
-}
-
-func (p *Sales) Company() *Companies {
+func (p *SalesTransactions) Company() *Companies {
 	var proxy *Companies
 	if rel := p.ExpandedOne("company"); rel != nil {
 		proxy = &Companies{}
@@ -1953,7 +2121,7 @@ func (p *Sales) Company() *Companies {
 	return proxy
 }
 
-func (p *Sales) SetCompany(company *Companies) {
+func (p *SalesTransactions) SetCompany(company *Companies) {
 	var id string
 	if company != nil {
 		id = company.Id
@@ -1968,7 +2136,7 @@ func (p *Sales) SetCompany(company *Companies) {
 	p.SetExpand(e)
 }
 
-func (p *Sales) Salesperson() *Users {
+func (p *SalesTransactions) Salesperson() *Users {
 	var proxy *Users
 	if rel := p.ExpandedOne("salesperson"); rel != nil {
 		proxy = &Users{}
@@ -1977,7 +2145,7 @@ func (p *Sales) Salesperson() *Users {
 	return proxy
 }
 
-func (p *Sales) SetSalesperson(salesperson *Users) {
+func (p *SalesTransactions) SetSalesperson(salesperson *Users) {
 	var id string
 	if salesperson != nil {
 		id = salesperson.Id
@@ -1992,51 +2160,213 @@ func (p *Sales) SetSalesperson(salesperson *Users) {
 	p.SetExpand(e)
 }
 
-func (p *Sales) Total() float64 {
-	return p.GetFloat("total")
+func (p *SalesTransactions) TotalAmount() float64 {
+	return p.GetFloat("total_amount")
 }
 
-func (p *Sales) SetTotal(total float64) {
-	p.Set("total", total)
+func (p *SalesTransactions) SetTotalAmount(totalAmount float64) {
+	p.Set("total_amount", totalAmount)
 }
 
-func (p *Sales) SalesDetails() *SalesDetails {
-	var proxy *SalesDetails
-	if rel := p.ExpandedOne("sales_details"); rel != nil {
-		proxy = &SalesDetails{}
+func (p *SalesTransactions) PaymentStatus() PaymentStatusSelectType {
+	option := p.GetString("payment_status")
+	i, ok := zzPaymentStatusSelectTypeSelectNameMap[option]
+	if !ok {
+		panic("Unknown select value")
+	}
+	return i
+}
+
+func (p *SalesTransactions) SetPaymentStatus(paymentStatus PaymentStatusSelectType) {
+	i, ok := zzPaymentStatusSelectTypeSelectIotaMap[paymentStatus]
+	if !ok {
+		panic("Unknown select value")
+	}
+	p.Set("payment_status", i)
+}
+
+func (p *SalesTransactions) RemainingBalance() float64 {
+	return p.GetFloat("remaining_balance")
+}
+
+func (p *SalesTransactions) SetRemainingBalance(remainingBalance float64) {
+	p.Set("remaining_balance", remainingBalance)
+}
+
+func (p *SalesTransactions) Customer() *Partners {
+	var proxy *Partners
+	if rel := p.ExpandedOne("customer"); rel != nil {
+		proxy = &Partners{}
 		proxy.Record = rel
 	}
 	return proxy
 }
 
-func (p *Sales) SetSalesDetails(salesDetails *SalesDetails) {
+func (p *SalesTransactions) SetCustomer(customer *Partners) {
 	var id string
-	if salesDetails != nil {
-		id = salesDetails.Id
+	if customer != nil {
+		id = customer.Id
 	}
-	p.Record.Set("sales_details", id)
+	p.Record.Set("customer", id)
 	e := p.Expand()
-	if salesDetails != nil {
-		e["sales_details"] = salesDetails.Record
+	if customer != nil {
+		e["customer"] = customer.Record
 	} else {
-		delete(e, "sales_details")
+		delete(e, "customer")
 	}
 	p.SetExpand(e)
 }
 
-func (p *Sales) Created() types.DateTime {
+func (p *SalesTransactions) TransactionType() TransactionTypeSelectType {
+	option := p.GetString("transaction_type")
+	i, ok := zzTransactionTypeSelectTypeSelectNameMap[option]
+	if !ok {
+		panic("Unknown select value")
+	}
+	return i
+}
+
+func (p *SalesTransactions) SetTransactionType(transactionType TransactionTypeSelectType) {
+	i, ok := zzTransactionTypeSelectTypeSelectIotaMap[transactionType]
+	if !ok {
+		panic("Unknown select value")
+	}
+	p.Set("transaction_type", i)
+}
+
+func (p *SalesTransactions) Notes() string {
+	return p.GetString("notes")
+}
+
+func (p *SalesTransactions) SetNotes(notes string) {
+	p.Set("notes", notes)
+}
+
+func (p *SalesTransactions) TransactionDate() types.DateTime {
+	return p.GetDateTime("transaction_date")
+}
+
+func (p *SalesTransactions) SetTransactionDate(transactionDate types.DateTime) {
+	p.Set("transaction_date", transactionDate)
+}
+
+func (p *SalesTransactions) SalesDetails() []*SalesDetails {
+	rels := p.ExpandedAll("sales_details")
+	proxies := make([]*SalesDetails, len(rels))
+	for i := range len(rels) {
+		proxies[i] = &SalesDetails{}
+		proxies[i].Record = rels[i]
+	}
+	return proxies
+}
+
+func (p *SalesTransactions) SetSalesDetails(salesDetails []*SalesDetails) {
+	records := make([]*core.Record, len(salesDetails))
+	ids := make([]string, len(salesDetails))
+	for i, r := range salesDetails {
+		records[i] = r.Record
+		ids[i] = r.Record.Id
+	}
+	p.Record.Set("sales_details", ids)
+	e := p.Expand()
+	e["sales_details"] = records
+	p.SetExpand(e)
+}
+
+func (p *SalesTransactions) Transaction() *Transactions {
+	var proxy *Transactions
+	if rel := p.ExpandedOne("transaction"); rel != nil {
+		proxy = &Transactions{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *SalesTransactions) SetTransaction(transaction *Transactions) {
+	var id string
+	if transaction != nil {
+		id = transaction.Id
+	}
+	p.Record.Set("transaction", id)
+	e := p.Expand()
+	if transaction != nil {
+		e["transaction"] = transaction.Record
+	} else {
+		delete(e, "transaction")
+	}
+	p.SetExpand(e)
+}
+
+func (p *SalesTransactions) NetProfit() float64 {
+	return p.GetFloat("net_profit")
+}
+
+func (p *SalesTransactions) SetNetProfit(netProfit float64) {
+	p.Set("net_profit", netProfit)
+}
+
+func (p *SalesTransactions) TaxAmount() float64 {
+	return p.GetFloat("tax_amount")
+}
+
+func (p *SalesTransactions) SetTaxAmount(taxAmount float64) {
+	p.Set("tax_amount", taxAmount)
+}
+
+func (p *SalesTransactions) DiscountAmount() float64 {
+	return p.GetFloat("discount_amount")
+}
+
+func (p *SalesTransactions) SetDiscountAmount(discountAmount float64) {
+	p.Set("discount_amount", discountAmount)
+}
+
+func (p *SalesTransactions) PaymentMethod() PaymentMethodSelectType {
+	option := p.GetString("payment_method")
+	i, ok := zzPaymentMethodSelectTypeSelectNameMap[option]
+	if !ok {
+		panic("Unknown select value")
+	}
+	return i
+}
+
+func (p *SalesTransactions) SetPaymentMethod(paymentMethod PaymentMethodSelectType) {
+	i, ok := zzPaymentMethodSelectTypeSelectIotaMap[paymentMethod]
+	if !ok {
+		panic("Unknown select value")
+	}
+	p.Set("payment_method", i)
+}
+
+func (p *SalesTransactions) ShippingAddress() string {
+	return p.GetString("shipping_address")
+}
+
+func (p *SalesTransactions) SetShippingAddress(shippingAddress string) {
+	p.Set("shipping_address", shippingAddress)
+}
+
+func (p *SalesTransactions) DeletedAt() types.DateTime {
+	return p.GetDateTime("deleted_at")
+}
+
+func (p *SalesTransactions) SetDeletedAt(deletedAt types.DateTime) {
+	p.Set("deleted_at", deletedAt)
+}
+
+func (p *SalesTransactions) Created() types.DateTime {
 	return p.GetDateTime("created")
 }
 
-func (p *Sales) SetCreated(created types.DateTime) {
+func (p *SalesTransactions) SetCreated(created types.DateTime) {
 	p.Set("created", created)
 }
 
-func (p *Sales) Updated() types.DateTime {
+func (p *SalesTransactions) Updated() types.DateTime {
 	return p.GetDateTime("updated")
 }
 
-func (p *Sales) SetUpdated(updated types.DateTime) {
+func (p *SalesTransactions) SetUpdated(updated types.DateTime) {
 	p.Set("updated", updated)
 }
 
@@ -2181,5 +2511,530 @@ func (p *JobQueue) Updated() types.DateTime {
 }
 
 func (p *JobQueue) SetUpdated(updated types.DateTime) {
+	p.Set("updated", updated)
+}
+
+type DailySummaries struct {
+	core.BaseRecordProxy
+}
+
+func (p *DailySummaries) CollectionName() string {
+	return "daily_summaries"
+}
+
+func (p *DailySummaries) Date() types.DateTime {
+	return p.GetDateTime("date")
+}
+
+func (p *DailySummaries) SetDate(date types.DateTime) {
+	p.Set("date", date)
+}
+
+func (p *DailySummaries) Company() *Companies {
+	var proxy *Companies
+	if rel := p.ExpandedOne("company"); rel != nil {
+		proxy = &Companies{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *DailySummaries) SetCompany(company *Companies) {
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
+	e := p.Expand()
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
+	p.SetExpand(e)
+}
+
+func (p *DailySummaries) TotalSales() float64 {
+	return p.GetFloat("total_sales")
+}
+
+func (p *DailySummaries) SetTotalSales(totalSales float64) {
+	p.Set("total_sales", totalSales)
+}
+
+func (p *DailySummaries) TotalPurchases() float64 {
+	return p.GetFloat("total_purchases")
+}
+
+func (p *DailySummaries) SetTotalPurchases(totalPurchases float64) {
+	p.Set("total_purchases", totalPurchases)
+}
+
+func (p *DailySummaries) TotalExpenses() float64 {
+	return p.GetFloat("total_expenses")
+}
+
+func (p *DailySummaries) SetTotalExpenses(totalExpenses float64) {
+	p.Set("total_expenses", totalExpenses)
+}
+
+func (p *DailySummaries) TopSellingProducts() string {
+	return p.GetString("top_selling_products")
+}
+
+func (p *DailySummaries) SetTopSellingProducts(topSellingProducts string) {
+	p.Set("top_selling_products", topSellingProducts)
+}
+
+func (p *DailySummaries) ProfitMargin() float64 {
+	return p.GetFloat("profit_margin")
+}
+
+func (p *DailySummaries) SetProfitMargin(profitMargin float64) {
+	p.Set("profit_margin", profitMargin)
+}
+
+func (p *DailySummaries) Created() types.DateTime {
+	return p.GetDateTime("created")
+}
+
+func (p *DailySummaries) SetCreated(created types.DateTime) {
+	p.Set("created", created)
+}
+
+func (p *DailySummaries) Updated() types.DateTime {
+	return p.GetDateTime("updated")
+}
+
+func (p *DailySummaries) SetUpdated(updated types.DateTime) {
+	p.Set("updated", updated)
+}
+
+type Inventory struct {
+	core.BaseRecordProxy
+}
+
+func (p *Inventory) CollectionName() string {
+	return "inventory"
+}
+
+func (p *Inventory) Company() *Companies {
+	var proxy *Companies
+	if rel := p.ExpandedOne("company"); rel != nil {
+		proxy = &Companies{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *Inventory) SetCompany(company *Companies) {
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
+	e := p.Expand()
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
+	p.SetExpand(e)
+}
+
+func (p *Inventory) Sku() *Skus {
+	var proxy *Skus
+	if rel := p.ExpandedOne("sku"); rel != nil {
+		proxy = &Skus{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *Inventory) SetSku(sku *Skus) {
+	var id string
+	if sku != nil {
+		id = sku.Id
+	}
+	p.Record.Set("sku", id)
+	e := p.Expand()
+	if sku != nil {
+		e["sku"] = sku.Record
+	} else {
+		delete(e, "sku")
+	}
+	p.SetExpand(e)
+}
+
+func (p *Inventory) Product() *Products {
+	var proxy *Products
+	if rel := p.ExpandedOne("product"); rel != nil {
+		proxy = &Products{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *Inventory) SetProduct(product *Products) {
+	var id string
+	if product != nil {
+		id = product.Id
+	}
+	p.Record.Set("product", id)
+	e := p.Expand()
+	if product != nil {
+		e["product"] = product.Record
+	} else {
+		delete(e, "product")
+	}
+	p.SetExpand(e)
+}
+
+func (p *Inventory) CurrentQuantity() float64 {
+	return p.GetFloat("current_quantity")
+}
+
+func (p *Inventory) SetCurrentQuantity(currentQuantity float64) {
+	p.Set("current_quantity", currentQuantity)
+}
+
+func (p *Inventory) ReorderPoint() float64 {
+	return p.GetFloat("reorder_point")
+}
+
+func (p *Inventory) SetReorderPoint(reorderPoint float64) {
+	p.Set("reorder_point", reorderPoint)
+}
+
+func (p *Inventory) CostPrice() float64 {
+	return p.GetFloat("cost_price")
+}
+
+func (p *Inventory) SetCostPrice(costPrice float64) {
+	p.Set("cost_price", costPrice)
+}
+
+func (p *Inventory) RetailPrice() float64 {
+	return p.GetFloat("retail_price")
+}
+
+func (p *Inventory) SetRetailPrice(retailPrice float64) {
+	p.Set("retail_price", retailPrice)
+}
+
+func (p *Inventory) Created() types.DateTime {
+	return p.GetDateTime("created")
+}
+
+func (p *Inventory) SetCreated(created types.DateTime) {
+	p.Set("created", created)
+}
+
+func (p *Inventory) Updated() types.DateTime {
+	return p.GetDateTime("updated")
+}
+
+func (p *Inventory) SetUpdated(updated types.DateTime) {
+	p.Set("updated", updated)
+}
+
+type ReasonCodeSelectType int
+
+const (
+	Sale4 ReasonCodeSelectType = iota
+	Purchase3
+	Return2
+	Adjustment2
+	Loss
+	Damage
+)
+
+var zzReasonCodeSelectTypeSelectNameMap = map[string]ReasonCodeSelectType{
+	"sale":       0,
+	"purchase":   1,
+	"return":     2,
+	"adjustment": 3,
+	"loss":       4,
+	"damage":     5,
+}
+var zzReasonCodeSelectTypeSelectIotaMap = map[ReasonCodeSelectType]string{
+	0: "sale",
+	1: "purchase",
+	2: "return",
+	3: "adjustment",
+	4: "loss",
+	5: "damage",
+}
+
+type InventoryTransactions struct {
+	core.BaseRecordProxy
+}
+
+func (p *InventoryTransactions) CollectionName() string {
+	return "inventory_transactions"
+}
+
+func (p *InventoryTransactions) Product() *Products {
+	var proxy *Products
+	if rel := p.ExpandedOne("product"); rel != nil {
+		proxy = &Products{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *InventoryTransactions) SetProduct(product *Products) {
+	var id string
+	if product != nil {
+		id = product.Id
+	}
+	p.Record.Set("product", id)
+	e := p.Expand()
+	if product != nil {
+		e["product"] = product.Record
+	} else {
+		delete(e, "product")
+	}
+	p.SetExpand(e)
+}
+
+func (p *InventoryTransactions) Sku() *Skus {
+	var proxy *Skus
+	if rel := p.ExpandedOne("sku"); rel != nil {
+		proxy = &Skus{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *InventoryTransactions) SetSku(sku *Skus) {
+	var id string
+	if sku != nil {
+		id = sku.Id
+	}
+	p.Record.Set("sku", id)
+	e := p.Expand()
+	if sku != nil {
+		e["sku"] = sku.Record
+	} else {
+		delete(e, "sku")
+	}
+	p.SetExpand(e)
+}
+
+func (p *InventoryTransactions) QuantityChange() float64 {
+	return p.GetFloat("quantity_change")
+}
+
+func (p *InventoryTransactions) SetQuantityChange(quantityChange float64) {
+	p.Set("quantity_change", quantityChange)
+}
+
+func (p *InventoryTransactions) QuantityAfter() float64 {
+	return p.GetFloat("quantity_after")
+}
+
+func (p *InventoryTransactions) SetQuantityAfter(quantityAfter float64) {
+	p.Set("quantity_after", quantityAfter)
+}
+
+func (p *InventoryTransactions) TransactionDate() types.DateTime {
+	return p.GetDateTime("transaction_date")
+}
+
+func (p *InventoryTransactions) SetTransactionDate(transactionDate types.DateTime) {
+	p.Set("transaction_date", transactionDate)
+}
+
+func (p *InventoryTransactions) ReasonCode() ReasonCodeSelectType {
+	option := p.GetString("reason_code")
+	i, ok := zzReasonCodeSelectTypeSelectNameMap[option]
+	if !ok {
+		panic("Unknown select value")
+	}
+	return i
+}
+
+func (p *InventoryTransactions) SetReasonCode(reasonCode ReasonCodeSelectType) {
+	i, ok := zzReasonCodeSelectTypeSelectIotaMap[reasonCode]
+	if !ok {
+		panic("Unknown select value")
+	}
+	p.Set("reason_code", i)
+}
+
+func (p *InventoryTransactions) ReferenceId() string {
+	return p.GetString("reference_id")
+}
+
+func (p *InventoryTransactions) SetReferenceId(referenceId string) {
+	p.Set("reference_id", referenceId)
+}
+
+func (p *InventoryTransactions) ReferenceType() string {
+	return p.GetString("reference_type")
+}
+
+func (p *InventoryTransactions) SetReferenceType(referenceType string) {
+	p.Set("reference_type", referenceType)
+}
+
+func (p *InventoryTransactions) User() *Users {
+	var proxy *Users
+	if rel := p.ExpandedOne("user"); rel != nil {
+		proxy = &Users{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *InventoryTransactions) SetUser(user *Users) {
+	var id string
+	if user != nil {
+		id = user.Id
+	}
+	p.Record.Set("user", id)
+	e := p.Expand()
+	if user != nil {
+		e["user"] = user.Record
+	} else {
+		delete(e, "user")
+	}
+	p.SetExpand(e)
+}
+
+func (p *InventoryTransactions) Created() types.DateTime {
+	return p.GetDateTime("created")
+}
+
+func (p *InventoryTransactions) SetCreated(created types.DateTime) {
+	p.Set("created", created)
+}
+
+func (p *InventoryTransactions) Updated() types.DateTime {
+	return p.GetDateTime("updated")
+}
+
+func (p *InventoryTransactions) SetUpdated(updated types.DateTime) {
+	p.Set("updated", updated)
+}
+
+type ProductAnalytics struct {
+	core.BaseRecordProxy
+}
+
+func (p *ProductAnalytics) CollectionName() string {
+	return "product_analytics"
+}
+
+func (p *ProductAnalytics) Product() *Products {
+	var proxy *Products
+	if rel := p.ExpandedOne("product"); rel != nil {
+		proxy = &Products{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *ProductAnalytics) SetProduct(product *Products) {
+	var id string
+	if product != nil {
+		id = product.Id
+	}
+	p.Record.Set("product", id)
+	e := p.Expand()
+	if product != nil {
+		e["product"] = product.Record
+	} else {
+		delete(e, "product")
+	}
+	p.SetExpand(e)
+}
+
+func (p *ProductAnalytics) Period() string {
+	return p.GetString("period")
+}
+
+func (p *ProductAnalytics) SetPeriod(period string) {
+	p.Set("period", period)
+}
+
+func (p *ProductAnalytics) Company() *Companies {
+	var proxy *Companies
+	if rel := p.ExpandedOne("company"); rel != nil {
+		proxy = &Companies{}
+		proxy.Record = rel
+	}
+	return proxy
+}
+
+func (p *ProductAnalytics) SetCompany(company *Companies) {
+	var id string
+	if company != nil {
+		id = company.Id
+	}
+	p.Record.Set("company", id)
+	e := p.Expand()
+	if company != nil {
+		e["company"] = company.Record
+	} else {
+		delete(e, "company")
+	}
+	p.SetExpand(e)
+}
+
+func (p *ProductAnalytics) UnitsSold() float64 {
+	return p.GetFloat("units_sold")
+}
+
+func (p *ProductAnalytics) SetUnitsSold(unitsSold float64) {
+	p.Set("units_sold", unitsSold)
+}
+
+func (p *ProductAnalytics) Revenue() float64 {
+	return p.GetFloat("revenue")
+}
+
+func (p *ProductAnalytics) SetRevenue(revenue float64) {
+	p.Set("revenue", revenue)
+}
+
+func (p *ProductAnalytics) Cost() float64 {
+	return p.GetFloat("cost")
+}
+
+func (p *ProductAnalytics) SetCost(cost float64) {
+	p.Set("cost", cost)
+}
+
+func (p *ProductAnalytics) Profit() float64 {
+	return p.GetFloat("profit")
+}
+
+func (p *ProductAnalytics) SetProfit(profit float64) {
+	p.Set("profit", profit)
+}
+
+func (p *ProductAnalytics) AvgSellingPrice() float64 {
+	return p.GetFloat("avg_selling_price")
+}
+
+func (p *ProductAnalytics) SetAvgSellingPrice(avgSellingPrice float64) {
+	p.Set("avg_selling_price", avgSellingPrice)
+}
+
+func (p *ProductAnalytics) Created() types.DateTime {
+	return p.GetDateTime("created")
+}
+
+func (p *ProductAnalytics) SetCreated(created types.DateTime) {
+	p.Set("created", created)
+}
+
+func (p *ProductAnalytics) Updated() types.DateTime {
+	return p.GetDateTime("updated")
+}
+
+func (p *ProductAnalytics) SetUpdated(updated types.DateTime) {
 	p.Set("updated", updated)
 }

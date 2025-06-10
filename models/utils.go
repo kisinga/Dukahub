@@ -8,7 +8,7 @@ import (
 )
 
 type Proxy interface {
-	Users | DailyStockTakes | DailyAccounts | AccountTypes | Skus | Products | Partners | Invoices | Purchases | Companies | CompanyAccounts | Transactions | SalesDetails | Expenses | OpenCloseDetails | ProductSkuFigures | Models | ProductCategories | ProductBalances | Sales | Admins | JobQueue
+	Users | DailyStockTakes | DailyAccounts | AccountTypes | Skus | Products | Partners | Invoices | Purchases | Companies | CompanyAccounts | Transactions | SalesDetails | Expenses | OpenCloseDetails | Models | ProductCategories | SalesTransactions | Admins | JobQueue | DailySummaries | Inventory | InventoryTransactions | ProductAnalytics
 }
 
 // This interface constrains a type parameter of
@@ -39,7 +39,7 @@ type Proxy interface {
 //
 //	MyFunc[*ProxyType]()
 //
-// And even works with other type paramters:
+// And even works with other type parameters:
 //
 //	func MyFunc2[P Proxy, PP ProxyP[P]]() {
 //	    MyFunc[PP]()
@@ -140,6 +140,9 @@ var Relations = map[string]map[string][]RelationField{
 		"product_categories": {
 			{"category", true},
 		},
+		"inventory": {
+			{"inventory", false},
+		},
 	},
 	"partners": {
 		"companies": {
@@ -180,6 +183,11 @@ var Relations = map[string]map[string][]RelationField{
 			{"transaction", false},
 		},
 	},
+	"companies": {
+		"companies": {
+			{"parent_company", false},
+		},
+	},
 	"company_accounts": {
 		"account_types": {
 			{"type", false},
@@ -204,13 +212,13 @@ var Relations = map[string]map[string][]RelationField{
 			{"sku", false},
 		},
 		"products": {
-			{"Product", false},
-		},
-		"transactions": {
-			{"transaction", true},
+			{"product", false},
 		},
 	},
 	"expenses": {
+		"companies": {
+			{"company", false},
+		},
 		"transactions": {
 			{"transaction", false},
 		},
@@ -218,14 +226,6 @@ var Relations = map[string]map[string][]RelationField{
 	"open_close_details": {
 		"users": {
 			{"user", false},
-		},
-	},
-	"product_sku_figures": {
-		"skus": {
-			{"sku", false},
-		},
-		"products": {
-			{"product", false},
 		},
 	},
 	"models": {
@@ -238,7 +238,51 @@ var Relations = map[string]map[string][]RelationField{
 			{"company", false},
 		},
 	},
-	"product_balances": {
+	"sales_transactions": {
+		"users": {
+			{"salesperson", false},
+		},
+		"partners": {
+			{"customer", false},
+		},
+		"companies": {
+			{"company", false},
+		},
+		"transactions": {
+			{"transaction", false},
+		},
+		"sales_details": {
+			{"sales_details", true},
+		},
+	},
+	"job_queue": {
+		"users": {
+			{"user", false},
+		},
+		"companies": {
+			{"company", false},
+		},
+	},
+	"daily_summaries": {
+		"companies": {
+			{"company", false},
+		},
+	},
+	"inventory": {
+		"skus": {
+			{"sku", false},
+		},
+		"products": {
+			{"product", false},
+		},
+		"companies": {
+			{"company", false},
+		},
+	},
+	"inventory_transactions": {
+		"users": {
+			{"user", false},
+		},
 		"skus": {
 			{"sku", false},
 		},
@@ -246,20 +290,9 @@ var Relations = map[string]map[string][]RelationField{
 			{"product", false},
 		},
 	},
-	"sales": {
-		"users": {
-			{"salesperson", false},
-		},
-		"companies": {
-			{"company", false},
-		},
-		"sales_details": {
-			{"sales_details", false},
-		},
-	},
-	"job_queue": {
-		"users": {
-			{"user", false},
+	"product_analytics": {
+		"products": {
+			{"product", false},
 		},
 		"companies": {
 			{"company", false},
