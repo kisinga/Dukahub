@@ -1,6 +1,7 @@
 package components
 
 import (
+	"fmt"
 	"github.com/kisinga/dukahub/models"
 	"strconv"
 )
@@ -78,17 +79,17 @@ templ CompaniesTable(companies []models.CompanyDashboardData, currentPage int, t
 		<nav aria-label="Page navigation">
 			<ul class="pagination">
 				<li class={ "page-item", templ.KV("disabled", currentPage == 1) }>
-					<a class="page-link" href="#" aria-label="Previous" data-page="{ strconv.Itoa(currentPage - 1) }">
+					<a class="page-link" href={ templ.SafeURL(fmt.Sprintf("/admin-dashboard?page=%s", strconv.Itoa(currentPage-1))) } aria-label="Previous">
 						<span aria-hidden="true">&laquo;</span>
 					</a>
 				</li>
 				for i := 1; i <= totalPages; i++ {
 					<li class={ "page-item", templ.KV("active", i == currentPage) }>
-						<a class="page-link" href="#" data-page="{ strconv.Itoa(i) }">{ strconv.Itoa(i) }</a>
+						<a class="page-link" href={ templ.SafeURL(fmt.Sprintf("/admin-dashboard?page=%s", strconv.Itoa(i))) }>{ strconv.Itoa(i) }</a>
 					</li>
 				}
 				<li class={ "page-item", templ.KV("disabled", currentPage == totalPages) }>
-					<a class="page-link" href="#" aria-label="Next" data-page="{ strconv.Itoa(currentPage + 1) }">
+					<a class="page-link" href={ templ.SafeURL(fmt.Sprintf("/admin-dashboard?page=%s", strconv.Itoa(currentPage+1))) } aria-label="Next">
 						<span aria-hidden="true">&raquo;</span>
 					</a>
 				</li>

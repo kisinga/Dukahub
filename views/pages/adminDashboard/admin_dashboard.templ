@@ -16,33 +16,13 @@ var config = models.LayoutConfig{
 	},
 }
 
-templ Home(admin *models.Admins, companies []models.CompanyDashboardData) {
+templ Home(admin *models.Admins, companies []models.CompanyDashboardData, currentPage int, totalPages int) {
 	@layouts.BaseLayout(config) {
 		@layouts.AdminDashboard(admin) {
-			<h5 class="mb-3">Companies Dashboard</h5>
+			<h5 class="mb-3">Companies</h5>
 			<div class="table-container">
-				@components.CompaniesTable(companies, 1, 1)
+				@components.CompaniesTable(companies, currentPage, totalPages)
 			</div>
-			<!-- Pagination -->
-			<nav aria-label="Page navigation">
-				<ul class="pagination">
-					<li class="page-item disabled">
-						<a class="page-link" href="#" aria-label="Previous">
-							<span aria-hidden="true">&laquo;</span>
-						</a>
-					</li>
-					<li class="page-item active">
-						<a class="page-link" href="#">1</a>
-					</li>
-					<li class="page-item"><a class="page-link" href="#">2</a></li>
-					<li class="page-item"><a class="page-link" href="#">3</a></li>
-					<li class="page-item">
-						<a class="page-link" href="#" aria-label="Next">
-							<span aria-hidden="true">&raquo;</span>
-						</a>
-					</li>
-				</ul>
-			</nav>
 			<button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#createCompanyModal">Create New Company</button>
 			<!-- Create Company Modal -->
 			<div
@@ -157,7 +137,8 @@ templ Home(admin *models.Admins, companies []models.CompanyDashboardData) {
 							></button>
 						</div>
 						<div class="modal-body">
-							Are you sure you want to delete company "<span id="deleteCompanyName"></span>"? This action cannot be undone.
+							Are you sure you want to delete company <span id="companyNameToDelete"></span>?
+							This action cannot be undone.
 							<input type="hidden" id="deleteCompanyId"/>
 						</div>
 						<div class="modal-footer">
@@ -167,7 +148,7 @@ templ Home(admin *models.Admins, companies []models.CompanyDashboardData) {
 					</div>
 				</div>
 			</div>
-			<!-- Model Modal -->
+			<!-- Model Details Modal -->
 			<div
 				class="modal fade"
 				id="modelModal"
@@ -178,7 +159,7 @@ templ Home(admin *models.Admins, companies []models.CompanyDashboardData) {
 				<div class="modal-dialog modal-dialog-centered">
 					<div class="modal-content">
 						<div class="modal-header">
-							<h5 class="modal-title" id="modelModalLabel">Model Details for <span class="company-name"></span></h5>
+							<h5 class="modal-title" id="modelModalLabel">Model Details for <span id="modelCompanyName"></span></h5>
 							<button
 								type="button"
 								class="btn-close"
@@ -187,15 +168,15 @@ templ Home(admin *models.Admins, companies []models.CompanyDashboardData) {
 							></button>
 						</div>
 						<div class="modal-body">
-							<p>Status: <span id="modelStatus" class="badge rounded-pill"></span></p>
-							<p>Last Trained: <span id="trainDate"></span></p>
-							<p>New Items: <span id="newItems"></span></p>
-							<p>New Images: <span id="newImages"></span></p>
-							<p>Total Images: <span id="totalImages"></span></p>
+							<p><strong>Company ID:</strong> <span id="modelCompanyId"></span></p>
+							<p><strong>Model Status:</strong> <span id="modelStatus"></span></p>
+							<p><strong>Last Train Date:</strong> <span id="modelTrainDate"></span></p>
+							<p><strong>New Items:</strong> <span id="modelNewItems"></span></p>
+							<p><strong>New Images:</strong> <span id="modelNewImages"></span></p>
+							<p><strong>Total Images:</strong> <span id="modelTotalImages"></span></p>
 						</div>
 						<div class="modal-footer">
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-							<button type="button" class="btn btn-primary" id="downloadImagesBtn">Download Images</button>
 						</div>
 					</div>
 				</div>

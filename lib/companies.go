@@ -55,6 +55,29 @@ func (helper *DbHelper) FetchAllCompanies() ([]*models.Companies, error) {
 	return companies, nil
 }
 
+func (helper *DbHelper) FetchCompaniesPaginated(page, perPage int, filter string) ([]*models.Companies, int, error) {
+	records, err := helper.pb.FindRecordsByFilter("companies", filter, "-created", perPage, (page-1)*perPage)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	companies := make([]*models.Companies, len(records))
+	for i, record := range records {
+		company, err := models.WrapRecord[models.Companies](record)
+		if err != nil {
+			return nil, 0, err
+		}
+		companies[i] = company
+	}
+
+	totalCompanies, err := helper.CountRecordsByFilter("companies", filter)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return companies, totalCompanies, nil
+}
+
 func (helper *DbHelper) CountProductsByCompanyID(companyID string) (int, error) {
 	return helper.CountRecordsByFilter("products", fmt.Sprintf("company = '%s'", companyID))
 }

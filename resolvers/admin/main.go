@@ -2,6 +2,7 @@ package admin
 
 import (
 	"io"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -66,11 +67,25 @@ func (r *Resolvers) Home(c *core.RequestEvent) error {
 	if err != nil {
 		return c.Redirect(http.StatusFound, "/admin-login")
 	}
-	companies, err := r.helper.FetchAllCompanies()
+
+	pageStr := c.Request.URL.Query().Get("page")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1 // Default to page 1
+	}
+
+	perPage := 10 // Number of companies per page
+
+	companies, totalCompanies, err := r.helper.FetchCompaniesPaginated(page, perPage, "")
 	if err != nil {
 		// Handle error, maybe log it and render the page with an empty list or an error message.
-		// For now, redirect to admin-login if companies cannot be fetched
+		r.helper.Logger.Printf("Error fetching companies paginated: %v", err)
 		return c.Redirect(http.StatusFound, "/admin-login")
+	}
+
+	totalPages := int(math.Ceil(float64(totalCompanies) / float64(perPage)))
+	if totalPages == 0 {
+		totalPages = 1 // Ensure at least one page if there are no companies
 	}
 
 	var dashboardData []models.CompanyDashboardData
@@ -100,16 +115,39 @@ func (r *Resolvers) Home(c *core.RequestEvent) error {
 			partnersCount = 0
 		}
 
+		// Model Status and Train Date Placeholders (if not available in models.Companies)
+		modelStatus := "N/A"
+		trainDate := "N/A"
+		newItemsCount := 0
+		newImagesCount := 0
+		totalImagesCount := 0
+
+		// Populate model data if available
+		if company.AdminConfig() != "" {
+			// Assuming AdminConfig contains model related info, parse it here
+			// For demonstration, let's just use placeholders
+			modelStatus = "Active"
+			trainDate = "2023-10-26"
+			newItemsCount = 10
+			newImagesCount = 5
+			totalImagesCount = 100
+		}
+
 		dashboardData = append(dashboardData, models.CompanyDashboardData{
-			Company:       company,
-			ProductsCount: productsCount,
-			UsersCount:    usersCount,
-			AccountsCount: accountsCount,
-			PartnersCount: partnersCount,
+			Company:          company,
+			ProductsCount:    productsCount,
+			UsersCount:       usersCount,
+			AccountsCount:    accountsCount,
+			PartnersCount:    partnersCount,
+			ModelStatus:      modelStatus,
+			TrainDate:        trainDate,
+			NewItemsCount:    newItemsCount,
+			NewImagesCount:   newImagesCount,
+			TotalImagesCount: totalImagesCount,
 		})
 	}
 
-	return lib.Render(c, admindashboard.Home(admin, dashboardData))
+	return lib.Render(c, admindashboard.Home(admin, dashboardData, page, totalPages))
 }
 
 func (r *Resolvers) Analytics(c *core.RequestEvent) error {
