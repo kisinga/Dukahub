@@ -1,0 +1,38 @@
+package components
+
+templ ModelDetailsModal() {
+	<!-- Model Details Modal -->
+	<div
+		class="modal fade"
+		id="modelModal"
+		tabindex="-1"
+		aria-labelledby="modelModalLabel"
+		aria-hidden="true"
+	>
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="modelModalLabel">Model Details for <span id="modelCompanyName"></span></h5>
+					<button
+						type="button"
+						class="btn-close"
+						data-bs-dismiss="modal"
+						aria-label="Close"
+					></button>
+				</div>
+				<div class="modal-body">
+					<p><strong>Company ID:</strong> <span id="modelCompanyId"></span></p>
+					<p><strong>Model Status:</strong> <span id="modelStatus"></span></p>
+					<p><strong>Last Train Date:</strong> <span id="modelTrainDate"></span></p>
+					<p><strong>New Items:</strong> <span id="modelNewItems"></span></p>
+					<p><strong>New Images:</strong> <span id="modelNewImages"></span></p>
+					<p><strong>Total Images:</strong> <span id="modelTotalImages"></span></p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-primary" id="downloadImagesBtn">Download Images</button>
+				</div>
+			</div>
+		</div>
+	</div>
+}

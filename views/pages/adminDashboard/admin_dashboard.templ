@@ -148,40 +148,10 @@ templ Home(admin *models.Admins, companies []models.CompanyDashboardData, curren
 					</div>
 				</div>
 			</div>
-			<!-- Model Details Modal -->
-			<div
-				class="modal fade"
-				id="modelModal"
-				tabindex="-1"
-				aria-labelledby="modelModalLabel"
-				aria-hidden="true"
-			>
-				<div class="modal-dialog modal-dialog-centered">
-					<div class="modal-content">
-						<div class="modal-header">
-							<h5 class="modal-title" id="modelModalLabel">Model Details for <span id="modelCompanyName"></span></h5>
-							<button
-								type="button"
-								class="btn-close"
-								data-bs-dismiss="modal"
-								aria-label="Close"
-							></button>
-						</div>
-						<div class="modal-body">
-							<p><strong>Company ID:</strong> <span id="modelCompanyId"></span></p>
-							<p><strong>Model Status:</strong> <span id="modelStatus"></span></p>
-							<p><strong>Last Train Date:</strong> <span id="modelTrainDate"></span></p>
-							<p><strong>New Items:</strong> <span id="modelNewItems"></span></p>
-							<p><strong>New Images:</strong> <span id="modelNewImages"></span></p>
-							<p><strong>Total Images:</strong> <span id="modelTotalImages"></span></p>
-						</div>
-						<div class="modal-footer">
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-						</div>
-					</div>
-				</div>
-			</div>
-			<script>
+			@components.ModelDetailsModal()
+		}
+	}
+	<script>
   // Modal data population
   const modelModal = document.getElementById("modelModal");
   modelModal.addEventListener("show.bs.modal", (event) => {
@@ -194,15 +164,17 @@ templ Home(admin *models.Admins, companies []models.CompanyDashboardData, curren
     const newImages = button.getAttribute("data-new-images");
     const totalImages = button.getAttribute("data-total-images");
 
-    const modalTitle = modelModal.querySelector(".company-name");
+    const modalTitle = modelModal.querySelector("#modelCompanyName");
+    const modelCompanyId = modelModal.querySelector("#modelCompanyId");
     const modelStatus = modelModal.querySelector("#modelStatus");
-    const trainDateElement = modelModal.querySelector("#trainDate");
-    const newItemsElement = modelModal.querySelector("#newItems");
-    const newImagesElement = modelModal.querySelector("#newImages");
-    const totalImagesElement = modelModal.querySelector("#totalImages");
+    const trainDateElement = modelModal.querySelector("#modelTrainDate");
+    const newItemsElement = modelModal.querySelector("#modelNewItems");
+    const newImagesElement = modelModal.querySelector("#modelNewImages");
+    const totalImagesElement = modelModal.querySelector("#modelTotalImages");
     const downloadButton = modelModal.querySelector("#downloadImagesBtn");
 
     modalTitle.textContent = company;
+    modelCompanyId.textContent = companyId;
     modelStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1);
     modelStatus.className = `badge rounded-pill pill-${status} mt-2`;
     trainDateElement.textContent = trainDate;
@@ -218,6 +190,4 @@ templ Home(admin *models.Admins, companies []models.CompanyDashboardData, curren
     }
   });
 </script>
-		}
-	}
 }
