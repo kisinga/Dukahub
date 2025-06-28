@@ -71,6 +71,7 @@ func main() {
 		adminDashboardGroup.BindFunc(resolvers.Admin.AuthCheck)
 
 		adminDashboardGroup.GET("/", resolvers.Admin.Home)
+		adminDashboardGroup.GET("/analytics", resolvers.Admin.Analytics)
 
 		adminDashboardGroup.GET("/export/{companyID}", resolvers.Admin.Export)
 

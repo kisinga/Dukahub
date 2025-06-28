@@ -53,9 +53,7 @@ templ BaseLayout(config models.LayoutConfig) {
 			}
 		</head>
 		<body>
-			<div class="max-w-screen-md m-auto">
-				{ children... }
-			</div>
+			{ children... }
 			if config.JS != nil {
 				for _, scriptComp := range config.JS {
 					@scriptComp

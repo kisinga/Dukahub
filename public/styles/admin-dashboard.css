@@ -12,16 +12,19 @@ body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Admin Dashboard Layout */
+.admin-dashboard-wrapper {
+  display: flex;
+  min-height: 100vh; /* Ensure it takes full viewport height */
+}
+
 .sidebar {
   width: var(--sidebar-width);
-  height: 100vh;
-  position: fixed;
-  left: 0;
-  top: 0;
   background-color: white;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
   z-index: 1000;
   transition: all 0.3s;
+  flex-shrink: 0; /* Prevent sidebar from shrinking */
 }
 
 .sidebar-logo {
@@ -56,8 +59,15 @@ body {
 }
 
 .main-content {
-  margin-left: var(--sidebar-width);
+  flex-grow: 1; /* Allow main content to take remaining space */
+  background-color: var(--light-bg);
   transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content > main {
+  flex-grow: 1; /* Ensure the main content area inside main-content grows */
 }
 
 .topbar {
@@ -70,6 +80,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 999;
+  flex-shrink: 0; /* Prevent topbar from shrinking */
 }
 
 .content-area {
@@ -121,8 +132,16 @@ body {
 
 /* Mobile Responsive */
 @media (max-width: 992px) {
+  .admin-dashboard-wrapper {
+    flex-direction: column; /* Stack sidebar and main content vertically */
+  }
+
   .sidebar {
+    position: fixed;
     transform: translateX(-100%);
+    height: 100vh; /* Use 100vh for fixed sidebar on mobile */
+    left: 0;
+    top: 0;
   }
 
   .sidebar.show {
@@ -130,7 +149,7 @@ body {
   }
 
   .main-content {
-    margin-left: 0;
+    margin-left: 0; /* Remove fixed margin for mobile */
   }
 
   .sidebar-toggle {
@@ -156,6 +175,28 @@ body {
   color: white;
   cursor: pointer;
 }
+
+/* Model Status Badges */
+.bg-pending {
+  background-color: #ffc107 !important; /* Bootstrap yellow for warning */
+  color: #212529 !important;
+}
+
+.bg-training {
+  background-color: #0dcaf0 !important; /* Bootstrap info for light blue */
+  color: #212529 !important;
+}
+
+.bg-trained {
+  background-color: #198754 !important; /* Bootstrap success for green */
+  color: #ffffff !important;
+}
+
+.bg-error {
+  background-color: #dc3545 !important; /* Bootstrap danger for red */
+  color: #ffffff !important;
+}
+
 .pagination {
   justify-content: center;
 }
