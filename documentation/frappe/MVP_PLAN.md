@@ -10,22 +10,22 @@ The following diagram shows the only parts of the system we will build or touch 
 
 ```mermaid
 graph TD
-    subgraph Frappe/ERPNext Platform [Provided]
-        B[ERPNext App <br/> (Doctypes: 'Item', 'Sales Invoice')]
+    subgraph P ["Frappe/ERPNext Platform (Provided)"]
+        B["ERPNext App <br/> (Doctypes: 'Item', 'Sales Invoice')"]
     end
 
-    subgraph Your Dukahub MVP App [You Will Build This]
-        C(1. Custom 'AI Model' DocType <br/> file: `ai_model.py`)
-        D(2. Custom 'Dukahub POS' Desk Page <br/> files: `dukahub_pos.js`, `dukahub_pos.py`)
-        E(3. Modification to 'Item' DocType <br/> tool: 'Customize Form')
-        F(4. Server-Side Glue Code <br/> file: `api.py`)
+    subgraph MVP ["Your Dukahub MVP App (You Will Build This)"]
+        C("1. Custom 'AI Model' DocType <br/> file: `ai_model.py`")
+        D("2. Custom 'Dukahub POS' Desk Page <br/> files: `dukahub_pos.js`, `dukahub_pos.py`")
+        E("3. Modification to 'Item' DocType <br/> tool: 'Customize Form'")
+        F("4. Server-Side Glue Code <br/> file: `api.py`")
     end
 
     C --> E
     D --> F
     F --> B
 
-    style Your_Dukahub_MVP_App fill:#e6f3ff,stroke:#333,stroke-width:2px
+    style MVP fill:#e6f3ff,stroke:#333,stroke-width:2px
 ```
 
 **What We Will IGNORE for the MVP:**

@@ -13,21 +13,40 @@ We embrace a layered architecture that clearly separates the platform from our c
 
 ```mermaid
 graph TD
-    subgraph A[Frappe Platform: The Foundation]
-        A1[Frappe Framework <br/> (Core Engine, UI, Users, DB Abstraction)]
-        A2[ERPNext App <br/> (Standard Business Doctypes: 'Item', 'Sales Invoice')]
+    subgraph A ["Frappe Platform: The Foundation"]
+        A1["Frappe Framework <br/> (Core Engine, UI, Users, DB Abstraction)"]
+        A2["ERPNext App <br/> (Standard Business Doctypes: 'Item', 'Sales Invoice')"]
     end
 
-    subgraph B[Your Dukahub App: The "Magic"]
-        B1[1. Custom DocTypes <br/> (e.g., 'AI Model')]
-        B2[2. Custom Desk Pages <br/> (e.g., 'Dukahub POS', 'AI Training UI')]
-        B3[3. Backend Hooks & API <br/> (e.g., `api.py`, `hooks.py`)]
-        B4[4. Form & POS Customization <br/> (e.g., Client Scripts, Custom Fields)]
+    subgraph B ["Your Dukahub App: The 'Magic'"]
+        B1["1. Custom DocTypes <br/> (e.g., 'AI Model')"]
+        B2["2. Custom Desk Pages <br/> (e.g., 'Dukahub POS', 'AI Training UI')"]
+        B3["3. Backend Hooks & API <br/> (e.g., `api.py`, `hooks.py`)"]
+        B4["4. Form & POS Customization <br/> (e.g., Client Scripts, Custom Fields)"]
     end
 
-    A --> B
+    A1 --> B
+    A2 --> B
     style B fill:#e6f3ff,stroke:#333,stroke-width:2px
 ```
+
+## Understanding the Customization Layers: Frappe vs. ERPNext
+
+It is critical to understand that we are extending **both** the Frappe platform and the ERPNext application, but at different levels.
+
+*   **Frappe** is the low-level **Platform/Framework**. It gives us the raw tools: the ability to create models (DocTypes), pages (Desk Pages), and APIs. It knows nothing about "sales" or "inventory."
+*   **ERPNext** is a large **Application** built using Frappe's tools. It provides specific business documents like `Item`, `Customer`, and `Sales Invoice`.
+
+Our Dukahub App is another application that sits alongside ERPNext. We will use Frappe's tools to create our own new features, and we will also use Frappe's tools to interact with ERPNext's features. The following table breaks down each MVP task to make this distinction clear.
+
+| MVP Task | Customization Level | Why? | Where It Lives |
+| :--- | :--- | :--- | :--- |
+| Create `AI Model` DocType | **Frappe** (Platform) | We are creating a brand new object type from scratch. | `dukahub_mvp/doctype/ai_model/` |
+| Create `Dukahub POS` Page | **Frappe** (Platform) | We are creating a brand new, custom UI screen. | `dukahub_mvp/page/dukahub_pos/` |
+| Create `api.py` file | **Frappe** (Platform) | We are creating new, secure API endpoints for our app. | `dukahub_mvp/api.py` |
+| Add link field to `Item` | **ERPNext** (Application) | We are **modifying** an existing ERPNext document. | **In the database** (via Customize Form) |
+| `get_item_details()` | **ERPNext** (Application) | Our code **reads data from** an ERPNext document. | `dukahub_mvp/api.py` |
+| `submit_pos_sale()` | **ERPNext** (Application) | Our code **creates and saves** an ERPNext document. | `dukahub_mvp/api.py` |
 
 ## Core Frappe Concepts We Will Use
 
