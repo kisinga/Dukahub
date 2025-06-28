@@ -59,6 +59,7 @@ templ CompaniesTable(companies []models.CompanyDashboardData, currentPage int, t
 									data-company-name={ data.Company.Name() }
 									data-company-location={ data.Company.Location() }
 									data-company-phone={ data.Company.Phone() }
+									data-company-logo={ data.Company.Logo() }
 									title="Edit Company"
 								>
 									<i class="bi bi-pencil"></i> Edit
@@ -108,6 +109,7 @@ templ CompaniesTable(companies []models.CompanyDashboardData, currentPage int, t
 		tabindex="-1"
 		aria-labelledby="createCompanyModalLabel"
 		aria-hidden="true"
+		x-data="createCompanyFormHandler()"
 	>
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
@@ -121,22 +123,22 @@ templ CompaniesTable(companies []models.CompanyDashboardData, currentPage int, t
 					></button>
 				</div>
 				<div class="modal-body">
-					<form id="createCompanyForm">
+					<form id="createCompanyForm" x-on:submit.prevent="submitForm">
 						<div class="mb-3">
 							<label for="createCompanyName" class="form-label">Company Name</label>
-							<input type="text" class="form-control" id="createCompanyName" required/>
+							<input type="text" class="form-control" id="createCompanyName" x-model="companyName" required/>
 						</div>
 						<div class="mb-3">
 							<label for="createCompanyLocation" class="form-label">Location</label>
-							<input type="text" class="form-control" id="createCompanyLocation"/>
+							<input type="text" class="form-control" id="createCompanyLocation" x-model="companyLocation"/>
 						</div>
 						<div class="mb-3">
 							<label for="createCompanyPhone" class="form-label">Phone</label>
-							<input type="text" class="form-control" id="createCompanyPhone"/>
+							<input type="text" class="form-control" id="createCompanyPhone" x-model="companyPhone"/>
 						</div>
 						<div class="mb-3">
 							<label for="createCompanyLogo" class="form-label">Logo URL</label>
-							<input type="text" class="form-control" id="createCompanyLogo"/>
+							<input type="text" class="form-control" id="createCompanyLogo" x-model="companyLogo"/>
 						</div>
 					</form>
 				</div>
@@ -154,6 +156,7 @@ templ CompaniesTable(companies []models.CompanyDashboardData, currentPage int, t
 		tabindex="-1"
 		aria-labelledby="editCompanyModalLabel"
 		aria-hidden="true"
+		x-data="editCompanyFormHandler()"
 	>
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
@@ -167,23 +170,23 @@ templ CompaniesTable(companies []models.CompanyDashboardData, currentPage int, t
 					></button>
 				</div>
 				<div class="modal-body">
-					<form id="editCompanyForm">
-						<input type="hidden" id="editCompanyId"/>
+					<form id="editCompanyForm" x-on:submit.prevent="submitForm">
+						<input type="hidden" id="editCompanyId" x-model="companyId"/>
 						<div class="mb-3">
 							<label for="editCompanyName" class="form-label">Company Name</label>
-							<input type="text" class="form-control" id="editCompanyName" required/>
+							<input type="text" class="form-control" id="editCompanyName" x-model="companyName" required/>
 						</div>
 						<div class="mb-3">
 							<label for="editCompanyLocation" class="form-label">Location</label>
-							<input type="text" class="form-control" id="editCompanyLocation"/>
+							<input type="text" class="form-control" id="editCompanyLocation" x-model="companyLocation"/>
 						</div>
 						<div class="mb-3">
 							<label for="editCompanyPhone" class="form-label">Phone</label>
-							<input type="text" class="form-control" id="editCompanyPhone"/>
+							<input type="text" class="form-control" id="editCompanyPhone" x-model="companyPhone"/>
 						</div>
 						<div class="mb-3">
 							<label for="editCompanyLogo" class="form-label">Logo URL</label>
-							<input type="text" class="form-control" id="editCompanyLogo"/>
+							<input type="text" class="form-control" id="editCompanyLogo" x-model="companyLogo"/>
 						</div>
 					</form>
 				</div>
@@ -201,6 +204,7 @@ templ CompaniesTable(companies []models.CompanyDashboardData, currentPage int, t
 		tabindex="-1"
 		aria-labelledby="deleteCompanyModalLabel"
 		aria-hidden="true"
+		x-data="deleteCompanyHandler()"
 	>
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
@@ -214,13 +218,13 @@ templ CompaniesTable(companies []models.CompanyDashboardData, currentPage int, t
 					></button>
 				</div>
 				<div class="modal-body">
-					Are you sure you want to delete company <span id="companyNameToDelete"></span>?
+					Are you sure you want to delete company <span id="companyNameToDelete" x-text="companyNameToDelete"></span>?
 					This action cannot be undone.
-					<input type="hidden" id="deleteCompanyId"/>
+					<input type="hidden" id="deleteCompanyId" x-model="companyId"/>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-danger" id="confirmDeleteCompanyBtn">Delete</button>
+					<button type="button" class="btn btn-danger" id="confirmDeleteCompanyBtn" x-on:click="confirmDelete">Delete</button>
 				</div>
 			</div>
 		</div>

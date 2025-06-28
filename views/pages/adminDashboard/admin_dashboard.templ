@@ -9,7 +9,7 @@ import (
 var config = models.LayoutConfig{
 	Title: "Dashboard",
 	JS: []templ.Component{
-		templ.Raw(`<script src="/public/js/admin-dashboard.js"></script>`),
+		templ.Raw(`<script src="/public/js/admin-dashboard.js" type="module"></script>`),
 	},
 	CSS: []templ.Component{
 		templ.Raw(`<link rel="stylesheet" href="/public/styles/admin-dashboard.css"/>`),

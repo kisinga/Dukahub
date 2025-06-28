@@ -2,12 +2,14 @@
 // These functions are intended to be used with `x-data` attributes on the corresponding HTML elements.
 // Ensure Alpine.js is loaded before this script (e.g., <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>).
 
-/**
- * Alpine.js handler for the Model Modal.
- * Manages displaying model information when the Bootstrap modal is shown.
- */
-function modelModalHandler() {
-  return {
+import { DbService } from "./pb.js"; // Import DbService
+
+document.addEventListener("alpine:init", () => {
+  /**
+   * Alpine.js handler for the Model Modal.
+   * Manages displaying model information when the Bootstrap modal is shown.
+   */
+  Alpine.data("modelModalHandler", () => ({
     companyName: "",
     modelStatus: "",
     trainDate: "",
@@ -41,16 +43,14 @@ function modelModalHandler() {
         return "badge rounded-pill bg-warning";
       }
     },
-  };
-}
+  }));
 
-/**
- * Alpine.js handler for the Create Company Form.
- * Manages form input and submission for creating a new company.
- * Apply this to your form element, e.g., <form id="createCompanyForm" x-data="createCompanyFormHandler()" x-on:submit.prevent="submitForm">.
- */
-function createCompanyFormHandler() {
-  return {
+  /**
+   * Alpine.js handler for the Create Company Form.
+   * Manages form input and submission for creating a new company.
+   * Apply this to your form element, e.g., <form id="createCompanyForm" x-data="createCompanyFormHandler()" x-on:submit.prevent="submitForm">.
+   */
+  Alpine.data("createCompanyFormHandler", () => ({
     companyName: "",
     companyLocation: "",
     companyPhone: "",
@@ -61,41 +61,33 @@ function createCompanyFormHandler() {
      */
     async submitForm() {
       try {
-        const response = await fetch("/admin/companies", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: this.companyName,
-            location: this.companyLocation,
-            phone: this.companyPhone,
-            logo: this.companyLogo,
-          }),
-        });
+        const companyData = {
+          name: this.companyName,
+          location: this.companyLocation,
+          phone: this.companyPhone,
+          logo: this.companyLogo,
+        };
+        const newCompany = await DbService.create("companies", companyData);
 
-        if (response.ok) {
+        if (newCompany) {
           alert("Company created successfully!");
           location.reload(); // Reload to reflect new company
         } else {
-          const errorData = await response.json();
-          alert(`Error creating company: ${errorData.message}`);
+          alert("Error creating company.");
         }
       } catch (error) {
         console.error("Error creating company:", error);
-        alert("An error occurred while creating the company.");
+        alert(`An error occurred while creating the company: ${error.message}`);
       }
     },
-  };
-}
+  }));
 
-/**
- * Alpine.js handler for the Edit Company Modal and Form.
- * Manages populating edit form with existing data and handling form submission for updates.
- * Apply this to your edit modal element, e.g., <div id="editCompanyModal" x-data="editCompanyFormHandler()">.
- */
-function editCompanyFormHandler() {
-  return {
+  /**
+   * Alpine.js handler for the Edit Company Modal and Form.
+   * Manages populating edit form with existing data and handling form submission for updates.
+   * Apply this to your edit modal element, e.g., <div id="editCompanyModal" x-data="editCompanyFormHandler()">.
+   */
+  Alpine.data("editCompanyFormHandler", () => ({
     companyId: "",
     companyName: "",
     companyLocation: "",
@@ -110,8 +102,7 @@ function editCompanyFormHandler() {
         this.companyName = button.getAttribute("data-company-name");
         this.companyLocation = button.getAttribute("data-company-location");
         this.companyPhone = button.getAttribute("data-company-phone");
-        // companyLogo might need to be set if available, or cleared for new input
-        this.companyLogo = ""; // Clear for new input or set from data-attribute if available
+        this.companyLogo = button.getAttribute("data-company-logo"); // Set companyLogo from data attribute
       });
     },
 
@@ -121,41 +112,37 @@ function editCompanyFormHandler() {
      */
     async submitForm() {
       try {
-        const response = await fetch(`/admin/companies/${this.companyId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: this.companyName,
-            location: this.companyLocation,
-            phone: this.companyPhone,
-            logo: this.companyLogo,
-          }),
-        });
+        const companyData = {
+          name: this.companyName,
+          location: this.companyLocation,
+          phone: this.companyPhone,
+          logo: this.companyLogo,
+        };
+        const updatedCompany = await DbService.update(
+          "companies",
+          this.companyId,
+          companyData
+        );
 
-        if (response.ok) {
+        if (updatedCompany) {
           alert("Company updated successfully!");
           location.reload(); // Reload to reflect updated company
         } else {
-          const errorData = await response.json();
-          alert(`Error updating company: ${errorData.message}`);
+          alert("Error updating company.");
         }
       } catch (error) {
         console.error("Error updating company:", error);
-        alert("An error occurred while updating the company.");
+        alert(`An error occurred while updating the company: ${error.message}`);
       }
     },
-  };
-}
+  }));
 
-/**
- * Alpine.js handler for the Delete Company Modal and Confirmation.
- * Manages displaying company name to be deleted and handles the deletion confirmation.
- * Apply this to your delete modal element, e.g., <div id="deleteCompanyModal" x-data="deleteCompanyHandler()">.
- */
-function deleteCompanyHandler() {
-  return {
+  /**
+   * Alpine.js handler for the Delete Company Modal and Confirmation.
+   * Manages displaying company name to be deleted and handles the deletion confirmation.
+   * Apply this to your delete modal element, e.g., <div id="deleteCompanyModal" x-data="deleteCompanyHandler()">.
+   */
+  Alpine.data("deleteCompanyHandler", () => ({
     companyId: "",
     companyNameToDelete: "",
 
@@ -174,21 +161,23 @@ function deleteCompanyHandler() {
      */
     async confirmDelete() {
       try {
-        const response = await fetch(`/admin/companies/${this.companyId}`, {
-          method: "DELETE",
-        });
+        // Perform soft delete by updating the 'is_deleted' field
+        const updatedCompany = await DbService.update(
+          "companies",
+          this.companyId,
+          { is_deleted: true }
+        );
 
-        if (response.ok) {
+        if (updatedCompany) {
           alert("Company deleted successfully!");
           location.reload(); // Reload to reflect deleted company
         } else {
-          const errorData = await response.json();
-          alert(`Error deleting company: ${errorData.message}`);
+          alert("Error deleting company.");
         }
       } catch (error) {
         console.error("Error deleting company:", error);
-        alert("An error occurred while deleting the company.");
+        alert(`An error occurred while deleting the company: ${error.message}`);
       }
     },
-  };
-}
+  }));
+});
