@@ -36,32 +36,61 @@ graph TD
 
 ---
 
-## Phase 0: Environment Setup (1-2 Days)
+## Phase 0: Environment Setup (1 Day)
 
-Your goal is to get a blank Frappe site running with your custom app installed.
+**Goal:** Get a Frappe development environment running inside Docker, with your local custom app code mounted into the container for live editing. This approach is faster, cleaner, and more consistent than a manual installation.
 
-1.  **Install Bench (Frappe's CLI):** Follow the [official installation guide](https://frappeframework.com/docs/user/en/installation).
-2.  **Create a New Bench Workspace:**
-    ```bash
-    bench init frappe-bench --frappe-branch version-15 # Or the latest stable version
-    cd frappe-bench
-    ```
-3.  **Create Your Site:**
-    ```bash
-    bench new-site dukahub.local
-    ```
-4.  **Install ERPNext and Your Custom App:**
-    ```bash
-    bench get-app erpnext --branch version-15
-    bench --site dukahub.local install-app erpnext
-    bench new-app dukahub_mvp
-    bench --site dukahub.local install-app dukahub_mvp
-    ```
-5.  **Start the Server:**
-    ```bash
-    bench start
-    ```
-    You can now log into `http://dukahub.local:8000` as "Administrator" with the password you set during site creation.
+1.  **Prerequisites:**
+    *   Install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+    *   Install [Visual Studio Code](https://code.visualstudio.com/) with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
+
+2.  **Clone `frappe_docker`:**
+    *   This is the official repository for running Frappe and ERPNext on Docker.
+    *   `git clone https://github.com/frappe/frappe_docker.git`
+    *   `cd frappe_docker`
+
+3.  **Create Your Custom App:**
+    *   Create a directory for your app(s) outside the `frappe_docker` folder. We will mount this into the container.
+    *   `mkdir ../apps && cd ../apps`
+    *   `git clone <your-dukahub-app-repo-url> dukahub_mvp` (Or `bench new-app dukahub_mvp` later)
+
+4.  **Configure the Docker Environment:**
+    *   Copy the example development compose file: `cp devcontainer.example.yml docker-compose.yml`
+    *   **Crucially, edit `docker-compose.yml`:** Under the `workspace` service, find the `volumes` section. Add a new line to mount your custom app folder:
+        ```yaml
+        volumes:
+          - ../apps:/workspace/apps
+        ```
+
+5.  **Launch the Dev Container:**
+    *   **Action:** Open the `frappe_docker` folder in VS Code. The "Dev Containers" extension will prompt you to "Reopen in Container". Click it.
+    *   **What Happens:** VS Code will automatically build the Docker images using the `docker-compose.yml` file, start all the required services (database, Redis, Frappe), and connect your VS Code editor directly into the running `workspace` container. You get a terminal and full file access *inside* the container, but you are editing files that live on your local machine.
+
+6.  **Setup Site and Install Apps (Inside the VS Code Terminal):**
+    *   Once the container is running, you'll have a terminal. All `bench` commands are run here.
+    *   Create a new bench workspace (this is inside the container):
+        ```bash
+        bench init --skip-redis-config-generation --frappe-branch version-15 frappe-bench
+        ```
+    *   Move into the bench directory: `cd frappe-bench`
+    *   Set the bench to use the container's database and redis hosts:
+        ```bash
+        bench set-mariadb-host mariadb
+        bench set-redis-cache-host redis-cache:6379
+        bench set-redis-queue-host redis-queue:6379
+        ```
+    *   Create your site: `bench new-site dukahub.local --no-mariadb-socket`
+    *   Install ERPNext and your custom app:
+        ```bash
+        bench get-app erpnext --branch version-15
+        bench --site dukahub.local install-app erpnext
+        bench get-app dukahub_mvp --resolve-deps ../apps/dukahub_mvp # The path to your mounted app
+        bench --site dukahub.local install-app dukahub_mvp
+        ```
+
+7.  **Start the Server:**
+    *   `bench start`
+    *   VS Code will automatically forward port 8000. You can now open `http://localhost:8000` in your browser and log in as "Administrator". Any changes you make to your `dukahub_mvp` code on your local machine will be reflected instantly.
 
 ## Phase 1: Backend Foundation (1 Day)
 
