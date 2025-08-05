@@ -2,12 +2,11 @@ package lib
 
 import (
 	"bytes"
-
-	"github.com/pocketbase/pocketbase/tools/filesystem/blob"
+	"io"
 )
 
 type FileInfo struct {
-	Reader   *blob.Reader
+	Reader   io.ReadCloser
 	Filename string
 }
 

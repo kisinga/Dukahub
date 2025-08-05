@@ -64,12 +64,9 @@ func createZip(files []FileInfo, logger *log.Logger) (*bytes.Buffer, error) {
 			continue
 		}
 		// Use a preallocated buffer from our pool.
-		buf := bufPool.Get().([]byte)
-		_, err = io.CopyBuffer(zipFile, file.Reader, buf)
-		bufPool.Put(buf) // return the buffer
-
-		// Copy the file content to the zip
-		_, err = io.Copy(zipFile, file.Reader)
+		copyBuf := bufPool.Get().([]byte)
+		_, err = io.CopyBuffer(zipFile, file.Reader, copyBuf)
+		bufPool.Put(copyBuf) // return the buffer
 		if err != nil {
 			logger.Printf("Error copying content for %s: %v", file.Filename, err)
 		}
