@@ -1,0 +1,101 @@
+<div
+  class="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 p-4"
+>
+  <div class="card w-full max-w-md bg-base-100 shadow-2xl">
+    <div class="card-body">
+      <!-- Logo and Header -->
+      <div class="text-center mb-6">
+        <h1 class="text-3xl font-bold mb-2">Welcome Back</h1>
+        <p class="text-base-content/60">Sign in to continue to Dukahub</p>
+      </div>
+
+      <!-- Login Form -->
+      <form (ngSubmit)="onSubmit()" class="space-y-4">
+        <!-- Email Input -->
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text">Email</span>
+          </label>
+          <input
+            type="email"
+            placeholder="you@example.com"
+            class="input input-bordered w-full"
+            [(ngModel)]="email"
+            name="email"
+            required
+            [disabled]="isLoading()"
+          />
+        </div>
+
+        <!-- Password Input -->
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text">Password</span>
+          </label>
+          <input
+            type="password"
+            placeholder="Enter your password"
+            class="input input-bordered w-full"
+            [(ngModel)]="password"
+            name="password"
+            required
+            [disabled]="isLoading()"
+          />
+          <label class="label">
+            <a href="#" class="label-text-alt link link-hover">Forgot password?</a>
+          </label>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-control mt-6">
+          <button
+            type="submit"
+            class="btn btn-primary w-full"
+            [disabled]="!email() || !password() || isLoading()"
+          >
+            @if (isLoading()) {
+            <span class="loading loading-spinner"></span>
+            Signing in... } @else { Sign In }
+          </button>
+        </div>
+      </form>
+
+      <!-- Divider -->
+      <div class="divider">OR</div>
+
+      <!-- Sign Up Link -->
+      <div class="text-center">
+        <p class="text-sm">
+          Don't have an account?
+          <a routerLink="/signup" class="link link-primary font-semibold">Sign up</a>
+        </p>
+      </div>
+
+      <!-- Back to Home -->
+      <div class="text-center mt-4">
+        <a routerLink="/" class="btn btn-ghost btn-sm">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+          Back to Home
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="absolute bottom-4 text-center w-full">
+    <p class="text-sm text-base-content/60">© 2025 Dukahub. Built for Kenyan SMEs.</p>
+  </div>
+</div>

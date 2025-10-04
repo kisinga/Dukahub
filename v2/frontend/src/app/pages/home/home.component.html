@@ -1,0 +1,459 @@
+<app-navbar />
+
+<main>
+  <!-- Hero Section -->
+  <section id="hero" class="hero min-h-[80vh] bg-gradient-to-br from-base-100 to-base-200">
+    <div class="hero-content text-center max-w-4xl px-4">
+      <div class="fade-in-up">
+        <h1 class="text-4xl md:text-6xl font-bold mb-6">
+          Digitize Your Shop with AI & Barcodes — Sell Faster, Even Offline.
+        </h1>
+        <p class="text-lg md:text-xl mb-8 text-base-content/80">
+          Dukahub makes inventory and sales simple for Kenyan SMEs. Point, scan, or snap a photo to
+          record sales in seconds.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a
+            routerLink="/signup"
+            [queryParams]="{ plan: 'pro', trial: 'true' }"
+            class="btn btn-primary btn-lg"
+          >
+            Start Your 14-Day Free Pro Trial Now
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 7l5 5m0 0l-5 5m5-5H6"
+              />
+            </svg>
+          </a>
+          <a href="#video-demo" class="btn btn-outline btn-lg">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Watch Demo
+          </a>
+        </div>
+        <p class="mt-6 text-sm text-base-content/60">
+          🔒 Secure, ✅ Simple, and Built for Kenyan SMEs.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section id="about" class="section-padding bg-base-100">
+    <div class="container mx-auto max-w-4xl text-center">
+      <h2 class="text-3xl md:text-5xl font-bold mb-6">Stop Guessing, Start Knowing</h2>
+      <p class="text-lg text-base-content/80">
+        Tired of manual record-keeping, lost sales data, and stock uncertainty? Dukahub gives Kenyan
+        small businesses like yours a simple, affordable way to track every sale, manage inventory
+        accurately, and gain real-time insights – all from your phone.
+      </p>
+    </div>
+  </section>
+
+  <!-- Problem/Solution Section -->
+  <section id="problem-solution" class="section-padding bg-base-200">
+    <div class="container mx-auto max-w-6xl">
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="card bg-base-100 shadow-xl">
+          <figure class="px-10 pt-10">
+            <div
+              class="w-full h-48 bg-base-300 rounded-lg flex items-center justify-center text-6xl"
+            >
+              📝
+            </div>
+          </figure>
+          <div class="card-body items-center text-center">
+            <h3 class="card-title text-2xl">The Old Way: Paper Chaos</h3>
+            <p>
+              Hours spent writing, messy calculations, stock errors, and no clear view of
+              performance.
+            </p>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow-xl">
+          <figure class="px-10 pt-10">
+            <div
+              class="w-full h-48 bg-base-300 rounded-lg flex items-center justify-center text-6xl"
+            >
+              📱
+            </div>
+          </figure>
+          <div class="card-body items-center text-center">
+            <h3 class="card-title text-2xl">The Dukahub Way: Digital Clarity</h3>
+            <p>
+              Record sales in seconds, track inventory effortlessly, get instant reports, and manage
+              with confidence.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="section-padding bg-base-100">
+    <div class="container mx-auto max-w-6xl">
+      <h2 class="text-3xl md:text-5xl font-bold text-center mb-12">Get Started in Minutes</h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="text-center">
+          <div
+            class="w-20 h-20 mx-auto mb-4 bg-primary text-primary-content rounded-full flex items-center justify-center text-3xl"
+          >
+            📷
+          </div>
+          <h3 class="text-xl font-bold mb-2">1. Add Products</h3>
+          <p>Scan barcodes or take 5 simple photos of each item/service.</p>
+        </div>
+        <div class="text-center">
+          <div
+            class="w-20 h-20 mx-auto mb-4 bg-secondary text-secondary-content rounded-full flex items-center justify-center text-3xl"
+          >
+            🤖
+          </div>
+          <h3 class="text-xl font-bold mb-2">2. AI Learns (Optional)</h3>
+          <p>Our system learns to recognize items from photos automatically.</p>
+        </div>
+        <div class="text-center">
+          <div
+            class="w-20 h-20 mx-auto mb-4 bg-accent text-accent-content rounded-full flex items-center justify-center text-3xl"
+          >
+            💰
+          </div>
+          <h3 class="text-xl font-bold mb-2">3. Sell Easily</h3>
+          <p>Point your phone to scan or recognize items. Record sales quickly, even offline.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Video Demo Section -->
+  <section id="video-demo" class="section-padding bg-base-200">
+    <div class="container mx-auto max-w-4xl text-center">
+      <h2 class="text-3xl md:text-5xl font-bold mb-6">See Dukahub in Action</h2>
+      <p class="text-lg mb-8 text-base-content/80">
+        Watch this short video to see how easy it is to manage your business.
+      </p>
+      <div class="aspect-video bg-base-300 rounded-lg flex items-center justify-center">
+        <div class="text-center">
+          <div class="text-6xl mb-4">▶️</div>
+          <p class="text-base-content/60">Video coming soon</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Who We Serve Section -->
+  <section id="who-we-serve" class="section-padding bg-base-100">
+    <div class="container mx-auto max-w-6xl">
+      <h2 class="text-3xl md:text-5xl font-bold text-center mb-12">
+        Made for Kenyan Businesses Like Yours
+      </h2>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
+        <div class="text-center">
+          <div class="text-5xl mb-2">💊</div>
+          <p class="font-semibold">Pharmacies</p>
+        </div>
+        <div class="text-center">
+          <div class="text-5xl mb-2">🌱</div>
+          <p class="font-semibold">Agrovets</p>
+        </div>
+        <div class="text-center">
+          <div class="text-5xl mb-2">🛒</div>
+          <p class="font-semibold">Mini Marts</p>
+        </div>
+        <div class="text-center">
+          <div class="text-5xl mb-2">✂️</div>
+          <p class="font-semibold">Salons/Tailors</p>
+        </div>
+        <div class="text-center">
+          <div class="text-5xl mb-2">🥬</div>
+          <p class="font-semibold">Mama Mbogas</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="section-padding bg-base-200">
+    <div class="container mx-auto max-w-6xl">
+      <h2 class="text-3xl md:text-5xl font-bold text-center mb-12">
+        Everything You Need to Manage Your Business
+      </h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <div class="text-3xl mb-2">📸</div>
+            <h3 class="card-title">AI & Barcode Sales</h3>
+            <p class="text-sm">
+              Fast sales entry using barcode scanning or AI image recognition. Adjust prices easily
+              at POS.
+            </p>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <div class="text-3xl mb-2">📦</div>
+            <h3 class="card-title">Simple Inventory</h3>
+            <p class="text-sm">
+              Track stock accurately. Add products via barcode/photos. Handles bundled items (SKU
+              conversion).
+            </p>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <div class="text-3xl mb-2">📡</div>
+            <h3 class="card-title">Reliable Offline Mode</h3>
+            <p class="text-sm">
+              Continue selling even without internet. Data syncs automatically & safely when
+              connection returns.
+            </p>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <div class="text-3xl mb-2">📊</div>
+            <h3 class="card-title">Actionable Insights</h3>
+            <p class="text-sm">
+              Understand your business better with reports on sales trends, top items, and seasonal
+              performance.
+            </p>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <div class="text-3xl mb-2">✂️</div>
+            <h3 class="card-title">Service Business Ready</h3>
+            <p class="text-sm">
+              Use visual cards for services (salons, repairs). Track service sales and popularity
+              like products.
+            </p>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <div class="text-3xl mb-2">🔔</div>
+            <h3 class="card-title">Smart Alerts (Pro)</h3>
+            <p class="text-sm">
+              Get notified for low stock and soon-to-expire products to reduce waste and lost sales.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section id="pricing" class="section-padding bg-base-100">
+    <div class="container mx-auto max-w-6xl">
+      <h2 class="text-3xl md:text-5xl font-bold text-center mb-6">Simple, Transparent Pricing</h2>
+      <p class="text-center text-lg mb-8 text-base-content/80">
+        Start free, upgrade as your business grows. No hidden fees.
+      </p>
+
+      <!-- Pricing Toggle -->
+      <div class="flex justify-center mb-12">
+        <div class="join">
+          <button
+            class="btn join-item"
+            [class.btn-active]="!isYearly()"
+            (click)="isYearly.set(false)"
+          >
+            Monthly
+          </button>
+          <button
+            class="btn join-item"
+            [class.btn-active]="isYearly()"
+            (click)="isYearly.set(true)"
+          >
+            Yearly
+            <span class="badge badge-success badge-sm ml-1">Save 20%</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Pricing Cards -->
+      <div class="grid md:grid-cols-3 gap-6">
+        @for (plan of pricingPlans; track plan.name) {
+        <div
+          class="card bg-base-100 shadow-xl"
+          [class.border-2]="plan.popular"
+          [class.border-primary]="plan.popular"
+        >
+          @if (plan.popular) {
+          <div class="badge badge-primary absolute top-4 right-4">Popular</div>
+          }
+          <div class="card-body">
+            <h3 class="card-title text-2xl">{{ plan.name }}</h3>
+            <div class="my-4">
+              <p class="text-3xl font-bold">
+                {{ isYearly() ? plan.yearlyPrice : plan.monthlyPrice }}
+              </p>
+              @if (plan.monthlyPrice !== 'Custom') {
+              <p class="text-sm text-base-content/60">{{ isYearly() ? '/year' : '/month' }}</p>
+              }
+            </div>
+            <p class="text-sm mb-4">{{ plan.description }}</p>
+            <ul class="space-y-2 mb-6">
+              @for (feature of plan.features; track $index) {
+              <li class="flex items-start gap-2" [class.opacity-40]="!feature.included">
+                @if (feature.included) {
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5 text-success flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                } @else {
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                }
+                <span class="text-sm">{{ feature.text }}</span>
+              </li>
+              }
+            </ul>
+            <div class="card-actions">
+              <a
+                [routerLink]="plan.ctaLink"
+                class="btn w-full"
+                [class.btn-primary]="plan.popular"
+                [class.btn-outline]="!plan.popular"
+              >
+                {{ plan.ctaText }}
+              </a>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+
+      <p class="text-center mt-8 text-sm text-base-content/60">
+        Pro plan includes a 14-day free trial. No credit card required.
+        <span class="font-semibold">Easy upgrade anytime.</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section id="testimonials" class="section-padding bg-base-200">
+    <div class="container mx-auto max-w-6xl">
+      <h2 class="text-3xl md:text-5xl font-bold text-center mb-12">
+        Don't Just Take Our Word For It
+      </h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        @for (testimonial of testimonials; track $index) {
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <p class="text-lg mb-4">"{{ testimonial.quote }}"</p>
+            <div class="divider my-2"></div>
+            <p class="font-semibold">{{ testimonial.author }}</p>
+            <p class="text-sm text-base-content/60">{{ testimonial.title }}</p>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section id="faq" class="section-padding bg-base-100">
+    <div class="container mx-auto max-w-3xl">
+      <h2 class="text-3xl md:text-5xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+      <div class="space-y-2">
+        @for (faq of faqItems(); track $index) {
+        <div class="collapse collapse-arrow bg-base-200">
+          <input type="checkbox" [checked]="faq.open" (change)="toggleFAQ($index)" />
+          <div class="collapse-title text-lg font-medium">{{ faq.question }}</div>
+          <div class="collapse-content">
+            <p>{{ faq.answer }}</p>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA Section -->
+  <section
+    id="cta"
+    class="section-padding bg-gradient-to-br from-primary to-secondary text-primary-content"
+  >
+    <div class="container mx-auto max-w-4xl text-center">
+      <h2 class="text-3xl md:text-5xl font-bold mb-6">Ready to Simplify Your Business?</h2>
+      <p class="text-lg mb-8 opacity-90">
+        Stop losing track of sales and stock. Start making informed decisions with Dukahub.
+      </p>
+      <a
+        routerLink="/signup"
+        [queryParams]="{ plan: 'pro', trial: 'true' }"
+        class="btn btn-lg bg-base-100 text-base-content hover:bg-base-200"
+      >
+        Start Your Free 14-Day Pro Trial Now
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 7l5 5m0 0l-5 5m5-5H6"
+          />
+        </svg>
+      </a>
+      <p class="mt-6 text-sm opacity-75">No credit card required. Cancel anytime.</p>
+    </div>
+  </section>
+</main>
+
+<app-footer />

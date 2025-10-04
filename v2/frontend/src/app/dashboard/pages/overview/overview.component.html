@@ -1,0 +1,205 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-bold">Dashboard Overview</h1>
+      <p class="text-base-content/60 mt-1">Welcome back! Here's what's happening today.</p>
+    </div>
+    <button class="btn btn-primary">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      New Sale
+    </button>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    @for (stat of stats; track stat.title) {
+    <div class="card bg-base-100 shadow-lg">
+      <div class="card-body">
+        <div class="flex justify-between items-start">
+          <div class="flex-1">
+            <p class="text-sm text-base-content/60 mb-1">{{ stat.title }}</p>
+            <h3 class="text-2xl font-bold">{{ stat.value }}</h3>
+            <div class="flex items-center gap-1 mt-2">
+              @if (stat.trend === 'up') {
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 text-success"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 10l7-7m0 0l7 7m-7-7v18"
+                />
+              </svg>
+              } @else {
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 text-error"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                />
+              </svg>
+              }
+              <span
+                class="text-sm font-semibold"
+                [class.text-success]="stat.trend === 'up'"
+                [class.text-error]="stat.trend === 'down'"
+              >
+                {{ stat.change }}
+              </span>
+              <span class="text-sm text-base-content/60">vs yesterday</span>
+            </div>
+          </div>
+          <div class="text-4xl">{{ stat.icon }}</div>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- Two Column Layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Recent Sales -->
+    <div class="lg:col-span-2">
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="card-title">Recent Sales</h2>
+            <button class="btn btn-ghost btn-sm">View All</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Sale ID</th>
+                  <th>Product</th>
+                  <th>Amount</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (sale of recentSales; track sale.id) {
+                <tr class="hover">
+                  <td class="font-mono text-sm">{{ sale.id }}</td>
+                  <td>{{ sale.product }}</td>
+                  <td class="font-semibold">{{ sale.amount }}</td>
+                  <td class="text-sm text-base-content/60">{{ sale.time }}</td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="space-y-4">
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <h2 class="card-title mb-4">Quick Actions</h2>
+          <div class="space-y-2">
+            <button class="btn btn-outline btn-block justify-start">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Add Product
+            </button>
+            <button class="btn btn-outline btn-block justify-start">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              Generate Report
+            </button>
+            <button class="btn btn-outline btn-block justify-start">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              View History
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body">
+          <h2 class="card-title mb-4">Alerts</h2>
+          <div class="space-y-2">
+            <div class="alert alert-warning">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6 shrink-0 stroke-current"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <div>
+                <p class="text-sm">12 items low in stock</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

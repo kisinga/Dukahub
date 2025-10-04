@@ -1,0 +1,219 @@
+<div class="drawer lg:drawer-open">
+  <input
+    id="dashboard-drawer"
+    type="checkbox"
+    class="drawer-toggle"
+    [checked]="drawerOpen()"
+    (change)="toggleDrawer()"
+  />
+
+  <!-- Main Content -->
+  <div class="drawer-content flex flex-col">
+    <!-- Navbar -->
+    <div class="navbar bg-base-100 border-b border-base-300 sticky top-0 z-40">
+      <!-- Mobile: Menu Button -->
+      <div class="flex-none lg:hidden">
+        <label for="dashboard-drawer" class="btn btn-square btn-ghost">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            class="inline-block h-5 w-5 stroke-current"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            ></path>
+          </svg>
+        </label>
+      </div>
+
+      <!-- Brand -->
+      <div class="flex-1">
+        <a class="btn btn-ghost text-xl font-bold">Dukahub</a>
+      </div>
+
+      <!-- Right side actions -->
+      <div class="flex-none gap-2">
+        <!-- Notifications -->
+        <div class="dropdown dropdown-end">
+          <div
+            tabindex="0"
+            role="button"
+            class="btn btn-ghost btn-circle"
+            (click)="toggleNotifications()"
+          >
+            <div class="indicator">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              <span class="badge badge-xs badge-primary indicator-item">3</span>
+            </div>
+          </div>
+          @if (notificationsOpen()) {
+          <div
+            tabindex="0"
+            class="card card-compact dropdown-content bg-base-100 z-50 mt-3 w-80 shadow-xl border border-base-300"
+          >
+            <div class="card-body">
+              <h3 class="font-bold text-lg mb-2">Notifications</h3>
+              <div class="space-y-2">
+                @for (notif of notifications; track $index) {
+                <div
+                  class="alert"
+                  [class.alert-warning]="notif.type === 'warning'"
+                  [class.alert-success]="notif.type === 'success'"
+                  [class.alert-info]="notif.type === 'info'"
+                >
+                  <div class="flex items-start gap-2 w-full">
+                    <span class="text-2xl">{{ notif.icon }}</span>
+                    <div class="flex-1">
+                      <p class="text-sm">{{ notif.text }}</p>
+                      <p class="text-xs opacity-60">{{ notif.time }}</p>
+                    </div>
+                  </div>
+                </div>
+                }
+              </div>
+              <div class="card-actions justify-center mt-2">
+                <button class="btn btn-ghost btn-sm">View All</button>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+
+        <!-- User Profile -->
+        <div class="dropdown dropdown-end">
+          <div
+            tabindex="0"
+            role="button"
+            class="btn btn-ghost btn-circle avatar"
+            (click)="toggleProfile()"
+          >
+            <div
+              class="w-10 rounded-full bg-primary text-primary-content flex items-center justify-center"
+            >
+              <span class="text-lg font-bold">A</span>
+            </div>
+          </div>
+          @if (profileOpen()) {
+          <ul
+            tabindex="0"
+            class="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-52 p-2 shadow-xl border border-base-300"
+          >
+            <li class="menu-title">
+              <span>admin@dukahub.com</span>
+            </li>
+            <li><a>Profile</a></li>
+            <li><a>Settings</a></li>
+            <li><a>Help</a></li>
+            <div class="divider my-0"></div>
+            <li><a (click)="logout()">Logout</a></li>
+          </ul>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Page Content -->
+    <main class="flex-1 overflow-auto bg-base-200 p-4 lg:p-6 pb-20 lg:pb-6">
+      <router-outlet />
+    </main>
+
+    <!-- Mobile Bottom Navigation -->
+    <div
+      class="dock dock-lg fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 lg:hidden z-50"
+    >
+      <a
+        routerLink="/dashboard"
+        routerLinkActive="dock-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="flex flex-col items-center"
+      >
+        <span class="text-2xl">📊</span>
+        <span class="text-xs">Overview</span>
+      </a>
+      <a
+        routerLink="/dashboard/sell"
+        routerLinkActive="dock-active"
+        class="flex flex-col items-center"
+      >
+        <span class="text-2xl">💰</span>
+        <span class="text-xs">Sell</span>
+      </a>
+      <a
+        routerLink="/dashboard/products"
+        routerLinkActive="dock-active"
+        class="flex flex-col items-center"
+      >
+        <span class="text-2xl">📦</span>
+        <span class="text-xs">Products</span>
+      </a>
+      <a
+        routerLink="/dashboard/reports"
+        routerLinkActive="dock-active"
+        class="flex flex-col items-center"
+      >
+        <span class="text-2xl">📈</span>
+        <span class="text-xs">Reports</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Sidebar (Desktop) -->
+  <div class="drawer-side z-50">
+    <label for="dashboard-drawer" class="drawer-overlay" (click)="closeDrawer()"></label>
+    <aside class="menu bg-base-100 text-base-content min-h-full w-80 p-4">
+      <!-- Sidebar Header -->
+      <div class="mb-4">
+        <h2 class="text-2xl font-bold px-4 mb-2">Dashboard</h2>
+        <div class="divider my-2"></div>
+      </div>
+
+      <!-- Navigation Items -->
+      <ul class="space-y-1">
+        @for (item of navItems; track item.route) {
+        <li>
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+            (click)="closeDrawer()"
+            class="flex items-center gap-3 text-base"
+          >
+            <span class="text-2xl">{{ item.icon }}</span>
+            <span>{{ item.label }}</span>
+          </a>
+        </li>
+        }
+      </ul>
+
+      <!-- Sidebar Footer -->
+      <div class="mt-auto pt-4">
+        <div class="divider my-2"></div>
+        <ul>
+          <li>
+            <a class="flex items-center gap-3">
+              <span class="text-2xl">❓</span>
+              <span>Help & Support</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
