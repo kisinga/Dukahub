@@ -4,13 +4,11 @@ services:
     volumes:
       - postgres_db_data:/var/lib/postgresql/data
     ports:
-      - "6543:5432"
-    environment:
-      POSTGRES_DB: vendure
-      POSTGRES_USER: vendure
-      POSTGRES_PASSWORD: 9xMeWdoNjJifJy9rWkQRCw
+      - "5432:5432"
+    env_file:
+      - ./backend/.env
     labels:
-      - "io.vendure.create.name=Dukahub"
+      - "io.vendure.create.name=dukahub"
 
   redis:
     image: redis:7-alpine
@@ -40,7 +38,11 @@ services:
       - postgres_db
       - redis
       - typesense
-    command: "npm run start"
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override DB_HOST to point to postgres_db service in docker network
+      DB_HOST: postgres_db
 
   frontend:
     build:
