@@ -1,0 +1,63 @@
+services:
+  postgres_db:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_db_data:/var/lib/postgresql/data
+    ports:
+      - "6543:5432"
+    environment:
+      POSTGRES_DB: vendure
+      POSTGRES_USER: vendure
+      POSTGRES_PASSWORD: 9xMeWdoNjJifJy9rWkQRCw
+    labels:
+      - "io.vendure.create.name=Dukahub"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6479:6379"
+    volumes:
+      - redis_data:/data
+    labels:
+      - "io.vendure.create.name=Dukahub"
+
+  typesense:
+    image: typesense/typesense:27.0
+    command: ["--data-dir", "/data", "--api-key", "SuperSecret"]
+    ports:
+      - "8208:8108"
+    volumes:
+      - typesense_data:/data
+    labels:
+      - "io.vendure.create.name=Dukahub"
+
+  backend:
+    build:
+      context: backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres_db
+      - redis
+      - typesense
+    command: "npm run start"
+
+  frontend:
+    build:
+      context: frontend
+    ports:
+      - "8080:80"
+
+volumes:
+  postgres_db_data:
+    driver: local
+    labels:
+      - "io.vendure.create.name=Dukahub"
+  typesense_data:
+    driver: local
+    labels:
+      - "io.vendure.create.name=Dukahub"
+  redis_data:
+    driver: local
+    labels:
+      - "io.vendure.create.name=Dukahub"

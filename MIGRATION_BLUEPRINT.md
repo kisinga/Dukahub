@@ -1,672 +1,173 @@
-# Dukahub v2 Migration Blueprint: PocketBase to MedusaJS
+# Dukahub v2 Architecture: The Single Source of Truth
 
-## Executive Summary
+## 1. Executive Summary & Core Problem
 
-This document outlines the comprehensive migration from Dukahub v1 (built on PocketBase) to Dukahub v2 (built on MedusaJS v2). The migration preserves all existing functionality while modernizing the architecture for better scalability, maintainability, and commerce-focused features.
+This document is the definitive architectural blueprint for Dukahub v2. All previous documentation is superseded by this plan.
 
-## Current Architecture Analysis (v1)
+**The core problem Dukahub solves is the profound inefficiency small retail businesses face in recording sales and managing inventory.** Our primary objective is to provide an incredibly fast and intuitive Point of Sale (POS) system, augmented with AI, that makes this process effortless.
 
-### Core Components
+To achieve this, we are migrating from the v1 PocketBase monolith to a modern, headless architecture powered by **Vendure**. This establishes a scalable foundation for future growth while enhancing our core POS functionality.
 
-#### 1. Backend (PocketBase)
+## 2. Architectural Vision & Technology Selection
 
-- **Framework**: PocketBase (Go-based backend-as-a-service)
-- **Database**: SQLite/PostgreSQL with auto-generated models
-- **Authentication**: Built-in user management with role-based access
-- **File Storage**: Built-in file management for product images/models
-- **Real-time**: WebSocket support for live updates
+### 2.1. Guiding Principles
 
-#### 2. Frontend
+- **API-First:** The backend is a headless service, decoupled from any specific frontend.
+- **Modular & Extensible:** Custom business logic will be encapsulated in plugins, never modifying core framework code.
+- **Scalable:** The architecture must support a growing number of tenants and transactions.
+- **Developer Velocity:** Leverage modern, type-safe technologies (TypeScript) to build robust features quickly.
 
-- **Framework**: Vanilla JavaScript with HTMX
-- **Templates**: Go HTML templates (`.templ` files)
-- **Styling**: Custom CSS with responsive design
-- **UI Components**: Custom JavaScript components for modals, forms, etc.
+### 2.2. The Case for Vendure
 
-#### 3. AI/ML Integration
+Vendure was strategically chosen over other platforms like MedusaJS for its strong alignment with our core architectural needs:
 
-- **Model Training**: Custom AI models for product recognition
-- **Image Processing**: Product photo upload and processing
-- **Prediction Service**: Real-time product identification via camera
+- **GraphQL-First API:** Ideal for the complex state management of our Angular SPA, allowing efficient data fetching.
+- **First-Class Multi-Tenancy:** Vendure's built-in `Channel` concept provides a robust, native solution for the multi-company tenancy that is central to Dukahub's business model.
+- **Structured Framework (NestJS):** Provides a highly organized, maintainable, and scalable foundation.
 
-### Data Model Deep Dive
+## 3. Target Architecture
 
-#### Core Entities
+The v2 architecture consists of four primary, containerized services.
 
-**1. Users & Companies**
+```mermaid
+graph TD
+    subgraph Browser/Device
+        A[Angular POS SPA]
+    end
+    subgraph Cloud Infrastructure
+        B[Vendure Server <br/> (Node.js/NestJS)]
+        C[Vendure Worker <br/> (Background Jobs)]
+        D[PostgreSQL Database]
+        E[AI Service <br/> (Model Training)]
+    end
 
-```go
-type Users struct {
-    Username string
-    Name string
-    Avatar string
-    Company []*Companies  // Multi-company support
-    Level float64        // Permission level
-}
-
-type Companies struct {
-    Name string
-    Logo string
-    Location string
-    Phone string
-    CompanyType CompanyTypeSelectType  // HQ/Branch/Store
-    ParentCompany *Companies          // Hierarchical structure
-    TaxId string
-    Industry string
-}
+    A -- GraphQL API --> B
+    B -- Jobs --> C
+    B -- TCP --> D
+    C -- TCP --> D
+    E -- Stores Models --> B
 ```
 
-**2. Product Management**
-
-```go
-type Products struct {
-    Name string
-    Photos []string
-    Category []*ProductCategories
-    Barcode string
-    TaxRate float64
-    Inventory *Inventory
-}
-
-type Skus struct {
-    Name string
-    Initials string
-}
-
-type Inventory struct {
-    CurrentQuantity float64
-    ReorderPoint float64
-    CostPrice float64
-    RetailPrice float64
-}
-```
-
-**3. Sales & Transactions**
-
-```go
-type SalesTransactions struct {
-    Company *Companies
-    Salesperson *Users
-    TotalAmount float64
-    PaymentStatus PaymentStatusSelectType
-    Customer *Partners
-    TransactionType TransactionTypeSelectType
-    SalesDetails []*SalesDetails
-}
-
-type SalesDetails struct {
-    Product *Products
-    Sku *Skus
-    Quantity float64
-    UnitPrice float64
-}
-```
-
-**4. Financial Management**
-
-```go
-type CompanyAccounts struct {
-    Name string
-    Type *AccountTypes
-    Balance float64
-    TotalRevenue float64
-    TotalExpenses float64
-    NetProfit float64
-}
-
-type Transactions struct {
-    Company *Companies
-    Account *CompanyAccounts
-    Type TypeSelectType2  // Debit/Credit
-    Amount float64
-    ReferenceType ReferenceTypeSelectType  // Sale/Purchase/Expense
-    ReferenceId string
-}
-```
-
-**5. Partners & Invoices**
-
-```go
-type Partners struct {
-    Name string
-    Phone string
-    Company *Companies
-    Balance float64
-}
-
-type Invoices struct {
-    Partner *Partners
-    Amount float64
-    Status StatusSelectType  // Paid/Partial/Pending
-    Balance float64
-    Company *Companies
-    Type TypeSelectType     // Sale/Purchase
-}
-```
-
-### Business Logic Flow
-
-#### 1. Product Creation & Inventory Setup
-
-```go
-// 1. Define company structure
-companies → branches → stores
-
-// 2. Create product catalog
-products → skus → categories
-
-// 3. Set up inventory per company
-inventory_records → reorder_points → cost_pricing
-```
+### 3.1. Frontend: Angular POS SPA
 
-#### 2. Purchase Flow
+The frontend is a Single-Page Application responsible for the entire user experience.
 
-```go
-// 1. Create purchase record
-purchase → link to supplier (partner)
+- **Framework:** Angular with Tailwind CSS.
+- **Core Feature:** A highly responsive POS interface with offline capabilities (via Service Workers and IndexedDB) to ensure sales can be recorded even with intermittent connectivity.
+- **AI Integration:** Performs **on-device** product recognition using TensorFlow.js models downloaded from the backend.
 
-// 2. Generate invoice
-invoice (type: purchase) → link to partner
+### 3.2. Backend: Vendure Core
 
-// 3. Record payment transaction
-transaction (type: debit) → update account balance
+Vendure forms the entire backend, handling all core commerce logic.
 
-// 4. Update inventory
-inventory_transaction (reason: purchase) → increase quantity
-```
+- **Vendure Server:** The main API server handling GraphQL requests, authentication, and business logic.
+- **Vendure Worker:** A separate process for handling asynchronous tasks like running AI training jobs, sending emails, and re-indexing search.
+- **Database:** PostgreSQL for its reliability and robust transaction support.
 
-#### 3. Sales Flow
+### 3.3. AI/ML Service & Architecture
 
-```go
-// 1. Create sales transaction
-sales_transaction → link salesperson & customer
+The AI service is a critical component for delivering the "magic" of Dukahub's POS. The architecture is optimized for performance and offline capability.
 
-// 2. Add sales details
-sales_details → product, sku, quantity, unit_price
+1.  **Training (Server-Side):** When a tenant uploads new product images, a job is queued for the Vendure Worker. The worker process uses these images to train or retrain the tenant's specific TensorFlow model.
+2.  **Distribution (Server-Side):** The newly trained model files (`model.json`, `weights.bin`) are stored and associated with the tenant's `Channel`.
+3.  **Inference (Client-Side):** When a user logs into the POS, the Angular application downloads the latest version of their company's model and caches it locally in IndexedDB. All real-time product recognition from the camera feed happens **directly on the device**. This provides instantaneous recognition and full functionality even when offline.
 
-// 3. Calculate totals & taxes
-total_amount = sum(sales_details) + tax
+This on-device approach is viable for the vast majority of our target audience (<1000 products) and avoids network latency during the critical sales process.
 
-// 4. Process payment
-transaction (type: credit) → update account balance
+## 4. Domain & Data Model
 
-// 5. Update inventory
-inventory_transaction (reason: sale) → decrease quantity
-```
+This section maps the business concepts of Dukahub to the target architecture in Vendure.
 
-#### 4. Financial Reporting
+### 4.1. Multi-Tenancy & User Management
 
-```go
-// Daily summaries
-daily_accounts → opening/closing balances
-daily_summaries → sales, purchases, expenses, profit
+This is the most critical architectural concept.
 
-// Analytics
-product_analytics → revenue, cost, profit by period
-company_stats → overall performance metrics
-```
+- **System-Level Admin:** A global "Super Admin" dashboard exists for Dukahub administrators to manage the entire platform. This is the original admin interface and remains unchanged.
+- **Tenant-Level Administration (`Channel`):** Each Dukahub customer (a company) is provisioned as a **`Channel`** in Vendure. This is the core of our multi-tenancy model, providing complete data isolation.
+- **Tenant Dashboards:** Each `Channel` will have its own dedicated administrative interface, accessible only to its users. This is where a company owner manages their own products, views their own sales reports, and, crucially, **manages their own staff's user accounts (`Administrator` records) and permissions** within their channel.
 
-### AI/ML Integration Architecture
+### 4.2. Core Business Logic Mapping
 
-#### Model Training Pipeline
+| **Dukahub Business Concept** | **Vendure Implementation**                              | **Notes & Business Flow**                                                                                                                                                                                                                                     |
+| ---------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Companies / Branches         | `Channel` / `StockLocation`                             | A parent company is a `Channel`. Its individual stores or warehouses are `StockLocations` within that channel, allowing for branch-specific inventory tracking.                                                                                               |
+| Products / SKUs              | `Product` / `ProductVariant`                            | A direct mapping. Vendure's system handles products with multiple variations (e.g., size, color) elegantly.                                                                                                                                                   |
+| Purchasing & Suppliers       | Custom `PurchaseOrder` Plugin / `Channel` for Suppliers | A custom plugin will be built to manage purchase orders. To enable advanced future features, major suppliers can be modeled as distinct `Channels`, allowing for supplier-specific product catalogs.                                                          |
+| **Sales (POS Transaction)**  | **`Order` State Machine**                               | This is the heart of the system. The POS frontend creates a `Draft` order. Adding items populates it. Payment transitions the order to `PaymentSettled`, at which point inventory is deducted. This entire flow is managed by Vendure's robust state machine. |
+| Inventory Management         | `StockLevel` / `StockMovement`                          | All inventory changes (sale, purchase, return, spoilage) are recorded as `StockMovements`, providing a full audit trail for every single item in every `StockLocation`. Reorder points will trigger notifications.                                            |
+| Customers (Debtors)          | `Customer`                                              | Maps directly to Vendure's `Customer` entity. Customer-specific pricing and order history are available out of the box.                                                                                                                                       |
+| Invoices & Financials        | Custom `Financials` Plugin                              | While the `Order` contains all necessary data for an invoice, a dedicated custom plugin will handle the generation of printable invoice documents, manage financial accounts (Chart of Accounts), and produce financial reports (P&L, Balance Sheet).         |
 
-```go
-// 1. Product photo upload
-upload_photos → store in file system
+## 5. Authentication and Authorization
 
-// 2. Model creation
-models → metadata, weights, training data
+Leveraging Vendure's built-in capabilities, the authentication and authorization model is designed for security and tenant isolation.
 
-// 3. Training jobs
-job_queue → status tracking → completion notifications
-```
+- **User Login:** All users, whether they are cashiers, managers, or company owners, will log in through the Angular SPA. The SPA communicates with the Vendure Shop API's standard login endpoints.
+- **Role-Based Access Control (RBAC):** Within each tenant's (`Channel`) dashboard, the company owner (or a designated administrator) can create roles with specific permissions (e.g., "Cashier," "Inventory Manager," "Admin").
+- **Tenant-Scoped Permissions:** Permissions are strictly confined to the `Channel` a user belongs to. A "Cashier" in Company A has no access or visibility into Company B's data.
+- **Session Management:** Secure, token-based session management is handled by Vendure out-of-the-box.
 
-#### Real-time Recognition
+## 6. Migration Strategy
 
-```go
-// 1. Camera capture
-mobile_camera → image capture
+The transition from v1 (PocketBase) to v2 (Vendure) will be executed in carefully managed phases to minimize disruption and risk.
 
-// 2. Prediction service
-ai_service → classify product → return sku + confidence
+### Phase 1: Foundation & Scaffolding (Sprint 1-2)
 
-// 3. POS integration
-recognized_product → auto-fill sale form
-```
+- **Goal:** Establish the core infrastructure and application skeletons.
+- **Tasks:**
+  1.  Provision cloud infrastructure on Azure (Managed PostgreSQL, App Service, Storage).
+  2.  Initialize the Vendure v2 project with a clean database schema.
+  3.  Configure the first `Channel` for a pilot/test company.
+  4.  Scaffold the custom plugins (`Financials`, `PurchaseOrder`, `AIModelManagement`).
 
-### Multi-tenant Architecture
+### Phase 2: Data Migration (Sprint 3)
 
-#### Company Isolation
+- **Goal:** Transfer all essential v1 data to the new v2 structure.
+- **Tasks:**
+  1.  Develop and rigorously test ETL (Extract, Transform, Load) scripts for migrating data from a PocketBase backup.
+  2.  **Migration Order is Critical:**
+      - `Users` & `Companies` -> `Administrators` & `Channels`
+      - `ProductCategories` -> `Collections` / `Facets`
+      - `Products` & `Skus` -> `Products` & `ProductVariants`
+      - `Partners` (Customers) -> `Customers`
+      - `Inventory` -> `StockLevels`
+      - Historical `SalesTransactions` -> `Orders` (This will be the most complex script).
+  3.  Perform a dry-run migration to a staging environment to validate data integrity.
 
-```go
-// Row-level security
-all_records.company_id = current_user.company_id
+### Phase 3: Feature Parity Development (Sprint 4-6)
 
-// Hierarchical permissions
-users → companies → branches → stores
+- **Goal:** Implement the core business logic and UI to match and exceed v1's capabilities.
+- **Tasks:**
+  1.  Build the essential components of the Angular SPA, focusing first on the critical POS sales flow and inventory management.
+  2.  Develop the custom `Financials` plugin to handle basic accounting.
+  3.  Implement the server-side AI model training and management within the `AIModelManagement` plugin.
+  4.  Build and test the tenant-specific dashboards for user and product management.
 
-// Data segregation
-company-specific: products, inventory, transactions
-shared: global users, system settings
-```
+### Phase 4: Pilot, Testing & Go-Live (Sprint 7-8)
 
-### Frontend Architecture
+- **Goal:** Validate the system with real users and prepare for production launch.
+- **Tasks:**
+  1.  Onboard a pilot company onto the staging environment.
+  2.  Conduct comprehensive User Acceptance Testing (UAT), focusing on the POS offline and AI recognition features.
+  3.  Perform load testing on the staging environment.
+  4.  Execute the final production data migration, deploy the application, and go live.
 
-#### Dashboard Structure
+## 7. Risks and Mitigation
 
-```javascript
-// Main dashboard
-/dashboard/{companyId}/ → company-specific data
+| Risk Category | Specific Risk                                                                     | Mitigation Strategy                                                                                                                                                                                                                       |
+| ------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Technical** | **Data Migration Integrity:** Data loss or corruption during the ETL process.     | Extensive validation scripts, a full dry-run on a staging environment, and a complete backup of the v1 database before the final production migration.                                                                                    |
+| **Technical** | **Offline POS Complexity:** Bugs in the service worker or IndexedDB sync logic.   | Rigorous, automated testing of the offline mode under various network conditions (flaky, completely offline). A manual sync trigger will be provided as a fallback.                                                                       |
+| **Business**  | **Feature Parity Gap:** The new v2 system is missing a critical workflow from v1. | The phased development approach prioritizes core workflows first. Continuous feedback from the pilot user during the UAT phase will be crucial to identify and address any gaps before the full launch.                                   |
+| **Business**  | **User Adoption:** Existing users may find the new interface confusing.           | The new Angular SPA will be designed with a strong focus on UX, aiming to be even more intuitive than the v1 interface. Short, targeted training videos will be produced for key workflows like completing a sale and managing inventory. |
 
-// Core modules
-- /sell → POS interface
-- /inventory → stock management
-- /reports → analytics & reporting
-- /settings → company configuration
-```
+## 8. Deployment Strategy
 
-#### UI Components
+The target deployment architecture is a containerized setup hosted on a public cloud provider like Azure.
 
-```javascript
-// Modal system
-ModalStore → centralized modal management
+- **Containerization:** All services (Vendure Server, Worker, Angular SPA, AI Service, PostgreSQL) will be packaged as Docker containers. `docker-compose.yml` will be used for local development.
+- **CI/CD:** GitHub Actions will be configured to automatically build and push new container images to a private container registry (e.g., GitHub Packages, Azure Container Registry) on every push to the main branch.
+- **Cloud Deployment:** The application will be deployed as a containerized web app (e.g., Azure App Service for Containers). A managed PostgreSQL service will be used for the database.
+- **Persistent Storage:** A shared file storage solution (e.g., Azure Files) will be mounted into the Vendure containers to persist uploaded assets like product images and AI models.
 
-// Sale management
-SaleStore → cart, items, totals
-
-// Scanner integration
-ScannerStore → camera, recognition, validation
-```
-
-## Target Architecture (v2) - MedusaJS
-
-### MedusaJS v2 Overview
-
-- **Framework**: Node.js/TypeScript headless commerce platform
-- **License**: MIT (permissive, commercial-friendly)
-- **Database**: PostgreSQL with TypeORM
-- **API**: REST + GraphQL
-- **Architecture**: Modular plugin system
-
-### Core Modules Migration
-
-#### 1. Product Module
-
-**PocketBase → Medusa Mapping:**
-
-```typescript
-// Products
-PocketBase: Products → Medusa: Product
-
-// Variants
-PocketBase: Skus → Medusa: ProductVariant
-
-// Categories
-PocketBase: ProductCategories → Medusa: ProductCategory
-
-// Inventory
-PocketBase: Inventory → Medusa: InventoryItem
-```
-
-#### 2. Order Module
-
-**PocketBase → Medusa Mapping:**
-
-```typescript
-// Sales Transactions
-PocketBase: SalesTransactions → Medusa: Order
-
-// Sales Details
-PocketBase: SalesDetails → Medusa: LineItem
-
-// Customers
-PocketBase: Partners → Medusa: Customer
-```
-
-#### 3. Customer Module
-
-**PocketBase → Medusa Mapping:**
-
-```typescript
-// Partners (Customers)
-PocketBase: Partners → Medusa: Customer
-
-// Partner balance tracking
-PocketBase: Balance field → Medusa: Custom entity or metadata
-```
-
-#### 4. Store Module (Multi-tenancy)
-
-**PocketBase → Medusa Mapping:**
-
-```typescript
-// Companies
-PocketBase: Companies → Medusa: Store
-
-// Company hierarchy
-PocketBase: ParentCompany → Medusa: Store parent relationship
-
-// Store-specific data
-All entities → Store-scoped via store_id
-```
-
-### Migration Strategy
-
-#### Phase 1: Foundation Setup
-
-1. **Create v2 directory structure**
-2. **Initialize MedusaJS project**
-3. **Set up Docker configuration**
-4. **Configure PostgreSQL + Redis**
-
-#### Phase 2: Data Model Migration
-
-1. **Migrate core entities** (Products, Orders, Customers)
-2. **Implement store isolation** (multi-tenancy)
-3. **Create custom entities** for non-standard fields
-4. **Set up relationships and constraints**
-
-#### Phase 3: Business Logic Migration
-
-1. **Inventory management logic**
-2. **Sales transaction processing**
-3. **Financial calculation logic**
-4. **Reporting and analytics**
-
-#### Phase 4: AI Integration
-
-1. **Preserve existing AI service**
-2. **Create Medusa plugin for AI integration**
-3. **Maintain model training pipeline**
-4. **Update prediction endpoints**
-
-#### Phase 5: Frontend Migration
-
-1. **Create React-based POS**
-2. **Implement offline capability**
-3. **Migrate UI components**
-4. **Set up build and deployment**
-
-### Technical Implementation Details
-
-#### Medusa Configuration
-
-```typescript
-// medusa-config.js
-module.exports = {
-  projectConfig: {
-    database_url: process.env.DATABASE_URL,
-    redis_url: process.env.REDIS_URL,
-    store_cors: process.env.STORE_CORS,
-    admin_cors: process.env.ADMIN_CORS,
-  },
-  plugins: [
-    // Core plugins
-    "@medusajs/medusa-plugin-sendgrid",
-    "@medusajs/medusa-plugin-stripe",
-    // Custom plugins
-    "./plugins/dukahub-ai",
-    "./plugins/dukahub-pos",
-  ],
-  modules: {
-    // Custom modules
-    dukahubStore: "./modules/dukahub-store",
-    dukahubAnalytics: "./modules/dukahub-analytics",
-  },
-};
-```
-
-#### Custom Entities & Services
-
-```typescript
-// Custom services
-- DukahubStoreService (multi-tenant logic)
-- DukahubInventoryService (extended inventory)
-- DukahubAIService (AI integration)
-- DukahubAnalyticsService (reporting)
-
-// Custom entities
-- DailySummary
-- InventoryTransaction
-- CompanyAccount
-- ProductAnalytics
-```
-
-#### Database Schema Extensions
-
-```sql
--- Store-specific extensions
-ALTER TABLE store ADD COLUMN tax_id VARCHAR(255);
-ALTER TABLE store ADD COLUMN industry VARCHAR(255);
-ALTER TABLE store ADD COLUMN company_type VARCHAR(50);
-
--- Custom tables
-CREATE TABLE daily_summaries (
-  id VARCHAR(255) PRIMARY KEY,
-  store_id VARCHAR(255) REFERENCES store(id),
-  date DATE NOT NULL,
-  total_sales DECIMAL(10,2),
-  total_purchases DECIMAL(10,2),
-  -- ... other fields
-);
-
-CREATE TABLE inventory_transactions (
-  id VARCHAR(255) PRIMARY KEY,
-  inventory_item_id VARCHAR(255) REFERENCES inventory_item(id),
-  quantity_change DECIMAL(10,2),
-  reason_code VARCHAR(50),
-  -- ... other fields
-);
-```
-
-### API Migration Strategy
-
-#### REST Endpoints Mapping
-
-```typescript
-// PocketBase endpoints → Medusa endpoints
-GET /api/collections/products → GET /store/products
-POST /api/collections/products → POST /admin/products
-GET /api/collections/sales_transactions → GET /store/orders
-POST /api/collections/sales_transactions → POST /store/orders
-```
-
-#### GraphQL Integration
-
-```graphql
-# Custom queries for POS
-query GetPOSData($storeId: String!) {
-  products(store_id: $storeId) {
-    id
-    title
-    variants {
-      id
-      title
-      inventory_quantity
-      prices {
-        amount
-        currency_code
-      }
-    }
-  }
-  orders(store_id: $storeId, status: "pending") {
-    id
-    total
-    items {
-      product_id
-      quantity
-      unit_price
-    }
-  }
-}
-```
-
-### Frontend Architecture (React)
-
-#### Component Structure
-
-```typescript
-// POS Components
--POSLayout -
-  ProductScanner -
-  CartManager -
-  PaymentProcessor -
-  ReceiptPrinter -
-  // Dashboard Components
-  DashboardLayout -
-  InventoryTable -
-  SalesReports -
-  AnalyticsCharts -
-  CompanySettings;
-```
-
-#### State Management
-
-```typescript
-// Zustand stores
-- usePOSStore (cart, products, totals)
-- useScannerStore (camera, recognition)
-- useOfflineStore (sync queue, local data)
-- useCompanyStore (current company, settings)
-```
-
-#### Offline Capability
-
-```typescript
-// IndexedDB integration
-- Product cache
-- Transaction queue
-- Image storage
-- Sync management
-```
-
-### Deployment Architecture
-
-#### Docker Configuration
-
-```dockerfile
-# Multi-service setup
-- medusa-backend (Node.js)
-- postgres (database)
-- redis (cache)
-- dukahub-pos (React frontend)
-- dukahub-ai (Go/Python service)
-```
-
-#### Environment Configuration
-
-```bash
-# Medusa environment
-DATABASE_URL=postgres://...
-REDIS_URL=redis://...
-STORE_CORS=http://localhost:3000
-ADMIN_CORS=http://localhost:7000
-
-# AI Service
-AI_SERVICE_URL=http://ai-service:8080
-MODEL_STORAGE_PATH=/app/models
-
-# POS Frontend
-REACT_APP_MEDUSA_BACKEND_URL=http://localhost:9000
-REACT_APP_AI_SERVICE_URL=http://localhost:8080
-```
-
-### Migration Checklist
-
-#### Pre-Migration
-
-- [ ] Backup existing database
-- [ ] Document all custom business logic
-- [ ] Test existing functionality
-- [ ] Set up Medusa development environment
-
-#### Data Migration
-
-- [ ] Migrate companies to stores
-- [ ] Migrate products and variants
-- [ ] Migrate inventory data
-- [ ] Migrate customer data
-- [ ] Migrate historical transactions
-
-#### Feature Migration
-
-- [ ] Implement multi-tenant logic
-- [ ] Rebuild sales flow
-- [ ] Implement inventory management
-- [ ] Set up financial reporting
-- [ ] Integrate AI services
-
-#### Testing & Validation
-
-- [ ] End-to-end testing
-- [ ] Performance testing
-- [ ] Offline functionality testing
-- [ ] Multi-tenant isolation testing
-
-### Success Metrics
-
-#### Functional Requirements
-
-- [ ] All existing POS features working
-- [ ] AI recognition preserved
-- [ ] Multi-company support maintained
-- [ ] Offline capability working
-- [ ] Financial reporting accurate
-
-#### Performance Requirements
-
-- [ ] Faster page loads
-- [ ] Better mobile performance
-- [ ] Improved API response times
-- [ ] Reduced server resource usage
-
-#### Developer Experience
-
-- [ ] Easier feature development
-- [ ] Better testing capabilities
-- [ ] Improved debugging
-- [ ] Modern development tools
-
-### Risk Mitigation
-
-#### Technical Risks
-
-1. **Data Loss**: Comprehensive backup and testing strategy
-2. **Downtime**: Staged migration with rollback capability
-3. **Performance**: Load testing and optimization
-4. **Compatibility**: Thorough testing of all features
-
-#### Business Risks
-
-1. **Feature Parity**: Detailed requirement mapping
-2. **User Training**: Documentation and training materials
-3. **Support**: Migration support and troubleshooting
-4. **Timeline**: Realistic timeline with buffers
-
-### Timeline & Milestones
-
-#### Week 1-2: Foundation
-
-- Set up Medusa environment
-- Create basic data models
-- Implement store isolation
-
-#### Week 3-4: Core Migration
-
-- Migrate products and inventory
-- Implement sales flow
-- Set up basic POS interface
-
-#### Week 5-6: Advanced Features
-
-- AI integration
-- Offline capability
-- Reporting and analytics
-
-#### Week 7-8: Testing & Launch
-
-- Comprehensive testing
-- Performance optimization
-- Production deployment
-
-This blueprint provides the comprehensive roadmap for migrating Dukahub from PocketBase to MedusaJS while preserving all existing functionality and improving the overall architecture.
+This strategy ensures a reproducible, scalable, and automated deployment process.
