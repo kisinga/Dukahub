@@ -1,32 +1,50 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
     selector: 'app-login',
     imports: [RouterLink, FormsModule],
     templateUrl: './login.component.html',
     styleUrl: './login.component.css',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
+    private readonly authService = inject(AuthService);
+    private readonly router = inject(Router);
+
+    // Form state
     protected readonly email = signal('');
     protected readonly password = signal('');
-    protected readonly isLoading = signal(false);
+    protected readonly rememberMe = signal(false);
+    protected readonly errorMessage = signal<string | null>(null);
 
-    constructor(private router: Router) { }
+    // Loading state from auth service
+    protected readonly isLoading = this.authService.isLoading;
 
     async onSubmit(): Promise<void> {
         if (!this.email() || !this.password()) {
+            this.errorMessage.set('Please enter both email and password');
             return;
         }
 
-        this.isLoading.set(true);
+        // Clear previous errors
+        this.errorMessage.set(null);
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Attempt login
+        const result = await this.authService.login({
+            username: this.email(),
+            password: this.password(),
+            rememberMe: this.rememberMe(),
+        });
 
-        // For now, just redirect to dashboard
-        this.router.navigate(['/dashboard']);
+        if (result.success) {
+            // Redirect to dashboard on successful login
+            this.router.navigate(['/dashboard']);
+        } else {
+            // Show error message
+            this.errorMessage.set(result.error || 'Login failed. Please try again.');
+        }
     }
 }

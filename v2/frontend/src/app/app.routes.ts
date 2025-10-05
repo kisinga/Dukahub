@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard, noAuthGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
     // Marketing pages (include their own navbar/footer)
@@ -8,11 +9,13 @@ export const routes: Routes = [
     },
     {
         path: 'login',
+        canActivate: [noAuthGuard],
         loadComponent: () =>
             import('./pages/auth/login/login.component').then((m) => m.LoginComponent)
     },
     {
         path: 'signup',
+        canActivate: [noAuthGuard],
         loadComponent: () =>
             import('./pages/auth/signup/signup.component').then((m) => m.SignupComponent)
     },
@@ -20,6 +23,7 @@ export const routes: Routes = [
     // Dashboard - separate layout with sidebar and mobile bottom nav
     {
         path: 'dashboard',
+        canActivate: [authGuard],
         loadComponent: () =>
             import('./dashboard/layout/dashboard-layout.component').then(
                 (m) => m.DashboardLayoutComponent

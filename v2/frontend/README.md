@@ -1,59 +1,80 @@
-# DukahubFrontend
+# Dukahub Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.4.
+Angular admin dashboard for Dukahub - Built for Kenyan SMEs.
 
-## Development server
-
-To start a local development server, run:
+## Setup
 
 ```bash
-ng serve
+npm install
+npm start  # http://localhost:4200
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Tech Stack
 
-## Code scaffolding
+- Angular 20.3 (Standalone + Signals)
+- Apollo Client (GraphQL)
+- Tailwind CSS 4 + daisyUI 5
+- Vendure Backend
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Authentication
+
+**Endpoint:** `admin-api` (not shop-api)  
+**Default credentials:** `superadmin` / `superadmin`
+
+```typescript
+// Services: inject() pattern + signals
+authService.login({ username, password });
+authService.user(); // Signal
+authService.isAuthenticated(); // Computed signal
+```
+
+## GraphQL Codegen
 
 ```bash
-ng generate component component-name
+npm run codegen         # Generate types (backend must be running)
+npm run codegen:watch   # Watch mode
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Structure
+
+```
+src/app/
+├── core/
+│   ├── services/     # apollo, auth, cart
+│   ├── guards/       # authGuard, noAuthGuard
+│   ├── graphql/      # queries/mutations
+│   └── models/       # types
+├── pages/            # login, landing
+└── dashboard/        # admin pages
+```
+
+## Scripts
 
 ```bash
-ng generate --help
+npm start             # Dev server
+npm run build         # Production build
+npm test              # Run tests
+npm run codegen       # Generate GraphQL types
 ```
 
-## Building
+## Environment
 
-To build the project run:
-
-```bash
-ng build
+```typescript
+// src/environments/environment.ts
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:3000/admin-api',
+};
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Common Issues
 
-## Running unit tests
+**"Invalid credentials"**: Use `superadmin`/`superadmin` (admin-api, not shop-api)  
+**CORS errors**: Check backend `vendure-config.ts` CORS settings  
+**Codegen fails**: Ensure backend is running on port 3000
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## More Info
 
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [Architecture](./ARCHITECTURE.md) - App structure
+- [Dashboard UX](./DASHBOARD_UX.md) - Design principles
+- [Migration Status](./MIGRATION_STATUS.md) - v1 → v2 progress

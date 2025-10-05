@@ -1,16 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
+import { CompanyService } from '../../core/services/company.service';
 
 interface NavItem {
     label: string;
     icon: string;
     route: string;
-}
-
-interface Company {
-    id: string;
-    name: string;
-    logo: string;
 }
 
 @Component({
@@ -21,6 +17,9 @@ interface Company {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardLayoutComponent {
+    private readonly authService = inject(AuthService);
+    private readonly companyService = inject(CompanyService);
+
     protected readonly navItems: NavItem[] = [
         { label: 'Overview', icon: '📊', route: '/dashboard' },
         { label: 'Sell', icon: '💰', route: '/dashboard/sell' },
@@ -75,61 +74,44 @@ export class DashboardLayoutComponent {
         }
     ];
 
-    // Computed unread notifications count
+    // Auth service signals
+    protected readonly user = this.authService.user;
+    protected readonly fullName = this.authService.fullName;
+
+    // Company service signals
+    protected readonly companies = this.companyService.companies;
+    protected readonly selectedCompanyId = this.companyService.selectedCompanyId;
+    protected readonly selectedCompany = this.companyService.selectedCompany;
+
+    // Computed values
     protected readonly unreadCount = computed(() =>
         this.notifications.filter(n => n.unread).length
     );
 
-    // Mock company data - TODO: Replace with actual data from backend
-    protected readonly companies: Company[] = [
-        {
-            id: '1',
-            name: 'Acme Pharmacy',
-            logo: 'https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp'
-        },
-        {
-            id: '2',
-            name: 'MediStore Plus Downtown',
-            logo: 'https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp'
-        },
-        {
-            id: '3',
-            name: 'HealthCare Hub & Wellness Center',
-            logo: 'https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp'
-        },
-        {
-            id: '4',
-            name: 'Quick Meds Express',
-            logo: 'https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp'
-        },
-        {
-            id: '5',
-            name: 'City Pharmacy Branch A',
-            logo: 'https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp'
-        }
-    ];
-
-    protected readonly selectedCompanyId = signal('1');
-
-    protected readonly selectedCompany = computed(() =>
-        this.companies.find(c => c.id === this.selectedCompanyId()) || this.companies[0]
-    );
-
-    // Truncate company name for display (max 20 characters)
     protected readonly displayCompanyName = computed(() => {
-        const name = this.selectedCompany().name;
+        const company = this.selectedCompany();
+        if (!company) return 'Loading...';
+        const name = company.name;
         return name.length > 20 ? name.substring(0, 20) + '...' : name;
     });
 
-    // User data - TODO: Replace with actual data from auth service
-    protected readonly currentUser = {
-        name: 'Admin User',
-        email: 'admin@dukahub.com',
-        avatar: 'default_avatar.png'
-    };
+    protected readonly userAvatar = computed(() =>
+        this.user()?.emailAddress ? 'default_avatar.png' : 'default_avatar.png'
+    );
+
+    constructor() {
+        // Initialize company selection from storage
+        this.companyService.initializeFromStorage();
+
+        // Fetch companies when authenticated
+        effect(() => {
+            if (this.authService.isAuthenticated()) {
+                this.companyService.fetchCompanies();
+            }
+        });
+    }
 
     closeDrawer(): void {
-        // Close drawer by unchecking the checkbox (for mobile navigation)
         const checkbox = document.getElementById('dashboard-drawer') as HTMLInputElement;
         if (checkbox) {
             checkbox.checked = false;
@@ -137,13 +119,11 @@ export class DashboardLayoutComponent {
     }
 
     selectCompany(companyId: string): void {
-        this.selectedCompanyId.set(companyId);
-        // TODO: Implement company switching logic (reload data, etc.)
+        this.companyService.selectCompany(companyId);
     }
 
-    logout(): void {
-        // TODO: Implement logout logic
-        window.location.href = '/';
+    async logout(): Promise<void> {
+        await this.authService.logout();
     }
 }
 

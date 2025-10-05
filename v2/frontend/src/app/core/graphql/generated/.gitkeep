@@ -1,0 +1,3 @@
+# This directory will contain generated GraphQL types
+# Run `npm run codegen` to generate the types
+

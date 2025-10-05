@@ -5,12 +5,32 @@
     <div class="card-body">
       <!-- Logo and Header -->
       <div class="text-center mb-6">
-        <h1 class="text-3xl font-bold mb-2">Welcome Back</h1>
-        <p class="text-base-content/60">Sign in to continue to Dukahub</p>
+        <h1 class="text-3xl font-bold mb-2">Admin Login</h1>
+        <p class="text-base-content/60">Sign in to Dukahub Dashboard</p>
       </div>
 
       <!-- Login Form -->
       <form (ngSubmit)="onSubmit()" class="space-y-4">
+        <!-- Error Alert -->
+        @if (errorMessage()) {
+        <div role="alert" class="alert alert-error">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 shrink-0 stroke-current"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>{{ errorMessage() }}</span>
+        </div>
+        }
+
         <!-- Email Input -->
         <div class="form-control">
           <label class="label">
@@ -24,6 +44,7 @@
             name="email"
             required
             [disabled]="isLoading()"
+            autocomplete="email"
           />
         </div>
 
@@ -40,9 +61,24 @@
             name="password"
             required
             [disabled]="isLoading()"
+            autocomplete="current-password"
           />
           <label class="label">
             <a href="#" class="label-text-alt link link-hover">Forgot password?</a>
+          </label>
+        </div>
+
+        <!-- Remember Me Checkbox -->
+        <div class="form-control">
+          <label class="label cursor-pointer justify-start gap-2">
+            <input
+              type="checkbox"
+              class="checkbox checkbox-primary"
+              [(ngModel)]="rememberMe"
+              name="rememberMe"
+              [disabled]="isLoading()"
+            />
+            <span class="label-text">Remember me</span>
           </label>
         </div>
 
@@ -60,14 +96,10 @@
         </div>
       </form>
 
-      <!-- Divider -->
-      <div class="divider">OR</div>
-
-      <!-- Sign Up Link -->
-      <div class="text-center">
-        <p class="text-sm">
-          Don't have an account?
-          <a routerLink="/signup" class="link link-primary font-semibold">Sign up</a>
+      <!-- Admin Note -->
+      <div class="text-center mt-4">
+        <p class="text-sm text-base-content/60">
+          Administrator credentials required
         </p>
       </div>
 
