@@ -1,58 +1,34 @@
-# Vendure GAPS
+# Vendure Implementation Gaps & Workarounds
 
-## Architectural
+This document tracks known limitations and required manual steps when working with Vendure.
 
-### Multi-Tenancy Model
+## Channel Provisioning Checklist
 
-Vendure's multi-tenancy uses a two-tier system:
+When creating a new Channel (customer company), manually provision:
 
-**Channel** = Independent customer company (e.g., "Downtown Groceries Inc.")
+1. ✅ **Stock Location** - At least one required for inventory
+2. ✅ **Payment Method** - Required for sales
+3. ✅ **Roles** - Required for user access
+4. ✅ **Assign Users** - Link users to roles
 
-- Provides complete data isolation between different POS customers
-- Each company gets their own: products, orders, customers, permissions
+**See [Frontend Architecture](./frontend/ARCHITECTURE.md) for detailed multi-tenancy model.**
 
-**Stock Location** = Individual shop within a company (shares inventory)
+## Known Limitations
 
-- Multiple shops under one company share the same product catalog
-- Inventory is tracked per location
-- Example: Company has 3 shops (Downtown, Mall, Airport)
+### User Permissions
 
-### ⚠️ Critical: Channel Setup Requirements
+- Users are scoped to Channels via Roles
+- Stock Location permissions require custom implementation
+- No native "shop-level" user scoping
 
-**For every Channel created, you MUST manually provision:**
+### Stock Locations
 
-1. **At least ONE Stock Location** (required for inventory tracking)
-   - Inventory cannot be tracked without a Stock Location
-   - Sales cannot be processed without a Stock Location
-   - Even single-shop companies need a Stock Location
-2. **Payment Method** (required for sales)
-   - Each company needs its own payment configuration
-3. **Role(s)** (required for user access)
-   - Users are scoped to channels via roles
-   - Unless intentional, each channel must have its own roles
-   - Users belonging to a role can see all companies associated with that role
+- Not automatically created with Channels
+- Must be manually provisioned for each new customer
+- Cannot track inventory without at least one Stock Location
 
-**Setup Order:** Channel → Stock Location → Payment Method → Roles → Assign Users
+### Multi-Channel Management
 
-### User Context & UX Flow
-
-**Login Flow:**
-
-1. User logs in → First channel (company) is automatically selected
-2. User selects their current shop (stock location)
-3. All operations are scoped to: Channel (company) + Stock Location (shop)
-
-**Navigation Hierarchy:**
-
-- **Shop Selector**: Primary action in navigation bar (frequent use)
-  - Switches active shop context for POS and stats
-  - Most common daily operation
-- **Company Selector**: Extended menu, first item (rare use)
-  - Only for users managing multiple customer companies
-  - Forces shop re-selection after switch
-
-**Scoping Rules:**
-
-- POS operations are shop-specific only
-- Dashboard stats default to shop-specific, with option to view aggregate
-- Future: Side-by-side shop comparison
+- Each Channel requires separate payment method setup
+- Roles must be created per Channel unless explicitly shared
+- Users in shared roles can see all associated Channels

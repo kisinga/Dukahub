@@ -4,10 +4,33 @@
 
 ### Channel vs Stock Location
 
-- **Channel** = Independent customer company (e.g., "Downtown Groceries Inc.")
-- **Stock Location** = Individual shop within that company (shares inventory)
+**Channel** = Independent customer company (e.g., "Downtown Groceries Inc.")
 
-⚠️ **Critical**: Every Channel MUST have at least one Stock Location. Inventory cannot be tracked and sales cannot be processed without a Stock Location.
+- Complete data isolation between POS customers
+- Each gets their own: products, orders, customers, permissions
+
+**Stock Location** = Individual shop within a company
+
+- Shares product catalog across all locations
+- Tracks inventory per physical location
+- Example: Company has 3 shops (Downtown, Mall, Airport)
+
+### ⚠️ Critical: Channel Setup Requirements
+
+**For every Channel created, you MUST manually provision:**
+
+1. **At least ONE Stock Location** (required for inventory tracking)
+   - Inventory cannot be tracked without a Stock Location
+   - Sales cannot be processed without a Stock Location
+   - Even single-shop companies need a Stock Location
+2. **Payment Method** (required for sales)
+   - Each company needs its own payment configuration
+3. **Role(s)** (required for user access)
+   - Users are scoped to channels via roles
+   - Unless intentional, each channel must have its own roles
+   - Users belonging to a role can see all companies associated with that role
+
+**Setup Order:** Channel → Stock Location → Payment Method → Roles → Assign Users
 
 ### User Context Hierarchy
 
@@ -20,48 +43,26 @@ User Login
 
 ### Selection Behavior
 
-#### Default State on Login
+**Login Flow:**
 
-- **First channel (company) is automatically selected**
-- User must then select their current shop/location
-- Selection persists across session
+1. User logs in → First company auto-selected
+2. User selects their current shop
+3. All operations scoped to: Company + Shop
 
-#### UI Placement
+**UI Placement:**
 
-- **Shop Selector**: Primary position in navigation bar
-  - Most frequent action for daily operations
-  - Switches active shop context
-  - Changes affect: POS, inventory counts, sales data
-- **Company Selector**: Extended menu (first item)
-  - Rare action (only for users managing multiple companies)
-  - Switches entire channel context
-  - Forces shop re-selection after switch
+- **Shop Selector**: Primary navbar position (frequent use)
+- **Company Selector**: Extended menu (rare use, multi-company users only)
 
 ### Scoping Rules
 
-#### POS Operations
-
-- **Shop-specific only**
-- Sales are recorded against the active shop
-- Inventory updates affect only the active shop's stock
-- No cross-shop operations in POS interface
-
-#### Dashboard Statistics
-
-- **Default view**: Shop-specific stats
-- **Option 1**: View aggregate across all shops in company
-- **Option 2 (future)**: Side-by-side shop comparison
-
-Example:
-
-```
-[Shop Selector: Downtown Branch ▼]
-
-Today's Sales: $1,234 (Downtown only)
-
-[View All Shops] → Shows aggregate
-[Compare Shops]  → Shows comparison table
-```
+| Feature         | Scope                                 |
+| --------------- | ------------------------------------- |
+| POS Sales       | Shop-specific only                    |
+| Inventory       | Shop-specific only                    |
+| Dashboard Stats | Shop-specific (with aggregate option) |
+| Product Catalog | Company-wide (shared)                 |
+| Customers       | Company-wide (shared)                 |
 
 ## Layout Strategy
 
