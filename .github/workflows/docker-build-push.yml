@@ -1,0 +1,39 @@
+name: Build and Push to GHCR – v2
+
+on:
+  push:
+    branches:
+      - v2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build images with docker-compose
+        run: docker compose -f v2/docker-compose.yml build
+
+      - name: Tag images for GHCR
+        run: |
+          docker tag v2-frontend ghcr.io/kisinga/dukahub/frontend:latest
+          docker tag v2-backend ghcr.io/kisinga/dukahub/backend:latest
+
+      - name: Push images to GHCR
+        run: |
+          docker push ghcr.io/kisinga/dukahub/frontend:latest
+          docker push ghcr.io/kisinga/dukahub/backend:latest

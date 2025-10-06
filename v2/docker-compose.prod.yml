@@ -1,0 +1,63 @@
+services:
+  postgres_db:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./backend/.env
+    labels:
+      - "io.vendure.create.name=dukahub"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6479:6379"
+    volumes:
+      - redis_data:/data
+    labels:
+      - "io.vendure.create.name=Dukahub"
+
+  typesense:
+    image: typesense/typesense:27.0
+    command: ["--data-dir", "/data", "--api-key", "SuperSecret"]
+    ports:
+      - "8208:8108"
+    volumes:
+      - typesense_data:/data
+    labels:
+      - "io.vendure.create.name=Dukahub"
+
+  backend:
+    image: ghcr.io/kisinga/dukahub/backend:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres_db
+      - redis
+      - typesense
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override DB_HOST to point to postgres_db service in docker network
+      DB_HOST: postgres_db
+
+  frontend:
+    image: ghcr.io/kisinga/dukahub/frontend:latest
+    ports:
+      - "8080:80"
+
+volumes:
+  postgres_db_data:
+    driver: local
+    labels:
+      - "io.vendure.create.name=Dukahub"
+  typesense_data:
+    driver: local
+    labels:
+      - "io.vendure.create.name=Dukahub"
+  redis_data:
+    driver: local
+    labels:
+      - "io.vendure.create.name=Dukahub"
