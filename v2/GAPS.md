@@ -17,13 +17,22 @@ Vendure's multi-tenancy uses a two-tier system:
 - Inventory is tracked per location
 - Example: Company has 3 shops (Downtown, Mall, Airport)
 
-### Channel Requirements
+### ⚠️ Critical: Channel Setup Requirements
 
-For every channel, we must manually create and link:
+**For every Channel created, you MUST manually provision:**
 
-- **Payment method** - Each company needs its own payment configuration
-- **Role** - Users are scoped to channels via roles
-- Unless intentional, each channel must have its own roles, as users belonging to that role can see all the companies associated with it
+1. **At least ONE Stock Location** (required for inventory tracking)
+   - Inventory cannot be tracked without a Stock Location
+   - Sales cannot be processed without a Stock Location
+   - Even single-shop companies need a Stock Location
+2. **Payment Method** (required for sales)
+   - Each company needs its own payment configuration
+3. **Role(s)** (required for user access)
+   - Users are scoped to channels via roles
+   - Unless intentional, each channel must have its own roles
+   - Users belonging to a role can see all companies associated with that role
+
+**Setup Order:** Channel → Stock Location → Payment Method → Roles → Assign Users
 
 ### User Context & UX Flow
 

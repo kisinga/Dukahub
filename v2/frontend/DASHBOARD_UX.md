@@ -24,6 +24,8 @@ The dashboard operates with a two-tier context system:
 - Changed frequently throughout the day
 - Located in: Primary position in navigation bar
 
+⚠️ **Critical**: Every Channel MUST have at least one Stock Location. Without it, inventory cannot be tracked and POS sales cannot be processed.
+
 ### Selection Behavior
 
 ```

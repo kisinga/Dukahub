@@ -86,6 +86,13 @@ This is the most critical architectural concept.
 - **Tenant-Level Administration (`Channel`):** Each Dukahub customer (a company) is provisioned as a **`Channel`** in Vendure. This is the core of our multi-tenancy model, providing complete data isolation.
 - **Tenant Dashboards:** Each `Channel` will have its own dedicated administrative interface, accessible only to its users. This is where a company owner manages their own products, views their own sales reports, and, crucially, **manages their own staff's user accounts (`Administrator` records) and permissions** within their channel.
 
+⚠️ **Critical Operational Requirement:** When provisioning a new Channel (customer), you MUST create:
+
+1. **At least one Stock Location** - Required for inventory tracking and POS sales
+2. **Payment Method** - Required for processing transactions
+3. **Role(s)** - Required for user access and permissions
+4. **Assign Users** to roles for channel access
+
 ### 4.2. Core Business Logic Mapping
 
 | **Dukahub Business Concept** | **Vendure Implementation**                              | **Notes & Business Flow**                                                                                                                                                                                                                                       |

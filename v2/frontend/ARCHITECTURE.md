@@ -7,6 +7,8 @@
 - **Channel** = Independent customer company (e.g., "Downtown Groceries Inc.")
 - **Stock Location** = Individual shop within that company (shares inventory)
 
+⚠️ **Critical**: Every Channel MUST have at least one Stock Location. Inventory cannot be tracked and sales cannot be processed without a Stock Location.
+
 ### User Context Hierarchy
 
 ```
