@@ -37,7 +37,8 @@ export type {
     CurrentUserChannel,
     // Common generated types
     ErrorCode,
-    ErrorResult, GetAdministratorChannelsQuery,
+    ErrorResult,
+    GetUserChannelsQuery,
     // Error types
     InvalidCredentialsError,
     NativeAuthStrategyError,

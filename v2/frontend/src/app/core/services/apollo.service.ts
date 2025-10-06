@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApolloClient, HttpLink, InMemoryCache, from } from '@apollo/client';
-import { setContext } from '@apollo/client/link/context';
+import { SetContextLink } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { environment } from '../../../environments/environment';
 
@@ -110,23 +110,36 @@ export class ApolloService {
             },
         });
 
-        // Middleware to attach auth token and headers to requests
-        const authLink = setContext((operation) => {
+        /**
+         * Middleware to attach auth token and headers to requests
+         * 
+         * Channel Token Behavior:
+         * - By default, channel token is included in all requests (if available)
+         * - To skip channel token for specific operations, pass context option:
+         *   
+         *   Example:
+         *   ```
+         *   client.query({
+         *     query: MY_QUERY,
+         *     context: { skipChannelToken: true }
+         *   })
+         *   ```
+         * 
+         * This is useful for auth operations where channel context isn't established yet
+         */
+        const authLink = new SetContextLink(async (prevContext, operation) => {
             const authToken = this.getAuthToken();
             const channelToken = this.getChannelToken();
-            const headers: Record<string, string> = {};
+            const headers: Record<string, string> = { ...prevContext['headers'] };
 
             if (authToken) {
                 headers['authorization'] = `Bearer ${authToken}`;
             }
 
-            // Don't send channel token during login/authentication operations
-            // to avoid "No Channel with token X found" errors
-            const isAuthOperation = operation.operationName === 'Login' ||
-                operation.operationName === 'Logout' ||
-                operation.operationName === 'GetActiveAdministrator';
-
-            if (channelToken && !isAuthOperation) {
+            // Only send channel token if:
+            // 1. Channel token exists
+            // 2. Operation context doesn't explicitly skip it
+            if (channelToken && !prevContext['skipChannelToken']) {
                 headers['vendure-token'] = channelToken;
             }
 

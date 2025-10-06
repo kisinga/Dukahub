@@ -4,14 +4,14 @@
 export type {
     Channel,
     ChannelList,
-    GetAdministratorChannelsQuery
+    GetUserChannelsQuery
 } from '../graphql/generated/graphql';
 
 /**
  * Company type - Direct mapping from Channel query result
  * In Vendure, channels represent different companies/stores
  * 
- * This matches exactly what we fetch from GetAdministratorChannels query
+ * This matches exactly what we fetch from GetUserChannels query
  */
 export type Company = {
     id: string;

@@ -1,4 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { GET_USER_CHANNELS } from '../graphql/auth.graphql';
+import type { GetUserChannelsQuery } from '../graphql/generated/graphql';
 import type { Company } from '../models/company.model';
 import { ApolloService } from './apollo.service';
 
@@ -14,6 +16,8 @@ import { ApolloService } from './apollo.service';
 })
 export class CompanyService {
     private readonly apolloService = inject(ApolloService);
+
+    private readonly COMPANIES_STORAGE_KEY = 'user_companies';
 
     private readonly companiesSignal = signal<Company[]>([]);
     private readonly activeCompanyIdSignal = signal<string | null>(null);
@@ -32,6 +36,37 @@ export class CompanyService {
     });
 
     /**
+     * Fetch all channels/companies for the authenticated user
+     * Called on app initialization to restore channel state
+     */
+    async fetchUserChannels(): Promise<void> {
+        this.isLoadingSignal.set(true);
+        console.log('📦 Fetching user channels...');
+
+        try {
+            const client = this.apolloService.getClient();
+            const result = await client.query<GetUserChannelsQuery>({
+                query: GET_USER_CHANNELS,
+                fetchPolicy: 'network-only',
+                context: { skipChannelToken: true },
+            });
+
+            console.log('📦 Full result:', result);
+            console.log('📦 Channel fetch data:', result.data);
+            console.log('📦 Channel fetch error:', result.error);
+
+            if (result.data?.me?.channels) {
+                this.setCompaniesFromChannels(result.data.me.channels);
+            }
+        } catch (error) {
+            console.error('❌ Failed to fetch user channels:', error);
+            this.companiesSignal.set([]);
+        } finally {
+            this.isLoadingSignal.set(false);
+        }
+    }
+
+    /**
      * Set companies from login response channels
      * This is the primary method to populate companies after login
      * Automatically activates the first company
@@ -46,7 +81,7 @@ export class CompanyService {
         }));
 
         this.companiesSignal.set(companies);
-        console.log('📦 Set companies from login:', companies);
+        console.log('📦 Set companies from channels:', companies);
 
         // Auto-activate first company if:
         // 1. No company is currently active

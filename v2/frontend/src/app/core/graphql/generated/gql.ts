@@ -18,14 +18,14 @@ type Documents = {
     "\n  mutation Login($username: String!, $password: String!, $rememberMe: Boolean) {\n    login(username: $username, password: $password, rememberMe: $rememberMe) {\n      ... on CurrentUser {\n        id\n        identifier\n        channels {\n          id\n          code\n          token\n        }\n      }\n      ... on InvalidCredentialsError {\n        errorCode\n        message\n      }\n      ... on NativeAuthStrategyError {\n        errorCode\n        message\n      }\n    }\n  }\n": typeof types.LoginDocument,
     "\n  mutation Logout {\n    logout {\n      success\n    }\n  }\n": typeof types.LogoutDocument,
     "\n  mutation UpdateAdministrator($input: UpdateActiveAdministratorInput!) {\n    updateActiveAdministrator(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n    }\n  }\n": typeof types.UpdateAdministratorDocument,
-    "\n  query GetAdministratorChannels {\n    channels {\n      items {\n        id\n        code\n        token\n      }\n    }\n  }\n": typeof types.GetAdministratorChannelsDocument,
+    "\n  query GetUserChannels {\n    me {\n      id\n      identifier\n      channels {\n        id\n        code\n        token\n      }\n    }\n  }\n": typeof types.GetUserChannelsDocument,
 };
 const documents: Documents = {
     "\n  query GetActiveAdministrator {\n    activeAdministrator {\n      id\n      firstName\n      lastName\n      emailAddress\n    }\n  }\n": types.GetActiveAdministratorDocument,
     "\n  mutation Login($username: String!, $password: String!, $rememberMe: Boolean) {\n    login(username: $username, password: $password, rememberMe: $rememberMe) {\n      ... on CurrentUser {\n        id\n        identifier\n        channels {\n          id\n          code\n          token\n        }\n      }\n      ... on InvalidCredentialsError {\n        errorCode\n        message\n      }\n      ... on NativeAuthStrategyError {\n        errorCode\n        message\n      }\n    }\n  }\n": types.LoginDocument,
     "\n  mutation Logout {\n    logout {\n      success\n    }\n  }\n": types.LogoutDocument,
     "\n  mutation UpdateAdministrator($input: UpdateActiveAdministratorInput!) {\n    updateActiveAdministrator(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n    }\n  }\n": types.UpdateAdministratorDocument,
-    "\n  query GetAdministratorChannels {\n    channels {\n      items {\n        id\n        code\n        token\n      }\n    }\n  }\n": types.GetAdministratorChannelsDocument,
+    "\n  query GetUserChannels {\n    me {\n      id\n      identifier\n      channels {\n        id\n        code\n        token\n      }\n    }\n  }\n": types.GetUserChannelsDocument,
 };
 
 /**
@@ -61,7 +61,7 @@ export function graphql(source: "\n  mutation UpdateAdministrator($input: Update
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query GetAdministratorChannels {\n    channels {\n      items {\n        id\n        code\n        token\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetAdministratorChannels {\n    channels {\n      items {\n        id\n        code\n        token\n      }\n    }\n  }\n"];
+export function graphql(source: "\n  query GetUserChannels {\n    me {\n      id\n      identifier\n      channels {\n        id\n        code\n        token\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetUserChannels {\n    me {\n      id\n      identifier\n      channels {\n        id\n        code\n        token\n      }\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

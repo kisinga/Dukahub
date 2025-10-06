@@ -12,6 +12,8 @@ import { graphql } from './generated';
 
 /**
  * GraphQL query to get current active administrator
+ * Note: This query is used on app initialization to restore auth state
+ * We don't fetch channels here because admin users don't have a channels field
  */
 export const GET_ACTIVE_ADMIN = graphql(`
   query GetActiveAdministrator {
@@ -73,6 +75,25 @@ export const UPDATE_ADMINISTRATOR = graphql(`
       firstName
       lastName
       emailAddress
+    }
+  }
+`);
+
+/**
+ * GraphQL query to get the authenticated user with their channels
+ * Used on app initialization to restore channel state
+ * Note: We get channels from the CurrentUser (me query), not the channels query
+ */
+export const GET_USER_CHANNELS = graphql(`
+  query GetUserChannels {
+    me {
+      id
+      identifier
+      channels {
+        id
+        code
+        token
+      }
     }
   }
 `);

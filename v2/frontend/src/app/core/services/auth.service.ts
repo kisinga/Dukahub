@@ -79,6 +79,7 @@ export class AuthService {
 
   /**
    * Fetch the currently authenticated administrator
+   * Also fetches user channels on initialization to restore state
    */
   private async fetchActiveAdministrator(): Promise<void> {
     try {
@@ -86,12 +87,18 @@ export class AuthService {
       const result = await client.query<GetActiveAdministratorQuery>({
         query: GET_ACTIVE_ADMIN,
         fetchPolicy: 'network-only',
+        context: { skipChannelToken: true },
       });
       const { data } = result;
-      console.log('fetchActiveAdministrator', data);
+
       if (data?.activeAdministrator) {
         // Use the generated type directly - it's the source of truth
         this.userSignal.set(data.activeAdministrator);
+        console.log('✅ Active admin fetched, now fetching channels...');
+
+        // Fetch user channels to restore channel state (on refresh/initialization)
+        // This ensures channels are available even on hard refresh
+        await this.companyService.fetchUserChannels();
       } else {
         // No administrator data means not authenticated
         this.userSignal.set(null);
@@ -147,6 +154,7 @@ export class AuthService {
       const result = await client.mutate<LoginMutation, LoginMutationVariables>({
         mutation: LOGIN,
         variables: credentials,
+        context: { skipChannelToken: true },
       });
       const { data } = result;
       // console.log('data', data);
@@ -183,6 +191,7 @@ export class AuthService {
       const client = this.apolloService.getClient();
       await client.mutate<LogoutMutation>({
         mutation: LOGOUT,
+        context: { skipChannelToken: true },
       });
     } catch (error) {
       console.error('Logout error:', error);
