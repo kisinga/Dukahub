@@ -26,15 +26,15 @@
 
       <!-- Company Selector -->
       <div class="flex-1">
-        @if (selectedCompany(); as company) {
+        @if (activeCompany(); as company) {
         <div class="dropdown">
           <div tabindex="0" role="button" class="btn btn-ghost gap-2">
             <div class="avatar">
               <div class="w-8 rounded-full">
-                <img [src]="company.logo ?? 'default_avatar.png'" [alt]="company.name" />
+                <img src="default_avatar.png" [alt]="company.code" />
               </div>
             </div>
-            <span class="hidden md:inline font-semibold">{{ displayCompanyName() }}</span>
+            <span class="md:inline font-semibold">{{ displayCompanyName() }}</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               class="h-4 w-4"
@@ -69,28 +69,28 @@
                 <li>
                   <a
                     (click)="selectCompany(company.id)"
-                    [class.active]="company.id === selectedCompanyId()"
+                    [class.active]="company.id === activeCompanyId()"
                     class="flex items-center gap-3 py-3 sm:py-3 min-h-[3.5rem] sm:min-h-0"
                   >
                     <div class="avatar">
                       <div
                         class="w-11 sm:w-10 rounded-full ring-2 ring-offset-1"
-                        [class.ring-primary]="company.id === selectedCompanyId()"
-                        [class.ring-transparent]="company.id !== selectedCompanyId()"
+                        [class.ring-primary]="company.id === activeCompanyId()"
+                        [class.ring-transparent]="company.id !== activeCompanyId()"
                       >
-                        <img [src]="company.logo ?? 'default_avatar.png'" [alt]="company.name" />
+                        <img src="default_avatar.png" [alt]="company.code" />
                       </div>
                     </div>
                     <div class="flex-1 min-w-0">
-                      <div class="font-medium text-sm sm:text-sm truncate">{{ company.name }}</div>
-                      @if (company.id === selectedCompanyId()) {
+                      <div class="font-medium text-sm sm:text-sm truncate">{{ company.code }}</div>
+                      @if (company.id === activeCompanyId()) {
                       <div class="text-xs opacity-60 flex items-center gap-1 mt-0.5">
                         <span class="w-1.5 h-1.5 bg-primary rounded-full"></span>
                         Active
                       </div>
                       }
                     </div>
-                    @if (company.id === selectedCompanyId()) {
+                    @if (company.id === activeCompanyId()) {
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       class="h-5 w-5 sm:h-5 sm:w-5 text-primary flex-shrink-0"

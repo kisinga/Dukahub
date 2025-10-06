@@ -7,11 +7,14 @@ import {
   LOGOUT,
 } from '../graphql/auth.graphql';
 import type {
-  LoginCredentials,
-  LoginResult,
-  User
+  ActiveAdministrator,
+  GetActiveAdministratorQuery,
+  LoginMutation,
+  LoginMutationVariables,
+  LogoutMutation
 } from '../models/user.model';
 import { ApolloService } from './apollo.service';
+import { CompanyService } from './company.service';
 
 /**
  * Global authentication service for admin users
@@ -24,10 +27,11 @@ import { ApolloService } from './apollo.service';
 })
 export class AuthService {
   private readonly apolloService = inject(ApolloService);
+  private readonly companyService = inject(CompanyService);
   private readonly router = inject(Router);
 
   // Authentication state signals
-  private readonly userSignal = signal<User | null>(null);
+  private readonly userSignal = signal<ActiveAdministrator | null>(null);
   private readonly isLoadingSignal = signal<boolean>(false);
 
   // ReplaySubject for initialization - emits once and caches for late subscribers
@@ -40,10 +44,15 @@ export class AuthService {
   readonly fullName = computed(() => {
     const user = this.userSignal();
     if (!user) return 'Loading...';
-    return `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.emailAddress || 'User';
+    return `${user.firstName} ${user.lastName}`.trim() || user.emailAddress;
   });
 
   constructor() {
+    // Register session expiration handler with Apollo service
+    this.apolloService.onSessionExpired(() => {
+      this.handleSessionExpired();
+    });
+
     this.initializeAuth();
   }
 
@@ -74,86 +83,91 @@ export class AuthService {
   private async fetchActiveAdministrator(): Promise<void> {
     try {
       const client = this.apolloService.getClient();
-      const { data, errors } = await client.query({
+      const result = await client.query<GetActiveAdministratorQuery>({
         query: GET_ACTIVE_ADMIN,
         fetchPolicy: 'network-only',
       });
-
-      if (errors && errors.length > 0) {
-        console.warn('GraphQL errors fetching admin:', errors);
-        // Don't clear session on GraphQL errors - might just be network issue
-        return;
-      }
-
+      const { data } = result;
+      console.log('fetchActiveAdministrator', data);
       if (data?.activeAdministrator) {
-        this.userSignal.set({
-          id: data.activeAdministrator.id,
-          firstName: data.activeAdministrator.firstName,
-          lastName: data.activeAdministrator.lastName,
-          emailAddress: data.activeAdministrator.emailAddress,
-        });
+        // Use the generated type directly - it's the source of truth
+        this.userSignal.set(data.activeAdministrator);
+      } else {
+        // No administrator data means not authenticated
+        this.userSignal.set(null);
       }
-      // Don't clear session if no data - user might not be logged in yet
     } catch (error) {
       console.error('Failed to fetch active administrator:', error);
-      // Don't clear session on network errors during initialization
+
+      // Check if this is an authentication error
+      if (this.isAuthError(error)) {
+        console.warn('Authentication error detected, clearing session');
+        this.userSignal.set(null);
+        // Note: Apollo error link will handle redirect
+      }
+      // For other errors (network issues, etc.), don't clear session during initialization
     }
   }
 
   /**
-   * Login with username and password
+   * Check if an error is authentication-related
    */
-  async login(credentials: LoginCredentials): Promise<LoginResult> {
-    this.isLoadingSignal.set(true);
+  private isAuthError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
 
+    // Check GraphQL errors
+    if ('graphQLErrors' in error && Array.isArray((error as any).graphQLErrors)) {
+      const graphQLErrors = (error as any).graphQLErrors;
+      return graphQLErrors.some((err: any) =>
+        err.extensions?.code === 'FORBIDDEN' ||
+        err.extensions?.code === 'UNAUTHORIZED' ||
+        err.message?.includes('not authorized') ||
+        err.message?.includes('not authenticated')
+      );
+    }
+
+    // Check network errors
+    if ('networkError' in error) {
+      const networkError = (error as any).networkError;
+      return networkError?.statusCode === 401 || networkError?.statusCode === 403;
+    }
+
+    return false;
+  }
+
+  /**
+   * Login with username and password
+   * Returns the login mutation result directly from the generated types
+   */
+  async login(credentials: LoginMutationVariables): Promise<LoginMutation['login']> {
+    this.isLoadingSignal.set(true);
+    // console.log('login', credentials);
     try {
       const client = this.apolloService.getClient();
-      const { data, errors } = await client.mutate({
+      const result = await client.mutate<LoginMutation, LoginMutationVariables>({
         mutation: LOGIN,
-        variables: {
-          username: credentials.username,
-          password: credentials.password,
-          rememberMe: credentials.rememberMe ?? false,
-        },
+        variables: credentials,
       });
-
-      if (errors && errors.length > 0) {
-        return {
-          success: false,
-          error: errors[0].message,
-        };
-      }
+      const { data } = result;
+      // console.log('data', data);
 
       const loginResult = data?.login;
 
-      // Check for error types
-      if (
-        loginResult?.__typename === 'InvalidCredentialsError' ||
-        loginResult?.__typename === 'NativeAuthStrategyError'
-      ) {
-        return {
-          success: false,
-          error: loginResult.message,
-        };
-      }
-
       // Successful login
       if (loginResult?.__typename === 'CurrentUser') {
+        // Set companies/channels from login response
+        if (loginResult.channels && loginResult.channels.length > 0) {
+          this.companyService.setCompaniesFromChannels(loginResult.channels);
+        }
+
         // Fetch full administrator details
         await this.fetchActiveAdministrator();
-        return { success: true };
       }
 
-      return {
-        success: false,
-        error: 'Unknown error occurred during login',
-      };
+      return loginResult!;
     } catch (error) {
       console.error('Login error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Login failed',
-      };
+      throw error;
     } finally {
       this.isLoadingSignal.set(false);
     }
@@ -167,7 +181,7 @@ export class AuthService {
 
     try {
       const client = this.apolloService.getClient();
-      await client.mutate({
+      await client.mutate<LogoutMutation>({
         mutation: LOGOUT,
       });
     } catch (error) {
@@ -189,8 +203,19 @@ export class AuthService {
    */
   private clearSession(): void {
     this.userSignal.set(null);
+    this.companyService.clearActiveCompany();
     this.apolloService.clearAuthToken();
     this.apolloService.clearCache();
+  }
+
+  /**
+   * Handle session expiration
+   * Called by Apollo service when authentication error is detected
+   */
+  private handleSessionExpired(): void {
+    console.warn('Session expired - clearing user state');
+    this.userSignal.set(null);
+    // Note: Apollo service handles redirect and cache clearing
   }
 
   /**

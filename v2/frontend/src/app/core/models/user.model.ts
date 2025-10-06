@@ -1,38 +1,35 @@
 /**
- * Represents the current authenticated user
+ * Re-export generated types from GraphQL schema
+ * These are the source of truth from the Vendure API
  */
-export interface User {
-  id: string;
-  title?: string;
-  firstName: string;
-  lastName: string;
-  emailAddress: string;
-  phoneNumber?: string;
-}
+export type {
+  Administrator,
+  CurrentUser,
+  Customer,
+  GetActiveAdministratorQuery,
+  LoginMutation,
+  LoginMutationVariables,
+  LogoutMutation,
+  UpdateAdministratorMutation
+} from '../graphql/generated/graphql';
+
+// Import for use in type definition
+import type { GetActiveAdministratorQuery } from '../graphql/generated/graphql';
 
 /**
- * Authentication state
+ * Type alias for the active administrator data from the query
+ * This is what we get from activeAdministrator query
+ */
+export type ActiveAdministrator = NonNullable<
+  GetActiveAdministratorQuery['activeAdministrator']
+>;
+
+/**
+ * Authentication state for the application
  */
 export interface AuthState {
-  user: User | null;
+  user: ActiveAdministrator | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-}
-
-/**
- * Login credentials
- */
-export interface LoginCredentials {
-  username: string;
-  password: string;
-  rememberMe?: boolean;
-}
-
-/**
- * Login result
- */
-export interface LoginResult {
-  success: boolean;
-  error?: string;
 }
 

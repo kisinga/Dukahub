@@ -32,19 +32,25 @@ export class LoginComponent {
         // Clear previous errors
         this.errorMessage.set(null);
 
-        // Attempt login
-        const result = await this.authService.login({
-            username: this.email(),
-            password: this.password(),
-            rememberMe: this.rememberMe(),
-        });
+        try {
+            // Attempt login using generated types
+            const result = await this.authService.login({
+                username: this.email(),
+                password: this.password(),
+                rememberMe: this.rememberMe(),
+            });
 
-        if (result.success) {
-            // Redirect to dashboard on successful login
-            this.router.navigate(['/dashboard']);
-        } else {
-            // Show error message
-            this.errorMessage.set(result.error || 'Login failed. Please try again.');
+            // Check result type using discriminated union
+            if (result.__typename === 'CurrentUser') {
+                // Redirect to dashboard on successful login
+                this.router.navigate(['/dashboard']);
+            } else if (result.__typename === 'InvalidCredentialsError' || result.__typename === 'NativeAuthStrategyError') {
+                // Show error message from the API
+                this.errorMessage.set(result.message);
+            }
+        } catch (error) {
+            // Handle unexpected errors
+            this.errorMessage.set(error instanceof Error ? error.message : 'Login failed. Please try again.');
         }
     }
 }

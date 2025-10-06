@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
@@ -80,8 +80,8 @@ export class DashboardLayoutComponent {
 
     // Company service signals
     protected readonly companies = this.companyService.companies;
-    protected readonly selectedCompanyId = this.companyService.selectedCompanyId;
-    protected readonly selectedCompany = this.companyService.selectedCompany;
+    protected readonly activeCompanyId = this.companyService.activeCompanyId;
+    protected readonly activeCompany = this.companyService.activeCompany;
 
     // Computed values
     protected readonly unreadCount = computed(() =>
@@ -89,9 +89,9 @@ export class DashboardLayoutComponent {
     );
 
     protected readonly displayCompanyName = computed(() => {
-        const company = this.selectedCompany();
+        const company = this.activeCompany();
         if (!company) return 'Loading...';
-        const name = company.name;
+        const name = company.code;
         return name.length > 20 ? name.substring(0, 20) + '...' : name;
     });
 
@@ -101,14 +101,8 @@ export class DashboardLayoutComponent {
 
     constructor() {
         // Initialize company selection from storage
+        // Companies are automatically populated from login response via AuthService
         this.companyService.initializeFromStorage();
-
-        // Fetch companies when authenticated
-        effect(() => {
-            if (this.authService.isAuthenticated()) {
-                this.companyService.fetchCompanies();
-            }
-        });
     }
 
     closeDrawer(): void {
@@ -119,7 +113,7 @@ export class DashboardLayoutComponent {
     }
 
     selectCompany(companyId: string): void {
-        this.companyService.selectCompany(companyId);
+        this.companyService.activateCompany(companyId);
     }
 
     async logout(): Promise<void> {

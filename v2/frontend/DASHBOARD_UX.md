@@ -17,10 +17,9 @@ The dashboard is designed with a **mobile-first approach** optimized for Kenyan 
 
 - **Drawer sidebar** - Swipe from left or tap hamburger
 - **Bottom navigation bar** - Fixed at bottom with 4 key actions:
-  1. 📊 Overview - Dashboard home
-  2. 💰 Sell - Quick access to POS
-  3. 📦 Products - Product management
-  4. 📈 Reports - Analytics
+  1. 📦 Purchase - Product management
+  2. 📊 Overview - Dashboard home
+  3. 💰 Sell - Quick access to POS
 - **Top navbar** - Compact with hamburger, notifications, profile
 - Content area fills screen
 - **Bottom padding (pb-20)** - Prevents content from hiding under bottom nav
@@ -78,15 +77,6 @@ The dashboard is designed with a **mobile-first approach** optimized for Kenyan 
 - Full navigation menu
 - Auto-closes on link click
 - Can swipe or tap overlay to close
-
-### Bottom Navigation
-
-```
-┌──────┬──────┬──────┬──────┐
-│  📊  │  💰  │  📦  │  📈  │
-│ Over │ Sell │ Prod │ Rept │
-└──────┴──────┴──────┴──────┘
-```
 
 ## Color & Theme
 

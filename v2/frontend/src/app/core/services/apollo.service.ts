@@ -1,6 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { ApolloClient, HttpLink, InMemoryCache, from } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
+import { onError } from '@apollo/client/link/error';
 import { environment } from '../../../environments/environment';
 
 /**
@@ -11,21 +13,31 @@ import { environment } from '../../../environments/environment';
     providedIn: 'root',
 })
 export class ApolloService {
+    private readonly router = inject(Router);
+
     private readonly AUTH_TOKEN_KEY = 'auth_token';
     private readonly CHANNEL_TOKEN_KEY = 'channel_token';
     private readonly LANGUAGE_CODE_KEY = 'language_code';
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private apolloClient: any;
+    private apolloClient: ApolloClient;
+    private sessionExpiredCallback?: () => void;
 
     constructor() {
         this.apolloClient = this.createApolloClient();
     }
 
     /**
+     * Register callback to be called when session expires
+     * Used by AuthService to handle cleanup
+     */
+    onSessionExpired(callback: () => void): void {
+        this.sessionExpiredCallback = callback;
+    }
+
+    /**
      * Get the Apollo client instance
      */
-    getClient() {
+    getClient(): ApolloClient {
         return this.apolloClient;
     }
 
@@ -81,8 +93,7 @@ export class ApolloService {
     /**
      * Create and configure Apollo client
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private createApolloClient(): any {
+    private createApolloClient(): ApolloClient {
         const httpLink = new HttpLink({
             uri: () => {
                 const languageCode = this.getLanguageCode();
@@ -100,7 +111,7 @@ export class ApolloService {
         });
 
         // Middleware to attach auth token and headers to requests
-        const authLink = setContext(() => {
+        const authLink = setContext((operation) => {
             const authToken = this.getAuthToken();
             const channelToken = this.getChannelToken();
             const headers: Record<string, string> = {};
@@ -108,15 +119,54 @@ export class ApolloService {
             if (authToken) {
                 headers['authorization'] = `Bearer ${authToken}`;
             }
-            if (channelToken) {
+
+            // Don't send channel token during login/authentication operations
+            // to avoid "No Channel with token X found" errors
+            const isAuthOperation = operation.operationName === 'Login' ||
+                operation.operationName === 'Logout' ||
+                operation.operationName === 'GetActiveAdministrator';
+
+            if (channelToken && !isAuthOperation) {
                 headers['vendure-token'] = channelToken;
             }
 
             return { headers };
         });
 
+        // Global error handling for authentication errors
+        const errorLink = onError((errorResponse) => {
+            const { error } = errorResponse;
+
+            // Check if error has extensions indicating auth issues
+            if (error && typeof error === 'object' && 'extensions' in error) {
+                const extensions = (error as any).extensions;
+                if (
+                    extensions?.code === 'FORBIDDEN' ||
+                    extensions?.code === 'UNAUTHORIZED'
+                ) {
+                    console.warn('Session expired or unauthorized access detected');
+                    this.handleSessionExpired();
+                    return;
+                }
+            }
+
+            // Check error message for auth-related content
+            if (error && typeof error === 'object' && 'message' in error) {
+                const message = (error as any).message;
+                if (
+                    message?.includes('not authorized') ||
+                    message?.includes('not authenticated') ||
+                    message?.includes('Unauthorized')
+                ) {
+                    console.warn('Session expired based on error message');
+                    this.handleSessionExpired();
+                    return;
+                }
+            }
+        });
+
         return new ApolloClient({
-            link: from([authLink, httpLink]),
+            link: from([errorLink, authLink, httpLink]),
             cache: new InMemoryCache(),
             defaultOptions: {
                 watchQuery: {
@@ -135,17 +185,39 @@ export class ApolloService {
     }
 
     /**
+     * Handle session expiration
+     * Clears local state and redirects to login
+     */
+    private handleSessionExpired(): void {
+        // Clear local storage
+        this.clearAuthToken();
+
+        // Notify AuthService to clean up its state
+        if (this.sessionExpiredCallback) {
+            this.sessionExpiredCallback();
+        }
+
+        // Clear Apollo cache
+        this.apolloClient.clearStore().catch(console.error);
+
+        // Redirect to login page
+        this.router.navigate(['/login'], {
+            queryParams: { sessionExpired: 'true' }
+        });
+    }
+
+    /**
      * Clear Apollo cache
      */
-    clearCache(): Promise<void> {
-        return this.apolloClient.clearStore();
+    async clearCache(): Promise<void> {
+        await this.apolloClient.clearStore();
     }
 
     /**
      * Reset Apollo store (clears cache and refetches active queries)
      */
-    resetStore(): Promise<void> {
-        return this.apolloClient.resetStore();
+    async resetStore(): Promise<void> {
+        await this.apolloClient.resetStore();
     }
 }
 

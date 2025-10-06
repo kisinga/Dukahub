@@ -1,36 +1,21 @@
 /**
- * HATEOAS link structure
+ * Re-export generated types from GraphQL schema
  */
-export interface HateoasLink {
-    href: string;
-    rel: string;
-    method?: string;
-}
+export type {
+    Channel,
+    ChannelList,
+    GetAdministratorChannelsQuery
+} from '../graphql/generated/graphql';
 
 /**
- * Company entity with HATEOAS links
+ * Company type - Direct mapping from Channel query result
+ * In Vendure, channels represent different companies/stores
+ * 
+ * This matches exactly what we fetch from GetAdministratorChannels query
  */
-export interface Company {
+export type Company = {
     id: string;
-    name: string;
-    logo?: string;
-    _links: {
-        self: HateoasLink;
-        select?: HateoasLink;
-        dashboard?: HateoasLink;
-    };
-}
-
-/**
- * Company list response with HATEOAS
- */
-export interface CompanyListResponse {
-    companies: Company[];
-    _links: {
-        self: HateoasLink;
-        first?: HateoasLink;
-        next?: HateoasLink;
-        prev?: HateoasLink;
-    };
-}
+    code: string;
+    token: string;
+};
 

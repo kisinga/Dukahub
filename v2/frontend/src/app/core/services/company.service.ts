@@ -1,23 +1,13 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { gql } from '@apollo/client';
 import type { Company } from '../models/company.model';
 import { ApolloService } from './apollo.service';
 
-const GET_COMPANIES = gql`
-  query GetAdministratorChannels {
-    channels {
-      items {
-        id
-        code
-        token
-      }
-    }
-  }
-`;
-
 /**
- * Service for managing company (channel) selection with HATEOAS pattern
+ * Service for managing company (channel) selection
  * In Vendure, channels represent different companies/stores
+ * 
+ * Key concept: activeCompanyId is the single source of truth that all dashboard 
+ * components depend on for fetching company-specific data
  */
 @Injectable({
     providedIn: 'root',
@@ -26,118 +16,101 @@ export class CompanyService {
     private readonly apolloService = inject(ApolloService);
 
     private readonly companiesSignal = signal<Company[]>([]);
-    private readonly selectedCompanyIdSignal = signal<string | null>(null);
+    private readonly activeCompanyIdSignal = signal<string | null>(null);
     private readonly isLoadingSignal = signal(false);
 
+    // Public readonly signals
     readonly companies = this.companiesSignal.asReadonly();
-    readonly selectedCompanyId = this.selectedCompanyIdSignal.asReadonly();
+    readonly activeCompanyId = this.activeCompanyIdSignal.asReadonly();
     readonly isLoading = this.isLoadingSignal.asReadonly();
 
-    // Computed: Current selected company
-    readonly selectedCompany = computed(() => {
-        const id = this.selectedCompanyIdSignal();
+    // Computed: Current active company (the one all dashboard operations use)
+    readonly activeCompany = computed(() => {
+        const id = this.activeCompanyIdSignal();
         const companies = this.companiesSignal();
-        return companies.find((c) => c.id === id) || companies[0] || null;
+        return companies.find((c) => c.id === id) || null;
     });
 
     /**
-     * Fetch companies (channels) for current admin
-     * Auto-select first company if none selected
+     * Set companies from login response channels
+     * This is the primary method to populate companies after login
+     * Automatically activates the first company
+     * 
+     * @param channels - Array of channels from login response
      */
-    async fetchCompanies(): Promise<void> {
-        this.isLoadingSignal.set(true);
+    setCompaniesFromChannels(channels: Array<{ id: string; code: string; token: string }>): void {
+        const companies: Company[] = channels.map((channel) => ({
+            id: channel.id,
+            code: channel.code,
+            token: channel.token,
+        }));
 
-        try {
-            const client = this.apolloService.getClient();
-            const { data, errors } = await client.query({
-                query: GET_COMPANIES,
-                fetchPolicy: 'network-only',
-            });
+        this.companiesSignal.set(companies);
+        console.log('📦 Set companies from login:', companies);
 
-            console.log('Fetching companies - Response:', { data, errors });
-
-            if (errors && errors.length > 0) {
-                console.error('GraphQL errors fetching channels:', errors);
-            }
-
-            if (data?.channels?.items) {
-                console.log('Channels items:', data.channels.items);
-                // Map Vendure channels to companies with HATEOAS links
-                const companies: Company[] = data.channels.items.map((channel: any) => ({
-                    id: channel.id,
-                    name: channel.code,
-                    logo: 'default_avatar.png', // TODO: Add logo support
-                    _links: {
-                        self: {
-                            href: `/admin-api/channels/${channel.id}`,
-                            rel: 'self',
-                        },
-                        select: {
-                            href: `/admin-api/channels/${channel.id}/select`,
-                            rel: 'select',
-                            method: 'POST',
-                        },
-                        dashboard: {
-                            href: `/dashboard?channel=${channel.id}`,
-                            rel: 'dashboard',
-                        },
-                    },
-                }));
-
-                this.companiesSignal.set(companies);
-
-                // Auto-select first company if none selected
-                if (!this.selectedCompanyIdSignal() && companies.length > 0) {
-                    this.selectCompany(companies[0].id);
-                }
-            }
-        } catch (error) {
-            console.error('Failed to fetch companies:', error);
-            this.companiesSignal.set([]);
-        } finally {
-            this.isLoadingSignal.set(false);
+        // Auto-activate first company if:
+        // 1. No company is currently active
+        // 2. We have at least one company available
+        if (!this.activeCompanyIdSignal() && companies.length > 0) {
+            this.activateCompany(companies[0].id);
         }
     }
 
     /**
-     * Select a company (channel) using HATEOAS link
-     * Updates the channel token in Apollo service
+     * Activate a company (channel) - makes it the active company for all operations
+     * This is the primary method that sets activeCompanyId
+     * 
+     * @param companyId - The channel ID to activate
+     */
+    activateCompany(companyId: string): void {
+        const company = this.companiesSignal().find((c) => c.id === companyId);
+        if (!company) {
+            console.warn(`Cannot activate company ${companyId}: not found in companies list`);
+            return;
+        }
+
+        console.log(`Activating company: ${company.code} (${companyId})`);
+
+        // Set channel token for subsequent requests
+        // In Vendure, we use the channel token to scope ALL operations to this channel
+        this.apolloService.setChannelToken(companyId);
+
+        // Set as active company
+        this.activeCompanyIdSignal.set(companyId);
+
+        // Persist to localStorage for session recovery
+        localStorage.setItem('active_company_id', companyId);
+    }
+
+    /**
+     * @deprecated Use activateCompany() instead
+     * Kept for backward compatibility
      */
     selectCompany(companyId: string): void {
-        const company = this.companiesSignal().find((c) => c.id === companyId);
-        if (!company) return;
-
-        // Follow HATEOAS select link
-        const selectLink = company._links.select;
-        if (selectLink) {
-            // Set channel token for subsequent requests
-            // In Vendure, we use the channel token to scope operations
-            this.apolloService.setChannelToken(companyId);
-        }
-
-        this.selectedCompanyIdSignal.set(companyId);
-
-        // Store in localStorage for persistence
-        localStorage.setItem('selected_company_id', companyId);
+        this.activateCompany(companyId);
     }
 
     /**
-     * Navigate to company dashboard using HATEOAS link
-     */
-    navigateToCompanyDashboard(companyId: string): string | null {
-        const company = this.companiesSignal().find((c) => c.id === companyId);
-        return company?._links.dashboard?.href || null;
-    }
-
-    /**
-     * Initialize company selection from localStorage
+     * Initialize company from localStorage on app startup
+     * This restores the previously active company without fetching
      */
     initializeFromStorage(): void {
-        const storedCompanyId = localStorage.getItem('selected_company_id');
+        const storedCompanyId = localStorage.getItem('active_company_id');
         if (storedCompanyId) {
-            this.selectedCompanyIdSignal.set(storedCompanyId);
+            console.log(`Restoring active company from storage: ${storedCompanyId}`);
+            this.activeCompanyIdSignal.set(storedCompanyId);
             this.apolloService.setChannelToken(storedCompanyId);
         }
+    }
+
+    /**
+     * Clear active company and all companies (useful for logout)
+     */
+    clearActiveCompany(): void {
+        this.activeCompanyIdSignal.set(null);
+        this.companiesSignal.set([]);
+        localStorage.removeItem('active_company_id');
+        this.apolloService.setChannelToken('');
     }
 }
 

@@ -1,7 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AuthService } from './auth.service';
 import { ApolloService } from './apollo.service';
-import { gql } from '@apollo/client';
+import { AuthService } from './auth.service';
 
 /**
  * Cart item interface
@@ -28,78 +27,15 @@ export interface CartSummary {
 }
 
 /**
- * GraphQL queries for cart operations
+ * TODO: Implement admin-api order management
+ * The shop-api cart operations (activeOrder, addItemToOrder, removeOrderLine) 
+ * are not available in admin-api. For admin panel, we should use:
+ * - createDraftOrder
+ * - addItemToDraftOrder
+ * - removeDraftOrderLine
+ * 
+ * For now, this service provides a stub implementation
  */
-const GET_ACTIVE_ORDER = gql`
-  query GetActiveOrder {
-    activeOrder {
-      id
-      code
-      state
-      totalQuantity
-      subTotal
-      shipping
-      total
-      lines {
-        id
-        quantity
-        unitPrice
-        linePrice
-        productVariant {
-          id
-          name
-          product {
-            id
-            name
-          }
-        }
-      }
-    }
-  }
-`;
-
-const ADD_TO_CART = gql`
-  mutation AddItemToOrder($productVariantId: ID!, $quantity: Int!) {
-    addItemToOrder(productVariantId: $productVariantId, quantity: $quantity) {
-      ... on Order {
-        id
-        code
-        totalQuantity
-      }
-      ... on OrderModificationError {
-        errorCode
-        message
-      }
-      ... on OrderLimitError {
-        errorCode
-        message
-      }
-      ... on NegativeQuantityError {
-        errorCode
-        message
-      }
-      ... on InsufficientStockError {
-        errorCode
-        message
-      }
-    }
-  }
-`;
-
-const REMOVE_FROM_CART = gql`
-  mutation RemoveOrderLine($orderLineId: ID!) {
-    removeOrderLine(orderLineId: $orderLineId) {
-      ... on Order {
-        id
-        totalQuantity
-      }
-      ... on OrderModificationError {
-        errorCode
-        message
-      }
-    }
-  }
-`;
 
 /**
  * Scoped service for managing shopping cart
@@ -129,7 +65,7 @@ export class CartService {
 
   /**
    * Fetch active cart/order
-   * Only available for authenticated users
+   * TODO: Implement using admin-api draft orders
    */
   async fetchCart(): Promise<void> {
     if (!this.authService.isAuthenticated()) {
@@ -140,27 +76,9 @@ export class CartService {
     this.isLoadingSignal.set(true);
 
     try {
-      const client = this.apolloService.getClient();
-      const { data } = await client.query({
-        query: GET_ACTIVE_ORDER,
-        fetchPolicy: 'network-only',
-      });
-
-      if (data?.activeOrder) {
-        const order = data.activeOrder;
-        const items: CartItem[] = order.lines.map((line: any) => ({
-          id: line.id,
-          productVariantId: line.productVariant.id,
-          productName: line.productVariant.product.name,
-          quantity: line.quantity,
-          unitPrice: line.unitPrice,
-          totalPrice: line.linePrice,
-        }));
-
-        this.cartItemsSignal.set(items);
-      } else {
-        this.cartItemsSignal.set([]);
-      }
+      // TODO: Implement with createDraftOrder or fetch existing draft orders
+      console.log('Cart fetching not yet implemented for admin-api');
+      this.cartItemsSignal.set([]);
     } catch (error) {
       console.error('Failed to fetch cart:', error);
       this.cartItemsSignal.set([]);
@@ -171,6 +89,7 @@ export class CartService {
 
   /**
    * Add item to cart
+   * TODO: Implement using admin-api draft orders
    */
   async addToCart(productVariantId: string, quantity: number): Promise<boolean> {
     if (!this.authService.isAuthenticated()) {
@@ -181,30 +100,8 @@ export class CartService {
     this.isLoadingSignal.set(true);
 
     try {
-      const client = this.apolloService.getClient();
-      const { data, errors } = await client.mutate({
-        mutation: ADD_TO_CART,
-        variables: { productVariantId, quantity },
-      });
-
-      if (errors && errors.length > 0) {
-        console.error('Add to cart error:', errors[0].message);
-        return false;
-      }
-
-      const result = data?.addItemToOrder;
-
-      if (result?.__typename === 'Order') {
-        // Refresh cart
-        await this.fetchCart();
-        return true;
-      }
-
-      if (result?.errorCode) {
-        console.error('Add to cart error:', result.message);
-        return false;
-      }
-
+      // TODO: Implement with addItemToDraftOrder
+      console.log('Add to cart not yet implemented for admin-api', { productVariantId, quantity });
       return false;
     } catch (error) {
       console.error('Failed to add to cart:', error);
@@ -216,6 +113,7 @@ export class CartService {
 
   /**
    * Remove item from cart
+   * TODO: Implement using admin-api draft orders
    */
   async removeFromCart(orderLineId: string): Promise<boolean> {
     if (!this.authService.isAuthenticated()) {
@@ -226,25 +124,8 @@ export class CartService {
     this.isLoadingSignal.set(true);
 
     try {
-      const client = this.apolloService.getClient();
-      const { data, errors } = await client.mutate({
-        mutation: REMOVE_FROM_CART,
-        variables: { orderLineId },
-      });
-
-      if (errors && errors.length > 0) {
-        console.error('Remove from cart error:', errors[0].message);
-        return false;
-      }
-
-      const result = data?.removeOrderLine;
-
-      if (result?.__typename === 'Order') {
-        // Refresh cart
-        await this.fetchCart();
-        return true;
-      }
-
+      // TODO: Implement with removeDraftOrderLine
+      console.log('Remove from cart not yet implemented for admin-api', { orderLineId });
       return false;
     } catch (error) {
       console.error('Failed to remove from cart:', error);
