@@ -6,7 +6,15 @@ import { ApolloService } from './apollo.service';
 
 /**
  * Service for managing company (channel) selection
- * In Vendure, channels represent different companies/stores
+ * 
+ * ARCHITECTURE:
+ * - Channel = Independent customer company (e.g., "Downtown Groceries Inc.")
+ * - Stock Location = Individual shop within company (separate service, not implemented yet)
+ * 
+ * UX FLOW:
+ * - Login auto-selects first company (via activateCompany)
+ * - User then selects shop in separate shop selector (primary navbar action)
+ * - Company selector is in extended menu (rare use, only for multi-company users)
  * 
  * Key concept: activeCompanyId is the single source of truth that all dashboard 
  * components depend on for fetching company-specific data

@@ -4,6 +4,59 @@
 
 The dashboard is designed with a **mobile-first approach** optimized for Kenyan SME owners who primarily use phones.
 
+## Multi-Tenancy UX Model
+
+### Two-Tier Context Selection
+
+The dashboard operates with a two-tier context system:
+
+**Tier 1: Company (Channel)**
+
+- Represents the customer's business (e.g., "Downtown Groceries Inc.")
+- Automatically selected on login (first company by default)
+- Changed rarely, only by users managing multiple businesses
+- Located in: Extended menu (first item)
+
+**Tier 2: Shop (Stock Location)**
+
+- Represents individual shop within the company (e.g., "Mall Branch")
+- Must be selected after login
+- Changed frequently throughout the day
+- Located in: Primary position in navigation bar
+
+### Selection Behavior
+
+```
+Login → Company Auto-Selected → Choose Shop → Ready to Sell
+         └─ Rare change          └─ Frequent change
+         └─ Extended menu         └─ Main navbar
+```
+
+**Why this hierarchy?**
+
+- **Shop selector is primary** because cashiers/managers work at one location but need to switch context when covering different shops
+- **Company selector is hidden** because most users only manage one business
+- Optimizes for the 95% use case (shop switching) while supporting the 5% case (multi-company management)
+
+### Scoping Rules
+
+All dashboard operations respect the selected shop context:
+
+| Feature              | Scope                               |
+| -------------------- | ----------------------------------- |
+| **POS Sales**        | Shop-specific only                  |
+| **Inventory Counts** | Shop-specific only                  |
+| **Dashboard Stats**  | Shop-specific by default            |
+| **Reports**          | Shop-specific with aggregate option |
+| **Product Catalog**  | Company-wide (shared across shops)  |
+| **Customer List**    | Company-wide (shared across shops)  |
+
+**Stats View Options:**
+
+1. **Default**: Current shop only
+2. **Option**: Aggregate across all shops
+3. **Future**: Side-by-side shop comparison
+
 ## Navigation System
 
 ### 🖥️ Desktop (> 1024px)
@@ -121,10 +174,21 @@ The dashboard is designed with a **mobile-first approach** optimized for Kenyan 
 
 - Avatar/initials in circle
 - Dropdown with:
+  - **Company selector** (first item)
   - Email display (non-clickable)
   - Profile settings
   - Help & support
   - Logout
+
+### Shop Selector (Primary Navbar)
+
+- Shop icon + current shop name
+- Dropdown with list of all shops user has access to
+- Selecting a shop immediately updates:
+  - POS inventory availability
+  - Dashboard statistics
+  - Sales records shown
+- Persists across sessions (saved to localStorage)
 
 ## Accessibility
 

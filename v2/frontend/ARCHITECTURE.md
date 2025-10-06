@@ -1,5 +1,66 @@
 # Frontend Architecture
 
+## Multi-Tenancy Model
+
+### Channel vs Stock Location
+
+- **Channel** = Independent customer company (e.g., "Downtown Groceries Inc.")
+- **Stock Location** = Individual shop within that company (shares inventory)
+
+### User Context Hierarchy
+
+```
+User Login
+  └─> Auto-select First Channel (Company)
+       └─> Select Stock Location (Shop) - Primary Action
+            └─> All POS operations scoped to this shop
+```
+
+### Selection Behavior
+
+#### Default State on Login
+
+- **First channel (company) is automatically selected**
+- User must then select their current shop/location
+- Selection persists across session
+
+#### UI Placement
+
+- **Shop Selector**: Primary position in navigation bar
+  - Most frequent action for daily operations
+  - Switches active shop context
+  - Changes affect: POS, inventory counts, sales data
+- **Company Selector**: Extended menu (first item)
+  - Rare action (only for users managing multiple companies)
+  - Switches entire channel context
+  - Forces shop re-selection after switch
+
+### Scoping Rules
+
+#### POS Operations
+
+- **Shop-specific only**
+- Sales are recorded against the active shop
+- Inventory updates affect only the active shop's stock
+- No cross-shop operations in POS interface
+
+#### Dashboard Statistics
+
+- **Default view**: Shop-specific stats
+- **Option 1**: View aggregate across all shops in company
+- **Option 2 (future)**: Side-by-side shop comparison
+
+Example:
+
+```
+[Shop Selector: Downtown Branch ▼]
+
+Today's Sales: $1,234 (Downtown only)
+
+[View All Shops] → Shows aggregate
+[Compare Shops]  → Shows comparison table
+```
+
 ## Layout Strategy
 
 The app uses **route-based layouts** to support different UI structures for different sections.
