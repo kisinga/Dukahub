@@ -6,7 +6,7 @@ services:
     ports:
       - "5433:5432"
     env_file:
-      - ./backend/.env
+      - configs/.env.backend
     labels:
       - "io.vendure.create.name=dukahub"
 
@@ -38,11 +38,16 @@ services:
       - postgres_db
       - redis
       - typesense
+    volumes:
+      # Mount the configs directory to make .env.backend available
+      - ./configs:/usr/src/app/configs:ro
     env_file:
-      - ./backend/.env
+      - configs/.env.backend
     environment:
-      # Override DB_HOST to point to postgres_db service in docker network
+      # Docker-specific overrides
+      APP_ENV: production
       DB_HOST: postgres_db
+      DB_SYNCHRONIZE: false
 
   frontend:
     build:

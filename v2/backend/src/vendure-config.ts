@@ -9,8 +9,13 @@ import {
 } from '@vendure/core';
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
-import 'dotenv/config';
+import { config as dotenvConfig } from 'dotenv';
 import path from 'path';
+
+// Load environment variables from shared config file
+// Works for both local development and Docker (when mounted)
+const envPath = path.join(__dirname, '../../configs/.env.backend');
+dotenvConfig({ path: envPath });
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3000;
