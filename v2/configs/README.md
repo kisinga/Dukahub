@@ -13,37 +13,56 @@ This directory contains the shared environment configuration for the Dukahub bac
 
 - The backend loads environment variables from `configs/.env.backend`
 - Path resolution: `../configs/.env.backend` relative to the compiled JavaScript file
+- Uses `localhost:5433` to connect to postgres_db container (mapped port)
 
 ### Docker Environment
 
 - The `configs` directory is mounted into the backend container at `/usr/src/app/configs`
 - Docker Compose loads the same `.env.backend` file via `env_file` for all services
+- Uses `postgres_db:5432` to connect (internal Docker network)
 - **postgres_db**: Uses `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` from `.env.backend`
 - **backend**: Docker-specific overrides in `docker-compose.yml`:
   - `APP_ENV: production` (overrides `dev`)
   - `DB_HOST: postgres_db` (overrides `localhost`)
+  - `DB_PORT: 5432` (overrides `5433` - uses internal Docker port)
   - `DB_SYNCHRONIZE: false` (overrides `true`)
+
+### Port Mapping Explained
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Local Development (backend on host)                         │
+│ backend → localhost:5433 → postgres_db container:5432       │
+│           uses DB_PORT=5433 from .env.backend               │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ Docker Environment (backend in container)                   │
+│ backend container → postgres_db:5432 (internal network)     │
+│                     uses DB_PORT=5432 override              │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Environment Variables
 
-| Variable              | Default                                     | Docker Override | Description               |
-| --------------------- | ------------------------------------------- | --------------- | ------------------------- |
-| `APP_ENV`             | `dev`                                       | `production`    | Application environment   |
-| `PORT`                | `3000`                                      | -               | Server port               |
-| `DB_HOST`             | `localhost`                                 | `postgres_db`   | Database host             |
-| `DB_SYNCHRONIZE`      | `true`                                      | `false`         | Auto-sync database schema |
-| `DB_NAME`             | `dukahub`                                   | -               | Database name             |
-| `DB_SCHEMA`           | `public`                                    | -               | Database schema           |
-| `DB_PORT`             | `5432`                                      | -               | Database port             |
-| `DB_USERNAME`         | `dukahub`                                   | -               | Database username         |
-| `DB_PASSWORD`         | `password`                                  | -               | Database password         |
-| `POSTGRES_DB`         | `dukahub`                                   | -               | PostgreSQL database name  |
-| `POSTGRES_USER`       | `dukahub`                                   | -               | PostgreSQL username       |
-| `POSTGRES_PASSWORD`   | `password`                                  | -               | PostgreSQL password       |
-| `SUPERADMIN_USERNAME` | `admin`                                     | -               | Admin username            |
-| `SUPERADMIN_PASSWORD` | `admin`                                     | -               | Admin password            |
-| `COOKIE_SECRET`       | `your-secret-key-here-change-in-production` | -               | Cookie encryption secret  |
-| `ASSET_URL_PREFIX`    | `https://www.my-shop.com/assets/`           | -               | CDN/Asset URL prefix      |
+| Variable              | Default                                     | Docker Override | Description                                               |
+| --------------------- | ------------------------------------------- | --------------- | --------------------------------------------------------- |
+| `APP_ENV`             | `dev`                                       | `production`    | Application environment                                   |
+| `PORT`                | `3000`                                      | -               | Server port                                               |
+| `DB_HOST`             | `localhost`                                 | `postgres_db`   | Database host                                             |
+| `DB_SYNCHRONIZE`      | `true`                                      | `false`         | Auto-sync database schema                                 |
+| `DB_NAME`             | `dukahub`                                   | -               | Database name                                             |
+| `DB_SCHEMA`           | `public`                                    | -               | Database schema                                           |
+| `DB_PORT`             | `5433`                                      | `5432`          | Database port (5433=host mapped, 5432=container internal) |
+| `DB_USERNAME`         | `dukahub`                                   | -               | Database username                                         |
+| `DB_PASSWORD`         | `password`                                  | -               | Database password                                         |
+| `POSTGRES_DB`         | `dukahub`                                   | -               | PostgreSQL database name                                  |
+| `POSTGRES_USER`       | `dukahub`                                   | -               | PostgreSQL username                                       |
+| `POSTGRES_PASSWORD`   | `password`                                  | -               | PostgreSQL password                                       |
+| `SUPERADMIN_USERNAME` | `admin`                                     | -               | Admin username                                            |
+| `SUPERADMIN_PASSWORD` | `admin`                                     | -               | Admin password                                            |
+| `COOKIE_SECRET`       | `your-secret-key-here-change-in-production` | -               | Cookie encryption secret                                  |
+| `ASSET_URL_PREFIX`    | `https://www.my-shop.com/assets/`           | -               | CDN/Asset URL prefix                                      |
 
 ## Adding New Variables
 

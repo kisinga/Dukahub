@@ -47,6 +47,7 @@ services:
       # Docker-specific overrides
       APP_ENV: production
       DB_HOST: postgres_db
+      DB_PORT: 5432
       DB_SYNCHRONIZE: false
 
   frontend:
