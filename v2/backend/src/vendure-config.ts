@@ -13,9 +13,15 @@ import { config as dotenvConfig } from 'dotenv';
 import path from 'path';
 
 // Load environment variables from shared config file
-// Works for both local development and Docker (when mounted)
-const envPath = path.join(__dirname, '../../configs/.env.backend');
-dotenvConfig({ path: envPath });
+// Try both paths: local dev (../../) and Docker (../)
+const envPaths = [
+    path.join(__dirname, '../../configs/.env.backend'), // Local dev (ts-node from src/)
+    path.join(__dirname, '../configs/.env.backend'),    // Docker (compiled to dist/)
+];
+const envPath = envPaths.find(p => require('fs').existsSync(p));
+if (envPath) {
+    dotenvConfig({ path: envPath });
+}
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3000;

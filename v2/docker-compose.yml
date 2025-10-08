@@ -1,12 +1,28 @@
+# =======================
+# Dukahub Docker Compose
+# =======================
+# ⚠️  DO NOT RUN DIRECTLY - use ./dc.sh instead
+#
+# Usage:
+#   ./dc.sh              # Loads env from configs/.env.backend
+#   ./dc.sh --populate   # Start + populate sample data
+#   ./dc.sh /configs     # Coolify deployment
+#
+# See configs/README.md for environment variables
+
 services:
   postgres_db:
     image: postgres:16-alpine
+    environment:
+      # Maps to DB_* vars from .env.backend (Postgres requires POSTGRES_* naming)
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_db_data:/var/lib/postgresql/data
+      - ./configs:/usr/src/app/configs:ro
     ports:
       - "5433:5432"
-    env_file:
-      - configs/.env.backend
     labels:
       - "io.vendure.create.name=dukahub"
 
@@ -16,56 +32,63 @@ services:
       - "6479:6379"
     volumes:
       - redis_data:/data
+      - ./configs:/usr/src/app/configs:ro
     labels:
-      - "io.vendure.create.name=Dukahub"
+      - "io.vendure.create.name=dukahub"
 
   typesense:
     image: typesense/typesense:27.0
-    command: ["--data-dir", "/data", "--api-key", "SuperSecret"]
+    command:
+      - --data-dir
+      - /data
+      - --api-key
+      - ${TYPESENSE_API_KEY}
     ports:
       - "8208:8108"
     volumes:
       - typesense_data:/data
+      - ./configs:/usr/src/app/configs:ro
     labels:
-      - "io.vendure.create.name=Dukahub"
+      - "io.vendure.create.name=dukahub"
 
   backend:
     build:
       context: backend
-    ports:
-      - "3000:3000"
     depends_on:
       - postgres_db
       - redis
       - typesense
-    volumes:
-      # Mount the configs directory to make .env.backend available
-      - ./configs:/usr/src/app/configs:ro
-    env_file:
-      - configs/.env.backend
+    ports:
+      - "3000:3000"
     environment:
-      # Docker-specific overrides
-      APP_ENV: production
-      DB_HOST: postgres_db
-      DB_PORT: 5432
-      DB_SYNCHRONIZE: false
+      DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-false}
+    volumes:
+      - ./configs:/usr/src/app/configs:ro
+    labels:
+      - "io.vendure.create.name=dukahub"
 
   frontend:
     build:
       context: frontend
     ports:
       - "4200:4200"
+    depends_on:
+      - backend
+    volumes:
+      - ./configs:/usr/src/app/configs:ro
+    labels:
+      - "io.vendure.create.name=dukahub"
 
 volumes:
   postgres_db_data:
     driver: local
     labels:
-      - "io.vendure.create.name=Dukahub"
+      - "io.vendure.create.name=dukahub"
   typesense_data:
     driver: local
     labels:
-      - "io.vendure.create.name=Dukahub"
+      - "io.vendure.create.name=dukahub"
   redis_data:
     driver: local
     labels:
-      - "io.vendure.create.name=Dukahub"
+      - "io.vendure.create.name=dukahub"

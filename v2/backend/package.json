@@ -9,7 +9,8 @@
     "build": "tsc",
     "start:server": "node ./dist/index.js",
     "start:worker": "node ./dist/index-worker.js",
-    "start": "concurrently npm:start:*"
+    "start": "concurrently npm:start:*",
+    "populate": "ts-node ./src/populate.ts"
   },
   "dependencies": {
     "@vendure/admin-ui-plugin": "3.4.3",
@@ -22,7 +23,8 @@
   },
   "devDependencies": {
     "@vendure/cli": "3.4.3",
+    "@vendure/create": "3.4.3",
     "concurrently": "9.2.1",
-    "typescript": "5.8.2"
+    "typescript": "5.9.3"
   }
 }

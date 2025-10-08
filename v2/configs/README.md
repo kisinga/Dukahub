@@ -1,89 +1,105 @@
 # Environment Configuration
 
-This directory contains the shared environment configuration for the Dukahub backend.
+**Single source of truth** for all Dukahub environment variables.
 
 ## Files
 
-- `.env.backend` - Single source of truth for all environment variables (gitignored)
-- `.env.backend.example` - Template file with all required variables
-
-## How It Works
-
-### Local Development
-
-- The backend loads environment variables from `configs/.env.backend`
-- Path resolution: `../configs/.env.backend` relative to the compiled JavaScript file
-- Uses `localhost:5433` to connect to postgres_db container (mapped port)
-
-### Docker Environment
-
-- The `configs` directory is mounted into the backend container at `/usr/src/app/configs`
-- Docker Compose loads the same `.env.backend` file via `env_file` for all services
-- Uses `postgres_db:5432` to connect (internal Docker network)
-- **postgres_db**: Uses `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` from `.env.backend`
-- **backend**: Docker-specific overrides in `docker-compose.yml`:
-  - `APP_ENV: production` (overrides `dev`)
-  - `DB_HOST: postgres_db` (overrides `localhost`)
-  - `DB_PORT: 5432` (overrides `5433` - uses internal Docker port)
-  - `DB_SYNCHRONIZE: false` (overrides `true`)
-
-### Port Mapping Explained
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Local Development (backend on host)                         │
-│ backend → localhost:5433 → postgres_db container:5432       │
-│           uses DB_PORT=5433 from .env.backend               │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ Docker Environment (backend in container)                   │
-│ backend container → postgres_db:5432 (internal network)     │
-│                     uses DB_PORT=5432 override              │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## Environment Variables
-
-| Variable              | Default                                     | Docker Override | Description                                               |
-| --------------------- | ------------------------------------------- | --------------- | --------------------------------------------------------- |
-| `APP_ENV`             | `dev`                                       | `production`    | Application environment                                   |
-| `PORT`                | `3000`                                      | -               | Server port                                               |
-| `DB_HOST`             | `localhost`                                 | `postgres_db`   | Database host                                             |
-| `DB_SYNCHRONIZE`      | `true`                                      | `false`         | Auto-sync database schema                                 |
-| `DB_NAME`             | `dukahub`                                   | -               | Database name                                             |
-| `DB_SCHEMA`           | `public`                                    | -               | Database schema                                           |
-| `DB_PORT`             | `5433`                                      | `5432`          | Database port (5433=host mapped, 5432=container internal) |
-| `DB_USERNAME`         | `dukahub`                                   | -               | Database username                                         |
-| `DB_PASSWORD`         | `password`                                  | -               | Database password                                         |
-| `POSTGRES_DB`         | `dukahub`                                   | -               | PostgreSQL database name                                  |
-| `POSTGRES_USER`       | `dukahub`                                   | -               | PostgreSQL username                                       |
-| `POSTGRES_PASSWORD`   | `password`                                  | -               | PostgreSQL password                                       |
-| `SUPERADMIN_USERNAME` | `admin`                                     | -               | Admin username                                            |
-| `SUPERADMIN_PASSWORD` | `admin`                                     | -               | Admin password                                            |
-| `COOKIE_SECRET`       | `your-secret-key-here-change-in-production` | -               | Cookie encryption secret                                  |
-| `ASSET_URL_PREFIX`    | `https://www.my-shop.com/assets/`           | -               | CDN/Asset URL prefix                                      |
-
-## Adding New Variables
-
-1. Add the variable to `.env.backend.example` with a default value
-2. Add the variable to your local `.env.backend` file
-3. If needed, add Docker-specific overrides in `docker-compose.yml`
-4. Update this README with the new variable
+| File                   | Purpose                       |
+| ---------------------- | ----------------------------- |
+| `.env.backend`         | Active config (gitignored)    |
+| `.env.backend.example` | Template with secure defaults |
 
 ## Quick Setup
 
 ```bash
-# Copy example file
 cd configs
 cp .env.backend.example .env.backend
-
-# Edit with your values
+# Update passwords and secrets
 nano .env.backend
 ```
 
-## Security Notes
+## How It Works
 
-- Change `COOKIE_SECRET` in production
-- Change default passwords in production
-- Consider using Docker secrets for sensitive data in production
+### Configuration Loading
+
+1. **Local Development** (backend running on host):
+
+   - Backend loads `configs/.env.backend` via `dotenv`
+   - Connects to Docker services via mapped ports (e.g., `localhost:5433`)
+
+2. **Docker Compose** (all services containerized):
+   - `dc.sh` exports variables from `.env.backend` to shell environment
+   - Docker Compose inherits these variables automatically
+   - Services communicate via Docker network (e.g., `postgres_db:5432`)
+
+### Environment Parity
+
+Both environments use **the same `.env.backend` file**. Docker-specific overrides (like `DB_HOST=postgres_db`) are set in `docker-compose.yml` environment section.
+
+```
+Local:  backend (host) → localhost:5433 → postgres_db (container)
+Docker: backend (container) → postgres_db:5432 (internal network)
+```
+
+## Environment Variables
+
+| Variable              | Example              | Used By            | Notes                            |
+| --------------------- | -------------------- | ------------------ | -------------------------------- |
+| `APP_ENV`             | `dev` / `production` | Backend            | Controls debug mode, trust proxy |
+| `PORT`                | `3000`               | Backend            | API server port                  |
+| `DB_HOST`             | `postgres_db`        | Backend            | Database hostname                |
+| `DB_PORT`             | `5432`               | Backend            | Database port                    |
+| `DB_NAME`             | `vendure`            | Backend, Postgres  | Database name                    |
+| `DB_SCHEMA`           | `public`             | Backend            | PostgreSQL schema                |
+| `DB_USERNAME`         | `vendure`            | Backend, Postgres  | Database user                    |
+| `DB_PASSWORD`         | `secure-password`    | Backend, Postgres  | Database password                |
+| `SUPERADMIN_USERNAME` | `superadmin`         | Backend            | Initial admin login              |
+| `SUPERADMIN_PASSWORD` | `secure-password`    | Backend            | Initial admin password           |
+| `COOKIE_SECRET`       | `random-32-chars`    | Backend            | Session cookie encryption key    |
+| `TYPESENSE_API_KEY`   | `secure-api-key`     | Typesense, Backend | Search API authentication        |
+| `TYPESENSE_HOST`      | `typesense`          | Backend            | Search service hostname          |
+| `TYPESENSE_PORT`      | `8108`               | Backend            | Search service port              |
+
+**Note:** `DB_SYNCHRONIZE` is set dynamically by `dc.sh` (`true` with `--populate`, `false` otherwise)
+
+## How Variables Are Used
+
+**Backend:**
+
+- Loads all vars from mounted `configs/.env.backend` via dotenv
+- `DB_SYNCHRONIZE` injected by docker-compose (set dynamically by `dc.sh`)
+
+**Postgres:**
+
+- Uses `DB_NAME` → `POSTGRES_DB`
+- Uses `DB_USERNAME` → `POSTGRES_USER`
+- Uses `DB_PASSWORD` → `POSTGRES_PASSWORD`
+- (Mapped in docker-compose.yml because Postgres requires `POSTGRES_*` naming)
+
+**Typesense:**
+
+- Uses `TYPESENSE_API_KEY` directly from shell (exported by `dc.sh`)
+
+All variables loaded from `.env.backend` → exported by `dc.sh` → available to docker-compose.
+
+## Security Checklist
+
+- [ ] Change `COOKIE_SECRET` to a random 32+ character string
+- [ ] Change `SUPERADMIN_PASSWORD` before deploying
+- [ ] Change `DB_PASSWORD` to a strong password
+- [ ] Update `TYPESENSE_API_KEY` to a strong random value
+- [ ] Set `APP_ENV=production` for production deployments
+- [ ] Never commit `.env.backend` to version control
+
+## Generate Secure Values
+
+```bash
+# Cookie secret (32 chars)
+openssl rand -base64 32
+
+# Passwords (20 chars)
+openssl rand -base64 24 | tr -d "=+/" | cut -c1-20
+
+# API keys (hex)
+openssl rand -hex 16
+```
