@@ -2,6 +2,9 @@
 # dc.sh — Load env vars from file, then run docker compose
 set -euo pipefail
 
+# Change to script directory
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
 ENV_FILE=""
 FIRST_RUN=false
 
