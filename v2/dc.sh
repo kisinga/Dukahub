@@ -2,16 +2,21 @@
 # dc.sh — Load env vars from file, then run docker compose
 set -euo pipefail
 
-LOAD_ENV=false
+ENV_FILE=""
 FIRST_RUN=false
-ENV_FILE="./configs/.env.backend"
 
 # Parse flags
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --env-file)
-      LOAD_ENV=true
       shift
+      if [[ $# -gt 0 && ! "$1" =~ ^-- ]]; then
+        ENV_FILE="$1"
+        shift
+      else
+        echo "❌ Error: --env-file requires a file path argument" >&2
+        exit 1
+      fi
       ;;
     --first-run)
       FIRST_RUN=true
@@ -23,8 +28,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Load env file if explicitly requested
-if [[ "$LOAD_ENV" == "true" ]]; then
+# Load env file if explicitly provided
+if [[ -n "$ENV_FILE" ]]; then
   if [[ ! -f "$ENV_FILE" ]]; then
     echo "❌ Error: $ENV_FILE not found" >&2
     exit 1
