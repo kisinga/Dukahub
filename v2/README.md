@@ -7,126 +7,100 @@ Modern multi-tenant inventory management system built with Vendure and Angular.
 ### Prerequisites
 
 - Node.js 22+
-- Docker & Docker Compose (for containerized development)
-- PostgreSQL 16 (if running locally without Docker)
+- Docker & Docker Compose
 
 ### Setup
 
-1. **Create environment file:**
+```bash
+cd v2
+cp configs/.env.backend.example configs/.env.backend
+nano configs/.env.backend  # Update passwords/secrets
 
-   ```bash
-   cd backend
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
+# Start services
+./dc.sh up -d
 
-2. **Start with Docker (Recommended):**
+# First-time: Populate sample data
+./dc.sh exec backend npm run populate
+```
 
-   ```bash
-   cd v2
-   docker compose up
-   ```
+**Access:**
 
-   Access:
+- Admin UI: http://localhost:3002/admin (superadmin / [your password])
+- API: http://localhost:3000
+- Frontend: http://localhost:4200
 
-   - Backend API: http://localhost:3000
-   - Admin UI: http://localhost:3002/admin
-   - Frontend: http://localhost:8080
+## 🔄 Workflows
 
-3. **Or run locally:**
-   ```bash
-   # Start database first (use docker-compose or local postgres)
-   cd backend
-   npm install
-   npm run dev
-   ```
+### Local Docker (Recommended)
+
+```bash
+./dc.sh up -d                        # Start all services
+./dc.sh exec backend npm run populate # Add sample data (first run)
+./dc.sh logs -f                      # View logs
+./dc.sh down                         # Stop all services
+```
+
+### Local Backend Dev
+
+Backend on host, services in Docker:
+
+```bash
+# 1. Start infrastructure
+docker compose up -d postgres_db redis typesense
+
+# 2. Run backend locally (connects to localhost:5433)
+cd backend
+npm install
+npm run dev
+
+# 3. First run: populate
+npm run populate
+```
 
 ## 📁 Project Structure
 
 ```
 v2/
-├── backend/          # Vendure backend
+├── configs/
+│   └── .env.backend     # ← SINGLE SOURCE OF TRUTH
+├── backend/             # Vendure e-commerce backend
 │   ├── src/
-│   │   ├── plugins/  # Custom Vendure plugins
+│   │   ├── plugins/
+│   │   ├── populate.ts  # Sample data loader (idempotent)
 │   │   └── vendure-config.ts
-│   ├── .env          # ← SINGLE SOURCE OF TRUTH for environment config
 │   └── Dockerfile
-├── frontend/         # Angular SPA
+├── frontend/            # Angular SPA
 │   ├── src/
 │   └── Dockerfile
-├── docker-compose.yml
-└── ENVIRONMENT_SETUP.md  # Detailed environment configuration guide
+├── docker-compose.yml   # Service definitions
+└── dc.sh                # Helper script (loads env + runs docker compose)
 ```
 
 ## ⚙️ Configuration
 
-**All configuration is in `backend/.env`** - this is the single source of truth for both local and Docker environments.
+**Single source:** `configs/.env.backend`
 
-See [ENVIRONMENT_SETUP.md](./ENVIRONMENT_SETUP.md) for detailed configuration instructions.
-
-### Key Points:
-
-- ✅ One `.env` file for all environments (`backend/.env`)
-- ✅ Works identically in local and Docker
-- ✅ No hardcoded credentials in `docker-compose.yml`
-- ✅ Secure by default (`.env` is git-ignored)
-
-## 🐳 Docker Commands
-
-```bash
-# Start all services
-docker compose up
-
-# Start in background
-docker compose up -d
-
-# Rebuild and start
-docker compose up --build
-
-# View logs
-docker compose logs -f backend
-
-# Stop all services
-docker compose down
-
-# Remove volumes (clean database)
-docker compose down -v
-```
+- Local dev: Backend loads via dotenv OR `dc.sh` exports to docker-compose
+- Coolify: Set variables in UI (overrides)
+- See `configs/README.md` for all variables
 
 ## 📚 Documentation
 
-- [Environment Setup Guide](./ENVIRONMENT_SETUP.md) - Complete environment configuration
-- [Vendure Documentation](https://www.vendure.io/docs)
-- [Migration Blueprint](../MIGRATION_BLUEPRINT.md) - Architecture and migration plan
+- [Infrastructure Guide](./INFRASTRUCTURE.md) - Docker setup & deployment
+- [Config Reference](./configs/README.md) - Environment variables
+- [Vendure Docs](https://www.vendure.io/docs)
+- [Migration Blueprint](../MIGRATION_BLUEPRINT.md) - v1→v2 migration plan
 
 ## 🔐 Security
 
-- Never commit `.env` files
-- Use strong secrets in production
-- Generate secure `COOKIE_SECRET`:
-  ```bash
-  openssl rand -base64 32
-  ```
-
-## 🛠️ Development
-
-### Backend Development
+Generate strong secrets:
 
 ```bash
-cd backend
-npm run dev          # Start with hot reload
-npm run build        # Build for production
-npm run start        # Run production build
+openssl rand -base64 32  # COOKIE_SECRET
+openssl rand -hex 16     # TYPESENSE_API_KEY
 ```
 
-### Frontend Development
-
-```bash
-cd frontend
-npm install
-npm start            # Development server
-npm run build        # Production build
-```
+Never commit `configs/.env.backend` to git (already in `.gitignore`)
 
 ## 📦 Tech Stack
 

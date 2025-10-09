@@ -69,19 +69,39 @@ configs/.env.backend
 
 ## 🚀 Quick Start
 
-### Initial Setup
+### Local Development
 
 ```bash
 cd v2
 cp configs/.env.backend.example configs/.env.backend
-nano configs/.env.backend
+nano configs/.env.backend  # Update passwords/secrets
 
 # Start stack
 ./dc.sh
 
-# Or start with sample data
+# Or start with sample data (first run)
 ./dc.sh --populate
 ```
+
+### Coolify Deployment
+
+**1. Set environment variables in Coolify UI:**
+
+```
+DB_NAME=dukahub
+DB_USERNAME=vendure
+DB_PASSWORD=<strong-password>
+TYPESENSE_API_KEY=<strong-key>
+COOKIE_SECRET=<strong-secret>
+SUPERADMIN_PASSWORD=<strong-password>
+```
+
+**2. Configure deployment:**
+
+- **Docker Compose Location:** `v2/docker-compose.yml`
+- **Post-deployment script:** `npm run populate:check`
+
+**3. Deploy!** The post-deployment script will auto-populate sample data on first run.
 
 ### Access Services
 
@@ -95,9 +115,8 @@ nano configs/.env.backend
 ### Commands
 
 ```bash
-./dc.sh              # Start
-./dc.sh --populate   # Start + sample data
-./dc.sh /configs     # Coolify
+./dc.sh              # Local dev: Start
+./dc.sh --populate   # Local dev: Start + sample data
 ./dc.sh -h           # Help
 
 docker compose logs -f              # View logs

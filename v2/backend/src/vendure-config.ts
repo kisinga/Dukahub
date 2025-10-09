@@ -10,17 +10,28 @@ import {
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import { config as dotenvConfig } from 'dotenv';
+import fs from 'fs';
 import path from 'path';
 
-// Load environment variables from shared config file
-// Try both paths: local dev (../../) and Docker (../)
-const envPaths = [
-    path.join(__dirname, '../../configs/.env.backend'), // Local dev (ts-node from src/)
-    path.join(__dirname, '../configs/.env.backend'),    // Docker (compiled to dist/)
-];
-const envPath = envPaths.find(p => require('fs').existsSync(p));
-if (envPath) {
-    dotenvConfig({ path: envPath });
+// Detect if running inside Docker
+const isDocker = fs.existsSync('/.dockerenv') || process.env.DOCKER_CONTAINER === 'true';
+
+// Only load from .env file if NOT in Docker
+// Docker containers get env vars passed directly from docker-compose
+if (!isDocker) {
+    const envPaths = [
+        path.join(__dirname, '../../configs/.env.backend'), // Local dev (ts-node from src/)
+        path.join(__dirname, '../configs/.env.backend'),    // Docker (compiled to dist/)
+    ];
+    const envPath = envPaths.find(p => fs.existsSync(p));
+    if (envPath) {
+        console.log(`[dotenv] Loading from ${envPath}`);
+        dotenvConfig({ path: envPath });
+    } else {
+        console.warn('[dotenv] No .env.backend file found, using system environment variables');
+    }
+} else {
+    console.log('[dotenv] Running in Docker, using environment variables from container');
 }
 
 const IS_DEV = process.env.APP_ENV === 'dev';

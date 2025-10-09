@@ -1,26 +1,24 @@
 # =======================
 # Dukahub Docker Compose
 # =======================
-# ⚠️  DO NOT RUN DIRECTLY - use ./dc.sh instead
 #
-# Usage:
-#   ./dc.sh              # Loads env from configs/.env.backend
-#   ./dc.sh --populate   # Start + populate sample data
-#   ./dc.sh /configs     # Coolify deployment
+# All ${VAR} substitutions expect environment variables to be PRESENT.
 #
-# See configs/README.md for environment variables
+# Local:   ./dc.sh [args]  (loads configs/.env.backend)
+# Coolify: Variables injected via UI
+#
+# See configs/README.md for all variables
 
 services:
   postgres_db:
     image: postgres:16-alpine
     environment:
-      # Maps to DB_* vars from .env.backend (Postgres requires POSTGRES_* naming)
+      # Postgres requires POSTGRES_* naming (maps from DB_* vars)
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_db_data:/var/lib/postgresql/data
-      - ./configs:/usr/src/app/configs:ro
     ports:
       - "5433:5432"
     labels:
@@ -32,7 +30,6 @@ services:
       - "6479:6379"
     volumes:
       - redis_data:/data
-      - ./configs:/usr/src/app/configs:ro
     labels:
       - "io.vendure.create.name=dukahub"
 
@@ -47,35 +44,54 @@ services:
       - "8208:8108"
     volumes:
       - typesense_data:/data
-      - ./configs:/usr/src/app/configs:ro
     labels:
       - "io.vendure.create.name=dukahub"
 
   backend:
     build:
       context: backend
+    environment:
+      # Docker detection
+      DOCKER_CONTAINER: "true"
+      # Application
+      APP_ENV: ${APP_ENV}
+      PORT: ${PORT}
+      # Database
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_SCHEMA: ${DB_SCHEMA}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      # Admin
+      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
+      # Security
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      # Search
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
+      TYPESENSE_HOST: ${TYPESENSE_HOST}
+      TYPESENSE_PORT: ${TYPESENSE_PORT}
     depends_on:
       - postgres_db
       - redis
       - typesense
     ports:
       - "3000:3000"
-    environment:
-      DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-false}
-    volumes:
-      - ./configs:/usr/src/app/configs:ro
     labels:
       - "io.vendure.create.name=dukahub"
+    restart: unless-stopped
 
   frontend:
     build:
       context: frontend
-    ports:
-      - "4200:4200"
+    environment:
+      DOCKER_CONTAINER: "true"
+      # All other env vars expected to be present in shell environment
     depends_on:
       - backend
-    volumes:
-      - ./configs:/usr/src/app/configs:ro
+    ports:
+      - "4200:4200"
     labels:
       - "io.vendure.create.name=dukahub"
 
