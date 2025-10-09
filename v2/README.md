@@ -17,11 +17,10 @@ cp configs/.env.backend.example configs/.env.backend
 nano configs/.env.backend  # Update passwords/secrets
 
 # First-time setup (loads env + starts + populates)
-./dc.sh --env-file --first-run up -d
+./compose-dev.sh --env-file ./configs/.env.backend --populate up -d
 
-# Or start normally, then populate manually
-./dc.sh --env-file up -d
-./dc.sh exec backend npm run populate
+# Or start normally without populate
+./compose-dev.sh --env-file ./configs/.env.backend up -d
 ```
 
 **Access:**
@@ -35,10 +34,10 @@ nano configs/.env.backend  # Update passwords/secrets
 ### Local Docker (Recommended)
 
 ```bash
-./dc.sh --env-file --first-run up -d  # First run: load env + start + populate
-./dc.sh --env-file up -d              # Subsequent runs: load env + start
-./dc.sh logs -f                       # View logs (no env needed)
-./dc.sh down                          # Stop (no env needed)
+./compose-dev.sh --env-file ./configs/.env.backend --populate up -d  # First run
+./compose-dev.sh --env-file ./configs/.env.backend up -d              # Subsequent runs
+docker compose logs -f                                                # View logs
+docker compose down                                                   # Stop
 ```
 
 ### Local Backend Dev
@@ -74,15 +73,15 @@ v2/
 │   ├── src/
 │   └── Dockerfile
 ├── docker-compose.yml   # Service definitions
-└── dc.sh                # Helper script (loads env + runs docker compose)
+└── compose-dev.sh       # Local dev helper (loads env + runs docker compose)
 ```
 
 ## ⚙️ Configuration
 
 **Single source:** `configs/.env.backend`
 
-- Local dev: `./dc.sh --env-file` loads from file
-- Coolify/Production: `./dc.sh` uses provider-injected vars (no `--env-file`)
+- **Local dev:** `./compose-dev.sh --env-file ./configs/.env.backend` loads from file
+- **Production:** Platform (e.g., Coolify) injects vars directly via UI
 - See `configs/README.md` for all variables
 
 ## 📚 Documentation

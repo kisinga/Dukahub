@@ -12,11 +12,15 @@ COPY . .
 # Build the application (no .env needed at build time)
 RUN npm run build
 
+# Copy and set up entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Environment variables will be provided at runtime via docker-compose
 # or via -e flags when running the container
 
 # Expose the port the app runs on
 EXPOSE 3000
 
-# Command to run the application
-CMD ["npm", "run", "start"]
+# Use entrypoint script to handle conditional populate
+ENTRYPOINT ["docker-entrypoint.sh"]

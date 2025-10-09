@@ -29,15 +29,15 @@ All services mount `./configs` as read-only for shared configuration access.
 ```
 configs/.env.backend
   ↓
-  ├─→ dc.sh (loads & exports)
+  ├─→ compose-dev.sh (loads & exports)
   │     ↓
   │     └─→ docker-compose.yml (substitutes ${VARS})
   │           ↓
   │           ├─→ postgres_db (DB_* → POSTGRES_*)
   │           ├─→ typesense (TYPESENSE_API_KEY)
-  │           └─→ backend (DB_SYNCHRONIZE injected)
+  │           └─→ backend (RUN_POPULATE triggers populate)
   │
-  └─→ backend container (dotenv loads all vars)
+  └─→ Production: Platform injects vars directly
 ```
 
 **Key principle:** No duplicate variables. `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` are mapped to `POSTGRES_*` in docker-compose.yml (Postgres requires this naming).
@@ -46,24 +46,24 @@ configs/.env.backend
 
 **Backend:**
 
-- Mounts `configs/.env.backend` → loads via dotenv
-- Gets `DB_SYNCHRONIZE` from docker-compose (set dynamically by dc.sh)
+- Receives all vars via docker-compose environment section
+- `RUN_POPULATE=true` triggers database population on container startup
 
 **Postgres:**
 
-- Gets `POSTGRES_DB=${DB_NAME}` from shell environment (via dc.sh)
+- Gets `POSTGRES_DB=${DB_NAME}` from shell environment (via compose-dev.sh)
 - Gets `POSTGRES_USER=${DB_USERNAME}` from shell environment
 - Gets `POSTGRES_PASSWORD=${DB_PASSWORD}` from shell environment
 
 **Typesense:**
 
-- Gets `TYPESENSE_API_KEY` from shell environment (via dc.sh)
+- Gets `TYPESENSE_API_KEY` from shell environment (via compose-dev.sh)
 
-**DB_SYNCHRONIZE** (special handling):
+**RUN_POPULATE** (optional):
 
-- Set by `dc.sh` based on `--populate` flag
-- `true` → auto-creates database schema (first run/populate)
-- `false` → uses existing schema (normal operation)
+- Set by `compose-dev.sh` via `--populate` flag
+- `true` → populates database with sample data on startup
+- `false` (default) → normal startup without populate
 
 ---
 
@@ -77,10 +77,10 @@ cp configs/.env.backend.example configs/.env.backend
 nano configs/.env.backend  # Update passwords/secrets
 
 # Start stack
-./dc.sh
+./compose-dev.sh --env-file ./configs/.env.backend up -d
 
 # Or start with sample data (first run)
-./dc.sh --populate
+./compose-dev.sh --env-file ./configs/.env.backend --populate up -d
 ```
 
 ### Coolify Deployment
@@ -115,14 +115,14 @@ SUPERADMIN_PASSWORD=<strong-password>
 ### Commands
 
 ```bash
-./dc.sh              # Local dev: Start
-./dc.sh --populate   # Local dev: Start + sample data
-./dc.sh -h           # Help
+# Start services (local dev)
+./compose-dev.sh --env-file ./configs/.env.backend up -d
+./compose-dev.sh --env-file ./configs/.env.backend --populate up -d  # With sample data
 
-docker compose logs -f              # View logs
-docker compose down                 # Stop
-docker compose down -v              # Reset (removes data)
-docker compose exec backend npm run populate  # Populate manually
+# Standard docker compose commands
+docker compose logs -f     # View logs
+docker compose down        # Stop
+docker compose down -v     # Reset (removes data)
 ```
 
 ---
@@ -141,37 +141,41 @@ See [`configs/README.md`](configs/README.md) for complete variable reference.
 
 ---
 
-## 🔧 Launcher Script: `dc.sh`
+## 🔧 Launcher Script: `compose-dev.sh`
 
-**Required** for running the stack. Loads environment variables from `.env.backend` and starts Docker Compose.
+**Local development helper** that loads environment variables from `.env.backend` and runs Docker Compose.
 
-### Why Required?
+### Why Use It?
 
 - Exports vars for `docker-compose.yml` variable substitution (`${DB_NAME}`, etc.)
-- Sets `DB_SYNCHRONIZE` dynamically based on `--populate` flag
-- Validates required variables before startup
+- Sets `RUN_POPULATE` flag to trigger database population
+- Single command for local development workflow
 
 ### Usage
 
 ```bash
-./dc.sh [ENV_DIR] [-p|--populate]
+./compose-dev.sh [OPTIONS] DOCKER_COMPOSE_ARGS
+
+# Options
+--env-file FILE    Load environment variables from FILE
+--populate         Set RUN_POPULATE=true to populate database on startup
 
 # Examples
-./dc.sh                 # Start stack
-./dc.sh --populate      # Start + populate sample data
-./dc.sh /configs        # Coolify (custom env path)
-./dc.sh /configs -p     # Coolify + populate
+./compose-dev.sh --env-file ./configs/.env.backend up -d
+./compose-dev.sh --env-file ./configs/.env.backend --populate up -d
+./compose-dev.sh --env-file ./configs/.env.backend logs -f
 ```
 
 ### Populate Flag
 
-Adds ~54 products, 9 collections, default channel/zone, countries, payment/shipping methods.
+Adds Vendure sample data (default channel/zone, ~250 countries, ~20 products with images).
 
 **How it works:**
 
-1. Starts postgres/redis/typesense
-2. Runs populate script (creates schema + imports data)
-3. Starts backend/frontend (uses existing data)
+1. Sets `RUN_POPULATE=true` environment variable
+2. Backend container's entrypoint script detects flag
+3. Runs populate script before starting server
+4. Server starts with populated data
 
 ---
 
@@ -203,7 +207,7 @@ Adds ~54 products, 9 collections, default channel/zone, countries, payment/shipp
 **Purpose:** Vendure-based e-commerce API and admin UI  
 **Build Context:** `./backend` directory  
 **Dependencies:** postgres_db, redis, typesense  
-**Configuration:** Loads all vars from mounted `configs/.env.backend` via dotenv, `DB_SYNCHRONIZE` injected by docker-compose
+**Configuration:** Receives all vars via docker-compose environment section, `RUN_POPULATE` triggers populate on startup
 
 ### frontend
 
@@ -262,7 +266,7 @@ openssl rand -base64 24 | tr -d "=+/" | cut -c1-20
 1. **Single Source of Truth** — One `.env.backend`, no duplicates
 2. **Environment Parity** — Same config works locally and in Docker
 3. **Variable Mapping** — `DB_*` → `POSTGRES_*` in docker-compose (Postgres naming requirement)
-4. **Dynamic Schema Control** — `DB_SYNCHRONIZE` set by dc.sh based on context
+4. **Container-Managed Initialization** — `RUN_POPULATE` handled by backend entrypoint
 5. **Data Persistence** — Named volumes prevent accidental data loss
 6. **Explicit Dependencies** — `depends_on` ensures correct startup order
 7. **KISS Principle** — Simple, obvious, maintainable
@@ -298,8 +302,8 @@ docker compose exec postgres_db psql -U vendure vendure
 ### Environment variables not loading
 
 ```bash
-# Test dc.sh variable export
-./dc.sh
+# Test compose-dev.sh variable export
+./compose-dev.sh --env-file ./configs/.env.backend up -d
 docker compose exec backend env | grep DB_
 
 # Verify .env.backend exists and is readable
@@ -312,7 +316,7 @@ cat configs/.env.backend
 # Remove everything and start fresh
 docker compose down -v
 docker system prune -a
-./dc.sh
+./compose-dev.sh --env-file ./configs/.env.backend --populate up -d
 ```
 
 ---
@@ -328,4 +332,4 @@ Use `--populate` flag to add Vendure sample data (initial-data.json + products.c
 
 **Includes:** Default channel/zone, ~250 countries, ~20 products with images, test payment handler.
 
-**Reset database:** `docker compose down -v && ./dc.sh --populate`
+**Reset database:** `docker compose down -v && ./compose-dev.sh --env-file ./configs/.env.backend --populate up -d`

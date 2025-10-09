@@ -28,7 +28,7 @@ nano .env.backend
    - Connects to Docker services via mapped ports (e.g., `localhost:5433`)
 
 2. **Docker Compose** (all services containerized):
-   - `dc.sh` exports variables from `.env.backend` to shell environment
+   - `compose-dev.sh` exports variables from `.env.backend` to shell environment
    - Docker Compose inherits these variables automatically
    - Services communicate via Docker network (e.g., `postgres_db:5432`)
 
@@ -60,14 +60,14 @@ Docker: backend (container) → postgres_db:5432 (internal network)
 | `TYPESENSE_HOST`      | `typesense`          | Backend            | Search service hostname          |
 | `TYPESENSE_PORT`      | `8108`               | Backend            | Search service port              |
 
-**Note:** `DB_SYNCHRONIZE` is set dynamically by `dc.sh` (`true` with `--populate`, `false` otherwise)
+**Note:** `RUN_POPULATE` can be set to `true` to populate database on first run
 
 ## How Variables Are Used
 
 **Backend:**
 
-- Loads all vars from mounted `configs/.env.backend` via dotenv
-- `DB_SYNCHRONIZE` injected by docker-compose (set dynamically by `dc.sh`)
+- Receives all vars via docker-compose environment section
+- `RUN_POPULATE` triggers database population on container startup (optional)
 
 **Postgres:**
 
@@ -78,9 +78,9 @@ Docker: backend (container) → postgres_db:5432 (internal network)
 
 **Typesense:**
 
-- Uses `TYPESENSE_API_KEY` directly from shell (exported by `dc.sh`)
+- Uses `TYPESENSE_API_KEY` directly from shell (exported by `compose-dev.sh`)
 
-All variables loaded from `.env.backend` → exported by `dc.sh` → available to docker-compose.
+All variables loaded from `.env.backend` → exported by `compose-dev.sh` → available to docker-compose.
 
 ## Security Checklist
 

@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# dc.sh — Load env vars from file, then run docker compose
+# compose-dev.sh — Local development wrapper for docker compose
+# Loads env vars from file and sets initialization flags
 set -euo pipefail
 
 # Change to script directory
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 ENV_FILE=""
-FIRST_RUN=false
+RUN_POPULATE=false
 
 # Parse flags
 while [[ $# -gt 0 ]]; do
@@ -21,8 +22,8 @@ while [[ $# -gt 0 ]]; do
         exit 1
       fi
       ;;
-    --first-run)
-      FIRST_RUN=true
+    --populate)
+      RUN_POPULATE=true
       shift
       ;;
     *)
@@ -44,13 +45,11 @@ if [[ -n "$ENV_FILE" ]]; then
   set +a
 fi
 
+# Export RUN_POPULATE for docker compose to pick up
+if [[ "$RUN_POPULATE" == "true" ]]; then
+  export RUN_POPULATE=true
+  echo "🌱 RUN_POPULATE=true will populate database on first start"
+fi
+
 # Run docker compose with remaining args
 docker compose "$@"
-
-# Populate database if requested
-if [[ "$FIRST_RUN" == "true" ]]; then
-  echo ""
-  echo "🌱 Populating database..."
-  sleep 3
-  docker compose exec backend npm run populate
-fi

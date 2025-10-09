@@ -4,8 +4,8 @@
 #
 # All ${VAR} substitutions expect environment variables to be PRESENT.
 #
-# Local:   ./dc.sh [args]  (loads configs/.env.backend)
-# Coolify: Variables injected via UI
+# Local Dev:   ./compose-dev.sh [args]  (loads configs/.env.backend)
+# Production:  Variables injected by platform (e.g., Coolify UI)
 #
 # See configs/README.md for all variables
 
@@ -72,6 +72,8 @@ services:
       TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
       TYPESENSE_HOST: ${TYPESENSE_HOST}
       TYPESENSE_PORT: ${TYPESENSE_PORT}
+      # Initialization (optional)
+      RUN_POPULATE: ${RUN_POPULATE:-false}
     depends_on:
       - postgres_db
       - redis
