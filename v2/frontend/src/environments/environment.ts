@@ -1,6 +1,5 @@
 export const environment = {
   production: false,
-  // Use admin-api for admin authentication
-  apiUrl: 'http://localhost:3000/admin-api',
+  apiUrl: '/admin-api', // Proxied by dev server (see proxy.conf.json)
 };
 

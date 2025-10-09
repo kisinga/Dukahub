@@ -63,9 +63,20 @@ npm run codegen       # Generate GraphQL types
 // src/environments/environment.ts
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000/admin-api',
+  apiUrl: '/admin-api',  // Relative URL - proxied to backend
 };
 ```
+
+## Remote Backend Development
+
+**Problem:** Browsers don't send cookies between different domains (localhost → homelab).
+
+**Solution:** Angular dev server proxy (`proxy.conf.json`) makes everything same-origin:
+```
+Browser → localhost:4200/admin-api → [Proxy] → homelab:3000/admin-api
+```
+
+Change target in `proxy.conf.json` to your backend URL. Cookies work because browser sees everything as localhost.
 
 ## Common Issues
 

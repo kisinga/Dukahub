@@ -23,6 +23,10 @@ npm run dev
 will start the Vendure server and [worker](https://www.vendure.io/docs/developer-guide/vendure-worker/) processes from
 the `src` directory.
 
+### Cookie-Based Authentication
+
+CORS and cookie config in `vendure-config.ts` allow localhost:4200 frontend to authenticate. Frontend uses Angular dev server proxy to make everything same-origin.
+
 ## Build
 
 ```
