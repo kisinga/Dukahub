@@ -43,6 +43,13 @@ export const config: VendureConfig = {
         adminApiPath: 'admin-api',
         shopApiPath: 'shop-api',
         trustProxy: IS_DEV ? false : 1,
+        // CORS configuration for cross-origin cookie authentication
+        cors: {
+            origin: IS_DEV
+                ? ['http://localhost:4200', 'http://127.0.0.1:4200']
+                : process.env.FRONTEND_URL?.split(',') || true,
+            credentials: true,
+        },
         // The following options are useful in development mode,
         // but are best turned off for production for security
         // reasons.
@@ -59,6 +66,11 @@ export const config: VendureConfig = {
         },
         cookieOptions: {
             secret: process.env.COOKIE_SECRET,
+            // Allow cookies to work across different hosts (e.g., localhost frontend -> VPN backend)
+            httpOnly: true,
+            sameSite: IS_DEV ? 'lax' : 'strict',
+            // In development, don't require HTTPS
+            secure: !IS_DEV,
         },
     },
     dbConnectionOptions: {
