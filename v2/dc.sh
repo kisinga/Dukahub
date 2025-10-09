@@ -3,6 +3,13 @@
 set -euo pipefail
 
 ENV_FILE="${ENV_FILE:-./configs/.env.backend}"
+FIRST_RUN=false
+
+# Check for --first-run flag
+if [[ "${1:-}" == "--first-run" ]]; then
+  FIRST_RUN=true
+  shift
+fi
 
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "❌ Error: $ENV_FILE not found" >&2
@@ -16,5 +23,13 @@ set -a
 source "$ENV_FILE"
 set +a
 
-# Pass all arguments to docker compose
-exec docker compose "$@"
+# Run docker compose with provided args
+docker compose "$@"
+
+# If first run, populate database
+if [[ "$FIRST_RUN" == "true" ]]; then
+  echo ""
+  echo "🌱 First run detected - populating database..."
+  sleep 3  # Wait for services to be ready
+  docker compose exec backend npm run populate
+fi

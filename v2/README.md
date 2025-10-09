@@ -16,10 +16,11 @@ cd v2
 cp configs/.env.backend.example configs/.env.backend
 nano configs/.env.backend  # Update passwords/secrets
 
-# Start services
-./dc.sh up -d
+# First-time setup (starts services + populates data)
+./dc.sh --first-run up -d
 
-# First-time: Populate sample data
+# Or start normally, then populate manually
+./dc.sh up -d
 ./dc.sh exec backend npm run populate
 ```
 
@@ -34,10 +35,10 @@ nano configs/.env.backend  # Update passwords/secrets
 ### Local Docker (Recommended)
 
 ```bash
-./dc.sh up -d                        # Start all services
-./dc.sh exec backend npm run populate # Add sample data (first run)
-./dc.sh logs -f                      # View logs
-./dc.sh down                         # Stop all services
+./dc.sh --first-run up -d  # First run: start + populate
+./dc.sh up -d              # Subsequent runs: just start
+./dc.sh logs -f            # View logs
+./dc.sh down               # Stop all services
 ```
 
 ### Local Backend Dev
