@@ -16,11 +16,11 @@ cd v2
 cp configs/.env.backend.example configs/.env.backend
 nano configs/.env.backend  # Update passwords/secrets
 
-# First-time setup (starts services + populates data)
-./dc.sh --first-run up -d
+# First-time setup (loads env + starts + populates)
+./dc.sh --env-file --first-run up -d
 
 # Or start normally, then populate manually
-./dc.sh up -d
+./dc.sh --env-file up -d
 ./dc.sh exec backend npm run populate
 ```
 
@@ -35,10 +35,10 @@ nano configs/.env.backend  # Update passwords/secrets
 ### Local Docker (Recommended)
 
 ```bash
-./dc.sh --first-run up -d  # First run: start + populate
-./dc.sh up -d              # Subsequent runs: just start
-./dc.sh logs -f            # View logs
-./dc.sh down               # Stop all services
+./dc.sh --env-file --first-run up -d  # First run: load env + start + populate
+./dc.sh --env-file up -d              # Subsequent runs: load env + start
+./dc.sh logs -f                       # View logs (no env needed)
+./dc.sh down                          # Stop (no env needed)
 ```
 
 ### Local Backend Dev
@@ -81,8 +81,8 @@ v2/
 
 **Single source:** `configs/.env.backend`
 
-- Local dev: Backend loads via dotenv OR `dc.sh` exports to docker-compose
-- Coolify: Set variables in UI (overrides)
+- Local dev: `./dc.sh --env-file` loads from file
+- Coolify/Production: `./dc.sh` uses provider-injected vars (no `--env-file`)
 - See `configs/README.md` for all variables
 
 ## 📚 Documentation

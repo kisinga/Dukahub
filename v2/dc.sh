@@ -1,35 +1,48 @@
 #!/usr/bin/env bash
-# dc.sh — Load env vars from configs/.env.backend, then run docker compose
+# dc.sh — Load env vars from file, then run docker compose
 set -euo pipefail
 
-ENV_FILE="${ENV_FILE:-./configs/.env.backend}"
+LOAD_ENV=false
 FIRST_RUN=false
+ENV_FILE="./configs/.env.backend"
 
-# Check for --first-run flag
-if [[ "${1:-}" == "--first-run" ]]; then
-  FIRST_RUN=true
-  shift
+# Parse flags
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --env-file)
+      LOAD_ENV=true
+      shift
+      ;;
+    --first-run)
+      FIRST_RUN=true
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+# Load env file if explicitly requested
+if [[ "$LOAD_ENV" == "true" ]]; then
+  if [[ ! -f "$ENV_FILE" ]]; then
+    echo "❌ Error: $ENV_FILE not found" >&2
+    exit 1
+  fi
+  echo "📦 Loading: $ENV_FILE"
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
 fi
 
-if [[ ! -f "$ENV_FILE" ]]; then
-  echo "❌ Error: $ENV_FILE not found" >&2
-  echo "Run: cp configs/.env.backend.example configs/.env.backend" >&2
-  exit 1
-fi
-
-# Load and export all variables
-set -a
-# shellcheck disable=SC1090
-source "$ENV_FILE"
-set +a
-
-# Run docker compose with provided args
+# Run docker compose with remaining args
 docker compose "$@"
 
-# If first run, populate database
+# Populate database if requested
 if [[ "$FIRST_RUN" == "true" ]]; then
   echo ""
-  echo "🌱 First run detected - populating database..."
-  sleep 3  # Wait for services to be ready
+  echo "🌱 Populating database..."
+  sleep 3
   docker compose exec backend npm run populate
 fi
