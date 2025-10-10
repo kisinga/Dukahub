@@ -69,35 +69,40 @@
 
       <!-- ML Model Warning Alert -->
       @if (mlModelError()) {
-        <div role="alert" class="alert alert-warning shadow-lg">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            />
-          </svg>
-          <div class="flex-1">
-            <h3 class="font-bold">Camera Scanning Disabled</h3>
-            <p class="text-sm mt-1">{{ mlModelError()!.message }}</p>
-            <p class="text-sm mt-1">Please use manual search or barcode scanner instead.</p>
-            @if (mlModelError()!.technicalDetails) {
-              <div class="text-xs opacity-75 mt-1">
-                Technical: {{ mlModelError()!.technicalDetails }}
-              </div>
-            }
+        <div role="alert" class="alert alert-warning shadow-lg flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div class="flex gap-3 items-start w-full">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="stroke-current shrink-0 h-5 w-5 sm:h-6 sm:w-6 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-bold text-sm sm:text-base">Camera Scanning Disabled</h3>
+              <p class="text-xs sm:text-sm mt-1">{{ mlModelError()!.message }}</p>
+              <p class="text-xs sm:text-sm mt-1">Use manual search or barcode scanner.</p>
+              @if (mlModelError()!.technicalDetails) {
+                <details class="mt-2">
+                  <summary class="text-xs opacity-75 cursor-pointer">Technical details</summary>
+                  <div class="text-xs opacity-75 mt-1 break-words">
+                    {{ mlModelError()!.technicalDetails }}
+                  </div>
+                </details>
+              }
+            </div>
           </div>
           <button
-            class="btn btn-sm btn-ghost"
+            class="btn btn-xs sm:btn-sm btn-ghost self-end sm:self-auto shrink-0"
             (click)="mlModelService.clearError()"
           >
-            Dismiss
+            ✕
           </button>
         </div>
       }
@@ -167,7 +172,7 @@
     </div>
 
     <!-- Right Column: Cart -->
-    <div class="card bg-base-100 shadow-lg lg:sticky lg:top-4" style="height: fit-content">
+    <div id="cart-section" class="card bg-base-100 shadow-lg lg:sticky lg:top-4" style="height: fit-content">
       <div class="card-body p-4">
         <div class="flex justify-between items-center mb-4">
           <h2 class="card-title text-lg">
@@ -183,6 +188,7 @@
             <div class="text-center py-12 text-base-content/50">
               <i class="bi bi-cart3 text-5xl mb-2 block"></i>
               <p>Cart is empty</p>
+              <p class="text-xs mt-2">Search or scan to add products</p>
             </div>
           } @else {
             <table class="table table-sm">
@@ -282,6 +288,26 @@
       </div>
     </div>
   </div>
+
+  <!-- Floating Cart Button (Mobile Only) -->
+  @if (cartItemCount() > 0) {
+    <div class="fab lg:hidden">
+      <button 
+        class="btn btn-circle btn-lg btn-primary shadow-2xl hover:scale-110 transition-all"
+        (click)="scrollToCart()"
+        aria-label="View cart with {{ cartItemCount() }} items"
+      >
+        <div class="indicator">
+          <span class="indicator-item badge badge-secondary badge-sm font-bold animate-pulse">
+            {{ cartItemCount() }}
+          </span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+      </button>
+    </div>
+  }
 </div>
 
 <!-- Product Confirmation Modal -->

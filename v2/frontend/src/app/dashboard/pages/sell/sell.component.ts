@@ -488,6 +488,28 @@ export class SellComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Scroll to cart section (mobile UX enhancement)
+   * Provides quick access to cart when camera/scanner takes up viewport
+   */
+  scrollToCart(): void {
+    const cartSection = document.getElementById('cart-section');
+    if (cartSection) {
+      // Haptic feedback on mobile devices
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+
+      cartSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Brief visual feedback
+      cartSection.classList.add('ring-2', 'ring-primary');
+      setTimeout(() => {
+        cartSection.classList.remove('ring-2', 'ring-primary');
+      }, 1000);
+    }
+  }
+
+  /**
    * Update confidence threshold
    */
   updateConfidenceThreshold(value: number): void {
