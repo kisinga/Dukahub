@@ -63,8 +63,8 @@ type ScannerStatus =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SellComponent implements OnInit, OnDestroy {
-  // Services
-  private readonly mlModelService = inject(MlModelService);
+  // Services (mlModelService is public for template access)
+  readonly mlModelService = inject(MlModelService);
   private readonly cameraService = inject(CameraService);
   private readonly barcodeService = inject(BarcodeScannerService);
   private readonly productSearchService = inject(ProductSearchService);
@@ -84,6 +84,8 @@ export class SellComponent implements OnInit, OnDestroy {
   // Scanner state
   readonly scannerStatus = signal<ScannerStatus>('idle');
   readonly scannerError = signal<string | null>(null);
+  readonly mlModelError = computed(() => this.mlModelService.error());
+  readonly hasMlModel = computed(() => this.mlModelService.isInitialized());
   readonly isScanning = signal<boolean>(false);
   readonly detectedProduct = signal<ProductSearchResult | null>(null);
   readonly showConfirmModal = signal<boolean>(false);
@@ -165,8 +167,16 @@ export class SellComponent implements OnInit, OnDestroy {
         const modelLoaded = await this.mlModelService.loadModel(this.config().channelId);
 
         if (!modelLoaded) {
-          console.warn('ML model not available, falling back to manual search only');
+          const error = this.mlModelService.error();
+          console.warn('ML model not available:', error?.message);
+
+          // Disable ML detection but continue with manual search
           this.config.update((c) => ({ ...c, enableMLDetection: false }));
+
+          // Show non-blocking warning (scanner still works)
+          this.scannerError.set(
+            error?.message || 'ML product recognition unavailable. Use manual search instead.'
+          );
         }
       }
 

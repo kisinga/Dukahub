@@ -1,13 +1,11 @@
 // Services
 export * from './services/apollo.service';
 export * from './services/auth.service';
+export * from './services/camera.service';
 export * from './services/cart.service';
 export * from './services/company.service';
 export * from './services/dashboard.service';
 export * from './services/ml-model.service';
-export * from './services/camera.service';
-export * from './services/barcode-scanner.service';
-export * from './services/product-search.service';
 
 // Guards
 export * from './guards/auth.guard';

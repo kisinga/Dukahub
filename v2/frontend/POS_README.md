@@ -1,62 +1,89 @@
-# POS System - Quick Reference
+# POS System - Documentation
 
-## What's Implemented
+## Current Implementation
 
-### Core Features
-- ✅ **ML-powered product detection** via camera (TensorFlow.js + Teachable Machine)
-- ✅ **Barcode scanning** using BarcodeDetector API
-- ✅ **Manual product search** by name/SKU
-- ✅ **Shopping cart** with quantity management
-- ✅ **Mobile-first design** with auto-start scanner on mobile devices
+### Detection Methods (3 ways to add products)
+1. **📷 AI Camera Detection** - Point camera at product, auto-detects at 90% confidence
+2. **📱 Barcode Scanner** - Scan product barcode (Chrome/Edge only)
+3. **🔍 Manual Search** - Type product name/SKU
 
-### Services Created
-1. `MlModelService` - Loads and runs AI models
-2. `CameraService` - Manages device camera access
-3. `BarcodeScannerService` - Handles barcode detection
-4. `ProductSearchService` - GraphQL product queries
+### Architecture
+```
+MlModelService      → Loads AI models from /assets/ml-models/{channelId}/
+CameraService       → Manages device camera (front/back)
+BarcodeScannerService → BarcodeDetector API wrapper
+ProductSearchService  → GraphQL product queries
+```
+
+### Component Structure
+```
+SellComponent
+├── Scanner State (signals)
+├── Cart State (signals)
+├── Search State (signals)
+└── Configuration (editable threshold)
+```
 
 ## Usage
 
-### Basic Flow
-1. Navigate to `/dashboard/sell`
-2. On mobile: Camera auto-starts
-3. Point camera at product → Auto-detects when confidence > 90%
-4. Or search manually by typing product name
-5. Or scan barcode (if browser supports it)
-6. Confirm product → Add to cart
-7. Checkout
+**Desktop:** Click "Scan" button to start camera  
+**Mobile:** Camera auto-starts on page load
 
-### Configuration
-Edit in `sell.component.ts`:
-```typescript
-confidenceThreshold: 0.9,  // 90% confidence required
-detectionIntervalMs: 1200,  // Check every 1.2 seconds
+**Detection Settings:**
+- Confidence threshold: 50-99% (default 90%)
+- Detection interval: 1200ms
+- Configurable via UI slider
+
+## ML Model Placement
+
+```
+/backend/static/assets/ml-models/
+└── {channelId}/
+    └── latest/
+        ├── model.json       (TF.js architecture)
+        ├── weights.bin      (Model weights)
+        └── metadata.json    (Product IDs as labels)
 ```
 
-## ML Model Setup
+Product IDs in `metadata.labels[]` must match Vendure product IDs.
 
-Place models at: `/backend/static/assets/ml-models/{channelId}/latest/`
-- `model.json` - TensorFlow.js model
-- `weights.bin` - Model weights
-- `metadata.json` - Labels & config
+## Future: Cashier Role (Payment Validation)
 
-See `ML_MODEL_GUIDE.md` for full details.
+### Two-Step Sales Process
+Separates selling from payment collection - critical for specialist sales environments.
 
-## Browser Support
+**Flow:**
+1. **Salesperson** adds items to cart (phone specialist, computer specialist, etc.)
+2. Salesperson clicks **"Submit to Cashier"**
+3. Order enters `PENDING_PAYMENT` state
+4. **Pro-forma invoice** prints (not a receipt yet - unpaid)
+5. Customer takes invoice to **Cashier station**
+6. **Cashier** validates payment (cash/card/mobile money/etc.)
+7. Cashier records payment method
+8. Order marked as `PAID`
+9. Physical document stamped **"PAID"**
 
-| Feature | Support |
-|---------|---------|
-| Camera Access | All modern browsers |
-| ML Detection | All modern browsers |
-| Barcode Scanner | Chrome/Edge/Samsung Internet |
+**Why This Matters:**
+- **Specialization:** Product experts sell, cashiers handle money
+- **Central reconciliation:** One cashier for multiple salespeople
+- **Audit trail:** Clear separation of duties
+- **Real-world example:** Computer + phone shop with specialist staff → both customers pay to same cashier
 
-Barcode scanner gracefully degrades to manual search on unsupported browsers.
+**Implementation:**
+- Order state: `DRAFT` → `PENDING_PAYMENT` → `PAID`
+- Salesperson role: Can create orders, cannot mark as paid
+- Cashier role: Can view pending orders, validate payments, mark as paid
+- UI: "Submit to Cashier" button for salespeople
+- UI: "Pending Payments" queue for cashiers
+- Print: Pro-forma invoice (unpaid) vs. Receipt (paid)
 
-## Mobile Optimization
-- Camera auto-starts on mobile devices
-- Touch-optimized controls (min 44px targets)
-- Responsive grid layout
-- Bottom-fixed cart on small screens
+## Browser Compatibility
 
-That's it! 🎯
+| Feature | Chrome | Firefox | Safari |
+|---------|--------|---------|--------|
+| Camera | ✅ | ✅ | ✅ |
+| ML Detection | ✅ | ✅ | ✅ |
+| Barcode API | ✅ | ❌ | ❌ |
+
+Graceful degradation: Barcode falls back to manual search.
 

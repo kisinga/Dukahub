@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { ApolloService } from './apollo.service';
 import { gql } from '@apollo/client/core';
+import { ApolloService } from './apollo.service';
 
 /**
  * Product variant for POS
@@ -72,14 +72,20 @@ export class ProductSearchService {
         `;
 
         try {
-            const result = await this.apolloService.query<any>(query, {
-                term: searchTerm,
+            const client = this.apolloService.getClient();
+            const result = await client.query<{
+                search: {
+                    items: any[];
+                };
+            }>({
+                query,
+                variables: { term: searchTerm },
             });
 
             // Group variants by product
             const productsMap = new Map<string, ProductSearchResult>();
 
-            result.data.search.items.forEach((item: any) => {
+            result.data?.search?.items.forEach((item: any) => {
                 if (!productsMap.has(item.productId)) {
                     productsMap.set(item.productId, {
                         id: item.productId,
@@ -142,9 +148,15 @@ export class ProductSearchService {
         `;
 
         try {
-            const result = await this.apolloService.query<any>(query, { id: productId });
+            const client = this.apolloService.getClient();
+            const result = await client.query<{
+                product: any | null;
+            }>({
+                query,
+                variables: { id: productId },
+            });
 
-            if (!result.data.product) {
+            if (!result.data?.product) {
                 return null;
             }
 
@@ -204,9 +216,17 @@ export class ProductSearchService {
         `;
 
         try {
-            const result = await this.apolloService.query<any>(query, { sku: barcode });
+            const client = this.apolloService.getClient();
+            const result = await client.query<{
+                search: {
+                    items: any[];
+                };
+            }>({
+                query,
+                variables: { sku: barcode },
+            });
 
-            if (result.data.search.items.length === 0) {
+            if (!result.data?.search?.items.length) {
                 return null;
             }
 

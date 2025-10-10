@@ -12,7 +12,7 @@
               class="btn btn-sm"
               [class.btn-primary]="!isScanning()"
               [class.btn-error]="isScanning()"
-              [disabled]="!canStartScanner()"
+              [disabled]="!canStartScanner() || !hasMlModel()"
               (click)="toggleScanner()"
             >
               @if (isScanning()) {
@@ -66,6 +66,41 @@
           }
         </div>
       </div>
+
+      <!-- ML Model Warning Alert -->
+      @if (mlModelError()) {
+        <div role="alert" class="alert alert-warning shadow-lg">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="stroke-current shrink-0 h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+          <div class="flex-1">
+            <h3 class="font-bold">Camera Scanning Disabled</h3>
+            <p class="text-sm mt-1">{{ mlModelError()!.message }}</p>
+            <p class="text-sm mt-1">Please use manual search or barcode scanner instead.</p>
+            @if (mlModelError()!.technicalDetails) {
+              <div class="text-xs opacity-75 mt-1">
+                Technical: {{ mlModelError()!.technicalDetails }}
+              </div>
+            }
+          </div>
+          <button
+            class="btn btn-sm btn-ghost"
+            (click)="mlModelService.clearError()"
+          >
+            Dismiss
+          </button>
+        </div>
+      }
 
       <!-- Camera Scanner Card -->
       @if (isScanning()) {
