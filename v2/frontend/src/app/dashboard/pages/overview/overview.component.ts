@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { DashboardService, PeriodStats } from '../../../core/services/dashboard.service';
 
 interface CategoryStat {
     period: string;
@@ -29,6 +30,18 @@ interface RecentActivity {
     time: string;
 }
 
+/**
+ * Dashboard Overview Component
+ * 
+ * Displays key business metrics: Sales, Purchases, Expenses
+ * Shows real-time data from Vendure backend via DashboardService
+ * 
+ * Features:
+ * - Real-time sales data from orders
+ * - Period breakdowns (Today/Week/Month)
+ * - Recent activity feed
+ * - Product and user statistics
+ */
 @Component({
     selector: 'app-overview',
     imports: [CommonModule],
@@ -36,68 +49,53 @@ interface RecentActivity {
     styleUrl: './overview.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class OverviewComponent {
+export class OverviewComponent implements OnInit {
+    private readonly dashboardService = inject(DashboardService);
+
     protected readonly expandedCategory = signal<string | null>(null);
     protected readonly showRecentActivity = signal(false);
     protected readonly showQuickActions = signal(false);
 
-    protected readonly categories: CategoryData[] = [
-        {
-            name: 'Purchases',
-            type: 'purchases',
-            color: '#4361ee',
-            lightColor: 'rgba(67, 97, 238, 0.1)',
-            stats: [
-                { period: 'Today', amount: 'KES 18,450' },
-                { period: 'Week', amount: 'KES 125,680' },
-                { period: 'Month', amount: 'KES 487,230' }
-            ],
-            accounts: [
-                { label: 'Inventory', value: 'KES 15,200', icon: '📦' },
-                { label: 'Supplies', value: 'KES 2,100', icon: '🛠️' },
-                { label: 'Utilities', value: 'KES 1,150', icon: '💡' }
-            ]
-        },
-        {
-            name: 'Sales',
-            type: 'sales',
-            color: '#36b37e',
-            lightColor: 'rgba(54, 179, 126, 0.1)',
-            stats: [
-                { period: 'Today', amount: 'KES 45,230' },
-                { period: 'Week', amount: 'KES 312,560' },
-                { period: 'Month', amount: 'KES 1,245,890' }
-            ],
-            accounts: [
-                { label: 'Cash Sales', value: 'KES 32,100', icon: '💵' },
-                { label: 'M-Pesa', value: 'KES 11,230', icon: '📱' },
-                { label: 'Credit', value: 'KES 1,900', icon: '🏦' }
-            ]
-        },
-        {
-            name: 'Expenses',
-            type: 'expenses',
-            color: '#ff5c75',
-            lightColor: 'rgba(255, 92, 117, 0.1)',
-            stats: [
-                { period: 'Today', amount: 'KES 8,120' },
-                { period: 'Week', amount: 'KES 56,340' },
-                { period: 'Month', amount: 'KES 234,670' }
-            ],
-            accounts: [
-                { label: 'Rent', value: 'KES 25,000', icon: '🏠' },
-                { label: 'Salaries', value: 'KES 45,000', icon: '👥' },
-                { label: 'Other', value: 'KES 5,340', icon: '📋' }
-            ]
-        }
-    ];
+    // Reactive data from service
+    protected readonly isLoading = this.dashboardService.isLoading;
+    protected readonly error = this.dashboardService.error;
 
-    protected readonly recentActivity: RecentActivity[] = [
-        { id: '#12345', type: 'Sale', description: 'Panadol 500mg', amount: '+KES 450', time: '2m' },
-        { id: '#12344', type: 'Sale', description: 'Milk 1L', amount: '+KES 150', time: '15m' },
-        { id: '#12343', type: 'Purchase', description: 'Stock reorder', amount: '-KES 8,200', time: '1h' },
-        { id: '#12342', type: 'Expense', description: 'Utilities', amount: '-KES 1,150', time: '2h' }
-    ];
+    // Computed categories from real data
+    protected readonly categories = computed(() => {
+        const stats = this.dashboardService.stats();
+        if (!stats) {
+            return this.getDefaultCategories();
+        }
+
+        return [
+            this.createCategoryData('Purchases', 'purchases', '#4361ee', stats.purchases),
+            this.createCategoryData('Sales', 'sales', '#36b37e', stats.sales),
+            this.createCategoryData('Expenses', 'expenses', '#ff5c75', stats.expenses),
+        ];
+    });
+
+    // Recent activity from service
+    protected readonly recentActivity = computed(() => {
+        return this.dashboardService.recentActivity() || [];
+    });
+
+    // Secondary stats computed from service data
+    protected readonly productCount = computed(() => {
+        return this.dashboardService.stats()?.productCount || 0;
+    });
+
+    protected readonly activeUsers = computed(() => {
+        return this.dashboardService.stats()?.activeUsers || 0;
+    });
+
+    protected readonly averageSale = computed(() => {
+        const avg = this.dashboardService.stats()?.averageSale || 0;
+        return this.formatCurrency(avg);
+    });
+
+    protected readonly profitMargin = computed(() => {
+        return this.dashboardService.stats()?.profitMargin || 0;
+    });
 
     protected readonly quickActions = [
         { label: 'New Sale', icon: '💰', action: 'sell' },
@@ -105,6 +103,76 @@ export class OverviewComponent {
         { label: 'Inventory', icon: '📊', action: 'inventory' },
         { label: 'Reports', icon: '📈', action: 'reports' }
     ];
+
+    ngOnInit(): void {
+        // Fetch dashboard data when component initializes
+        this.dashboardService.fetchDashboardData();
+    }
+
+    /**
+     * Create category data from period stats
+     */
+    private createCategoryData(
+        name: string,
+        type: 'purchases' | 'sales' | 'expenses',
+        color: string,
+        periodStats: PeriodStats
+    ): CategoryData {
+        return {
+            name,
+            type,
+            color,
+            lightColor: this.hexToRgba(color, 0.1),
+            stats: [
+                { period: 'Today', amount: this.formatCurrency(periodStats.today) },
+                { period: 'Week', amount: this.formatCurrency(periodStats.week) },
+                { period: 'Month', amount: this.formatCurrency(periodStats.month) }
+            ],
+            accounts: periodStats.accounts.map(account => ({
+                label: account.label,
+                value: this.formatCurrency(account.value),
+                icon: account.icon
+            }))
+        };
+    }
+
+    /**
+     * Get default categories with zero values (used during loading)
+     */
+    private getDefaultCategories(): CategoryData[] {
+        const emptyStats: PeriodStats = {
+            today: 0,
+            week: 0,
+            month: 0,
+            accounts: []
+        };
+
+        return [
+            this.createCategoryData('Purchases', 'purchases', '#4361ee', emptyStats),
+            this.createCategoryData('Sales', 'sales', '#36b37e', emptyStats),
+            this.createCategoryData('Expenses', 'expenses', '#ff5c75', emptyStats),
+        ];
+    }
+
+    /**
+     * Format currency for display
+     */
+    private formatCurrency(amount: number): string {
+        return `KES ${amount.toLocaleString('en-KE', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        })}`;
+    }
+
+    /**
+     * Convert hex color to rgba
+     */
+    private hexToRgba(hex: string, alpha: number): string {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
 
     toggleCategory(categoryType: string): void {
         if (this.expandedCategory() === categoryType) {
@@ -125,6 +193,13 @@ export class OverviewComponent {
     handleQuickAction(action: string): void {
         console.log('Quick action:', action);
         // Handle navigation or action
+    }
+
+    /**
+     * Refresh dashboard data
+     */
+    async refresh(): Promise<void> {
+        await this.dashboardService.refresh();
     }
 }
 

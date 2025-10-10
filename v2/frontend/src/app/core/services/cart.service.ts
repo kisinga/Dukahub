@@ -161,5 +161,56 @@ export class CartService {
       total,
     };
   }
+
+  /**
+   * Add item locally (for POS quick add)
+   * This is a local-only operation for the POS system
+   */
+  addItemLocal(productVariantId: string, productName: string, quantity: number, unitPrice: number): void {
+    const items = this.cartItemsSignal();
+    const existingItem = items.find((item) => item.productVariantId === productVariantId);
+
+    if (existingItem) {
+      existingItem.quantity += quantity;
+      existingItem.totalPrice = existingItem.quantity * existingItem.unitPrice;
+    } else {
+      items.push({
+        id: `temp-${Date.now()}`,
+        productVariantId,
+        productName,
+        quantity,
+        unitPrice,
+        totalPrice: quantity * unitPrice,
+      });
+    }
+
+    this.cartItemsSignal.set([...items]);
+  }
+
+  /**
+   * Update item quantity locally
+   */
+  updateItemQuantityLocal(productVariantId: string, quantity: number): void {
+    const items = this.cartItemsSignal();
+    const item = items.find((i) => i.productVariantId === productVariantId);
+
+    if (item) {
+      if (quantity <= 0) {
+        this.removeItemLocal(productVariantId);
+      } else {
+        item.quantity = quantity;
+        item.totalPrice = quantity * item.unitPrice;
+        this.cartItemsSignal.set([...items]);
+      }
+    }
+  }
+
+  /**
+   * Remove item locally
+   */
+  removeItemLocal(productVariantId: string): void {
+    const items = this.cartItemsSignal();
+    this.cartItemsSignal.set(items.filter((item) => item.productVariantId !== productVariantId));
+  }
 }
 

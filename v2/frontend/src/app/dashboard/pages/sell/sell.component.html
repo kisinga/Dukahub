@@ -1,0 +1,367 @@
+<div class="pos-container min-h-screen">
+  <!-- Mobile optimized layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
+    <!-- Left Column: Scanner & Search -->
+    <div class="space-y-4">
+      <!-- Search Card -->
+      <div class="card bg-base-100 shadow-lg">
+        <div class="card-body p-4">
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="card-title text-lg">Add Product</h2>
+            <button
+              class="btn btn-sm"
+              [class.btn-primary]="!isScanning()"
+              [class.btn-error]="isScanning()"
+              [disabled]="!canStartScanner()"
+              (click)="toggleScanner()"
+            >
+              @if (isScanning()) {
+                <i class="bi bi-stop-circle"></i>
+                Stop
+              } @else {
+                <i class="bi bi-camera"></i>
+                Scan
+              }
+            </button>
+          </div>
+
+          <!-- Search Input -->
+          <label class="input input-bordered flex items-center gap-2">
+            <i class="bi bi-search"></i>
+            <input
+              type="text"
+              class="grow"
+              placeholder="Search by name or SKU..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="searchProducts()"
+            />
+            @if (isSearching()) {
+              <span class="loading loading-spinner loading-sm"></span>
+            }
+          </label>
+
+          <!-- Search Results -->
+          @if (searchResults().length > 0) {
+            <div class="mt-2 menu bg-base-200 rounded-box max-h-60 overflow-y-auto">
+              @for (product of searchResults(); track product.id) {
+                <li>
+                  <button (click)="selectProduct(product)" class="flex items-center gap-2">
+                    @if (product.featuredAsset) {
+                      <img
+                        [src]="product.featuredAsset.preview"
+                        [alt]="product.name"
+                        class="w-10 h-10 rounded object-cover"
+                      />
+                    }
+                    <div class="flex-1 text-left">
+                      <div class="font-medium">{{ product.name }}</div>
+                      <div class="text-xs opacity-70">
+                        {{ product.variants.length }} variant(s)
+                      </div>
+                    </div>
+                  </button>
+                </li>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Camera Scanner Card -->
+      @if (isScanning()) {
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body p-4">
+            <div class="relative bg-black rounded-lg overflow-hidden" style="aspect-ratio: 4/3">
+              <video
+                #cameraView
+                class="w-full h-full object-cover"
+                autoplay
+                playsinline
+                muted
+              ></video>
+
+              <!-- Detection overlay -->
+              <div
+                class="absolute inset-0 flex items-center justify-center pointer-events-none"
+              >
+                <div class="scan-frame"></div>
+              </div>
+            </div>
+
+            <!-- Scanner Status -->
+            <div
+              class="alert mt-3"
+              [class.alert-info]="scannerStatus() === 'scanning'"
+              [class.alert-success]="scannerStatus() === 'ready'"
+              [class.alert-error]="scannerStatus() === 'error'"
+              [class.alert-warning]="
+                scannerStatus() === 'initializing' || scannerStatus() === 'loading_model'
+              "
+            >
+              @if (scannerStatus() === 'scanning') {
+                <span class="loading loading-spinner loading-sm"></span>
+              }
+              <span>{{ statusMessage() }}</span>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Configuration Card (Desktop only) -->
+      <div class="card bg-base-100 shadow-lg hidden lg:block">
+        <div class="card-body p-4">
+          <h3 class="font-semibold mb-2">Scanner Settings</h3>
+
+          <!-- Confidence Threshold -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Detection Confidence</span>
+              <span class="label-text-alt">{{ (config().confidenceThreshold * 100) | number: '1.0-0' }}%</span>
+            </label>
+            <input
+              type="range"
+              min="50"
+              max="99"
+              [value]="config().confidenceThreshold * 100"
+              (input)="updateConfidenceThreshold($any($event.target).value)"
+              class="range range-primary range-sm"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Cart -->
+    <div class="card bg-base-100 shadow-lg lg:sticky lg:top-4" style="height: fit-content">
+      <div class="card-body p-4">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="card-title text-lg">
+            <i class="bi bi-cart3"></i>
+            Current Sale
+          </h2>
+          <div class="badge badge-primary">{{ cartItemCount() }} items</div>
+        </div>
+
+        <!-- Cart Items -->
+        <div class="overflow-x-auto max-h-96">
+          @if (cartItems().length === 0) {
+            <div class="text-center py-12 text-base-content/50">
+              <i class="bi bi-cart3 text-5xl mb-2 block"></i>
+              <p>Cart is empty</p>
+            </div>
+          } @else {
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th class="text-right">Price</th>
+                  <th class="text-center">Qty</th>
+                  <th class="text-right">Total</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of cartItems(); track item.variant.id) {
+                  <tr>
+                    <td>
+                      <div class="font-medium">{{ item.variant.productName }}</div>
+                      @if (item.variant.name !== item.variant.productName) {
+                        <div class="text-xs opacity-70">{{ item.variant.name }}</div>
+                      }
+                    </td>
+                    <td class="text-right">${{ item.variant.priceWithTax | number: '1.2-2' }}</td>
+                    <td class="text-center">
+                      <div class="join">
+                        <button
+                          class="btn btn-xs join-item"
+                          (click)="updateCartItemQuantity(item.variant.id, item.quantity - 1)"
+                        >
+                          <i class="bi bi-dash"></i>
+                        </button>
+                        <input
+                          type="number"
+                          [value]="item.quantity"
+                          (change)="updateCartItemQuantity(item.variant.id, +$any($event.target).value)"
+                          class="input input-xs w-12 text-center join-item"
+                          min="1"
+                        />
+                        <button
+                          class="btn btn-xs join-item"
+                          (click)="updateCartItemQuantity(item.variant.id, item.quantity + 1)"
+                        >
+                          <i class="bi bi-plus"></i>
+                        </button>
+                      </div>
+                    </td>
+                    <td class="text-right font-semibold">
+                      ${{ item.subtotal | number: '1.2-2' }}
+                    </td>
+                    <td>
+                      <button
+                        class="btn btn-ghost btn-xs text-error"
+                        (click)="removeFromCart(item.variant.id)"
+                      >
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+
+        <!-- Cart Totals -->
+        <div class="divider my-2"></div>
+        <div class="space-y-1">
+          <div class="flex justify-between text-sm">
+            <span>Subtotal</span>
+            <span>${{ cartSubtotal() | number: '1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span>Tax</span>
+            <span>${{ cartTax() | number: '1.2-2' }}</span>
+          </div>
+          <div class="divider my-1"></div>
+          <div class="flex justify-between text-lg font-bold">
+            <span>Total</span>
+            <span class="text-primary">${{ cartTotal() | number: '1.2-2' }}</span>
+          </div>
+        </div>
+
+        <!-- Checkout Buttons -->
+        <div class="grid grid-cols-2 gap-2 mt-4">
+          <button class="btn btn-outline btn-warning" [disabled]="cartItems().length === 0">
+            <i class="bi bi-person-lines-fill"></i>
+            Credit
+          </button>
+          <button
+            class="btn btn-success"
+            [disabled]="cartItems().length === 0"
+            (click)="checkout()"
+          >
+            <i class="bi bi-cash-coin"></i>
+            Pay Now
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Product Confirmation Modal -->
+@if (showConfirmModal() && detectedProduct()) {
+  <div class="modal modal-open">
+    <div class="modal-box max-w-2xl">
+      <h3 class="font-bold text-lg mb-4">
+        <i class="bi bi-check-circle text-success"></i>
+        Product Detected
+      </h3>
+
+      <div class="space-y-4">
+        <!-- Product Info -->
+        <div class="flex gap-4">
+          @if (detectedProduct()!.featuredAsset) {
+            <img
+              [src]="detectedProduct()!.featuredAsset!.preview"
+              [alt]="detectedProduct()!.name"
+              class="w-24 h-24 rounded-lg object-cover"
+            />
+          }
+          <div class="flex-1">
+            <h4 class="font-semibold text-lg">{{ detectedProduct()!.name }}</h4>
+            <p class="text-sm opacity-70">{{ detectedProduct()!.variants.length }} variant(s)</p>
+          </div>
+        </div>
+
+        <!-- Variant Selection -->
+        @if (detectedProduct()!.variants.length > 1) {
+          <div>
+            <label class="label">
+              <span class="label-text font-medium">Select Variant</span>
+            </label>
+            <div class="space-y-2">
+              @for (variant of detectedProduct()!.variants; track variant.id) {
+                <div
+                  class="card card-compact bg-base-200 cursor-pointer hover:bg-base-300"
+                  (click)="addToCart(variant, 1)"
+                >
+                  <div class="card-body">
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <div class="font-medium">{{ variant.name }}</div>
+                        <div class="text-xs opacity-70">SKU: {{ variant.sku }}</div>
+                      </div>
+                      <div class="text-right">
+                        <div class="font-bold text-primary">
+                          ${{ variant.priceWithTax | number: '1.2-2' }}
+                        </div>
+                        <div class="badge badge-sm" [class.badge-success]="variant.stockLevel === 'IN_STOCK'" [class.badge-error]="variant.stockLevel === 'OUT_OF_STOCK'">
+                          {{ variant.stockLevel === 'IN_STOCK' ? 'In Stock' : 'Out of Stock' }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        } @else {
+          <!-- Single variant - show quantity selector -->
+          <div class="card bg-base-200">
+            <div class="card-body">
+              <div class="flex justify-between items-center mb-3">
+                <div>
+                  <div class="font-medium">{{ detectedProduct()!.variants[0].name }}</div>
+                  <div class="text-xs opacity-70">
+                    SKU: {{ detectedProduct()!.variants[0].sku }}
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="font-bold text-primary text-xl">
+                    ${{ detectedProduct()!.variants[0].priceWithTax | number: '1.2-2' }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex gap-2 items-center justify-center">
+                <label class="label">
+                  <span class="label-text">Quantity:</span>
+                </label>
+                <div class="join">
+                  <button class="btn btn-sm join-item" (click)="quantityInput.stepDown()">
+                    <i class="bi bi-dash"></i>
+                  </button>
+                  <input
+                    #quantityInput
+                    type="number"
+                    value="1"
+                    min="1"
+                    class="input input-sm input-bordered w-20 text-center join-item"
+                  />
+                  <button class="btn btn-sm join-item" (click)="quantityInput.stepUp()">
+                    <i class="bi bi-plus"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            class="btn btn-primary btn-block btn-lg"
+            (click)="addToCart(detectedProduct()!.variants[0], +quantityInput.value)"
+          >
+            <i class="bi bi-cart-plus"></i>
+            Add to Cart
+          </button>
+        }
+      </div>
+
+      <div class="modal-action">
+        <button class="btn btn-ghost" (click)="closeConfirmModal()">Cancel</button>
+      </div>
+    </div>
+    <div class="modal-backdrop" (click)="closeConfirmModal()"></div>
+  </div>
+}
+

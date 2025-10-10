@@ -32,6 +32,8 @@
     "@angular/router": "^20.3.0",
     "@apollo/client": "^4.0.7",
     "@tailwindcss/postcss": "^4.1.14",
+    "@teachablemachine/image": "^0.8.5",
+    "@tensorflow/tfjs": "^4.22.0",
     "daisyui": "^5.1.27",
     "graphql": "^16.11.0",
     "postcss": "^8.5.6",

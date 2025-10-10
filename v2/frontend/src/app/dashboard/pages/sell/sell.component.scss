@@ -1,0 +1,127 @@
+.pos-container {
+  background: oklch(var(--b2));
+}
+
+// Scanner frame animation
+.scan-frame {
+  width: 80%;
+  height: 80%;
+  border: 3px solid oklch(var(--p));
+  border-radius: 1rem;
+  position: relative;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    background: oklch(var(--p));
+  }
+
+  // Scanning line animation
+  &::before {
+    left: 0;
+    right: 0;
+    height: 2px;
+    top: 0;
+    animation: scan 2s linear infinite;
+    box-shadow: 0 0 10px oklch(var(--p)), 0 0 20px oklch(var(--p));
+  }
+
+  // Corner markers
+  &::after {
+    width: 20px;
+    height: 20px;
+    border-top: 3px solid oklch(var(--s));
+    border-left: 3px solid oklch(var(--s));
+    top: -3px;
+    left: -3px;
+  }
+}
+
+@keyframes scan {
+  0%,
+  100% {
+    top: 0;
+  }
+  50% {
+    top: 100%;
+  }
+}
+
+// Cart sticky positioning enhancement
+@media (min-width: 1024px) {
+  .lg\:sticky {
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+}
+
+// Mobile optimizations
+@media (max-width: 767px) {
+  .pos-container {
+    padding-bottom: 2rem;
+  }
+
+  // Make cart fixed at bottom on mobile for easy access
+  .card:has(.cart-title) {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 50vh;
+    border-radius: 1rem 1rem 0 0;
+    z-index: 10;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Smooth transitions
+.card,
+.modal-box {
+  transition: all 0.2s ease;
+}
+
+// Product image optimization
+img {
+  object-fit: cover;
+}
+
+// Touch targets for mobile
+@media (max-width: 767px) {
+  .btn {
+    min-height: 2.75rem;
+  }
+
+  .input {
+    min-height: 2.75rem;
+  }
+}
+
+// Loading states
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Modal backdrop
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+// Confidence threshold slider
+.range {
+  &::-webkit-slider-thumb {
+    cursor: pointer;
+  }
+}
+
