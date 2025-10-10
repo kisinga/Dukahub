@@ -1,205 +1,223 @@
-<div class="space-y-6">
-  <!-- Header -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+<div class="w-full max-w-screen-lg mx-auto p-3 space-y-3">
+  <!-- Header with Status -->
+  <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-3xl font-bold">Dashboard Overview</h1>
-      <p class="text-base-content/60 mt-1">Welcome back! Here's what's happening today.</p>
+      <h1 class="text-lg font-bold">Dashboard</h1>
+      <p class="text-xs opacity-60">Today's Overview</p>
     </div>
-    <button class="btn btn-primary">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-      </svg>
-      New Sale
-    </button>
+    <div class="badge badge-success badge-sm gap-1">
+      <span class="w-1.5 h-1.5 bg-success-content rounded-full"></span>
+      Open
+    </div>
   </div>
 
-  <!-- Stats Grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-    @for (stat of stats; track stat.title) {
-    <div class="card bg-base-100 shadow-lg">
-      <div class="card-body">
-        <div class="flex justify-between items-start">
-          <div class="flex-1">
-            <p class="text-sm text-base-content/60 mb-1">{{ stat.title }}</p>
-            <h3 class="text-2xl font-bold">{{ stat.value }}</h3>
-            <div class="flex items-center gap-1 mt-2">
-              @if (stat.trend === 'up') {
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4 text-success"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 10l7-7m0 0l7 7m-7-7v18"
-                />
-              </svg>
-              } @else {
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4 text-error"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                />
-              </svg>
-              }
-              <span
-                class="text-sm font-semibold"
-                [class.text-success]="stat.trend === 'up'"
-                [class.text-error]="stat.trend === 'down'"
-              >
-                {{ stat.change }}
-              </span>
-              <span class="text-sm text-base-content/60">vs yesterday</span>
+  <!-- Stats Overview Cards (3-column grid) -->
+  <div class="grid grid-cols-3 gap-2">
+    @for (category of categories; track category.type) {
+    <div
+      class="stats stats-vertical shadow-sm cursor-pointer transition-all border-2 hover:shadow-lg active:scale-95"
+      [class.border-base-300]="expandedCategory() !== category.type"
+      [class.hover:border-primary]="category.type === 'purchases' && expandedCategory() !== category.type"
+      [class.hover:border-success]="category.type === 'sales' && expandedCategory() !== category.type"
+      [class.hover:border-error]="category.type === 'expenses' && expandedCategory() !== category.type"
+      [class.border-primary]="expandedCategory() === category.type && category.type === 'purchases'"
+      [class.bg-primary]="expandedCategory() === category.type && category.type === 'purchases'"
+      [class.text-primary-content]="expandedCategory() === category.type && category.type === 'purchases'"
+      [class.border-success]="expandedCategory() === category.type && category.type === 'sales'"
+      [class.bg-success]="expandedCategory() === category.type && category.type === 'sales'"
+      [class.text-success-content]="expandedCategory() === category.type && category.type === 'sales'"
+      [class.border-error]="expandedCategory() === category.type && category.type === 'expenses'"
+      [class.bg-error]="expandedCategory() === category.type && category.type === 'expenses'"
+      [class.text-error-content]="expandedCategory() === category.type && category.type === 'expenses'"
+      (click)="toggleCategory(category.type)"
+    >
+      <div class="stat p-2 flex flex-col items-center">
+        <div
+          class="stat-title text-[0.65rem] mb-1.5 font-bold text-center"
+          [class.text-primary]="category.type === 'purchases' && expandedCategory() !== category.type"
+          [class.text-success]="category.type === 'sales' && expandedCategory() !== category.type"
+          [class.text-error]="category.type === 'expenses' && expandedCategory() !== category.type"
+        >
+          {{ category.name }}
+        </div>
+        <div class="w-full space-y-0.5">
+          @for (stat of category.stats; track stat.period) {
+          <div class="flex justify-between items-baseline">
+            <div class="stat-desc text-[0.6rem] opacity-70">{{ stat.period }}</div>
+            <div class="stat-value text-[0.7rem] font-bold">
+              {{ stat.amount.replace('KES ', '') }}
             </div>
           </div>
-          <div class="text-4xl">{{ stat.icon }}</div>
+          }
+        </div>
+        <div class="flex justify-center mt-1.5">
+          <div class="badge badge-sm gap-1 opacity-60" [class.badge-outline]="expandedCategory() !== category.type">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-2.5 w-2.5 transition-transform"
+              [class.rotate-180]="expandedCategory() === category.type"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+            <span class="text-[0.55rem]">{{ expandedCategory() === category.type ? 'Hide' : 'View' }}</span>
+          </div>
         </div>
       </div>
     </div>
     }
   </div>
 
-  <!-- Two Column Layout -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Recent Sales -->
-    <div class="lg:col-span-2">
-      <div class="card bg-base-100 shadow-lg">
-        <div class="card-body">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="card-title">Recent Sales</h2>
-            <button class="btn btn-ghost btn-sm">View All</button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Sale ID</th>
-                  <th>Product</th>
-                  <th>Amount</th>
-                  <th>Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (sale of recentSales; track sale.id) {
-                <tr class="hover">
-                  <td class="font-mono text-sm">{{ sale.id }}</td>
-                  <td>{{ sale.product }}</td>
-                  <td class="font-semibold">{{ sale.amount }}</td>
-                  <td class="text-sm text-base-content/60">{{ sale.time }}</td>
-                </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+  <!-- Expanded Details (Collapse) -->
+  @if (expandedCategory(); as expanded) {
+  @for (category of categories; track category.type) {
+  @if (category.type === expanded) {
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body p-3">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="card-title text-sm">
+          <span
+            [class.text-primary]="category.type === 'purchases'"
+            [class.text-success]="category.type === 'sales'"
+            [class.text-error]="category.type === 'expenses'"
+          >
+            {{ category.name }}
+          </span>
+          Breakdown
+        </h3>
+        <button
+          class="btn btn-ghost btn-xs btn-circle"
+          (click)="toggleCategory(category.type); $event.stopPropagation()"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        @for (account of category.accounts; track account.label) {
+        <div class="flex flex-col items-center gap-1 p-2 rounded-lg bg-base-200 hover:bg-base-300 border border-base-300 hover:border-base-content/20 transition-all active:scale-95 cursor-pointer">
+          <span class="text-xl">{{ account.icon }}</span>
+          <span class="text-[0.6rem] opacity-70 text-center leading-tight">{{ account.label }}</span>
+          <span class="text-[0.7rem] font-bold text-center">{{ account.value.replace('KES ', '') }}</span>
         </div>
+        }
       </div>
     </div>
+  </div>
+  }
+  }
+  }
 
-    <!-- Quick Actions -->
-    <div class="space-y-4">
-      <div class="card bg-base-100 shadow-lg">
-        <div class="card-body">
-          <h2 class="card-title mb-4">Quick Actions</h2>
-          <div class="space-y-2">
-            <button class="btn btn-outline btn-block justify-start">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              Add Product
-            </button>
-            <button class="btn btn-outline btn-block justify-start">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              Generate Report
-            </button>
-            <button class="btn btn-outline btn-block justify-start">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              View History
-            </button>
+  <!-- Recent Activity (Collapsible) -->
+  <div class="collapse collapse-arrow bg-base-100 shadow-sm border-2 border-base-300 hover:border-base-content/20 transition-all">
+    <input type="checkbox" [checked]="showRecentActivity()" (change)="toggleRecentActivity()" />
+    <div class="collapse-title text-sm font-semibold flex items-center justify-center gap-2 min-h-0 py-2.5 px-3">
+      <span>📊</span>
+      <span>Recent Activity</span>
+      <span class="badge badge-primary badge-xs">{{ recentActivity.length }}</span>
+    </div>
+    <div class="collapse-content px-3 pb-3">
+      <div class="space-y-2">
+        @for (activity of recentActivity; track activity.id) {
+        <div class="flex items-center justify-between p-2 rounded-lg bg-base-200 border border-base-300 hover:border-base-content/20 hover:bg-base-300 transition-all cursor-pointer active:scale-98">
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <span
+              class="badge badge-xs flex-shrink-0"
+              [class.badge-primary]="activity.type === 'Purchase'"
+              [class.badge-success]="activity.type === 'Sale'"
+              [class.badge-error]="activity.type === 'Expense'"
+            >
+              {{ activity.type }}
+            </span>
+            <span class="text-xs truncate">{{ activity.description }}</span>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span
+              class="text-xs font-bold"
+              [class.text-success]="activity.amount.startsWith('+')"
+              [class.text-error]="activity.amount.startsWith('-')"
+            >
+              {{ activity.amount }}
+            </span>
+            <span class="text-[0.6rem] opacity-50">{{ activity.time }}</span>
           </div>
         </div>
+        }
       </div>
+    </div>
+  </div>
 
-      <!-- Alerts -->
-      <div class="card bg-base-100 shadow-lg">
-        <div class="card-body">
-          <h2 class="card-title mb-4">Alerts</h2>
-          <div class="space-y-2">
-            <div class="alert alert-warning">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6 shrink-0 stroke-current"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-              <div>
-                <p class="text-sm">12 items low in stock</p>
-              </div>
-            </div>
-          </div>
-        </div>
+  <!-- Quick Actions (Collapsible) -->
+  <div class="collapse collapse-arrow bg-base-100 shadow-sm border-2 border-base-300 hover:border-base-content/20 transition-all">
+    <input type="checkbox" [checked]="showQuickActions()" (change)="toggleQuickActions()" />
+    <div class="collapse-title text-sm font-semibold flex items-center justify-center gap-2 min-h-0 py-2.5 px-3">
+      <span>⚡</span>
+      <span>Quick Actions</span>
+    </div>
+    <div class="collapse-content px-3 pb-3">
+      <div class="grid grid-cols-4 gap-2">
+        @for (action of quickActions; track action.action) {
+        <button
+          class="btn btn-outline btn-sm flex flex-col items-center justify-center gap-1 h-auto py-3 border-2 hover:scale-105 active:scale-95 transition-transform"
+          (click)="handleQuickAction(action.action)"
+        >
+          <span class="text-xl">{{ action.icon }}</span>
+          <span class="text-[0.6rem] text-center leading-tight">{{ action.label }}</span>
+        </button>
+        }
       </div>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div class="alert alert-warning shadow-sm py-2 border-2 border-warning/30">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-4 w-4 shrink-0"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
+    </svg>
+    <span class="text-xs">12 items are low in stock</span>
+  </div>
+
+  <!-- Secondary Stats (Optional - for desktop) -->
+  <div class="hidden sm:grid sm:grid-cols-4 gap-3">
+    <div class="stat bg-base-100 shadow-sm rounded-lg p-3 border-2 border-base-300 hover:border-primary/30 transition-all">
+      <div class="stat-title text-xs">Total Products</div>
+      <div class="stat-value text-lg">234</div>
+      <div class="stat-desc text-xs">+5 this week</div>
+    </div>
+    <div class="stat bg-base-100 shadow-sm rounded-lg p-3 border-2 border-base-300 hover:border-success/30 transition-all">
+      <div class="stat-title text-xs">Active Users</div>
+      <div class="stat-value text-lg">3</div>
+      <div class="stat-desc text-xs">All online</div>
+    </div>
+    <div class="stat bg-base-100 shadow-sm rounded-lg p-3 border-2 border-base-300 hover:border-info/30 transition-all">
+      <div class="stat-title text-xs">Avg Sale</div>
+      <div class="stat-value text-lg">KES 890</div>
+      <div class="stat-desc text-xs">↗︎ 12% vs yesterday</div>
+    </div>
+    <div class="stat bg-base-100 shadow-sm rounded-lg p-3 border-2 border-base-300 hover:border-accent/30 transition-all">
+      <div class="stat-title text-xs">Profit Margin</div>
+      <div class="stat-value text-lg">24%</div>
+      <div class="stat-desc text-xs">This month</div>
     </div>
   </div>
 </div>

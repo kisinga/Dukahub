@@ -1,1 +1,168 @@
-// Overview page specific styles
+// Minimal custom styles - rely on daisyUI theme system
+// All colors and spacing use daisyUI theme variables
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+// Override daisyUI stats component for compact mobile view
+.stats {
+  &.stats-vertical {
+    // Mobile: ultra compact
+    .stat {
+      padding: 0.5rem;
+      place-items: center;
+      text-align: center;
+    }
+
+    .stat-title {
+      font-size: 0.65rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+      font-size: 0.75rem;
+    }
+
+    .stat-desc {
+      font-size: 0.6rem;
+    }
+  }
+
+  // Smooth transitions with enhanced borders
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0.75rem;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+// Enhanced card animations
+.card {
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid oklch(var(--b3));
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// Collapse component tweaks with centered titles
+.collapse {
+  border-radius: 0.75rem;
+
+  &.collapse-arrow {
+    .collapse-title {
+      min-height: auto;
+      padding: 0.5rem 0.75rem;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: oklch(var(--b2));
+      }
+    }
+
+    // Arrow positioning for centered layout
+    &::after {
+      position: absolute;
+      right: 1rem;
+    }
+  }
+
+  // Smooth content reveal
+  .collapse-content {
+    transition: all 0.3s ease;
+  }
+}
+
+// Custom scale utilities
+.active\:scale-98:active {
+  transform: scale(0.98);
+}
+
+.active\:scale-95:active {
+  transform: scale(0.95);
+}
+
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}
+
+// Desktop/Tablet optimizations
+@media (min-width: 640px) {
+  .stats.stats-vertical .stat {
+    padding: 0.75rem;
+
+    .stat-title {
+      font-size: 0.75rem;
+    }
+
+    .stat-value {
+      font-size: 1rem;
+    }
+
+    .stat-desc {
+      font-size: 0.7rem;
+    }
+  }
+
+  .collapse.collapse-arrow .collapse-title {
+    padding: 0.75rem 1rem;
+  }
+}
+
+// Larger screens
+@media (min-width: 1024px) {
+  .stats.stats-vertical .stat {
+    padding: 1rem;
+
+    .stat-title {
+      font-size: 0.875rem;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+    }
+
+    .stat-desc {
+      font-size: 0.75rem;
+    }
+  }
+}
+
+// Ensure smooth touch interactions on mobile
+@media (hover: none) and (pointer: coarse) {
+  .stats,
+  .btn,
+  .card,
+  .collapse {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  // Remove hover effects on touch devices
+  .stats:hover {
+    transform: none;
+  }
+
+  // Only keep active states
+  .stats:active {
+    transform: scale(0.97);
+  }
+}
