@@ -1,0 +1,724 @@
+<div class="container mx-auto p-4 md:p-6 max-w-5xl">
+  <!-- Header with Channel Info -->
+  <div class="mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold">Create Product</h1>
+        <p class="text-base-content/70 mt-1">
+          Add a new product with SKUs to your inventory
+        </p>
+      </div>
+
+      <!-- Active Channel Badge -->
+      <div class="badge badge-lg badge-primary">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4 mr-2"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+          />
+        </svg>
+        Channel: {{ channelName() }}
+      </div>
+    </div>
+
+    <div class="divider"></div>
+  </div>
+
+  <!-- Success Message -->
+  @if (submitSuccess()) {
+  <div role="alert" class="alert alert-success mb-6">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-6 w-6"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    <span>Product created successfully! Redirecting...</span>
+  </div>
+  }
+
+  <!-- Error Message -->
+  @if (submitError()) {
+  <div role="alert" class="alert alert-error mb-6">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-6 w-6"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    <span>{{ submitError() }}</span>
+  </div>
+  }
+
+  <!-- Main Form -->
+  <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+    <div class="grid gap-6">
+      <!-- Product Information Card -->
+      <div class="card card-border bg-base-100">
+        <div class="card-body">
+          <h2 class="card-title">Product Information</h2>
+
+          <!-- Product Name -->
+          <label class="floating-label">
+            <input
+              type="text"
+              formControlName="name"
+              placeholder="Product Name"
+              class="input"
+              [class.input-error]="hasError('name')"
+            />
+            <span>Product Name *</span>
+          </label>
+          @if (hasError('name')) {
+          <p class="text-error text-sm mt-1">{{ getErrorMessage('name') }}</p>
+          }
+
+          <!-- Product Description -->
+          <label class="floating-label mt-4">
+            <textarea
+              formControlName="description"
+              placeholder="Product Description"
+              class="textarea"
+              rows="3"
+              [class.textarea-error]="hasError('description')"
+            ></textarea>
+            <span>Product Description *</span>
+          </label>
+          @if (hasError('description')) {
+          <p class="text-error text-sm mt-1">
+            {{ getErrorMessage('description') }}
+          </p>
+          }
+
+          <!-- Enabled Toggle -->
+          <div class="form-control mt-4">
+            <label class="label cursor-pointer justify-start gap-4">
+              <input
+                type="checkbox"
+                formControlName="enabled"
+                class="toggle toggle-primary"
+              />
+              <div>
+                <span class="label-text font-medium">Enable Product</span>
+                <p class="text-sm text-base-content/70">
+                  Product will be immediately available for sale
+                </p>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product Photos / Barcode Card -->
+      <div class="card card-border bg-base-100">
+        <div class="card-body">
+          <!-- Tabs -->
+          <div role="tablist" class="tabs tabs-boxed mb-4">
+            <button
+              type="button"
+              role="tab"
+              class="tab"
+              [class.tab-active]="activeTab() === 'photos'"
+              (click)="switchTab('photos')"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              Photos
+            </button>
+            <button
+              type="button"
+              role="tab"
+              class="tab"
+              [class.tab-active]="activeTab() === 'barcode'"
+              (click)="switchTab('barcode')"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                />
+              </svg>
+              Barcode Scanner
+            </button>
+          </div>
+
+          <!-- Photos Tab Content -->
+          @if (activeTab() === 'photos') {
+          <div>
+            <h2 class="card-title">Product Photos (Optional)</h2>
+            <p class="text-sm text-base-content/70 mb-4">
+              Upload product images to help with visual identification
+            </p>
+
+          <!-- Photo Upload Button -->
+          <div class="flex items-center gap-3 mb-4">
+            <input
+              type="file"
+              #photoInput
+              accept="image/*"
+              multiple
+              capture="environment"
+              (change)="onPhotosSelected($event)"
+              class="hidden"
+            />
+            
+            <button
+              type="button"
+              (click)="photoInput.click()"
+              class="btn btn-primary"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              Take Photo / Choose from Gallery
+            </button>
+
+            <div class="badge badge-lg" [class.badge-success]="photos().length > 0">
+              {{ photos().length }} photo(s)
+            </div>
+          </div>
+
+          <!-- Photo Previews Grid -->
+          @if (photoPreviews().length > 0) {
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            @for (preview of photoPreviews(); track $index; let i = $index) {
+            <div class="relative group">
+              <img
+                [src]="preview"
+                [alt]="'Product photo ' + (i + 1)"
+                class="w-full h-32 object-cover rounded-lg border-2 border-base-300"
+              />
+              <button
+                type="button"
+                (click)="removePhoto(i)"
+                class="btn btn-circle btn-sm btn-error absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+              @if (i === 0) {
+              <div class="badge badge-primary badge-sm absolute bottom-1 left-1">
+                Featured
+              </div>
+              }
+            </div>
+            }
+          </div>
+          } @else {
+          <div role="alert" class="alert">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span>No photos added yet. Photos are optional.</span>
+          </div>
+          }
+          </div>
+          }
+
+          <!-- Barcode Tab Content -->
+          @if (activeTab() === 'barcode') {
+          <div>
+            <h2 class="card-title">Scan Barcode for SKU</h2>
+            <p class="text-sm text-base-content/70 mb-4">
+              Scan product barcodes to automatically fill SKU fields
+            </p>
+
+            @if (!isScanningBarcode()) {
+            <div role="alert" class="alert alert-info mb-4">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>Click "Scan Barcode" button next to any SKU field below</span>
+            </div>
+            } @else {
+            <div class="mb-4">
+              <div class="relative aspect-video bg-black rounded-lg overflow-hidden">
+                <video
+                  #barcodeCamera
+                  autoplay
+                  playsinline
+                  class="w-full h-full object-cover"
+                ></video>
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div class="border-2 border-primary w-3/4 h-3/4 rounded-lg"></div>
+                </div>
+              </div>
+              <button
+                type="button"
+                (click)="stopBarcodeScanner()"
+                class="btn btn-error btn-block mt-2"
+              >
+                Stop Scanner
+              </button>
+            </div>
+            }
+
+            @if (scannedBarcode()) {
+            <div role="alert" class="alert alert-success">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>Barcode scanned: {{ scannedBarcode() }}</span>
+            </div>
+            }
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- Stock Location Card -->
+      <div class="card card-border bg-base-100">
+        <div class="card-body">
+          <h2 class="card-title">Stock Location</h2>
+          <p class="text-sm text-base-content/70 mb-4">
+            Select where the initial stock will be stored
+          </p>
+
+          @if (isLoadingLocations()) {
+          <div class="flex items-center gap-3">
+            <span class="loading loading-spinner loading-md"></span>
+            <span class="text-base-content/70">Loading stock locations...</span>
+          </div>
+          } @else if (locationsError()) {
+          <div role="alert" class="alert alert-error">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span>{{ locationsError() }}</span>
+          </div>
+          } @else if (stockLocations().length === 0) {
+          <div role="alert" class="alert alert-warning">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <span
+              >No stock locations found. Please create one in settings
+              first.</span
+            >
+          </div>
+          } @else {
+          <select
+            formControlName="stockLocationId"
+            class="select"
+            [class.select-error]="hasError('stockLocationId')"
+          >
+            <option value="" disabled>Select a stock location</option>
+            @for (location of stockLocations(); track location.id) {
+            <option [value]="location.id">
+              {{ location.name }} @if (location.description) { -
+              {{ location.description }} }
+            </option>
+            }
+          </select>
+          @if (hasError('stockLocationId')) {
+          <p class="text-error text-sm mt-1">
+            {{ getErrorMessage('stockLocationId') }}
+          </p>
+          } }
+        </div>
+      </div>
+
+      <!-- SKU/Variants Card -->
+      <div class="card card-border bg-base-100">
+        <div class="card-body">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div>
+              <h2 class="card-title">Product Variants (SKUs)</h2>
+              <p class="text-sm text-base-content/70 mt-1">
+                Add one or more SKUs with prices and stock levels
+              </p>
+            </div>
+
+            <button
+              type="button"
+              (click)="addVariant()"
+              class="btn btn-sm btn-primary"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              Add SKU
+            </button>
+          </div>
+
+          <!-- Variants List -->
+          <div formArrayName="variants" class="space-y-6">
+            @for (variant of variants.controls; track $index; let i = $index) {
+            <div
+              [formGroupName]="i"
+              class="card bg-base-200 border border-base-300"
+            >
+              <div class="card-body p-4">
+                <div class="flex items-start justify-between mb-3">
+                  <h3 class="font-semibold text-lg">SKU #{{ i + 1 }}</h3>
+
+                  <button
+                    type="button"
+                    (click)="removeVariant(i)"
+                    [disabled]="variants.length <= 1"
+                    class="btn btn-sm btn-ghost btn-circle"
+                    [class.btn-disabled]="variants.length <= 1"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- SKU Code -->
+                  <div>
+                    <label class="floating-label">
+                      <input
+                        type="text"
+                        formControlName="sku"
+                        placeholder="ABC123456"
+                        class="input input-sm"
+                        [class.input-error]="hasVariantError(i, 'sku')"
+                        maxlength="50"
+                      />
+                      <span>SKU Code * (3-50 chars)</span>
+                    </label>
+                    @if (hasVariantError(i, 'sku')) {
+                    <p class="text-error text-xs mt-1">
+                      {{ getVariantErrorMessage(i, 'sku') }}
+                    </p>
+                    }
+                    <div class="flex gap-2 mt-2">
+                      <button
+                        type="button"
+                        (click)="suggestSKU(i)"
+                        class="btn btn-xs btn-ghost"
+                      >
+                        Generate SKU
+                      </button>
+                      <button
+                        type="button"
+                        (click)="startBarcodeScanner(i); switchTab('barcode')"
+                        class="btn btn-xs btn-primary"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-3 w-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                          />
+                        </svg>
+                        Scan Barcode
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Variant Name -->
+                  <div>
+                    <label class="floating-label">
+                      <input
+                        type="text"
+                        formControlName="name"
+                        placeholder="Variant Name"
+                        class="input input-sm"
+                        [class.input-error]="hasVariantError(i, 'name')"
+                      />
+                      <span>Variant Name *</span>
+                    </label>
+                    @if (hasVariantError(i, 'name')) {
+                    <p class="text-error text-xs mt-1">
+                      {{ getVariantErrorMessage(i, 'name') }}
+                    </p>
+                    }
+                  </div>
+
+                  <!-- Price -->
+                  <div>
+                    <label class="floating-label">
+                      <input
+                        type="number"
+                        formControlName="price"
+                        placeholder="0.00"
+                        step="0.01"
+                        min="0"
+                        class="input input-sm"
+                        [class.input-error]="hasVariantError(i, 'price')"
+                      />
+                      <span>Price *</span>
+                    </label>
+                    @if (hasVariantError(i, 'price')) {
+                    <p class="text-error text-xs mt-1">
+                      {{ getVariantErrorMessage(i, 'price') }}
+                    </p>
+                    }
+                  </div>
+
+                  <!-- Stock Quantity -->
+                  <div>
+                    <label class="floating-label">
+                      <input
+                        type="number"
+                        formControlName="stockOnHand"
+                        placeholder="0"
+                        min="0"
+                        class="input input-sm"
+                        [class.input-error]="hasVariantError(i, 'stockOnHand')"
+                      />
+                      <span>Initial Stock *</span>
+                    </label>
+                    @if (hasVariantError(i, 'stockOnHand')) {
+                    <p class="text-error text-xs mt-1">
+                      {{ getVariantErrorMessage(i, 'stockOnHand') }}
+                    </p>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+            } @empty {
+            <div role="alert" class="alert">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>No variants added yet. Click "Add SKU" to get started.</span>
+            </div>
+            }
+          </div>
+
+          <!-- Helper Actions -->
+          @if (variants.length > 0) {
+          <div class="mt-4 pt-4 border-t border-base-300">
+            <button
+              type="button"
+              (click)="autoFillVariantNames()"
+              class="btn btn-sm btn-ghost"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+              Auto-fill variant names with product name
+            </button>
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
+        <button type="button" (click)="cancel()" class="btn btn-ghost">
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="!canSubmit()"
+          [class.btn-disabled]="!canSubmit()"
+        >
+          @if (isSubmitting()) {
+          <span class="loading loading-spinner loading-sm"></span>
+          Creating Product...
+          } @else {
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          Create Product
+          }
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+

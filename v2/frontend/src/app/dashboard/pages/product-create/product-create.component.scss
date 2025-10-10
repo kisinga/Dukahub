@@ -1,0 +1,73 @@
+// Product Create Component Styles
+// Using daisyUI and Tailwind CSS - minimal custom CSS needed
+
+// Enhance floating label behavior
+.floating-label {
+  position: relative;
+  display: block;
+
+  // Ensure labels float properly on focus
+  input:focus + span,
+  textarea:focus + span,
+  input:not(:placeholder-shown) + span,
+  textarea:not(:placeholder-shown) + span {
+    transform: translateY(-1.5rem) scale(0.875);
+    color: hsl(var(--p));
+  }
+}
+
+// Smooth transitions for form elements
+.input,
+.select,
+.textarea {
+  transition: all 0.2s ease-in-out;
+
+  &:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Card hover effect for variants
+.card-body .card {
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Animate success/error alerts
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.alert {
+  animation: slideDown 0.3s ease-out;
+}
+
+// Loading spinner in button
+.btn .loading {
+  margin-right: 0.5rem;
+}
+
+// Responsive adjustments
+@media (max-width: 640px) {
+  .card-body {
+    padding: 1rem;
+  }
+
+  .badge-lg {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+

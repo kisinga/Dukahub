@@ -115,8 +115,8 @@ export class CompanyService {
         console.log(`Activating company: ${company.code} (${companyId})`);
 
         // Set channel token for subsequent requests
-        // In Vendure, we use the channel token to scope ALL operations to this channel
-        this.apolloService.setChannelToken(companyId);
+        // In Vendure, we use the channel TOKEN (not ID) to scope ALL operations to this channel
+        this.apolloService.setChannelToken(company.token);
 
         // Set as active company
         this.activeCompanyIdSignal.set(companyId);
@@ -142,7 +142,11 @@ export class CompanyService {
         if (storedCompanyId) {
             console.log(`Restoring active company from storage: ${storedCompanyId}`);
             this.activeCompanyIdSignal.set(storedCompanyId);
-            this.apolloService.setChannelToken(storedCompanyId);
+            // Find the company to get its token
+            const company = this.companiesSignal().find(c => c.id === storedCompanyId);
+            if (company) {
+                this.apolloService.setChannelToken(company.token);
+            }
         }
     }
 

@@ -6,6 +6,8 @@ export * from './services/cart.service';
 export * from './services/company.service';
 export * from './services/dashboard.service';
 export * from './services/ml-model.service';
+export * from './services/product.service';
+export * from './services/stock-location.service';
 
 // Guards
 export * from './guards/auth.guard';

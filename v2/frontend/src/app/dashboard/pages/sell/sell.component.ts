@@ -91,7 +91,7 @@ export class SellComponent implements OnInit, OnDestroy {
   readonly showConfirmModal = signal<boolean>(false);
 
   // Search state
-  readonly searchTerm = signal<string>('');
+  searchTerm = ''; // Regular property for ngModel two-way binding
   readonly searchResults = signal<ProductSearchResult[]>([]);
   readonly isSearching = signal<boolean>(false);
 
@@ -363,10 +363,10 @@ export class SellComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Search products by name
+   * Search products by name or SKU
    */
   async searchProducts(): Promise<void> {
-    const term = this.searchTerm().trim();
+    const term = this.searchTerm.trim();
 
     if (term.length < 2) {
       this.searchResults.set([]);
@@ -392,7 +392,7 @@ export class SellComponent implements OnInit, OnDestroy {
   selectProduct(product: ProductSearchResult): void {
     this.detectedProduct.set(product);
     this.showConfirmModal.set(true);
-    this.searchTerm.set('');
+    this.searchTerm = '';
     this.searchResults.set([]);
   }
 

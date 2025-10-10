@@ -46,25 +46,25 @@ export class ProductSearchService {
     async searchProducts(searchTerm: string): Promise<ProductSearchResult[]> {
         const query = gql`
             query SearchProducts($term: String!) {
-                search(input: { term: $term, take: 10, groupByProduct: true }) {
+                products(options: { 
+                    filter: { 
+                        name: { contains: $term }
+                    },
+                    take: 5 
+                }) {
                     items {
-                        productId
-                        productName
-                        productVariantId
-                        productVariantName
-                        sku
-                        price {
-                            ... on SinglePrice {
-                                value
-                            }
-                        }
-                        priceWithTax {
-                            ... on SinglePrice {
-                                value
-                            }
-                        }
-                        productAsset {
+                        id
+                        name
+                        featuredAsset {
                             preview
+                        }
+                        variants {
+                            id
+                            name
+                            sku
+                            price
+                            priceWithTax
+                            stockOnHand
                         }
                     }
                 }
@@ -74,46 +74,32 @@ export class ProductSearchService {
         try {
             const client = this.apolloService.getClient();
             const result = await client.query<{
-                search: {
+                products: {
                     items: any[];
                 };
             }>({
                 query,
                 variables: { term: searchTerm },
+                fetchPolicy: 'network-only',
             });
 
-            // Group variants by product
-            const productsMap = new Map<string, ProductSearchResult>();
-
-            result.data?.search?.items.forEach((item: any) => {
-                if (!productsMap.has(item.productId)) {
-                    productsMap.set(item.productId, {
-                        id: item.productId,
-                        name: item.productName,
-                        variants: [],
-                        featuredAsset: item.productAsset
-                            ? { preview: item.productAsset.preview }
-                            : undefined,
-                    });
-                }
-
-                const product = productsMap.get(item.productId)!;
-                product.variants.push({
-                    id: item.productVariantId,
-                    name: item.productVariantName,
-                    sku: item.sku,
-                    price: item.price.value / 100,
-                    priceWithTax: item.priceWithTax.value / 100,
-                    stockLevel: 'IN_STOCK', // TODO: Get from stock location
-                    productId: item.productId,
-                    productName: item.productName,
-                    featuredAsset: item.productAsset
-                        ? { preview: item.productAsset.preview }
-                        : undefined,
-                });
-            });
-
-            return Array.from(productsMap.values());
+            return result.data?.products?.items.map((product: any) => ({
+                id: product.id,
+                name: product.name,
+                featuredAsset: product.featuredAsset
+                    ? { preview: product.featuredAsset.preview }
+                    : undefined,
+                variants: product.variants.map((v: any) => ({
+                    id: v.id,
+                    name: v.name,
+                    sku: v.sku,
+                    price: v.price / 100,
+                    priceWithTax: v.priceWithTax / 100,
+                    stockLevel: v.stockOnHand > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
+                    productId: product.id,
+                    productName: product.name,
+                })),
+            })) || [];
         } catch (error) {
             console.error('Product search failed:', error);
             return [];
