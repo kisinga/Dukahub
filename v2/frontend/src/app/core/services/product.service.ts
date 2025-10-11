@@ -242,12 +242,12 @@ export class ProductService {
                             },
                         ],
                     };
-                    
+
                     // Include optionIds only if provided (for future Phase 1)
                     if (v.optionIds && v.optionIds.length > 0) {
                         input.optionIds = v.optionIds;
                     }
-                    
+
                     return input;
                 }
             );

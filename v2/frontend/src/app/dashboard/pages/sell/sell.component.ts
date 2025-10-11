@@ -16,6 +16,7 @@ import {
   BarcodeScannerService,
 } from '../../../core/services/barcode-scanner.service';
 import { CameraService } from '../../../core/services/camera.service';
+import { CompanyService } from '../../../core/services/company.service';
 import { MlModelService, ModelPrediction } from '../../../core/services/ml-model.service';
 import {
   ProductSearchResult,
@@ -84,19 +85,27 @@ export class SellComponent implements OnInit, OnDestroy {
   private readonly cameraService = inject(CameraService);
   private readonly barcodeService = inject(BarcodeScannerService);
   private readonly productSearchService = inject(ProductSearchService);
+  private readonly companyService = inject(CompanyService);
 
   // View references
   readonly videoElement = viewChild<ElementRef<HTMLVideoElement>>('cameraView');
 
-  // Configuration
-  readonly config = signal<POSConfig>({
-    confidenceThreshold: 0.9,
-    detectionIntervalMs: 1200,
-    enableMLDetection: true,
-    enableBarcodeScanning: true,
-    channelId: 'T_1', // TODO: Get from auth/company service
-    cashierFlow: true, // Manual initialization as requested
-  });
+  // Configuration (mutable signals)
+  private readonly confidenceThreshold = signal(0.9);
+  private readonly detectionIntervalMs = signal(1200);
+  private readonly enableMLDetection = signal(true);
+  private readonly enableBarcodeScanning = signal(true);
+  private readonly cashierFlow = signal(true);
+
+  // Computed configuration that includes dynamic channelId
+  readonly config = computed<POSConfig>(() => ({
+    confidenceThreshold: this.confidenceThreshold(),
+    detectionIntervalMs: this.detectionIntervalMs(),
+    enableMLDetection: this.enableMLDetection(),
+    enableBarcodeScanning: this.enableBarcodeScanning(),
+    channelId: this.companyService.activeCompanyId() || 'T_1', // Fallback to T_1 if no active company
+    cashierFlow: this.cashierFlow(),
+  }));
 
   // Scanner state
   readonly scannerStatus = signal<ScannerStatus>('idle');
@@ -212,7 +221,7 @@ export class SellComponent implements OnInit, OnDestroy {
           console.warn('ML model not available:', error?.message);
 
           // Disable ML detection but continue with manual search
-          this.config.update((c) => ({ ...c, enableMLDetection: false }));
+          this.enableMLDetection.set(false);
 
           // Show non-blocking warning (scanner still works)
           this.scannerError.set(
@@ -802,7 +811,7 @@ export class SellComponent implements OnInit, OnDestroy {
    * Update confidence threshold
    */
   updateConfidenceThreshold(value: number): void {
-    this.config.update((c) => ({ ...c, confidenceThreshold: value / 100 }));
+    this.confidenceThreshold.set(value / 100);
   }
 
   /**

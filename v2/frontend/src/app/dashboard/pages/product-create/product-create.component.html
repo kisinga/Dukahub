@@ -74,67 +74,41 @@
       <div class="card bg-base-100 shadow">
         <div class="card-body p-4 space-y-4">
           <!-- Header -->
-          <div class="flex items-center justify-between">
-            <h3 class="font-bold">🏷️ Variants</h3>
-            @if (selectedTemplates().length > 0 || customOptions().length > 0) {
-            <button type="button" (click)="clearTemplates()" class="btn btn-xs btn-ghost">
-              Reset All
-            </button>
-            }
-          </div>
+          <h3 class="font-bold">🏷️ Variants</h3>
 
-          <!-- Step 1: Choose What Varies -->
-          <div>
-            <p class="text-sm mb-2 opacity-70">What varies?</p>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              @for (template of templates; track template.id) {
-              <button
-                type="button"
-                (click)="toggleTemplate(template.id)"
-                class="btn min-h-[3rem]"
-                [class.btn-primary]="selectedTemplates().includes(template.id)"
-                [class.btn-outline]="!selectedTemplates().includes(template.id)"
-              >
-                {{ template.name }}
-              </button>
-              }
-
-              <!-- Add Custom Template Option -->
-              <button
-                type="button"
-                (click)="openCustomOptionModal()"
-                class="btn btn-outline min-h-[3rem] gap-1"
-              >
-                ➕ Custom
-              </button>
-            </div>
-          </div>
+          <!-- Step 1: Template Picker -->
+          <app-template-picker
+            [templates]="templateState.templates"
+            [selectedTemplates]="templateState.selectedTemplates()"
+            (templateToggled)="orchestrator.toggleTemplate($event)"
+            (customOptionRequested)="orchestrator.openCustomOptionModal()"
+            (clearAll)="orchestrator.clearAll()"
+          />
 
           <!-- Step 2: Pick Values (Progressive) -->
-          @if (selectedTemplates().length > 0 || customOptions().length > 0) {
+          @if (templateState.selectedTemplates().length > 0 || templateState.customOptions().length > 0) {
           <div class="bg-primary/5 p-3 rounded-lg space-y-3">
             <div class="flex items-center justify-between">
               <p class="text-sm font-semibold">Pick values → {{ variants.length }} variants</p>
             </div>
             <app-option-selector
-              [options]="availableOptions()"
-              [selectedOptionIds]="selectedOptionIds()"
-              [selectedTemplateIds]="allTemplateIds()"
-              [templateNames]="selectedTemplateNames()"
-              [templates]="templates"
-              (optionToggled)="toggleOptionSelection($event)"
+              [options]="templateState.availableOptions()"
+              [selectedOptionIds]="templateState.selectedOptionIds()"
+              [selectedTemplateIds]="templateState.allTemplateIds()"
+              [templateNames]="templateState.selectedTemplateNames()"
+              [templates]="templateState.templates"
+              (optionToggled)="orchestrator.toggleOption($event)"
             />
           </div>
           }
 
           <!-- Add Custom Option Value -->
-          @if (selectedTemplates().length === 0 && customOptions().length === 0 && variants.length
-          === 0) {
+          @if (templateState.selectedTemplates().length === 0 && templateState.customOptions().length === 0 && variants.length === 0) {
           <div class="text-center">
             <div class="divider text-xs opacity-60">No templates?</div>
             <button
               type="button"
-              (click)="openAddOptionValueModal()"
+              (click)="orchestrator.openAddOptionValueModal()"
               class="btn btn-outline min-h-[3rem] gap-2"
             >
               ➕ Add Option
@@ -145,7 +119,7 @@
           <div class="text-center">
             <button
               type="button"
-              (click)="openAddOptionValueModal()"
+              (click)="orchestrator.openAddOptionValueModal()"
               class="btn btn-sm btn-ghost gap-1"
             >
               ➕ Add More Options
@@ -155,45 +129,31 @@
         </div>
       </div>
 
-      <!-- Step 3: Variant Details (SKU, Price, Stock) -->
-      @if (variants.length > 0) {
-      <div class="card bg-base-100 shadow">
-        <div class="card-body p-4">
-          <!-- Header -->
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="font-bold">3️⃣ Variant Details</h3>
-            <span class="badge badge-primary">{{ variants.length }}</span>
-          </div>
-          <p class="text-sm opacity-70 mb-4">Fill details for each variant below ↓</p>
-
-          <!-- Variant List (Modular Component) -->
-          <app-variant-list
-            [variants]="variants"
-            [combinationLabels]="variantCombinationLabels()"
-            [customVariantIndices]="customVariantIndices()"
-            (variantRemoved)="removeVariant($event)"
-            (barcodeRequested)="startBarcodeScanner($event)"
-          />
-        </div>
-      </div>
-      }
+      <!-- Step 3: Variant Details -->
+      <app-variant-details-section
+        [variants]="variants"
+        [combinationLabels]="variantCombinationLabels()"
+        [customVariantIndices]="customVariantIndices()"
+        (variantRemoved)="removeVariant($event)"
+        (barcodeRequested)="startBarcodeScanner($event)"
+      />
 
       <!-- Add Custom Option Type Modal (Weight, Size, etc.) -->
       <app-custom-option-modal
-        [isOpen]="showCustomOptionModal()"
-        [form]="customOptionForm"
-        (submitted)="addCustomOption()"
-        (cancelled)="closeCustomOptionModal()"
+        [isOpen]="orchestrator.showCustomOptionModal()"
+        [form]="orchestrator.customOptionForm"
+        (submitted)="orchestrator.addCustomOption()"
+        (cancelled)="orchestrator.closeCustomOptionModal()"
       />
 
       <!-- Add Option Value Modal -->
-      @if (showAddOptionModal()) {
+      @if (orchestrator.showAddOptionModal()) {
       <dialog open class="modal modal-bottom sm:modal-middle">
         <div class="modal-box">
           <h3 class="font-bold text-lg mb-2">➕ Add Option</h3>
           <p class="text-sm opacity-70 mb-4">Add to existing group or create new</p>
 
-          <form [formGroup]="addOptionForm" (ngSubmit)="addOptionValue()">
+          <form [formGroup]="orchestrator.addOptionForm" (ngSubmit)="orchestrator.addOptionValue()">
             <div class="space-y-3">
               <!-- Variant Group Selection -->
               <div class="bg-accent/10 p-3 rounded-lg">
@@ -206,9 +166,9 @@
                   list="all-variant-groups"
                 />
                 <datalist id="all-variant-groups">
-                  @for (template of templates; track template.id) {
+                  @for (template of templateState.templates; track template.id) {
                   <option [value]="template.name">{{ template.name }}</option>
-                  } @for (group of customVariantGroups(); track group) {
+                  } @for (group of templateState.customVariantGroups(); track group) {
                   <option [value]="group">{{ group }} (custom)</option>
                   }
                 </datalist>
@@ -230,18 +190,18 @@
             </div>
 
             <div class="modal-action">
-              <button type="button" (click)="closeAddOptionModal()" class="btn">Cancel</button>
+              <button type="button" (click)="orchestrator.closeAddOptionModal()" class="btn">Cancel</button>
               <button
                 type="submit"
                 class="btn btn-accent min-h-[3rem]"
-                [disabled]="addOptionForm.invalid"
+                [disabled]="orchestrator.addOptionForm.invalid"
               >
                 ✓ Add Option
               </button>
             </div>
           </form>
         </div>
-        <form method="dialog" class="modal-backdrop" (click)="closeAddOptionModal()">
+        <form method="dialog" class="modal-backdrop" (click)="orchestrator.closeAddOptionModal()">
           <button>close</button>
         </form>
       </dialog>
