@@ -1,5 +1,4 @@
 import { Injectable, signal } from '@angular/core';
-import * as tmImage from '@teachablemachine/image';
 import * as tf from '@tensorflow/tfjs';
 
 /**
@@ -53,7 +52,7 @@ export interface ModelError {
     providedIn: 'root',
 })
 export class MlModelService {
-    private model: tmImage.CustomMobileNet | null = null;
+    private model: tf.LayersModel | null = null;
     private metadata: ModelMetadata | null = null;
     private readonly isLoadingSignal = signal<boolean>(false);
     private readonly isInitializedSignal = signal<boolean>(false);
@@ -136,20 +135,13 @@ export class MlModelService {
 
             const baseUrl = `/assets/ml-models/${channelId}/latest/`;
 
-            // Download all model files in parallel
-            console.log('Downloading model files...');
-            const [modelJson, weights, metadataJson] = await Promise.all([
-                this.fetchAsFile(`${baseUrl}model.json`, 'model.json', 'application/json'),
-                this.fetchAsFile(`${baseUrl}weights.bin`, 'weights.bin', 'application/octet-stream'),
-                this.fetchMetadata(`${baseUrl}metadata.json`),
-            ]);
+            // Load metadata first
+            console.log('Loading model metadata...');
+            this.metadata = await this.fetchMetadata(`${baseUrl}metadata.json`);
 
-            // Store metadata
-            this.metadata = metadataJson;
-
-            // Load model using Teachable Machine
+            // Load model directly with TensorFlow.js
             console.log('Loading model into TensorFlow.js...');
-            this.model = await tmImage.loadFromFiles(modelJson, weights, metadataJson as any);
+            this.model = await tf.loadLayersModel(`${baseUrl}model.json`);
 
             this.isInitializedSignal.set(true);
             console.log('Model loaded successfully:', {
@@ -170,21 +162,6 @@ export class MlModelService {
         } finally {
             this.isLoadingSignal.set(false);
         }
-    }
-
-    /**
-     * Fetch URL as File object
-     */
-    private async fetchAsFile(url: string, filename: string, type: string): Promise<File> {
-        const response = await fetch(url);
-        if (!response.ok) {
-            if (response.status === 404) {
-                throw new Error(`Model file not found: ${filename}. The model may be incomplete or corrupted.`);
-            }
-            throw new Error(`Failed to fetch ${filename}: HTTP ${response.status} ${response.statusText}`);
-        }
-        const blob = await response.blob();
-        return new File([blob], filename, { type });
     }
 
     /**
@@ -250,7 +227,7 @@ export class MlModelService {
         imageElement: HTMLImageElement | HTMLVideoElement,
         topK: number = 3
     ): Promise<ModelPrediction[]> {
-        if (!this.model) {
+        if (!this.model || !this.metadata) {
             const error: ModelError = {
                 type: ModelErrorType.PREDICTION_ERROR,
                 message: 'Cannot make predictions - model not loaded.',
@@ -261,11 +238,42 @@ export class MlModelService {
         }
 
         try {
-            const predictions = await this.model.predictTopK(imageElement, topK);
-            return predictions.map((p) => ({
-                className: p.className,
-                probability: p.probability,
+            // Preprocess the image
+            const tensor = tf.tidy(() => {
+                // Convert image to tensor
+                let img = tf.browser.fromPixels(imageElement);
+
+                // Resize to model's expected input size (typically 224x224 for Teachable Machine)
+                const imageSize = this.metadata?.imageSize || 224;
+                img = tf.image.resizeBilinear(img, [imageSize, imageSize]);
+
+                // Normalize to [0, 1] range
+                img = img.toFloat().div(255.0);
+
+                // Add batch dimension
+                return img.expandDims(0);
+            });
+
+            // Run inference
+            const predictions = this.model.predict(tensor) as tf.Tensor;
+            const probabilities = await predictions.data();
+
+            // Clean up tensors
+            tensor.dispose();
+            predictions.dispose();
+
+            // Get labels from metadata
+            const labels = this.metadata.labels;
+
+            // Create prediction array with labels and probabilities
+            const results: ModelPrediction[] = labels.map((label, i) => ({
+                className: label,
+                probability: probabilities[i]
             }));
+
+            // Sort by probability (descending) and take top K
+            results.sort((a, b) => b.probability - a.probability);
+            return results.slice(0, topK);
         } catch (error: any) {
             console.error('Prediction error:', error);
             const modelError: ModelError = {
