@@ -80,6 +80,8 @@ services:
       - typesense
     ports:
       - "3000:3000"
+    volumes:
+      - ./backend/static/assets/ml-models:/app/static/assets/ml-models
     labels:
       - "io.vendure.create.name=dukahub"
     restart: unless-stopped

@@ -1,73 +1,120 @@
-// Product Create Component Styles
-// Using daisyUI and Tailwind CSS - minimal custom CSS needed
+// Product Create Component Styles - KISS Edition
+// Simplified, compact, mobile-first
 
-// Enhance floating label behavior
-.floating-label {
-  position: relative;
-  display: block;
+@use '../../../../styles/design-system' as ds;
 
-  // Ensure labels float properly on focus
-  input:focus + span,
-  textarea:focus + span,
-  input:not(:placeholder-shown) + span,
-  textarea:not(:placeholder-shown) + span {
-    transform: translateY(-1.5rem) scale(0.875);
-    color: hsl(var(--p));
+// ============================================
+// HEADER
+// ============================================
+.sticky {
+  backdrop-filter: blur(8px);
+  transition: backdrop-filter ds.$transition-fast;
+}
+
+// ============================================
+// CARDS (Compact)
+// ============================================
+.card {
+  transition: transform ds.$transition-fast;
+
+  &:active {
+    transform: scale(0.99);
   }
 }
 
-// Smooth transitions for form elements
+// ============================================
+// COLLAPSIBLE SECTIONS (Minimal)
+// ============================================
+.collapse {
+  .collapse-content {
+    padding-top: ds.$space-2;
+  }
+
+  .collapse-title {
+    padding: ds.$space-2 ds.$space-3;
+  }
+}
+
+// ============================================
+// FORM FIELDS (Touch-Optimized)
+// ============================================
 .input,
 .select,
 .textarea {
-  transition: all 0.2s ease-in-out;
+  transition: box-shadow ds.$transition-fast;
 
   &:focus {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0 2px oklch(var(--p) / 0.2);
   }
 }
 
-// Card hover effect for variants
-.card-body .card {
-  transition: all 0.2s ease-in-out;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  }
+// ============================================
+// ANIMATIONS (Minimal)
+// ============================================
+.alert {
+  animation: fadeIn 0.2s ds.$ease-in-out;
 }
 
-// Animate success/error alerts
-@keyframes slideDown {
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(-1rem);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-.alert {
-  animation: slideDown 0.3s ease-out;
+// ============================================
+// ACTION BAR
+// ============================================
+.fixed.bottom-0 {
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
 }
 
-// Loading spinner in button
-.btn .loading {
-  margin-right: 0.5rem;
-}
-
-// Responsive adjustments
-@media (max-width: 640px) {
-  .card-body {
-    padding: 1rem;
+// ============================================
+// BUTTONS (Simple)
+// ============================================
+.btn {
+  &:active:not(:disabled) {
+    transform: scale(0.98);
   }
 
-  .badge-lg {
-    font-size: 0.75rem;
-    padding: 0.5rem 0.75rem;
+  // Subtle glow on primary button when enabled
+  &.btn-primary:not(:disabled) {
+    box-shadow: 0 0 0 2px oklch(var(--p) / 0.3);
+    animation: subtleGlow 2s ease-in-out infinite;
   }
 }
 
+@keyframes subtleGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px oklch(var(--p) / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 3px oklch(var(--p) / 0.5);
+  }
+}
+
+// ============================================
+// TOOLTIPS
+// ============================================
+.tooltip {
+  &::before {
+    font-size: ds.$text-xs;
+    max-width: 200px;
+  }
+}
+
+// ============================================
+// ACCESSIBILITY
+// ============================================
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

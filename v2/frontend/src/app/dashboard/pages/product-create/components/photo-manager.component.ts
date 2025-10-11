@@ -11,100 +11,132 @@ import { ChangeDetectionStrategy, Component, ElementRef, output, signal, viewChi
     selector: 'app-photo-manager',
     imports: [CommonModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    styles: [`
+        .aspect-square {
+            aspect-ratio: 1;
+        }
+
+        .photo-thumbnail {
+            transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .photo-thumbnail:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .photo-thumbnail:active {
+            transform: scale(0.98);
+        }
+
+        /* Remove button animation */
+        .btn-remove {
+            transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .group:hover .btn-remove {
+            transform: scale(1.1);
+        }
+
+        /* Empty state button hover */
+        .btn-upload-empty {
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-upload-empty:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-upload-empty:active {
+            transform: translateY(0);
+        }
+    `],
     template: `
-        <div class="card card-border bg-base-100">
-            <div class="card-body">
-                <h2 class="card-title">Product Photos</h2>
-                <p class="text-sm text-base-content/70 mb-2">
-                    📸 Important for AI recognition (pricing posters, symbols, product packaging)
-                </p>
+        <!-- Hidden File Input -->
+        <input
+            #photoInput
+            type="file"
+            accept="image/*"
+            multiple
+            capture="environment"
+            (change)="onPhotosSelected($event)"
+            class="hidden"
+        />
 
-                <!-- Photo Upload Button -->
-                <div class="flex items-center gap-3 mb-4">
-                    <input
-                        #photoInput
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        capture="environment"
-                        (change)="onPhotosSelected($event)"
-                        class="hidden"
-                    />
-
-                    <button
-                        type="button"
-                        (click)="photoInput.click()"
-                        class="btn btn-primary"
+        <!-- Upload Button (Empty State) -->
+        @if (photoPreviews().length === 0) {
+            <button
+                type="button"
+                (click)="photoInput.click()"
+                class="btn btn-outline btn-block gap-2 h-auto py-6 flex-col btn-upload-empty"
+            >
+                <span class="text-4xl">📸</span>
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold">Add Photos</span>
+                    <div 
+                        class="tooltip tooltip-right" 
+                        data-tip="Take photos of product, price tags, or packaging for AI recognition"
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                            />
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                        </svg>
-                        Take Photo / Choose from Gallery
-                    </button>
-
-                    <div class="badge badge-lg" [class.badge-success]="photos().length > 0">
-                        {{ photos().length }} photo(s)
+                        <span class="badge badge-xs badge-ghost">?</span>
                     </div>
                 </div>
+                <span class="text-xs opacity-60">📱 Camera or 🖼️ Gallery</span>
+            </button>
+        } @else {
+            <!-- Photo Grid -->
+            <div class="space-y-2">
+                <!-- Add More Button with Count -->
+                <button
+                    type="button"
+                    (click)="photoInput.click()"
+                    class="btn btn-sm btn-outline btn-block gap-1"
+                >
+                    <span>➕</span>
+                    <span>Add More</span>
+                    <span class="badge badge-sm" [class.badge-primary]="photos().length > 0">
+                        {{ photos().length }}
+                    </span>
+                </button>
 
-                <!-- Photo Previews Grid -->
-                @if (photoPreviews().length > 0) {
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                        @for (preview of photoPreviews(); track $index; let i = $index) {
-                            <div class="relative group">
-                                <img
-                                    [src]="preview"
-                                    [alt]="'Product photo ' + (i + 1)"
-                                    class="w-full h-32 object-cover rounded-lg border-2 border-base-300"
-                                />
-                                <button
-                                    type="button"
-                                    (click)="removePhoto(i)"
-                                    class="btn btn-circle btn-sm btn-error absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-4 w-4"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12"
-                                        />
-                                    </svg>
-                                </button>
-                                @if (i === 0) {
-                                    <div class="badge badge-primary badge-sm absolute bottom-1 left-1">
-                                        Featured
-                                    </div>
-                                }
-                            </div>
-                        }
-                    </div>
-                }
+                <!-- Photo Thumbnails Grid -->
+                <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+                    @for (preview of photoPreviews(); track $index; let i = $index) {
+                        <div class="relative aspect-square group">
+                            <!-- Photo Thumbnail -->
+                            <img
+                                [src]="preview"
+                                [alt]="'Photo ' + (i + 1)"
+                                class="w-full h-full object-cover rounded-lg border border-base-300 photo-thumbnail"
+                                loading="lazy"
+                            />
+                            
+                            <!-- Remove Button (Always visible on mobile, hover on desktop) -->
+                            <button
+                                type="button"
+                                (click)="removePhoto(i)"
+                                class="btn btn-circle btn-xs btn-error absolute -top-1 -right-1 shadow-lg btn-remove sm:opacity-0 sm:group-hover:opacity-100"
+                                aria-label="Remove photo"
+                            >
+                                ✕
+                            </button>
+                            
+                            <!-- Featured Badge -->
+                            @if (i === 0) {
+                                <div class="badge badge-xs badge-primary absolute bottom-1 left-1 gap-0.5">
+                                    ⭐ Main
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Helpful Hint -->
+                <div class="text-center">
+                    <p class="text-xs opacity-60">⭐ First photo appears as main</p>
+                </div>
             </div>
-        </div>
+        }
     `,
 })
 export class PhotoManagerComponent {

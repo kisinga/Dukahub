@@ -37,6 +37,7 @@ export interface VariantInput {
     price: number; // In currency units (e.g., 10.99)
     stockOnHand: number;
     stockLocationId: string;
+    optionIds?: string[]; // Product option IDs (KISS: typically 1 per variant)
 }
 
 /**
@@ -217,32 +218,49 @@ export class ProductService {
         try {
             const client = this.apolloService.getClient();
 
+            console.log('🔧 Creating variants for product:', productId);
+            console.log('🔧 Variant inputs received:', variants);
+
             // Prepare variant inputs for Vendure
             const variantInputs: CreateProductVariantsMutationVariables['input'] = variants.map(
-                (v) => ({
-                    productId,
-                    sku: v.sku,
-                    price: Math.round(v.price * 100), // Convert to cents
-                    stockOnHand: v.stockOnHand,
-                    stockLevels: [
-                        {
-                            stockLocationId: v.stockLocationId,
-                            stockOnHand: v.stockOnHand,
-                        },
-                    ],
-                    translations: [
-                        {
-                            languageCode: 'en' as any,
-                            name: v.name,
-                        },
-                    ],
-                })
+                (v) => {
+                    const input: any = {
+                        productId,
+                        sku: v.sku,
+                        price: Math.round(v.price * 100), // Convert to cents
+                        stockOnHand: v.stockOnHand,
+                        stockLevels: [
+                            {
+                                stockLocationId: v.stockLocationId,
+                                stockOnHand: v.stockOnHand,
+                            },
+                        ],
+                        translations: [
+                            {
+                                languageCode: 'en' as any,
+                                name: v.name,
+                            },
+                        ],
+                    };
+                    
+                    // Include optionIds only if provided (for future Phase 1)
+                    if (v.optionIds && v.optionIds.length > 0) {
+                        input.optionIds = v.optionIds;
+                    }
+                    
+                    return input;
+                }
             );
+
+            console.log('🔧 Vendure variant inputs:', variantInputs);
 
             const result = await client.mutate<CreateProductVariantsMutation>({
                 mutation: CREATE_PRODUCT_VARIANTS,
                 variables: { input: variantInputs },
             });
+
+            console.log('🔧 Mutation result:', result);
+            console.log('🔧 Created variants:', result.data?.createProductVariants);
 
             return result.data?.createProductVariants || null;
         } catch (error) {

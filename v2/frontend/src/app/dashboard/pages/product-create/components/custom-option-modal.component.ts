@@ -13,51 +13,49 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         @if (isOpen()) {
-        <dialog open class="modal">
-            <div class="modal-box">
-                <h3 class="text-lg font-bold mb-2">Add Custom Option</h3>
-                <p class="text-sm text-base-content/70 mb-4">
-                    Create a new option type that's not in the templates (e.g., Bunch, Bundle, Case)
-                </p>
+        <dialog open class="modal modal-bottom sm:modal-middle">
+            <div class="modal-box max-w-lg">
+                <h3 class="font-bold text-lg mb-2">➕ Create Custom Option</h3>
+                <p class="text-sm opacity-70 mb-4">e.g., Packaging → Single, Box, Carton</p>
 
                 <form [formGroup]="form()" (ngSubmit)="submitted.emit()">
                     <div class="space-y-4">
-                        <!-- Option Name -->
-                        <label class="floating-label">
+                        <!-- Option Type Name -->
+                        <div class="bg-accent/10 p-3 rounded-lg">
+                            <label class="text-sm font-semibold mb-1 block">Option Type</label>
                             <input
                                 type="text"
                                 formControlName="name"
-                                placeholder="e.g., Bunch, Bundle, Case"
-                                class="input"
+                                placeholder="e.g., Packaging, Bundle Type"
+                                class="input input-bordered w-full"
                                 [class.input-error]="form().get('name')?.invalid && form().get('name')?.touched"
+                                autofocus
                             />
-                            <span>Option Name *</span>
-                        </label>
-                        <p class="text-xs text-base-content/60 -mt-2">
-                            This will appear as a selectable option alongside templates
-                        </p>
+                        </div>
 
-                        <!-- SKU -->
-                        <label class="floating-label">
-                            <input
-                                type="text"
-                                formControlName="sku"
-                                placeholder="e.g., BUNCH, BND, CASE"
-                                class="input"
-                                maxlength="10"
-                                [class.input-error]="form().get('sku')?.invalid && form().get('sku')?.touched"
-                            />
-                            <span>SKU Code *</span>
-                        </label>
-                        <p class="text-xs text-base-content/60 -mt-2">
-                            Short code that will be used when creating SKUs
-                        </p>
+                        <!-- Values (Multiple) -->
+                        <div class="bg-accent/10 p-3 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-sm font-semibold">Values</label>
+                                <span class="text-xs opacity-60">One per line</span>
+                            </div>
+                            <textarea
+                                formControlName="values"
+                                placeholder="Single&#10;Box of 12&#10;Carton of 24"
+                                class="textarea textarea-bordered w-full"
+                                rows="4"
+                                [class.textarea-error]="form().get('values')?.invalid && form().get('values')?.touched"
+                            ></textarea>
+                            <p class="text-xs opacity-60 mt-1">
+                                Each line = one value. They'll auto-select.
+                            </p>
+                        </div>
                     </div>
 
                     <div class="modal-action">
-                        <button type="button" (click)="cancelled.emit()" class="btn btn-ghost">Cancel</button>
-                        <button type="submit" class="btn btn-primary" [disabled]="form().invalid">
-                            Add Option
+                        <button type="button" (click)="cancelled.emit()" class="btn">Cancel</button>
+                        <button type="submit" class="btn btn-accent min-h-[3rem]" [disabled]="form().invalid">
+                            ✓ Add Custom Option
                         </button>
                     </div>
                 </form>

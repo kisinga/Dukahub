@@ -1,409 +1,305 @@
-<div class="container mx-auto p-4 md:p-6 max-w-5xl">
-  <!-- Header with Channel Info -->
-  <div class="mb-6">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <h1 class="text-2xl md:text-3xl font-bold">
-          {{ itemType() === 'product' ? 'Create Product' : 'Create Service' }}
-        </h1>
-        <p class="text-base-content/70 mt-1">
-          {{
-            itemType() === 'product'
-              ? 'Add a new product with SKUs to your inventory'
-              : 'Add a new service offering to your business'
-          }}
-        </p>
+<!-- Compact Header -->
+<div class="sticky top-0 z-30 bg-base-100/95 backdrop-blur-sm border-b border-base-300">
+  <div class="container-app py-2">
+    <div class="flex items-center justify-between gap-2">
+      <!-- Title & Type Toggle -->
+      <div role="tablist" class="tabs tabs-boxed tabs-sm">
+        <button
+          type="button"
+          role="tab"
+          class="tab gap-1"
+          [class.tab-active]="itemType() === 'product'"
+          (click)="switchItemType('product')"
+        >
+          📦 Product
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="tab gap-1"
+          [class.tab-active]="itemType() === 'service'"
+          (click)="switchItemType('service')"
+        >
+          💼 Service
+        </button>
       </div>
 
-      <!-- Active Channel Badge -->
-      <div class="badge badge-lg badge-primary">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-4 w-4 mr-2"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-          />
-        </svg>
-        Channel: {{ channelName() }}
-      </div>
+      <!-- Close Button -->
+      <button type="button" (click)="cancel()" class="btn btn-sm btn-circle btn-ghost">✕</button>
     </div>
-
-    <!-- Item Type Tabs -->
-    <div role="tablist" class="tabs tabs-boxed mt-4">
-      <button
-        type="button"
-        role="tab"
-        class="tab"
-        [class.tab-active]="itemType() === 'product'"
-        (click)="switchItemType('product')"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5 mr-2"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-          />
-        </svg>
-        Product
-      </button>
-      <button
-        type="button"
-        role="tab"
-        class="tab"
-        [class.tab-active]="itemType() === 'service'"
-        (click)="switchItemType('service')"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5 mr-2"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-          />
-        </svg>
-        Service
-      </button>
-    </div>
-
-    <div class="divider"></div>
   </div>
+</div>
 
-  <!-- Success Message -->
+<!-- Main Content -->
+<div class="container-app py-3 pb-44 lg:pb-32 max-w-4xl mx-auto">
+  <!-- Alerts -->
   @if (submitSuccess()) {
-  <div role="alert" class="alert alert-success mb-6">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      class="h-6 w-6"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-    <span>Product created successfully! Redirecting...</span>
+  <div role="alert" class="alert alert-success mb-3">
+    <span>✓ Created! Redirecting...</span>
   </div>
-  }
-
-  <!-- Error Message -->
-  @if (submitError()) {
-  <div role="alert" class="alert alert-error mb-6">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      class="h-6 w-6"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
+  } @if (submitError()) {
+  <div role="alert" class="alert alert-error mb-3">
     <span>{{ submitError() }}</span>
   </div>
   }
 
-  <!-- Product Form -->
-  @if (itemType() === 'product') {
-  <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
-    <div class="grid gap-6">
-      <!-- Product Information (Extracted Component) -->
-      <app-product-info-form [form]="productForm" />
+  <!-- Main Form (Product & Service) -->
+  <form [formGroup]="itemType() === 'product' ? productForm : serviceForm" (ngSubmit)="onSubmit()">
+    <div class="space-y-2">
+      <!-- Basic Info -->
+      <div class="card bg-base-100 shadow">
+        <div class="card-body p-3 sm:p-4">
+          <app-product-info-form [form]="itemType() === 'product' ? productForm : serviceForm" />
+        </div>
+      </div>
 
-      <!-- Product Photos (Extracted Component) -->
-      <app-photo-manager #photoManager />
+      <!-- Photos (Collapsible) - Products only -->
+      @if (itemType() === 'product') {
+      <div class="collapse collapse-arrow bg-base-100 shadow">
+        <input type="checkbox" />
+        <div class="collapse-title min-h-[2.5rem] text-sm font-semibold">
+          📸 Photos <span class="text-xs opacity-60">(optional)</span>
+        </div>
+        <div class="collapse-content">
+          <app-photo-manager #photoManager />
+        </div>
+      </div>
 
-      <!-- Barcode Scanner (Extracted Component) -->
-      <app-barcode-scanner #barcodeScanner />
+      <!-- Hidden barcode scanner -->
+      <div class="hidden">
+        <app-barcode-scanner #barcodeScanner />
+      </div>
 
-      <!-- Stock Location Card disabled for now-->
-      <div class="card hidden card-border bg-base-100">
-        <div class="card-body">
-          <h2 class="card-title">Stock Location</h2>
-          <p class="text-sm text-base-content/70 mb-4">
-            Select where the initial stock will be stored
-          </p>
-
-          @if (isLoadingLocations()) {
-          <div class="flex items-center gap-3">
-            <span class="loading loading-spinner loading-md"></span>
-            <span class="text-base-content/70">Loading stock locations...</span>
-          </div>
-          } @else if (locationsError()) {
-          <div role="alert" class="alert alert-error">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>{{ locationsError() }}</span>
-          </div>
-          } @else if (stockLocations().length === 0) {
-          <div role="alert" class="alert alert-warning">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            <span>No stock locations found. Please create one in settings first.</span>
-          </div>
-          } @else {
-          <select formControlName="stockLocationId" class="select">
-            <option value="" disabled>Select a stock location</option>
-            @for (location of stockLocations(); track location.id) {
-            <option [value]="location.id">
-              {{ location.name }} @if (location.description) { - {{ location.description }} }
-            </option>
+      <!-- Variants Setup - Products only -->
+      <div class="card bg-base-100 shadow">
+        <div class="card-body p-4 space-y-4">
+          <!-- Header -->
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold">🏷️ Variants</h3>
+            @if (selectedTemplates().length > 0 || customOptions().length > 0) {
+            <button type="button" (click)="clearTemplates()" class="btn btn-xs btn-ghost">
+              Reset All
+            </button>
             }
-          </select>
+          </div>
+
+          <!-- Step 1: Choose What Varies -->
+          <div>
+            <p class="text-sm mb-2 opacity-70">What varies?</p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              @for (template of templates; track template.id) {
+              <button
+                type="button"
+                (click)="toggleTemplate(template.id)"
+                class="btn min-h-[3rem]"
+                [class.btn-primary]="selectedTemplates().includes(template.id)"
+                [class.btn-outline]="!selectedTemplates().includes(template.id)"
+              >
+                {{ template.name }}
+              </button>
+              }
+
+              <!-- Add Custom Template Option -->
+              <button
+                type="button"
+                (click)="openCustomOptionModal()"
+                class="btn btn-outline min-h-[3rem] gap-1"
+              >
+                ➕ Custom
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Pick Values (Progressive) -->
+          @if (selectedTemplates().length > 0 || customOptions().length > 0) {
+          <div class="bg-primary/5 p-3 rounded-lg space-y-3">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-semibold">Pick values → {{ variants.length }} variants</p>
+            </div>
+            <app-option-selector
+              [options]="availableOptions()"
+              [selectedOptionIds]="selectedOptionIds()"
+              [selectedTemplateIds]="allTemplateIds()"
+              [templateNames]="selectedTemplateNames()"
+              [templates]="templates"
+              (optionToggled)="toggleOptionSelection($event)"
+            />
+          </div>
+          }
+
+          <!-- Add Custom Option Value -->
+          @if (selectedTemplates().length === 0 && customOptions().length === 0 && variants.length
+          === 0) {
+          <div class="text-center">
+            <div class="divider text-xs opacity-60">No templates?</div>
+            <button
+              type="button"
+              (click)="openAddOptionValueModal()"
+              class="btn btn-outline min-h-[3rem] gap-2"
+            >
+              ➕ Add Option
+            </button>
+            <p class="text-xs opacity-60 mt-2">e.g., "Kilograms", "Small"</p>
+          </div>
+          } @else if (variants.length > 0) {
+          <div class="text-center">
+            <button
+              type="button"
+              (click)="openAddOptionValueModal()"
+              class="btn btn-sm btn-ghost gap-1"
+            >
+              ➕ Add More Options
+            </button>
+          </div>
           }
         </div>
       </div>
-      <!-- Template Selector Component -->
-      <app-template-selector
-        [templates]="templates"
-        [selectedTemplateIds]="selectedTemplates()"
-        (templateToggled)="toggleTemplate($event)"
-        (customOptionClicked)="openCustomOptionModal()"
-        (clearAllClicked)="clearTemplates()"
-      />
 
-      <!-- Option Selector Component -->
-      @if (selectedTemplates().length > 0 || customOptions().length > 0) {
-      <app-option-selector
-        [options]="availableOptions()"
-        [selectedOptionIds]="selectedOptionIds()"
-        [selectedTemplateIds]="selectedTemplates()"
-        [templateNames]="selectedTemplateNames()"
-        [templates]="templates"
-        (optionToggled)="toggleOptionSelection($event)"
-      />
+      <!-- Step 3: Variant Details (SKU, Price, Stock) -->
+      @if (variants.length > 0) {
+      <div class="card bg-base-100 shadow">
+        <div class="card-body p-4">
+          <!-- Header -->
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold">3️⃣ Variant Details</h3>
+            <span class="badge badge-primary">{{ variants.length }}</span>
+          </div>
+          <p class="text-sm opacity-70 mb-4">Fill details for each variant below ↓</p>
+
+          <!-- Variant List (Modular Component) -->
+          <app-variant-list
+            [variants]="variants"
+            [combinationLabels]="variantCombinationLabels()"
+            [customVariantIndices]="customVariantIndices()"
+            (variantRemoved)="removeVariant($event)"
+            (barcodeRequested)="startBarcodeScanner($event)"
+          />
+        </div>
+      </div>
       }
 
-      <!-- SKU Customization Cards -->
-      <div formArrayName="variants" class="space-y-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold">SKU Customization</h3>
-          <button
-            type="button"
-            (click)="addCustomVariant()"
-            class="btn btn-sm btn-outline btn-primary"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
-            Add Custom SKU
-          </button>
+      <!-- Add Custom Option Type Modal (Weight, Size, etc.) -->
+      <app-custom-option-modal
+        [isOpen]="showCustomOptionModal()"
+        [form]="customOptionForm"
+        (submitted)="addCustomOption()"
+        (cancelled)="closeCustomOptionModal()"
+      />
+
+      <!-- Add Option Value Modal -->
+      @if (showAddOptionModal()) {
+      <dialog open class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box">
+          <h3 class="font-bold text-lg mb-2">➕ Add Option</h3>
+          <p class="text-sm opacity-70 mb-4">Add to existing group or create new</p>
+
+          <form [formGroup]="addOptionForm" (ngSubmit)="addOptionValue()">
+            <div class="space-y-3">
+              <!-- Variant Group Selection -->
+              <div class="bg-accent/10 p-3 rounded-lg">
+                <label class="text-sm font-semibold mb-1 block">Variant Group</label>
+                <input
+                  type="text"
+                  formControlName="variantGroup"
+                  placeholder="Choose or type new group"
+                  class="input input-bordered w-full"
+                  list="all-variant-groups"
+                />
+                <datalist id="all-variant-groups">
+                  @for (template of templates; track template.id) {
+                  <option [value]="template.name">{{ template.name }}</option>
+                  } @for (group of customVariantGroups(); track group) {
+                  <option [value]="group">{{ group }} (custom)</option>
+                  }
+                </datalist>
+                <p class="text-xs opacity-60 mt-1">Select existing or type new</p>
+              </div>
+
+              <!-- Option Value -->
+              <div class="bg-accent/10 p-3 rounded-lg">
+                <label class="text-sm font-semibold mb-1 block">Option Value</label>
+                <input
+                  type="text"
+                  formControlName="value"
+                  placeholder="e.g., Kilograms, Small, Red"
+                  class="input input-bordered w-full"
+                  autofocus
+                />
+                <p class="text-xs opacity-60 mt-1">This creates 1 variant</p>
+              </div>
+            </div>
+
+            <div class="modal-action">
+              <button type="button" (click)="closeAddOptionModal()" class="btn">Cancel</button>
+              <button
+                type="submit"
+                class="btn btn-accent min-h-[3rem]"
+                [disabled]="addOptionForm.invalid"
+              >
+                ✓ Add Option
+              </button>
+            </div>
+          </form>
         </div>
+        <form method="dialog" class="modal-backdrop" (click)="closeAddOptionModal()">
+          <button>close</button>
+        </form>
+      </dialog>
+      }
 
-        <!-- Generated Combination Variants -->
-        @if (getComboVariants().length > 0) {
-        <div class="space-y-3">
-          <div class="flex items-center gap-2 mb-3">
-            <h4 class="text-sm font-semibold">Auto-Generated Variants</h4>
-            <span class="badge badge-sm badge-info">{{ getComboVariants().length }} variants</span>
-          </div>
-
-          @for (variant of variants.controls; track $index; let i = $index) { @if
-          (variant.get('optionIds')?.value?.length > 0) {
-          <div [formGroupName]="i">
-            <app-variant-card
-              [variantForm]="$any(variant)"
-              [combinationLabel]="getVariantCombinationLabel(i)"
-              [namePlaceholder]="'e.g., One Kilogram, Two Kilograms'"
-              [skuPlaceholder]="'e.g., KG1, KG2'"
-              (removed)="removeVariant(i)"
-              (scanBarcodeClicked)="startBarcodeScanner(i)"
-            />
-          </div>
-          } }
-        </div>
-        }
-
-        <!-- Custom SKUs (manually added, no auto-generation) -->
-        @if (getCustomVariants().length > 0) {
-        <div class="space-y-3">
-          <h4 class="text-sm font-semibold mb-3">Custom Variants</h4>
-
-          @for (variant of variants.controls; track $index; let i = $index) { @if
-          (variant.get('optionIds')?.value?.length === 0) {
-          <div [formGroupName]="i">
-            <app-variant-card
-              [variantForm]="$any(variant)"
-              [headerLabel]="'Custom SKU'"
-              [namePlaceholder]="'e.g., Standard Package, Bulk Deal'"
-              [skuPlaceholder]="'e.g., CUSTOM-001'"
-              (removed)="removeVariant(i)"
-              (scanBarcodeClicked)="startBarcodeScanner(i)"
-            />
-          </div>
-          } }
-        </div>
-        }
-
-        <!-- Empty state -->
-        @if (variants.length === 0) {
-        <div role="alert" class="alert">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <div>
-            <p class="font-medium">No SKUs added yet</p>
-            <p class="text-sm text-base-content/70">
-              Select options from templates above to auto-generate variants, or click "Add Custom
-              SKU"
-            </p>
-          </div>
-        </div>
-        }
-      </div>
-
-      <!-- Form Actions -->
-      <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
-        <button type="button" (click)="cancel()" class="btn btn-ghost">Cancel</button>
-
-        <button
-          type="submit"
-          class="btn btn-primary"
-          [disabled]="!canSubmit()"
-          [class.btn-disabled]="!canSubmit()"
-        >
-          @if (isSubmitting()) {
-          <span class="loading loading-spinner loading-sm"></span>
-          Creating Product... } @else {
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-          Create Product }
-        </button>
-      </div>
+      <!-- Combination Creation Modal (Hidden - see VARIANT_MANAGEMENT.md) -->
+      <!-- <app-combination-modal
+        [isOpen]="showCombinationModal()"
+        [form]="combinationForm"
+        [options]="availableOptions()"
+        [templateIds]="allTemplateIds()"
+        [selectedOptionIds]="combinationForm.get('selectedOptionIds')?.value || []"
+        (submitted)="createCombination()"
+        (cancelled)="closeCombinationModal()"
+        (optionToggled)="toggleCombinationOption($event)"
+      /> -->
+      }
     </div>
   </form>
 
-  <!-- Custom Option Modal Component -->
-  <app-custom-option-modal
-    [isOpen]="showCustomOptionModal()"
-    [form]="customOptionForm"
-    (submitted)="addCustomOption()"
-    (cancelled)="closeCustomOptionModal()"
-  />
-  }
+  <!-- Unified Action Bar -->
+  <!-- Action Bar with Validation Feedback -->
+  <div
+    class="fixed left-0 right-0 bg-base-100 border-t-2 border-base-300 shadow-xl lg:bottom-0 lg:z-40"
+    style="bottom: 4rem; z-index: 51"
+  >
+    <div class="container-app py-3">
+      <!-- Validation Issues (when disabled) -->
+      @if (!canSubmit() && !isSubmitting() && validationIssues().length > 0) {
+      <div class="mb-2 text-center">
+        <p class="text-xs text-error font-semibold">
+          {{ validationIssues().length }} issue{{ validationIssues().length > 1 ? 's' : '' }} to fix
+        </p>
+      </div>
+      }
 
-  <!-- Service Form (Extracted Component) -->
-  @if (itemType() === 'service') {
-  <form [formGroup]="serviceForm" (ngSubmit)="onSubmit()">
-    <div class="grid gap-6">
-      <app-service-form [form]="serviceForm" />
-
-      <!-- Form Actions -->
-      <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
+      <div class="flex gap-2">
         <button type="button" (click)="cancel()" class="btn btn-ghost">Cancel</button>
-
         <button
           type="submit"
-          class="btn btn-primary"
+          (click)="onSubmit()"
+          class="btn btn-primary flex-1 min-h-[3rem]"
           [disabled]="!canSubmit()"
-          [class.btn-disabled]="!canSubmit()"
         >
           @if (isSubmitting()) {
-          <span class="loading loading-spinner loading-sm"></span>
-          Creating Service... } @else {
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+          <span class="loading loading-spinner"></span>
+          <span>Creating...</span>
+          } @else if (canSubmit()) {
+          <span>✓</span>
+          <span class="font-bold"
+            >Create {{ itemType() === 'product' ? 'Product' : 'Service' }}</span
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-          Create Service }
+          } @else {
+          <span>{{ validationIssues().length }}</span>
+          <span>Issue{{ validationIssues().length > 1 ? 's' : '' }} to Fix</span>
+          }
         </button>
       </div>
     </div>
-  </form>
-  }
+  </div>
 </div>

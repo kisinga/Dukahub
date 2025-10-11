@@ -21,13 +21,13 @@ import { CompanyService } from '../../../core/services/company.service';
 import { ProductService } from '../../../core/services/product.service';
 import { StockLocationService } from '../../../core/services/stock-location.service';
 import { BarcodeScannerComponent } from './components/barcode-scanner.component';
+// import { CombinationModalComponent } from './components/combination-modal.component'; // Hidden - see VARIANT_MANAGEMENT.md
 import { CustomOptionModalComponent } from './components/custom-option-modal.component';
 import { OptionItem, OptionSelectorComponent } from './components/option-selector.component';
 import { PhotoManagerComponent } from './components/photo-manager.component';
 import { ProductInfoFormComponent } from './components/product-info-form.component';
-import { ServiceFormComponent } from './components/service-form.component';
-import { Template, TemplateSelectorComponent } from './components/template-selector.component';
-import { VariantCardComponent } from './components/variant-card.component';
+import { Template } from './components/template-selector.component';
+import { VariantListComponent } from './components/variant-list.component';
 import { SkuGeneratorService } from './services/sku-generator.service';
 import { VariantForm, VariantGeneratorService } from './services/variant-generator.service';
 
@@ -43,13 +43,12 @@ import { VariantForm, VariantGeneratorService } from './services/variant-generat
         CommonModule,
         ReactiveFormsModule,
         ProductInfoFormComponent,
-        ServiceFormComponent,
         PhotoManagerComponent,
         BarcodeScannerComponent,
-        TemplateSelectorComponent,
         OptionSelectorComponent,
-        VariantCardComponent,
+        VariantListComponent,
         CustomOptionModalComponent,
+        // CombinationModalComponent, // Hidden - see VARIANT_MANAGEMENT.md
     ],
     templateUrl: './product-create.component.html',
     styleUrl: './product-create.component.scss',
@@ -87,16 +86,67 @@ export class ProductCreateComponent implements OnInit {
     readonly selectedTemplates = signal<string[]>([]);
 
     // Custom options added by user (in addition to template options)
-    readonly customOptions = signal<Array<{ name: string; sku: string }>>([]);
+    readonly customOptions = signal<Array<{ name: string; sku: string; typeName: string }>>([]);
 
     // Selected option IDs (for generating SKU cards)
     readonly selectedOptionIds = signal<string[]>([]);
 
-    // Modal state for adding custom option
+    // Modal state for adding custom option (type + multiple values)
     readonly showCustomOptionModal = signal(false);
     readonly customOptionForm = this.fb.group({
-        name: ['', [Validators.required, Validators.minLength(1)]],
-        sku: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(10)]],
+        name: ['', [Validators.required, Validators.minLength(2)]],
+        values: ['', [Validators.required, Validators.minLength(3)]],
+    });
+
+    // Modal for adding single option to existing or new group
+    readonly showAddOptionModal = signal(false);
+    readonly addOptionForm = this.fb.group({
+        variantGroup: ['Custom', [Validators.required]],
+        value: ['', [Validators.required, Validators.minLength(1)]],
+    });
+
+    // Track variant groups (for organizing custom options)
+    readonly customVariantGroups = computed(() => {
+        const groups = new Set<string>();
+        this.customOptions().forEach(opt => groups.add(opt.typeName));
+        return Array.from(groups);
+    });
+
+    // Computed: Combination labels for each variant (for variant-list component)
+    readonly variantCombinationLabels = computed(() => {
+        const labels: string[] = [];
+        for (let i = 0; i < this.variants.length; i++) {
+            labels.push(this.getVariantCombinationLabel(i));
+        }
+        return labels;
+    });
+
+    // Computed: Custom variant indices (for variant-list component)
+    readonly customVariantIndices = computed(() => {
+        const indices: number[] = [];
+        for (let i = 0; i < this.variants.length; i++) {
+            if (this.variantHasCustomOptions(i)) {
+                indices.push(i);
+            }
+        }
+        return indices;
+    });
+
+    // --- KISS Implementation (2025-10-11) ---
+    // Combination features are temporarily hidden for simplicity.
+    // See VARIANT_MANAGEMENT.md for rationale and future plans.
+
+    // Tab state for Individual vs Combinations view (UNUSED - kept for future Phase 1)
+    readonly activeVariantTab = signal<'individual' | 'combinations'>('individual');
+
+    // Modal for creating combinations (UNUSED - kept for future Phase 1)
+    readonly showCombinationModal = signal(false);
+    readonly combinationForm = this.fb.group({
+        selectedOptionIds: [[] as string[], [Validators.required, Validators.minLength(2)]],
+        name: ['', [Validators.required]],
+        sku: ['', [Validators.required]],
+        price: [0, [Validators.required, Validators.min(0.01)]],
+        stockOnHand: [0, [Validators.required, Validators.min(0)]],
     });
 
     // Built-in templates for quick setup
@@ -162,29 +212,37 @@ export class ProductCreateComponent implements OnInit {
         const templateIds = this.selectedTemplates();
         const customs = this.customOptions();
 
+        console.log('🔍 Computing availableOptions...');
+        console.log('🔍 selectedTemplates:', templateIds);
+        console.log('🔍 customOptions:', customs);
+
         let options: OptionItem[] = [];
 
         // Add options from all selected templates
         templateIds.forEach(templateId => {
             const template = this.templates.find(t => t.id === templateId);
+            console.log(`🔍 Template "${templateId}":`, template);
             if (template) {
                 template.options.forEach((opt, index) => {
-                    options.push({
+                    const option = {
                         id: `${templateId}-${index}`,
                         name: opt.name,
                         suggestedSku: opt.sku,
                         templateName: template.name
-                    });
+                    };
+                    console.log(`🔍 Adding option:`, option);
+                    options.push(option);
                 });
             }
         });
 
-        // Add custom options
+        // Add custom options (grouped by typeName)
         customs.forEach((custom, index) => {
             options.push({
                 id: `custom-${index}`,
                 name: custom.name,
                 suggestedSku: custom.sku,
+                templateName: custom.typeName,
                 isCustom: true
             });
         });
@@ -192,13 +250,63 @@ export class ProductCreateComponent implements OnInit {
         return options;
     });
 
-    // Get selected template names
+    // Get selected template names (including custom types)
     readonly selectedTemplateNames = computed(() => {
         const templateIds = this.selectedTemplates();
-        return templateIds
+        const customTypeNames = [...new Set(this.customOptions().map(c => c.typeName))];
+
+        const templateNames = templateIds
             .map(id => this.templates.find(t => t.id === id)?.name)
-            .filter(Boolean)
-            .join(' + ');
+            .filter(Boolean);
+
+        return [...templateNames, ...customTypeNames].join(' + ');
+    });
+
+    // Get all active template IDs (built-in + custom)
+    readonly allTemplateIds = computed(() => {
+        const builtIn = this.selectedTemplates();
+        const customTypes = [...new Set(this.customOptions().map(c => c.typeName))];
+        const result = [...builtIn, ...customTypes];
+        console.log('🔍 allTemplateIds:', result);
+        return result;
+    });
+
+    // Individual variants (have exactly 1 option)
+    readonly individualVariants = computed(() => {
+        return this.variants.controls.filter(v => {
+            const optionIds = v.get('optionIds')?.value || [];
+            return optionIds.length === 1;
+        }) as FormGroup[];
+    });
+
+    // Combined variants (have 2+ options)
+    readonly combinedVariants = computed(() => {
+        return this.variants.controls.filter(v => {
+            const optionIds = v.get('optionIds')?.value || [];
+            return optionIds.length > 1;
+        }) as FormGroup[];
+    });
+
+    // Group individual variants by template
+    readonly groupedIndividualVariants = computed(() => {
+        const individuals = this.individualVariants();
+        const grouped = new Map<string, FormGroup[]>();
+
+        individuals.forEach(variant => {
+            const optionIds = variant.get('optionIds')?.value || [];
+            if (optionIds.length === 1) {
+                const optionId = optionIds[0];
+                const option = this.availableOptions().find(opt => opt.id === optionId);
+                const templateName = option?.templateName || 'Custom';
+
+                if (!grouped.has(templateName)) {
+                    grouped.set(templateName, []);
+                }
+                grouped.get(templateName)!.push(variant);
+            }
+        });
+
+        return grouped;
     });
 
     // Active channel info
@@ -225,9 +333,31 @@ export class ProductCreateComponent implements OnInit {
         const hasVariants = this.variants.length > 0;
         const hasLocations = this.stockLocations().length > 0;
 
-        console.log('🔘 Button state:', { isValid, notSubmitting, hasVariants, hasLocations });
-
         return isValid && notSubmitting && hasVariants && hasLocations;
+    });
+
+    // Computed: Validation issues count
+    readonly validationIssues = computed(() => {
+        const issues: string[] = [];
+        const activeForm = this.itemType() === 'product' ? this.productForm : this.serviceForm;
+
+        // Check form validity
+        if (activeForm.get('name')?.invalid) issues.push('Name required');
+        if (activeForm.get('price')?.invalid) issues.push('Price required');
+
+        // Product-specific
+        if (this.itemType() === 'product') {
+            if (this.variants.length === 0) issues.push('Add at least 1 SKU');
+
+            // Check variant validity
+            this.variants.controls.forEach((v, i) => {
+                if (v.get('name')?.invalid) issues.push(`SKU ${i + 1}: Name`);
+                if (v.get('sku')?.invalid) issues.push(`SKU ${i + 1}: Code`);
+                if (v.get('price')?.invalid) issues.push(`SKU ${i + 1}: Price`);
+            });
+        }
+
+        return issues;
     });
 
     constructor() {
@@ -379,8 +509,8 @@ export class ProductCreateComponent implements OnInit {
     }
 
     /**
-     * Regenerate all variants based on selected options
-     * Delegates to VariantGeneratorService
+     * Regenerate individual variants based on selected options
+     * Each option becomes its own variant (no Cartesian product)
      */
     private regenerateVariants(): void {
         const selectedIds = this.selectedOptionIds();
@@ -400,18 +530,45 @@ export class ProductCreateComponent implements OnInit {
             this.productForm.get('name')?.value || ''
         );
 
-        // Generate variants using service
-        const generatedVariants = this.variantGenerator.generateVariants(
-            selectedOptions,
-            productPrefix
-        );
+        // Remove individual variants that are no longer selected
+        const existingIndividualVariants = this.variants.controls.filter(v => {
+            const optionIds = v.get('optionIds')?.value || [];
+            return optionIds.length === 1;
+        });
 
-        // Clear existing variants
-        this.variants.clear();
+        // Keep only variants whose option is still selected
+        for (let i = this.variants.length - 1; i >= 0; i--) {
+            const variant = this.variants.at(i);
+            const optionIds = variant.get('optionIds')?.value || [];
 
-        // Add generated variants to FormArray
-        generatedVariants.forEach(variant => {
-            this.variants.push(this.createVariantForm(variant));
+            if (optionIds.length === 1 && !selectedIds.includes(optionIds[0])) {
+                this.variants.removeAt(i);
+            }
+        }
+
+        // Create individual variants for newly selected options
+        selectedOptions.forEach(option => {
+            // Check if variant already exists
+            const exists = this.variants.controls.some(v => {
+                const optionIds = v.get('optionIds')?.value || [];
+                return optionIds.length === 1 && optionIds[0] === option.id;
+            });
+
+            if (!exists) {
+                // Create new individual variant
+                const name = this.skuGenerator.formatOptionName(option.name);
+                const sku = this.skuGenerator.generateVariantSku(productPrefix, [option]);
+
+                const variant: VariantForm = {
+                    optionIds: [option.id],
+                    name,
+                    sku,
+                    price: 0,
+                    stockOnHand: 0
+                };
+
+                this.variants.push(this.createVariantForm(variant));
+            }
         });
     }
 
@@ -437,6 +594,14 @@ export class ProductCreateComponent implements OnInit {
         );
 
         this.variants.push(this.createVariantForm(customVariant));
+
+        // Scroll to SKU Details section after adding
+        setTimeout(() => {
+            const skuSection = document.querySelector('[formArrayName="variants"]');
+            if (skuSection) {
+                skuSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }, 100);
     }
 
     /**
@@ -471,7 +636,7 @@ export class ProductCreateComponent implements OnInit {
     }
 
     /**
-     * Open modal to add custom option
+     * Open modal to add custom option (type + multiple values)
      */
     openCustomOptionModal(): void {
         this.customOptionForm.reset();
@@ -487,7 +652,64 @@ export class ProductCreateComponent implements OnInit {
     }
 
     /**
-     * Add custom option and auto-select it
+     * Open modal to add single option value
+     */
+    openAddOptionValueModal(): void {
+        this.addOptionForm.reset();
+        this.showAddOptionModal.set(true);
+    }
+
+    /**
+     * Close add option value modal
+     */
+    closeAddOptionModal(): void {
+        this.showAddOptionModal.set(false);
+        this.addOptionForm.reset();
+    }
+
+    /**
+     * Add single option value to a variant group
+     */
+    addOptionValue(): void {
+        if (this.addOptionForm.invalid) {
+            this.addOptionForm.markAllAsTouched();
+            return;
+        }
+
+        const valueName = this.addOptionForm.value.value!.trim();
+        const groupName = this.addOptionForm.value.variantGroup!.trim();
+        const customs = this.customOptions();
+        const startIndex = customs.length;
+
+        // Create option under selected group
+        const newOption = {
+            name: valueName,
+            sku: this.generateCustomSku(valueName),
+            typeName: groupName
+        };
+
+        this.customOptions.set([...customs, newOption]);
+        this.closeAddOptionModal();
+
+        // Auto-select the new option
+        setTimeout(() => {
+            const newOptionId = `custom-${startIndex}`;
+            if (!this.isOptionSelected(newOptionId)) {
+                this.toggleOptionSelection(newOptionId);
+            }
+
+            // Scroll to SKU Details
+            setTimeout(() => {
+                const skuSection = document.querySelector('[formArrayName="variants"]');
+                if (skuSection) {
+                    skuSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 200);
+        }, 100);
+    }
+
+    /**
+     * Add custom option and auto-select all values
      */
     addCustomOption(): void {
         if (this.customOptionForm.invalid) {
@@ -496,26 +718,61 @@ export class ProductCreateComponent implements OnInit {
         }
 
         const value = this.customOptionForm.value;
-        const customs = this.customOptions();
+        const optionTypeName = value.name!.trim();
+        const valuesText = value.values!.trim();
 
-        // Add to custom options
-        const newIndex = customs.length;
-        this.customOptions.set([
-            ...customs,
-            {
-                name: value.name!.trim(),
-                sku: value.sku!.trim().toUpperCase()
-            }
-        ]);
+        // Parse multiple values (one per line)
+        const values = valuesText
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0);
+
+        if (values.length === 0) {
+            return;
+        }
+
+        const customs = this.customOptions();
+        const startIndex = customs.length;
+
+        // Create custom options for each value
+        const newOptions = values.map((valueName, idx) => ({
+            name: valueName,
+            sku: this.generateCustomSku(valueName),
+            typeName: optionTypeName
+        }));
+
+        this.customOptions.set([...customs, ...newOptions]);
 
         // Close modal
         this.closeCustomOptionModal();
 
-        // Auto-select the newly created option to create first SKU
+        // Auto-select all newly created options
         setTimeout(() => {
-            const newOptionId = `custom-${newIndex}`;
-            this.toggleOptionSelection(newOptionId);
+            newOptions.forEach((_, idx) => {
+                const newOptionId = `custom-${startIndex + idx}`;
+                if (!this.isOptionSelected(newOptionId)) {
+                    this.toggleOptionSelection(newOptionId);
+                }
+            });
+
+            // Scroll to SKU Details section
+            setTimeout(() => {
+                const skuSection = document.querySelector('[formArrayName="variants"]');
+                if (skuSection) {
+                    skuSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 200);
         }, 100);
+    }
+
+    /**
+     * Generate SKU code from value name
+     */
+    private generateCustomSku(valueName: string): string {
+        return valueName
+            .toUpperCase()
+            .replace(/[^A-Z0-9]/g, '')
+            .substring(0, 5);
     }
 
     /**
@@ -530,6 +787,16 @@ export class ProductCreateComponent implements OnInit {
             optionIds,
             this.availableOptions()
         );
+    }
+
+    /**
+     * Check if variant has any custom options
+     */
+    variantHasCustomOptions(variantIndex: number): boolean {
+        const variant = this.variants.at(variantIndex);
+        const optionIds = variant.get('optionIds')?.value || [];
+
+        return optionIds.some((id: string) => id.startsWith('custom-'));
     }
 
     /**
@@ -555,6 +822,108 @@ export class ProductCreateComponent implements OnInit {
         return option.templateName === templateName;
     }
 
+
+    /**
+     * Open combination creation modal
+     */
+    openCombinationModal(): void {
+        this.combinationForm.reset({
+            selectedOptionIds: [],
+            name: '',
+            sku: '',
+            price: 0,
+            stockOnHand: 0
+        });
+        this.showCombinationModal.set(true);
+    }
+
+    /**
+     * Close combination modal
+     */
+    closeCombinationModal(): void {
+        this.showCombinationModal.set(false);
+        this.combinationForm.reset();
+    }
+
+    /**
+     * Toggle option selection in combination modal
+     */
+    toggleCombinationOption(optionId: string): void {
+        const selectedIds = this.combinationForm.get('selectedOptionIds')?.value || [];
+        const index = selectedIds.indexOf(optionId);
+
+        if (index > -1) {
+            selectedIds.splice(index, 1);
+        } else {
+            selectedIds.push(optionId);
+        }
+
+        this.combinationForm.patchValue({ selectedOptionIds: [...selectedIds] });
+
+        // Auto-generate name and SKU based on selected options
+        if (selectedIds.length >= 2) {
+            const options = this.availableOptions().filter(opt => selectedIds.includes(opt.id));
+            const names = options.map(opt => this.skuGenerator.formatOptionName(opt.name));
+            const productPrefix = this.skuGenerator.generateProductPrefix(
+                this.productForm.get('name')?.value || ''
+            );
+            const sku = this.skuGenerator.generateVariantSku(productPrefix, options);
+
+            this.combinationForm.patchValue({
+                name: names.join(' - '),
+                sku
+            });
+        }
+    }
+
+    /**
+     * Check if option is selected in combination form
+     */
+    isCombinationOptionSelected(optionId: string): boolean {
+        const selectedIds = this.combinationForm.get('selectedOptionIds')?.value || [];
+        return selectedIds.includes(optionId);
+    }
+
+    /**
+     * Create combination variant
+     */
+    createCombination(): void {
+        if (this.combinationForm.invalid) {
+            this.combinationForm.markAllAsTouched();
+            return;
+        }
+
+        const value = this.combinationForm.value;
+
+        const combinationVariant: VariantForm = {
+            optionIds: value.selectedOptionIds!,
+            name: value.name!.trim(),
+            sku: value.sku!.trim(),
+            price: Number(value.price),
+            stockOnHand: Number(value.stockOnHand)
+        };
+
+        this.variants.push(this.createVariantForm(combinationVariant));
+        this.closeCombinationModal();
+
+        // Switch to combinations tab to show the new combination
+        this.activeVariantTab.set('combinations');
+
+        // Scroll to combinations section
+        setTimeout(() => {
+            const combinationsSection = document.querySelector('[data-section="combinations"]');
+            if (combinationsSection) {
+                combinationsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }, 100);
+    }
+
+    /**
+     * Get variant index in main array by finding it in the form array
+     */
+    getVariantIndex(variant: FormGroup): number {
+        return this.variants.controls.indexOf(variant);
+    }
 
     /**
      * Switch between product and service creation
@@ -666,14 +1035,20 @@ export class ProductCreateComponent implements OnInit {
                 enabled: true,
             };
 
-            // Map variants
+            // Map variants (KISS: independent variants, no ProductOptions yet)
+            // Note: optionIds in our form are UI identifiers only, not Vendure IDs
+            // For KISS mode, we create simple independent variants
             const variantsInput = formValue.variants.map((v: VariantForm) => ({
                 sku: v.sku.trim().toUpperCase(),
                 name: v.name.trim(),
                 price: Number(v.price),
                 stockOnHand: Number(v.stockOnHand),
                 stockLocationId,
+                // optionIds intentionally omitted - creates independent variants in Vendure
             }));
+
+            console.log('📦 Submitting variants:', variantsInput);
+            console.log('📦 Variants count:', variantsInput.length);
 
             const productId = await this.productService.createProductWithVariants(
                 productInput,

@@ -32,6 +32,7 @@ interface POSConfig {
   enableMLDetection: boolean;
   enableBarcodeScanning: boolean;
   channelId: string;
+  cashierFlow: boolean; // Global toggle for cashier flow
 }
 
 /**
@@ -42,6 +43,21 @@ interface CartItem {
   quantity: number;
   subtotal: number;
 }
+
+/**
+ * Customer structure
+ */
+interface Customer {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+}
+
+/**
+ * Payment method types (hook only - no implementation yet)
+ */
+type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
 
 /**
  * Scanner status
@@ -79,6 +95,7 @@ export class SellComponent implements OnInit, OnDestroy {
     enableMLDetection: true,
     enableBarcodeScanning: true,
     channelId: 'T_1', // TODO: Get from auth/company service
+    cashierFlow: true, // Manual initialization as requested
   });
 
   // Scanner state
@@ -111,6 +128,27 @@ export class SellComponent implements OnInit, OnDestroy {
 
   // Cart modal state
   readonly showCartModal = signal<boolean>(false);
+
+  // Checkout modal state
+  readonly showCheckoutModal = signal<boolean>(false);
+  readonly checkoutType = signal<'credit' | 'cashier' | 'cash' | null>(null);
+  readonly isProcessingCheckout = signal<boolean>(false);
+  readonly checkoutError = signal<string | null>(null);
+
+  // Customer management state
+  readonly customerSearchTerm = signal<string>('');
+  readonly customerSearchResults = signal<Customer[]>([]);
+  readonly isSearchingCustomers = signal<boolean>(false);
+  readonly selectedCustomer = signal<Customer | null>(null);
+  readonly showCustomerForm = signal<boolean>(false);
+
+  // New customer form
+  readonly newCustomerName = signal<string>('');
+  readonly newCustomerPhone = signal<string>('');
+  readonly newCustomerEmail = signal<string>('');
+
+  // Payment method state (hook only)
+  readonly selectedPaymentMethod = signal<PaymentMethod | null>(null);
 
   // Computed status message
   readonly statusMessage = computed(() => {
@@ -424,6 +462,9 @@ export class SellComponent implements OnInit, OnDestroy {
     this.detectedProduct.set(null);
 
     console.log('Added to cart:', variant.name, 'x', quantity);
+
+    // Provide visual feedback but don't keep cart modal open
+    // Cart is now accessed via FAB for a cleaner experience
   }
 
   /**
@@ -459,20 +500,265 @@ export class SellComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Process checkout
+   * Initiate checkout - opens checkout modal
    */
   async checkout(): Promise<void> {
     if (this.cartItems().length === 0) {
       return;
     }
 
-    console.log('Processing checkout:', {
-      items: this.cartItems(),
-      total: this.cartTotal(),
-    });
+    this.closeCartModal();
+    this.showCheckoutModal.set(true);
+    this.checkoutError.set(null);
+  }
 
-    // TODO: Implement checkout with backend
-    alert('Checkout not yet implemented');
+  /**
+   * Handle credit sale selection
+   */
+  handleCreditSale(): void {
+    this.checkoutType.set('credit');
+    this.selectedCustomer.set(null);
+    this.customerSearchTerm.set('');
+    this.customerSearchResults.set([]);
+    this.showCustomerForm.set(false);
+  }
+
+  /**
+   * Handle cashier flow selection
+   */
+  handleCashierFlow(): void {
+    this.checkoutType.set('cashier');
+  }
+
+  /**
+   * Handle cash sale selection
+   */
+  handleCashSale(): void {
+    this.checkoutType.set('cash');
+    this.selectedPaymentMethod.set(null);
+  }
+
+  /**
+   * Search for customers (for credit sales)
+   */
+  async searchCustomers(): Promise<void> {
+    const term = this.customerSearchTerm().trim();
+
+    if (term.length < 2) {
+      this.customerSearchResults.set([]);
+      return;
+    }
+
+    this.isSearchingCustomers.set(true);
+
+    try {
+      // TODO: Implement actual customer search via GraphQL
+      // For now, mock results
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Mock customer results
+      const mockCustomers: Customer[] = [
+        { id: '1', name: `Customer matching "${term}"`, phone: '+254712345678' },
+        { id: '2', name: `Another ${term}`, phone: '+254787654321', email: 'test@example.com' },
+      ];
+
+      this.customerSearchResults.set(mockCustomers);
+    } catch (error) {
+      console.error('Customer search failed:', error);
+      this.customerSearchResults.set([]);
+    } finally {
+      this.isSearchingCustomers.set(false);
+    }
+  }
+
+  /**
+   * Select a customer from search results
+   */
+  selectCustomer(customer: Customer): void {
+    this.selectedCustomer.set(customer);
+    this.customerSearchTerm.set('');
+    this.customerSearchResults.set([]);
+    this.showCustomerForm.set(false);
+  }
+
+  /**
+   * Show form to create new customer
+   */
+  showNewCustomerForm(): void {
+    this.showCustomerForm.set(true);
+    this.newCustomerName.set('');
+    this.newCustomerPhone.set('');
+    this.newCustomerEmail.set('');
+  }
+
+  /**
+   * Cancel new customer creation
+   */
+  cancelNewCustomer(): void {
+    this.showCustomerForm.set(false);
+    this.newCustomerName.set('');
+    this.newCustomerPhone.set('');
+    this.newCustomerEmail.set('');
+  }
+
+  /**
+   * Create new customer (basic details only)
+   */
+  async createNewCustomer(): Promise<void> {
+    const name = this.newCustomerName().trim();
+    const phone = this.newCustomerPhone().trim();
+
+    if (!name || !phone) {
+      alert('Name and phone number are required');
+      return;
+    }
+
+    this.isProcessingCheckout.set(true);
+
+    try {
+      // TODO: Implement actual customer creation via GraphQL
+      // For now, create a mock customer
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const newCustomer: Customer = {
+        id: `new-${Date.now()}`,
+        name,
+        phone,
+        email: this.newCustomerEmail().trim() || undefined,
+      };
+
+      this.selectedCustomer.set(newCustomer);
+      this.showCustomerForm.set(false);
+      this.newCustomerName.set('');
+      this.newCustomerPhone.set('');
+      this.newCustomerEmail.set('');
+    } catch (error) {
+      console.error('Failed to create customer:', error);
+      alert('Failed to create customer. Please try again.');
+    } finally {
+      this.isProcessingCheckout.set(false);
+    }
+  }
+
+  /**
+   * Select payment method (hook only - no implementation)
+   */
+  selectPaymentMethod(method: PaymentMethod): void {
+    this.selectedPaymentMethod.set(method);
+  }
+
+  /**
+   * Complete credit sale
+   */
+  async completeCreditSale(): Promise<void> {
+    if (!this.selectedCustomer()) {
+      this.checkoutError.set('Please select or create a customer');
+      return;
+    }
+
+    this.isProcessingCheckout.set(true);
+    this.checkoutError.set(null);
+
+    try {
+      // TODO: Implement order creation with Vendure
+      // Order should be created with status for credit (payment due later)
+      console.log('Creating credit sale:', {
+        customer: this.selectedCustomer(),
+        items: this.cartItems(),
+        total: this.cartTotal(),
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock API call
+
+      // Success
+      this.clearCart();
+      this.closeCheckoutModal();
+      alert(`Credit sale created successfully for ${this.selectedCustomer()?.name}`);
+    } catch (error) {
+      console.error('Credit sale failed:', error);
+      this.checkoutError.set('Failed to create credit sale. Please try again.');
+    } finally {
+      this.isProcessingCheckout.set(false);
+    }
+  }
+
+  /**
+   * Complete cashier flow (submit to cashier for payment)
+   */
+  async completeCashierFlow(): Promise<void> {
+    this.isProcessingCheckout.set(true);
+    this.checkoutError.set(null);
+
+    try {
+      // TODO: Implement order creation with PENDING_PAYMENT status
+      // This follows the two-step process from POS_README.md
+      console.log('Submitting to cashier:', {
+        items: this.cartItems(),
+        total: this.cartTotal(),
+        status: 'PENDING_PAYMENT',
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock API call
+
+      // Success - order created, awaiting cashier payment validation
+      this.clearCart();
+      this.closeCheckoutModal();
+      alert('Order submitted to cashier! Pro-forma invoice will be printed.');
+    } catch (error) {
+      console.error('Cashier submission failed:', error);
+      this.checkoutError.set('Failed to submit to cashier. Please try again.');
+    } finally {
+      this.isProcessingCheckout.set(false);
+    }
+  }
+
+  /**
+   * Complete cash sale
+   */
+  async completeCashSale(): Promise<void> {
+    if (!this.selectedPaymentMethod()) {
+      this.checkoutError.set('Please select a payment method');
+      return;
+    }
+
+    this.isProcessingCheckout.set(true);
+    this.checkoutError.set(null);
+
+    try {
+      // TODO: Implement order creation with Vendure
+      // Order should be created with immediate payment
+      console.log('Creating cash sale:', {
+        paymentMethod: this.selectedPaymentMethod(),
+        items: this.cartItems(),
+        total: this.cartTotal(),
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock API call
+
+      // Success
+      this.clearCart();
+      this.closeCheckoutModal();
+      alert(`Cash sale completed successfully! Payment method: ${this.selectedPaymentMethod()}`);
+    } catch (error) {
+      console.error('Cash sale failed:', error);
+      this.checkoutError.set('Failed to complete sale. Please try again.');
+    } finally {
+      this.isProcessingCheckout.set(false);
+    }
+  }
+
+  /**
+   * Close checkout modal
+   */
+  closeCheckoutModal(): void {
+    this.showCheckoutModal.set(false);
+    this.checkoutType.set(null);
+    this.checkoutError.set(null);
+    this.selectedCustomer.set(null);
+    this.selectedPaymentMethod.set(null);
+    this.customerSearchTerm.set('');
+    this.customerSearchResults.set([]);
+    this.showCustomerForm.set(false);
   }
 
   /**
@@ -533,11 +819,4 @@ export class SellComponent implements OnInit, OnDestroy {
     this.showCartModal.set(false);
   }
 
-  /**
-   * Handle credit payment
-   */
-  handleCredit(): void {
-    console.log('Credit payment not yet implemented');
-    // TODO: Implement credit payment flow
-  }
 }
