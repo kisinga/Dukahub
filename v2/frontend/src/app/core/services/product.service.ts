@@ -1,17 +1,20 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import type {
     CheckSkuExistsQuery,
     CreateProductMutation,
     CreateProductMutationVariables,
     CreateProductVariantsMutation,
     CreateProductVariantsMutationVariables,
-    GetProductDetailQuery
+    GetProductDetailQuery,
+    GetProductsQuery,
+    GetProductsQueryVariables
 } from '../graphql/generated/graphql';
 import {
     CHECK_SKU_EXISTS,
     CREATE_PRODUCT,
     CREATE_PRODUCT_VARIANTS,
-    GET_PRODUCT_DETAIL
+    GET_PRODUCT_DETAIL,
+    GET_PRODUCTS
 } from '../graphql/product.graphql';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
@@ -80,9 +83,15 @@ export class ProductService {
     // State for operation in progress
     private readonly isCreatingSignal = signal(false);
     private readonly errorSignal = signal<string | null>(null);
+    private readonly isLoadingSignal = signal(false);
+    private readonly productsSignal = signal<any[]>([]);
+    private readonly totalItemsSignal = signal(0);
 
     readonly isCreating = this.isCreatingSignal.asReadonly();
     readonly error = this.errorSignal.asReadonly();
+    readonly isLoading = this.isLoadingSignal.asReadonly();
+    readonly products = this.productsSignal.asReadonly();
+    readonly totalItems = this.totalItemsSignal.asReadonly();
 
     /**
      * Check if a SKU already exists
@@ -278,6 +287,42 @@ export class ProductService {
      */
     clearError(): void {
         this.errorSignal.set(null);
+    }
+
+    /**
+     * Fetch all products with optional pagination
+     * @param options - Optional pagination and filter options
+     */
+    async fetchProducts(options?: GetProductsQueryVariables['options']): Promise<void> {
+        this.isLoadingSignal.set(true);
+        this.errorSignal.set(null);
+
+        try {
+            const client = this.apolloService.getClient();
+            const result = await client.query<GetProductsQuery>({
+                query: GET_PRODUCTS,
+                variables: {
+                    options: options || {
+                        take: 50,
+                        skip: 0
+                    }
+                },
+                fetchPolicy: 'network-only',
+            });
+
+            const items = result.data?.products?.items || [];
+            const total = result.data?.products?.totalItems || 0;
+
+            this.productsSignal.set(items);
+            this.totalItemsSignal.set(total);
+        } catch (error: any) {
+            console.error('❌ Failed to fetch products:', error);
+            this.errorSignal.set(error.message || 'Failed to fetch products');
+            this.productsSignal.set([]);
+            this.totalItemsSignal.set(0);
+        } finally {
+            this.isLoadingSignal.set(false);
+        }
     }
 }
 

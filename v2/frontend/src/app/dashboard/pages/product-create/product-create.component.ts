@@ -77,8 +77,9 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     // View references
     readonly barcodeVideoElement = viewChild<ElementRef<HTMLVideoElement>>('barcodeCamera');
 
-    // Form
+    // Forms
     readonly productForm: FormGroup;
+    readonly serviceForm: FormGroup;
 
     // State signals
     readonly isSubmitting = signal(false);
@@ -88,6 +89,7 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     readonly photoPreviews = signal<string[]>([]);
     readonly activeTab = signal<'photos' | 'barcode'>('photos');
     readonly isScanningBarcode = signal(false);
+    readonly itemType = signal<'product' | 'service'>('product');
     readonly scannedBarcode = signal<string | null>(null);
     private currentVariantIndexForBarcode = 0;
 
@@ -228,6 +230,13 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     readonly canSubmit = computed(() => {
         const isValid = this.formValidSignal();
         const notSubmitting = !this.isSubmitting();
+
+        if (this.itemType() === 'service') {
+            // Services only need valid form
+            return isValid && notSubmitting;
+        }
+
+        // Products need variants and locations
         const hasVariants = this.variants.length > 0;
         const hasLocations = this.stockLocations().length > 0;
 
@@ -237,7 +246,7 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     });
 
     constructor() {
-        // Initialize form
+        // Initialize product form
         this.productForm = this.fb.group({
             name: ['', [Validators.required, Validators.minLength(3)]],
             description: [''], // Optional
@@ -245,16 +254,32 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
             variants: this.fb.array([]),
         });
 
-        // Variants are added dynamically when options are selected
+        // Initialize service form (simpler - no inventory, no variants)
+        this.serviceForm = this.fb.group({
+            name: ['', [Validators.required, Validators.minLength(3)]],
+            description: ['', [Validators.required, Validators.minLength(10)]],
+            price: [0, [Validators.required, Validators.min(0.01)]],
+            duration: [0, [Validators.min(0)]], // Optional: duration in minutes
+        });
 
         // Track form validity changes for reactive button state
         this.productForm.statusChanges.subscribe((status) => {
             const isValid = status === 'VALID';
-            this.formValidSignal.set(isValid);
+            if (this.itemType() === 'product') {
+                this.formValidSignal.set(isValid);
+            }
         });
+
+        this.serviceForm.statusChanges.subscribe((status) => {
+            const isValid = status === 'VALID';
+            if (this.itemType() === 'service') {
+                this.formValidSignal.set(isValid);
+            }
+        });
+
         this.formValidSignal.set(this.productForm.valid);
 
-        // Auto-select first stock location when loaded
+        // Auto-select first stock location when loaded (products only)
         effect(() => {
             const locations = this.stockLocationService.locations();
             if (locations.length > 0 && !this.productForm.get('stockLocationId')?.value) {
@@ -644,10 +669,96 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Submit the form and create product with variants
-     * For now: Creates simple variants without option groups (KISS)
+     * Switch between product and service creation
+     */
+    switchItemType(type: 'product' | 'service'): void {
+        this.itemType.set(type);
+
+        // Update form validity signal based on active form
+        if (type === 'product') {
+            this.formValidSignal.set(this.productForm.valid);
+        } else {
+            this.formValidSignal.set(this.serviceForm.valid);
+        }
+    }
+
+    /**
+     * Submit the form (delegates to product or service submission)
      */
     async onSubmit(): Promise<void> {
+        if (this.itemType() === 'service') {
+            return this.submitService();
+        }
+        return this.submitProduct();
+    }
+
+    /**
+     * Submit service form
+     */
+    async submitService(): Promise<void> {
+        if (!this.canSubmit()) {
+            this.serviceForm.markAllAsTouched();
+            return;
+        }
+
+        this.isSubmitting.set(true);
+        this.submitError.set(null);
+        this.submitSuccess.set(false);
+
+        try {
+            const formValue = this.serviceForm.value;
+
+            // Create a simple product variant for the service
+            // Services are treated as products with a single variant and no stock tracking
+            const productInput = {
+                name: formValue.name.trim(),
+                description: formValue.description?.trim() || '',
+                enabled: true,
+            };
+
+            // Ensure we have at least one stock location
+            const locations = this.stockLocations();
+            if (locations.length === 0) {
+                this.submitError.set('No stock location available. Please create one in settings first.');
+                this.isSubmitting.set(false);
+                return;
+            }
+
+            const variantsInput = [{
+                sku: `SVC-${Date.now()}`, // Auto-generate simple SKU for service
+                name: 'Standard', // Default variant name for services
+                price: Number(formValue.price),
+                stockOnHand: 0, // Services don't track stock
+                stockLocationId: locations[0].id, // Use first location
+            }];
+
+            const productId = await this.productService.createProductWithVariants(
+                productInput,
+                variantsInput
+            );
+
+            if (productId) {
+                this.submitSuccess.set(true);
+                setTimeout(() => {
+                    this.router.navigate(['/dashboard/products']);
+                }, 1500);
+            } else {
+                const error = this.productService.error();
+                this.submitError.set(error || 'Failed to create service');
+            }
+        } catch (error: any) {
+            console.error('❌ Service creation failed:', error);
+            this.submitError.set(error.message || 'An unexpected error occurred');
+        } finally {
+            this.isSubmitting.set(false);
+        }
+    }
+
+    /**
+     * Submit product form with variants
+     * For now: Creates simple variants without option groups (KISS)
+     */
+    async submitProduct(): Promise<void> {
         if (!this.canSubmit()) {
             this.productForm.markAllAsTouched();
             return;

@@ -233,3 +233,34 @@ export const ADD_OPTION_GROUP_TO_PRODUCT = graphql(`
   }
 `);
 
+/**
+ * Query to get all products with pagination
+ * Used for displaying products in the products list page
+ */
+export const GET_PRODUCTS = graphql(`
+  query GetProducts($options: ProductListOptions) {
+    products(options: $options) {
+      totalItems
+      items {
+        id
+        name
+        slug
+        description
+        enabled
+        featuredAsset {
+          id
+          preview
+        }
+        variants {
+          id
+          name
+          sku
+          price
+          priceWithTax
+          stockOnHand
+        }
+      }
+    }
+  }
+`);
+

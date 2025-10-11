@@ -3,8 +3,16 @@
   <div class="mb-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h1 class="text-2xl md:text-3xl font-bold">Create Product</h1>
-        <p class="text-base-content/70 mt-1">Add a new product with SKUs to your inventory</p>
+        <h1 class="text-2xl md:text-3xl font-bold">
+          {{ itemType() === 'product' ? 'Create Product' : 'Create Service' }}
+        </h1>
+        <p class="text-base-content/70 mt-1">
+          {{
+            itemType() === 'product'
+              ? 'Add a new product with SKUs to your inventory'
+              : 'Add a new service offering to your business'
+          }}
+        </p>
       </div>
 
       <!-- Active Channel Badge -->
@@ -25,6 +33,56 @@
         </svg>
         Channel: {{ channelName() }}
       </div>
+    </div>
+
+    <!-- Item Type Tabs -->
+    <div role="tablist" class="tabs tabs-boxed mt-4">
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [class.tab-active]="itemType() === 'product'"
+        (click)="switchItemType('product')"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 mr-2"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+          />
+        </svg>
+        Product
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [class.tab-active]="itemType() === 'service'"
+        (click)="switchItemType('service')"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 mr-2"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+          />
+        </svg>
+        Service
+      </button>
     </div>
 
     <div class="divider"></div>
@@ -72,7 +130,8 @@
   </div>
   }
 
-  <!-- Main Form -->
+  <!-- Product Form -->
+  @if (itemType() === 'product') {
   <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
     <div class="grid gap-6">
       <!-- Product Information Card -->
@@ -563,4 +622,163 @@
     (submitted)="addCustomOption()"
     (cancelled)="closeCustomOptionModal()"
   />
+  }
+
+  <!-- Service Form -->
+  @if (itemType() === 'service') {
+  <form [formGroup]="serviceForm" (ngSubmit)="onSubmit()">
+    <div class="grid gap-6">
+      <!-- Service Information Card -->
+      <div class="card card-border bg-base-100">
+        <div class="card-body">
+          <h2 class="card-title">Service Information</h2>
+          <p class="text-sm text-base-content/70 mb-4">
+            Services are offerings that don't require inventory tracking
+          </p>
+
+          <!-- Service Name -->
+          <label class="floating-label">
+            <input
+              type="text"
+              formControlName="name"
+              placeholder="Service Name"
+              class="input"
+              [class.input-error]="
+                serviceForm.get('name')?.invalid &&
+                (serviceForm.get('name')?.dirty || serviceForm.get('name')?.touched)
+              "
+            />
+            <span>Service Name *</span>
+          </label>
+          @if (serviceForm.get('name')?.invalid && (serviceForm.get('name')?.dirty ||
+          serviceForm.get('name')?.touched)) {
+          <p class="text-error text-sm mt-1">
+            @if (serviceForm.get('name')?.hasError('required')) { Service name required } @else if
+            (serviceForm.get('name')?.hasError('minlength')) { Minimum 3 characters required }
+          </p>
+          }
+
+          <!-- Service Description -->
+          <label class="floating-label mt-4">
+            <textarea
+              formControlName="description"
+              placeholder="Service Description"
+              class="textarea"
+              rows="4"
+              [class.textarea-error]="
+                serviceForm.get('description')?.invalid &&
+                (serviceForm.get('description')?.dirty || serviceForm.get('description')?.touched)
+              "
+            ></textarea>
+            <span>Service Description *</span>
+          </label>
+          @if (serviceForm.get('description')?.invalid && (serviceForm.get('description')?.dirty ||
+          serviceForm.get('description')?.touched)) {
+          <p class="text-error text-sm mt-1">
+            @if (serviceForm.get('description')?.hasError('required')) { Description is required }
+            @else if (serviceForm.get('description')?.hasError('minlength')) { Minimum 10 characters
+            required }
+          </p>
+          }
+        </div>
+      </div>
+
+      <!-- Pricing Card -->
+      <div class="card card-border bg-base-100">
+        <div class="card-body">
+          <h2 class="card-title">Pricing & Duration</h2>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <!-- Price -->
+            <label class="floating-label">
+              <input
+                type="number"
+                formControlName="price"
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+                class="input"
+                [class.input-error]="
+                  serviceForm.get('price')?.invalid &&
+                  (serviceForm.get('price')?.dirty || serviceForm.get('price')?.touched)
+                "
+              />
+              <span>Price (KES) *</span>
+            </label>
+            @if (serviceForm.get('price')?.invalid && (serviceForm.get('price')?.dirty ||
+            serviceForm.get('price')?.touched)) {
+            <p class="text-error text-sm mt-1">
+              @if (serviceForm.get('price')?.hasError('required')) { Price is required } @else if
+              (serviceForm.get('price')?.hasError('min')) { Price must be greater than 0 }
+            </p>
+            }
+
+            <!-- Duration (Optional) -->
+            <label class="floating-label">
+              <input
+                type="number"
+                formControlName="duration"
+                placeholder="0"
+                min="0"
+                class="input"
+              />
+              <span>Duration (minutes, optional)</span>
+            </label>
+          </div>
+
+          <div role="alert" class="alert alert-info mt-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span class="text-sm">
+              Duration helps with scheduling and estimating service completion time
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
+        <button type="button" (click)="cancel()" class="btn btn-ghost">Cancel</button>
+
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="!canSubmit()"
+          [class.btn-disabled]="!canSubmit()"
+        >
+          @if (isSubmitting()) {
+          <span class="loading loading-spinner loading-sm"></span>
+          Creating Service... } @else {
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          Create Service }
+        </button>
+      </div>
+    </div>
+  </form>
+  }
 </div>
