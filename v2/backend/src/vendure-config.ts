@@ -10,6 +10,7 @@ import {
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import { config as dotenvConfig } from 'dotenv';
+import express from 'express';
 import fs from 'fs';
 import path from 'path';
 
@@ -57,6 +58,26 @@ export const config: VendureConfig = {
             adminApiDebug: true,
             shopApiDebug: true,
         } : {}),
+        // Custom middleware to serve ML model files
+        middleware: [
+            {
+                handler: express.static(path.join(__dirname, '../static/assets/ml-models'), {
+                    setHeaders: (res, filePath) => {
+                        // Enable CORS for ML model files
+                        res.setHeader('Access-Control-Allow-Origin', '*');
+                        res.setHeader('Access-Control-Allow-Methods', 'GET');
+
+                        // Set proper MIME types
+                        if (filePath.endsWith('.json')) {
+                            res.setHeader('Content-Type', 'application/json');
+                        } else if (filePath.endsWith('.bin')) {
+                            res.setHeader('Content-Type', 'application/octet-stream');
+                        }
+                    },
+                }),
+                route: 'assets/ml-models',
+            },
+        ],
     },
     authOptions: {
         tokenMethod: ['bearer', 'cookie'],

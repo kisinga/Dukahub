@@ -81,6 +81,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
+      # Mount ML models directory so trained models persist across container rebuilds
+      # Served via custom Express middleware at /assets/ml-models
       - ./backend/static/assets/ml-models:/app/static/assets/ml-models
     labels:
       - "io.vendure.create.name=dukahub"

@@ -11,6 +11,11 @@
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"
+  },
+  "/assets/ml-models": {
+    "target": "http://homelab:3000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
   }
 }
-
