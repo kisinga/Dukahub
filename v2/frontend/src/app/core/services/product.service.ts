@@ -5,13 +5,13 @@ import type {
     CreateProductMutationVariables,
     CreateProductVariantsMutation,
     CreateProductVariantsMutationVariables,
-    GetProductDetailQuery,
+    GetProductDetailQuery
 } from '../graphql/generated/graphql';
 import {
     CHECK_SKU_EXISTS,
     CREATE_PRODUCT,
     CREATE_PRODUCT_VARIANTS,
-    GET_PRODUCT_DETAIL,
+    GET_PRODUCT_DETAIL
 } from '../graphql/product.graphql';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
@@ -30,11 +30,31 @@ export interface ProductInput {
  */
 export interface VariantInput {
     sku: string;
-    name: string;
+    name: string; // Auto-generated name
     price: number; // In currency units (e.g., 10.99)
     stockOnHand: number;
     stockLocationId: string;
 }
+
+/**
+ * ProductOptionGroup with options
+ */
+export interface ProductOptionGroup {
+    id: string;
+    code: string;
+    name: string;
+    options: ProductOption[];
+}
+
+/**
+ * ProductOption within a group
+ */
+export interface ProductOption {
+    id: string;
+    code: string;
+    name: string;
+}
+
 
 /**
  * Service for product management operations
@@ -47,7 +67,7 @@ export interface VariantInput {
  * 
  * FLOW:
  * 1. Create product (basic info)
- * 2. Create variants for the product (SKUs with prices)
+ * 2. Create variants for the product (SKUs with prices and names)
  * 3. Stock levels are set during variant creation
  */
 @Injectable({

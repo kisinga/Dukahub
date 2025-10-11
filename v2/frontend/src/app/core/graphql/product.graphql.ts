@@ -154,3 +154,82 @@ export const CHECK_SKU_EXISTS = graphql(`
   }
 `);
 
+/**
+ * Query to get all product option groups with their options
+ * Used for displaying available option groups during product creation
+ */
+export const GET_PRODUCT_OPTION_GROUPS = graphql(`
+  query GetProductOptionGroups {
+    productOptionGroups {
+      id
+      code
+      name
+      options {
+        id
+        code
+        name
+      }
+    }
+  }
+`);
+
+/**
+ * Mutation to create a new product option group
+ * Useful for adding custom option groups like "Weight", "Size", etc.
+ */
+export const CREATE_PRODUCT_OPTION_GROUP = graphql(`
+  mutation CreateProductOptionGroup($input: CreateProductOptionGroupInput!) {
+    createProductOptionGroup(input: $input) {
+      id
+      code
+      name
+      options {
+        id
+        code
+        name
+      }
+    }
+  }
+`);
+
+/**
+ * Mutation to create a new product option within an existing option group
+ * Example: Adding "2kg" to the "Weight" option group
+ */
+export const CREATE_PRODUCT_OPTION = graphql(`
+  mutation CreateProductOption($input: CreateProductOptionInput!) {
+    createProductOption(input: $input) {
+      id
+      code
+      name
+      group {
+        id
+        name
+      }
+    }
+  }
+`);
+
+/**
+ * Mutation to add an option group to a product
+ * This must be done before creating variants that use those options
+ */
+export const ADD_OPTION_GROUP_TO_PRODUCT = graphql(`
+  mutation AddOptionGroupToProduct($productId: ID!, $optionGroupId: ID!) {
+    addOptionGroupToProduct(productId: $productId, optionGroupId: $optionGroupId) {
+      id
+      name
+      optionGroups {
+        id
+        code
+        name
+        options {
+          id
+          code
+          name
+        }
+      }
+    }
+  }
+`);
+

@@ -29,10 +29,12 @@ import {
 
 /**
  * Variant form structure
+ * Note: name is auto-generated from optionId (shown to user but not editable)
  */
 interface VariantForm {
+    optionId: string; // The selected option ID
+    name: string; // Customizable variant name
     sku: string;
-    name: string;
     price: number;
     stockOnHand: number;
 }
@@ -40,19 +42,8 @@ interface VariantForm {
 /**
  * Product Creation Component
  * 
- * FEATURES:
- * - Create products with multiple SKUs/variants
- * - Channel-aware (automatically uses active channel)
- * - Stock location selection
- * - Real-time SKU validation
- * - Dynamic variant form array
- * 
- * UX FLOW:
- * 1. Fill product details (name, description)
- * 2. Select stock location where inventory will be stored
- * 3. Add one or more SKUs with prices and initial stock
- * 4. Submit to create product and all variants
- * 5. Redirect to products list on success
+ * Simple product creation with multiple SKUs/variants.
+ * Mobile-first design for fast inventory management.
  */
 @Component({
     selector: 'app-product-create',
@@ -92,6 +83,124 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     readonly isLoadingLocations = this.stockLocationService.isLoading;
     readonly locationsError = this.stockLocationService.error;
 
+    // Template-based option groups (can select multiple)
+    readonly selectedTemplates = signal<string[]>([]);
+
+    // Custom options added by user (in addition to template options)
+    readonly customOptions = signal<Array<{ name: string; sku: string }>>([]);
+
+    // Selected option IDs (for generating SKU cards)
+    readonly selectedOptionIds = signal<string[]>([]);
+
+    // Modal state for adding custom option
+    readonly showCustomOptionModal = signal(false);
+    readonly customOptionForm = this.fb.group({
+        name: ['', [Validators.required, Validators.minLength(1)]],
+        sku: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(10)]],
+    });
+
+    // Built-in templates for quick setup
+    readonly templates = [
+        {
+            id: 'weight',
+            name: 'Weight',
+            options: [
+                { name: 'Kilograms', sku: 'KG' },
+                { name: 'Grams', sku: 'G' },
+                { name: 'Tons', sku: 'TON' },
+                { name: 'Pounds', sku: 'LB' }
+            ]
+        },
+        {
+            id: 'size',
+            name: 'Size',
+            options: [
+                { name: 'XS', sku: 'XS' },
+                { name: 'Small', sku: 'SM' },
+                { name: 'Medium', sku: 'MD' },
+                { name: 'Large', sku: 'LG' },
+                { name: 'XL', sku: 'XL' },
+                { name: 'XXL', sku: 'XXL' }
+            ]
+        },
+        {
+            id: 'color',
+            name: 'Color',
+            options: [
+                { name: 'Red', sku: 'RED' },
+                { name: 'Blue', sku: 'BLU' },
+                { name: 'Green', sku: 'GRN' },
+                { name: 'Black', sku: 'BLK' },
+                { name: 'White', sku: 'WHT' },
+                { name: 'Yellow', sku: 'YEL' }
+            ]
+        },
+        {
+            id: 'volume',
+            name: 'Volume',
+            options: [
+                { name: 'Milliliters', sku: 'ML' },
+                { name: 'Liters', sku: 'L' },
+                { name: 'Gallons', sku: 'GAL' }
+            ]
+        },
+        {
+            id: 'packaging',
+            name: 'Packaging',
+            options: [
+                { name: 'Single', sku: 'SINGLE' },
+                { name: 'Pack of 6', sku: 'PK6' },
+                { name: 'Pack of 12', sku: 'PK12' },
+                { name: 'Carton (24)', sku: 'CTN24' },
+                { name: 'Bulk (100)', sku: 'BULK100' }
+            ]
+        },
+    ];
+
+    // Available options from all selected templates + custom options
+    readonly availableOptions = computed(() => {
+        const templateIds = this.selectedTemplates();
+        const customs = this.customOptions();
+
+        let options: Array<{ id: string; name: string; suggestedSku: string; templateName?: string; isCustom?: boolean }> = [];
+
+        // Add options from all selected templates
+        templateIds.forEach(templateId => {
+            const template = this.templates.find(t => t.id === templateId);
+            if (template) {
+                template.options.forEach((opt, index) => {
+                    options.push({
+                        id: `${templateId}-${index}`,
+                        name: opt.name,
+                        suggestedSku: opt.sku,
+                        templateName: template.name
+                    });
+                });
+            }
+        });
+
+        // Add custom options
+        customs.forEach((custom, index) => {
+            options.push({
+                id: `custom-${index}`,
+                name: custom.name,
+                suggestedSku: custom.sku,
+                isCustom: true
+            });
+        });
+
+        return options;
+    });
+
+    // Get selected template names
+    readonly selectedTemplateNames = computed(() => {
+        const templateIds = this.selectedTemplates();
+        return templateIds
+            .map(id => this.templates.find(t => t.id === id)?.name)
+            .filter(Boolean)
+            .join(' + ');
+    });
+
     // Active channel info
     readonly activeChannel = this.companyService.activeCompany;
     readonly channelName = computed(() => {
@@ -118,26 +227,21 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
         // Initialize form
         this.productForm = this.fb.group({
             name: ['', [Validators.required, Validators.minLength(3)]],
-            description: ['', [Validators.required, Validators.minLength(10)]],
-            enabled: [true],
+            description: ['', [Validators.minLength(10)]],
             stockLocationId: ['', [Validators.required]],
             variants: this.fb.array([]),
         });
 
-        // Add initial variant
-        this.addVariant();
+        // Variants are added dynamically when options are selected
 
         // Track form validity changes for reactive button state
         this.productForm.statusChanges.subscribe((status) => {
             const isValid = status === 'VALID';
-            console.log('📝 Form status changed:', status, 'valid:', isValid);
             this.formValidSignal.set(isValid);
-            console.log('🔘 Form value:', this.productForm.value);
         });
         this.formValidSignal.set(this.productForm.valid);
 
-        // Auto-select first stock location when loaded using effect
-        // Must be in constructor (injection context), not ngOnInit
+        // Auto-select first stock location when loaded
         effect(() => {
             const locations = this.stockLocationService.locations();
             if (locations.length > 0 && !this.productForm.get('stockLocationId')?.value) {
@@ -149,6 +253,51 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         // Fetch stock locations
         this.stockLocationService.fetchStockLocations();
+    }
+
+    /**
+     * Toggle template selection (can select multiple)
+     */
+    toggleTemplate(templateId: string): void {
+        const selected = this.selectedTemplates();
+        const index = selected.indexOf(templateId);
+
+        if (index > -1) {
+            // Remove template
+            selected.splice(index, 1);
+            this.selectedTemplates.set([...selected]);
+
+            // Remove variants associated with options from this template
+            const template = this.templates.find(t => t.id === templateId);
+            if (template) {
+                const optionIdsToRemove = template.options.map((_, idx) => `${templateId}-${idx}`);
+                optionIdsToRemove.forEach(optionId => {
+                    if (this.isOptionSelected(optionId)) {
+                        this.toggleOptionSelection(optionId);
+                    }
+                });
+            }
+        } else {
+            // Add template
+            selected.push(templateId);
+            this.selectedTemplates.set([...selected]);
+        }
+    }
+
+    /**
+     * Check if template is selected
+     */
+    isTemplateSelected(templateId: string): boolean {
+        return this.selectedTemplates().includes(templateId);
+    }
+
+    /**
+     * Clear all templates
+     */
+    clearTemplates(): void {
+        this.selectedTemplates.set([]);
+        this.variants.clear();
+        this.selectedOptionIds.set([]);
     }
 
     ngOnDestroy(): void {
@@ -163,19 +312,20 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Create a new variant form group
+     * Create a new variant form group for a selected option
      */
     private createVariantForm(defaults?: Partial<VariantForm>): FormGroup {
         return this.fb.group({
+            optionId: [defaults?.optionId || '', [Validators.required]],
+            name: [defaults?.name || '', [Validators.required, Validators.minLength(1)]],
             sku: [
                 defaults?.sku || '',
                 [
                     Validators.required,
-                    Validators.minLength(3),
+                    Validators.minLength(1),
                     Validators.maxLength(50),
                 ],
             ],
-            name: [defaults?.name || '', [Validators.required, Validators.minLength(2)]],
             price: [
                 defaults?.price || 0,
                 [Validators.required, Validators.min(0.01)],
@@ -188,43 +338,226 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Add a new variant to the form
+     * Toggle option selection - creates/removes variant
      */
-    addVariant(): void {
-        // Pre-fill name with product name if this is the first variant
-        const productName = this.productForm.get('name')?.value || '';
-        const isFirstVariant = this.variants.length === 0;
+    toggleOptionSelection(optionId: string): void {
+        const selectedIds = this.selectedOptionIds();
+        const index = selectedIds.indexOf(optionId);
 
-        const defaults: Partial<VariantForm> = isFirstVariant && productName
-            ? { name: productName }
-            : {};
+        if (index > -1) {
+            // Remove option - remove ALL variants for this option
+            selectedIds.splice(index, 1);
+            this.selectedOptionIds.set([...selectedIds]);
 
-        this.variants.push(this.createVariantForm(defaults));
-    }
+            // Remove all corresponding variants
+            const variantsToRemove: number[] = [];
+            this.variants.controls.forEach((v, idx) => {
+                if (v.get('optionId')?.value === optionId) {
+                    variantsToRemove.push(idx);
+                }
+            });
 
-    /**
-     * Remove a variant from the form
-     */
-    removeVariant(index: number): void {
-        // Prevent removing the last variant
-        if (this.variants.length > 1) {
-            this.variants.removeAt(index);
+            // Remove in reverse order to maintain indices
+            variantsToRemove.reverse().forEach(idx => {
+                this.variants.removeAt(idx);
+            });
+        } else {
+            // Add option
+            selectedIds.push(optionId);
+            this.selectedOptionIds.set([...selectedIds]);
+
+            // Create new variant for this option
+            const option = this.availableOptions().find(opt => opt.id === optionId);
+            if (option) {
+                const name = this.formatOptionName(option.name);
+                this.variants.push(this.createVariantForm({
+                    optionId,
+                    name,
+                    sku: option.suggestedSku,
+                    price: 0,
+                    stockOnHand: 0
+                }));
+            }
         }
     }
 
     /**
-     * Auto-fill all variant names with product name
-     * Useful shortcut for simple products with one variant
+     * Check if option is selected
      */
-    autoFillVariantNames(): void {
-        const productName = this.productForm.get('name')?.value || '';
-        if (!productName) return;
+    isOptionSelected(optionId: string): boolean {
+        return this.selectedOptionIds().includes(optionId);
+    }
 
-        this.variants.controls.forEach((control) => {
-            if (!control.get('name')?.value) {
-                control.patchValue({ name: productName });
+    /**
+     * Format option name nicely
+     */
+    private formatOptionName(name: string): string {
+        if (name === 'Kilograms') return 'One Kilogram';
+        if (name === 'Grams') return 'One Gram';
+        if (name === 'Tons') return 'One Ton';
+        if (name === 'Pounds') return 'One Pound';
+        if (name === 'Milliliters') return 'One Milliliter';
+        if (name === 'Liters') return 'One Liter';
+        if (name === 'Gallons') return 'One Gallon';
+        return name;
+    }
+
+    /**
+     * Get all variants for a specific option ID
+     */
+    getVariantsByOptionId(optionId: string): FormGroup[] {
+        return this.variants.controls.filter(
+            v => v.get('optionId')?.value === optionId
+        ) as FormGroup[];
+    }
+
+    /**
+     * Add a fully custom variant (no template/option)
+     */
+    addCustomVariant(): void {
+        this.variants.push(this.createVariantForm({
+            optionId: '', // Empty optionId means custom variant
+            name: '',
+            sku: '',
+            price: 0,
+            stockOnHand: 0
+        }));
+    }
+
+    /**
+     * Remove a custom variant
+     */
+    removeCustomVariant(variantIndex: number): void {
+        this.variants.removeAt(variantIndex);
+    }
+
+    /**
+     * Get custom variants (no optionId)
+     */
+    getCustomVariants(): FormGroup[] {
+        return this.variants.controls.filter(
+            v => !v.get('optionId')?.value
+        ) as FormGroup[];
+    }
+
+    /**
+     * Add another SKU for an existing option
+     */
+    addSkuForOption(optionId: string): void {
+        const option = this.availableOptions().find(opt => opt.id === optionId);
+        if (option) {
+            const name = this.formatOptionName(option.name);
+            this.variants.push(this.createVariantForm({
+                optionId,
+                name,
+                sku: option.suggestedSku,
+                price: 0,
+                stockOnHand: 0
+            }));
+        }
+    }
+
+    /**
+     * Remove a specific SKU variant
+     */
+    removeSkuVariant(variantIndex: number): void {
+        const variant = this.variants.at(variantIndex);
+        const optionId = variant.get('optionId')?.value;
+
+        // Count how many variants exist for this option
+        const variantsForOption = this.getVariantsByOptionId(optionId);
+
+        // Only remove if there's more than 1, or deselect the option entirely
+        if (variantsForOption.length > 1) {
+            this.variants.removeAt(variantIndex);
+        } else {
+            // Last variant for this option - deselect the option
+            this.toggleOptionSelection(optionId);
+        }
+    }
+
+    /**
+     * Open modal to add custom option
+     */
+    openCustomOptionModal(): void {
+        this.customOptionForm.reset();
+        this.showCustomOptionModal.set(true);
+    }
+
+    /**
+     * Close custom option modal
+     */
+    closeCustomOptionModal(): void {
+        this.showCustomOptionModal.set(false);
+        this.customOptionForm.reset();
+    }
+
+    /**
+     * Add custom option and auto-select it
+     */
+    addCustomOption(): void {
+        if (this.customOptionForm.invalid) {
+            this.customOptionForm.markAllAsTouched();
+            return;
+        }
+
+        const value = this.customOptionForm.value;
+        const customs = this.customOptions();
+
+        // Add to custom options
+        const newIndex = customs.length;
+        this.customOptions.set([
+            ...customs,
+            {
+                name: value.name!.trim(),
+                sku: value.sku!.trim().toUpperCase()
             }
-        });
+        ]);
+
+        // Close modal
+        this.closeCustomOptionModal();
+
+        // Auto-select the newly created option to create first SKU
+        setTimeout(() => {
+            const newOptionId = `custom-${newIndex}`;
+            this.toggleOptionSelection(newOptionId);
+        }, 100);
+    }
+
+    /**
+     * Get option name for a variant
+     */
+    getOptionNameForVariant(variantIndex: number): string {
+        const variant = this.variants.at(variantIndex);
+        const optionId = variant.get('optionId')?.value;
+
+        if (!optionId) return 'Unknown';
+
+        const option = this.availableOptions().find(opt => opt.id === optionId);
+        return option?.name || 'Unknown';
+    }
+
+    /**
+     * Get option name by option ID
+     */
+    getOptionName(optionId: string): string {
+        const option = this.availableOptions().find(opt => opt.id === optionId);
+        return option?.name || 'Unknown';
+    }
+
+    /**
+     * Get template name by template ID
+     */
+    getTemplateName(templateId: string): string {
+        return this.templates.find(t => t.id === templateId)?.name || '';
+    }
+
+    /**
+     * Check if option belongs to template
+     */
+    optionBelongsToTemplate(option: any, templateId: string): boolean {
+        const templateName = this.getTemplateName(templateId);
+        return option.templateName === templateName;
     }
 
     /**
@@ -250,10 +583,10 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
 
     /**
      * Submit the form and create product with variants
+     * For now: Creates simple variants without option groups (KISS)
      */
     async onSubmit(): Promise<void> {
         if (!this.canSubmit()) {
-            // Mark all fields as touched to show validation errors
             this.productForm.markAllAsTouched();
             return;
         }
@@ -266,14 +599,13 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
             const formValue = this.productForm.value;
             const stockLocationId = formValue.stockLocationId;
 
-            // Prepare product input
             const productInput = {
                 name: formValue.name.trim(),
-                description: formValue.description.trim(),
-                enabled: formValue.enabled,
+                description: formValue.description?.trim() || '',
+                enabled: true,
             };
 
-            // Prepare variants input (add stock location to each)
+            // Map variants
             const variantsInput = formValue.variants.map((v: VariantForm) => ({
                 sku: v.sku.trim().toUpperCase(),
                 name: v.name.trim(),
@@ -282,7 +614,6 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
                 stockLocationId,
             }));
 
-            // Create product with variants
             const productId = await this.productService.createProductWithVariants(
                 productInput,
                 variantsInput
@@ -290,9 +621,6 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
 
             if (productId) {
                 this.submitSuccess.set(true);
-                console.log('✅ Product created successfully:', productId);
-
-                // Redirect to products list after a short delay
                 setTimeout(() => {
                     this.router.navigate(['/dashboard/products']);
                 }, 1500);
