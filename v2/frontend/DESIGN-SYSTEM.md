@@ -1,4 +1,5 @@
 # DukaHub Design System
+
 **Mobile-First. Simple. Consistent.**
 
 ---
@@ -6,12 +7,13 @@
 ## 🚀 Quick Start
 
 ### Import in Component SCSS:
+
 ```scss
 @use '../../../../styles/design-system' as ds;
 
 .my-card {
   padding: ds.$space-4;
-  
+
   @include ds.tablet {
     padding: ds.$space-6;
   }
@@ -19,6 +21,7 @@
 ```
 
 ### Use in Templates:
+
 ```html
 <div class="card bg-base-100 p-4 sm:p-6">
   <h2 class="text-2xl sm:text-3xl font-bold">Title</h2>
@@ -31,25 +34,28 @@
 ## 📏 The 3 Rules
 
 ### 1️⃣ Mobile First
+
 ```scss
 // ✅ Start with mobile, enhance for desktop
 .button {
-  font-size: 14px;  // Mobile default
-  
+  font-size: 14px; // Mobile default
+
   @media (min-width: 640px) {
-    font-size: 16px;  // Tablet+
+    font-size: 16px; // Tablet+
   }
 }
 ```
 
 ### 2️⃣ Use Spacing Scale (4px base)
+
 ```scss
-gap: 8px;   // ds.$space-2
-padding: 12px;  // ds.$space-3
-margin: 16px;   // ds.$space-4
+gap: 8px; // ds.$space-2
+padding: 12px; // ds.$space-3
+margin: 16px; // ds.$space-4
 ```
 
 ### 3️⃣ Touch Targets ≥ 44px
+
 ```html
 <button class="btn btn-lg min-h-[3rem]">Touch Friendly</button>
 ```
@@ -58,17 +64,18 @@ margin: 16px;   // ds.$space-4
 
 ## 📐 Spacing Scale
 
-| Name | Size | Use For |
-|------|------|---------|
-| `$space-1` | 4px | Tiny gaps |
-| `$space-2` | 8px | Small gaps, icons |
-| `$space-3` | 12px | Mobile padding |
-| `$space-4` | 16px | Default spacing |
-| `$space-6` | 24px | Section spacing |
-| `$space-8` | 32px | Large spacing |
-| `$space-12` | 48px | Desktop sections |
+| Name        | Size | Use For           |
+| ----------- | ---- | ----------------- |
+| `$space-1`  | 4px  | Tiny gaps         |
+| `$space-2`  | 8px  | Small gaps, icons |
+| `$space-3`  | 12px | Mobile padding    |
+| `$space-4`  | 16px | Default spacing   |
+| `$space-6`  | 24px | Section spacing   |
+| `$space-8`  | 32px | Large spacing     |
+| `$space-12` | 48px | Desktop sections  |
 
 **HTML Usage:**
+
 ```html
 <div class="p-3 sm:p-4 lg:p-6">
   <div class="flex gap-2 sm:gap-4">Items</div>
@@ -80,6 +87,7 @@ margin: 16px;   // ds.$space-4
 ## ✏️ Typography
 
 ### Font Sizes:
+
 ```
 xs:   10px - Timestamps, tiny labels
 sm:   12px - Labels, captions
@@ -93,6 +101,7 @@ xl:   18px - Subheadings
 ```
 
 ### Weights:
+
 ```
 400 - normal
 500 - medium
@@ -101,6 +110,7 @@ xl:   18px - Subheadings
 ```
 
 ### Usage:
+
 ```html
 <h1 class="text-4xl sm:text-5xl font-bold">Page Title</h1>
 <p class="text-sm sm:text-base">Body text</p>
@@ -108,6 +118,7 @@ xl:   18px - Subheadings
 ```
 
 ### Numbers (Always Tabular):
+
 ```html
 <div class="text-tabular font-bold">$1,234.56</div>
 ```
@@ -137,6 +148,7 @@ oklch(var(--su) / 0.3)  // 30% opacity
 ```
 
 **HTML Usage:**
+
 ```html
 <div class="bg-base-100 text-base-content">
   <span class="text-primary">Blue text</span>
@@ -156,10 +168,14 @@ Wide:    1280px+   (xl:)
 ```
 
 ### Responsive Mixins:
+
 ```scss
-@include ds.tablet { }   // 640px+
-@include ds.desktop { }  // 1024px+
-@include ds.wide { }     // 1280px+
+@include ds.tablet {
+} // 640px+
+@include ds.desktop {
+} // 1024px+
+@include ds.wide {
+} // 1280px+
 ```
 
 ---
@@ -167,6 +183,7 @@ Wide:    1280px+   (xl:)
 ## 🔲 Common Patterns
 
 ### Card:
+
 ```html
 <div class="card bg-base-100 shadow-lg border-2 border-base-300">
   <div class="card-body p-4 sm:p-6">
@@ -177,13 +194,13 @@ Wide:    1280px+   (xl:)
 ```
 
 ### Button:
+
 ```html
-<button class="btn btn-primary btn-lg min-h-[3rem]">
-  Action
-</button>
+<button class="btn btn-primary btn-lg min-h-[3rem]">Action</button>
 ```
 
 ### List Item:
+
 ```html
 <button class="w-full flex items-center gap-3 p-4 rounded-lg bg-base-200 hover:bg-base-300">
   <div class="flex-1 text-left">
@@ -195,6 +212,7 @@ Wide:    1280px+   (xl:)
 ```
 
 ### Collapsible:
+
 ```html
 <div class="card bg-base-100 shadow-lg">
   <div class="collapse collapse-arrow">
@@ -202,14 +220,13 @@ Wide:    1280px+   (xl:)
     <div class="collapse-title min-h-[3.5rem] flex items-center gap-3">
       <h3 class="font-bold">Section</h3>
     </div>
-    <div class="collapse-content p-4">
-      Content
-    </div>
+    <div class="collapse-content p-4">Content</div>
   </div>
 </div>
 ```
 
 ### Bottom Sheet Modal:
+
 ```html
 <div class="modal modal-open modal-bottom sm:modal-middle">
   <div class="modal-box max-w-xl">
@@ -220,6 +237,7 @@ Wide:    1280px+   (xl:)
 ```
 
 ### Sticky Bottom Bar:
+
 ```html
 <div class="fixed bottom-0 left-0 right-0 bg-base-100 border-t-2 border-base-300 z-40">
   <div class="container-app py-3">
@@ -229,6 +247,7 @@ Wide:    1280px+   (xl:)
 ```
 
 ### Empty State:
+
 ```html
 <div class="text-center py-16">
   <div class="text-5xl mb-3">🔍</div>
@@ -244,15 +263,15 @@ Wide:    1280px+   (xl:)
 ```html
 <!-- 1 → 3 columns -->
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-<!-- 2 → 4 columns -->
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-
-<!-- 3 columns always (compact) -->
-<div class="grid grid-cols-3 gap-2">
-
-<!-- Auto-fit -->
-<div class="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
+  <!-- 2 → 4 columns -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+    <!-- 3 columns always (compact) -->
+    <div class="grid grid-cols-3 gap-2">
+      <!-- Auto-fit -->
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4"></div>
+    </div>
+  </div>
+</div>
 ```
 
 ---
@@ -273,6 +292,7 @@ animation: slideIn 0.3s ease-out;
 ```
 
 **Classes:**
+
 ```html
 <div class="fade-in">Fades in</div>
 <div class="slide-up">Slides up</div>
@@ -283,6 +303,7 @@ animation: slideIn 0.3s ease-out;
 ## 💡 Pro Tips
 
 ### Import Paths (Count Folders):
+
 ```scss
 // 4 levels: pages/sell/
 @use '../../../../styles/design-system' as ds;
@@ -295,18 +316,20 @@ animation: slideIn 0.3s ease-out;
 ```
 
 ### Responsive Visibility:
+
 ```html
-<span class="hidden sm:inline">Desktop only</span>
-<span class="sm:hidden">Mobile only</span>
+<span class="hidden sm:inline">Desktop only</span> <span class="sm:hidden">Mobile only</span>
 ```
 
 ### Truncate Text:
+
 ```html
 <div class="truncate">Long text...</div>
 <div class="line-clamp-2">Two lines max...</div>
 ```
 
 ### Touch Devices Only:
+
 ```scss
 @include ds.touch-device {
   // Remove hover effects on mobile
@@ -348,6 +371,7 @@ animation: slideIn 0.3s ease-out;
 ## 📦 Example Components
 
 ### Stat Card (Dashboard):
+
 ```html
 <button class="stat-card stat-card-sales">
   <div class="stat-icon">💰</div>
@@ -360,6 +384,7 @@ animation: slideIn 0.3s ease-out;
 ```
 
 ### Search Bar:
+
 ```html
 <div class="card bg-base-100 shadow-lg">
   <div class="card-body p-3">
@@ -374,11 +399,20 @@ animation: slideIn 0.3s ease-out;
 ```
 
 ### Action Bar:
+
 ```html
-<div class="fixed bottom-0 left-0 right-0 bg-base-100 border-t-2 z-40">
-  <div class="flex gap-3 p-3">
-    <button class="btn btn-outline flex-1 min-h-[3rem]">Cancel</button>
-    <button class="btn btn-success flex-1 min-h-[3rem]">Confirm</button>
+<div class="fixed bottom-0 left-0 right-0 bg-base-100 border-t-2 z-40 shadow-xl">
+  <div class="container-app py-3">
+    <!-- Error counter when disabled -->
+    @if (errorCount > 0) {
+    <p class="text-xs text-error text-center mb-2">{{ errorCount }} issues to fix</p>
+    }
+    <div class="flex gap-2">
+      <button class="btn btn-ghost">Cancel</button>
+      <button class="btn btn-primary flex-1 min-h-[3rem]">
+        @if (canSubmit) { ✓ Create } @else { {{ errorCount }} Issues }
+      </button>
+    </div>
   </div>
 </div>
 ```
@@ -392,19 +426,77 @@ animation: slideIn 0.3s ease-out;
 - **Global**: `src/styles.scss`
 
 **Examples:**
+
 - Dashboard: `pages/overview/`
 - POS: `pages/sell/`
 - Layout: `layout/dashboard-layout.component.html`
 
 ---
 
+## 🎯 KISS UI Patterns
+
+### Emojis Over Text
+
+```html
+<!-- ❌ Verbose -->
+<button>Upload Product Photo</button>
+
+<!-- ✅ Simple -->
+<button>📸 Add Photos</button>
+```
+
+### Subtle Help (Mobile-Friendly)
+
+```html
+<!-- ✅ Native title attribute - works on mobile (long press) & desktop (hover) -->
+<label class="cursor-help" title="Helpful context here"> 📦 Field Name </label>
+
+<!-- ❌ Avoid tooltips inside collapsible/interactive elements -->
+<div class="collapse">
+  <div class="tooltip">❌ Can interfere with parent interactions</div>
+</div>
+
+<!-- ✅ Use placeholders for examples -->
+<input placeholder="e.g., Blue Jeans XL" />
+```
+
+### Compact Spacing
+
+```html
+<!-- Use gap-2 instead of gap-4 for tight layouts -->
+<div class="space-y-2">
+  <!-- 8px -->
+  <div class="grid grid-cols-3 gap-2">...</div>
+</div>
+```
+
+### Empty States
+
+```html
+<!-- Clear CTA with emoji -->
+<button class="btn btn-outline btn-block h-auto py-6 flex-col">
+  <span class="text-4xl">📸</span>
+  <span>Add Photos</span>
+  <span class="text-xs opacity-60">Camera or gallery</span>
+</button>
+```
+
+### Smart Visibility
+
+```html
+<!-- Mobile: always visible, Desktop: hover -->
+<button class="btn sm:opacity-0 sm:group-hover:opacity-100">✕</button>
+```
+
+---
+
 ## ✨ Remember: KISS
 
 1. **Mobile First** - Phones are your primary users
-2. **Spacing Scale** - 4px rhythm (8, 12, 16, 24, 32, 48)
+2. **Spacing Scale** - Use gap-2 for compact, gap-4 for breathable
 3. **Touch Targets** - 44px minimum
-4. **Theme Colors** - Use daisyUI variables
-5. **Tabular Numbers** - For prices/amounts
-6. **Simple** - Don't over-design
+4. **Emojis** - Replace text with clear emojis
+5. **Tooltips** - "?" badges for optional context
+6. **Simple** - Less text, more clarity
 
 **Your users are on phones - optimize for them!** 📱

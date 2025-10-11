@@ -86,10 +86,12 @@ v2/
 
 ## 📚 Documentation
 
-- [Infrastructure Guide](./INFRASTRUCTURE.md) - Docker setup & deployment
-- [Config Reference](./configs/README.md) - Environment variables
-- [Vendure Docs](https://www.vendure.io/docs)
-- [Migration Blueprint](../MIGRATION_BLUEPRINT.md) - v1→v2 migration plan
+- [Infrastructure](./INFRASTRUCTURE.md) - Docker & deployment
+- [Roadmap](./ROADMAP.md) - Future plans
+- [Frontend Architecture](./frontend/ARCHITECTURE.md)
+- [Design System](./frontend/DESIGN-SYSTEM.md)
+- [ML Guide](./ML_GUIDE.md)
+- [Gaps & Workarounds](./GAPS.md)
 
 ## 🔐 Security
 
