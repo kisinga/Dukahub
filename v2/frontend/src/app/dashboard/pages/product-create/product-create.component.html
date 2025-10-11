@@ -134,263 +134,14 @@
   @if (itemType() === 'product') {
   <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
     <div class="grid gap-6">
-      <!-- Product Information Card -->
-      <div class="card card-border bg-base-100">
-        <div class="card-body">
-          <h2 class="card-title">Product Information</h2>
+      <!-- Product Information (Extracted Component) -->
+      <app-product-info-form [form]="productForm" />
 
-          <!-- Product Name -->
-          <label class="floating-label">
-            <input
-              type="text"
-              formControlName="name"
-              placeholder="Product Name"
-              class="input"
-              [class.input-error]="hasError('name')"
-            />
-            <span>Product Name *</span>
-          </label>
-          @if (hasError('name')) {
-          <p class="text-error text-sm mt-1">{{ getErrorMessage('name') }}</p>
-          }
+      <!-- Product Photos (Extracted Component) -->
+      <app-photo-manager #photoManager />
 
-          <!-- Product Description -->
-          <label class="floating-label mt-4">
-            <textarea
-              formControlName="description"
-              placeholder="Product Description"
-              class="textarea"
-              rows="3"
-              [class.textarea-error]="hasError('description')"
-            ></textarea>
-            <span>Product Description *</span>
-          </label>
-          @if (hasError('description')) {
-          <p class="text-error text-sm mt-1">
-            {{ getErrorMessage('description') }}
-          </p>
-          }
-        </div>
-      </div>
-
-      <!-- Product Photos / Barcode Card -->
-      <div class="card card-border bg-base-100">
-        <div class="card-body">
-          <!-- Tabs -->
-          <div role="tablist" class="tabs tabs-boxed mb-4">
-            <button
-              type="button"
-              role="tab"
-              class="tab"
-              [class.tab-active]="activeTab() === 'photos'"
-              (click)="switchTab('photos')"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5 mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                />
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              Photos
-            </button>
-            <button
-              type="button"
-              role="tab"
-              class="tab"
-              [class.tab-active]="activeTab() === 'barcode'"
-              (click)="switchTab('barcode')"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5 mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                />
-              </svg>
-              Barcode Scanner
-            </button>
-          </div>
-
-          <!-- Photos Tab Content -->
-          @if (activeTab() === 'photos') {
-          <div>
-            <h2 class="card-title">Product Photos</h2>
-            <p class="text-sm text-base-content/70 mb-2">
-              📸 Important for AI recognition (pricing posters, symbols, product packaging)
-            </p>
-
-            <!-- Photo Upload Button -->
-            <div class="flex items-center gap-3 mb-4">
-              <input
-                type="file"
-                #photoInput
-                accept="image/*"
-                multiple
-                capture="environment"
-                (change)="onPhotosSelected($event)"
-                class="hidden"
-              />
-
-              <button type="button" (click)="photoInput.click()" class="btn btn-primary">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                Take Photo / Choose from Gallery
-              </button>
-
-              <div class="badge badge-lg" [class.badge-success]="photos().length > 0">
-                {{ photos().length }} photo(s)
-              </div>
-            </div>
-
-            <!-- Photo Previews Grid -->
-            @if (photoPreviews().length > 0) {
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-              @for (preview of photoPreviews(); track $index; let i = $index) {
-              <div class="relative group">
-                <img
-                  [src]="preview"
-                  [alt]="'Product photo ' + (i + 1)"
-                  class="w-full h-32 object-cover rounded-lg border-2 border-base-300"
-                />
-                <button
-                  type="button"
-                  (click)="removePhoto($index)"
-                  class="btn btn-circle btn-sm btn-error absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-                @if (i === 0) {
-                <div class="badge badge-primary badge-sm absolute bottom-1 left-1">Featured</div>
-                }
-              </div>
-              }
-            </div>
-            }
-          </div>
-          }
-
-          <!-- Barcode Tab Content -->
-          @if (activeTab() === 'barcode') {
-          <div>
-            <h2 class="card-title">Scan Barcode for SKU</h2>
-            <p class="text-sm text-base-content/70 mb-4">
-              Scan product barcodes to automatically fill SKU fields
-            </p>
-
-            @if (!isScanningBarcode()) {
-            <div role="alert" class="alert alert-info mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>Click "Scan Barcode" button next to any SKU field below</span>
-            </div>
-            } @else {
-            <div class="mb-4">
-              <div class="relative aspect-video bg-black rounded-lg overflow-hidden">
-                <video
-                  #barcodeCamera
-                  autoplay
-                  playsinline
-                  class="w-full h-full object-cover"
-                ></video>
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div class="border-2 border-primary w-3/4 h-3/4 rounded-lg"></div>
-                </div>
-              </div>
-              <button
-                type="button"
-                (click)="stopBarcodeScanner()"
-                class="btn btn-error btn-block mt-2"
-              >
-                Stop Scanner
-              </button>
-            </div>
-            } @if (scannedBarcode()) {
-            <div role="alert" class="alert alert-success">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>Barcode scanned: {{ scannedBarcode() }}</span>
-            </div>
-            }
-          </div>
-          }
-        </div>
-      </div>
+      <!-- Barcode Scanner (Extracted Component) -->
+      <app-barcode-scanner #barcodeScanner />
 
       <!-- Stock Location Card disabled for now-->
       <div class="card hidden card-border bg-base-100">
@@ -442,11 +193,7 @@
             <span>No stock locations found. Please create one in settings first.</span>
           </div>
           } @else {
-          <select
-            formControlName="stockLocationId"
-            class="select"
-            [class.select-error]="hasError('stockLocationId')"
-          >
+          <select formControlName="stockLocationId" class="select">
             <option value="" disabled>Select a stock location</option>
             @for (location of stockLocations(); track location.id) {
             <option [value]="location.id">
@@ -454,11 +201,7 @@
             </option>
             }
           </select>
-          @if (hasError('stockLocationId')) {
-          <p class="text-error text-sm mt-1">
-            {{ getErrorMessage('stockLocationId') }}
-          </p>
-          } }
+          }
         </div>
       </div>
       <!-- Template Selector Component -->
@@ -624,129 +367,11 @@
   />
   }
 
-  <!-- Service Form -->
+  <!-- Service Form (Extracted Component) -->
   @if (itemType() === 'service') {
   <form [formGroup]="serviceForm" (ngSubmit)="onSubmit()">
     <div class="grid gap-6">
-      <!-- Service Information Card -->
-      <div class="card card-border bg-base-100">
-        <div class="card-body">
-          <h2 class="card-title">Service Information</h2>
-          <p class="text-sm text-base-content/70 mb-4">
-            Services are offerings that don't require inventory tracking
-          </p>
-
-          <!-- Service Name -->
-          <label class="floating-label">
-            <input
-              type="text"
-              formControlName="name"
-              placeholder="Service Name"
-              class="input"
-              [class.input-error]="
-                serviceForm.get('name')?.invalid &&
-                (serviceForm.get('name')?.dirty || serviceForm.get('name')?.touched)
-              "
-            />
-            <span>Service Name *</span>
-          </label>
-          @if (serviceForm.get('name')?.invalid && (serviceForm.get('name')?.dirty ||
-          serviceForm.get('name')?.touched)) {
-          <p class="text-error text-sm mt-1">
-            @if (serviceForm.get('name')?.hasError('required')) { Service name required } @else if
-            (serviceForm.get('name')?.hasError('minlength')) { Minimum 3 characters required }
-          </p>
-          }
-
-          <!-- Service Description -->
-          <label class="floating-label mt-4">
-            <textarea
-              formControlName="description"
-              placeholder="Service Description"
-              class="textarea"
-              rows="4"
-              [class.textarea-error]="
-                serviceForm.get('description')?.invalid &&
-                (serviceForm.get('description')?.dirty || serviceForm.get('description')?.touched)
-              "
-            ></textarea>
-            <span>Service Description *</span>
-          </label>
-          @if (serviceForm.get('description')?.invalid && (serviceForm.get('description')?.dirty ||
-          serviceForm.get('description')?.touched)) {
-          <p class="text-error text-sm mt-1">
-            @if (serviceForm.get('description')?.hasError('required')) { Description is required }
-            @else if (serviceForm.get('description')?.hasError('minlength')) { Minimum 10 characters
-            required }
-          </p>
-          }
-        </div>
-      </div>
-
-      <!-- Pricing Card -->
-      <div class="card card-border bg-base-100">
-        <div class="card-body">
-          <h2 class="card-title">Pricing & Duration</h2>
-
-          <div class="grid sm:grid-cols-2 gap-4">
-            <!-- Price -->
-            <label class="floating-label">
-              <input
-                type="number"
-                formControlName="price"
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-                class="input"
-                [class.input-error]="
-                  serviceForm.get('price')?.invalid &&
-                  (serviceForm.get('price')?.dirty || serviceForm.get('price')?.touched)
-                "
-              />
-              <span>Price (KES) *</span>
-            </label>
-            @if (serviceForm.get('price')?.invalid && (serviceForm.get('price')?.dirty ||
-            serviceForm.get('price')?.touched)) {
-            <p class="text-error text-sm mt-1">
-              @if (serviceForm.get('price')?.hasError('required')) { Price is required } @else if
-              (serviceForm.get('price')?.hasError('min')) { Price must be greater than 0 }
-            </p>
-            }
-
-            <!-- Duration (Optional) -->
-            <label class="floating-label">
-              <input
-                type="number"
-                formControlName="duration"
-                placeholder="0"
-                min="0"
-                class="input"
-              />
-              <span>Duration (minutes, optional)</span>
-            </label>
-          </div>
-
-          <div role="alert" class="alert alert-info mt-4">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span class="text-sm">
-              Duration helps with scheduling and estimating service completion time
-            </span>
-          </div>
-        </div>
-      </div>
+      <app-service-form [form]="serviceForm" />
 
       <!-- Form Actions -->
       <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">

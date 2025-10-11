@@ -2,8 +2,6 @@ import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    ElementRef,
-    OnDestroy,
     OnInit,
     computed,
     effect,
@@ -19,43 +17,35 @@ import {
     Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import { BarcodeScannerService } from '../../../core/services/barcode-scanner.service';
-import { CameraService } from '../../../core/services/camera.service';
 import { CompanyService } from '../../../core/services/company.service';
 import { ProductService } from '../../../core/services/product.service';
-import {
-    StockLocationService
-} from '../../../core/services/stock-location.service';
+import { StockLocationService } from '../../../core/services/stock-location.service';
+import { BarcodeScannerComponent } from './components/barcode-scanner.component';
 import { CustomOptionModalComponent } from './components/custom-option-modal.component';
 import { OptionItem, OptionSelectorComponent } from './components/option-selector.component';
+import { PhotoManagerComponent } from './components/photo-manager.component';
+import { ProductInfoFormComponent } from './components/product-info-form.component';
+import { ServiceFormComponent } from './components/service-form.component';
 import { Template, TemplateSelectorComponent } from './components/template-selector.component';
 import { VariantCardComponent } from './components/variant-card.component';
+import { SkuGeneratorService } from './services/sku-generator.service';
+import { VariantForm, VariantGeneratorService } from './services/variant-generator.service';
 
 /**
- * Variant form structure
- * Note: name is auto-generated from optionId (shown to user but not editable)
- */
-interface VariantForm {
-    optionIds: string[]; // Array of option IDs (for combinations)
-    name: string; // Customizable variant name
-    sku: string;
-    price: number;
-    stockOnHand: number;
-    // Note: Photos are product-level, not variant-level
-    // Future: Add toggle for SKU-specific photos when needed
-}
-
-/**
- * Product Creation Component
+ * Product Creation Component (Refactored)
  * 
- * Simple product creation with multiple SKUs/variants.
- * Mobile-first design for fast inventory management.
+ * Orchestrates product/service creation by delegating to focused child components.
+ * Follows KISS principle - keeps only orchestration and submission logic.
  */
 @Component({
     selector: 'app-product-create',
     imports: [
         CommonModule,
         ReactiveFormsModule,
+        ProductInfoFormComponent,
+        ServiceFormComponent,
+        PhotoManagerComponent,
+        BarcodeScannerComponent,
         TemplateSelectorComponent,
         OptionSelectorComponent,
         VariantCardComponent,
@@ -65,17 +55,18 @@ interface VariantForm {
     styleUrl: './product-create.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProductCreateComponent implements OnInit, OnDestroy {
+export class ProductCreateComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
     private readonly router = inject(Router);
     private readonly productService = inject(ProductService);
     private readonly stockLocationService = inject(StockLocationService);
-    private readonly cameraService = inject(CameraService);
-    private readonly barcodeService = inject(BarcodeScannerService);
+    private readonly variantGenerator = inject(VariantGeneratorService);
+    private readonly skuGenerator = inject(SkuGeneratorService);
     readonly companyService = inject(CompanyService);
 
-    // View references
-    readonly barcodeVideoElement = viewChild<ElementRef<HTMLVideoElement>>('barcodeCamera');
+    // View references to child components
+    readonly photoManager = viewChild<PhotoManagerComponent>('photoManager');
+    readonly barcodeScanner = viewChild<BarcodeScannerComponent>('barcodeScanner');
 
     // Forms
     readonly productForm: FormGroup;
@@ -85,13 +76,7 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     readonly isSubmitting = signal(false);
     readonly submitError = signal<string | null>(null);
     readonly submitSuccess = signal(false);
-    readonly photos = signal<File[]>([]);
-    readonly photoPreviews = signal<string[]>([]);
-    readonly activeTab = signal<'photos' | 'barcode'>('photos');
-    readonly isScanningBarcode = signal(false);
     readonly itemType = signal<'product' | 'service'>('product');
-    readonly scannedBarcode = signal<string | null>(null);
-    private currentVariantIndexForBarcode = 0;
 
     // Stock locations
     readonly stockLocations = this.stockLocationService.locations;
@@ -338,9 +323,6 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
         this.selectedOptionIds.set([]);
     }
 
-    ngOnDestroy(): void {
-        this.stopBarcodeScanner();
-    }
 
     /**
      * Get variants form array
@@ -398,7 +380,7 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
 
     /**
      * Regenerate all variants based on selected options
-     * Creates Cartesian product of options grouped by template
+     * Delegates to VariantGeneratorService
      */
     private regenerateVariants(): void {
         const selectedIds = this.selectedOptionIds();
@@ -408,69 +390,29 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
             return;
         }
 
-        // Group selected options by template
-        const optionsByTemplate: Map<string, any[]> = new Map();
+        // Get selected options from available options
+        const selectedOptions = this.availableOptions().filter(opt =>
+            selectedIds.includes(opt.id)
+        );
 
-        selectedIds.forEach(optionId => {
-            const option = this.availableOptions().find(opt => opt.id === optionId);
-            if (option) {
-                const templateName = option.templateName || 'Custom';
-                if (!optionsByTemplate.has(templateName)) {
-                    optionsByTemplate.set(templateName, []);
-                }
-                optionsByTemplate.get(templateName)!.push(option);
-            }
-        });
+        // Get product SKU prefix
+        const productPrefix = this.skuGenerator.generateProductPrefix(
+            this.productForm.get('name')?.value || ''
+        );
 
-        // Get all template groups as arrays
-        const groups = Array.from(optionsByTemplate.values());
-
-        // Generate Cartesian product (all combinations)
-        const combinations = this.cartesianProduct(groups);
+        // Generate variants using service
+        const generatedVariants = this.variantGenerator.generateVariants(
+            selectedOptions,
+            productPrefix
+        );
 
         // Clear existing variants
         this.variants.clear();
 
-        // Create variant for each combination with product prefix
-        const productPrefix = this.getProductSkuPrefix();
-
-        combinations.forEach(combo => {
-            const optionIds = combo.map((opt: any) => opt.id);
-            const names = combo.map((opt: any) => this.formatOptionName(opt.name));
-            const skus = combo.map((opt: any) => opt.suggestedSku).filter(Boolean);
-
-            // Generate unique SKU: PRODUCT-OPTION1-OPTION2
-            const combinedSku = skus.length > 0 ? skus.join('-') : 'VAR';
-            const uniqueSku = `${productPrefix}-${combinedSku}`;
-
-            this.variants.push(this.createVariantForm({
-                optionIds,
-                name: names.join(' - '),
-                sku: uniqueSku,
-                price: 0,
-                stockOnHand: 0
-            }));
+        // Add generated variants to FormArray
+        generatedVariants.forEach(variant => {
+            this.variants.push(this.createVariantForm(variant));
         });
-    }
-
-    /**
-     * Generate Cartesian product of arrays
-     */
-    private cartesianProduct(arrays: any[][]): any[][] {
-        if (arrays.length === 0) return [[]];
-        if (arrays.length === 1) return arrays[0].map(item => [item]);
-
-        const [first, ...rest] = arrays;
-        const restProduct = this.cartesianProduct(rest);
-
-        const result: any[][] = [];
-        first.forEach(item => {
-            restProduct.forEach(combo => {
-                result.push([item, ...combo]);
-            });
-        });
-
-        return result;
     }
 
     /**
@@ -481,50 +423,20 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Format option name nicely
-     */
-    private formatOptionName(name: string): string {
-        if (name === 'Kilograms') return 'One Kilogram';
-        if (name === 'Grams') return 'One Gram';
-        if (name === 'Tons') return 'One Ton';
-        if (name === 'Pounds') return 'One Pound';
-        if (name === 'Milliliters') return 'One Milliliter';
-        if (name === 'Liters') return 'One Liter';
-        if (name === 'Gallons') return 'One Gallon';
-        return name;
-    }
-
-    /**
-     * Get product SKU prefix from product name
-     * Ensures SKUs are globally unique across all products
-     */
-    private getProductSkuPrefix(): string {
-        const name = this.productForm.get('name')?.value || '';
-        if (!name.trim()) return 'PROD';
-
-        // Take first 4 characters, remove spaces, uppercase
-        return name
-            .trim()
-            .substring(0, 4)
-            .toUpperCase()
-            .replace(/\s/g, '')
-            .replace(/[^A-Z0-9]/g, ''); // Remove special chars
-    }
-
-    /**
      * Add a fully custom variant (no template/option)
      */
     addCustomVariant(): void {
-        const productPrefix = this.getProductSkuPrefix();
+        const productPrefix = this.skuGenerator.generateProductPrefix(
+            this.productForm.get('name')?.value || ''
+        );
         const variantCount = this.getCustomVariants().length + 1;
 
-        this.variants.push(this.createVariantForm({
-            optionIds: [],
-            name: '',
-            sku: `${productPrefix}-CUSTOM${variantCount}`,
-            price: 0,
-            stockOnHand: 0
-        }));
+        const customVariant = this.variantGenerator.createCustomVariant(
+            productPrefix,
+            variantCount
+        );
+
+        this.variants.push(this.createVariantForm(customVariant));
     }
 
     /**
@@ -608,20 +520,16 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
 
     /**
      * Get combination label for a variant
+     * Delegates to VariantGeneratorService
      */
     getVariantCombinationLabel(variantIndex: number): string {
         const variant = this.variants.at(variantIndex);
         const optionIds = variant.get('optionIds')?.value || [];
 
-        if (optionIds.length === 0) return 'Custom';
-
-        const options = this.availableOptions();
-        const names = optionIds.map((id: string) => {
-            const opt = options.find(o => o.id === id);
-            return opt?.name || '';
-        }).filter(Boolean);
-
-        return names.join(' × ') || 'Unknown';
+        return this.variantGenerator.getVariantCombinationLabel(
+            optionIds,
+            this.availableOptions()
+        );
     }
 
     /**
@@ -647,26 +555,6 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
         return option.templateName === templateName;
     }
 
-    /**
-     * Generate SKU suggestion based on product name and variant index
-     */
-    suggestSKU(variantIndex: number): void {
-        const productName = this.productForm.get('name')?.value || '';
-        if (!productName) return;
-
-        // Generate SKU: First 3 letters + timestamp + variant number
-        const prefix = productName
-            .replace(/[^a-zA-Z0-9]/g, '')
-            .toUpperCase()
-            .substring(0, 3)
-            .padEnd(3, 'X');
-        const timestamp = Date.now().toString().slice(-6);
-        const variant = String(variantIndex + 1).padStart(2, '0');
-        const suggestedSKU = `${prefix}${timestamp}${variant}`;
-
-        const control = this.variants.at(variantIndex);
-        control.patchValue({ sku: suggestedSKU });
-    }
 
     /**
      * Switch between product and service creation
@@ -810,113 +698,27 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Switch between Photos and Barcode tabs
+     * Handle barcode scanned from child component
+     * Updates the current variant's SKU field
      */
-    switchTab(tab: 'photos' | 'barcode'): void {
-        this.activeTab.set(tab);
-        if (tab === 'barcode') {
-            // Stop any existing scanner when switching away
-            this.stopBarcodeScanner();
+    onBarcodeScanned(barcode: string, variantIndex: number): void {
+        const control = this.variants.at(variantIndex);
+        if (control) {
+            control.patchValue({ sku: barcode });
         }
     }
 
     /**
      * Start barcode scanner for a specific variant
+     * Delegates to BarcodeScannerComponent
      */
     async startBarcodeScanner(variantIndex: number): Promise<void> {
-        this.currentVariantIndexForBarcode = variantIndex;
-        const videoEl = this.barcodeVideoElement()?.nativeElement;
-
-        if (!videoEl) {
-            console.error('Video element not found');
-            return;
+        const scanner = this.barcodeScanner();
+        if (scanner) {
+            await scanner.startScanning();
+            // Note: The scanned barcode will be handled via the barcodeScanned output
+            // which should be connected in the template
         }
-
-        try {
-            // Start camera
-            const started = await this.cameraService.startCamera(videoEl);
-            if (!started) {
-                console.error('Failed to start camera');
-                return;
-            }
-
-            this.isScanningBarcode.set(true);
-
-            // Start barcode scanning
-            if (this.barcodeService.isSupported()) {
-                await this.barcodeService.initialize();
-                this.barcodeService.startScanning(
-                    videoEl,
-                    (result) => {
-                        // Barcode detected - fill in SKU field
-                        const control = this.variants.at(variantIndex);
-                        if (control) {
-                            control.patchValue({ sku: result.rawValue });
-                            this.scannedBarcode.set(result.rawValue);
-                        }
-                        this.stopBarcodeScanner();
-                    },
-                    500
-                );
-            }
-        } catch (error) {
-            console.error('Failed to start barcode scanner:', error);
-        }
-    }
-
-    /**
-     * Stop barcode scanner
-     */
-    stopBarcodeScanner(): void {
-        this.barcodeService.stopScanning();
-        const videoEl = this.barcodeVideoElement()?.nativeElement;
-        if (videoEl) {
-            this.cameraService.stopCamera(videoEl);
-        }
-        this.isScanningBarcode.set(false);
-    }
-
-    /**
-     * Handle photo selection for product
-     * Note: Photos are product-level for AI recognition
-     */
-    onPhotosSelected(event: Event): void {
-        const input = event.target as HTMLInputElement;
-        if (!input.files || input.files.length === 0) return;
-
-        const newFiles = Array.from(input.files);
-        const currentPhotos = this.photos();
-
-        // Add new photos
-        const allPhotos = [...currentPhotos, ...newFiles];
-        this.photos.set(allPhotos);
-
-        // Generate previews for new photos
-        newFiles.forEach((file) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const preview = e.target?.result as string;
-                this.photoPreviews.set([...this.photoPreviews(), preview]);
-            };
-            reader.readAsDataURL(file);
-        });
-
-        // Clear input
-        input.value = '';
-    }
-
-    /**
-     * Remove a photo from product
-     */
-    removePhoto(photoIndex: number): void {
-        const photos = this.photos();
-        const previews = this.photoPreviews();
-
-        photos.splice(photoIndex, 1);
-        previews.splice(photoIndex, 1);
-
-        this.photos.set([...photos]);
-        this.photoPreviews.set([...previews]);
     }
 
     /**
@@ -926,79 +728,6 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
         if (confirm('Are you sure? All unsaved changes will be lost.')) {
             this.router.navigate(['/dashboard/products']);
         }
-    }
-
-    /**
-     * Helper: Check if a form control has an error
-     */
-    hasError(controlName: string, errorType?: string): boolean {
-        const control = this.productForm.get(controlName);
-        if (!control) return false;
-
-        if (errorType) {
-            return control.hasError(errorType) && (control.dirty || control.touched);
-        }
-        return control.invalid && (control.dirty || control.touched);
-    }
-
-    /**
-     * Helper: Check if a variant control has an error
-     */
-    hasVariantError(
-        variantIndex: number,
-        controlName: string,
-        errorType?: string
-    ): boolean {
-        const control = this.variants.at(variantIndex)?.get(controlName);
-        if (!control) return false;
-
-        if (errorType) {
-            return control.hasError(errorType) && (control.dirty || control.touched);
-        }
-        return control.invalid && (control.dirty || control.touched);
-    }
-
-    /**
-     * Get error message for a form control
-     */
-    getErrorMessage(controlName: string): string {
-        const control = this.productForm.get(controlName);
-        if (!control || !control.errors) return '';
-
-        const errors = control.errors;
-        if (errors['required']) return 'This field is required';
-        if (errors['minlength']) {
-            return `Minimum ${errors['minlength'].requiredLength} characters required`;
-        }
-        if (errors['min']) return `Minimum value is ${errors['min'].min}`;
-        if (errors['pattern']) {
-            if (controlName === 'sku') {
-                return 'SKU must contain only letters, numbers, hyphens, and underscores';
-            }
-            return 'Invalid format';
-        }
-
-        return 'Invalid value';
-    }
-
-    /**
-     * Get error message for a variant control
-     */
-    getVariantErrorMessage(variantIndex: number, controlName: string): string {
-        const control = this.variants.at(variantIndex)?.get(controlName);
-        if (!control || !control.errors) return '';
-
-        const errors = control.errors;
-        if (errors['required']) return 'Required';
-        if (errors['minlength']) {
-            return `Min ${errors['minlength'].requiredLength} chars`;
-        }
-        if (errors['maxlength']) {
-            return `Max ${errors['maxlength'].requiredLength} chars`;
-        }
-        if (errors['min']) return `Min ${errors['min'].min}`;
-
-        return 'Invalid';
     }
 }
 
