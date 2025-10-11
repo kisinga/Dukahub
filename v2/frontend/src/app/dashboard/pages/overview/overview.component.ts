@@ -201,5 +201,54 @@ export class OverviewComponent implements OnInit {
     async refresh(): Promise<void> {
         await this.dashboardService.refresh();
     }
+
+    /**
+     * Get current date formatted for display
+     */
+    getCurrentDate(): string {
+        const now = new Date();
+        const options: Intl.DateTimeFormatOptions = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        };
+        return now.toLocaleDateString('en-US', options);
+    }
+
+    /**
+     * Format value in compact form for mobile (e.g., 1.5k, 2.3M)
+     */
+    formatCompactValue(amount: string): string {
+        const numStr = amount.replace('KES ', '').replace(/,/g, '');
+        const num = parseFloat(numStr);
+
+        if (num >= 1000000) {
+            return `${(num / 1000000).toFixed(1)}M`;
+        } else if (num >= 1000) {
+            return `${(num / 1000).toFixed(1)}k`;
+        }
+        return num.toString();
+    }
+
+    /**
+     * Calculate bar width based on category performance
+     * Returns percentage for visual indicator
+     */
+    getBarWidth(categoryType: 'purchases' | 'sales' | 'expenses'): number {
+        const stats = this.dashboardService.stats();
+        if (!stats) return 0;
+
+        const categoryData = stats[categoryType];
+        const todayValue = categoryData.today;
+        const weekValue = categoryData.week;
+
+        // Calculate as percentage of week average
+        const weekAverage = weekValue / 7;
+        if (weekAverage === 0) return 0;
+
+        const percentage = (todayValue / weekAverage) * 100;
+        return Math.min(Math.max(percentage, 10), 100); // Clamp between 10-100%
+    }
 }
 

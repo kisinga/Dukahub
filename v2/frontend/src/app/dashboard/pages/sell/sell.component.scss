@@ -1,127 +1,73 @@
-.pos-container {
-  background: oklch(var(--b2));
+@use '../../../../styles/design-system' as ds;
+
+:host {
+  display: block;
 }
 
-// Scanner frame animation
+// POS Container
+.pos-container {
+  min-height: 100vh;
+  padding-bottom: 6rem; // Space for sticky checkout bar
+}
+
+// Scan Frame Overlay
 .scan-frame {
   width: 80%;
-  height: 80%;
+  height: 60%;
+  max-width: 300px;
+  max-height: 300px;
   border: 3px solid oklch(var(--p));
-  border-radius: 1rem;
-  position: relative;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    background: oklch(var(--p));
-  }
-
-  // Scanning line animation
-  &::before {
-    left: 0;
-    right: 0;
-    height: 2px;
-    top: 0;
-    animation: scan 2s linear infinite;
-    box-shadow: 0 0 10px oklch(var(--p)), 0 0 20px oklch(var(--p));
-  }
-
-  // Corner markers
-  &::after {
-    width: 20px;
-    height: 20px;
-    border-top: 3px solid oklch(var(--s));
-    border-left: 3px solid oklch(var(--s));
-    top: -3px;
-    left: -3px;
-  }
+  border-radius: ds.$radius-lg;
+  box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.5);
+  animation: scan-pulse 2s ease-in-out infinite;
 }
 
-@keyframes scan {
+@keyframes scan-pulse {
   0%,
   100% {
-    top: 0;
+    opacity: 1;
+    border-color: oklch(var(--p));
   }
   50% {
-    top: 100%;
+    opacity: 0.7;
+    border-color: oklch(var(--s));
   }
 }
 
-// Cart sticky positioning enhancement
-@media (min-width: 1024px) {
-  .lg\:sticky {
-    max-height: calc(100vh - 2rem);
-    overflow-y: auto;
+// Animations
+.animate-in {
+  animation: slideIn 0.3s ds.$ease-in-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-// Mobile optimizations
-@media (max-width: 767px) {
-  .pos-container {
-    padding-bottom: 2rem;
-  }
-
-  // Make cart fixed at bottom on mobile for easy access
-  .card:has(.cart-title) {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    max-height: 50vh;
-    border-radius: 1rem 1rem 0 0;
-    z-index: 10;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+// Touch optimizations
+@include ds.touch-device {
+  .btn {
+    @include ds.touch-target;
   }
 }
 
 // Smooth transitions
-.card,
-.modal-box {
-  transition: all 0.2s ease;
+.active\:scale-98:active {
+  transform: scale(0.98);
 }
 
-// Product image optimization
-img {
-  object-fit: cover;
-}
-
-// Touch targets for mobile
-@media (max-width: 767px) {
-  .btn {
-    min-height: 2.75rem;
-  }
-
-  .input {
-    min-height: 2.75rem;
+// Modal bottom sheet on mobile
+@media (max-width: 639px) {
+  .modal-bottom .modal-box {
+    max-width: 100%;
+    width: 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
   }
 }
-
-// Loading states
-.loading-spinner {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-// Modal backdrop
-.modal-backdrop {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-// Confidence threshold slider
-.range {
-  &::-webkit-slider-thumb {
-    cursor: pointer;
-  }
-}
-

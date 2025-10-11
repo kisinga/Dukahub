@@ -1,44 +1,206 @@
-/* You can add global styles to this file, and also import other style files */
+/* ============================================
+   DUKAHUB - Global Styles
+   Mobile-First Design System
+   ============================================ */
 
+// Import Design System (must come first)
+@use 'styles/design-system' as ds;
+@use 'styles/design-patterns';
+
+// Import Tailwind & daisyUI
 @use 'tailwindcss';
 @plugin "daisyui" {
   themes: light --default, dark --prefersdark;
   logs: false;
 }
 
-/* Global custom styles */
+/* ============================================
+   GLOBAL STYLES
+   ============================================ */
+
 :root {
   scroll-behavior: smooth;
+
+  // Custom CSS variables for consistency
+  --app-max-width: #{ds.$container-xl};
+  --content-padding: #{ds.$space-4};
+  --section-spacing: #{ds.$space-6};
+
+  @media (min-width: #{ds.$tablet}) {
+    --content-padding: #{ds.$space-6};
+    --section-spacing: #{ds.$space-8};
+  }
+
+  @media (min-width: #{ds.$desktop}) {
+    --content-padding: #{ds.$space-8};
+    --section-spacing: #{ds.$space-12};
+  }
 }
+
+/* ============================================
+   BASE TYPOGRAPHY
+   ============================================ */
 
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
     Cantarell, sans-serif;
-}
+  font-size: ds.$text-base;
+  line-height: ds.$leading-normal;
+  @include ds.text-smooth;
 
-/* Animation utilities */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  @media (min-width: #{ds.$tablet}) {
+    font-size: ds.$text-lg;
   }
 }
 
-.fade-in-up {
-  animation: fadeInUp 0.6s ease-out forwards;
+// Headings
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: ds.$font-bold;
+  line-height: ds.$leading-tight;
+  letter-spacing: ds.$tracking-tight;
 }
 
-/* Section spacing */
-.section-padding {
-  padding: 4rem 1rem;
+h1 {
+  font-size: ds.$text-4xl;
+
+  @media (min-width: #{ds.$tablet}) {
+    font-size: ds.$text-5xl;
+  }
 }
 
-@media (min-width: 768px) {
-  .section-padding {
-    padding: 6rem 2rem;
+h2 {
+  font-size: ds.$text-2xl;
+
+  @media (min-width: #{ds.$tablet}) {
+    font-size: ds.$text-3xl;
+  }
+}
+
+h3 {
+  font-size: ds.$text-xl;
+
+  @media (min-width: #{ds.$tablet}) {
+    font-size: ds.$text-2xl;
+  }
+}
+
+// Paragraphs
+p {
+  margin-bottom: ds.$space-4;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+// Spacing utilities
+.p-mobile {
+  padding: ds.$space-3;
+}
+.p-tablet {
+  @media (min-width: #{ds.$tablet}) {
+    padding: ds.$space-4;
+  }
+}
+.p-desktop {
+  @media (min-width: #{ds.$desktop}) {
+    padding: ds.$space-6;
+  }
+}
+
+.gap-mobile {
+  gap: ds.$space-2;
+}
+.gap-tablet {
+  @media (min-width: #{ds.$tablet}) {
+    gap: ds.$space-4;
+  }
+}
+.gap-desktop {
+  @media (min-width: #{ds.$desktop}) {
+    gap: ds.$space-6;
+  }
+}
+
+// Text utilities
+.text-truncate {
+  @include ds.truncate;
+}
+.text-tabular {
+  @include ds.tabular-nums;
+}
+.line-clamp-2 {
+  @include ds.line-clamp(2);
+}
+.line-clamp-3 {
+  @include ds.line-clamp(3);
+}
+
+// Container
+.container-app {
+  width: 100%;
+  max-width: var(--app-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--content-padding);
+  padding-right: var(--content-padding);
+}
+
+// Section spacing
+.section {
+  padding-top: var(--section-spacing);
+  padding-bottom: var(--section-spacing);
+}
+
+/* ============================================
+   TOUCH OPTIMIZATIONS
+   ============================================ */
+
+@media (hover: none) and (pointer: coarse) {
+  // Remove tap highlights
+  * {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  // Ensure all interactive elements are touch-friendly
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role='button'] {
+    min-height: ds.$touch-min;
+    min-width: ds.$touch-min;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+// Focus states
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  @include ds.focus-ring;
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -109,6 +109,9 @@ export class SellComponent implements OnInit, OnDestroy {
   // Detection loop
   private detectionInterval: any = null;
 
+  // Cart modal state
+  readonly showCartModal = signal<boolean>(false);
+
   // Computed status message
   readonly statusMessage = computed(() => {
     const status = this.scannerStatus();
@@ -514,5 +517,27 @@ export class SellComponent implements OnInit, OnDestroy {
    */
   updateConfidenceThreshold(value: number): void {
     this.config.update((c) => ({ ...c, confidenceThreshold: value / 100 }));
+  }
+
+  /**
+   * Open cart modal
+   */
+  openCartModal(): void {
+    this.showCartModal.set(true);
+  }
+
+  /**
+   * Close cart modal
+   */
+  closeCartModal(): void {
+    this.showCartModal.set(false);
+  }
+
+  /**
+   * Handle credit payment
+   */
+  handleCredit(): void {
+    console.log('Credit payment not yet implemented');
+    // TODO: Implement credit payment flow
   }
 }
