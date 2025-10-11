@@ -26,17 +26,23 @@ import { ProductService } from '../../../core/services/product.service';
 import {
     StockLocationService
 } from '../../../core/services/stock-location.service';
+import { CustomOptionModalComponent } from './components/custom-option-modal.component';
+import { OptionItem, OptionSelectorComponent } from './components/option-selector.component';
+import { Template, TemplateSelectorComponent } from './components/template-selector.component';
+import { VariantCardComponent } from './components/variant-card.component';
 
 /**
  * Variant form structure
  * Note: name is auto-generated from optionId (shown to user but not editable)
  */
 interface VariantForm {
-    optionId: string; // The selected option ID
+    optionIds: string[]; // Array of option IDs (for combinations)
     name: string; // Customizable variant name
     sku: string;
     price: number;
     stockOnHand: number;
+    // Note: Photos are product-level, not variant-level
+    // Future: Add toggle for SKU-specific photos when needed
 }
 
 /**
@@ -47,7 +53,14 @@ interface VariantForm {
  */
 @Component({
     selector: 'app-product-create',
-    imports: [CommonModule, ReactiveFormsModule],
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        TemplateSelectorComponent,
+        OptionSelectorComponent,
+        VariantCardComponent,
+        CustomOptionModalComponent,
+    ],
     templateUrl: './product-create.component.html',
     styleUrl: './product-create.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -100,7 +113,7 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     });
 
     // Built-in templates for quick setup
-    readonly templates = [
+    readonly templates: Template[] = [
         {
             id: 'weight',
             name: 'Weight',
@@ -158,11 +171,11 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     ];
 
     // Available options from all selected templates + custom options
-    readonly availableOptions = computed(() => {
+    readonly availableOptions = computed((): OptionItem[] => {
         const templateIds = this.selectedTemplates();
         const customs = this.customOptions();
 
-        let options: Array<{ id: string; name: string; suggestedSku: string; templateName?: string; isCustom?: boolean }> = [];
+        let options: OptionItem[] = [];
 
         // Add options from all selected templates
         templateIds.forEach(templateId => {
@@ -227,7 +240,7 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
         // Initialize form
         this.productForm = this.fb.group({
             name: ['', [Validators.required, Validators.minLength(3)]],
-            description: ['', [Validators.minLength(10)]],
+            description: [''], // Optional
             stockLocationId: ['', [Validators.required]],
             variants: this.fb.array([]),
         });
@@ -312,11 +325,11 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Create a new variant form group for a selected option
+     * Create a new variant form group
      */
     private createVariantForm(defaults?: Partial<VariantForm>): FormGroup {
         return this.fb.group({
-            optionId: [defaults?.optionId || '', [Validators.required]],
+            optionIds: [defaults?.optionIds || [], [Validators.required, Validators.minLength(1)]],
             name: [defaults?.name || '', [Validators.required, Validators.minLength(1)]],
             sku: [
                 defaults?.sku || '',
@@ -338,47 +351,101 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Toggle option selection - creates/removes variant
+     * Toggle option selection - regenerates all variant combinations
      */
     toggleOptionSelection(optionId: string): void {
         const selectedIds = this.selectedOptionIds();
         const index = selectedIds.indexOf(optionId);
 
         if (index > -1) {
-            // Remove option - remove ALL variants for this option
+            // Remove option
             selectedIds.splice(index, 1);
-            this.selectedOptionIds.set([...selectedIds]);
-
-            // Remove all corresponding variants
-            const variantsToRemove: number[] = [];
-            this.variants.controls.forEach((v, idx) => {
-                if (v.get('optionId')?.value === optionId) {
-                    variantsToRemove.push(idx);
-                }
-            });
-
-            // Remove in reverse order to maintain indices
-            variantsToRemove.reverse().forEach(idx => {
-                this.variants.removeAt(idx);
-            });
         } else {
             // Add option
             selectedIds.push(optionId);
-            this.selectedOptionIds.set([...selectedIds]);
+        }
 
-            // Create new variant for this option
+        this.selectedOptionIds.set([...selectedIds]);
+
+        // Regenerate all variants based on combinations
+        this.regenerateVariants();
+    }
+
+    /**
+     * Regenerate all variants based on selected options
+     * Creates Cartesian product of options grouped by template
+     */
+    private regenerateVariants(): void {
+        const selectedIds = this.selectedOptionIds();
+
+        if (selectedIds.length === 0) {
+            this.variants.clear();
+            return;
+        }
+
+        // Group selected options by template
+        const optionsByTemplate: Map<string, any[]> = new Map();
+
+        selectedIds.forEach(optionId => {
             const option = this.availableOptions().find(opt => opt.id === optionId);
             if (option) {
-                const name = this.formatOptionName(option.name);
-                this.variants.push(this.createVariantForm({
-                    optionId,
-                    name,
-                    sku: option.suggestedSku,
-                    price: 0,
-                    stockOnHand: 0
-                }));
+                const templateName = option.templateName || 'Custom';
+                if (!optionsByTemplate.has(templateName)) {
+                    optionsByTemplate.set(templateName, []);
+                }
+                optionsByTemplate.get(templateName)!.push(option);
             }
-        }
+        });
+
+        // Get all template groups as arrays
+        const groups = Array.from(optionsByTemplate.values());
+
+        // Generate Cartesian product (all combinations)
+        const combinations = this.cartesianProduct(groups);
+
+        // Clear existing variants
+        this.variants.clear();
+
+        // Create variant for each combination with product prefix
+        const productPrefix = this.getProductSkuPrefix();
+
+        combinations.forEach(combo => {
+            const optionIds = combo.map((opt: any) => opt.id);
+            const names = combo.map((opt: any) => this.formatOptionName(opt.name));
+            const skus = combo.map((opt: any) => opt.suggestedSku).filter(Boolean);
+
+            // Generate unique SKU: PRODUCT-OPTION1-OPTION2
+            const combinedSku = skus.length > 0 ? skus.join('-') : 'VAR';
+            const uniqueSku = `${productPrefix}-${combinedSku}`;
+
+            this.variants.push(this.createVariantForm({
+                optionIds,
+                name: names.join(' - '),
+                sku: uniqueSku,
+                price: 0,
+                stockOnHand: 0
+            }));
+        });
+    }
+
+    /**
+     * Generate Cartesian product of arrays
+     */
+    private cartesianProduct(arrays: any[][]): any[][] {
+        if (arrays.length === 0) return [[]];
+        if (arrays.length === 1) return arrays[0].map(item => [item]);
+
+        const [first, ...rest] = arrays;
+        const restProduct = this.cartesianProduct(rest);
+
+        const result: any[][] = [];
+        first.forEach(item => {
+            restProduct.forEach(combo => {
+                result.push([item, ...combo]);
+            });
+        });
+
+        return result;
     }
 
     /**
@@ -403,77 +470,67 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Get all variants for a specific option ID
+     * Get product SKU prefix from product name
+     * Ensures SKUs are globally unique across all products
      */
-    getVariantsByOptionId(optionId: string): FormGroup[] {
-        return this.variants.controls.filter(
-            v => v.get('optionId')?.value === optionId
-        ) as FormGroup[];
+    private getProductSkuPrefix(): string {
+        const name = this.productForm.get('name')?.value || '';
+        if (!name.trim()) return 'PROD';
+
+        // Take first 4 characters, remove spaces, uppercase
+        return name
+            .trim()
+            .substring(0, 4)
+            .toUpperCase()
+            .replace(/\s/g, '')
+            .replace(/[^A-Z0-9]/g, ''); // Remove special chars
     }
 
     /**
      * Add a fully custom variant (no template/option)
      */
     addCustomVariant(): void {
+        const productPrefix = this.getProductSkuPrefix();
+        const variantCount = this.getCustomVariants().length + 1;
+
         this.variants.push(this.createVariantForm({
-            optionId: '', // Empty optionId means custom variant
+            optionIds: [],
             name: '',
-            sku: '',
+            sku: `${productPrefix}-CUSTOM${variantCount}`,
             price: 0,
             stockOnHand: 0
         }));
     }
 
     /**
-     * Remove a custom variant
+     * Remove a variant
      */
-    removeCustomVariant(variantIndex: number): void {
+    removeVariant(variantIndex: number): void {
         this.variants.removeAt(variantIndex);
     }
 
     /**
-     * Get custom variants (no optionId)
+     * Get custom variants (no optionIds or empty)
      */
     getCustomVariants(): FormGroup[] {
         return this.variants.controls.filter(
-            v => !v.get('optionId')?.value
+            v => {
+                const ids = v.get('optionIds')?.value || [];
+                return ids.length === 0;
+            }
         ) as FormGroup[];
     }
 
     /**
-     * Add another SKU for an existing option
+     * Get generated combo variants (has optionIds)
      */
-    addSkuForOption(optionId: string): void {
-        const option = this.availableOptions().find(opt => opt.id === optionId);
-        if (option) {
-            const name = this.formatOptionName(option.name);
-            this.variants.push(this.createVariantForm({
-                optionId,
-                name,
-                sku: option.suggestedSku,
-                price: 0,
-                stockOnHand: 0
-            }));
-        }
-    }
-
-    /**
-     * Remove a specific SKU variant
-     */
-    removeSkuVariant(variantIndex: number): void {
-        const variant = this.variants.at(variantIndex);
-        const optionId = variant.get('optionId')?.value;
-
-        // Count how many variants exist for this option
-        const variantsForOption = this.getVariantsByOptionId(optionId);
-
-        // Only remove if there's more than 1, or deselect the option entirely
-        if (variantsForOption.length > 1) {
-            this.variants.removeAt(variantIndex);
-        } else {
-            // Last variant for this option - deselect the option
-            this.toggleOptionSelection(optionId);
-        }
+    getComboVariants(): FormGroup[] {
+        return this.variants.controls.filter(
+            v => {
+                const ids = v.get('optionIds')?.value || [];
+                return ids.length > 0;
+            }
+        ) as FormGroup[];
     }
 
     /**
@@ -525,16 +582,21 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Get option name for a variant
+     * Get combination label for a variant
      */
-    getOptionNameForVariant(variantIndex: number): string {
+    getVariantCombinationLabel(variantIndex: number): string {
         const variant = this.variants.at(variantIndex);
-        const optionId = variant.get('optionId')?.value;
+        const optionIds = variant.get('optionIds')?.value || [];
 
-        if (!optionId) return 'Unknown';
+        if (optionIds.length === 0) return 'Custom';
 
-        const option = this.availableOptions().find(opt => opt.id === optionId);
-        return option?.name || 'Unknown';
+        const options = this.availableOptions();
+        const names = optionIds.map((id: string) => {
+            const opt = options.find(o => o.id === id);
+            return opt?.name || '';
+        }).filter(Boolean);
+
+        return names.join(' × ') || 'Unknown';
     }
 
     /**
@@ -704,7 +766,8 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handle photo selection from file input or camera
+     * Handle photo selection for product
+     * Note: Photos are product-level for AI recognition
      */
     onPhotosSelected(event: Event): void {
         const input = event.target as HTMLInputElement;
@@ -718,7 +781,6 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
         this.photos.set(allPhotos);
 
         // Generate previews for new photos
-        const currentPreviews = this.photoPreviews();
         newFiles.forEach((file) => {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -733,14 +795,14 @@ export class ProductCreateComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Remove a photo by index
+     * Remove a photo from product
      */
-    removePhoto(index: number): void {
+    removePhoto(photoIndex: number): void {
         const photos = this.photos();
         const previews = this.photoPreviews();
 
-        photos.splice(index, 1);
-        previews.splice(index, 1);
+        photos.splice(photoIndex, 1);
+        previews.splice(photoIndex, 1);
 
         this.photos.set([...photos]);
         this.photoPreviews.set([...previews]);

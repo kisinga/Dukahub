@@ -176,9 +176,9 @@
           <!-- Photos Tab Content -->
           @if (activeTab() === 'photos') {
           <div>
-            <h2 class="card-title">Product Photos (Optional)</h2>
-            <p class="text-sm text-base-content/70 mb-4">
-              Upload product images to help with visual identification
+            <h2 class="card-title">Product Photos</h2>
+            <p class="text-sm text-base-content/70 mb-2">
+              📸 Important for AI recognition (pricing posters, symbols, product packaging)
             </p>
 
             <!-- Photo Upload Button -->
@@ -234,7 +234,7 @@
                 />
                 <button
                   type="button"
-                  (click)="removePhoto(i)"
+                  (click)="removePhoto($index)"
                   class="btn btn-circle btn-sm btn-error absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <svg
@@ -257,24 +257,6 @@
                 }
               </div>
               }
-            </div>
-            } @else {
-            <div role="alert" class="alert">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>No photos added yet. Photos are optional.</span>
             </div>
             }
           </div>
@@ -420,179 +402,26 @@
           } }
         </div>
       </div>
-      <!-- Quick Setup Templates -->
-      <div class="card card-border bg-base-100">
-        <div class="card-body">
-          <h2 class="card-title">Quick Setup</h2>
-          <p class="text-sm text-base-content/70 mb-3">
-            Choose a template to quickly set up common product variants
-          </p>
+      <!-- Template Selector Component -->
+      <app-template-selector
+        [templates]="templates"
+        [selectedTemplateIds]="selectedTemplates()"
+        (templateToggled)="toggleTemplate($event)"
+        (customOptionClicked)="openCustomOptionModal()"
+        (clearAllClicked)="clearTemplates()"
+      />
 
-          <!-- Template Chips (Multi-select) -->
-          <div class="flex flex-wrap gap-2">
-            @for (template of templates; track template.id) {
-            <button
-              type="button"
-              (click)="toggleTemplate(template.id)"
-              class="btn btn-sm"
-              [class.btn-primary]="isTemplateSelected(template.id)"
-              [class.btn-outline]="!isTemplateSelected(template.id)"
-            >
-              @if (isTemplateSelected(template.id)) {
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              }
-              {{ template.name }}
-            </button>
-            } @if (selectedTemplates().length > 0) {
-            <button type="button" (click)="clearTemplates()" class="btn btn-sm btn-ghost">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-              Clear All
-            </button>
-            }
-
-            <div class="divider divider-horizontal mx-2"></div>
-
-            <!-- Add Custom Option Button - Always visible -->
-            <button type="button" (click)="openCustomOptionModal()" class="btn btn-sm btn-outline">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-              Add Custom
-            </button>
-          </div>
-          <p class="text-xs text-base-content/60 mt-2">
-            💡 Select templates or add custom options (e.g., Bunch, Bundle, Case)
-          </p>
-
-          <!-- Show available options when templates are selected OR custom options exist -->
-          @if (selectedTemplates().length > 0 || customOptions().length > 0) {
-          <div class="mt-3 p-3 bg-base-200 rounded-lg">
-            @if (selectedTemplates().length > 0) {
-            <p class="text-sm font-medium mb-3">Available {{ selectedTemplateNames() }} options:</p>
-            }
-
-            <!-- Selectable pills (grouped by template) -->
-            <div class="space-y-3">
-              @for (templateId of selectedTemplates(); track templateId) {
-              <div>
-                <p class="text-xs font-medium text-base-content/70 mb-1">
-                  {{ getTemplateName(templateId) }}:
-                </p>
-                <div class="flex flex-wrap gap-2">
-                  @for (option of availableOptions(); track option.id) { @if
-                  (optionBelongsToTemplate(option, templateId)) {
-                  <button
-                    type="button"
-                    (click)="toggleOptionSelection(option.id)"
-                    class="btn btn-sm"
-                    [class.btn-primary]="isOptionSelected(option.id)"
-                    [class.btn-outline]="!isOptionSelected(option.id)"
-                  >
-                    @if (isOptionSelected(option.id)) {
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    }
-                    {{ option.name }}
-                  </button>
-                  } }
-                </div>
-              </div>
-              }
-
-              <!-- Custom options -->
-              @if (customOptions().length > 0) {
-              <div>
-                <p class="text-xs font-medium text-base-content/70 mb-1">Custom:</p>
-                <div class="flex flex-wrap gap-2">
-                  @for (option of availableOptions(); track option.id) { @if (option.isCustom) {
-                  <button
-                    type="button"
-                    (click)="toggleOptionSelection(option.id)"
-                    class="btn btn-sm"
-                    [class.btn-primary]="isOptionSelected(option.id)"
-                    [class.btn-outline]="!isOptionSelected(option.id)"
-                  >
-                    @if (isOptionSelected(option.id)) {
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    }
-                    {{ option.name }}
-                    <span class="badge badge-xs">custom</span>
-                  </button>
-                  } }
-                </div>
-              </div>
-              }
-            </div>
-
-            <p class="text-xs text-base-content/60 mt-2">
-              👆 Click to select options for your product SKUs
-            </p>
-          </div>
-          }
-        </div>
-      </div>
+      <!-- Option Selector Component -->
+      @if (selectedTemplates().length > 0 || customOptions().length > 0) {
+      <app-option-selector
+        [options]="availableOptions()"
+        [selectedOptionIds]="selectedOptionIds()"
+        [selectedTemplateIds]="selectedTemplates()"
+        [templateNames]="selectedTemplateNames()"
+        [templates]="templates"
+        (optionToggled)="toggleOptionSelection($event)"
+      />
+      }
 
       <!-- SKU Customization Cards -->
       <div formArrayName="variants" class="space-y-6">
@@ -621,283 +450,53 @@
           </button>
         </div>
 
-        <!-- Template-based SKUs -->
-        @if (selectedOptionIds().length > 0) {
-        <div class="space-y-6">
-          @for (optionId of selectedOptionIds(); track optionId) {
-          <div class="space-y-3">
-            <!-- Option Header -->
-            <div class="flex items-center justify-between">
-              <div class="badge badge-primary badge-lg">
-                {{ getOptionName(optionId) }}
-              </div>
-              <button
-                type="button"
-                (click)="addSkuForOption(optionId)"
-                class="btn btn-xs btn-ghost"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                Add SKU
-              </button>
-            </div>
-
-            <!-- SKU Cards for this option -->
-            @for (variant of variants.controls; track $index; let i = $index) { @if
-            (variant.get('optionId')?.value === optionId) {
-            <div class="card card-border bg-base-100" [formGroupName]="i">
-              <div class="card-body">
-                <div class="flex items-center justify-between mb-3">
-                  <span class="text-sm font-medium">SKU #{{ i + 1 }}</span>
-                  <button
-                    type="button"
-                    (click)="removeSkuVariant(i)"
-                    class="btn btn-xs btn-circle btn-ghost"
-                    title="Remove SKU"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <!-- Variant Name -->
-                  <div class="md:col-span-2">
-                    <label class="floating-label">
-                      <input
-                        type="text"
-                        formControlName="name"
-                        placeholder="e.g., One Kilogram, Two Kilograms"
-                        class="input input-sm"
-                        [class.input-error]="hasVariantError(i, 'name')"
-                      />
-                      <span>Variant Name *</span>
-                    </label>
-                    @if (hasVariantError(i, 'name')) {
-                    <p class="text-error text-xs mt-1">
-                      {{ getVariantErrorMessage(i, 'name') }}
-                    </p>
-                    }
-                  </div>
-
-                  <!-- SKU Code -->
-                  <div>
-                    <label class="floating-label">
-                      <input
-                        type="text"
-                        formControlName="sku"
-                        placeholder="e.g., KG1, KG2"
-                        class="input input-sm"
-                        [class.input-error]="hasVariantError(i, 'sku')"
-                        maxlength="50"
-                      />
-                      <span>SKU *</span>
-                    </label>
-                    @if (hasVariantError(i, 'sku')) {
-                    <p class="text-error text-xs mt-1">
-                      {{ getVariantErrorMessage(i, 'sku') }}
-                    </p>
-                    }
-                  </div>
-
-                  <!-- Price -->
-                  <div>
-                    <label class="floating-label">
-                      <input
-                        type="number"
-                        formControlName="price"
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                        class="input input-sm"
-                        [class.input-error]="hasVariantError(i, 'price')"
-                      />
-                      <span>Price *</span>
-                    </label>
-                    @if (hasVariantError(i, 'price')) {
-                    <p class="text-error text-xs mt-1">
-                      {{ getVariantErrorMessage(i, 'price') }}
-                    </p>
-                    }
-                  </div>
-
-                  <!-- Stock Quantity -->
-                  <div>
-                    <label class="floating-label">
-                      <input
-                        type="number"
-                        formControlName="stockOnHand"
-                        placeholder="0"
-                        min="0"
-                        class="input input-sm"
-                        [class.input-error]="hasVariantError(i, 'stockOnHand')"
-                      />
-                      <span>Initial Stock *</span>
-                    </label>
-                    @if (hasVariantError(i, 'stockOnHand')) {
-                    <p class="text-error text-xs mt-1">
-                      {{ getVariantErrorMessage(i, 'stockOnHand') }}
-                    </p>
-                    }
-                  </div>
-                </div>
-              </div>
-            </div>
-            } }
-          </div>
-          }
-        </div>
-        }
-
-        <!-- Custom SKUs (no template) -->
-        @if (getCustomVariants().length > 0) {
+        <!-- Generated Combination Variants -->
+        @if (getComboVariants().length > 0) {
         <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="badge badge-neutral badge-lg">Custom Variants</div>
+          <div class="flex items-center gap-2 mb-3">
+            <h4 class="text-sm font-semibold">Auto-Generated Variants</h4>
+            <span class="badge badge-sm badge-info">{{ getComboVariants().length }} variants</span>
           </div>
 
           @for (variant of variants.controls; track $index; let i = $index) { @if
-          (!variant.get('optionId')?.value) {
-          <div class="card card-border bg-base-100" [formGroupName]="i">
-            <div class="card-body">
-              <div class="flex items-center justify-between mb-3">
-                <span class="text-sm font-medium">Custom SKU #{{ i + 1 }}</span>
-                <button
-                  type="button"
-                  (click)="removeCustomVariant(i)"
-                  class="btn btn-xs btn-circle btn-ghost"
-                  title="Remove SKU"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
+          (variant.get('optionIds')?.value?.length > 0) {
+          <div [formGroupName]="i">
+            <app-variant-card
+              [variantForm]="$any(variant)"
+              [combinationLabel]="getVariantCombinationLabel(i)"
+              [namePlaceholder]="'e.g., One Kilogram, Two Kilograms'"
+              [skuPlaceholder]="'e.g., KG1, KG2'"
+              (removed)="removeVariant(i)"
+              (scanBarcodeClicked)="startBarcodeScanner(i)"
+            />
+          </div>
+          } }
+        </div>
+        }
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Variant Name -->
-                <div class="md:col-span-2">
-                  <label class="floating-label">
-                    <input
-                      type="text"
-                      formControlName="name"
-                      placeholder="e.g., Standard Package, Bulk Deal"
-                      class="input input-sm"
-                      [class.input-error]="hasVariantError(i, 'name')"
-                    />
-                    <span>Variant Name *</span>
-                  </label>
-                  @if (hasVariantError(i, 'name')) {
-                  <p class="text-error text-xs mt-1">
-                    {{ getVariantErrorMessage(i, 'name') }}
-                  </p>
-                  }
-                </div>
+        <!-- Custom SKUs (manually added, no auto-generation) -->
+        @if (getCustomVariants().length > 0) {
+        <div class="space-y-3">
+          <h4 class="text-sm font-semibold mb-3">Custom Variants</h4>
 
-                <!-- SKU Code -->
-                <div>
-                  <label class="floating-label">
-                    <input
-                      type="text"
-                      formControlName="sku"
-                      placeholder="e.g., CUSTOM-001"
-                      class="input input-sm"
-                      [class.input-error]="hasVariantError(i, 'sku')"
-                      maxlength="50"
-                    />
-                    <span>SKU *</span>
-                  </label>
-                  @if (hasVariantError(i, 'sku')) {
-                  <p class="text-error text-xs mt-1">
-                    {{ getVariantErrorMessage(i, 'sku') }}
-                  </p>
-                  }
-                </div>
-
-                <!-- Price -->
-                <div>
-                  <label class="floating-label">
-                    <input
-                      type="number"
-                      formControlName="price"
-                      placeholder="0.00"
-                      step="0.01"
-                      min="0"
-                      class="input input-sm"
-                      [class.input-error]="hasVariantError(i, 'price')"
-                    />
-                    <span>Price *</span>
-                  </label>
-                  @if (hasVariantError(i, 'price')) {
-                  <p class="text-error text-xs mt-1">
-                    {{ getVariantErrorMessage(i, 'price') }}
-                  </p>
-                  }
-                </div>
-
-                <!-- Stock Quantity -->
-                <div>
-                  <label class="floating-label">
-                    <input
-                      type="number"
-                      formControlName="stockOnHand"
-                      placeholder="0"
-                      min="0"
-                      class="input input-sm"
-                      [class.input-error]="hasVariantError(i, 'stockOnHand')"
-                    />
-                    <span>Initial Stock *</span>
-                  </label>
-                  @if (hasVariantError(i, 'stockOnHand')) {
-                  <p class="text-error text-xs mt-1">
-                    {{ getVariantErrorMessage(i, 'stockOnHand') }}
-                  </p>
-                  }
-                </div>
-              </div>
-            </div>
+          @for (variant of variants.controls; track $index; let i = $index) { @if
+          (variant.get('optionIds')?.value?.length === 0) {
+          <div [formGroupName]="i">
+            <app-variant-card
+              [variantForm]="$any(variant)"
+              [headerLabel]="'Custom SKU'"
+              [namePlaceholder]="'e.g., Standard Package, Bulk Deal'"
+              [skuPlaceholder]="'e.g., CUSTOM-001'"
+              (removed)="removeVariant(i)"
+              (scanBarcodeClicked)="startBarcodeScanner(i)"
+            />
           </div>
           } }
         </div>
         }
 
         <!-- Empty state -->
-        @if (selectedOptionIds().length === 0 && getCustomVariants().length === 0) {
+        @if (variants.length === 0) {
         <div role="alert" class="alert">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -916,7 +515,8 @@
           <div>
             <p class="font-medium">No SKUs added yet</p>
             <p class="text-sm text-base-content/70">
-              Select options from templates above or click "Add Custom SKU" to create variants
+              Select options from templates above to auto-generate variants, or click "Add Custom
+              SKU"
             </p>
           </div>
         </div>
@@ -956,66 +556,11 @@
     </div>
   </form>
 
-  <!-- Custom Option Modal -->
-  @if (showCustomOptionModal()) {
-  <dialog open class="modal">
-    <div class="modal-box">
-      <h3 class="text-lg font-bold mb-2">Add Custom Option</h3>
-      <p class="text-sm text-base-content/70 mb-4">
-        Create a new option type that's not in the templates (e.g., Bunch, Bundle, Case)
-      </p>
-
-      <form [formGroup]="customOptionForm" (ngSubmit)="addCustomOption()">
-        <div class="space-y-4">
-          <!-- Option Name -->
-          <label class="floating-label">
-            <input
-              type="text"
-              formControlName="name"
-              placeholder="e.g., Bunch, Bundle, Case"
-              class="input"
-              [class.input-error]="
-                customOptionForm.get('name')?.invalid && customOptionForm.get('name')?.touched
-              "
-            />
-            <span>Option Name *</span>
-          </label>
-          <p class="text-xs text-base-content/60 -mt-2">
-            This will appear as a selectable option alongside templates
-          </p>
-
-          <!-- SKU -->
-          <label class="floating-label">
-            <input
-              type="text"
-              formControlName="sku"
-              placeholder="e.g., BUNCH, BND, CASE"
-              class="input"
-              maxlength="10"
-              [class.input-error]="
-                customOptionForm.get('sku')?.invalid && customOptionForm.get('sku')?.touched
-              "
-            />
-            <span>SKU Code *</span>
-          </label>
-          <p class="text-xs text-base-content/60 -mt-2">
-            Short code that will be used when creating SKUs
-          </p>
-        </div>
-
-        <div class="modal-action">
-          <button type="button" (click)="closeCustomOptionModal()" class="btn btn-ghost">
-            Cancel
-          </button>
-          <button type="submit" class="btn btn-primary" [disabled]="customOptionForm.invalid">
-            Add Option
-          </button>
-        </div>
-      </form>
-    </div>
-    <form method="dialog" class="modal-backdrop" (click)="closeCustomOptionModal()">
-      <button>close</button>
-    </form>
-  </dialog>
-  }
+  <!-- Custom Option Modal Component -->
+  <app-custom-option-modal
+    [isOpen]="showCustomOptionModal()"
+    [form]="customOptionForm"
+    (submitted)="addCustomOption()"
+    (cancelled)="closeCustomOptionModal()"
+  />
 </div>
