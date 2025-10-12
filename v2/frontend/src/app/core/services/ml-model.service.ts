@@ -58,6 +58,9 @@ export class MlModelService {
     private readonly isInitializedSignal = signal<boolean>(false);
     private readonly errorSignal = signal<ModelError | null>(null);
 
+    // Cache for model files using IndexedDB via TensorFlow.js
+    private readonly MODEL_CACHE_NAME = 'dukahub-ml-models';
+
     readonly isLoading = this.isLoadingSignal.asReadonly();
     readonly isInitialized = this.isInitializedSignal.asReadonly();
     readonly error = this.errorSignal.asReadonly();
@@ -109,11 +112,11 @@ export class MlModelService {
 
     /**
      * Load model for the given channel
-     * Downloads and caches model files from backend
+     * Uses IndexedDB caching via TensorFlow.js for offline operation
      */
     async loadModel(channelId: string): Promise<boolean> {
         if (this.model) {
-            console.log('Model already loaded');
+            console.log('✅ Model already loaded in memory');
             return true;
         }
 
@@ -121,7 +124,7 @@ export class MlModelService {
         this.errorSignal.set(null);
 
         try {
-            // First check if model exists
+            // First check if model exists on server
             const existsCheck = await this.checkModelExists(channelId);
             if (!existsCheck.exists) {
                 this.errorSignal.set(existsCheck.error!);
@@ -131,20 +134,35 @@ export class MlModelService {
             // Set TensorFlow backend
             await tf.setBackend('webgl');
             await tf.ready();
-            console.log(`TensorFlow.js backend ready: ${tf.getBackend()}`);
+            console.log(`🔧 TensorFlow.js backend ready: ${tf.getBackend()}`);
 
             const baseUrl = `/assets/ml-models/${channelId}/latest/`;
+            const modelUrl = `${baseUrl}model.json`;
+            const cacheKey = `indexeddb://${this.MODEL_CACHE_NAME}/${channelId}`;
 
-            // Load metadata first
-            console.log('Loading model metadata...');
+            // Load metadata first (lightweight, no need to cache separately)
+            console.log('📄 Loading model metadata...');
             this.metadata = await this.fetchMetadata(`${baseUrl}metadata.json`);
 
-            // Load model directly with TensorFlow.js
-            console.log('Loading model into TensorFlow.js...');
-            this.model = await tf.loadLayersModel(`${baseUrl}model.json`);
+            // Try loading from IndexedDB cache first
+            try {
+                console.log('💾 Attempting to load model from IndexedDB cache...');
+                this.model = await tf.loadLayersModel(cacheKey);
+                console.log('✅ Model loaded from IndexedDB cache (offline-ready)');
+            } catch (cacheError) {
+                // Cache miss - load from network and save to cache
+                console.log('🌐 Cache miss, loading from network...');
+                this.model = await tf.loadLayersModel(modelUrl);
+
+                // Save to IndexedDB for future offline use
+                console.log('💾 Saving model to IndexedDB cache...');
+                await this.model.save(cacheKey);
+                console.log('✅ Model cached to IndexedDB for offline use');
+            }
 
             this.isInitializedSignal.set(true);
-            console.log('Model loaded successfully:', {
+            console.log('✅ Model ready:', {
+                channelId,
                 productCount: this.metadata.productCount,
                 imageCount: this.metadata.imageCount,
                 labels: this.metadata.labels.length,
@@ -152,7 +170,7 @@ export class MlModelService {
 
             return true;
         } catch (error: any) {
-            console.error('Failed to load model:', error);
+            console.error('❌ Failed to load model:', error);
             const modelError = this.parseError(error);
             this.errorSignal.set(modelError);
             this.model = null;
@@ -309,7 +327,7 @@ export class MlModelService {
     }
 
     /**
-     * Unload model to free memory
+     * Unload model from memory (cached version stays in IndexedDB)
      */
     unloadModel(): void {
         if (this.model) {
@@ -319,7 +337,28 @@ export class MlModelService {
             this.metadata = null;
             this.isInitializedSignal.set(false);
             this.errorSignal.set(null);
-            console.log('Model unloaded');
+            console.log('🗑️ Model unloaded from memory (cache preserved)');
+        }
+    }
+
+    /**
+     * Clear model from IndexedDB cache completely
+     */
+    async clearModelCache(channelId: string): Promise<void> {
+        try {
+            const cacheKey = `indexeddb://${this.MODEL_CACHE_NAME}/${channelId}`;
+
+            // Unload from memory first
+            this.unloadModel();
+
+            // Remove from IndexedDB
+            const models = await tf.io.listModels();
+            if (models[cacheKey]) {
+                await tf.io.removeModel(cacheKey);
+                console.log(`🗑️ Model cache cleared for channel ${channelId}`);
+            }
+        } catch (error) {
+            console.error('Error clearing model cache:', error);
         }
     }
 

@@ -1,45 +1,12 @@
-@use '../../../../styles/design-system' as ds;
-
 :host {
   display: block;
 }
 
-// POS Container
-.pos-container {
-  min-height: 100vh;
-  padding-bottom: 6rem; // Space for sticky checkout bar
-}
-
-// Scan Frame Overlay
-.scan-frame {
-  width: 80%;
-  height: 60%;
-  max-width: 300px;
-  max-height: 300px;
-  border: 3px solid oklch(var(--p));
-  border-radius: ds.$radius-lg;
-  box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.5);
-  animation: scan-pulse 2s ease-in-out infinite;
-}
-
-@keyframes scan-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    border-color: oklch(var(--p));
-  }
-  50% {
-    opacity: 0.7;
-    border-color: oklch(var(--s));
-  }
-}
-
-// Animations
 .animate-in {
-  animation: slideIn 0.3s ds.$ease-in-out;
+  animation: slideDown 0.3s ease-out;
 }
 
-@keyframes slideIn {
+@keyframes slideDown {
   from {
     opacity: 0;
     transform: translateY(-20px);
@@ -47,27 +14,5 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-// Touch optimizations
-@include ds.touch-device {
-  .btn {
-    @include ds.touch-target;
-  }
-}
-
-// Smooth transitions
-.active\:scale-98:active {
-  transform: scale(0.98);
-}
-
-// Modal bottom sheet on mobile
-@media (max-width: 639px) {
-  .modal-bottom .modal-box {
-    max-width: 100%;
-    width: 100%;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
   }
 }

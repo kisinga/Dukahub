@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AppInitService } from '../../core/services/app-init.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
 
@@ -16,9 +17,10 @@ interface NavItem {
     styleUrl: './dashboard-layout.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DashboardLayoutComponent {
+export class DashboardLayoutComponent implements OnInit {
     private readonly authService = inject(AuthService);
     private readonly companyService = inject(CompanyService);
+    private readonly appInitService = inject(AppInitService);
 
     protected readonly navItems: NavItem[] = [
         { label: 'Overview', icon: '📊', route: '/dashboard' },
@@ -103,6 +105,24 @@ export class DashboardLayoutComponent {
         // Initialize company selection from storage
         // Companies are automatically populated from login response via AuthService
         this.companyService.initializeFromStorage();
+
+        // Watch for active company changes and initialize dashboard
+        effect(() => {
+            const companyId = this.activeCompanyId();
+            if (companyId) {
+                console.log(`🔄 Active company changed: ${companyId}`);
+                // Initialize dashboard data in background (non-blocking)
+                this.appInitService.initializeDashboard(companyId);
+            }
+        });
+    }
+
+    ngOnInit(): void {
+        // If company already active on init, trigger initialization
+        const companyId = this.activeCompanyId();
+        if (companyId) {
+            this.appInitService.initializeDashboard(companyId);
+        }
     }
 
     closeDrawer(): void {
@@ -114,9 +134,12 @@ export class DashboardLayoutComponent {
 
     selectCompany(companyId: string): void {
         this.companyService.activateCompany(companyId);
+        // Note: effect() in constructor will trigger initialization
     }
 
     async logout(): Promise<void> {
+        // Clear cached data before logout
+        this.appInitService.clearCache();
         await this.authService.logout();
     }
 }

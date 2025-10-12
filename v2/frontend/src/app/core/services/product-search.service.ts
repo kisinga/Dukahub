@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { gql } from '@apollo/client/core';
 import { ApolloService } from './apollo.service';
+import { ProductCacheService } from './product-cache.service';
 
 /**
  * Product variant for POS
@@ -39,11 +40,20 @@ export interface ProductSearchResult {
 })
 export class ProductSearchService {
     private readonly apolloService = inject(ApolloService);
+    private readonly cacheService = inject(ProductCacheService);
 
     /**
-     * Search products by name or SKU
+     * Search products by name or SKU (cache-first for offline support)
      */
     async searchProducts(searchTerm: string): Promise<ProductSearchResult[]> {
+        // Try cache first if available
+        if (this.cacheService.isCacheReady()) {
+            const cachedResults = this.cacheService.searchProducts(searchTerm);
+            if (cachedResults.length > 0) {
+                console.log(`📦 Returning ${cachedResults.length} products from cache`);
+                return cachedResults;
+            }
+        }
         const query = gql`
             query SearchProducts($term: String!) {
                 products(options: { 
@@ -107,9 +117,18 @@ export class ProductSearchService {
     }
 
     /**
-     * Get product by ID
+     * Get product by ID (cache-first for offline ML detection)
      */
     async getProductById(productId: string): Promise<ProductSearchResult | null> {
+        // CRITICAL: Try cache first for ML detection (offline support)
+        const cachedProduct = this.cacheService.getProductById(productId);
+        if (cachedProduct) {
+            console.log(`📦 Product ${productId} found in cache`);
+            return cachedProduct;
+        }
+
+        // Fallback to network if not in cache
+        console.log(`🌐 Fetching product ${productId} from network...`);
         const query = gql`
             query GetProduct($id: ID!) {
                 product(id: $id) {
