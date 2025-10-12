@@ -83,7 +83,7 @@ services:
     volumes:
       # Mount ML models directory so trained models persist across container rebuilds
       # Served via custom Express middleware at /assets/ml-models
-      - ./backend/static/assets/ml-models:/app/static/assets/ml-models
+      - ./backend/static/assets/ml-models:/usr/src/app/static/assets/ml-models
     labels:
       - "io.vendure.create.name=dukahub"
     restart: unless-stopped
