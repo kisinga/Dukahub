@@ -8,13 +8,12 @@ Containerized architecture for Dukahub development and production environments.
 
 ## 🏗️ Architecture
 
-| Service         | Image                      | Exposed Port | Internal Port | Data Volume        |
-| --------------- | -------------------------- | ------------ | ------------- | ------------------ |
-| **postgres_db** | `postgres:16-alpine`       | `5433`       | `5432`        | `postgres_db_data` |
-| **redis**       | `redis:7-alpine`           | `6479`       | `6379`        | `redis_data`       |
-| **typesense**   | `typesense/typesense:27.0` | `8208`       | `8108`        | `typesense_data`   |
-| **backend**     | Built from `./backend`     | `3000`       | `3000`        | —                  |
-| **frontend**    | Built from `./frontend`    | `4200`       | `4200`        | —                  |
+| Service         | Image                   | Exposed Port | Internal Port | Data Volume        |
+| --------------- | ----------------------- | ------------ | ------------- | ------------------ |
+| **postgres_db** | `postgres:16-alpine`    | `5433`       | `5432`        | `postgres_db_data` |
+| **redis**       | `redis:7-alpine`        | `6479`       | `6379`        | `redis_data`       |
+| **backend**     | Built from `./backend`  | `3000`       | `3000`        | —                  |
+| **frontend**    | Built from `./frontend` | `4200`       | `4200`        | —                  |
 
 All services mount `./configs` as read-only for shared configuration access.
 
@@ -34,7 +33,6 @@ configs/.env.backend
   │     └─→ docker-compose.yml (substitutes ${VARS})
   │           ↓
   │           ├─→ postgres_db (DB_* → POSTGRES_*)
-  │           ├─→ typesense (TYPESENSE_API_KEY)
   │           └─→ backend (RUN_POPULATE triggers populate)
   │
   └─→ Production: Platform injects vars directly
@@ -54,10 +52,6 @@ configs/.env.backend
 - Gets `POSTGRES_DB=${DB_NAME}` from shell environment (via compose-dev.sh)
 - Gets `POSTGRES_USER=${DB_USERNAME}` from shell environment
 - Gets `POSTGRES_PASSWORD=${DB_PASSWORD}` from shell environment
-
-**Typesense:**
-
-- Gets `TYPESENSE_API_KEY` from shell environment (via compose-dev.sh)
 
 **RUN_POPULATE** (optional):
 
@@ -91,7 +85,6 @@ nano configs/.env.backend  # Update passwords/secrets
 DB_NAME=dukahub
 DB_USERNAME=vendure
 DB_PASSWORD=<strong-password>
-TYPESENSE_API_KEY=<strong-key>
 COOKIE_SECRET=<strong-secret>
 SUPERADMIN_PASSWORD=<strong-password>
 ```
@@ -108,7 +101,6 @@ SUPERADMIN_PASSWORD=<strong-password>
 - **Backend API:** http://localhost:3000
 - **Admin UI:** http://localhost:3002
 - **Frontend:** http://localhost:4200
-- **Typesense:** http://localhost:8208
 - **Postgres:** `localhost:5433`
 - **Redis:** `localhost:6479`
 
@@ -136,7 +128,6 @@ See [`configs/README.md`](configs/README.md) for complete variable reference.
 - `COOKIE_SECRET` — Session encryption key
 - `DB_PASSWORD` — Database password
 - `SUPERADMIN_PASSWORD` — Admin login
-- `TYPESENSE_API_KEY` — Search API key
 - `APP_ENV=production` — Enables production mode
 
 ---
@@ -195,18 +186,11 @@ Adds Vendure sample data (default channel/zone, ~250 countries, ~20 products wit
 **Persistence:** `redis_data` volume  
 **Network:** Accessible as `redis:6379` from containers
 
-### typesense
-
-**Purpose:** Full-text search engine for product catalog  
-**Configuration:** API key from `TYPESENSE_API_KEY`  
-**Persistence:** `typesense_data` volume  
-**Network:** Accessible as `typesense:8108` from containers
-
 ### backend
 
 **Purpose:** Vendure-based e-commerce API and admin UI  
 **Build Context:** `./backend` directory  
-**Dependencies:** postgres_db, redis, typesense  
+**Dependencies:** postgres_db, redis  
 **Configuration:** Receives all vars via docker-compose environment section, `RUN_POPULATE` triggers populate on startup
 
 ### frontend
@@ -223,7 +207,6 @@ Adds Vendure sample data (default channel/zone, ~250 countries, ~20 products wit
 | Volume Name        | Purpose                     | Backup Priority |
 | ------------------ | --------------------------- | --------------- |
 | `postgres_db_data` | Database (products, orders) | **Critical**    |
-| `typesense_data`   | Search index (rebuildable)  | Medium          |
 | `redis_data`       | Cache/queue (ephemeral)     | Low             |
 
 ### Backup Database
@@ -251,9 +234,6 @@ docker compose exec -T postgres_db psql -U vendure vendure < backup.sql
 ```bash
 # Cookie secret
 openssl rand -base64 32
-
-# Typesense API key
-openssl rand -hex 16
 
 # Database password
 openssl rand -base64 24 | tr -d "=+/" | cut -c1-20

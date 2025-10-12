@@ -33,20 +33,6 @@ services:
     labels:
       - "io.vendure.create.name=dukahub"
 
-  typesense:
-    image: typesense/typesense:27.0
-    command:
-      - --data-dir
-      - /data
-      - --api-key
-      - ${TYPESENSE_API_KEY}
-    ports:
-      - "8208:8108"
-    volumes:
-      - typesense_data:/data
-    labels:
-      - "io.vendure.create.name=dukahub"
-
   backend:
     build:
       context: backend
@@ -68,16 +54,11 @@ services:
       SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
       # Security
       COOKIE_SECRET: ${COOKIE_SECRET}
-      # Search
-      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
-      TYPESENSE_HOST: ${TYPESENSE_HOST}
-      TYPESENSE_PORT: ${TYPESENSE_PORT}
       # Initialization (optional)
       RUN_POPULATE: ${RUN_POPULATE:-false}
     depends_on:
       - postgres_db
       - redis
-      - typesense
     ports:
       - "3000:3000"
     volumes:
@@ -103,10 +84,6 @@ services:
 
 volumes:
   postgres_db_data:
-    driver: local
-    labels:
-      - "io.vendure.create.name=dukahub"
-  typesense_data:
     driver: local
     labels:
       - "io.vendure.create.name=dukahub"

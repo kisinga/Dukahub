@@ -46,7 +46,7 @@ Backend on host, services in Docker:
 
 ```bash
 # 1. Start infrastructure
-docker compose up -d postgres_db redis typesense
+docker compose up -d postgres_db redis
 
 # 2. Run backend locally (connects to localhost:5433)
 cd backend
@@ -99,7 +99,6 @@ Generate strong secrets:
 
 ```bash
 openssl rand -base64 32  # COOKIE_SECRET
-openssl rand -hex 16     # TYPESENSE_API_KEY
 ```
 
 Never commit `configs/.env.backend` to git (already in `.gitignore`)
@@ -112,7 +111,6 @@ Never commit `configs/.env.backend` to git (already in `.gitignore`)
 - **TypeScript** - Type-safe development
 - **PostgreSQL** - Primary database
 - **Redis** - Session & cache store
-- **Typesense** - Search engine
 
 ### Frontend
 
