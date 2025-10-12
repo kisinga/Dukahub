@@ -43,19 +43,20 @@ Docker: backend (container) → postgres_db:5432 (internal network)
 
 ## Environment Variables
 
-| Variable              | Example              | Used By           | Notes                            |
-| --------------------- | -------------------- | ----------------- | -------------------------------- |
-| `APP_ENV`             | `dev` / `production` | Backend           | Controls debug mode, trust proxy |
-| `PORT`                | `3000`               | Backend           | API server port                  |
-| `DB_HOST`             | `postgres_db`        | Backend           | Database hostname                |
-| `DB_PORT`             | `5432`               | Backend           | Database port                    |
-| `DB_NAME`             | `vendure`            | Backend, Postgres | Database name                    |
-| `DB_SCHEMA`           | `public`             | Backend           | PostgreSQL schema                |
-| `DB_USERNAME`         | `vendure`            | Backend, Postgres | Database user                    |
-| `DB_PASSWORD`         | `secure-password`    | Backend, Postgres | Database password                |
-| `SUPERADMIN_USERNAME` | `superadmin`         | Backend           | Initial admin login              |
-| `SUPERADMIN_PASSWORD` | `secure-password`    | Backend           | Initial admin password           |
-| `COOKIE_SECRET`       | `random-32-chars`    | Backend           | Session cookie encryption key    |
+| Variable              | Example              | Used By           | Notes                                          |
+| --------------------- | -------------------- | ----------------- | ---------------------------------------------- |
+| `APP_ENV`             | `dev` / `production` | Backend           | Controls debug mode, trust proxy               |
+| `PORT`                | `3000`               | Backend           | API server port                                |
+| `DB_HOST`             | `postgres_db`        | Backend           | Database hostname                              |
+| `DB_PORT`             | `5432`               | Backend           | Database port                                  |
+| `DB_NAME`             | `vendure`            | Backend, Postgres | Database name                                  |
+| `DB_SCHEMA`           | `public`             | Backend           | PostgreSQL schema                              |
+| `DB_USERNAME`         | `vendure`            | Backend, Postgres | Database user                                  |
+| `DB_PASSWORD`         | `secure-password`    | Backend, Postgres | Database password                              |
+| `SUPERADMIN_USERNAME` | `superadmin`         | Backend           | Initial admin login                            |
+| `SUPERADMIN_PASSWORD` | `secure-password`    | Backend           | Initial admin password                         |
+| `COOKIE_SECRET`       | `random-32-chars`    | Backend           | Session cookie encryption key                  |
+| `COOKIE_SECURE`       | `true` / `false`     | Backend           | Enable secure flag on cookies (requires HTTPS) |
 
 **Note:** `RUN_POPULATE` can be set to `true` to populate database on first run
 

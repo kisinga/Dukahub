@@ -54,6 +54,7 @@ services:
       SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
       # Security
       COOKIE_SECRET: ${COOKIE_SECRET}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       # Initialization (optional)
       RUN_POPULATE: ${RUN_POPULATE:-false}
     depends_on:

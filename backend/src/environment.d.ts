@@ -8,6 +8,7 @@ declare global {
             APP_ENV: string;
             PORT: string;
             COOKIE_SECRET: string;
+            COOKIE_SECURE?: string;
             SUPERADMIN_USERNAME: string;
             SUPERADMIN_PASSWORD: string;
             DB_HOST: string;

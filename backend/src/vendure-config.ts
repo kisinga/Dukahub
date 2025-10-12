@@ -38,6 +38,10 @@ if (!isDocker) {
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3000;
 
+// Cookie secure flag: Only use secure cookies when explicitly enabled
+// This allows HTTP access for local/homelab deployments
+const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
+
 export const config: VendureConfig = {
     apiOptions: {
         port: serverPort,
@@ -92,8 +96,10 @@ export const config: VendureConfig = {
             // Use 'lax' for both dev and prod since frontend and backend are on same domain
             // 'strict' prevents cookies on navigation which breaks SPA routing
             sameSite: 'lax',
-            // In development, don't require HTTPS
-            secure: !IS_DEV,
+            // Only use secure cookies when explicitly enabled (requires HTTPS)
+            // Set COOKIE_SECURE=true for HTTPS deployments
+            // Leave unset or false for HTTP (local dev, homelab, etc.)
+            secure: COOKIE_SECURE,
         },
     },
     dbConnectionOptions: {
