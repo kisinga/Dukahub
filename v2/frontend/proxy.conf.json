@@ -1,0 +1,21 @@
+{
+  "$comment": "Change 'target' to your backend URL (localhost:3000, homelab:3000, etc.)",
+  "/admin-api": {
+    "target": "http://homelab:3000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/shop-api": {
+    "target": "http://homelab:3000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/assets/ml-models": {
+    "target": "http://homelab:3000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}

@@ -1,12 +1,20 @@
-pb_data/
-*_templ.go
+# .DS_Store
+.DS_Store
 
-# the bianry
+# Node
+node_modules
 
-backend
+# npm
+npm-debug.log
+yarn-error.log
 
-# all .DS_Store files in all folders
-**/.DS_Store
-
-# all debug binaries
-*__debug*
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+.settings/
+.history/
+.vscode/
+.cursorrules
+.cursorignore

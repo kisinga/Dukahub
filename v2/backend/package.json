@@ -1,0 +1,30 @@
+{
+  "name": "dukahub",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:server": "ts-node ./src/index.ts",
+    "dev:worker": "ts-node ./src/index-worker.ts",
+    "dev": "concurrently npm:dev:*",
+    "build": "tsc",
+    "start:server": "node ./dist/index.js",
+    "start:worker": "node ./dist/index-worker.js",
+    "start": "concurrently npm:start:*",
+    "populate": "node ./dist/populate.js"
+  },
+  "dependencies": {
+    "@vendure/admin-ui-plugin": "3.4.3",
+    "@vendure/asset-server-plugin": "3.4.3",
+    "@vendure/core": "3.4.3",
+    "@vendure/email-plugin": "3.4.3",
+    "@vendure/graphiql-plugin": "3.4.3",
+    "dotenv": "17.2.3",
+    "pg": "8.16.3"
+  },
+  "devDependencies": {
+    "@vendure/cli": "3.4.3",
+    "@vendure/create": "3.4.3",
+    "concurrently": "9.2.1",
+    "typescript": "5.9.3"
+  }
+}

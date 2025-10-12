@@ -1,0 +1,265 @@
+<!-- Compact Header -->
+<div class="sticky top-0 z-30 bg-base-100/95 backdrop-blur-sm border-b border-base-300">
+  <div class="container-app py-2">
+    <div class="flex items-center justify-between gap-2">
+      <!-- Title & Type Toggle -->
+      <div role="tablist" class="tabs tabs-boxed tabs-sm">
+        <button
+          type="button"
+          role="tab"
+          class="tab gap-1"
+          [class.tab-active]="itemType() === 'product'"
+          (click)="switchItemType('product')"
+        >
+          📦 Product
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="tab gap-1"
+          [class.tab-active]="itemType() === 'service'"
+          (click)="switchItemType('service')"
+        >
+          💼 Service
+        </button>
+      </div>
+
+      <!-- Close Button -->
+      <button type="button" (click)="cancel()" class="btn btn-sm btn-circle btn-ghost">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="container-app py-3 pb-44 lg:pb-32 max-w-4xl mx-auto">
+  <!-- Alerts -->
+  @if (submitSuccess()) {
+  <div role="alert" class="alert alert-success mb-3">
+    <span>✓ Created! Redirecting...</span>
+  </div>
+  } @if (submitError()) {
+  <div role="alert" class="alert alert-error mb-3">
+    <span>{{ submitError() }}</span>
+  </div>
+  }
+
+  <!-- Main Form (Product & Service) -->
+  <form [formGroup]="itemType() === 'product' ? productForm : serviceForm" (ngSubmit)="onSubmit()">
+    <div class="space-y-2">
+      <!-- Basic Info -->
+      <div class="card bg-base-100 shadow">
+        <div class="card-body p-3 sm:p-4">
+          <app-product-info-form [form]="itemType() === 'product' ? productForm : serviceForm" />
+        </div>
+      </div>
+
+      <!-- Photos (Collapsible) - Products only -->
+      @if (itemType() === 'product') {
+      <div class="collapse collapse-arrow bg-base-100 shadow">
+        <input type="checkbox" />
+        <div class="collapse-title min-h-[2.5rem] text-sm font-semibold">
+          📸 Photos <span class="text-xs opacity-60">(optional)</span>
+        </div>
+        <div class="collapse-content">
+          <app-photo-manager #photoManager />
+        </div>
+      </div>
+
+      <!-- Hidden barcode scanner -->
+      <div class="hidden">
+        <app-barcode-scanner #barcodeScanner />
+      </div>
+
+      <!-- Variants Setup - Products only -->
+      <div class="card bg-base-100 shadow">
+        <div class="card-body p-4 space-y-4">
+          <!-- Header -->
+          <h3 class="font-bold">🏷️ Variants</h3>
+
+          <!-- Step 1: Template Picker -->
+          <app-template-picker
+            [templates]="templateState.templates"
+            [selectedTemplates]="templateState.selectedTemplates()"
+            (templateToggled)="orchestrator.toggleTemplate($event)"
+            (customOptionRequested)="orchestrator.openCustomOptionModal()"
+            (clearAll)="orchestrator.clearAll()"
+          />
+
+          <!-- Step 2: Pick Values (Progressive) -->
+          @if (templateState.selectedTemplates().length > 0 || templateState.customOptions().length > 0) {
+          <div class="bg-primary/5 p-3 rounded-lg space-y-3">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-semibold">Pick values → {{ variants.length }} variants</p>
+            </div>
+            <app-option-selector
+              [options]="templateState.availableOptions()"
+              [selectedOptionIds]="templateState.selectedOptionIds()"
+              [selectedTemplateIds]="templateState.allTemplateIds()"
+              [templateNames]="templateState.selectedTemplateNames()"
+              [templates]="templateState.templates"
+              (optionToggled)="orchestrator.toggleOption($event)"
+            />
+          </div>
+          }
+
+          <!-- Add Custom Option Value -->
+          @if (templateState.selectedTemplates().length === 0 && templateState.customOptions().length === 0 && variants.length === 0) {
+          <div class="text-center">
+            <div class="divider text-xs opacity-60">No templates?</div>
+            <button
+              type="button"
+              (click)="orchestrator.openAddOptionValueModal()"
+              class="btn btn-outline min-h-[3rem] gap-2"
+            >
+              ➕ Add Option
+            </button>
+            <p class="text-xs opacity-60 mt-2">e.g., "Kilograms", "Small"</p>
+          </div>
+          } @else if (variants.length > 0) {
+          <div class="text-center">
+            <button
+              type="button"
+              (click)="orchestrator.openAddOptionValueModal()"
+              class="btn btn-sm btn-ghost gap-1"
+            >
+              ➕ Add More Options
+            </button>
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- Step 3: Variant Details -->
+      <app-variant-details-section
+        [variants]="variants"
+        [combinationLabels]="variantCombinationLabels()"
+        [customVariantIndices]="customVariantIndices()"
+        (variantRemoved)="removeVariant($event)"
+        (barcodeRequested)="startBarcodeScanner($event)"
+      />
+
+      <!-- Add Custom Option Type Modal (Weight, Size, etc.) -->
+      <app-custom-option-modal
+        [isOpen]="orchestrator.showCustomOptionModal()"
+        [form]="orchestrator.customOptionForm"
+        (submitted)="orchestrator.addCustomOption()"
+        (cancelled)="orchestrator.closeCustomOptionModal()"
+      />
+
+      <!-- Add Option Value Modal -->
+      @if (orchestrator.showAddOptionModal()) {
+      <dialog open class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box">
+          <h3 class="font-bold text-lg mb-2">➕ Add Option</h3>
+          <p class="text-sm opacity-70 mb-4">Add to existing group or create new</p>
+
+          <form [formGroup]="orchestrator.addOptionForm" (ngSubmit)="orchestrator.addOptionValue()">
+            <div class="space-y-3">
+              <!-- Variant Group Selection -->
+              <div class="bg-accent/10 p-3 rounded-lg">
+                <label class="text-sm font-semibold mb-1 block">Variant Group</label>
+                <input
+                  type="text"
+                  formControlName="variantGroup"
+                  placeholder="Choose or type new group"
+                  class="input input-bordered w-full"
+                  list="all-variant-groups"
+                />
+                <datalist id="all-variant-groups">
+                  @for (template of templateState.templates; track template.id) {
+                  <option [value]="template.name">{{ template.name }}</option>
+                  } @for (group of templateState.customVariantGroups(); track group) {
+                  <option [value]="group">{{ group }} (custom)</option>
+                  }
+                </datalist>
+                <p class="text-xs opacity-60 mt-1">Select existing or type new</p>
+              </div>
+
+              <!-- Option Value -->
+              <div class="bg-accent/10 p-3 rounded-lg">
+                <label class="text-sm font-semibold mb-1 block">Option Value</label>
+                <input
+                  type="text"
+                  formControlName="value"
+                  placeholder="e.g., Kilograms, Small, Red"
+                  class="input input-bordered w-full"
+                  autofocus
+                />
+                <p class="text-xs opacity-60 mt-1">This creates 1 variant</p>
+              </div>
+            </div>
+
+            <div class="modal-action">
+              <button type="button" (click)="orchestrator.closeAddOptionModal()" class="btn">Cancel</button>
+              <button
+                type="submit"
+                class="btn btn-accent min-h-[3rem]"
+                [disabled]="orchestrator.addOptionForm.invalid"
+              >
+                ✓ Add Option
+              </button>
+            </div>
+          </form>
+        </div>
+        <form method="dialog" class="modal-backdrop" (click)="orchestrator.closeAddOptionModal()">
+          <button>close</button>
+        </form>
+      </dialog>
+      }
+
+      <!-- Combination Creation Modal (Hidden - see VARIANT_MANAGEMENT.md) -->
+      <!-- <app-combination-modal
+        [isOpen]="showCombinationModal()"
+        [form]="combinationForm"
+        [options]="availableOptions()"
+        [templateIds]="allTemplateIds()"
+        [selectedOptionIds]="combinationForm.get('selectedOptionIds')?.value || []"
+        (submitted)="createCombination()"
+        (cancelled)="closeCombinationModal()"
+        (optionToggled)="toggleCombinationOption($event)"
+      /> -->
+      }
+    </div>
+  </form>
+
+  <!-- Unified Action Bar -->
+  <!-- Action Bar with Validation Feedback -->
+  <div
+    class="fixed left-0 right-0 bg-base-100 border-t-2 border-base-300 shadow-xl lg:bottom-0 lg:z-40"
+    style="bottom: 4rem; z-index: 51"
+  >
+    <div class="container-app py-3">
+      <!-- Validation Issues (when disabled) -->
+      @if (!canSubmit() && !isSubmitting() && validationIssues().length > 0) {
+      <div class="mb-2 text-center">
+        <p class="text-xs text-error font-semibold">
+          {{ validationIssues().length }} issue{{ validationIssues().length > 1 ? 's' : '' }} to fix
+        </p>
+      </div>
+      }
+
+      <div class="flex gap-2">
+        <button type="button" (click)="cancel()" class="btn btn-ghost">Cancel</button>
+        <button
+          type="submit"
+          (click)="onSubmit()"
+          class="btn btn-primary flex-1 min-h-[3rem]"
+          [disabled]="!canSubmit()"
+        >
+          @if (isSubmitting()) {
+          <span class="loading loading-spinner"></span>
+          <span>Creating...</span>
+          } @else if (canSubmit()) {
+          <span>✓</span>
+          <span class="font-bold"
+            >Create {{ itemType() === 'product' ? 'Product' : 'Service' }}</span
+          >
+          } @else {
+          <span>{{ validationIssues().length }}</span>
+          <span>Issue{{ validationIssues().length > 1 ? 's' : '' }} to Fix</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

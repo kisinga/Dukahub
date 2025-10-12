@@ -1,0 +1,93 @@
+# =======================
+# Dukahub Docker Compose
+# =======================
+#
+# All ${VAR} substitutions expect environment variables to be PRESENT.
+#
+# Local Dev:   ./compose-dev.sh [args]  (loads configs/.env.backend)
+# Production:  Variables injected by platform (e.g., Coolify UI)
+#
+# See configs/README.md for all variables
+
+services:
+  postgres_db:
+    image: postgres:16-alpine
+    environment:
+      # Postgres requires POSTGRES_* naming (maps from DB_* vars)
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    labels:
+      - "io.vendure.create.name=dukahub"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6479:6379"
+    volumes:
+      - redis_data:/data
+    labels:
+      - "io.vendure.create.name=dukahub"
+
+  backend:
+    build:
+      context: backend
+    environment:
+      # Docker detection
+      DOCKER_CONTAINER: "true"
+      # Application
+      APP_ENV: ${APP_ENV}
+      PORT: ${PORT}
+      # Database
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_SCHEMA: ${DB_SCHEMA}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      # Admin
+      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
+      # Security
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      # Initialization (optional)
+      RUN_POPULATE: ${RUN_POPULATE:-false}
+    depends_on:
+      - postgres_db
+      - redis
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount ML models directory so trained models persist across container rebuilds
+      # Served via custom Express middleware at /assets/ml-models
+      - ./backend/static/assets/ml-models:/usr/src/app/static/assets/ml-models
+    labels:
+      - "io.vendure.create.name=dukahub"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: frontend
+    environment:
+      DOCKER_CONTAINER: "true"
+      # All other env vars expected to be present in shell environment
+    depends_on:
+      - backend
+    ports:
+      - "4200:4200"
+    labels:
+      - "io.vendure.create.name=dukahub"
+
+volumes:
+  postgres_db_data:
+    driver: local
+    labels:
+      - "io.vendure.create.name=dukahub"
+  redis_data:
+    driver: local
+    labels:
+      - "io.vendure.create.name=dukahub"

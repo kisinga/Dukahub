@@ -1,0 +1,401 @@
+// Enhanced styles with sophisticated typography and interactions
+// Following mobile-first design principles with ultra-compact mobile cards
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+// Typography enhancements - tabular nums for consistent number display
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+// ============================================
+// COMPACT STAT CARDS - Mobile Optimized
+// ============================================
+
+.stat-card {
+  & {
+    position: relative;
+    background: oklch(var(--b1));
+    border-radius: 0.75rem;
+    border: 2px solid oklch(var(--b3));
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    text-align: left;
+    appearance: none;
+    font-family: inherit;
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  // Category-specific colors
+  &.stat-card-purchases {
+    border-color: oklch(var(--p) / 0.3);
+
+    .stat-icon {
+      color: oklch(var(--p));
+      background: oklch(var(--p) / 0.1);
+    }
+
+    .stat-bar {
+      background: oklch(var(--p));
+    }
+
+    .stat-period-dot {
+      background: oklch(var(--p) / 0.3);
+      &.stat-period-dot-week {
+        background: oklch(var(--p) / 0.6);
+      }
+      &.stat-period-dot-month {
+        background: oklch(var(--p));
+      }
+    }
+
+    &.stat-card-active {
+      border-color: oklch(var(--p));
+      background: oklch(var(--p) / 0.05);
+    }
+  }
+
+  &.stat-card-sales {
+    border-color: oklch(var(--su) / 0.3);
+
+    .stat-icon {
+      color: oklch(var(--su));
+      background: oklch(var(--su) / 0.1);
+    }
+
+    .stat-bar {
+      background: oklch(var(--su));
+    }
+
+    .stat-period-dot {
+      background: oklch(var(--su) / 0.3);
+      &.stat-period-dot-week {
+        background: oklch(var(--su) / 0.6);
+      }
+      &.stat-period-dot-month {
+        background: oklch(var(--su));
+      }
+    }
+
+    &.stat-card-active {
+      border-color: oklch(var(--su));
+      background: oklch(var(--su) / 0.05);
+    }
+  }
+
+  &.stat-card-expenses {
+    border-color: oklch(var(--er) / 0.3);
+
+    .stat-icon {
+      color: oklch(var(--er));
+      background: oklch(var(--er) / 0.1);
+    }
+
+    .stat-bar {
+      background: oklch(var(--er));
+    }
+
+    .stat-period-dot {
+      background: oklch(var(--er) / 0.3);
+      &.stat-period-dot-week {
+        background: oklch(var(--er) / 0.6);
+      }
+      &.stat-period-dot-month {
+        background: oklch(var(--er));
+      }
+    }
+
+    &.stat-card-active {
+      border-color: oklch(var(--er));
+      background: oklch(var(--er) / 0.05);
+    }
+  }
+}
+
+// Mobile Compact Layout
+.stat-card-compact {
+  padding: 0.75rem;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+// Icon with background
+.stat-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  padding: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+
+  .stat-card:active & {
+    transform: scale(0.9);
+  }
+}
+
+// Trend indicator
+.stat-trend {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.25rem;
+  background: oklch(var(--su) / 0.15);
+  color: oklch(var(--su));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.125rem;
+
+  svg {
+    stroke-width: 2.5;
+  }
+}
+
+// Category label
+.stat-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
+}
+
+// Primary value display
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 0.5rem;
+}
+
+// Visual bar indicator
+.stat-bar-container {
+  width: 100%;
+  height: 0.25rem;
+  background: oklch(var(--b3));
+  border-radius: 0.125rem;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.stat-bar {
+  height: 100%;
+  border-radius: 0.125rem;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// Period dots indicator
+.stat-periods {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.stat-period-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+// Tablet/Desktop full layout
+.stat-card-full {
+  padding: 1rem;
+}
+
+// Smooth card animations with subtle depth
+.card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+// Button as card interactions
+button.card {
+  text-align: left;
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// Enhanced stat cards with gradient backgrounds
+.card.bg-gradient-to-br {
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background: inherit;
+  }
+
+  &:hover::before {
+    opacity: 0.15;
+  }
+}
+
+// Slide-in animation for expanded details
+.animate-in {
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// Keyframe animations
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// Smooth pulse animation for status indicator
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// Enhanced collapse components with smooth transitions
+.collapse {
+  .collapse-title {
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: oklch(var(--b2) / 0.5);
+    }
+  }
+
+  .collapse-content {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+// Smooth transform utilities
+.active\:scale-98:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+.active\:scale-95:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+// Enhanced button interactions
+.btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// Badge animations
+.badge {
+  transition: all 0.2s ease;
+}
+
+// Alert enhancements
+.alert {
+  animation: slideIn 0.3s ease-out;
+}
+
+// Responsive typography improvements
+@media (min-width: 640px) {
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.025em;
+  }
+}
+
+@media (min-width: 1024px) {
+  h1 {
+    letter-spacing: -0.03em;
+  }
+}
+
+// Touch device optimizations
+@media (hover: none) and (pointer: coarse) {
+  // Remove hover effects and rely on active states only
+  .card:hover,
+  .btn:hover {
+    transform: none;
+  }
+
+  // Ensure touch interactions are smooth
+  .card,
+  .btn,
+  button {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  // Enhanced active states for better feedback
+  .card:active,
+  button.card:active {
+    transform: scale(0.98);
+  }
+
+  .btn:active {
+    transform: scale(0.95);
+  }
+}
+
+// Ensure accessibility - focus states
+button:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid oklch(var(--p));
+  outline-offset: 2px;
+}
+
+// Loading state animations
+.loading {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

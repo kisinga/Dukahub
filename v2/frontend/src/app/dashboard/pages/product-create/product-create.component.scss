@@ -1,0 +1,120 @@
+// Product Create Component Styles - KISS Edition
+// Simplified, compact, mobile-first
+
+@use '../../../../styles/design-system' as ds;
+
+// ============================================
+// HEADER
+// ============================================
+.sticky {
+  backdrop-filter: blur(8px);
+  transition: backdrop-filter ds.$transition-fast;
+}
+
+// ============================================
+// CARDS (Compact)
+// ============================================
+.card {
+  transition: transform ds.$transition-fast;
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+// ============================================
+// COLLAPSIBLE SECTIONS (Minimal)
+// ============================================
+.collapse {
+  .collapse-content {
+    padding-top: ds.$space-2;
+  }
+
+  .collapse-title {
+    padding: ds.$space-2 ds.$space-3;
+  }
+}
+
+// ============================================
+// FORM FIELDS (Touch-Optimized)
+// ============================================
+.input,
+.select,
+.textarea {
+  transition: box-shadow ds.$transition-fast;
+
+  &:focus {
+    box-shadow: 0 0 0 2px oklch(var(--p) / 0.2);
+  }
+}
+
+// ============================================
+// ANIMATIONS (Minimal)
+// ============================================
+.alert {
+  animation: fadeIn 0.2s ds.$ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// ============================================
+// ACTION BAR
+// ============================================
+.fixed.bottom-0 {
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
+}
+
+// ============================================
+// BUTTONS (Simple)
+// ============================================
+.btn {
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  // Subtle glow on primary button when enabled
+  &.btn-primary:not(:disabled) {
+    box-shadow: 0 0 0 2px oklch(var(--p) / 0.3);
+    animation: subtleGlow 2s ease-in-out infinite;
+  }
+}
+
+@keyframes subtleGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px oklch(var(--p) / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 3px oklch(var(--p) / 0.5);
+  }
+}
+
+// ============================================
+// TOOLTIPS
+// ============================================
+.tooltip {
+  &::before {
+    font-size: ds.$text-xs;
+    max-width: 200px;
+  }
+}
+
+// ============================================
+// ACCESSIBILITY
+// ============================================
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

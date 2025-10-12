@@ -1,0 +1,133 @@
+<div
+  class="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 p-4"
+>
+  <div class="card w-full max-w-md bg-base-100 shadow-2xl">
+    <div class="card-body">
+      <!-- Logo and Header -->
+      <div class="text-center mb-6">
+        <h1 class="text-3xl font-bold mb-2">Admin Login</h1>
+        <p class="text-base-content/60">Sign in to Dukahub Dashboard</p>
+      </div>
+
+      <!-- Login Form -->
+      <form (ngSubmit)="onSubmit()" class="space-y-4">
+        <!-- Error Alert -->
+        @if (errorMessage()) {
+        <div role="alert" class="alert alert-error">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 shrink-0 stroke-current"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>{{ errorMessage() }}</span>
+        </div>
+        }
+
+        <!-- Email Input -->
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text">Email</span>
+          </label>
+          <input
+            type="email"
+            placeholder="you@example.com"
+            class="input input-bordered w-full"
+            [(ngModel)]="email"
+            name="email"
+            required
+            [disabled]="isLoading()"
+            autocomplete="email"
+          />
+        </div>
+
+        <!-- Password Input -->
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text">Password</span>
+          </label>
+          <input
+            type="password"
+            placeholder="Enter your password"
+            class="input input-bordered w-full"
+            [(ngModel)]="password"
+            name="password"
+            required
+            [disabled]="isLoading()"
+            autocomplete="current-password"
+          />
+          <label class="label">
+            <a href="#" class="label-text-alt link link-hover">Forgot password?</a>
+          </label>
+        </div>
+
+        <!-- Remember Me Checkbox -->
+        <div class="form-control">
+          <label class="label cursor-pointer justify-start gap-2">
+            <input
+              type="checkbox"
+              class="checkbox checkbox-primary"
+              [(ngModel)]="rememberMe"
+              name="rememberMe"
+              [disabled]="isLoading()"
+            />
+            <span class="label-text">Remember me</span>
+          </label>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-control mt-6">
+          <button
+            type="submit"
+            class="btn btn-primary w-full"
+            [disabled]="!email() || !password() || isLoading()"
+          >
+            @if (isLoading()) {
+            <span class="loading loading-spinner"></span>
+            Signing in... } @else { Sign In }
+          </button>
+        </div>
+      </form>
+
+      <!-- Admin Note -->
+      <div class="text-center mt-4">
+        <p class="text-sm text-base-content/60">
+          Administrator credentials required
+        </p>
+      </div>
+
+      <!-- Back to Home -->
+      <div class="text-center mt-4">
+        <a routerLink="/" class="btn btn-ghost btn-sm">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+          Back to Home
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="absolute bottom-4 text-center w-full">
+    <p class="text-sm text-base-content/60">© 2025 Dukahub. Built for Kenyan SMEs.</p>
+  </div>
+</div>
