@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { gql } from '@apollo/client/core';
+import { gql } from '@apollo/client';
 import { ApolloService } from './apollo.service';
 import { ProductCacheService } from './product-cache.service';
 
