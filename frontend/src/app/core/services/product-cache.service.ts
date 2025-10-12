@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { gql } from '@apollo/client/core';
+import { gql } from '@apollo/client';
 import { ApolloService } from './apollo.service';
 import { ProductSearchResult } from './product-search.service';
 
@@ -73,7 +73,7 @@ export class ProductCacheService {
 
     try {
       const client = this.apolloService.getClient();
-      
+
       // Fetch all products (adjust take limit as needed)
       const result = await client.query<{
         products: {
@@ -137,7 +137,7 @@ export class ProductCacheService {
       return true;
     } catch (error: any) {
       console.error('❌ Failed to prefetch products:', error);
-      
+
       this.statusSignal.update((s) => ({
         ...s,
         isLoading: false,
