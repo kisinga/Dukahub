@@ -89,7 +89,9 @@ export const config: VendureConfig = {
             secret: process.env.COOKIE_SECRET,
             // Allow cookies to work across different hosts (e.g., localhost frontend -> VPN backend)
             httpOnly: true,
-            sameSite: IS_DEV ? 'lax' : 'strict',
+            // Use 'lax' for both dev and prod since frontend and backend are on same domain
+            // 'strict' prevents cookies on navigation which breaks SPA routing
+            sameSite: 'lax',
             // In development, don't require HTTPS
             secure: !IS_DEV,
         },
