@@ -38,6 +38,11 @@ export class CameraService {
         this.errorSignal.set(null);
 
         try {
+            // Check if mediaDevices API is available
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Camera API not available. Please use HTTPS or localhost.');
+            }
+
             // Request camera access
             const constraints: MediaStreamConstraints = {
                 video: {
@@ -111,6 +116,12 @@ export class CameraService {
      */
     async isCameraAvailable(): Promise<boolean> {
         try {
+            // Check if mediaDevices API is available (requires HTTPS or localhost)
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                console.warn('Camera API not available (requires HTTPS or localhost)');
+                return false;
+            }
+
             const devices = await navigator.mediaDevices.enumerateDevices();
             return devices.some((device) => device.kind === 'videoinput');
         } catch (error) {
