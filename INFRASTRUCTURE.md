@@ -1,89 +1,135 @@
-# Infrastructure
+# Infrastructure & Deployment
 
-Platform-agnostic deployment using individual container images.
-
-**Deploy anywhere:** Coolify, Railway, Render, Fly.io, DigitalOcean, etc.
+Complete guide for local development and production deployment.
 
 ---
 
-## Architecture
+## Table of Contents
 
-### Production
-
-| Service      | Image                                     | Port | Requirements         |
-| ------------ | ----------------------------------------- | ---- | -------------------- |
-| **Backend**  | `ghcr.io/kisinga/dukahub/backend:latest`  | 3000 | Postgres 16, Redis 7 |
-| **Frontend** | `ghcr.io/kisinga/dukahub/frontend:latest` | 4200 | Backend API          |
-| **Postgres** | `postgres:16-alpine`                      | 5432 | Persistent storage   |
-| **Redis**    | `redis:7-alpine`                          | 6379 | Persistent storage   |
-
-### Local Development
-
-| Service      | Source                   | Port |
-| ------------ | ------------------------ | ---- |
-| **Backend**  | Manual (`npm run dev`)   | 3000 |
-| **Frontend** | Manual (`npm start`)     | 4200 |
-| **Postgres** | `docker-compose.dev.yml` | 5433 |
-| **Redis**    | `docker-compose.dev.yml` | 6479 |
+- [Local Development](#local-development)
+- [Production Deployment](#production-deployment)
+- [Docker Containers](#docker-containers)
+- [Database Operations](#database-operations)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Local Development
 
+Run frontend and backend manually on your machine for fastest iteration.
+
+### Prerequisites
+
+- Node.js 20+
+- Docker (for Postgres and Redis)
+- npm
+
+### Setup
+
 ```bash
-# Start dependencies
+# 1. Start dependencies only
 docker compose -f docker-compose.dev.yml up -d
 
-# Setup environment
+# 2. Configure environment
 cp configs/env.example configs/.env
-nano configs/.env  # Set DB_HOST=localhost, DB_PORT=5433
+nano configs/.env
+```
 
-# Run backend
-cd backend && npm install && npm run dev
+**Required changes in `.env`:**
 
-# Run frontend (separate terminal)
-cd frontend && npm install && npm start
+```bash
+DB_HOST=localhost
+DB_PORT=5433
+REDIS_HOST=localhost
+REDIS_PORT=6479
+```
 
-# Populate database (first-time)
-cd backend && npm run populate
+```bash
+# 3. Install and run backend
+cd backend
+npm install
+npm run dev      # Runs on http://localhost:3000
 
+# 4. Install and run frontend (separate terminal)
+cd frontend
+npm install
+npm start        # Runs on http://localhost:4200
+
+# 5. Populate database (first-time only)
+cd backend
+npm run populate
+```
+
+### Service Ports
+
+| Service    | Host Port | Container Port |
+| ---------- | --------- | -------------- |
+| Frontend   | 4200      | —              |
+| Backend    | 3000      | —              |
+| PostgreSQL | 5433      | 5432           |
+| Redis      | 6479      | 6379           |
+
+### Frontend Development
+
+**Backend Proxy:**  
+Edit `frontend/proxy.conf.json` to point to your backend:
+
+```json
+{
+  "/admin-api": {
+    "target": "http://localhost:3000"
+  }
+}
+```
+
+This solves cross-origin cookie issues by making everything same-origin.
+
+### Stop Services
+
+```bash
 # Stop dependencies
 docker compose -f docker-compose.dev.yml down
+
+# Stop dependencies and delete data
+docker compose -f docker-compose.dev.yml down -v
 ```
 
 ---
 
 ## Production Deployment
 
-Deploy to any container platform:
+Deploy to any container platform (Coolify, Railway, Render, Fly.io, etc.).
 
-**1. Create database services:**
+### Architecture
 
-- PostgreSQL 16 (persistent storage required)
-- Redis 7 (persistent storage required)
+| Service      | Image/Version        | Port | Requirements         |
+| ------------ | -------------------- | ---- | -------------------- |
+| **Frontend** | `dukahub-frontend`   | 4200 | Backend API          |
+| **Backend**  | `dukahub-backend`    | 3000 | Postgres 16, Redis 7 |
+| **Postgres** | `postgres:16-alpine` | 5432 | Persistent storage   |
+| **Redis**    | `redis:7-alpine`     | 6379 | Persistent storage   |
 
-**2. Deploy backend container:**
+### Deployment Steps
 
-- Image: `ghcr.io/kisinga/dukahub/backend:latest`
-- Port: 3000
-- Environment variables (see below)
+#### 1. Create Database Services
 
-**3. Deploy frontend container:**
+**PostgreSQL 16:**
 
-- Image: `ghcr.io/kisinga/dukahub/frontend:latest`
-- Port: 4200
+- Enable persistent storage
+- Note internal hostname
 
-**4. Populate database (first-time):**
+**Redis 7:**
+
+- Enable persistent storage
+- Note internal hostname
+
+#### 2. Deploy Backend
+
+**Image:** `ghcr.io/kisinga/dukahub/backend:latest` or build from `backend/`
+
+**Environment Variables:**
 
 ```bash
-# Access backend container shell
-npm run populate
-```
-
-### Backend Environment Variables
-
-```bash
-# Required
 NODE_ENV=production
 PORT=3000
 DB_HOST=<postgres-internal-host>
@@ -92,72 +138,230 @@ DB_NAME=vendure
 DB_USERNAME=<db-user>
 DB_PASSWORD=<strong-password>
 DB_SCHEMA=public
+REDIS_HOST=<redis-internal-host>
+REDIS_PORT=6379
 SUPERADMIN_USERNAME=superadmin
 SUPERADMIN_PASSWORD=<strong-password>
 COOKIE_SECRET=<32-char-random>
 COOKIE_SECURE=true
 FRONTEND_URL=https://yourdomain.com
-REDIS_HOST=<redis-internal-host>
-REDIS_PORT=6379
 ```
 
-**Generate secrets:**
+**First-time setup:**
 
 ```bash
-# COOKIE_SECRET
-openssl rand -base64 32
-
-# Passwords
-openssl rand -base64 24 | tr -d "=+/" | cut -c1-20
+# Access backend container shell
+npm run populate
 ```
 
-See [`configs/env.example`](configs/env.example) for complete reference.
+#### 3. Deploy Frontend
+
+**Image:** `ghcr.io/kisinga/dukahub/frontend:latest` or build from `frontend/`
+
+**Environment Variables:**
+
+```bash
+BACKEND_HOST=<backend-internal-host>
+BACKEND_PORT=3000
+```
+
+**Public URL:** Configure your domain to point to port 4200
+
+#### 4. Configure CORS
+
+Update `FRONTEND_URL` in backend environment to match your frontend domain.
+
+### Security Checklist
+
+- [ ] Generate new `COOKIE_SECRET` (see [README](./README.md#generate-secure-values))
+- [ ] Change `SUPERADMIN_PASSWORD`
+- [ ] Change `DB_PASSWORD`
+- [ ] Set `COOKIE_SECURE=true`
+- [ ] Configure `FRONTEND_URL` with production domain
+- [ ] Enable HTTPS on your platform
+- [ ] Enable database backups
 
 ---
 
-## Backups
+## Docker Containers
+
+Run containers independently for flexible deployment.
+
+### Backend Container
+
+```bash
+docker run -p 3000:3000 \
+  -e DB_HOST=your-postgres-host \
+  -e DB_PORT=5432 \
+  -e DB_NAME=vendure \
+  -e DB_USERNAME=vendure \
+  -e DB_PASSWORD=secure-password \
+  -e REDIS_HOST=your-redis-host \
+  -e REDIS_PORT=6379 \
+  -e SUPERADMIN_USERNAME=superadmin \
+  -e SUPERADMIN_PASSWORD=secure-password \
+  -e COOKIE_SECRET=your-32-char-secret \
+  dukahub-backend
+```
+
+### Frontend Container
+
+```bash
+docker run -p 4200:4200 \
+  -e BACKEND_HOST=your-backend-host \
+  -e BACKEND_PORT=3000 \
+  dukahub-frontend
+```
+
+### Build Images
+
+```bash
+# Backend
+cd backend
+docker build -t dukahub-backend .
+
+# Frontend
+cd frontend
+docker build -t dukahub-frontend .
+```
+
+### Container Features
+
+**Backend:**
+
+- Health check on `/health`
+- Automatic migrations on startup
+- Optional database population via `RUN_POPULATE=true`
+
+**Frontend:**
+
+- nginx with caching and rate limiting
+- Runtime backend configuration
+- Health check on `/health`
+
+---
+
+## Database Operations
+
+### Migrations
+
+```bash
+# Local dev
+cd backend
+npm run migration:generate -- --name=MigrationName
+npm run migration:run
+
+# Production (access backend container)
+npm run migration:run
+```
+
+### Backups
 
 ```bash
 # Backup (access postgres container)
-pg_dump -U vendure vendure > backup.sql
+pg_dump -U vendure vendure > backup-$(date +%Y%m%d).sql
 
 # Restore (access postgres container)
-psql -U vendure vendure < backup.sql
+psql -U vendure vendure < backup-20250113.sql
 ```
+
+### Reset Database
+
+**Local development:**
+
+```bash
+docker compose -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.dev.yml up -d
+cd backend && npm run populate
+```
+
+**Production:**  
+Use your platform's UI to recreate the database service, then run `npm run populate` in backend container.
 
 ---
 
 ## Troubleshooting
 
-### Database connection errors
+### Backend won't connect to database
 
-```bash
-# Local dev: Check dependencies are running
-docker compose -f docker-compose.dev.yml ps
-
-# Check credentials in configs/.env
-grep -E "^DB_" configs/.env
-
-# Production: Check platform environment variables
-```
-
-### Reset database
+**Check database is running:**
 
 ```bash
 # Local dev
-docker compose -f docker-compose.dev.yml down -v
-docker compose -f docker-compose.dev.yml up -d
-cd backend && npm run populate
+docker compose -f docker-compose.dev.yml ps
 
-# Production: Use platform UI to recreate database service
+# Production
+# Check database service status in platform UI
+```
+
+**Verify credentials:**
+
+```bash
+# Local dev
+grep -E "^DB_" configs/.env
+
+# Production
+# Check environment variables in platform UI
+```
+
+**Check network connectivity:**
+
+```bash
+# From backend container
+ping postgres-hostname
+```
+
+### Frontend can't reach backend
+
+**Check backend is running:**
+
+```bash
+curl http://backend-host:3000/health
+```
+
+**Verify environment variables:**
+
+```bash
+# Docker container
+docker exec frontend-container env | grep BACKEND
+```
+
+### CORS errors
+
+**Check `FRONTEND_URL` in backend:**
+
+```bash
+# Must match your frontend domain exactly
+FRONTEND_URL=https://yourdomain.com
+```
+
+### Can't login to admin
+
+**Default credentials:**
+
+- Username: `superadmin`
+- Password: Value of `SUPERADMIN_PASSWORD` environment variable
+
+**Check you're using admin API:**
+
+- Correct: `/admin-api`
+- Wrong: `/shop-api`
+
+### Database connection pool errors
+
+**Increase connection limit in Postgres:**
+
+```sql
+ALTER SYSTEM SET max_connections = 200;
+SELECT pg_reload_conf();
 ```
 
 ---
 
 ## Design Principles
 
-1. **Platform Agnostic** — Deploy individual services to any container platform
-2. **Manual Local Dev** — Run apps directly on host (faster, simpler debugging)
-3. **Self-Contained Images** — All dependencies bundled in container images
-4. **Environment Variables** — All configuration via env vars (12-factor)
-5. **KISS** — Simple, obvious, maintainable
+1. **Platform Agnostic** - Deploy individual services anywhere
+2. **Manual Local Dev** - Run apps on host for speed and debugging
+3. **Self-Contained Images** - All dependencies bundled
+4. **Environment Variables** - All configuration via env (12-factor)
+5. **KISS** - Simple, obvious, maintainable

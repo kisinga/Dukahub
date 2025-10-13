@@ -6,10 +6,9 @@
 
 ### Current System (V2)
 
-- **[System Architecture](../ARCHITECTURE.md)** - Complete technical design and infrastructure
+- **[System Architecture](../ARCHITECTURE.md)** - Technical design and stack decisions
+- **[Infrastructure & Deployment](../INFRASTRUCTURE.md)** - Local dev and production setup
 - **[ML Implementation Guide](../ML_GUIDE.md)** - AI product recognition setup
-- **[Infrastructure Setup](../INFRASTRUCTURE.md)** - Docker and deployment configuration
-- **[Environment Setup](../ENVIRONMENT_SETUP.md)** - Local development guide
 - **[Development Roadmap](../ROADMAP.md)** - Planned features and timeline
 - **[Known Gaps](../GAPS.md)** - Vendure limitations and workarounds
 
@@ -67,7 +66,7 @@ Dukahub empowers small businesses to ditch manual data entry and expensive barco
 
 | I want to...                   | Go to...                                            |
 | ------------------------------ | --------------------------------------------------- |
-| Set up development environment | [ENVIRONMENT_SETUP.md](../ENVIRONMENT_SETUP.md)     |
+| Set up development environment | [INFRASTRUCTURE.md](../INFRASTRUCTURE.md)           |
 | Understand system architecture | [ARCHITECTURE.md](../ARCHITECTURE.md)               |
 | Implement ML features          | [ML_GUIDE.md](../ML_GUIDE.md)                       |
 | See what's planned             | [ROADMAP.md](../ROADMAP.md)                         |

@@ -250,49 +250,20 @@ https://domain.com/assets/ml-models/{channelId}/latest/metadata.json
 - **Secrets Management**: Environment variables, never in code
 - **Audit Logging**: Track sensitive operations
 
-## Infrastructure
+## Deployment
 
-### Development Environment
+Dukahub uses platform-agnostic container images for flexible deployment.
 
-```bash
-# Start dependencies only (Postgres, Redis)
-docker compose -f docker-compose.dev.yml up -d
+### Key Principles
 
-# Run backend manually
-cd backend && npm run dev
+- **Independent Services**: Frontend, backend, database, and cache run independently
+- **Environment-Based Config**: All configuration via environment variables
+- **Docker Containers**: Self-contained images with all dependencies
+- **Manual Local Dev**: Run services directly on host for fast iteration
 
-# Run frontend manually (in another terminal)
-cd frontend && npm start
+**See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) for complete setup and deployment guide**
 
-# Access frontend: http://localhost:4200
-# Access API: http://localhost:3000/admin-api
-
-# Populate database (first-time)
-cd backend && npm run populate
-```
-
-### Production Deployment
-
-- **Docker Compose** for orchestration
-- **Environment Variables** for configuration
-- **Volume Mounts** for data persistence
-- **Health Checks** for service monitoring
-
-**See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) for detailed setup**
-
-### Configuration
-
-Single source of truth: `configs/.env`
-
-```
-DB_NAME=dukahub
-DB_USERNAME=dukahub_user
-DB_PASSWORD=secure_password
-DB_HOST=postgres_db
-DB_PORT=5432
-REDIS_HOST=redis
-REDIS_PORT=6379
-```
+**See [README.md](./README.md#configuration) for all environment variables**
 
 ## Migration from V1
 
