@@ -51,6 +51,7 @@ services:
       - dukahub_network
 
   backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/kisinga/dukahub/backend:latest}
     environment:
       DOCKER_CONTAINER: "true"
       APP_ENV: ${APP_ENV:-dev}
@@ -95,6 +96,7 @@ services:
       - dukahub_network
 
   frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/kisinga/dukahub/frontend:latest}
     environment:
       DOCKER_CONTAINER: "true"
     depends_on:

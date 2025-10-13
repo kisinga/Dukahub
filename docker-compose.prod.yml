@@ -65,7 +65,7 @@ services:
       - /tmp
 
   backend:
-    image: ghcr.io/kisinga/dukahub/backend:latest
+    # Uses image from base config (GHCR)
     environment:
       APP_ENV: production
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
@@ -95,7 +95,7 @@ services:
       - no-new-privileges:true
 
   frontend:
-    image: ghcr.io/kisinga/dukahub/frontend:latest
+    # Uses image from base config (GHCR)
     ports:
       - "${FRONTEND_PORT:-4200}:4200"
     labels:
