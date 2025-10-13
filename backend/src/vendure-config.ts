@@ -10,7 +10,7 @@ import {
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import { config as dotenvConfig } from 'dotenv';
-import express from 'express';
+import express, { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 
@@ -66,7 +66,7 @@ export const config: VendureConfig = {
         middleware: [
             // Health check endpoint for container orchestration
             {
-                handler: (req, res) => {
+                handler: (req: Request, res: Response) => {
                     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
                 },
                 route: 'health',
