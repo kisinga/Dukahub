@@ -29,13 +29,13 @@ Dukahub helps shopkeepers ditch manual data entry and expensive barcode scanners
 
 ## Tech Stack
 
-| Component      | Technology                          |
-| -------------- | ----------------------------------- |
-| **Frontend**   | Angular 19 + daisyUI + Tailwind CSS |
-| **Backend**    | Vendure (NestJS) + TypeScript       |
-| **Database**   | PostgreSQL 16                       |
-| **Cache**      | Redis 7                             |
-| **ML**         | TensorFlow.js (client-side)         |
+| Component      | Technology                           |
+| -------------- | ------------------------------------ |
+| **Frontend**   | Angular 19 + daisyUI + Tailwind CSS  |
+| **Backend**    | Vendure (NestJS) + TypeScript        |
+| **Database**   | PostgreSQL 16                        |
+| **Cache**      | Redis 7                              |
+| **ML**         | TensorFlow.js (client-side)          |
 | **Deployment** | Container images (platform-agnostic) |
 
 ## Configuration
@@ -161,10 +161,12 @@ cd frontend && npm install && npm start
 Deploy to any container platform (Coolify, Railway, Render, Fly.io):
 
 **Container Images:**
+
 - Backend: `ghcr.io/kisinga/dukahub/backend:latest`
 - Frontend: `ghcr.io/kisinga/dukahub/frontend:latest`
 
 **Required Services:**
+
 - PostgreSQL 16
 - Redis 7
 
