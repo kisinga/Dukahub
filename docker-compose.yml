@@ -1,87 +1,129 @@
-# =======================
-# Dukahub Docker Compose
-# =======================
+# =====================================
+# Dukahub Base Configuration (Shared)
+# =====================================
 #
-# All ${VAR} substitutions expect environment variables to be PRESENT.
+# This base config is used by both dev and production.
+# Environment-specific overrides:
+#   - Dev: docker-compose.override.yml (auto-loaded)
+#   - Prod: docker-compose.prod.yml (use -f flag)
 #
-# Local Dev:   ./compose-dev.sh [args]  (loads configs/.env.backend)
-# Production:  Variables injected by platform (e.g., Coolify UI)
-#
-# See configs/README.md for all variables
+# Usage:
+#   Dev:  ./compose-dev.sh up -d
+#   Prod: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 services:
   postgres_db:
     image: postgres:16-alpine
     environment:
-      # Postgres requires POSTGRES_* naming (maps from DB_* vars)
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
     volumes:
       - postgres_db_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
     labels:
       - "io.vendure.create.name=dukahub"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - dukahub_network
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6479:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save 60 1000
     volumes:
       - redis_data:/data
     labels:
       - "io.vendure.create.name=dukahub"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - dukahub_network
 
   backend:
-    build:
-      context: backend
     environment:
-      # Docker detection
       DOCKER_CONTAINER: "true"
-      # Application
-      APP_ENV: ${APP_ENV}
-      PORT: ${PORT}
-      # Database
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
+      APP_ENV: ${APP_ENV:-dev}
+      PORT: ${PORT:-3000}
+      DB_HOST: ${DB_HOST:-postgres_db}
+      DB_PORT: ${DB_PORT:-5432}
       DB_NAME: ${DB_NAME}
-      DB_SCHEMA: ${DB_SCHEMA}
+      DB_SCHEMA: ${DB_SCHEMA:-public}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      # Admin
       SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME}
       SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
-      # Security
       COOKIE_SECRET: ${COOKIE_SECRET}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
-      # Initialization (optional)
       RUN_POPULATE: ${RUN_POPULATE:-false}
+      NODE_ENV: ${APP_ENV:-dev}
+      NODE_OPTIONS: "--max-old-space-size=2048"
     depends_on:
-      - postgres_db
-      - redis
-    ports:
-      - "3000:3000"
-    volumes:
-      # Mount ML models directory so trained models persist across container rebuilds
-      # Served via custom Express middleware at /assets/ml-models
-      - ./backend/static/assets/ml-models:/usr/src/app/static/assets/ml-models
+      postgres_db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     labels:
       - "io.vendure.create.name=dukahub"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     restart: unless-stopped
+    stop_grace_period: 30s
+    networks:
+      - dukahub_network
 
   frontend:
-    build:
-      context: frontend
     environment:
       DOCKER_CONTAINER: "true"
-      # All other env vars expected to be present in shell environment
     depends_on:
-      - backend
-    ports:
-      - "4200:4200"
+      backend:
+        condition: service_healthy
     labels:
       - "io.vendure.create.name=dukahub"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:4200/health",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    stop_grace_period: 10s
+    networks:
+      - dukahub_network
+
+networks:
+  dukahub_network:
+    driver: bridge
 
 volumes:
   postgres_db_data:

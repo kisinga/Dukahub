@@ -1,0 +1,172 @@
+# ====================================
+# Dukahub Production Server Specs
+# ====================================
+
+## RECOMMENDED: 4GB RAM / 2 CPU (~$5-24/month)
+
+### Resource Allocation (4GB VPS)
+Total: 4096MB RAM
+├─ OS/System:    ~600MB  (15%)
+├─ Postgres:     1200MB  (30%)  ← Database
+├─ Backend:      1800MB  (45%)  ← Node.js + Vendure
+├─ Redis:         256MB   (6%)  ← Cache
+├─ Frontend:      256MB   (6%)  ← Nginx
+└─ Buffer:        ~184MB        ← Safety margin
+
+### Performance Expectations
+✓ Product catalog: Up to 1,000 products
+✓ Concurrent users: Up to 100
+✓ Orders per day: Up to 500
+✓ Page load time: <2s (with caching)
+✓ Admin operations: Smooth
+✓ Monthly traffic: ~50k requests
+
+### When to Upgrade (Signs you need 8GB)
+
+❌ Backend container OOM (Out of Memory) kills
+❌ Database queries consistently >500ms
+❌ Page load time >3 seconds
+❌ >500 products in catalog
+❌ >100 concurrent users regularly
+❌ Admin panel feels sluggish
+
+→ Upgrade to 8GB VPS (~$12-48/mo)
+
+### 8GB Server (Growth Phase)
+Postgres:  2GB
+Backend:   4GB
+Redis:     512MB
+Frontend:  512MB
+OS/Buffer: 1GB
+
+Handles:
+- 5,000 products
+- 500 concurrent users
+- 2,000 orders/day
+
+---
+
+## Additional Costs to Consider
+
+Storage (Backups):        $5-10/mo   (S3, Backblaze B2)
+Domain:                   $12/year   (Namecheap, Cloudflare)
+SSL Certificate:          FREE       (Let's Encrypt)
+Email (Transactional):    FREE       (First 100/day with SendGrid)
+Monitoring:               FREE       (Uptime Kuma self-hosted)
+CDN (Optional):           FREE-$5/mo (Cloudflare)
+
+Total minimum:            $5-10/month
+
+---
+
+## Deployment Checklist for 4GB VPS
+
+1. Server Setup
+   [ ] Ubuntu 22.04 LTS installed
+   [ ] Docker + Docker Compose installed
+   [ ] UFW firewall configured (ports 22, 80, 443, 4200)
+   [ ] SSH key authentication (disable password)
+   [ ] Automatic security updates enabled
+   [ ] Swap file configured (2GB recommended)
+
+2. Application Deployment
+   [ ] Clone repository
+   [ ] Set environment variables (APP_ENV=production)
+   [ ] Generate strong secrets (COOKIE_SECRET, passwords)
+   [ ] Deploy: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+   [ ] Verify health checks passing
+   [ ] Test frontend accessible
+
+3. Security
+   [ ] Change all default passwords
+   [ ] Enable firewall
+   [ ] Configure fail2ban
+   [ ] Set up SSL/TLS (Caddy or Certbot)
+   [ ] Disable root SSH login
+   [ ] Set up automated backups
+
+4. Monitoring
+   [ ] Set up monitoring (Uptime Kuma, Netdata, or similar)
+   [ ] Configure alerting (email, Discord, Slack)
+   [ ] Monitor disk space
+   [ ] Monitor memory usage: docker stats
+
+5. Backups
+   [ ] Daily database backups to object storage
+   [ ] Test backup restoration
+   [ ] Backup environment variables securely
+   [ ] Document recovery procedure
+
+---
+
+## Performance Tuning Tips
+
+1. PostgreSQL (1.2GB limit)
+   - Set shared_buffers = 256MB
+   - Set effective_cache_size = 768MB
+   - Enable query logging for slow queries (>500ms)
+
+2. Node.js Backend (1.8GB limit)
+   - NODE_OPTIONS: --max-old-space-size=1536
+   - Disable source maps in production
+   - Enable HTTP caching headers
+
+3. Nginx (256MB limit)
+   - Enable gzip compression (already configured)
+   - Set proxy_cache for assets (already configured)
+   - Enable HTTP/2 if using HTTPS
+
+4. Redis (256MB limit)
+   - maxmemory-policy: allkeys-lru (already configured)
+   - Persistent AOF disabled (using RDB snapshots)
+
+5. OS Level
+   - Add 2GB swap file: fallocate -l 2G /swapfile
+   - Set swappiness: sysctl vm.swappiness=10
+   - Monitor with: htop, docker stats
+
+---
+
+## Cost Comparison: Total First Year
+
+Hetzner Setup:
+- VPS 4GB:           €54/year   ($59)
+- Domain:            $12/year
+- Backups (B2):      $60/year   (50GB)
+Total:               ~$131/year ($11/mo average)
+
+DigitalOcean Setup:
+- VPS 4GB:           $288/year
+- Domain:            $12/year
+- Backups:           FREE (DO snapshots)
+Total:               $300/year ($25/mo average)
+
+Recommendation: Start with Hetzner, migrate to DO if you need global CDN/managed services.
+
+---
+
+## Migration Path
+
+Phase 1: Homelab (Current)
+- Free
+- Learn and test
+
+Phase 2: Budget VPS (4GB)
+- $5-24/mo
+- 0-500 orders/day
+- Single location
+
+Phase 3: Growth (8GB VPS)
+- $12-48/mo
+- 500-2000 orders/day
+- Add CDN
+
+Phase 4: Scale (Managed Services)
+- $100+/mo
+- Managed Database (RDS, DO Managed)
+- Multiple app servers
+- Load balancer
+- CDN + Object storage
+
+You're at Phase 1→2 transition. Stay at Phase 2 until revenue justifies Phase 3.
+

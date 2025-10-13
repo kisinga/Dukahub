@@ -21,24 +21,29 @@ All services mount `./configs` as read-only for shared configuration access.
 
 ## ⚙️ Configuration Strategy
 
-### Single Source of Truth
+### Docker Compose Override Pattern
 
-**One file:** `configs/.env.backend`
+**Three-file structure for dev/prod parity:**
+
+```
+docker-compose.yml              ← Base config (shared by all environments)
+docker-compose.override.yml     ← Dev overrides (auto-loaded)
+docker-compose.prod.yml         ← Production overrides (explicit with -f flag)
+```
+
+**Environment variables:** `configs/.env.backend`
 
 ```
 configs/.env.backend
   ↓
-  ├─→ compose-dev.sh (loads & exports)
-  │     ↓
-  │     └─→ docker-compose.yml (substitutes ${VARS})
-  │           ↓
-  │           ├─→ postgres_db (DB_* → POSTGRES_*)
-  │           └─→ backend (RUN_POPULATE triggers populate)
+  ├─→ Development:
+  │   compose-dev.sh → exports vars → docker-compose.yml + docker-compose.override.yml
   │
-  └─→ Production: Platform injects vars directly
+  └─→ Production:
+      Platform (Coolify) → injects vars → docker-compose.yml + docker-compose.prod.yml
 ```
 
-**Key principle:** No duplicate variables. `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` are mapped to `POSTGRES_*` in docker-compose.yml (Postgres requires this naming).
+**Key principle:** Base config is shared, only differences are in override files. This ensures parity and makes environment differences explicit.
 
 ### Variable Flow
 
@@ -66,20 +71,19 @@ configs/.env.backend
 ### Local Development
 
 ```bash
-cd v2
 cp configs/.env.backend.example configs/.env.backend
 nano configs/.env.backend  # Update passwords/secrets
 
-# Start stack
-./compose-dev.sh --env-file ./configs/.env.backend up -d
+# Start stack (loads env vars + auto-merges docker-compose.override.yml)
+./compose-dev.sh --env-file configs/.env.backend up -d
 
-# Or start with sample data (first run)
-./compose-dev.sh --env-file ./configs/.env.backend --populate up -d
+# Or with sample data (first run)
+./compose-dev.sh --env-file configs/.env.backend --populate up -d
 ```
 
-### Coolify Deployment
+### Production Deployment
 
-**1. Set environment variables in Coolify UI:**
+**1. Set environment variables in platform (e.g., Coolify UI):**
 
 ```
 DB_NAME=dukahub
@@ -87,14 +91,15 @@ DB_USERNAME=vendure
 DB_PASSWORD=<strong-password>
 COOKIE_SECRET=<strong-secret>
 SUPERADMIN_PASSWORD=<strong-password>
+APP_ENV=production
 ```
 
-**2. Configure deployment:**
+**2. Deploy with production overrides:**
 
-- **Docker Compose Location:** `v2/docker-compose.yml`
-- **Post-deployment script:** `npm run populate:check`
-
-**3. Deploy!** The post-deployment script will auto-populate sample data on first run.
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
 
 ### Access Services
 
@@ -108,13 +113,13 @@ SUPERADMIN_PASSWORD=<strong-password>
 
 ```bash
 # Start services (local dev)
-./compose-dev.sh --env-file ./configs/.env.backend up -d
-./compose-dev.sh --env-file ./configs/.env.backend --populate up -d  # With sample data
+./compose-dev.sh --env-file configs/.env.backend up -d
+./compose-dev.sh --env-file configs/.env.backend --populate up -d  # With sample data
 
 # Standard docker compose commands
-docker compose logs -f     # View logs
-docker compose down        # Stop
-docker compose down -v     # Reset (removes data)
+./compose-dev.sh --env-file configs/.env.backend logs -f     # View logs
+./compose-dev.sh --env-file configs/.env.backend down        # Stop
+./compose-dev.sh --env-file configs/.env.backend down -v     # Reset (removes data)
 ```
 
 ---
@@ -145,16 +150,16 @@ See [`configs/README.md`](configs/README.md) for complete variable reference.
 ### Usage
 
 ```bash
-./compose-dev.sh [OPTIONS] DOCKER_COMPOSE_ARGS
+./compose-dev.sh --env-file FILE [OPTIONS] DOCKER_COMPOSE_ARGS
 
 # Options
---env-file FILE    Load environment variables from FILE
+--env-file FILE    Load environment variables from FILE (required)
 --populate         Set RUN_POPULATE=true to populate database on startup
 
 # Examples
-./compose-dev.sh --env-file ./configs/.env.backend up -d
-./compose-dev.sh --env-file ./configs/.env.backend --populate up -d
-./compose-dev.sh --env-file ./configs/.env.backend logs -f
+./compose-dev.sh --env-file configs/.env.backend up -d
+./compose-dev.sh --env-file configs/.env.backend --populate up -d
+./compose-dev.sh --env-file configs/.env.backend logs -f backend
 ```
 
 ### Populate Flag
@@ -243,13 +248,14 @@ openssl rand -base64 24 | tr -d "=+/" | cut -c1-20
 
 ## 🎯 Design Principles
 
-1. **Single Source of Truth** — One `.env.backend`, no duplicates
-2. **Environment Parity** — Same config works locally and in Docker
-3. **Variable Mapping** — `DB_*` → `POSTGRES_*` in docker-compose (Postgres naming requirement)
-4. **Container-Managed Initialization** — `RUN_POPULATE` handled by backend entrypoint
-5. **Data Persistence** — Named volumes prevent accidental data loss
-6. **Explicit Dependencies** — `depends_on` ensures correct startup order
-7. **KISS Principle** — Simple, obvious, maintainable
+1. **Override Pattern** — Base config + environment-specific overrides (standard Docker Compose pattern)
+2. **Dev/Prod Parity** — Shared base ensures environments stay in sync
+3. **Environment Variables** — One `.env.backend`, no duplicates
+4. **Explicit Differences** — Override files show exactly what differs between environments
+5. **Health Checks** — All services have health checks for orchestration
+6. **Resource Limits** — Defined for all services to prevent resource exhaustion
+7. **Security Hardening** — Production uses non-root users, read-only filesystems, tmpfs
+8. **KISS Principle** — Simple, obvious, maintainable
 
 ---
 
@@ -283,7 +289,7 @@ docker compose exec postgres_db psql -U vendure vendure
 
 ```bash
 # Test compose-dev.sh variable export
-./compose-dev.sh --env-file ./configs/.env.backend up -d
+./compose-dev.sh --env-file configs/.env.backend up -d
 docker compose exec backend env | grep DB_
 
 # Verify .env.backend exists and is readable
@@ -294,9 +300,9 @@ cat configs/.env.backend
 
 ```bash
 # Remove everything and start fresh
-docker compose down -v
+./compose-dev.sh --env-file configs/.env.backend down -v
 docker system prune -a
-./compose-dev.sh --env-file ./configs/.env.backend --populate up -d
+./compose-dev.sh --env-file configs/.env.backend --populate up -d
 ```
 
 ---

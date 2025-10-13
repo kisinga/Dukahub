@@ -1,0 +1,66 @@
+# =====================================
+# Development Overrides (Auto-loaded)
+# =====================================
+#
+# This file is automatically merged with docker-compose.yml in dev.
+# Differences from production:
+#   - Builds from source (not pre-built images)
+#   - Exposes database ports for debugging
+#   - Uses bind mounts for live code updates
+#   - Relaxed resource limits (for local dev machines)
+#   - Relaxed security
+
+services:
+  postgres_db:
+    ports:
+      - "5433:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 1536M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+
+  redis:
+    ports:
+      - "6479:6379"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+
+  backend:
+    build:
+      context: backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/static/assets/ml-models:/usr/src/app/static/assets/ml-models
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+
+  frontend:
+    build:
+      context: frontend
+    ports:
+      - "4200:4200"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M

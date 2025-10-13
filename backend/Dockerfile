@@ -1,26 +1,61 @@
+# ========================================
+# Backend Production Build - Multi-stage
+# ========================================
+
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+# Copy dependency manifests
+COPY package*.json ./
+
+# Install all dependencies including devDependencies for build
+RUN npm ci --quiet --no-audit --no-fund
+
+# Copy source code
+COPY . .
+
+# Build TypeScript to JavaScript
+RUN npm run build
+
+# Stage 2: Production runtime
 FROM node:22-alpine
+
+# Install wget for health checks and dumb-init for proper signal handling
+RUN apk add --no-cache wget dumb-init
 
 WORKDIR /usr/src/app
 
-# Copy package files and install all dependencies (including devDependencies)
+# Copy package files
 COPY package*.json ./
-RUN npm ci
 
-# Copy the rest of the application source code
-COPY . .
+# Install only production dependencies
+RUN npm ci --quiet --no-audit --no-fund --omit=dev && \
+    npm cache clean --force
 
-# Build the application (no .env needed at build time)
-RUN npm run build
+# Copy built application from builder
+COPY --from=builder /app/dist ./dist
 
-# Copy and set up entrypoint script
+# Copy static assets and templates
+COPY static ./static
+
+# Copy and setup entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Environment variables will be provided at runtime via docker-compose
-# or via -e flags when running the container
+# Create non-root user for security
+RUN addgroup -g 1001 -S vendure && \
+    adduser -u 1001 -S vendure -G vendure && \
+    chown -R vendure:vendure /usr/src/app
 
-# Expose the port the app runs on
+USER vendure
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
 EXPOSE 3000
 
-# Use entrypoint script to handle conditional populate
-ENTRYPOINT ["docker-entrypoint.sh"]
+# Use dumb-init for proper signal handling and process reaping
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["docker-entrypoint.sh"]

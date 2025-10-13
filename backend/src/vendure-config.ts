@@ -62,8 +62,16 @@ export const config: VendureConfig = {
             adminApiDebug: true,
             shopApiDebug: true,
         } : {}),
-        // Custom middleware to serve ML model files
+        // Custom middleware
         middleware: [
+            // Health check endpoint for container orchestration
+            {
+                handler: (req, res) => {
+                    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+                },
+                route: 'health',
+            },
+            // Serve ML model files
             {
                 handler: express.static(path.join(__dirname, '../static/assets/ml-models'), {
                     setHeaders: (res, filePath) => {

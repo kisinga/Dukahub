@@ -1,4 +1,36 @@
-node_modules
-.git
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+.angular/
+
+# Development files
+*.md
+.git/
 .gitignore
-dist
+.env*
+.vscode/
+.idea/
+
+# Tests
+*.test.ts
+*.spec.ts
+e2e/
+coverage/
+
+# Documentation
+docs/
+
+# CI/CD
+.github/
+
+# SSL certs (dev only)
+ssl/
+
+# OS files
+.DS_Store
+Thumbs.db
