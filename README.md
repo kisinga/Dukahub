@@ -36,7 +36,7 @@ Dukahub helps shopkeepers ditch manual data entry and expensive barcode scanners
 | **Database**   | PostgreSQL 16                       |
 | **Cache**      | Redis 7                             |
 | **ML**         | TensorFlow.js (client-side)         |
-| **Deployment** | Docker + Docker Compose             |
+| **Deployment** | Container images (platform-agnostic) |
 
 ## Configuration
 
@@ -83,19 +83,20 @@ Docker: backend (container) → postgres_db:5432 (internal network)
 
 #### Application Settings
 
-| Variable        | Example              | Default       | Notes                                  |
-| --------------- | -------------------- | ------------- | -------------------------------------- |
-| `NODE_ENV`      | `production`         | `development` | Node environment mode                  |
-| `PORT`          | `3000`               | `3000`        | Backend server port                    |
-| `COOKIE_SECURE` | `true` / `false`     | `false`       | Enable secure cookies (requires HTTPS) |
-| `FRONTEND_URL`  | `http://example.com` | —             | CORS allowed origins (comma-separated) |
+| Variable        | Example              | Default       | Used By                    |
+| --------------- | -------------------- | ------------- | -------------------------- |
+| `NODE_ENV`      | `production`         | `development` | Backend mode               |
+| `PORT`          | `3000`               | `3000`        | Backend port               |
+| `COOKIE_SECURE` | `true` / `false`     | `false`       | Backend (requires HTTPS)   |
+| `FRONTEND_URL`  | `http://example.com` | —             | Frontend (comma-separated) |
 
 #### Optional Variables
 
-| Variable           | Example                   | Default | Notes                                       |
-| ------------------ | ------------------------- | ------- | ------------------------------------------- |
-| `ASSET_URL_PREFIX` | `https://cdn.example.com` | —       | CDN prefix for assets (empty = local serve) |
-| `RUN_POPULATE`     | `true` / `false`          | `false` | Populate DB with sample data on startup     |
+| Variable           | Example                   | Default | Used By  |
+| ------------------ | ------------------------- | ------- | -------- |
+| `ASSET_URL_PREFIX` | `https://cdn.example.com` | —       | Frontend |
+|                    |
+| `RUN_POPULATE`     | `true` / `false`          | `false` | Backend  |
 
 **Security Warning:** Always change `DB_PASSWORD`, `SUPERADMIN_PASSWORD`, and `COOKIE_SECRET` before production deployment!
 
@@ -155,18 +156,23 @@ cd backend && npm install && npm run dev
 cd frontend && npm install && npm start
 ```
 
-### Production
+### Production (Platform Deployment)
 
-```bash
-# Pull and start all services
-docker compose pull
-docker compose up -d
+Deploy to any container platform (Coolify, Railway, Render, Fly.io):
 
-# Populate database (first-time only)
-docker compose exec backend npm run populate
-```
+**Container Images:**
+- Backend: `ghcr.io/kisinga/dukahub/backend:latest`
+- Frontend: `ghcr.io/kisinga/dukahub/frontend:latest`
 
-See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) for detailed instructions.
+**Required Services:**
+- PostgreSQL 16
+- Redis 7
+
+**Environment Variables:** See table below or `configs/env.example`
+
+**First-time:** Run `npm run populate` in backend container to seed database.
+
+See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) for platform-specific guides.
 
 ## Project Structure
 
