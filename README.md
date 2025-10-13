@@ -67,54 +67,65 @@ Docker: backend (container) → postgres_db:5432 (internal network)
 
 ### Environment Variables
 
-#### Required Variables
+#### Backend & Database
 
-| Variable              | Example           | Used By           | Notes                                             |
-| --------------------- | ----------------- | ----------------- | ------------------------------------------------- |
-| `DB_NAME`             | `vendure`         | Backend, Postgres | Database name                                     |
-| `DB_USERNAME`         | `vendure`         | Backend, Postgres | Database user                                     |
-| `DB_PASSWORD`         | `secure-password` | Backend, Postgres | Database password **[CHANGE IN PRODUCTION]**      |
-| `DB_SCHEMA`           | `public`          | Backend           | PostgreSQL schema                                 |
-| `DB_HOST`             | `postgres_db`     | Backend           | Database hostname (service name in Docker)        |
-| `DB_PORT`             | `5432`            | Backend           | Database port                                     |
-| `SUPERADMIN_USERNAME` | `superadmin`      | Backend           | Initial admin login                               |
-| `SUPERADMIN_PASSWORD` | `secure-password` | Backend           | Initial admin password **[CHANGE IN PRODUCTION]** |
-| `COOKIE_SECRET`       | `random-32-chars` | Backend           | Session encryption key **[CHANGE IN PRODUCTION]** |
+| Variable              | Example           | Default | Used By           | Notes                                             |
+| --------------------- | ----------------- | ------- | ----------------- | ------------------------------------------------- |
+| `DB_NAME`             | `vendure`         | —       | Backend, Postgres | Database name                                     |
+| `DB_USERNAME`         | `vendure`         | —       | Backend, Postgres | Database user                                     |
+| `DB_PASSWORD`         | `secure-password` | —       | Backend, Postgres | Database password **[CHANGE IN PRODUCTION]**      |
+| `DB_SCHEMA`           | `public`          | —       | Backend           | PostgreSQL schema                                 |
+| `DB_HOST`             | `postgres_db`     | —       | Backend           | Database hostname (service name in Docker)        |
+| `DB_PORT`             | `5432`            | —       | Backend           | Database port                                     |
+| `REDIS_HOST`          | `redis`           | —       | Backend           | Redis hostname (service name in Docker)           |
+| `REDIS_PORT`          | `6379`            | —       | Backend           | Redis port                                        |
+| `SUPERADMIN_USERNAME` | `superadmin`      | —       | Backend           | Initial admin login                               |
+| `SUPERADMIN_PASSWORD` | `secure-password` | —       | Backend           | Initial admin password **[CHANGE IN PRODUCTION]** |
+| `COOKIE_SECRET`       | `random-32-chars` | —       | Backend           | Session encryption key **[CHANGE IN PRODUCTION]** |
 
-#### Application Settings
+#### Frontend (Docker Only)
 
-| Variable        | Example              | Default       | Used By                    |
-| --------------- | -------------------- | ------------- | -------------------------- |
-| `NODE_ENV`      | `production`         | `development` | Backend mode               |
-| `PORT`          | `3000`               | `3000`        | Backend port               |
-| `COOKIE_SECURE` | `true` / `false`     | `false`       | Backend (requires HTTPS)   |
-| `FRONTEND_URL`  | `http://example.com` | —             | Frontend (comma-separated) |
+| Variable       | Example   | Default   | Notes                          |
+| -------------- | --------- | --------- | ------------------------------ |
+| `BACKEND_HOST` | `backend` | `backend` | Backend hostname to connect to |
+| `BACKEND_PORT` | `3000`    | `3000`    | Backend port to connect to     |
 
-#### Optional Variables
+#### Optional Settings
 
-| Variable           | Example                   | Default | Used By  |
-| ------------------ | ------------------------- | ------- | -------- |
-| `ASSET_URL_PREFIX` | `https://cdn.example.com` | —       | Frontend |
-|                    |
-| `RUN_POPULATE`     | `true` / `false`          | `false` | Backend  |
+| Variable           | Example                   | Default       | Used By | Notes                          |
+| ------------------ | ------------------------- | ------------- | ------- | ------------------------------ |
+| `NODE_ENV`         | `production`              | `development` | Backend | Runtime mode                   |
+| `PORT`             | `3000`                    | `3000`        | Backend | Backend port                   |
+| `COOKIE_SECURE`    | `true` / `false`          | `false`       | Backend | HTTPS-only cookies             |
+| `FRONTEND_URL`     | `http://example.com`      | —             | Backend | CORS origins (comma-separated) |
+| `ASSET_URL_PREFIX` | `https://cdn.example.com` | —             | Backend | CDN URL for assets             |
+| `RUN_POPULATE`     | `true` / `false`          | `false`       | Backend | Auto-populate database         |
 
 **Security Warning:** Always change `DB_PASSWORD`, `SUPERADMIN_PASSWORD`, and `COOKIE_SECRET` before production deployment!
 
-### How Variables Are Used
+### Usage Notes
 
-**Backend:**
+**Backend Container:**
 
-- Receives all vars via docker-compose environment section
-- `RUN_POPULATE` triggers database population on container startup (optional)
+- Requires database and Redis connection variables
+- `RUN_POPULATE=true` seeds database on first startup
 
-**Postgres:**
+**Frontend Container:**
 
-- Uses `DB_NAME` → `POSTGRES_DB`
-- Uses `DB_USERNAME` → `POSTGRES_USER`
-- Uses `DB_PASSWORD` → `POSTGRES_PASSWORD`
-- (Mapped in docker-compose.yml because Postgres requires `POSTGRES_*` naming)
+- Only requires `BACKEND_HOST` and `BACKEND_PORT`
+- All API requests proxy through nginx to backend
+- Independent deployment - no database access
 
-For local development: Load `.env` manually in your shell or let your IDE/tools handle it.
+**Postgres Container:**
+
+- Maps `DB_*` to `POSTGRES_*` environment variables
+- Required by official postgres image naming
+
+**Local Development:**
+
+- Frontend uses `proxy.conf.json` (edit target URL manually)
+- Backend loads `configs/.env` via dotenv
+- Services connect via localhost ports (5433, 6479)
 
 ### Security Checklist
 
@@ -156,23 +167,33 @@ cd backend && npm install && npm run dev
 cd frontend && npm install && npm start
 ```
 
-### Production (Platform Deployment)
+### Docker Deployment
 
-Deploy to any container platform (Coolify, Railway, Render, Fly.io):
+Images are **independent** and configurable at runtime.
 
-**Container Images:**
+#### Backend
 
-- Backend: `ghcr.io/kisinga/dukahub/backend:latest`
-- Frontend: `ghcr.io/kisinga/dukahub/frontend:latest`
+```bash
+docker run -p 3000:3000 \
+  -e DB_HOST=your-postgres-host \
+  -e DB_PORT=5432 \
+  -e REDIS_HOST=your-redis-host \
+  -e REDIS_PORT=6379 \
+  dukahub-backend
+```
 
-**Required Services:**
+#### Frontend
 
-- PostgreSQL 16
-- Redis 7
+```bash
+docker run -p 4200:4200 \
+  -e BACKEND_HOST=your-backend-host \
+  -e BACKEND_PORT=3000 \
+  dukahub-frontend
+```
 
-**Environment Variables:** See table below or `configs/env.example`
+**Required Services:** PostgreSQL 16 + Redis 7 (backend only)
 
-**First-time:** Run `npm run populate` in backend container to seed database.
+**All Environment Variables:** See Configuration section above
 
 See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) for platform-specific guides.
 

@@ -31,16 +31,17 @@ RUN rm -rf /etc/nginx/conf.d/default.conf /usr/share/nginx/html/*
 # Copy built app from builder
 COPY --from=builder /app/dist/dukahub-frontend/browser /usr/share/nginx/html
 
-# Copy production nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy nginx configuration as template (will be processed at runtime)
+COPY nginx.conf /etc/nginx/conf.d/default.conf.template
+
+# Copy and make entrypoint executable
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 # Create cache directories for nginx
 RUN mkdir -p /var/cache/nginx/proxy && \
     chown -R nginx:nginx /var/cache/nginx && \
     chmod -R 755 /var/cache/nginx
-
-# Run as non-root user
-USER nginx
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
@@ -48,5 +49,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 EXPOSE 4200
 
-# Use exec form for proper signal handling
-CMD ["nginx", "-g", "daemon off;"]
+# Entrypoint will substitute env vars and start nginx
+ENTRYPOINT ["/docker-entrypoint.sh"]

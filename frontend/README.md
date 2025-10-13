@@ -63,7 +63,7 @@ npm run codegen       # Generate GraphQL types
 // src/environments/environment.ts
 export const environment = {
   production: false,
-  apiUrl: '/admin-api',  // Relative URL - proxied to backend
+  apiUrl: '/admin-api', // Relative URL - proxied to backend
 };
 ```
 
@@ -72,6 +72,7 @@ export const environment = {
 **Problem:** Browsers don't send cookies between different domains (localhost → homelab).
 
 **Solution:** Angular dev server proxy (`proxy.conf.json`) makes everything same-origin:
+
 ```
 Browser → localhost:4200/admin-api → [Proxy] → homelab:3000/admin-api
 ```
