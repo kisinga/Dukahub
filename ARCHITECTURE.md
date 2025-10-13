@@ -261,9 +261,7 @@ Dukahub uses platform-agnostic container images for flexible deployment.
 - **Docker Containers**: Self-contained images with all dependencies
 - **Manual Local Dev**: Run services directly on host for fast iteration
 
-**See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) for complete setup and deployment guide**
-
-**See [README.md](./README.md#configuration) for all environment variables**
+**See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) for complete deployment guide and environment variables**
 
 ## Migration from V1
 

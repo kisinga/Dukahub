@@ -6,11 +6,80 @@ Complete guide for local development and production deployment.
 
 ## Table of Contents
 
+- [Environment Variables](#environment-variables)
 - [Local Development](#local-development)
 - [Production Deployment](#production-deployment)
 - [Docker Containers](#docker-containers)
 - [Database Operations](#database-operations)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## Environment Variables
+
+All configuration is managed via environment variables.
+
+### Backend & Database
+
+| Variable              | Example           | Default | Notes                                             |
+| --------------------- | ----------------- | ------- | ------------------------------------------------- |
+| `DB_NAME`             | `vendure`         | —       | Database name                                     |
+| `DB_USERNAME`         | `vendure`         | —       | Database user                                     |
+| `DB_PASSWORD`         | `secure-password` | —       | Database password **[CHANGE IN PRODUCTION]**      |
+| `DB_SCHEMA`           | `public`          | —       | PostgreSQL schema                                 |
+| `DB_HOST`             | `postgres_db`     | —       | Database hostname                                 |
+| `DB_PORT`             | `5432`            | —       | Database port                                     |
+| `REDIS_HOST`          | `redis`           | —       | Redis hostname                                    |
+| `REDIS_PORT`          | `6379`            | —       | Redis port                                        |
+| `SUPERADMIN_USERNAME` | `superadmin`      | —       | Initial admin login                               |
+| `SUPERADMIN_PASSWORD` | `secure-password` | —       | Initial admin password **[CHANGE IN PRODUCTION]** |
+| `COOKIE_SECRET`       | `random-32-chars` | —       | Session encryption key **[CHANGE IN PRODUCTION]** |
+
+### Frontend (Docker Only)
+
+| Variable       | Example   | Default   | Notes                          |
+| -------------- | --------- | --------- | ------------------------------ |
+| `BACKEND_HOST` | `backend` | `backend` | Backend hostname to connect to |
+| `BACKEND_PORT` | `3000`    | `3000`    | Backend port to connect to     |
+
+### Optional Settings
+
+| Variable           | Example                   | Default       | Notes                             |
+| ------------------ | ------------------------- | ------------- | --------------------------------- |
+| `NODE_ENV`         | `production`              | `development` | Runtime mode                      |
+| `PORT`             | `3000`                    | `3000`        | Backend port                      |
+| `COOKIE_SECURE`    | `true` / `false`          | `false`       | HTTPS-only cookies                |
+| `FRONTEND_URL`     | `http://example.com`      | —             | CORS origins (comma-separated)    |
+| `ASSET_URL_PREFIX` | `https://cdn.example.com` | —             | CDN URL for assets                |
+| `RUN_POPULATE`     | `true` / `false`          | `false`       | Auto-populate database on startup |
+
+### Security
+
+**Security Warning:** Always change `DB_PASSWORD`, `SUPERADMIN_PASSWORD`, and `COOKIE_SECRET` before production deployment!
+
+**Generate secure values:**
+
+```bash
+# Cookie secret (32 chars)
+openssl rand -base64 32
+
+# Passwords (20 chars)
+openssl rand -base64 24 | tr -d "=+/" | cut -c1-20
+```
+
+### Usage by Environment
+
+**Local Development:**
+
+- Backend loads from `configs/.env` via dotenv
+- Frontend uses `proxy.conf.json` for backend URL
+- Services connect via `localhost` ports
+
+**Docker:**
+
+- Backend requires all database/Redis variables
+- Frontend only needs `BACKEND_HOST` and `BACKEND_PORT`
+- All configuration at container runtime
 
 ---
 
@@ -127,25 +196,14 @@ Deploy to any container platform (Coolify, Railway, Render, Fly.io, etc.).
 
 **Image:** `ghcr.io/kisinga/dukahub/backend:latest` or build from `backend/`
 
-**Environment Variables:**
+**Environment Variables:** Configure all variables from [Environment Variables](#environment-variables) section above.
 
-```bash
-NODE_ENV=production
-PORT=3000
-DB_HOST=<postgres-internal-host>
-DB_PORT=5432
-DB_NAME=vendure
-DB_USERNAME=<db-user>
-DB_PASSWORD=<strong-password>
-DB_SCHEMA=public
-REDIS_HOST=<redis-internal-host>
-REDIS_PORT=6379
-SUPERADMIN_USERNAME=superadmin
-SUPERADMIN_PASSWORD=<strong-password>
-COOKIE_SECRET=<32-char-random>
-COOKIE_SECURE=true
-FRONTEND_URL=https://yourdomain.com
-```
+**Required for production:**
+
+- Set `NODE_ENV=production`
+- Set `COOKIE_SECURE=true`
+- Point `DB_HOST` and `REDIS_HOST` to internal service names
+- Set `FRONTEND_URL` to your domain
 
 **First-time setup:**
 
@@ -158,12 +216,7 @@ npm run populate
 
 **Image:** `ghcr.io/kisinga/dukahub/frontend:latest` or build from `frontend/`
 
-**Environment Variables:**
-
-```bash
-BACKEND_HOST=<backend-internal-host>
-BACKEND_PORT=3000
-```
+**Environment Variables:** Set `BACKEND_HOST` and `BACKEND_PORT` from [Environment Variables](#environment-variables) section.
 
 **Public URL:** Configure your domain to point to port 4200
 
@@ -173,7 +226,7 @@ Update `FRONTEND_URL` in backend environment to match your frontend domain.
 
 ### Security Checklist
 
-- [ ] Generate new `COOKIE_SECRET` (see [README](./README.md#generate-secure-values))
+- [ ] Generate new `COOKIE_SECRET` (see [Environment Variables](#security))
 - [ ] Change `SUPERADMIN_PASSWORD`
 - [ ] Change `DB_PASSWORD`
 - [ ] Set `COOKIE_SECURE=true`
