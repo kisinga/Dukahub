@@ -1,5 +1,5 @@
 # ========================================
-# Backend Production Build - Multi-stage
+# Backend Production Dockerfile
 # ========================================
 
 FROM node:22-alpine AS builder

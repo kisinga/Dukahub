@@ -1,5 +1,5 @@
 # ========================================
-# Frontend Production Build - Multi-stage
+# Frontend Production Dockerfile
 # ========================================
 
 # Stage 1: Build Angular application

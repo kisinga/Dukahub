@@ -1,41 +1,51 @@
 # Deployment Guide
 
-## Docker Compose Override Pattern
+## Architecture: Docker = Production Only
 
-### Three-File Structure
+**Single file:** `docker-compose.yml` (production-optimized, GHCR images)
 
-1. **`docker-compose.yml`** - Base config (shared)
-2. **`docker-compose.override.yml`** - Dev overrides (auto-loaded)
-3. **`docker-compose.prod.yml`** - Production overrides (explicit)
-
-### Development
-
-Uses override pattern with local builds.
-
-```bash
-./compose-dev.sh --env-file configs/.env.backend up -d
-```
-
-### Production
+### Production Deployment
 
 Uses pre-built images from GitHub Container Registry.
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose pull
+docker compose up -d
+```
+
+### Local Development
+
+Run services manually (not containerized):
+
+```bash
+# Start dependencies only (postgres, redis)
+docker compose -f docker-compose.dev.yml up -d
+
+# Run backend
+cd backend
+npm install
+npm run dev
+
+# Run frontend (separate terminal)
+cd frontend
+npm install
+npm start
 ```
 
 ---
 
-## Development Workflow
+## Deployment Workflow
 
 ### 1. Local Development
 
 ```bash
-./compose-dev.sh --env-file configs/.env.backend up -d
-```
+# Start dependencies
+docker compose -f docker-compose.dev.yml up -d
 
-Make changes, rebuild as needed.
+# Develop backend/frontend manually
+cd backend && npm run dev
+cd frontend && npm start
+```
 
 ### 2. Push to GitHub
 
@@ -45,60 +55,55 @@ git commit -m "Your changes"
 git push origin main
 ```
 
-GitHub Actions automatically builds and pushes images to GHCR (main branch only).
+GitHub Actions builds and pushes images to GHCR.
 
-### 3. Deploy to Production Server
+### 3. Deploy to Production
 
 ```bash
-# SSH into your server
-cd /path/to/dukahub
-
 # Pull latest images
-docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+docker compose pull
 
-# Restart services
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Start services
+docker compose up -d
 ```
 
 ---
 
 ## Quick Commands
 
-### Development
+### Local Development
 
 ```bash
-# Start dev environment
-./compose-dev.sh --env-file configs/.env.backend up -d
+# Start dependencies only
+docker compose -f docker-compose.dev.yml up -d
 
-# View logs
-./compose-dev.sh --env-file configs/.env.backend logs -f
+# Run backend manually
+cd backend && npm run dev
 
-# Stop
-./compose-dev.sh --env-file configs/.env.backend down
+# Run frontend manually (separate terminal)
+cd frontend && npm start
 
-# Clean restart
-./compose-dev.sh --env-file configs/.env.backend down -v
-./compose-dev.sh --env-file configs/.env.backend --populate up -d
+# Stop dependencies
+docker compose -f docker-compose.dev.yml down
 ```
 
 ### Production
 
 ```bash
 # Pull latest images
-docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+docker compose pull
 
-# Start production environment
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-
-# Stop
-docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+# Start services
+docker compose up -d
 
 # View logs
-docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f backend
+docker compose logs -f backend
 
-# Update to latest (pull + restart)
-docker compose -f docker-compose.yml -f docker-compose.prod.yml pull && \
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Stop services
+docker compose down
+
+# Update to latest
+docker compose pull && docker compose up -d
 ```
 
 ---
@@ -141,10 +146,12 @@ Check packages at:
 # On your production server
 git clone https://github.com/kisinga/dukahub.git
 cd dukahub
-cp configs/.env.backend.example configs/.env.backend
-nano configs/.env.backend  # Set production values
+
+# Set environment variables in .env or Coolify UI
+# Required: DB_NAME, DB_USERNAME, DB_PASSWORD, COOKIE_SECRET,
+#           SUPERADMIN_USERNAME, SUPERADMIN_PASSWORD
 
 # Deploy
-docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose pull
+docker compose up -d
 ```

@@ -14,32 +14,19 @@ import express, { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 
-// Detect if running inside Docker
-const isDocker = fs.existsSync('/.dockerenv') || process.env.DOCKER_CONTAINER === 'true';
-
-// Only load from .env file if NOT in Docker
-// Docker containers get env vars passed directly from docker-compose
-if (!isDocker) {
-    const envPaths = [
-        path.join(__dirname, '../../configs/.env.backend'), // Local dev (ts-node from src/)
-        path.join(__dirname, '../configs/.env.backend'),    // Docker (compiled to dist/)
-    ];
-    const envPath = envPaths.find(p => fs.existsSync(p));
-    if (envPath) {
-        console.log(`[dotenv] Loading from ${envPath}`);
-        dotenvConfig({ path: envPath });
-    } else {
-        console.warn('[dotenv] No .env.backend file found, using system environment variables');
-    }
-} else {
-    console.log('[dotenv] Running in Docker, using environment variables from container');
+// Load environment variables from .env file for local development
+// Docker containers get env vars from docker-compose (these override .env)
+const envPaths = [
+    path.join(__dirname, '../../configs/.env.backend'), // Local dev (ts-node from src/)
+    path.join(__dirname, '../configs/.env.backend'),    // Compiled (dist/)
+];
+const envPath = envPaths.find(p => fs.existsSync(p));
+if (envPath) {
+    dotenvConfig({ path: envPath });
 }
 
-const IS_DEV = process.env.APP_ENV === 'dev';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const serverPort = +process.env.PORT || 3000;
-
-// Cookie secure flag: Only use secure cookies when explicitly enabled
-// This allows HTTP access for local/homelab deployments
 const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
 
 export const config: VendureConfig = {
@@ -47,24 +34,21 @@ export const config: VendureConfig = {
         port: serverPort,
         adminApiPath: 'admin-api',
         shopApiPath: 'shop-api',
-        trustProxy: IS_DEV ? false : 1,
-        // CORS configuration for cross-origin cookie authentication
+        trustProxy: IS_PRODUCTION ? 1 : false,
         cors: {
-            origin: IS_DEV
-                ? ['http://localhost:4200', 'http://127.0.0.1:4200']
-                : process.env.FRONTEND_URL?.split(',') || true,
+            origin: IS_PRODUCTION
+                ? process.env.FRONTEND_URL?.split(',') || true
+                : ['http://localhost:4200', 'http://127.0.0.1:4200'],
             credentials: true,
         },
-        // The following options are useful in development mode,
-        // but are best turned off for production for security
-        // reasons.
-        ...(IS_DEV ? {
+        // Debug modes enabled only in development
+        ...(!IS_PRODUCTION ? {
             adminApiDebug: true,
             shopApiDebug: true,
         } : {}),
         // Custom middleware
         middleware: [
-            // Health check endpoint for container orchestration
+            // Health check endpoint
             {
                 handler: (req: Request, res: Response) => {
                     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -99,22 +83,14 @@ export const config: VendureConfig = {
         },
         cookieOptions: {
             secret: process.env.COOKIE_SECRET,
-            // Allow cookies to work across different hosts (e.g., localhost frontend -> VPN backend)
             httpOnly: true,
-            // Use 'lax' for both dev and prod since frontend and backend are on same domain
-            // 'strict' prevents cookies on navigation which breaks SPA routing
             sameSite: 'lax',
-            // Only use secure cookies when explicitly enabled (requires HTTPS)
-            // Set COOKIE_SECURE=true for HTTPS deployments
-            // Leave unset or false for HTTP (local dev, homelab, etc.)
             secure: COOKIE_SECURE,
         },
     },
     dbConnectionOptions: {
         type: 'postgres',
-        // See the README.md "Migrations" section for an explanation of
-        // the `synchronize` and `migrations` options.
-        synchronize: process.env.DB_SYNCHRONIZE ? process.env.DB_SYNCHRONIZE === 'true' : false,
+        synchronize: false, // Never use in production
         migrations: [path.join(__dirname, './migrations/*.+(js|ts)')],
         logging: false,
         database: process.env.DB_NAME,
@@ -135,10 +111,7 @@ export const config: VendureConfig = {
         AssetServerPlugin.init({
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),
-            // For local dev, the correct value for assetUrlPrefix should
-            // be guessed correctly, but for production it will usually need
-            // to be set manually to match your production url.
-            assetUrlPrefix: IS_DEV ? undefined : 'https://www.my-shop.com/assets/',
+            assetUrlPrefix: process.env.ASSET_URL_PREFIX || undefined,
         }),
         DefaultSchedulerPlugin.init(),
         DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),

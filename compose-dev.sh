@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
-# compose-dev.sh — Local development wrapper for docker compose
-# Loads env vars from file and sets initialization flags
+# compose-dev.sh — DEPRECATED
+#
+# Architecture has changed: Docker = Production only
+# For local development, use: docker compose -f docker-compose.dev.yml up -d
+# Then run backend/frontend manually: npm run dev
+#
+# This script is kept for backwards compatibility only.
 set -euo pipefail
 
 # Change to script directory

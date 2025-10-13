@@ -1,15 +1,17 @@
 # =====================================
-# Dukahub Base Configuration (Shared)
+# Dukahub Production Configuration
 # =====================================
 #
-# This base config is used by both dev and production.
-# Environment-specific overrides:
-#   - Dev: docker-compose.override.yml (auto-loaded)
-#   - Prod: docker-compose.prod.yml (use -f flag)
+# Production-only Docker Compose for deployed environments.
+# Optimized for 8GB RAM / 4 vCPU server.
 #
 # Usage:
-#   Dev:  ./compose-dev.sh up -d
-#   Prod: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#   Production: docker compose pull && docker compose up -d
+#   Coolify:    Reads this file automatically
+#
+# Local Development:
+#   Run services manually (npm run dev)
+#   Use docker-compose.dev.yml for dependencies only
 
 services:
   postgres_db:
@@ -21,43 +23,74 @@ services:
       POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
     volumes:
       - postgres_db_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
     labels:
       - "io.vendure.create.name=dukahub"
+      - "com.centurylinklabs.watchtower.enable=true"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 20s
-    restart: unless-stopped
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 768M
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+      - /run
     networks:
       - dukahub_network
 
   redis:
     image: redis:7-alpine
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save 60 1000
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru --save 60 1000
     volumes:
       - redis_data:/data
+    expose:
+      - "6379"
     labels:
       - "io.vendure.create.name=dukahub"
+      - "com.centurylinklabs.watchtower.enable=true"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 10s
-    restart: unless-stopped
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 192M
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
     networks:
       - dukahub_network
 
   backend:
-    image: ${BACKEND_IMAGE:-ghcr.io/kisinga/dukahub/backend:latest}
+    image: ghcr.io/kisinga/dukahub/backend:latest
     environment:
-      DOCKER_CONTAINER: "true"
-      APP_ENV: ${APP_ENV:-dev}
-      PORT: ${PORT:-3000}
-      DB_HOST: ${DB_HOST:-postgres_db}
-      DB_PORT: ${DB_PORT:-5432}
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: postgres_db
+      DB_PORT: 5432
       DB_NAME: ${DB_NAME}
       DB_SCHEMA: ${DB_SCHEMA:-public}
       DB_USERNAME: ${DB_USERNAME}
@@ -65,17 +98,22 @@ services:
       SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME}
       SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
       COOKIE_SECRET: ${COOKIE_SECRET}
-      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
       RUN_POPULATE: ${RUN_POPULATE:-false}
-      NODE_ENV: ${APP_ENV:-dev}
-      NODE_OPTIONS: "--max-old-space-size=2048"
+      NODE_OPTIONS: "--max-old-space-size=2560"
     depends_on:
       postgres_db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    expose:
+      - "3000"
+    volumes:
+      - ml_models:/usr/src/app/static/assets/ml-models
+      - backend_assets:/usr/src/app/static/assets
     labels:
       - "io.vendure.create.name=dukahub"
+      - "com.centurylinklabs.watchtower.enable=true"
     healthcheck:
       test:
         [
@@ -89,21 +127,32 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
-    restart: unless-stopped
-    stop_grace_period: 30s
+      start_period: 90s
+    restart: always
+    stop_grace_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.5"
+          memory: 3G
+        reservations:
+          cpus: "1.0"
+          memory: 1280M
+    security_opt:
+      - no-new-privileges:true
     networks:
       - dukahub_network
 
   frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/kisinga/dukahub/frontend:latest}
-    environment:
-      DOCKER_CONTAINER: "true"
+    image: ghcr.io/kisinga/dukahub/frontend:latest
     depends_on:
       backend:
         condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-4200}:4200"
     labels:
       - "io.vendure.create.name=dukahub"
+      - "com.centurylinklabs.watchtower.enable=true"
     healthcheck:
       test:
         [
@@ -118,8 +167,23 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
-    restart: unless-stopped
+    restart: always
     stop_grace_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 192M
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
     networks:
       - dukahub_network
 
@@ -133,6 +197,14 @@ volumes:
     labels:
       - "io.vendure.create.name=dukahub"
   redis_data:
+    driver: local
+    labels:
+      - "io.vendure.create.name=dukahub"
+  ml_models:
+    driver: local
+    labels:
+      - "io.vendure.create.name=dukahub"
+  backend_assets:
     driver: local
     labels:
       - "io.vendure.create.name=dukahub"

@@ -21,29 +21,26 @@ All services mount `./configs` as read-only for shared configuration access.
 
 ## ⚙️ Configuration Strategy
 
-### Docker Compose Override Pattern
+### Docker = Production Only
 
-**Three-file structure for dev/prod parity:**
-
-```
-docker-compose.yml              ← Base config (shared by all environments)
-docker-compose.override.yml     ← Dev overrides (auto-loaded)
-docker-compose.prod.yml         ← Production overrides (explicit with -f flag)
-```
-
-**Environment variables:** `configs/.env.backend`
+**Single production file:** `docker-compose.yml`
 
 ```
-configs/.env.backend
-  ↓
-  ├─→ Development:
-  │   compose-dev.sh → exports vars → docker-compose.yml + docker-compose.override.yml
-  │
-  └─→ Production:
-      Platform (Coolify) → injects vars → docker-compose.yml + docker-compose.prod.yml
+docker-compose.yml          ← Production-only (GHCR images, optimized, hardened)
+docker-compose.dev.yml      ← Local dependencies only (postgres, redis)
 ```
 
-**Key principle:** Base config is shared, only differences are in override files. This ensures parity and makes environment differences explicit.
+**Environment variables:**
+
+```
+Production (Docker):
+  Coolify/VPS → Environment variables → docker-compose.yml
+
+Local Development:
+  Manual setup → configs/.env.backend → npm run dev
+```
+
+**Key principle:** Clear separation between production (containerized) and development (manual). No dev containers for application code.
 
 ### Variable Flow
 
@@ -71,14 +68,22 @@ configs/.env.backend
 ### Local Development
 
 ```bash
+# Start dependencies only (postgres, redis)
+docker compose -f docker-compose.dev.yml up -d
+
+# Set up environment
 cp configs/.env.backend.example configs/.env.backend
-nano configs/.env.backend  # Update passwords/secrets
+nano configs/.env.backend
 
-# Start stack (loads env vars + auto-merges docker-compose.override.yml)
-./compose-dev.sh --env-file configs/.env.backend up -d
+# Run backend manually
+cd backend
+npm install
+npm run dev
 
-# Or with sample data (first run)
-./compose-dev.sh --env-file configs/.env.backend --populate up -d
+# Run frontend manually (separate terminal)
+cd frontend
+npm install
+npm start
 ```
 
 ### Production Deployment
@@ -91,14 +96,13 @@ DB_USERNAME=vendure
 DB_PASSWORD=<strong-password>
 COOKIE_SECRET=<strong-secret>
 SUPERADMIN_PASSWORD=<strong-password>
-APP_ENV=production
 ```
 
-**2. Deploy with production overrides:**
+**2. Deploy:**
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose pull
+docker compose up -d
 ```
 
 ### Access Services
@@ -112,14 +116,17 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ### Commands
 
 ```bash
-# Start services (local dev)
-./compose-dev.sh --env-file configs/.env.backend up -d
-./compose-dev.sh --env-file configs/.env.backend --populate up -d  # With sample data
+# Production
+docker compose pull                # Pull latest images
+docker compose up -d               # Start services
+docker compose logs -f backend     # View logs
+docker compose down                # Stop services
 
-# Standard docker compose commands
-./compose-dev.sh --env-file configs/.env.backend logs -f     # View logs
-./compose-dev.sh --env-file configs/.env.backend down        # Stop
-./compose-dev.sh --env-file configs/.env.backend down -v     # Reset (removes data)
+# Local Development
+docker compose -f docker-compose.dev.yml up -d    # Start dependencies
+cd backend && npm run dev                          # Run backend
+cd frontend && npm start                           # Run frontend
+docker compose -f docker-compose.dev.yml down     # Stop dependencies
 ```
 
 ---
@@ -133,45 +140,46 @@ See [`configs/README.md`](configs/README.md) for complete variable reference.
 - `COOKIE_SECRET` — Session encryption key
 - `DB_PASSWORD` — Database password
 - `SUPERADMIN_PASSWORD` — Admin login
-- `APP_ENV=production` — Enables production mode
 
 ---
 
-## 🔧 Launcher Script: `compose-dev.sh`
+## 🔧 Local Development Setup
 
-**Local development helper** that loads environment variables from `.env.backend` and runs Docker Compose.
+### Dependencies Only
 
-### Why Use It?
-
-- Exports vars for `docker-compose.yml` variable substitution (`${DB_NAME}`, etc.)
-- Sets `RUN_POPULATE` flag to trigger database population
-- Single command for local development workflow
-
-### Usage
+Use `docker-compose.dev.yml` to run database and cache:
 
 ```bash
-./compose-dev.sh --env-file FILE [OPTIONS] DOCKER_COMPOSE_ARGS
-
-# Options
---env-file FILE    Load environment variables from FILE (required)
---populate         Set RUN_POPULATE=true to populate database on startup
-
-# Examples
-./compose-dev.sh --env-file configs/.env.backend up -d
-./compose-dev.sh --env-file configs/.env.backend --populate up -d
-./compose-dev.sh --env-file configs/.env.backend logs -f backend
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-### Populate Flag
+This provides:
 
-Adds Vendure sample data (default channel/zone, ~250 countries, ~20 products with images).
+- PostgreSQL on `localhost:5433`
+- Redis on `localhost:6479`
 
-**How it works:**
+### Run Application Manually
 
-1. Sets `RUN_POPULATE=true` environment variable
-2. Backend container's entrypoint script detects flag
-3. Runs populate script before starting server
-4. Server starts with populated data
+```bash
+# Backend
+cd backend
+npm install
+cp ../configs/.env.backend.example ../configs/.env.backend
+# Edit configs/.env.backend with DB settings
+npm run dev
+
+# Frontend (separate terminal)
+cd frontend
+npm install
+npm start
+```
+
+### Populate Database
+
+```bash
+cd backend
+npm run populate
+```
 
 ---
 
@@ -232,7 +240,6 @@ docker compose exec -T postgres_db psql -U vendure vendure < backup.sql
 2. **Use strong secrets** — generate random values for production
 3. **Don't use `--populate` in production** — only for initial dev setup
 4. **Change default passwords** — all example passwords before deployment
-5. **Set `APP_ENV=production`** — disables debug features
 
 ### Generate Strong Secrets
 
@@ -248,13 +255,13 @@ openssl rand -base64 24 | tr -d "=+/" | cut -c1-20
 
 ## 🎯 Design Principles
 
-1. **Override Pattern** — Base config + environment-specific overrides (standard Docker Compose pattern)
-2. **Dev/Prod Parity** — Shared base ensures environments stay in sync
-3. **Environment Variables** — One `.env.backend`, no duplicates
-4. **Explicit Differences** — Override files show exactly what differs between environments
+1. **Docker = Production** — Containers only for deployed environments
+2. **Manual Dev** — Run backend/frontend directly on host (faster, simpler debugging)
+3. **Clear Separation** — DevOps (Docker) vs Development (manual) are distinct
+4. **Single Source** — One production compose file, no overrides
 5. **Health Checks** — All services have health checks for orchestration
-6. **Resource Limits** — Defined for all services to prevent resource exhaustion
-7. **Security Hardening** — Production uses non-root users, read-only filesystems, tmpfs
+6. **Resource Limits** — Optimized for 8GB server, prevent resource exhaustion
+7. **Security Hardening** — Non-root users, read-only filesystems, tmpfs
 8. **KISS Principle** — Simple, obvious, maintainable
 
 ---
@@ -288,21 +295,25 @@ docker compose exec postgres_db psql -U vendure vendure
 ### Environment variables not loading
 
 ```bash
-# Test compose-dev.sh variable export
-./compose-dev.sh --env-file configs/.env.backend up -d
+# Check environment variables in container
 docker compose exec backend env | grep DB_
 
-# Verify .env.backend exists and is readable
-cat configs/.env.backend
+# Verify environment variables are set
+cat .env  # or check Coolify UI
 ```
 
 ### Clean slate (nuclear option)
 
 ```bash
-# Remove everything and start fresh
-./compose-dev.sh --env-file configs/.env.backend down -v
+# Production
+docker compose down -v
 docker system prune -a
-./compose-dev.sh --env-file configs/.env.backend --populate up -d
+docker compose pull && docker compose up -d
+
+# Local dev
+docker compose -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.dev.yml up -d
+cd backend && npm run populate
 ```
 
 ---
