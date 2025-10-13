@@ -255,12 +255,20 @@ https://domain.com/assets/ml-models/{channelId}/latest/metadata.json
 ### Development Environment
 
 ```bash
-# Start all services
-./compose-dev.sh up
+# Start dependencies only (Postgres, Redis)
+docker compose -f docker-compose.dev.yml up -d
 
-# Database is auto-populated on first run
+# Run backend manually
+cd backend && npm run dev
+
+# Run frontend manually (in another terminal)
+cd frontend && npm start
+
 # Access frontend: http://localhost:4200
 # Access API: http://localhost:3000/admin-api
+
+# Populate database (first-time)
+cd backend && npm run populate
 ```
 
 ### Production Deployment

@@ -28,7 +28,7 @@ nano .env.backend
    - Connects to Docker services via mapped ports (e.g., `localhost:5433`)
 
 2. **Docker Compose** (all services containerized):
-   - `compose-dev.sh` exports variables from `.env.backend` to shell environment
+   - Variables are loaded by docker-compose or manually for local development
    - Docker Compose inherits these variables automatically
    - Services communicate via Docker network (e.g., `postgres_db:5432`)
 
@@ -73,7 +73,7 @@ Docker: backend (container) → postgres_db:5432 (internal network)
 - Uses `DB_PASSWORD` → `POSTGRES_PASSWORD`
 - (Mapped in docker-compose.yml because Postgres requires `POSTGRES_*` naming)
 
-All variables loaded from `.env.backend` → exported by `compose-dev.sh` → available to docker-compose.
+For local development: Load `.env.backend` manually in your shell or let your IDE/tools handle it.
 
 ## Security Checklist
 

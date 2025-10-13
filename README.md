@@ -40,20 +40,37 @@ Dukahub helps shopkeepers ditch manual data entry and expensive barcode scanners
 
 ## Quick Start
 
+### Local Development
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/dukahub.git
 cd dukahub
 
-# Start development environment
-./compose-dev.sh up
+# Start dependencies (Postgres, Redis)
+docker compose -f docker-compose.dev.yml up -d
 
-# Access the application
-# Frontend: http://localhost:4200
-# Backend API: http://localhost:3000/admin-api
+# Set up environment
+cp configs/.env.backend.example configs/.env.backend
+nano configs/.env.backend
+
+# Run backend
+cd backend && npm install && npm run dev
+
+# Run frontend (in another terminal)
+cd frontend && npm install && npm start
 ```
 
-See [ENVIRONMENT_SETUP.md](./ENVIRONMENT_SETUP.md) for detailed instructions.
+### Production
+```bash
+# Pull and start all services
+docker compose pull
+docker compose up -d
+
+# Populate database (first-time only)
+docker compose exec backend npm run populate
+```
+
+See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) for detailed instructions.
 
 ## Project Structure
 

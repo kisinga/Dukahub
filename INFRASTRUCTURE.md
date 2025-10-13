@@ -51,15 +51,16 @@ Local Development:
 
 **Postgres:**
 
-- Gets `POSTGRES_DB=${DB_NAME}` from shell environment (via compose-dev.sh)
-- Gets `POSTGRES_USER=${DB_USERNAME}` from shell environment
-- Gets `POSTGRES_PASSWORD=${DB_PASSWORD}` from shell environment
+- Gets `POSTGRES_DB=${DB_NAME}` from environment variables
+- Gets `POSTGRES_USER=${DB_USERNAME}` from environment variables
+- Gets `POSTGRES_PASSWORD=${DB_PASSWORD}` from environment variables
 
 **RUN_POPULATE** (optional):
 
-- Set by `compose-dev.sh` via `--populate` flag
-- `true` → populates database with sample data on startup
+- Environment variable for production deployment
+- `true` → populates database with sample data on startup (via docker-entrypoint.sh)
 - `false` (default) → normal startup without populate
+- **Recommended:** Use `docker compose exec backend npm run populate` instead
 
 ---
 
@@ -105,6 +106,19 @@ docker compose pull
 docker compose up -d
 ```
 
+**3. Populate Database (First-time setup only):**
+
+Choose one approach:
+
+```bash
+# Option A: One-off populate command (recommended)
+docker compose exec backend npm run populate
+
+# Option B: Via environment variable (requires restart)
+# In Coolify: Set RUN_POPULATE=true → Deploy → Set back to false → Deploy
+# Via CLI: Edit .env, set RUN_POPULATE=true, restart backend
+```
+
 ### Access Services
 
 - **Backend API:** http://localhost:3000
@@ -117,10 +131,11 @@ docker compose up -d
 
 ```bash
 # Production
-docker compose pull                # Pull latest images
-docker compose up -d               # Start services
-docker compose logs -f backend     # View logs
-docker compose down                # Stop services
+docker compose pull                           # Pull latest images
+docker compose up -d                          # Start services
+docker compose logs -f backend                # View logs
+docker compose exec backend npm run populate # Populate database (first-time)
+docker compose down                           # Stop services
 
 # Local Development
 docker compose -f docker-compose.dev.yml up -d    # Start dependencies
@@ -325,8 +340,28 @@ cd backend && npm run populate
 
 ### Sample Data
 
-Use `--populate` flag to add Vendure sample data (initial-data.json + products.csv from `@vendure/create`).
+Add Vendure sample data (initial-data.json + products.csv from `@vendure/create`).
 
 **Includes:** Default channel/zone, ~250 countries, ~20 products with images, test payment handler.
 
-**Reset database:** `docker compose down -v && ./compose-dev.sh --env-file ./configs/.env.backend --populate up -d`
+**Populate database:**
+
+```bash
+# Production
+docker compose exec backend npm run populate
+
+# Local development (run from backend directory)
+npm run populate
+```
+
+**Reset database:**
+
+```bash
+# Production
+docker compose down -v && docker compose up -d && docker compose exec backend npm run populate
+
+# Local development
+docker compose -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.dev.yml up -d
+cd backend && npm run populate
+```
