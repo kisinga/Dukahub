@@ -37,7 +37,7 @@ Production (Docker):
   Coolify/VPS → Environment variables → docker-compose.yml
 
 Local Development:
-  Manual setup → configs/.env.backend → npm run dev
+  Manual setup → configs/.env → npm run dev
 ```
 
 **Key principle:** Clear separation between production (containerized) and development (manual). No dev containers for application code.
@@ -73,8 +73,8 @@ Local Development:
 docker compose -f docker-compose.dev.yml up -d
 
 # Set up environment
-cp configs/.env.backend.example configs/.env.backend
-nano configs/.env.backend
+cp configs/env.example configs/.env
+nano configs/.env
 
 # Run backend manually
 cd backend
@@ -179,8 +179,8 @@ This provides:
 # Backend
 cd backend
 npm install
-cp ../configs/.env.backend.example ../configs/.env.backend
-# Edit configs/.env.backend with DB settings
+cp ../configs/env.example ../configs/.env
+# Edit configs/.env with DB settings
 npm run dev
 
 # Frontend (separate terminal)
@@ -251,7 +251,7 @@ docker compose exec -T postgres_db psql -U vendure vendure < backup.sql
 
 ## 🔐 Security Best Practices
 
-1. **Never commit `.env.backend`** — it's gitignored for a reason
+1. **Never commit `.env`** — it's gitignored for a reason
 2. **Use strong secrets** — generate random values for production
 3. **Don't use `--populate` in production** — only for initial dev setup
 4. **Change default passwords** — all example passwords before deployment
@@ -301,7 +301,7 @@ docker compose logs
 docker compose ps postgres_db
 
 # Check database credentials
-grep -E "^DB_" configs/.env.backend
+grep -E "^DB_" configs/.env
 
 # Connect manually to test
 docker compose exec postgres_db psql -U vendure vendure

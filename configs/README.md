@@ -4,18 +4,18 @@
 
 ## Files
 
-| File                   | Purpose                       |
-| ---------------------- | ----------------------------- |
-| `.env.backend`         | Active config (gitignored)    |
-| `.env.backend.example` | Template with secure defaults |
+| File          | Purpose                       |
+| ------------- | ----------------------------- |
+| `.env`        | Active config (gitignored)    |
+| `env.example` | Template with secure defaults |
 
 ## Quick Setup
 
 ```bash
 cd configs
-cp .env.backend.example .env.backend
+cp env.example .env
 # Update passwords and secrets
-nano .env.backend
+nano .env
 ```
 
 ## How It Works
@@ -24,7 +24,7 @@ nano .env.backend
 
 1. **Local Development** (backend running on host):
 
-   - Backend loads `configs/.env.backend` via `dotenv`
+   - Backend loads `configs/.env` via `dotenv`
    - Connects to Docker services via mapped ports (e.g., `localhost:5433`)
 
 2. **Docker Compose** (all services containerized):
@@ -34,7 +34,7 @@ nano .env.backend
 
 ### Environment Parity
 
-Both environments use **the same `.env.backend` file**. Docker-specific overrides (like `DB_HOST=postgres_db`) are set in `docker-compose.yml` environment section.
+Both environments use **the same `.env` file**. Docker-specific overrides (like `DB_HOST=postgres_db`) are set in `docker-compose.yml` environment section.
 
 ```
 Local:  backend (host) → localhost:5433 → postgres_db (container)
@@ -43,21 +43,37 @@ Docker: backend (container) → postgres_db:5432 (internal network)
 
 ## Environment Variables
 
-| Variable              | Example           | Used By           | Notes                                          |
-| --------------------- | ----------------- | ----------------- | ---------------------------------------------- |
-| `PORT`                | `3000`            | Backend           | API server port                                |
-| `DB_HOST`             | `postgres_db`     | Backend           | Database hostname                              |
-| `DB_PORT`             | `5432`            | Backend           | Database port                                  |
-| `DB_NAME`             | `vendure`         | Backend, Postgres | Database name                                  |
-| `DB_SCHEMA`           | `public`          | Backend           | PostgreSQL schema                              |
-| `DB_USERNAME`         | `vendure`         | Backend, Postgres | Database user                                  |
-| `DB_PASSWORD`         | `secure-password` | Backend, Postgres | Database password                              |
-| `SUPERADMIN_USERNAME` | `superadmin`      | Backend           | Initial admin login                            |
-| `SUPERADMIN_PASSWORD` | `secure-password` | Backend           | Initial admin password                         |
-| `COOKIE_SECRET`       | `random-32-chars` | Backend           | Session cookie encryption key                  |
-| `COOKIE_SECURE`       | `true` / `false`  | Backend           | Enable secure flag on cookies (requires HTTPS) |
+### Required Variables
 
-**Note:** `RUN_POPULATE` can be set to `true` to populate database on first run
+| Variable              | Example           | Used By           | Notes                                             |
+| --------------------- | ----------------- | ----------------- | ------------------------------------------------- |
+| `DB_NAME`             | `vendure`         | Backend, Postgres | Database name                                     |
+| `DB_USERNAME`         | `vendure`         | Backend, Postgres | Database user                                     |
+| `DB_PASSWORD`         | `secure-password` | Backend, Postgres | Database password **[CHANGE IN PRODUCTION]**      |
+| `DB_SCHEMA`           | `public`          | Backend           | PostgreSQL schema                                 |
+| `DB_HOST`             | `postgres_db`     | Backend           | Database hostname (service name in Docker)        |
+| `DB_PORT`             | `5432`            | Backend           | Database port                                     |
+| `SUPERADMIN_USERNAME` | `superadmin`      | Backend           | Initial admin login                               |
+| `SUPERADMIN_PASSWORD` | `secure-password` | Backend           | Initial admin password **[CHANGE IN PRODUCTION]** |
+| `COOKIE_SECRET`       | `random-32-chars` | Backend           | Session encryption key **[CHANGE IN PRODUCTION]** |
+
+### Application Settings
+
+| Variable        | Example              | Default       | Notes                                  |
+| --------------- | -------------------- | ------------- | -------------------------------------- |
+| `NODE_ENV`      | `production`         | `development` | Node environment mode                  |
+| `PORT`          | `3000`               | `3000`        | Backend server port                    |
+| `COOKIE_SECURE` | `true` / `false`     | `false`       | Enable secure cookies (requires HTTPS) |
+| `FRONTEND_URL`  | `http://example.com` | —             | CORS allowed origins (comma-separated) |
+
+### Optional Variables
+
+| Variable           | Example                   | Default | Notes                                       |
+| ------------------ | ------------------------- | ------- | ------------------------------------------- |
+| `ASSET_URL_PREFIX` | `https://cdn.example.com` | —       | CDN prefix for assets (empty = local serve) |
+| `RUN_POPULATE`     | `true` / `false`          | `false` | Populate DB with sample data on startup     |
+
+**Security Warning:** Always change `DB_PASSWORD`, `SUPERADMIN_PASSWORD`, and `COOKIE_SECRET` before production deployment!
 
 ## How Variables Are Used
 
@@ -73,14 +89,14 @@ Docker: backend (container) → postgres_db:5432 (internal network)
 - Uses `DB_PASSWORD` → `POSTGRES_PASSWORD`
 - (Mapped in docker-compose.yml because Postgres requires `POSTGRES_*` naming)
 
-For local development: Load `.env.backend` manually in your shell or let your IDE/tools handle it.
+For local development: Load `.env` manually in your shell or let your IDE/tools handle it.
 
 ## Security Checklist
 
 - [ ] Change `COOKIE_SECRET` to a random 32+ character string
 - [ ] Change `SUPERADMIN_PASSWORD` before deploying
 - [ ] Change `DB_PASSWORD` to a strong password
-- [ ] Never commit `.env.backend` to version control
+- [ ] Never commit `.env` to version control
 
 ## Generate Secure Values
 

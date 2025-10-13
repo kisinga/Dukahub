@@ -50,8 +50,8 @@ cd dukahub
 docker compose -f docker-compose.dev.yml up -d
 
 # Set up environment
-cp configs/.env.backend.example configs/.env.backend
-nano configs/.env.backend
+cp configs/env.example configs/.env
+nano configs/.env
 
 # Run backend
 cd backend && npm install && npm run dev

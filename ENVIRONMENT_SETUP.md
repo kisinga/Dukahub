@@ -82,7 +82,7 @@ backend:
 
 | Variable              | Required | Default      | Description                                         |
 | --------------------- | -------- | ------------ | --------------------------------------------------- |
-| `APP_ENV`             | Yes      | `dev`        | Application environment (`dev` or `production`)     |
+| `NODE_ENV`            | Yes      | `dev`        | Application environment (`dev` or `production`)     |
 | `PORT`                | Yes      | `3000`       | Port the server listens on                          |
 | `COOKIE_SECRET`       | Yes      | -            | Secret for cookie encryption (random string)        |
 | `SUPERADMIN_USERNAME` | Yes      | `superadmin` | Initial superadmin username                         |

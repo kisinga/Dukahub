@@ -282,7 +282,7 @@ cd backend && npm run populate
 
 ### Configuration
 
-Single source of truth: `configs/.env.backend`
+Single source of truth: `configs/.env`
 
 ```
 DB_NAME=dukahub

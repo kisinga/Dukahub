@@ -17,8 +17,8 @@ import path from 'path';
 // Load environment variables from .env file for local development
 // Docker containers get env vars from docker-compose (these override .env)
 const envPaths = [
-    path.join(__dirname, '../../configs/.env.backend'), // Local dev (ts-node from src/)
-    path.join(__dirname, '../configs/.env.backend'),    // Compiled (dist/)
+    path.join(__dirname, '../../configs/.env'), // Local dev (ts-node from src/)
+    path.join(__dirname, '../configs/.env'),    // Compiled (dist/)
 ];
 const envPath = envPaths.find(p => fs.existsSync(p));
 if (envPath) {
