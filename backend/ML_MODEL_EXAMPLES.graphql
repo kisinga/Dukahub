@@ -1,0 +1,164 @@
+# ML Model Management - GraphQL Examples
+# Use these in the GraphiQL playground at /admin-api/graphiql
+
+# =============================================================================
+# QUERIES
+# =============================================================================
+
+# Get ML model information for a channel
+query GetMlModelInfo {
+  mlModelInfo(channelId: "1") {
+    hasModel
+    version
+    status
+    modelJson {
+      id
+      name
+      source
+      preview
+      fileSize
+      mimeType
+    }
+    modelBin {
+      id
+      name
+      source
+      fileSize
+      mimeType
+    }
+    metadata {
+      id
+      name
+      source
+      fileSize
+      mimeType
+    }
+  }
+}
+
+# =============================================================================
+# MUTATIONS
+# =============================================================================
+
+# Upload model.json file
+mutation UploadModelJson {
+  uploadMlModelFile(
+    channelId: "1"
+    file: null # This will be the uploaded file
+    fileType: "model"
+  ) {
+    id
+    name
+    source
+    preview
+    fileSize
+  }
+}
+
+# Upload weights.bin or similar binary file
+mutation UploadModelBinary {
+  uploadMlModelFile(
+    channelId: "1"
+    file: null # This will be the uploaded file
+    fileType: "binary"
+  ) {
+    id
+    name
+    source
+    fileSize
+  }
+}
+
+# Upload metadata.json file
+mutation UploadMetadata {
+  uploadMlModelFile(
+    channelId: "1"
+    file: null # This will be the uploaded file
+    fileType: "metadata"
+  ) {
+    id
+    name
+    source
+    fileSize
+  }
+}
+
+# Set model status to active
+mutation ActivateModel {
+  setMlModelStatus(channelId: "1", status: "active")
+}
+
+# Set model status to inactive
+mutation DeactivateModel {
+  setMlModelStatus(channelId: "1", status: "inactive")
+}
+
+# Set model status to training
+mutation SetTrainingStatus {
+  setMlModelStatus(channelId: "1", status: "training")
+}
+
+# Clear all ML model files for a channel
+mutation ClearModel {
+  clearMlModel(channelId: "1")
+}
+
+# =============================================================================
+# COMPLETE WORKFLOW EXAMPLE
+# =============================================================================
+
+# Step 1: Upload model.json
+# (Use GraphiQL file upload interface)
+
+# Step 2: Upload weights file
+# (Use GraphiQL file upload interface)
+
+# Step 3: Upload metadata.json
+# (Use GraphiQL file upload interface)
+
+# Step 4: Activate the model
+mutation ActivateUploadedModel {
+  setMlModelStatus(channelId: "1", status: "active")
+}
+
+# Step 5: Verify everything is uploaded
+query VerifyModelUploaded {
+  mlModelInfo(channelId: "1") {
+    hasModel
+    version
+    status
+    modelJson {
+      name
+      source
+    }
+    modelBin {
+      name
+      source
+    }
+    metadata {
+      name
+      source
+    }
+  }
+}
+
+# =============================================================================
+# SHOP API QUERIES (for frontend)
+# =============================================================================
+
+# Query from Shop API to get model files for loading in frontend
+query GetModelForChannel {
+  mlModelInfo(channelId: "1") {
+    hasModel
+    status
+    modelJson {
+      source
+    }
+    modelBin {
+      source
+    }
+    metadata {
+      source
+    }
+  }
+}

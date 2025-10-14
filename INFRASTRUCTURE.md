@@ -485,6 +485,27 @@ Channel Data → Vendure DB → Custom Fields → Volume Mount
 - **Error Handling**: Improved error handling for API failures
 - **Caching**: Maintains IndexedDB caching for offline operation
 
+### Admin UI Integration
+
+#### Custom Fields in Channel Settings
+
+The ML model custom fields appear in the Channel detail page in the Admin UI:
+
+- **ML Model JSON File**: Dropdown to select uploaded model.json asset
+- **ML Model Binary Files**: Dropdown to select uploaded binary files
+- **ML Model Metadata**: Dropdown to select uploaded metadata.json asset
+- **ML Model Version**: Text field for version tracking
+- **ML Model Status**: Text field for status (active/inactive)
+
+#### Upload Workflow
+
+1. Go to **Assets** section in Admin UI
+2. Upload ML model files (model.json, metadata.json, binary files)
+3. Tag files appropriately (e.g., "ml-model", "model-json", "metadata")
+4. Go to **Settings → Channels**
+5. Select the appropriate channel
+6. Use the custom fields dropdowns to associate uploaded files with the channel
+
 ### API Endpoints
 
 #### GraphQL Queries

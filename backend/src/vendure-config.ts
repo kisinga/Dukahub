@@ -1,13 +1,12 @@
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
 import {
-    Asset,
     DefaultJobQueuePlugin,
     DefaultSchedulerPlugin,
     DefaultSearchPlugin,
     dummyPaymentHandler,
     LanguageCode,
-    VendureConfig,
+    VendureConfig
 } from '@vendure/core';
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
@@ -15,6 +14,7 @@ import { config as dotenvConfig } from 'dotenv';
 import { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
+import { MlModelPlugin } from './plugins/ml-model.plugin';
 
 // ML Model functionality handled via existing AssetServerPlugin and custom middleware
 
@@ -50,14 +50,6 @@ export const config: VendureConfig = {
             adminApiDebug: true,
             shopApiDebug: true,
         } : {}),
-        // ML Model GraphQL API Extensions
-        apolloServerPlugins: [
-            {
-                async serverWillStart() {
-                    console.log('ML Model GraphQL API extensions loaded');
-                },
-            },
-        ],
         // Custom middleware
         middleware: [
             // Health check endpoint
@@ -66,61 +58,6 @@ export const config: VendureConfig = {
                     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
                 },
                 route: 'health',
-            },
-            // Serve ML model files through API endpoints
-            {
-                handler: async (req: any, res: any, next: any) => {
-                    try {
-                        const { channelId, filename } = req.params;
-
-                        // Get channel with ML model assets
-                        const channelService = (global as any).channelService;
-                        const ctx = req.ctx || { channel: { id: channelId } };
-
-                        const channel = await channelService.findOne(ctx, channelId);
-                        if (!channel) {
-                            return res.status(404).json({ error: 'Channel not found' });
-                        }
-
-                        const customFields = channel.customFields as any;
-
-                        // Determine which asset to serve based on filename
-                        let asset: any = null;
-                        if (filename === 'model.json' && customFields.mlModelJson) {
-                            asset = customFields.mlModelJson;
-                        } else if (filename === 'metadata.json' && customFields.mlMetadata) {
-                            asset = customFields.mlMetadata;
-                        }
-
-                        if (!asset) {
-                            return res.status(404).json({ error: 'ML model file not found' });
-                        }
-
-                        // Serve the asset file
-                        const assetPath = path.join(process.cwd(), 'static', 'assets', asset.source);
-
-                        if (!fs.existsSync(assetPath)) {
-                            return res.status(404).json({ error: 'ML model file not found on disk' });
-                        }
-
-                        // Set appropriate headers
-                        if (filename.endsWith('.json')) {
-                            res.setHeader('Content-Type', 'application/json');
-                        } else if (filename.endsWith('.bin')) {
-                            res.setHeader('Content-Type', 'application/octet-stream');
-                        }
-
-                        res.setHeader('Access-Control-Allow-Origin', '*');
-                        res.setHeader('Access-Control-Allow-Methods', 'GET');
-
-                        // Send file
-                        res.sendFile(assetPath);
-                    } catch (error) {
-                        console.error('Error serving ML model file:', error);
-                        res.status(500).json({ error: 'Internal server error' });
-                    }
-                },
-                route: 'ml-models/:channelId/:filename',
             },
         ],
     },
@@ -157,28 +94,28 @@ export const config: VendureConfig = {
     customFields: {
         Channel: [
             {
-                name: 'mlModelJson',
-                type: 'relation',
-                entity: Asset,
+                name: 'mlModelJsonId',
+                type: 'string',
                 nullable: true,
-                label: [{ languageCode: LanguageCode.en, value: 'ML Model JSON File' }],
-                description: [{ languageCode: LanguageCode.en, value: 'TensorFlow.js model.json file for product recognition' }],
+                label: [{ languageCode: LanguageCode.en, value: 'ML Model JSON Asset ID' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Asset ID for model.json file' }],
+                ui: { component: 'asset-form-input' },
             },
             {
-                name: 'mlModelBin',
-                type: 'relation',
-                entity: Asset,
+                name: 'mlModelBinId',
+                type: 'string',
                 nullable: true,
-                label: [{ languageCode: LanguageCode.en, value: 'ML Model Binary Files' }],
-                description: [{ languageCode: LanguageCode.en, value: 'TensorFlow.js model binary files (weights.bin, etc.)' }],
+                label: [{ languageCode: LanguageCode.en, value: 'ML Model Binary Asset ID' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Asset ID for weights.bin file' }],
+                ui: { component: 'asset-form-input' },
             },
             {
-                name: 'mlMetadata',
-                type: 'relation',
-                entity: Asset,
+                name: 'mlMetadataId',
+                type: 'string',
                 nullable: true,
-                label: [{ languageCode: LanguageCode.en, value: 'ML Model Metadata' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Model metadata JSON file with training information' }],
+                label: [{ languageCode: LanguageCode.en, value: 'ML Model Metadata Asset ID' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Asset ID for metadata.json file' }],
+                ui: { component: 'asset-form-input' },
             },
             {
                 name: 'mlModelVersion',
@@ -191,13 +128,15 @@ export const config: VendureConfig = {
                 name: 'mlModelStatus',
                 type: 'string',
                 nullable: true,
+                defaultValue: 'inactive',
                 label: [{ languageCode: LanguageCode.en, value: 'ML Model Status' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Status of the ML model (active, training, inactive)' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Status: active, inactive, or training' }],
             },
         ],
     },
     plugins: [
         GraphiqlPlugin.init(),
+        MlModelPlugin,
         AssetServerPlugin.init({
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),
