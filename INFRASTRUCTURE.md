@@ -187,6 +187,22 @@ Deploy to any container platform (Coolify, Railway, Render, Fly.io, etc.).
 | **Postgres** | `postgres:16-alpine` | 5432 | Persistent storage   |
 | **Redis**    | `redis:7-alpine`     | 6379 | Persistent storage   |
 
+### Coolify Deployment
+
+**Backend Environment:**
+
+- Set all database/Redis variables from [Environment Variables](#backend--database) section
+- Note the backend's **service ID** (shown in container name, e.g., `a4skko0gg448sk4o0kg4gco8`)
+
+**Frontend Environment:**
+
+```bash
+BACKEND_HOST=a4skko0gg448sk4o0kg4gco8  # Use backend's service ID
+BACKEND_PORT=3000
+```
+
+**Important:** Use the backend's **service ID** (the long alphanumeric prefix from the container name), NOT the resource name. The service ID is stable across redeployments.
+
 ### Deployment Steps
 
 #### 1. Create Database Services
