@@ -37,12 +37,19 @@ All configuration is managed via environment variables.
 
 ### Frontend (Docker Only)
 
-| Variable       | Example   | Default   | Notes                          |
-| -------------- | --------- | --------- | ------------------------------ |
-| `BACKEND_HOST` | `backend` | `backend` | Backend hostname to connect to |
-| `BACKEND_PORT` | `3000`    | `3000`    | Backend port to connect to     |
+| Variable       | Example           | Default   | Notes                                         |
+| -------------- | ----------------- | --------- | --------------------------------------------- |
+| `BACKEND_HOST` | `api.example.com` | `backend` | Backend hostname, IP, or domain to connect to |
+| `BACKEND_PORT` | `3000`            | `3000`    | Backend port to connect to                    |
 
-**⚠️ Critical Constraint:** The `BACKEND_HOST` must be an internal Docker service name or container name accessible within the **same Docker network** as the frontend. The frontend's Nginx uses Docker's internal DNS resolver (`127.0.0.11`) to look up this hostname at request time. External URLs or backends running on different Docker engines/hosts will **not** work with the current Nginx proxy configuration.
+**Flexible Backend Connection:** The frontend can connect to backends anywhere:
+
+- **Same Docker network:** Use service name (e.g., `backend`)
+- **Different server:** Use IP address (e.g., `192.168.1.100`)
+- **Different cloud provider:** Use domain name (e.g., `api.railway.app`)
+- **Local dev from container:** Use `host.docker.internal`
+
+The nginx configuration supports both Docker internal DNS and public DNS resolution.
 
 ### Optional Settings
 
@@ -240,12 +247,22 @@ Update `FRONTEND_URL` in backend environment to match your frontend domain.
 
 ## Docker Containers
 
-Run containers independently for flexible deployment.
+Run containers independently for flexible deployment. Services are **fully decoupled** and can be deployed on different servers, different container platforms, or different cloud providers.
 
 ### Backend Container
 
+**Build:**
+
 ```bash
-docker run -p 3000:3000 \
+cd backend
+docker build -t dukahub-backend .
+```
+
+**Run:**
+
+```bash
+docker run -d -p 3000:3000 \
+  --name dukahub-backend \
   -e DB_HOST=your-postgres-host \
   -e DB_PORT=5432 \
   -e DB_NAME=vendure \
@@ -256,17 +273,45 @@ docker run -p 3000:3000 \
   -e SUPERADMIN_USERNAME=superadmin \
   -e SUPERADMIN_PASSWORD=secure-password \
   -e COOKIE_SECRET=your-32-char-secret \
+  -e FRONTEND_URL=http://your-frontend-domain:4200 \
   dukahub-backend
 ```
 
+**Notes:**
+
+- `DB_HOST` and `REDIS_HOST` can be hostnames, IPs, or service names
+- Backend is completely independent - doesn't need to know about frontend infrastructure
+- Exposes `/health` endpoint for health checks
+
 ### Frontend Container
 
+**Build:**
+
 ```bash
-docker run -p 4200:4200 \
-  -e BACKEND_HOST=your-backend-host \
+cd frontend
+docker build -t dukahub-frontend .
+```
+
+**Run:**
+
+```bash
+docker run -d -p 4200:4200 \
+  --name dukahub-frontend \
+  -e BACKEND_HOST=your-backend-host-or-ip \
   -e BACKEND_PORT=3000 \
   dukahub-frontend
 ```
+
+**Notes:**
+
+- `BACKEND_HOST` can be a hostname, IP address, or domain name
+- Can resolve hostnames via Docker DNS (if same network) OR public DNS
+- Works with backends on different servers/platforms
+- Example values for `BACKEND_HOST`:
+  - Same Docker network: `backend` (service name)
+  - Different Docker host: `192.168.1.100` or `backend.example.com`
+  - Different cloud provider: `backend-api.railway.app`
+  - Local dev backend: `host.docker.internal` (on Docker Desktop)
 
 ### Build Images
 

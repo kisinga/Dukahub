@@ -17,6 +17,10 @@ echo "   Backend: ${BACKEND_HOST}:${BACKEND_PORT}"
 # Substitute environment variables in nginx config template
 envsubst '${BACKEND_HOST} ${BACKEND_PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
 
+# Debug: Show what was actually substituted
+echo "   Substituted config preview:"
+grep -A 2 "set \$backend_url" /etc/nginx/conf.d/default.conf | head -3 || echo "   (config check skipped)"
+
 echo "✅ Configuration complete"
 
 # Start nginx
