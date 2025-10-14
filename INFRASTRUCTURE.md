@@ -189,21 +189,60 @@ Deploy to any container platform (Coolify, Railway, Render, Fly.io, etc.).
 
 ### Coolify Deployment
 
-**Backend Environment:**
+#### 1. Setup Database and Redis Services
 
-- Set all database/Redis variables from [Environment Variables](#backend--database) section
-- Note the backend's **service ID** (shown in container name, e.g., `a4skko0gg448sk4o0kg4gco8`)
+Create PostgreSQL 16 and Redis 7 services in Coolify. Note their internal service names.
 
-**Frontend Environment:**
+#### 2. Deploy Backend
+
+**Environment Variables:**
+
+Set all variables from [Backend & Database](#backend--database) section:
+
+- Database credentials and connection details
+- Redis connection details
+- Admin credentials
+- Security keys (Cookie secret)
+
+**Storage (CRITICAL):**
+
+Add persistent storage to retain uploaded assets across redeployments:
+
+```
+Volume Name: dukahub_backend_assets
+Source Path: (leave empty)
+Destination Path: /usr/src/app/static/assets
+```
+
+**Why this is critical:**
+
+- Without this volume, all uploaded product images are lost on every redeploy
+- Persists: product images, previews, cached transformations, ML models
+- Can be shared with other containers (backup services, image processors)
+
+**After deployment:**
+
+Note the backend's **service ID** (e.g., `a4skko0gg448sk4o0kg4gco8`) - you'll need this for frontend configuration.
+
+Populate the database (one-time):
 
 ```bash
-BACKEND_HOST=a4skko0gg448sk4o0kg4gco8  # Use backend's service ID
+# Access backend container shell in Coolify
+npm run populate
+```
+
+#### 3. Deploy Frontend
+
+**Environment Variables:**
+
+```bash
+BACKEND_HOST=a4skko0gg448sk4o0kg4gco8  # Use backend's service ID from step 2
 BACKEND_PORT=3000
 ```
 
 **Important:** Use the backend's **service ID** (the long alphanumeric prefix from the container name), NOT the resource name. The service ID is stable across redeployments.
 
-### Deployment Steps
+### Other Platforms (Railway, Render, Fly.io, etc.)
 
 #### 1. Create Database Services
 
