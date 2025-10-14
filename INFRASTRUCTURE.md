@@ -42,6 +42,8 @@ All configuration is managed via environment variables.
 | `BACKEND_HOST` | `backend` | `backend` | Backend hostname to connect to |
 | `BACKEND_PORT` | `3000`    | `3000`    | Backend port to connect to     |
 
+**⚠️ Critical Constraint:** The `BACKEND_HOST` must be an internal Docker service name or container name accessible within the **same Docker network** as the frontend. The frontend's Nginx uses Docker's internal DNS resolver (`127.0.0.11`) to look up this hostname at request time. External URLs or backends running on different Docker engines/hosts will **not** work with the current Nginx proxy configuration.
+
 ### Optional Settings
 
 | Variable           | Example                   | Default       | Notes                             |
