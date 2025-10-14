@@ -435,6 +435,180 @@ Use your platform's UI to recreate the database service, then run `npm run popul
 
 ---
 
+## ML Model Management System
+
+### Overview
+
+The system has been refactored to maintain **single pathway for information flow** through APIs rather than direct filesystem access. This ensures:
+
+- ✅ **Consistent data flow** - All ML model operations go through the same API layer
+- ✅ **Channel-specific models** - Each channel can have its own ML model
+- ✅ **Centralized management** - Models are managed through the admin interface
+- ✅ **Proper permissions** - Access control through Vendure's permission system
+- ✅ **Persistent storage** - Models stored in Docker volumes with proper ownership
+
+### Architecture Changes
+
+#### Before: Direct File Access
+
+```
+Frontend → Direct filesystem access → /assets/ml-models/
+└── ${channelId}/
+    ├── latest/
+    │   ├── model.json
+    │   ├── metadata.json
+    │   └── *.bin files
+    └── versions/
+```
+
+#### After: API-Managed Models
+
+```
+Frontend → GraphQL API → Backend Plugin → Asset Storage
+    ↓              ↓              ↓           ↓
+Channel Data → Vendure DB → Custom Fields → Volume Mount
+```
+
+### New Components
+
+#### 1. ML Model Plugin (`backend/src/plugins/ml-model.plugin.ts`)
+
+- **Custom Fields**: Adds `mlModelJson`, `mlModelBin`, `mlMetadata`, `mlModelVersion`, `mlModelStatus` to Channel entity
+- **GraphQL API**: Provides queries and mutations for model management
+- **File Serving**: Serves ML model files through authenticated API endpoints
+- **Admin UI**: Angular component for model upload/management in admin panel
+
+#### 2. Updated Frontend Service (`frontend/src/app/core/services/ml-model.service.ts`)
+
+- **API Integration**: Uses GraphQL queries instead of direct file fetching
+- **Model Loading**: Loads models from `/admin-api/ml-models/{channelId}/` endpoints
+- **Error Handling**: Improved error handling for API failures
+- **Caching**: Maintains IndexedDB caching for offline operation
+
+### API Endpoints
+
+#### GraphQL Queries
+
+```graphql
+query GetMlModelInfo($channelId: ID!) {
+  mlModelInfo(channelId: $channelId) {
+    hasModel
+    version
+    status
+    trainedAt
+    productCount
+    imageCount
+    labels
+  }
+}
+```
+
+#### GraphQL Mutations
+
+```graphql
+mutation UploadMlModelFiles(
+  $channelId: ID!
+  $modelJson: Upload!
+  $metadata: Upload!
+) {
+  uploadMlModelFiles(
+    channelId: $channelId
+    modelJson: $modelJson
+    metadata: $metadata
+  )
+}
+```
+
+#### REST Endpoints
+
+- `GET /admin-api/ml-models/{channelId}/model.json` - Serve TensorFlow model files
+- `GET /admin-api/ml-models/{channelId}/metadata.json` - Serve model metadata
+
+### Usage Workflow
+
+#### For Administrators:
+
+1. **Access Admin Panel** → Navigate to "ML Models" section
+2. **Select Channel** → Choose the channel for model management
+3. **Upload Files** → Upload `model.json` and `metadata.json` files
+4. **Verify Status** → Check model information and training data
+
+#### For Frontend Application:
+
+1. **Check Model Availability** → Use `checkModelExists(channelId)` API call
+2. **Load Model** → Use `loadModel(channelId)` to load TensorFlow model via API
+3. **Make Predictions** → Use loaded model for product recognition
+4. **Handle Updates** → Check for model updates via `checkForUpdate()` API
+
+### Benefits Achieved
+
+#### 1. Single Information Pathway
+
+- **Before**: Frontend directly accessed filesystem (`/assets/ml-models/`)
+- **After**: All access through authenticated GraphQL APIs
+- **Result**: Consistent data flow, proper authentication, and centralized control
+
+#### 2. Channel-Specific Models
+
+- **Implementation**: Each channel has separate custom fields for ML model assets
+- **Storage**: Models stored as Vendure assets with proper metadata
+- **Access**: Frontend queries by channel ID through API
+
+#### 3. Persistent Storage
+
+- **Volume Mounts**: ML model files stored in Docker volumes
+- **Ownership**: Proper UID/GID permissions for container user
+- **Persistence**: Files survive container restarts and deployments
+
+#### 4. Manual Upload Process
+
+- **Admin Interface**: Drag-and-drop upload in admin panel
+- **Validation**: File type and size validation
+- **Status Tracking**: Version and status management
+
+#### 5. API-First Architecture
+
+- **GraphQL Integration**: Full GraphQL API for model management
+- **Authentication**: Proper permission checks for model operations
+- **Error Handling**: Comprehensive error handling and user feedback
+
+### File Structure
+
+```
+backend/src/plugins/
+├── ml-model.plugin.ts          # Main plugin with resolvers and middleware
+└── ml-model-admin.component.ts # Admin UI Angular component
+
+frontend/src/app/core/services/
+└── ml-model.service.ts         # Updated to use API endpoints
+
+backend/src/vendure-config.ts   # Updated to include ML model plugin
+```
+
+### Migration Notes
+
+#### Breaking Changes:
+
+- **Frontend**: ML service now requires Apollo GraphQL client
+- **Backend**: Direct file access removed, API endpoints added
+- **Storage**: Models now stored as Vendure assets in volumes
+
+#### Deployment Requirements:
+
+1. **Volume Mounts**: Ensure `/usr/src/app/static/assets` is mounted as Docker volume
+2. **Permissions**: Volume must be owned by UID 1001 (vendure user)
+3. **Admin Access**: Users need `UpdateCatalog` permission for model management
+
+#### Rollback Plan:
+
+If issues occur, the old direct file access can be restored by:
+
+1. Removing ML model plugin from vendure config
+2. Adding back direct file serving middleware
+3. Reverting frontend service to direct file access
+
+---
+
 ## Troubleshooting
 
 ### Backend won't connect to database

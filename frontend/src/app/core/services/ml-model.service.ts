@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { gql } from '@apollo/client';
 import * as tf from '@tensorflow/tfjs';
 
 /**
@@ -66,35 +67,62 @@ export class MlModelService {
     readonly error = this.errorSignal.asReadonly();
 
     /**
-     * Check if model exists for the given channel
+     * Execute GraphQL query using Apollo Client
+     */
+    private async queryGraphQL<T>(query: string, variables?: any): Promise<{ data?: T; errors?: any }> {
+        try {
+            // Use Apollo Client for GraphQL queries
+            const apollo = (window as any).apolloClient;
+            if (!apollo) {
+                throw new Error('Apollo Client not available. Make sure it\'s properly configured.');
+            }
+
+            const result = await apollo.query({
+                query: gql`${query}`,
+                variables,
+                fetchPolicy: 'network-only' // Always fetch fresh data
+            });
+
+            return { data: result.data };
+        } catch (error: any) {
+            console.error('GraphQL query error:', error);
+            return { errors: error };
+        }
+    }
+
+    /**
+     * Check if model exists for the given channel using GraphQL API
      * Returns { exists: boolean, error?: ModelError }
      */
     async checkModelExists(channelId: string): Promise<{ exists: boolean; error?: ModelError }> {
         try {
-            const metadataUrl = `/assets/ml-models/${channelId}/latest/metadata.json`;
-            const response = await fetch(metadataUrl, { method: 'HEAD' });
-
-            if (response.ok) {
-                return { exists: true };
-            }
-
-            if (response.status === 404) {
-                return {
-                    exists: false,
-                    error: {
-                        type: ModelErrorType.NOT_FOUND,
-                        message: 'No ML model found for this store. Train a model first to use product recognition.',
-                        technicalDetails: `Model not found at: ${metadataUrl}`
+            // Use GraphQL API instead of direct file access
+            const response = await this.queryGraphQL<{
+                mlModelInfo: {
+                    hasModel: boolean;
+                    version?: string;
+                    status?: string;
+                }
+            }>(`
+                query CheckMlModel($channelId: ID!) {
+                    mlModelInfo(channelId: $channelId) {
+                        hasModel
+                        version
+                        status
                     }
-                };
+                }
+            `, { channelId });
+
+            if (response.data?.mlModelInfo?.hasModel) {
+                return { exists: true };
             }
 
             return {
                 exists: false,
                 error: {
-                    type: ModelErrorType.NETWORK_ERROR,
-                    message: `Failed to check model availability (HTTP ${response.status})`,
-                    technicalDetails: `${response.status} ${response.statusText}`
+                    type: ModelErrorType.NOT_FOUND,
+                    message: 'No ML model found for this store. Upload a model first to use product recognition.',
+                    technicalDetails: `No ML model configured for channel ${channelId}`
                 }
             };
         } catch (error: any) {
@@ -111,7 +139,7 @@ export class MlModelService {
     }
 
     /**
-     * Load model for the given channel
+     * Load model for the given channel using API endpoints
      * Uses IndexedDB caching via TensorFlow.js for offline operation
      */
     async loadModel(channelId: string): Promise<boolean> {
@@ -124,7 +152,7 @@ export class MlModelService {
         this.errorSignal.set(null);
 
         try {
-            // First check if model exists on server
+            // First check if model exists via API
             const existsCheck = await this.checkModelExists(channelId);
             if (!existsCheck.exists) {
                 this.errorSignal.set(existsCheck.error!);
@@ -136,13 +164,14 @@ export class MlModelService {
             await tf.ready();
             console.log(`🔧 TensorFlow.js backend ready: ${tf.getBackend()}`);
 
-            const baseUrl = `/assets/ml-models/${channelId}/latest/`;
+            // Use API endpoints instead of direct file access
+            const baseUrl = `/admin-api/ml-models/${channelId}/`;
             const modelUrl = `${baseUrl}model.json`;
             const cacheKey = `indexeddb://${this.MODEL_CACHE_NAME}/${channelId}`;
 
-            // Load metadata first (lightweight, no need to cache separately)
-            console.log('📄 Loading model metadata...');
-            this.metadata = await this.fetchMetadata(`${baseUrl}metadata.json`);
+            // Load metadata first via API
+            console.log('📄 Loading model metadata via API...');
+            this.metadata = await this.fetchMetadataFromAPI(channelId);
 
             // Try loading from IndexedDB cache first
             try {
@@ -150,8 +179,8 @@ export class MlModelService {
                 this.model = await tf.loadLayersModel(cacheKey);
                 console.log('✅ Model loaded from IndexedDB cache (offline-ready)');
             } catch (cacheError) {
-                // Cache miss - load from network and save to cache
-                console.log('🌐 Cache miss, loading from network...');
+                // Cache miss - load from API and save to cache
+                console.log('🌐 Cache miss, loading from API...');
                 this.model = await tf.loadLayersModel(modelUrl);
 
                 // Save to IndexedDB for future offline use
@@ -183,17 +212,64 @@ export class MlModelService {
     }
 
     /**
-     * Fetch metadata JSON
+     * Fetch metadata from API instead of direct file access
      */
-    private async fetchMetadata(url: string): Promise<ModelMetadata> {
-        const response = await fetch(url);
-        if (!response.ok) {
-            if (response.status === 404) {
-                throw new Error('Model metadata not found. Please retrain the model.');
+    private async fetchMetadataFromAPI(channelId: string): Promise<ModelMetadata> {
+        try {
+            // Get metadata via GraphQL API
+            const response = await this.queryGraphQL<{
+                mlModelInfo: {
+                    trainedAt?: string;
+                    productCount?: number;
+                    imageCount?: number;
+                    labels?: string[];
+                    version?: string;
+                    status?: string;
+                }
+            }>(`
+                query GetMlModelInfo($channelId: ID!) {
+                    mlModelInfo(channelId: $channelId) {
+                        trainedAt
+                        productCount
+                        imageCount
+                        labels
+                        version
+                        status
+                    }
+                }
+            `, { channelId });
+
+            if (!response.data?.mlModelInfo) {
+                throw new Error('Model metadata not found. Please upload a model first.');
             }
-            throw new Error(`Failed to fetch metadata: HTTP ${response.status} ${response.statusText}`);
+
+            const info = response.data.mlModelInfo;
+
+            // Fetch the actual metadata file
+            const metadataUrl = `/admin-api/ml-models/${channelId}/metadata.json`;
+            const metadataResponse = await fetch(metadataUrl);
+
+            if (!metadataResponse.ok) {
+                throw new Error(`Failed to fetch metadata file: HTTP ${metadataResponse.status}`);
+            }
+
+            const metadata = await metadataResponse.json();
+
+            return {
+                version: info.version || metadata.version || '1.0.0',
+                trainedAt: info.trainedAt || metadata.trainedAt || new Date().toISOString(),
+                channelId,
+                productCount: info.productCount || metadata.productCount || 0,
+                imageCount: info.imageCount || metadata.imageCount || 0,
+                trainingDuration: metadata.trainingDuration || 0,
+                labels: info.labels || metadata.labels || [],
+                imageSize: metadata.imageSize || 224,
+                modelType: metadata.modelType || 'teachable-machine',
+            };
+        } catch (error: any) {
+            console.error('Error fetching metadata from API:', error);
+            throw new Error(`Failed to load model metadata: ${error.message}`);
         }
-        return await response.json();
     }
 
     /**
@@ -363,19 +439,34 @@ export class MlModelService {
     }
 
     /**
-     * Check if cached model needs update
+     * Check if cached model needs update using API
      */
     async checkForUpdate(channelId: string): Promise<boolean> {
         if (!this.metadata) return true;
 
         try {
-            const metadataUrl = `/assets/ml-models/${channelId}/latest/metadata.json`;
-            const response = await fetch(metadataUrl);
-            if (!response.ok) return false;
+            // Get current model info via API
+            const response = await this.queryGraphQL<{
+                mlModelInfo: {
+                    trainedAt?: string;
+                    version?: string;
+                }
+            }>(`
+                query GetMlModelInfo($channelId: ID!) {
+                    mlModelInfo(channelId: $channelId) {
+                        trainedAt
+                        version
+                    }
+                }
+            `, { channelId });
 
-            const remoteMetadata: ModelMetadata = await response.json();
+            if (!response.data?.mlModelInfo) return false;
+
+            const remoteInfo = response.data.mlModelInfo;
+
+            // Compare cached vs remote training time
             const cachedTime = new Date(this.metadata.trainedAt);
-            const remoteTime = new Date(remoteMetadata.trainedAt);
+            const remoteTime = new Date(remoteInfo.trainedAt || '');
 
             return remoteTime > cachedTime;
         } catch (error) {
