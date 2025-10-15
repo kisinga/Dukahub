@@ -160,7 +160,138 @@ class ModelSyncService {
 
 ## Backend Implementation
 
-### Plugin Structure
+### Current: Tag-Based Versioning + Custom Field Activation ⭐
+
+**Architecture:**
+
+- **Active Model**: Asset IDs referenced in Channel custom fields
+- **Ownership**: Assets tagged with `channel-{id}` (permanent)
+- **Versioning**: Tags track version and training date
+- **History**: All versions preserved in Asset system
+
+**Why this works:**
+
+- ✅ Channel-aware via tags and assignment
+- ✅ Version history visible in Asset tags
+- ✅ Active model = simple ID reference
+- ✅ 2-minute rollback (change 3 IDs)
+- ✅ Fully automatable
+
+**Tag Schema:**
+
+```
+ml-model           # Category identifier
+channel-{id}       # Permanent ownership (never removed)
+v{version}         # Semantic version (v1.0.0, v2.1.0)
+trained-{date}     # Training date (YYYY-MM-DD)
+```
+
+**Channel Custom Fields (minimal):**
+
+```typescript
+mlModelJsonId; // Asset ID for model.json
+mlModelBinId; // Asset ID for weights.bin
+mlMetadataId; // Asset ID for metadata.json
+```
+
+#### Manual Deployment Workflow
+
+**1. Upload Files** (Admin UI: Catalog → Assets → Create)
+
+```
+Upload 3 files (any names)
+For EACH file, add tags:
+  ✓ ml-model
+  ✓ channel-2        (your channel ID)
+  ✓ v3.0.0           (version)
+  ✓ trained-2025-10-15  (today)
+
+Note Asset IDs: 150, 151, 152
+```
+
+**2. Assign to Channel** (GraphiQL: /admin-api/graphiql)
+
+```graphql
+mutation {
+  assignAssetsToChannel(
+    input: { assetIds: ["150", "151", "152"], channelId: "2" }
+  ) {
+    id
+  }
+}
+```
+
+**3. Activate Version** (Admin UI: Settings → Channels → ML Model tab)
+
+```
+ML Model JSON Asset ID:    150
+ML Model Weights Asset ID: 151
+ML Metadata Asset ID:      152
+Save
+```
+
+**Rollback:** Change custom field IDs to previous version's Asset IDs (2 minutes)
+
+#### Automated Deployment
+
+```bash
+node backend/scripts/deploy-ml-model.js \
+  --channel=2 \
+  --version=3.0.0 \
+  --model=./models/model.json \
+  --weights=./models/weights.bin \
+  --metadata=./models/metadata.json \
+  --token=YOUR_ADMIN_TOKEN
+```
+
+See `backend/scripts/deploy-ml-model.js` for implementation.
+
+#### Frontend Integration
+
+```typescript
+// Service already implements this pattern
+const modelService = inject(MlModelService);
+await modelService.loadModel(channelId);
+
+// Under the hood:
+// 1. Queries channel.customFields for Asset IDs
+// 2. Fetches assets (includes tags with version info)
+// 3. Loads from /assets/{source}
+// 4. Caches in IndexedDB with version key
+```
+
+#### Version Management
+
+**List all versions for channel:**
+
+```
+Admin UI: Catalog → Assets
+Filter by tags: ml-model, channel-2
+All versions visible with training dates
+```
+
+**Check active version:**
+
+```graphql
+query {
+  channel(id: "2") {
+    customFields {
+      mlModelJsonId
+      mlModelBinId
+      mlMetadataId
+    }
+  }
+  asset(id: "150") {
+    tags {
+      value
+    } # Shows: v3.0.0, trained-2025-10-15
+  }
+}
+```
+
+**Delete old versions:** Select assets in Admin UI → Delete (keep ≥2 versions for rollback)
+
+### Future: Plugin Structure
 
 ```
 backend/src/plugins/ai-model-management/
@@ -294,24 +425,30 @@ async addItemToOrder(productId: string, ctx: RequestContext) {
 - 1000 deleted channels = ~5 GB = $0.10/month storage cost
 - Future: Weekly cleanup job
 
-## Implementation Checklist
+## Implementation Status
 
-### Backend
+### ✅ Completed (MVP - Manual Upload)
 
-- [ ] Install `@tensorflow/tfjs-node` or Teachable Machine API client
-- [ ] Create plugin directory structure
-- [ ] Implement `ModelTrainingService`
-  - [ ] Fetch product images from database
-  - [ ] Train MobileNet model
-  - [ ] Generate metadata.json
-- [ ] Implement `ModelStorageService`
-  - [ ] Atomic write (temp → latest)
-  - [ ] File validation
-- [ ] Create GraphQL mutation `trainModelForChannel`
-- [ ] Add training job to Vendure job queue
-- [ ] Test end-to-end training flow
+**Backend:**
 
-### Frontend
+- [x] ML Model plugin with GraphQL API
+- [x] Asset-based storage (via Vendure AssetService)
+- [x] Channel custom fields for model tracking
+- [x] File type permissions (.json, .bin, ML formats)
+- [x] Upload mutations (`uploadMlModelFile`)
+- [x] Query model info (`mlModelInfo`)
+- [x] Status management (`setMlModelStatus`)
+- [x] Clear/delete model functionality
+
+**Configuration:**
+
+- [x] Asset size limit (50MB)
+- [x] MIME type validation
+- [x] Channel-scoped model storage
+
+### 🔄 In Progress
+
+**Frontend:**
 
 - [ ] Create `ModelSyncService`
   - [ ] Model existence check (metadata.json 404 handling)
@@ -321,18 +458,27 @@ async addItemToOrder(productId: string, ctx: RequestContext) {
 - [ ] Add camera/image recognition component in POS
 - [ ] Integrate TensorFlow.js inference
 - [ ] Handle missing model gracefully (show manual entry UI)
-- [ ] Add "Train AI Model" button in channel settings
-- [ ] Show training status indicator
 - [ ] Test offline mode with cached model
 
-### Testing
+### 📋 Planned (Auto-Training)
 
-- [ ] New channel (no model exists)
-- [ ] Model training flow (manual trigger)
+**Backend:**
+
+- [ ] Install `@tensorflow/tfjs-node` or Teachable Machine API client
+- [ ] Implement `ModelTrainingService`
+  - [ ] Fetch product images from database
+  - [ ] Train MobileNet model
+  - [ ] Generate metadata.json
+- [ ] Create GraphQL mutation `trainModelForChannel`
+- [ ] Add training job to Vendure job queue
+- [ ] Atomic write pattern (temp → latest)
+- [ ] Add "Train AI Model" button integration
+
+**Testing:**
+
 - [ ] Cache invalidation (timestamp check)
 - [ ] Incomplete training (crash recovery via atomic writes)
 - [ ] Concurrent training requests (queue serialization)
-- [ ] Offline recognition (IndexedDB cache)
 - [ ] Cross-channel isolation (product ID validation)
 
 ## Training Data Structure

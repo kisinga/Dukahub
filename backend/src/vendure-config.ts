@@ -14,7 +14,7 @@ import { config as dotenvConfig } from 'dotenv';
 import { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
-import { MlModelPlugin } from './plugins/ml-model.plugin';
+// import { MlModelPlugin } from './plugins/ml-model.plugin';
 
 // ML Model functionality handled via existing AssetServerPlugin and custom middleware
 
@@ -61,6 +61,26 @@ export const config: VendureConfig = {
             },
         ],
     },
+    assetOptions: {
+        permittedFileTypes: [
+            // Images
+            '.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp',
+            'image/*',
+            // Documents
+            '.pdf',
+            'application/pdf',
+            // ML Model files
+            '.json',
+            'application/json',
+            '.bin',
+            'application/octet-stream',
+            '.pb',  // TensorFlow
+            '.h5',  // Keras
+            '.onnx',  // ONNX
+            '.tflite',  // TensorFlow Lite
+        ],
+        uploadMaxFileSize: 52428800,  // 50MB for large model files
+    },
     authOptions: {
         tokenMethod: ['bearer', 'cookie'],
         superadminCredentials: {
@@ -89,54 +109,44 @@ export const config: VendureConfig = {
     paymentOptions: {
         paymentMethodHandlers: [dummyPaymentHandler],
     },
-    // When adding or altering custom field definitions, the database will
-    // need to be updated. See the "Migrations" section in README.md.
+    // ML Model Management: Tag-based versioning + custom field activation
+    // - Assets tagged: ml-model, channel-{id}, v{version}, trained-{date}
+    // - Active model: Asset IDs in Channel.customFields below
+    // - Deploy: backend/scripts/deploy-ml-model.js
     customFields: {
         Channel: [
             {
                 name: 'mlModelJsonId',
                 type: 'string',
-                nullable: true,
                 label: [{ languageCode: LanguageCode.en, value: 'ML Model JSON Asset ID' }],
                 description: [{ languageCode: LanguageCode.en, value: 'Asset ID for model.json file' }],
-                ui: { component: 'asset-form-input' },
+                public: false,
+                nullable: true,
+                ui: { tab: 'ML Model' },
             },
             {
                 name: 'mlModelBinId',
                 type: 'string',
-                nullable: true,
-                label: [{ languageCode: LanguageCode.en, value: 'ML Model Binary Asset ID' }],
+                label: [{ languageCode: LanguageCode.en, value: 'ML Model Weights Asset ID' }],
                 description: [{ languageCode: LanguageCode.en, value: 'Asset ID for weights.bin file' }],
-                ui: { component: 'asset-form-input' },
+                public: false,
+                nullable: true,
+                ui: { tab: 'ML Model' },
             },
             {
                 name: 'mlMetadataId',
                 type: 'string',
-                nullable: true,
-                label: [{ languageCode: LanguageCode.en, value: 'ML Model Metadata Asset ID' }],
+                label: [{ languageCode: LanguageCode.en, value: 'ML Metadata Asset ID' }],
                 description: [{ languageCode: LanguageCode.en, value: 'Asset ID for metadata.json file' }],
-                ui: { component: 'asset-form-input' },
-            },
-            {
-                name: 'mlModelVersion',
-                type: 'string',
+                public: false,
                 nullable: true,
-                label: [{ languageCode: LanguageCode.en, value: 'ML Model Version' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Version identifier for the ML model' }],
-            },
-            {
-                name: 'mlModelStatus',
-                type: 'string',
-                nullable: true,
-                defaultValue: 'inactive',
-                label: [{ languageCode: LanguageCode.en, value: 'ML Model Status' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Status: active, inactive, or training' }],
+                ui: { tab: 'ML Model' },
             },
         ],
     },
     plugins: [
         GraphiqlPlugin.init(),
-        MlModelPlugin,
+        // MlModelPlugin,
         AssetServerPlugin.init({
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),

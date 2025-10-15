@@ -1,6 +1,6 @@
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import {
     Allow,
-    Asset,
     AssetService,
     ChannelService,
     Ctx,
@@ -19,9 +19,9 @@ export const ML_MODEL_SCHEMA = gql`
         hasModel: Boolean!
         version: String
         status: String
-        modelJson: Asset
-        modelBin: Asset
-        metadata: Asset
+        modelJsonId: String
+        modelBinId: String
+        metadataId: String
     }
 
     extend type Query {
@@ -30,8 +30,13 @@ export const ML_MODEL_SCHEMA = gql`
     }
 
     extend type Mutation {
-        """Upload ML model file (model.json, weights.bin, or metadata.json)"""
-        uploadMlModelFile(channelId: ID!, file: Upload!, fileType: String!): Asset!
+        """Link existing Asset IDs to channel (simpler than file upload)"""
+        linkMlModelAssets(
+            channelId: ID!
+            modelJsonId: ID!
+            modelBinId: ID!
+            metadataId: ID!
+        ): Boolean!
         
         """Set ML model status (active/inactive/training)"""
         setMlModelStatus(channelId: ID!, status: String!): Boolean!
@@ -42,18 +47,20 @@ export const ML_MODEL_SCHEMA = gql`
 `;
 
 /**
- * ML Model Resolver - KISS implementation using Vendure's Asset system
+ * ML Model Resolver - Using NestJS decorators per Vendure docs
  */
+@Resolver()
 export class MlModelResolver {
     constructor(
         private channelService: ChannelService,
         private assetService: AssetService,
     ) { }
 
+    @Query()
     @Allow(Permission.ReadCatalog)
     async mlModelInfo(
         @Ctx() ctx: RequestContext,
-        args: { channelId: ID },
+        @Args() args: { channelId: ID },
     ): Promise<any> {
         const channel = await this.channelService.findOne(ctx, args.channelId);
         if (!channel) {
@@ -62,85 +69,65 @@ export class MlModelResolver {
 
         const customFields = channel.customFields as any;
 
-        // Fetch Asset entities by ID if they exist
-        const modelJson = customFields.mlModelJsonId
-            ? await this.assetService.findOne(ctx, customFields.mlModelJsonId)
-            : null;
-        const modelBin = customFields.mlModelBinId
-            ? await this.assetService.findOne(ctx, customFields.mlModelBinId)
-            : null;
-        const metadata = customFields.mlMetadataId
-            ? await this.assetService.findOne(ctx, customFields.mlMetadataId)
-            : null;
-
         return {
-            hasModel: !!(modelJson && metadata),
+            hasModel: !!(customFields.mlModelJsonId && customFields.mlMetadataId),
             version: customFields.mlModelVersion || null,
             status: customFields.mlModelStatus || 'inactive',
-            modelJson,
-            modelBin,
-            metadata,
+            modelJsonId: customFields.mlModelJsonId || null,
+            modelBinId: customFields.mlModelBinId || null,
+            metadataId: customFields.mlMetadataId || null,
         };
     }
 
     @Transaction()
+    @Mutation()
     @Allow(Permission.UpdateCatalog)
-    async uploadMlModelFile(
+    async linkMlModelAssets(
         @Ctx() ctx: RequestContext,
-        args: { channelId: ID; file: any; fileType: string },
-    ): Promise<Asset> {
+        @Args() args: { channelId: ID; modelJsonId: ID; modelBinId: ID; metadataId: ID },
+    ): Promise<boolean> {
+        console.log('[ML Model] linkMlModelAssets called', args);
+
         const channel = await this.channelService.findOne(ctx, args.channelId);
         if (!channel) {
             throw new Error('Channel not found');
         }
 
-        // Create asset using Vendure's AssetService
-        const assetResult = await this.assetService.create(ctx, {
-            file: args.file,
-            tags: ['ml-model', `channel-${args.channelId}`, `type-${args.fileType}`],
-        });
+        // Verify assets exist
+        const [modelJson, modelBin, metadata] = await Promise.all([
+            this.assetService.findOne(ctx, args.modelJsonId),
+            this.assetService.findOne(ctx, args.modelBinId),
+            this.assetService.findOne(ctx, args.metadataId),
+        ]);
 
-        // Handle potential errors
-        if ('message' in assetResult) {
-            throw new Error(`Failed to create asset: ${assetResult.message}`);
+        if (!modelJson || !modelBin || !metadata) {
+            throw new Error('One or more assets not found');
         }
 
-        const asset = assetResult;
+        const version = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
 
-        // Determine which custom field to update
-        const customFieldUpdates: any = {
-            ...channel.customFields,
-        };
-
-        switch (args.fileType) {
-            case 'model':
-                customFieldUpdates.mlModelJsonId = asset.id;
-                customFieldUpdates.mlModelVersion = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
-                break;
-            case 'binary':
-                customFieldUpdates.mlModelBinId = asset.id;
-                break;
-            case 'metadata':
-                customFieldUpdates.mlMetadataId = asset.id;
-                break;
-            default:
-                throw new Error(`Invalid file type: ${args.fileType}. Use 'model', 'binary', or 'metadata'`);
-        }
-
-        // Update channel
         await this.channelService.update(ctx, {
             id: args.channelId,
-            customFields: customFieldUpdates,
+            customFields: {
+                ...channel.customFields,
+                mlModelJsonId: args.modelJsonId,
+                mlModelBinId: args.modelBinId,
+                mlMetadataId: args.metadataId,
+                mlModelVersion: version,
+                mlModelStatus: 'active',
+            },
         });
 
-        return asset as Asset;
+        console.log('[ML Model] Assets linked successfully');
+        return true;
     }
 
     @Transaction()
+    @Mutation()
     @Allow(Permission.UpdateCatalog)
     async setMlModelStatus(
         @Ctx() ctx: RequestContext,
-        args: { channelId: ID; status: string },
+        @Args() args: { channelId: ID; status: string },
     ): Promise<boolean> {
         const channel = await this.channelService.findOne(ctx, args.channelId);
         if (!channel) {
@@ -164,23 +151,17 @@ export class MlModelResolver {
     }
 
     @Transaction()
+    @Mutation()
     @Allow(Permission.DeleteCatalog)
     async clearMlModel(
         @Ctx() ctx: RequestContext,
-        args: { channelId: ID },
+        @Args() args: { channelId: ID },
     ): Promise<boolean> {
         const channel = await this.channelService.findOne(ctx, args.channelId);
         if (!channel) {
             throw new Error('Channel not found');
         }
 
-        // Optionally delete the assets (commented out to keep assets in system)
-        // const customFields = channel.customFields as any;
-        // if (customFields.mlModelJsonId) await this.assetService.delete(ctx, [customFields.mlModelJsonId]);
-        // if (customFields.mlModelBinId) await this.assetService.delete(ctx, [customFields.mlModelBinId]);
-        // if (customFields.mlMetadataId) await this.assetService.delete(ctx, [customFields.mlMetadataId]);
-
-        // Clear references
         await this.channelService.update(ctx, {
             id: args.channelId,
             customFields: {

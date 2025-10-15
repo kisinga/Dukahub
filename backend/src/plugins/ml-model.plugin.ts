@@ -8,9 +8,10 @@ import { ML_MODEL_SCHEMA, MlModelResolver } from './ml-model-resolver';
  * ML model files are stored as Vendure Assets and linked to channels via custom fields.
  * 
  * Usage:
- * 1. Upload model files via Admin API mutations
- * 2. Query model info via Shop API or Admin API
- * 3. Model files are served automatically by AssetServerPlugin
+ * 1. Upload files via Admin UI (Catalog → Assets)
+ * 2. Use linkMlModelAssets mutation to link them to channel
+ * 3. Query model info via Shop API or Admin API
+ * 4. Model files are served automatically by AssetServerPlugin
  */
 @VendurePlugin({
     imports: [PluginCommonModule],
