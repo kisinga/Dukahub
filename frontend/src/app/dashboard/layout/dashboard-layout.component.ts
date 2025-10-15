@@ -102,9 +102,8 @@ export class DashboardLayoutComponent implements OnInit {
     );
 
     constructor() {
-        // Initialize company selection from storage
-        // Companies are automatically populated from login response via AuthService
-        this.companyService.initializeFromStorage();
+        // Note: Company session is now restored in AuthService before channels are fetched
+        // This ensures the selected company persists across page refreshes
 
         // Watch for active company changes and initialize dashboard
         effect(() => {

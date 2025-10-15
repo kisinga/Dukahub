@@ -142,6 +142,25 @@ export const config: VendureConfig = {
                 nullable: true,
                 ui: { tab: 'ML Model' },
             },
+            {
+                name: 'cashierFlowEnabled',
+                type: 'boolean',
+                label: [{ languageCode: LanguageCode.en, value: 'Enable Cashier Flow' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Enable cashier/POS interface for this channel' }],
+                public: true,
+                defaultValue: false,
+                ui: { tab: 'Cashier' },
+            },
+        ],
+        StockLocation: [
+            {
+                name: 'cashierOpen',
+                type: 'boolean',
+                label: [{ languageCode: LanguageCode.en, value: 'Cashier Open' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Whether the cashier is currently open at this location' }],
+                public: true,
+                defaultValue: false,
+            },
         ],
     },
     plugins: [

@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { CompanyService } from '../../../core/services/company.service';
 import { DashboardService, PeriodStats } from '../../../core/services/dashboard.service';
+import { StockLocationService } from '../../../core/services/stock-location.service';
 
 interface CategoryStat {
     period: string;
@@ -51,6 +53,8 @@ interface RecentActivity {
 })
 export class OverviewComponent implements OnInit {
     private readonly dashboardService = inject(DashboardService);
+    private readonly companyService = inject(CompanyService);
+    private readonly stockLocationService = inject(StockLocationService);
 
     protected readonly expandedCategory = signal<string | null>(null);
     protected readonly showRecentActivity = signal(false);
@@ -97,6 +101,18 @@ export class OverviewComponent implements OnInit {
         return this.dashboardService.stats()?.profitMargin || 0;
     });
 
+    /**
+     * Cashier flow enabled (from channel settings)
+     * Controls whether to show cashier-specific UI elements
+     */
+    protected readonly cashierFlowEnabled = this.companyService.cashierFlowEnabled;
+
+    /**
+     * Cashier status (from stock location settings)
+     * Shows whether the cashier is currently open
+     */
+    protected readonly cashierOpen = this.stockLocationService.cashierOpen;
+
     protected readonly quickActions = [
         { label: 'New Sale', icon: '💰', action: 'sell' },
         { label: 'Add Product', icon: '📦', action: 'add-product' },
@@ -107,6 +123,9 @@ export class OverviewComponent implements OnInit {
     ngOnInit(): void {
         // Fetch dashboard data when component initializes
         this.dashboardService.fetchDashboardData();
+        
+        // Fetch stock locations with cashier status
+        this.stockLocationService.fetchStockLocationsWithCashier();
     }
 
     /**

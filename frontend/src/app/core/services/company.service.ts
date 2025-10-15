@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { GET_USER_CHANNELS } from '../graphql/auth.graphql';
-import type { GetUserChannelsQuery } from '../graphql/generated/graphql';
+import { GET_ACTIVE_CHANNEL, GET_USER_CHANNELS } from '../graphql/auth.graphql';
+import type { GetActiveChannelQuery, GetUserChannelsQuery } from '../graphql/generated/graphql';
 import type { Company } from '../models/company.model';
 import { ApolloService } from './apollo.service';
 
@@ -25,11 +25,12 @@ import { ApolloService } from './apollo.service';
 export class CompanyService {
     private readonly apolloService = inject(ApolloService);
 
-    private readonly COMPANIES_STORAGE_KEY = 'user_companies';
+    private readonly SESSION_KEY = 'company_session';
 
     private readonly companiesSignal = signal<Company[]>([]);
     private readonly activeCompanyIdSignal = signal<string | null>(null);
     private readonly isLoadingSignal = signal(false);
+    private readonly activeChannelDataSignal = signal<GetActiveChannelQuery['activeChannel'] | null>(null);
 
     // Public readonly signals
     readonly companies = this.companiesSignal.asReadonly();
@@ -42,6 +43,64 @@ export class CompanyService {
         const companies = this.companiesSignal();
         return companies.find((c) => c.id === id) || null;
     });
+
+    /**
+     * Cashier flow enabled for the active channel
+     * Fetched from Channel.customFields.cashierFlowEnabled
+     */
+    readonly cashierFlowEnabled = computed(() => {
+        const channelData = this.activeChannelDataSignal();
+        return channelData?.customFields?.cashierFlowEnabled ?? false;
+    });
+
+    /**
+     * ML Model asset IDs for the active channel
+     * All ML model custom fields consolidated here
+     */
+    readonly mlModelAssetIds = computed(() => {
+        const channelData = this.activeChannelDataSignal();
+        const customFields = channelData?.customFields;
+
+        if (!customFields?.mlModelJsonId || !customFields?.mlModelBinId || !customFields?.mlMetadataId) {
+            return null;
+        }
+
+        return {
+            mlModelJsonId: customFields.mlModelJsonId,
+            mlModelBinId: customFields.mlModelBinId,
+            mlMetadataId: customFields.mlMetadataId,
+        };
+    });
+
+    /**
+     * Fetch active channel data with custom fields
+     * Called when channel is activated or on app initialization
+     * Persists complete session to localStorage
+     */
+    async fetchActiveChannel(): Promise<void> {
+        try {
+            const client = this.apolloService.getClient();
+            const result = await client.query<GetActiveChannelQuery>({
+                query: GET_ACTIVE_CHANNEL,
+                fetchPolicy: 'network-only',
+            });
+
+            console.log('📦 Active channel data:', result.data);
+
+            if (result.data?.activeChannel) {
+                this.activeChannelDataSignal.set(result.data.activeChannel);
+                this.persistSession();
+
+                console.log('✅ Channel data cached:', {
+                    cashierFlowEnabled: result.data.activeChannel.customFields?.cashierFlowEnabled,
+                    mlModelConfigured: !!result.data.activeChannel.customFields?.mlModelJsonId,
+                });
+            }
+        } catch (error: any) {
+            console.error('❌ Failed to fetch active channel:', error);
+            this.activeChannelDataSignal.set(null);
+        }
+    }
 
     /**
      * Fetch all channels/companies for the authenticated user
@@ -115,14 +174,14 @@ export class CompanyService {
         console.log(`Activating company: ${company.code} (${companyId})`);
 
         // Set channel token for subsequent requests
-        // In Vendure, we use the channel TOKEN (not ID) to scope ALL operations to this channel
         this.apolloService.setChannelToken(company.token);
 
         // Set as active company
         this.activeCompanyIdSignal.set(companyId);
 
-        // Persist to localStorage for session recovery
-        localStorage.setItem('active_company_id', companyId);
+        // Persist and fetch channel custom fields
+        this.persistSession();
+        this.fetchActiveChannel();
     }
 
     /**
@@ -134,19 +193,55 @@ export class CompanyService {
     }
 
     /**
+     * Persist entire session to localStorage (KISS - one object, one key)
+     */
+    private persistSession(): void {
+        const session = {
+            companies: this.companiesSignal(),
+            activeCompanyId: this.activeCompanyIdSignal(),
+            channelData: this.activeChannelDataSignal(),
+        };
+        localStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+        console.log('💾 Session persisted');
+    }
+
+    /**
      * Initialize company from localStorage on app startup
-     * This restores the previously active company without fetching
+     * Restores complete session instantly, then refreshes in background
      */
     initializeFromStorage(): void {
-        const storedCompanyId = localStorage.getItem('active_company_id');
-        if (storedCompanyId) {
-            console.log(`Restoring active company from storage: ${storedCompanyId}`);
-            this.activeCompanyIdSignal.set(storedCompanyId);
-            // Find the company to get its token
-            const company = this.companiesSignal().find(c => c.id === storedCompanyId);
+        console.log('🔄 Initializing from storage...');
+
+        const stored = localStorage.getItem(this.SESSION_KEY);
+        if (!stored) {
+            console.log('No session in storage');
+            return;
+        }
+
+        try {
+            const session = JSON.parse(stored);
+
+            // Restore everything instantly
+            this.companiesSignal.set(session.companies || []);
+            this.activeCompanyIdSignal.set(session.activeCompanyId);
+            this.activeChannelDataSignal.set(session.channelData);
+
+            console.log('✅ Session restored:', {
+                companies: session.companies?.length,
+                activeCompany: session.activeCompanyId,
+                cashierEnabled: session.channelData?.customFields?.cashierFlowEnabled,
+            });
+
+            // Set channel token
+            const company = session.companies?.find((c: Company) => c.id === session.activeCompanyId);
             if (company) {
                 this.apolloService.setChannelToken(company.token);
+                // Refresh in background
+                this.fetchActiveChannel();
             }
+        } catch (error) {
+            console.error('Failed to restore session:', error);
+            localStorage.removeItem(this.SESSION_KEY);
         }
     }
 
@@ -155,8 +250,9 @@ export class CompanyService {
      */
     clearActiveCompany(): void {
         this.activeCompanyIdSignal.set(null);
+        this.activeChannelDataSignal.set(null);
         this.companiesSignal.set([]);
-        localStorage.removeItem('active_company_id');
+        localStorage.removeItem(this.SESSION_KEY);
         this.apolloService.setChannelToken('');
     }
 }

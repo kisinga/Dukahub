@@ -10,11 +10,17 @@
     <div class="flex items-center gap-3">
       @if (isLoading()) {
       <span class="loading loading-spinner loading-md"></span>
-      }
+      } @if (cashierFlowEnabled() && cashierOpen()) {
       <div class="badge badge-success badge-lg gap-2 font-semibold px-4 py-3">
         <span class="w-2 h-2 bg-success-content rounded-full animate-pulse"></span>
         Cash Register Open
       </div>
+      } @if (cashierFlowEnabled() && !cashierOpen()) {
+      <div class="badge badge-neutral badge-lg gap-2 font-semibold px-4 py-3">
+        <span class="w-2 h-2 bg-neutral-content rounded-full"></span>
+        Cash Register Closed
+      </div>
+      }
     </div>
   </div>
 

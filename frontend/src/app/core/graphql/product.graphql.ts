@@ -27,6 +27,25 @@ export const GET_STOCK_LOCATIONS = graphql(`
 `);
 
 /**
+ * Query to get all stock locations with cashier status
+ * Used to check if cashier is open at each location
+ */
+export const GET_STOCK_LOCATIONS_WITH_CASHIER = graphql(`
+  query GetStockLocationsWithCashier {
+    stockLocations(options: { take: 100 }) {
+      items {
+        id
+        name
+        description
+        customFields {
+          cashierOpen
+        }
+      }
+    }
+  }
+`);
+
+/**
  * Mutation to create a new product
  * Returns the created product with basic fields
  */

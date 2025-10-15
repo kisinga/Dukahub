@@ -94,7 +94,11 @@ export class AuthService {
       if (data?.activeAdministrator) {
         // Use the generated type directly - it's the source of truth
         this.userSignal.set(data.activeAdministrator);
-        console.log('✅ Active admin fetched, now fetching channels...');
+        console.log('✅ Active admin fetched, now restoring session and fetching channels...');
+
+        // CRITICAL: Restore session BEFORE fetching channels
+        // This prevents fetchUserChannels from resetting to first company
+        this.companyService.initializeFromStorage();
 
         // Fetch user channels to restore channel state (on refresh/initialization)
         // This ensures channels are available even on hard refresh

@@ -2,6 +2,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { gql } from '@apollo/client';
 import * as tf from '@tensorflow/tfjs';
 import { ApolloService } from './apollo.service';
+import { CompanyService } from './company.service';
 
 /**
  * ML Model Service
@@ -52,6 +53,7 @@ export interface ModelError {
 })
 export class MlModelService {
     private readonly apolloService = inject(ApolloService);
+    private readonly companyService = inject(CompanyService);
 
     private model: tf.LayersModel | null = null;
     private metadata: ModelMetadata | null = null;
@@ -68,6 +70,7 @@ export class MlModelService {
     /**
      * Get ML model asset sources for a channel
      * Returns file paths needed to load the model
+     * Uses CompanyService as single source of truth for channel custom fields
      */
     private async getModelSources(channelId: string): Promise<{
         modelUrl: string;
@@ -76,38 +79,15 @@ export class MlModelService {
     } | null> {
         const client = this.apolloService.getClient();
 
-        // Get asset IDs from channel custom fields
-        const channelResult = await client.query<{
-            channel: {
-                customFields: {
-                    mlModelJsonId?: string;
-                    mlModelBinId?: string;
-                    mlMetadataId?: string;
-                };
-            } | null;
-        }>({
-            query: gql`
-                query GetChannelMLModel($id: ID!) {
-                    channel(id: $id) {
-                        customFields {
-                            mlModelJsonId
-                            mlModelBinId
-                            mlMetadataId
-                        }
-                    }
-                }
-            `,
-            variables: { id: channelId },
-            fetchPolicy: 'network-only',
-        });
+        // Get asset IDs from CompanyService (already fetched on boot)
+        const assetIds = this.companyService.mlModelAssetIds();
 
-        const customFields = channelResult.data?.channel?.customFields;
-
-        if (!customFields?.mlModelJsonId || !customFields?.mlModelBinId || !customFields?.mlMetadataId) {
+        if (!assetIds) {
+            console.log('No ML model configured for this channel');
             return null;
         }
 
-        // Get asset source paths
+        // Get asset source paths using the IDs from CompanyService
         const assetsResult = await client.query<{
             assets: {
                 items: Array<{
@@ -127,16 +107,16 @@ export class MlModelService {
                 }
             `,
             variables: {
-                ids: [customFields.mlModelJsonId, customFields.mlModelBinId, customFields.mlMetadataId],
+                ids: [assetIds.mlModelJsonId, assetIds.mlModelBinId, assetIds.mlMetadataId],
             },
             fetchPolicy: 'network-only',
         });
 
         const assets = assetsResult.data?.assets?.items || [];
 
-        const modelAsset = assets.find((a: any) => a.id === customFields.mlModelJsonId);
-        const weightsAsset = assets.find((a: any) => a.id === customFields.mlModelBinId);
-        const metadataAsset = assets.find((a: any) => a.id === customFields.mlMetadataId);
+        const modelAsset = assets.find((a: any) => a.id === assetIds.mlModelJsonId);
+        const weightsAsset = assets.find((a: any) => a.id === assetIds.mlModelBinId);
+        const metadataAsset = assets.find((a: any) => a.id === assetIds.mlMetadataId);
 
         if (!modelAsset || !weightsAsset || !metadataAsset) {
             return null;
