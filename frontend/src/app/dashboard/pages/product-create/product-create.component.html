@@ -1,262 +1,297 @@
-<!-- Compact Header -->
-<div class="sticky top-0 z-30 bg-base-100/95 backdrop-blur-sm border-b border-base-300">
+<!-- Mobile-First Item Creation (Products & Services) -->
+
+<!-- Header with Type Toggle -->
+<div class="sticky top-0 z-30 bg-base-100/95 backdrop-blur-sm border-b">
   <div class="container-app py-2">
     <div class="flex items-center justify-between gap-2">
-      <!-- Title & Type Toggle -->
-      <div role="tablist" class="tabs tabs-boxed tabs-sm">
-        <button
-          type="button"
-          role="tab"
-          class="tab gap-1"
-          [class.tab-active]="itemType() === 'product'"
-          (click)="switchItemType('product')"
-        >
-          📦 Product
-        </button>
-        <button
-          type="button"
-          role="tab"
-          class="tab gap-1"
-          [class.tab-active]="itemType() === 'service'"
-          (click)="switchItemType('service')"
-        >
-          💼 Service
-        </button>
-      </div>
-
-      <!-- Close Button -->
+      <h1 class="text-lg font-bold">{{ itemType() === 'product' ? '📦' : '✨' }} Add Item</h1>
       <button type="button" (click)="cancel()" class="btn btn-sm btn-circle btn-ghost">✕</button>
+    </div>
+    
+    <!-- Product/Service Toggle -->
+    <div class="tabs tabs-box mt-2">
+      <button 
+        type="button"
+        class="tab"
+        [class.tab-active]="itemType() === 'product'"
+        (click)="toggleItemType('product')"
+      >
+        📦 Product
+      </button>
+      <button 
+        type="button"
+        class="tab"
+        [class.tab-active]="itemType() === 'service'"
+        (click)="toggleItemType('service')"
+      >
+        ✨ Service
+      </button>
     </div>
   </div>
 </div>
 
 <!-- Main Content -->
-<div class="container-app py-3 pb-44 lg:pb-32 max-w-4xl mx-auto">
+<div class="container-app py-3 pb-32 max-w-lg mx-auto">
   <!-- Alerts -->
   @if (submitSuccess()) {
   <div role="alert" class="alert alert-success mb-3">
-    <span>✓ Created! Redirecting...</span>
+    <span>✓ Created!</span>
   </div>
-  } @if (submitError()) {
+  }
+  
+  @if (submitError()) {
   <div role="alert" class="alert alert-error mb-3">
     <span>{{ submitError() }}</span>
   </div>
   }
 
-  <!-- Main Form (Product & Service) -->
-  <form [formGroup]="itemType() === 'product' ? productForm : serviceForm" (ngSubmit)="onSubmit()">
-    <div class="space-y-2">
-      <!-- Basic Info -->
-      <div class="card bg-base-100 shadow">
-        <div class="card-body p-3 sm:p-4">
-          <app-product-info-form [form]="itemType() === 'product' ? productForm : serviceForm" />
-        </div>
-      </div>
-
-      <!-- Photos (Collapsible) - Products only -->
-      @if (itemType() === 'product') {
-      <div class="collapse collapse-arrow bg-base-100 shadow">
-        <input type="checkbox" />
-        <div class="collapse-title min-h-[2.5rem] text-sm font-semibold">
-          📸 Photos <span class="text-xs opacity-60">(optional)</span>
-        </div>
-        <div class="collapse-content">
-          <app-photo-manager #photoManager />
-        </div>
-      </div>
-
-      <!-- Hidden barcode scanner -->
-      <div class="hidden">
-        <app-barcode-scanner #barcodeScanner />
-      </div>
-
-      <!-- Variants Setup - Products only -->
-      <div class="card bg-base-100 shadow">
-        <div class="card-body p-4 space-y-4">
-          <!-- Header -->
-          <h3 class="font-bold">🏷️ Variants</h3>
-
-          <!-- Step 1: Template Picker -->
-          <app-template-picker
-            [templates]="templateState.templates"
-            [selectedTemplates]="templateState.selectedTemplates()"
-            (templateToggled)="orchestrator.toggleTemplate($event)"
-            (customOptionRequested)="orchestrator.openCustomOptionModal()"
-            (clearAll)="orchestrator.clearAll()"
-          />
-
-          <!-- Step 2: Pick Values (Progressive) -->
-          @if (templateState.selectedTemplates().length > 0 || templateState.customOptions().length > 0) {
-          <div class="bg-primary/5 p-3 rounded-lg space-y-3">
-            <div class="flex items-center justify-between">
-              <p class="text-sm font-semibold">Pick values → {{ variants.length }} variants</p>
-            </div>
-            <app-option-selector
-              [options]="templateState.availableOptions()"
-              [selectedOptionIds]="templateState.selectedOptionIds()"
-              [selectedTemplateIds]="templateState.allTemplateIds()"
-              [templateNames]="templateState.selectedTemplateNames()"
-              [templates]="templateState.templates"
-              (optionToggled)="orchestrator.toggleOption($event)"
-            />
-          </div>
-          }
-
-          <!-- Add Custom Option Value -->
-          @if (templateState.selectedTemplates().length === 0 && templateState.customOptions().length === 0 && variants.length === 0) {
-          <div class="text-center">
-            <div class="divider text-xs opacity-60">No templates?</div>
-            <button
-              type="button"
-              (click)="orchestrator.openAddOptionValueModal()"
-              class="btn btn-outline min-h-[3rem] gap-2"
-            >
-              ➕ Add Option
-            </button>
-            <p class="text-xs opacity-60 mt-2">e.g., "Kilograms", "Small"</p>
-          </div>
-          } @else if (variants.length > 0) {
-          <div class="text-center">
-            <button
-              type="button"
-              (click)="orchestrator.openAddOptionValueModal()"
-              class="btn btn-sm btn-ghost gap-1"
-            >
-              ➕ Add More Options
-            </button>
-          </div>
-          }
-        </div>
-      </div>
-
-      <!-- Step 3: Variant Details -->
-      <app-variant-details-section
-        [variants]="variants"
-        [combinationLabels]="variantCombinationLabels()"
-        [customVariantIndices]="customVariantIndices()"
-        (variantRemoved)="removeVariant($event)"
-        (barcodeRequested)="startBarcodeScanner($event)"
-      />
-
-      <!-- Add Custom Option Type Modal (Weight, Size, etc.) -->
-      <app-custom-option-modal
-        [isOpen]="orchestrator.showCustomOptionModal()"
-        [form]="orchestrator.customOptionForm"
-        (submitted)="orchestrator.addCustomOption()"
-        (cancelled)="orchestrator.closeCustomOptionModal()"
-      />
-
-      <!-- Add Option Value Modal -->
-      @if (orchestrator.showAddOptionModal()) {
-      <dialog open class="modal modal-bottom sm:modal-middle">
-        <div class="modal-box">
-          <h3 class="font-bold text-lg mb-2">➕ Add Option</h3>
-          <p class="text-sm opacity-70 mb-4">Add to existing group or create new</p>
-
-          <form [formGroup]="orchestrator.addOptionForm" (ngSubmit)="orchestrator.addOptionValue()">
-            <div class="space-y-3">
-              <!-- Variant Group Selection -->
-              <div class="bg-accent/10 p-3 rounded-lg">
-                <label class="text-sm font-semibold mb-1 block">Variant Group</label>
-                <input
-                  type="text"
-                  formControlName="variantGroup"
-                  placeholder="Choose or type new group"
-                  class="input input-bordered w-full"
-                  list="all-variant-groups"
-                />
-                <datalist id="all-variant-groups">
-                  @for (template of templateState.templates; track template.id) {
-                  <option [value]="template.name">{{ template.name }}</option>
-                  } @for (group of templateState.customVariantGroups(); track group) {
-                  <option [value]="group">{{ group }} (custom)</option>
-                  }
-                </datalist>
-                <p class="text-xs opacity-60 mt-1">Select existing or type new</p>
+  <!-- Form -->
+  <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="space-y-3">
+    
+    <!-- Step 1: Identification -->
+    <div class="card bg-base-100 shadow">
+      <div class="card-body p-3">
+        <h3 class="font-bold text-sm mb-2">
+          {{ itemType() === 'product' ? '1️⃣ How to ID This Item?' : '1️⃣ How to ID This Service?' }}
+        </h3>
+        
+        <div class="grid gap-2">
+          <!-- Option A: Barcode -->
+          <div 
+            class="p-2 rounded border-2 cursor-pointer"
+            [class.border-primary]="identificationMethod() === 'barcode'"
+            [class.bg-primary/5]="identificationMethod() === 'barcode'"
+            [class.border-base-300]="identificationMethod() !== 'barcode'"
+            (click)="chooseIdentificationMethod('barcode')"
+          >
+            <div class="flex items-center gap-2">
+              <div class="text-xl">🏷️</div>
+              <div class="flex-1">
+                <span class="font-semibold text-sm">Barcode</span>
               </div>
-
-              <!-- Option Value -->
-              <div class="bg-accent/10 p-3 rounded-lg">
-                <label class="text-sm font-semibold mb-1 block">Option Value</label>
-                <input
-                  type="text"
-                  formControlName="value"
-                  placeholder="e.g., Kilograms, Small, Red"
-                  class="input input-bordered w-full"
-                  autofocus
-                />
-                <p class="text-xs opacity-60 mt-1">This creates 1 variant</p>
-              </div>
+              @if (identificationMethod() === 'barcode') {
+              <div class="text-primary">✓</div>
+              }
             </div>
-
-            <div class="modal-action">
-              <button type="button" (click)="orchestrator.closeAddOptionModal()" class="btn">Cancel</button>
+            
+            @if (identificationMethod() === 'barcode') {
+            <div class="flex gap-2 mt-2">
+              <input
+                type="text"
+                formControlName="barcode"
+                placeholder="Or type manually"
+                class="input input-sm input-bordered flex-1 font-mono"
+              />
               <button
-                type="submit"
-                class="btn btn-accent min-h-[3rem]"
-                [disabled]="orchestrator.addOptionForm.invalid"
+                type="button"
+                (click)="startBarcodeScanner(); $event.stopPropagation()"
+                class="btn btn-sm btn-primary"
               >
-                ✓ Add Option
+                📷
               </button>
             </div>
-          </form>
-        </div>
-        <form method="dialog" class="modal-backdrop" (click)="orchestrator.closeAddOptionModal()">
-          <button>close</button>
-        </form>
-      </dialog>
-      }
+            }
+          </div>
 
-      <!-- Combination Creation Modal (Hidden - see VARIANT_MANAGEMENT.md) -->
-      <!-- <app-combination-modal
-        [isOpen]="showCombinationModal()"
-        [form]="combinationForm"
-        [options]="availableOptions()"
-        [templateIds]="allTemplateIds()"
-        [selectedOptionIds]="combinationForm.get('selectedOptionIds')?.value || []"
-        (submitted)="createCombination()"
-        (cancelled)="closeCombinationModal()"
-        (optionToggled)="toggleCombinationOption($event)"
-      /> -->
-      }
+          <!-- Option B: Photos -->
+          <div 
+            class="p-2 rounded border-2 cursor-pointer"
+            [class.border-primary]="identificationMethod() === 'label-photos'"
+            [class.bg-primary/5]="identificationMethod() === 'label-photos'"
+            [class.border-base-300]="identificationMethod() !== 'label-photos'"
+            (click)="chooseIdentificationMethod('label-photos')"
+          >
+            <div class="flex items-center gap-2 mb-2">
+              <div class="text-xl">📸</div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold text-sm">
+                    {{ itemType() === 'product' ? 'Tag Photos' : 'Card Photos' }}
+                  </span>
+                  @if (photoCount() > 0) {
+                  <span class="badge badge-xs badge-primary">{{ photoCount() }}/5</span>
+                  }
+                </div>
+              </div>
+              @if (identificationMethod() === 'label-photos' && photoCount() >= 5) {
+              <div class="text-primary">✓</div>
+              }
+            </div>
+
+            @if (identificationMethod() === 'label-photos') {
+            <!-- Inline help based on type -->
+            @if (itemType() === 'product') {
+            <div class="bg-warning/10 p-2 rounded text-xs mb-2">
+              <strong>Photo the TAG, not the item!</strong>
+              <p class="opacity-80 mt-1">Example: "TOMATO 10/=" written on cardboard</p>
+            </div>
+            } @else {
+            <div class="bg-info/10 p-2 rounded text-xs mb-2">
+              <strong>Photo the SERVICE CARD!</strong>
+              <p class="opacity-80 mt-1">Example: "Haircut" card with ✂️ icon on desk</p>
+            </div>
+            }
+
+            <div>
+              <app-photo-manager 
+                #photoManager
+                (photoCountChange)="onPhotosChanged($event)"
+              />
+              @if (photoCount() > 0 && photoCount() < 5) {
+              <div class="text-xs text-warning mt-1">Need {{ 5 - photoCount() }} more</div>
+              }
+            </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Product Name -->
+    <div class="card bg-base-100 shadow">
+      <div class="card-body p-3">
+        <h3 class="font-bold text-sm mb-2">2️⃣ Product Name</h3>
+        <input
+          type="text"
+          formControlName="name"
+          [placeholder]="itemType() === 'product' ? 'e.g., Tomatoes' : 'e.g., Haircut'"
+          class="input input-bordered w-full"
+          [class.input-error]="productForm.get('name')?.invalid && productForm.get('name')?.touched"
+        />
+      </div>
+    </div>
+
+    <!-- Step 3: SKUs (Multiple) -->
+    <div class="card bg-base-100 shadow">
+      <div class="card-body p-3">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-bold text-sm">3️⃣ SKUs (Sizes/Tiers)</h3>
+          <button
+            type="button"
+            (click)="addSku()"
+            class="btn btn-xs btn-primary"
+          >
+            + Add SKU
+          </button>
+        </div>
+        
+        <p class="text-xs opacity-60 mb-3">
+          {{ itemType() === 'product' ? 'e.g., 1kg, 2kg, 5kg' : 'e.g., Kids, Regular, Premium' }}
+        </p>
+
+        <!-- SKU List -->
+        <div formArrayName="skus" class="space-y-3">
+          @for (sku of skus.controls; track $index) {
+          <div [formGroupName]="$index" class="p-3 bg-base-200 rounded">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <span class="text-xs font-semibold opacity-70">SKU #{{ $index + 1 }}</span>
+              @if (skus.length > 1) {
+              <button
+                type="button"
+                (click)="removeSku($index)"
+                class="btn btn-xs btn-ghost btn-circle text-error"
+              >
+                ✕
+              </button>
+              }
+            </div>
+
+            <div class="space-y-2">
+              <!-- SKU Name -->
+              <input
+                type="text"
+                formControlName="name"
+                placeholder="Name (e.g., 1kg or Kids)"
+                class="input input-sm input-bordered w-full"
+              />
+
+              <!-- SKU Code -->
+              <input
+                type="text"
+                formControlName="sku"
+                placeholder="SKU code"
+                class="input input-sm input-bordered w-full font-mono"
+                maxlength="50"
+              />
+
+              <!-- Price & Stock -->
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <input
+                    type="number"
+                    formControlName="price"
+                    placeholder="Price"
+                    step="0.01"
+                    class="input input-sm input-bordered w-full"
+                  />
+                </div>
+
+                @if (itemType() === 'product') {
+                <div>
+                  <input
+                    type="number"
+                    formControlName="stockOnHand"
+                    placeholder="Stock"
+                    class="input input-sm input-bordered w-full"
+                  />
+                </div>
+                }
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Location (Products Only) -->
+    @if (itemType() === 'product') {
+    <div class="card bg-base-200">
+      <div class="card-body p-3">
+        <h3 class="font-bold text-sm mb-1">4️⃣ Location</h3>
+        @if (activeLocation()) {
+        <p class="text-sm">📍 {{ activeLocation()!.name }}</p>
+        } @else {
+        <p class="text-sm text-error">⚠️ No location selected</p>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- Hidden barcode scanner -->
+    <div class="hidden">
+      <app-barcode-scanner #barcodeScanner (barcodeScanned)="onBarcodeScanned($event)" />
     </div>
   </form>
 
-  <!-- Unified Action Bar -->
-  <!-- Action Bar with Validation Feedback -->
+  <!-- Action Bar -->
   <div
     class="fixed left-0 right-0 bg-base-100 border-t-2 border-base-300 shadow-xl lg:bottom-0 lg:z-40"
     style="bottom: 4rem; z-index: 51"
   >
-    <div class="container-app py-3">
-      <!-- Validation Issues (when disabled) -->
-      @if (!canSubmit() && !isSubmitting() && validationIssues().length > 0) {
-      <div class="mb-2 text-center">
-        <p class="text-xs text-error font-semibold">
-          {{ validationIssues().length }} issue{{ validationIssues().length > 1 ? 's' : '' }} to fix
-        </p>
+    <div class="container-app py-2">
+      <!-- Validation Issues -->
+      @if (!canSubmit() && validationIssues().length > 0) {
+      <div class="text-xs text-error text-center mb-2">
+        <span *ngFor="let issue of validationIssues(); let last = last">
+          {{ issue }}<span *ngIf="!last"> · </span>
+        </span>
       </div>
       }
 
       <div class="flex gap-2">
-        <button type="button" (click)="cancel()" class="btn btn-ghost">Cancel</button>
+        <button type="button" (click)="cancel()" class="btn btn-ghost btn-sm">Cancel</button>
         <button
           type="submit"
           (click)="onSubmit()"
-          class="btn btn-primary flex-1 min-h-[3rem]"
+          class="btn btn-primary flex-1"
           [disabled]="!canSubmit()"
         >
           @if (isSubmitting()) {
-          <span class="loading loading-spinner"></span>
+          <span class="loading loading-spinner loading-sm"></span>
           <span>Creating...</span>
-          } @else if (canSubmit()) {
-          <span>✓</span>
-          <span class="font-bold"
-            >Create {{ itemType() === 'product' ? 'Product' : 'Service' }}</span
-          >
           } @else {
-          <span>{{ validationIssues().length }}</span>
-          <span>Issue{{ validationIssues().length > 1 ? 's' : '' }} to Fix</span>
+          <span>✓ Create {{ itemType() === 'product' ? 'Product' : 'Service' }}</span>
           }
         </button>
       </div>

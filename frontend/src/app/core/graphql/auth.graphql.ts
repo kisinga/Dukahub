@@ -101,7 +101,7 @@ export const GET_USER_CHANNELS = graphql(`
 /**
  * GraphQL query to get the active channel with ALL custom fields
  * Single source of truth for channel data - fetched once on boot/channel activation
- * Includes: cashier settings, ML model asset IDs
+ * Includes: ML model asset IDs
  */
 export const GET_ACTIVE_CHANNEL = graphql(`
   query GetActiveChannel {
@@ -110,10 +110,10 @@ export const GET_ACTIVE_CHANNEL = graphql(`
       code
       token
       customFields {
-        cashierFlowEnabled
         mlModelJsonId
         mlModelBinId
         mlMetadataId
+        companyLogoId
       }
     }
   }

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CompanyService } from '../../../core/services/company.service';
 import { ProductSearchResult, ProductSearchService, ProductVariant } from '../../../core/services/product-search.service';
+import { StockLocationService } from '../../../core/services/stock-location.service';
 import { CartItem, CartModalComponent } from './components/cart-modal.component';
 import { CheckoutModalComponent } from './components/checkout-modal.component';
 import { Customer } from './components/customer-selector.component';
@@ -46,10 +47,11 @@ type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
 export class SellComponent implements OnInit {
   private readonly productSearchService = inject(ProductSearchService);
   private readonly companyService = inject(CompanyService);
+  private readonly stockLocationService = inject(StockLocationService);
 
   // Configuration
   readonly channelId = computed(() => this.companyService.activeCompanyId() || 'T_1');
-  readonly cashierFlowEnabled = this.companyService.cashierFlowEnabled;
+  readonly cashierFlowEnabled = this.stockLocationService.cashierFlowEnabled;
 
   // Search state
   readonly searchResults = signal<ProductSearchResult[]>([]);

@@ -7,6 +7,7 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
  * 
  * Reusable form for product and service basic info.
  * Shows price field for services, hides it for products.
+ * Description is hidden by default (optional).
  */
 @Component({
     selector: 'app-product-info-form',
@@ -30,28 +31,14 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
                 <input
                     type="text"
                     formControlName="name"
-                    placeholder="e.g., Blue Jeans XL"
+                    placeholder="e.g., Coca Cola 500ml"
                     class="input input-bordered w-full"
                     [class.input-error]="hasError('name')"
+                    autofocus
                 />
                 @if (hasError('name')) {
                     <p class="text-error text-xs mt-1">{{ getErrorMessage('name') }}</p>
                 }
-            </div>
-
-            <!-- Description -->
-            <div class="input-wrapper">
-                <div class="flex items-center gap-2 mb-1">
-                    <label class="text-sm font-semibold label-text">📝 Description</label>
-                    <span class="text-xs opacity-60">(optional)</span>
-                </div>
-                <textarea
-                    formControlName="description"
-                    placeholder="Additional details..."
-                    class="textarea textarea-bordered w-full"
-                    rows="2"
-                    [class.textarea-error]="hasError('description')"
-                ></textarea>
             </div>
 
             <!-- Price (for services only) -->

@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { OptionItem } from '../components/option-selector.component';
 import { SkuGeneratorService } from './sku-generator.service';
@@ -43,7 +43,7 @@ export class VariantFormStateService {
      */
     readonly individualVariants = computed(() => {
         if (!this.variantsArray) return [];
-        
+
         return this.variantsArray.controls.filter(v => {
             const optionIds = v.get('optionIds')?.value || [];
             return optionIds.length === 1;
@@ -55,7 +55,7 @@ export class VariantFormStateService {
      */
     readonly combinedVariants = computed(() => {
         if (!this.variantsArray) return [];
-        
+
         return this.variantsArray.controls.filter(v => {
             const optionIds = v.get('optionIds')?.value || [];
             return optionIds.length > 1;
@@ -67,7 +67,7 @@ export class VariantFormStateService {
      */
     readonly customVariants = computed(() => {
         if (!this.variantsArray) return [];
-        
+
         return this.variantsArray.controls.filter(v => {
             const optionIds = v.get('optionIds')?.value || [];
             return optionIds.length === 0;
@@ -78,7 +78,7 @@ export class VariantFormStateService {
      * Create variant FormGroup
      */
     createVariantForm(defaults?: Partial<VariantForm>): FormGroup {
-        return this.fb.group({
+        const formGroup = this.fb.group({
             optionIds: [defaults?.optionIds || [], [Validators.required, Validators.minLength(1)]],
             name: [defaults?.name || '', [Validators.required, Validators.minLength(1)]],
             sku: [
@@ -98,6 +98,10 @@ export class VariantFormStateService {
                 [Validators.required, Validators.min(0)],
             ],
         });
+
+        // Mark all fields as touched so validation shows immediately
+        formGroup.markAllAsTouched();
+        return formGroup;
     }
 
     /**
@@ -148,7 +152,11 @@ export class VariantFormStateService {
                     stockOnHand: 0
                 };
 
-                this.variantsArray.push(this.createVariantForm(variant));
+                const formGroup = this.createVariantForm(variant);
+                this.variantsArray.push(formGroup);
+
+                // Trigger form validation update
+                this.variantsArray.updateValueAndValidity();
             }
         });
     }

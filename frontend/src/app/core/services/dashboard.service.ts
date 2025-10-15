@@ -77,6 +77,7 @@ export class DashboardService {
     private readonly recentActivitySignal = signal<RecentActivity[]>([]);
     private readonly isLoadingSignal = signal(false);
     private readonly errorSignal = signal<string | null>(null);
+    private readonly activeLocationIdSignal = signal<string | null>(null);
 
     // Public readonly signals
     readonly stats = this.statsSignal.asReadonly();
@@ -90,13 +91,18 @@ export class DashboardService {
     /**
      * Fetch all dashboard data
      * This is the main entry point - call this when dashboard loads or refreshes
+     * 
+     * @param locationId - Optional stock location ID to filter data (for location-specific stats)
      */
-    async fetchDashboardData(): Promise<void> {
+    async fetchDashboardData(locationId?: string): Promise<void> {
         // Don't fetch if no company is active
         if (!this.companyService.activeCompanyId()) {
             console.warn('No active company - skipping dashboard data fetch');
             return;
         }
+
+        // Store active location for filtering
+        this.activeLocationIdSignal.set(locationId ?? null);
 
         this.isLoadingSignal.set(true);
         this.errorSignal.set(null);
@@ -104,9 +110,9 @@ export class DashboardService {
         try {
             // Fetch data in parallel for performance
             const [metrics, products, recentOrders] = await Promise.all([
-                this.fetchSalesMetrics(),
-                this.fetchProductStats(),
-                this.fetchRecentOrders(),
+                this.fetchSalesMetrics(locationId),
+                this.fetchProductStats(locationId),
+                this.fetchRecentOrders(locationId),
             ]);
 
             // Transform into dashboard stats
@@ -133,8 +139,11 @@ export class DashboardService {
     /**
      * Fetch sales metrics from Vendure
      * Uses metricSummary API for aggregated data
+     * 
+     * @param locationId - Optional location ID for filtering (currently not supported in Vendure standard API)
+     * NOTE: Location filtering is infrastructure-ready but requires custom Vendure plugin to filter orders by stock location
      */
-    private async fetchSalesMetrics(): Promise<{
+    private async fetchSalesMetrics(locationId?: string): Promise<{
         orderTotal: number;
         orderCount: number;
         averageOrderValue: number;
@@ -231,8 +240,11 @@ export class DashboardService {
 
     /**
      * Fetch product statistics from Vendure
+     * 
+     * @param locationId - Optional location ID for filtering stock at specific location
+     * NOTE: Currently returns total products. Location-specific stock counts require custom implementation.
      */
-    private async fetchProductStats(): Promise<{ productCount: number; variantCount: number }> {
+    private async fetchProductStats(locationId?: string): Promise<{ productCount: number; variantCount: number }> {
         const client = this.apolloService.getClient();
 
         try {
@@ -266,8 +278,11 @@ export class DashboardService {
 
     /**
      * Fetch recent orders for activity feed
+     * 
+     * @param locationId - Optional location ID for filtering (currently not supported in Vendure standard API)
+     * NOTE: Location filtering requires custom order fields or custom resolver
      */
-    private async fetchRecentOrders(): Promise<any[]> {
+    private async fetchRecentOrders(locationId?: string): Promise<any[]> {
         const client = this.apolloService.getClient();
 
         try {
@@ -406,9 +421,11 @@ export class DashboardService {
     /**
      * Refresh dashboard data
      * Useful for pull-to-refresh or manual refresh
+     * Uses the currently active location ID
      */
     async refresh(): Promise<void> {
-        return this.fetchDashboardData();
+        const locationId = this.activeLocationIdSignal();
+        return this.fetchDashboardData(locationId ?? undefined);
     }
 
     /**

@@ -26,6 +26,7 @@ export interface ProductInput {
     name: string;
     description: string;
     enabled: boolean;
+    barcode?: string; // Optional product-level barcode
 }
 
 /**
@@ -35,6 +36,7 @@ export interface VariantInput {
     sku: string;
     name: string; // Auto-generated name
     price: number; // In currency units (e.g., 10.99)
+    trackInventory?: boolean; // Native Vendure field: false for services (infinite stock), true for products
     stockOnHand: number;
     stockLocationId: string;
     optionIds?: string[]; // Product option IDs (KISS: typically 1 per variant)
@@ -194,6 +196,7 @@ export class ProductService {
                         description: input.description,
                     },
                 ],
+                customFields: input.barcode ? { barcode: input.barcode } : undefined,
             };
 
             const result = await client.mutate<CreateProductMutation>({
@@ -228,6 +231,7 @@ export class ProductService {
                         productId,
                         sku: v.sku,
                         price: Math.round(v.price * 100), // Convert to cents
+                        trackInventory: v.trackInventory !== undefined ? v.trackInventory : true, // Default to true (track inventory)
                         stockOnHand: v.stockOnHand,
                         stockLevels: [
                             {

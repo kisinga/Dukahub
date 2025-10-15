@@ -136,23 +136,34 @@ export class TemplateStateService {
         return options;
     });
 
-    // Computed: Selected template names
+    // Computed: Selected template names (de-duplicated)
     readonly selectedTemplateNames = computed(() => {
         const templateIds = this.selectedTemplatesSignal();
         const customTypeNames = [...new Set(this.customOptionsSignal().map(c => c.typeName))];
 
         const templateNames = templateIds
             .map(id => this.templates.find(t => t.id === id)?.name)
-            .filter(Boolean);
+            .filter(Boolean) as string[];
 
-        return [...templateNames, ...customTypeNames].join(' + ');
+        // Merge and de-duplicate: custom types that match template names shouldn't be shown twice
+        const allNames = new Set([...templateNames, ...customTypeNames]);
+        return Array.from(allNames).join(' + ');
     });
 
-    // Computed: All template IDs (built-in + custom types)
+    // Computed: All template IDs (built-in + custom types, de-duplicated)
     readonly allTemplateIds = computed(() => {
         const builtIn = this.selectedTemplatesSignal();
         const customTypes = [...new Set(this.customOptionsSignal().map(c => c.typeName))];
-        return [...builtIn, ...customTypes];
+
+        // Get template names to check for duplicates
+        const builtInNames = builtIn.map(id => this.templates.find(t => t.id === id)?.name);
+
+        // Only add custom types that don't match existing template names
+        const uniqueCustomTypes = customTypes.filter(
+            customType => !builtInNames.includes(customType)
+        );
+
+        return [...builtIn, ...uniqueCustomTypes];
     });
 
     // Computed: Custom variant groups

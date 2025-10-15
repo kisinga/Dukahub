@@ -1,140 +1,114 @@
-# Cashier Flow - Two-Step Payment Process
+# Cashier Flow - Location-Based Two-Step Payment
 
 ## What It Does
 
-Enables a two-step sales process where:
+Enables a two-step sales process at specific locations:
 
 1. **Salesperson** adds items to cart and sends order to cashier (no customer required)
 2. **Cashier** receives order with PENDING_PAYMENT status and collects payment
 
-## How It Works
+## Configuration
 
-### Enabling Cashier Flow
+### Enable Cashier Flow (Per Location)
 
-Set `cashierFlowEnabled` to `true` in Vendure Admin:
+In Vendure Admin:
 
-1. Go to Settings → Channels
-2. Select your channel
-3. Go to "Cashier" tab
-4. Check "Enable Cashier Flow"
+1. Go to Settings → Stock Locations
+2. Select your location (e.g., "Main Store")
+3. Check "Enable Cashier Flow"
+4. Check "Cashier Open" when ready to accept orders
 5. Save
 
-### Creating Orders
+**Result:** Sell page will show "Send to Cashier" button for that location.
 
-When enabled, the Sell page shows "Send to Cashier" option:
+### Location Status
+
+Two toggles per location:
+
+- **`cashierFlowEnabled`** - Feature toggle (rarely changes)
+- **`cashierOpen`** - Status toggle (open/close shifts)
+
+## Implementation
+
+### Data Flow
 
 ```typescript
-// frontend/src/app/dashboard/pages/sell/sell.component.ts
+// StockLocation custom fields (both required)
+{
+  cashierFlowEnabled: boolean,  // Enable feature at this location
+  cashierOpen: boolean          // Currently accepting orders
+}
 
-// Cashier flow is automatically enabled/disabled based on channel setting
-readonly cashierFlowEnabled = this.companyService.cashierFlowEnabled;
+// Frontend reads from active location
+readonly cashierFlowEnabled = stockLocationService.cashierFlowEnabled;
+readonly cashierOpen = stockLocationService.cashierOpen;
+```
 
+### UI Behavior
+
+**Sell Page:**
+
+- Shows "Send to Cashier" when `cashierFlowEnabled = true`
+- Hides button when `false`
+- No customer required for cashier orders
+
+**Dashboard:**
+
+- Shows "Cash Register Open" badge when both `true`
+- Shows "Cash Register Closed" when enabled but closed
+- No badge when feature disabled
+
+### Order Creation (Stub)
+
+```typescript
 async handleCompleteCashier(): Promise<void> {
   // Creates order with PENDING_PAYMENT status
-  // No customer required for cash sales
-  // Order sent to cashier station for payment collection
+  // No customer data required
+  // Order sent to cashier station
+  // Cart clears for next customer
 }
 ```
 
-### UI Flow
+## Session Persistence
 
-1. **Add items** to cart via barcode scanner or search
-2. **Open cart** → Shows "Send to Cashier" button if `cashierFlowEnabled = true`
-3. **Click "Send to Cashier"** → Order created with `PENDING_PAYMENT` status
-4. **Cart clears** → Salesperson can process next customer
-5. **Cashier receives** order → Collects payment and completes order
-
-## Channel Data Architecture
-
-**Single Source of Truth:** `CompanyService` holds all channel settings
-
-```typescript
-// All channel custom fields fetched once on boot
-GET_ACTIVE_CHANNEL = graphql(`
-  query GetActiveChannel {
-    activeChannel {
-      customFields {
-        cashierFlowEnabled    # Enables cashier flow
-        mlModelJsonId         # ML model assets
-        mlModelBinId
-        mlMetadataId
-      }
-    }
-  }
-`);
-
-// Exposed as computed signals
-readonly cashierFlowEnabled = computed(() =>
-  channelData()?.customFields?.cashierFlowEnabled ?? false
-);
-```
-
-## Persistence
-
-Complete session stored in `localStorage` under one key:
+All location data persists to `localStorage`:
 
 ```typescript
 localStorage.setItem('company_session', JSON.stringify({
-  companies: [...],           // Available channels
-  activeCompanyId: '1',       // Selected channel
-  channelData: {              // All custom fields
-    customFields: {
-      cashierFlowEnabled: true,
-      mlModelJsonId: '...'
-    }
-  }
+  companies: [...],
+  activeCompanyId: '1',
+  channelData: { mlModelJsonId: '...' },  // Channel level
+  // Location data fetched separately
 }));
 ```
-
-**Benefits:**
-
-- Page reload restores all state instantly
-- No loading spinners on refresh
-- Background sync keeps cache fresh
-
-## Cashier Status Badge
-
-Dashboard shows real-time cashier status when `cashierFlowEnabled = true`:
-
-```typescript
-// frontend/src/app/dashboard/pages/overview/overview.component.html
-
-@if (cashierFlowEnabled() && cashierOpen()) {
-  <div class="badge badge-success">Cash Register Open</div>
-}
-@if (cashierFlowEnabled() && !cashierOpen()) {
-  <div class="badge badge-neutral">Cash Register Closed</div>
-}
-```
-
-## Next Steps (Not Implemented)
-
-1. **Backend Order Creation**: Implement actual Vendure order mutation with PENDING_PAYMENT
-2. **Cashier Station**: Build interface to view pending orders and collect payments
-3. **MPESA Integration**: Auto-detect payments via STK push or paybill
-4. **Receipt Printing**: Generate pro-forma invoice when sending to cashier
 
 ## Files Modified
 
 **Backend:**
 
 - `backend/src/migrations/1760505873000-AddCashierCustomFields.ts`
-- `backend/src/vendure-config.ts` - Added `cashierFlowEnabled` custom field
+- `backend/src/vendure-config.ts` - Both fields on StockLocation
 
 **Frontend:**
 
-- `frontend/src/app/core/services/company.service.ts` - Centralized channel data + persistence
-- `frontend/src/app/core/services/stock-location.service.ts` - Added `cashierOpen` status
-- `frontend/src/app/core/graphql/auth.graphql.ts` - Consolidated channel query
-- `frontend/src/app/dashboard/pages/sell/sell.component.ts` - Connected to `cashierFlowEnabled`
-- `frontend/src/app/dashboard/pages/overview/overview.component.html` - Status badge
+- `frontend/src/app/core/services/stock-location.service.ts` - Added `cashierFlowEnabled` + `cashierOpen`
+- `frontend/src/app/core/graphql/product.graphql.ts` - Query both fields
+- `frontend/src/app/dashboard/pages/sell/sell.component.ts` - Use location setting
+- `frontend/src/app/dashboard/pages/overview/overview.component.ts` - Status badge from location
+
+## Next Steps
+
+1. **Restart Backend** - Pick up new StockLocation custom fields
+2. **Backend Order Creation** - Implement Vendure mutation for PENDING_PAYMENT
+3. **Cashier Station** - Interface to view and complete pending orders
+4. **MPESA Integration** - Auto-detect payments
 
 ## Summary
 
-✅ Cashier flow toggle via channel custom field  
-✅ Conditional UI rendering based on setting  
-✅ Session persistence for instant page loads  
+✅ Location-specific cashier flow toggle  
+✅ Conditional UI based on active location  
 ✅ Status badge on dashboard  
-🔲 Backend order creation (stub only)  
+✅ Session persistence  
+🔲 Backend order creation (stub)  
 🔲 Cashier station interface  
 🔲 Payment integrations

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { CompanyService } from '../../../core/services/company.service';
 import { DashboardService, PeriodStats } from '../../../core/services/dashboard.service';
 import { StockLocationService } from '../../../core/services/stock-location.service';
@@ -102,13 +102,13 @@ export class OverviewComponent implements OnInit {
     });
 
     /**
-     * Cashier flow enabled (from channel settings)
+     * Cashier flow enabled (from location settings)
      * Controls whether to show cashier-specific UI elements
      */
-    protected readonly cashierFlowEnabled = this.companyService.cashierFlowEnabled;
+    protected readonly cashierFlowEnabled = this.stockLocationService.cashierFlowEnabled;
 
     /**
-     * Cashier status (from stock location settings)
+     * Cashier status (from location settings)
      * Shows whether the cashier is currently open
      */
     protected readonly cashierOpen = this.stockLocationService.cashierOpen;
@@ -120,12 +120,24 @@ export class OverviewComponent implements OnInit {
         { label: 'Reports', icon: '📈', action: 'reports' }
     ];
 
+    constructor() {
+        // React to location changes and refresh dashboard
+        effect(() => {
+            const locationId = this.stockLocationService.activeLocationId();
+            if (locationId) {
+                console.log(`📊 Dashboard filtering by location: ${locationId}`);
+                this.dashboardService.fetchDashboardData(locationId);
+            }
+        }, { allowSignalWrites: true });
+    }
+
     ngOnInit(): void {
-        // Fetch dashboard data when component initializes
-        this.dashboardService.fetchDashboardData();
-        
         // Fetch stock locations with cashier status
         this.stockLocationService.fetchStockLocationsWithCashier();
+
+        // Fetch dashboard data with active location (if set)
+        const locationId = this.stockLocationService.activeLocationId();
+        this.dashboardService.fetchDashboardData(locationId ?? undefined);
     }
 
     /**

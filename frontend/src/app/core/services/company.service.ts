@@ -45,15 +45,6 @@ export class CompanyService {
     });
 
     /**
-     * Cashier flow enabled for the active channel
-     * Fetched from Channel.customFields.cashierFlowEnabled
-     */
-    readonly cashierFlowEnabled = computed(() => {
-        const channelData = this.activeChannelDataSignal();
-        return channelData?.customFields?.cashierFlowEnabled ?? false;
-    });
-
-    /**
      * ML Model asset IDs for the active channel
      * All ML model custom fields consolidated here
      */
@@ -70,6 +61,26 @@ export class CompanyService {
             mlModelBinId: customFields.mlModelBinId,
             mlMetadataId: customFields.mlMetadataId,
         };
+    });
+
+    /**
+     * Company logo asset ID for the active channel
+     * Used to display company branding in navbar
+     */
+    readonly companyLogoId = computed(() => {
+        const channelData = this.activeChannelDataSignal();
+        return channelData?.customFields?.companyLogoId ?? null;
+    });
+
+    /**
+     * Company display name (truncated to max 10 characters)
+     * Used in navbar to show active shop name
+     */
+    readonly companyDisplayName = computed(() => {
+        const company = this.activeCompany();
+        if (!company) return '';
+        const name = company.code;
+        return name.length > 10 ? name.substring(0, 10) + '...' : name;
     });
 
     /**
@@ -92,8 +103,8 @@ export class CompanyService {
                 this.persistSession();
 
                 console.log('✅ Channel data cached:', {
-                    cashierFlowEnabled: result.data.activeChannel.customFields?.cashierFlowEnabled,
                     mlModelConfigured: !!result.data.activeChannel.customFields?.mlModelJsonId,
+                    companyLogoConfigured: !!result.data.activeChannel.customFields?.companyLogoId,
                 });
             }
         } catch (error: any) {

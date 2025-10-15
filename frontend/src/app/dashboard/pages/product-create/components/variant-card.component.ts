@@ -106,15 +106,6 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
                             />
                         </div>
                     </div>
-
-                    <!-- Barcode Scanner (Optional) -->
-                    <button
-                        type="button"
-                        (click)="scanBarcodeClicked.emit()"
-                        class="btn btn-sm btn-ghost w-full gap-1"
-                    >
-                        📷 Scan Barcode
-                    </button>
                 </div>
             </div>
         </div>
@@ -131,5 +122,4 @@ export class VariantCardComponent {
 
     // Outputs
     readonly removed = output<void>();
-    readonly scanBarcodeClicked = output<void>();
 }

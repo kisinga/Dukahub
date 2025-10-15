@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AppInitService } from '../../core/services/app-init.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
+import { StockLocationService } from '../../core/services/stock-location.service';
 
 interface NavItem {
     label: string;
@@ -20,6 +21,7 @@ interface NavItem {
 export class DashboardLayoutComponent implements OnInit {
     private readonly authService = inject(AuthService);
     private readonly companyService = inject(CompanyService);
+    private readonly stockLocationService = inject(StockLocationService);
     private readonly appInitService = inject(AppInitService);
 
     protected readonly navItems: NavItem[] = [
@@ -84,22 +86,37 @@ export class DashboardLayoutComponent implements OnInit {
     protected readonly companies = this.companyService.companies;
     protected readonly activeCompanyId = this.companyService.activeCompanyId;
     protected readonly activeCompany = this.companyService.activeCompany;
+    protected readonly companyDisplayName = this.companyService.companyDisplayName;
+    protected readonly companyLogoId = this.companyService.companyLogoId;
+
+    // Stock location service signals
+    protected readonly locations = this.stockLocationService.locations;
+    protected readonly activeLocationId = this.stockLocationService.activeLocationId;
+    protected readonly activeLocation = this.stockLocationService.activeLocation;
 
     // Computed values
     protected readonly unreadCount = computed(() =>
         this.notifications.filter(n => n.unread).length
     );
 
-    protected readonly displayCompanyName = computed(() => {
-        const company = this.activeCompany();
-        if (!company) return 'Loading...';
-        const name = company.code;
+    protected readonly displayLocationName = computed(() => {
+        const location = this.activeLocation();
+        if (!location) return 'Select Location';
+        const name = location.name;
         return name.length > 20 ? name.substring(0, 20) + '...' : name;
     });
 
     protected readonly userAvatar = computed(() =>
         this.user()?.emailAddress ? 'default_avatar.png' : 'default_avatar.png'
     );
+
+    protected readonly logoUrl = computed(() => {
+        const logoId = this.companyLogoId();
+        if (!logoId) return 'default_avatar.png';
+        // Construct asset URL from Vendure backend
+        const backendUrl = 'http://localhost:3000'; // TODO: Get from environment
+        return `${backendUrl}/assets/${logoId}`;
+    });
 
     constructor() {
         // Note: Company session is now restored in AuthService before channels are fetched
@@ -117,6 +134,9 @@ export class DashboardLayoutComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        // Initialize stock location from storage
+        this.stockLocationService.initializeFromStorage();
+
         // If company already active on init, trigger initialization
         const companyId = this.activeCompanyId();
         if (companyId) {
@@ -134,6 +154,18 @@ export class DashboardLayoutComponent implements OnInit {
     selectCompany(companyId: string): void {
         this.companyService.activateCompany(companyId);
         // Note: effect() in constructor will trigger initialization
+        // Also clear and refetch locations for new company
+        this.stockLocationService.clearLocations();
+        this.stockLocationService.fetchStockLocationsWithCashier();
+    }
+
+    selectLocation(locationId: string): void {
+        this.stockLocationService.activateLocation(locationId);
+        // Trigger dashboard refresh with new location
+        const companyId = this.activeCompanyId();
+        if (companyId) {
+            this.appInitService.initializeDashboard(companyId);
+        }
     }
 
     async logout(): Promise<void> {

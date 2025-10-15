@@ -36,7 +36,6 @@ import { VariantCardComponent } from './variant-card.component';
                         [headerLabel]="getHeaderLabel(i)"
                         [isCustom]="getIsCustom(i)"
                         (removed)="variantRemoved.emit(i)"
-                        (scanBarcodeClicked)="barcodeRequested.emit(i)"
                     />
                 }
             }
@@ -51,7 +50,6 @@ export class VariantListComponent {
 
     // Outputs
     readonly variantRemoved = output<number>();
-    readonly barcodeRequested = output<number>();
 
     /**
      * Get FormGroup at specific index (type-safe)

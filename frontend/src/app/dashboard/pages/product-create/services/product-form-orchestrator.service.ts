@@ -1,5 +1,5 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Injectable, effect, inject, signal } from '@angular/core';
+import { FormBuilder, Validators } from '@angular/forms';
 import { CustomOption, TemplateStateService } from './template-state.service';
 import { VariantFormStateService } from './variant-form-state.service';
 
@@ -70,9 +70,16 @@ export class ProductFormOrchestratorService {
     constructor() {
         // Auto-sync: When selected options change, regenerate variants
         effect(() => {
-            const selectedOptions = this.templateState.getSelectedOptions();
+            // Explicitly track these signals to ensure effect re-runs
+            const selectedIds = this.templateState.selectedOptionIds();
+            const availableOptions = this.templateState.availableOptions();
             const productName = this.productNameSignal();
-            
+
+            // Get selected options
+            const selectedOptions = availableOptions.filter(opt => selectedIds.includes(opt.id));
+
+            console.log('🔄 Effect triggered - selected options:', selectedOptions.length);
+
             // Regenerate variants when options change
             this.variantFormState.regenerateVariants(
                 selectedOptions,
@@ -148,13 +155,16 @@ export class ProductFormOrchestratorService {
         }));
 
         this.templateState.addCustomOptions(newOptions);
-        this.closeCustomOptionModal();
 
-        // Auto-select all newly created options
+        // Auto-select all newly created options immediately
         this.templateState.autoSelectNewOptions(startIndex, newOptions.length);
 
-        // Scroll to SKU Details section
-        this.scrollToSkuSection();
+        this.closeCustomOptionModal();
+
+        // Scroll to SKU Details section after DOM update
+        setTimeout(() => {
+            this.scrollToSkuSection();
+        }, 150);
     }
 
     // --- Add Option Value Modal ---
@@ -190,17 +200,19 @@ export class ProductFormOrchestratorService {
         };
 
         this.templateState.addCustomOption(newOption);
+
+        // Auto-select the new option immediately (synchronous to ensure effect triggers)
+        const newOptionId = `custom-${startIndex}`;
+        if (!this.templateState.isOptionSelected(newOptionId)) {
+            this.templateState.toggleOption(newOptionId);
+        }
+
         this.closeAddOptionModal();
 
-        // Auto-select the new option
+        // Scroll after a brief delay to let DOM update
         setTimeout(() => {
-            const newOptionId = `custom-${startIndex}`;
-            if (!this.templateState.isOptionSelected(newOptionId)) {
-                this.templateState.toggleOption(newOptionId);
-            }
-
             this.scrollToSkuSection();
-        }, 100);
+        }, 150);
     }
 
     // --- Combination Modal (Hidden in KISS mode) ---

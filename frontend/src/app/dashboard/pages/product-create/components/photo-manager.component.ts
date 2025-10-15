@@ -147,8 +147,9 @@ export class PhotoManagerComponent {
     // View reference
     readonly photoInput = viewChild<ElementRef<HTMLInputElement>>('photoInput');
 
-    // Output
+    // Outputs
     readonly photosChanged = output<File[]>();
+    readonly photoCountChange = output<number>();
 
     /**
      * Handle photo selection from input
@@ -174,8 +175,9 @@ export class PhotoManagerComponent {
             reader.readAsDataURL(file);
         });
 
-        // Emit change
+        // Emit changes
         this.photosChanged.emit(allPhotos);
+        this.photoCountChange.emit(allPhotos.length);
 
         // Clear input
         input.value = '';
@@ -194,8 +196,9 @@ export class PhotoManagerComponent {
         this.photos.set([...photos]);
         this.photoPreviews.set([...previews]);
 
-        // Emit change
+        // Emit changes
         this.photosChanged.emit([...photos]);
+        this.photoCountChange.emit(photos.length);
     }
 
     /**
@@ -212,6 +215,7 @@ export class PhotoManagerComponent {
         this.photos.set([]);
         this.photoPreviews.set([]);
         this.photosChanged.emit([]);
+        this.photoCountChange.emit(0);
     }
 }
 

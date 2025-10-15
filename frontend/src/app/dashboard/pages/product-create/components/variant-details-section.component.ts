@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormArray } from '@angular/forms';
 import { VariantListComponent } from './variant-list.component';
 
@@ -35,7 +35,6 @@ import { VariantListComponent } from './variant-list.component';
                     [combinationLabels]="combinationLabels()"
                     [customVariantIndices]="customVariantIndices()"
                     (variantRemoved)="variantRemoved.emit($event)"
-                    (barcodeRequested)="barcodeRequested.emit($event)"
                 />
             </div>
         </div>
@@ -51,6 +50,5 @@ export class VariantDetailsSectionComponent {
 
     // Outputs
     readonly variantRemoved = output<number>();
-    readonly barcodeRequested = output<number>();
 }
 

@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { CompanyService } from './company.service';
 import { MlModelService } from './ml-model.service';
 import { ProductCacheService } from './product-cache.service';
+import { StockLocationService } from './stock-location.service';
 
 /**
  * Initialization status for dashboard boot
@@ -9,6 +10,7 @@ import { ProductCacheService } from './product-cache.service';
 export interface InitStatus {
   productsLoaded: boolean;
   modelLoaded: boolean;
+  locationsLoaded: boolean;
   channelId: string | null;
   error: string | null;
 }
@@ -24,10 +26,12 @@ export class AppInitService {
   private readonly companyService = inject(CompanyService);
   private readonly productCacheService = inject(ProductCacheService);
   private readonly mlModelService = inject(MlModelService);
+  private readonly stockLocationService = inject(StockLocationService);
 
   private readonly initStatusSignal = signal<InitStatus>({
     productsLoaded: false,
     modelLoaded: false,
+    locationsLoaded: false,
     channelId: null,
     error: null,
   });
@@ -36,7 +40,7 @@ export class AppInitService {
 
   /**
    * Initialize dashboard data when channel is set
-   * Pre-fetches products and ML model for offline operation
+   * Pre-fetches products, stock locations, and ML model for offline operation
    */
   async initializeDashboard(channelId: string): Promise<void> {
     console.log(`🚀 Initializing dashboard for channel ${channelId}...`);
@@ -44,9 +48,10 @@ export class AppInitService {
     this.initStatusSignal.update((s) => ({ ...s, channelId, error: null }));
 
     // Run prefetch operations in parallel for faster boot
-    const [productsSuccess, modelSuccess] = await Promise.allSettled([
+    const [productsSuccess, modelSuccess, locationsSuccess] = await Promise.allSettled([
       this.prefetchProducts(channelId),
       this.prefetchModel(channelId),
+      this.prefetchStockLocations(),
     ]);
 
     // Update status based on results
@@ -54,16 +59,19 @@ export class AppInitService {
       ...s,
       productsLoaded: productsSuccess.status === 'fulfilled' && productsSuccess.value,
       modelLoaded: modelSuccess.status === 'fulfilled' && modelSuccess.value,
+      locationsLoaded: locationsSuccess.status === 'fulfilled' && locationsSuccess.value,
       error:
-        productsSuccess.status === 'rejected' || modelSuccess.status === 'rejected'
+        productsSuccess.status === 'rejected' || 
+        modelSuccess.status === 'rejected' ||
+        locationsSuccess.status === 'rejected'
           ? 'Some features failed to initialize'
           : null,
     }));
 
     const status = this.initStatusSignal();
-    if (status.productsLoaded && status.modelLoaded) {
+    if (status.productsLoaded && status.modelLoaded && status.locationsLoaded) {
       console.log('✅ Dashboard fully initialized (offline-capable)');
-    } else if (status.productsLoaded) {
+    } else if (status.productsLoaded && status.locationsLoaded) {
       console.log('⚠️ Dashboard initialized (camera scanning unavailable)');
     } else {
       console.error('❌ Dashboard initialization incomplete');
@@ -102,14 +110,29 @@ export class AppInitService {
   }
 
   /**
+   * Pre-fetch stock locations on boot
+   */
+  private async prefetchStockLocations(): Promise<boolean> {
+    try {
+      await this.stockLocationService.fetchStockLocations();
+      return this.stockLocationService.locations().length > 0;
+    } catch (error: any) {
+      console.error('Failed to prefetch stock locations:', error);
+      return false;
+    }
+  }
+
+  /**
    * Clear all cached data (on logout or channel switch)
    */
   clearCache(): void {
     this.productCacheService.clearCache();
     this.mlModelService.unloadModel();
+    this.stockLocationService.clearLocations();
     this.initStatusSignal.set({
       productsLoaded: false,
       modelLoaded: false,
+      locationsLoaded: false,
       channelId: null,
       error: null,
     });

@@ -98,6 +98,7 @@ export const config: VendureConfig = {
         type: 'postgres',
         synchronize: false, // Never use in production
         migrations: [path.join(__dirname, './migrations/*.+(js|ts)')],
+        migrationsRun: true, // Auto-run pending migrations on startup
         logging: false,
         database: process.env.DB_NAME,
         schema: process.env.DB_SCHEMA,
@@ -114,6 +115,16 @@ export const config: VendureConfig = {
     // - Active model: Asset IDs in Channel.customFields below
     // - Deploy: backend/scripts/deploy-ml-model.js
     customFields: {
+        Product: [
+            {
+                name: 'barcode',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'Product Barcode' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Barcode for the entire product (shared across all variants)' }],
+                public: true,
+                nullable: true,
+            },
+        ],
         Channel: [
             {
                 name: 'mlModelJsonId',
@@ -143,16 +154,24 @@ export const config: VendureConfig = {
                 ui: { tab: 'ML Model' },
             },
             {
-                name: 'cashierFlowEnabled',
-                type: 'boolean',
-                label: [{ languageCode: LanguageCode.en, value: 'Enable Cashier Flow' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Enable cashier/POS interface for this channel' }],
+                name: 'companyLogoId',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'Company Logo Asset ID' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Asset ID for the company logo image' }],
                 public: true,
-                defaultValue: false,
-                ui: { tab: 'Cashier' },
+                nullable: true,
+                ui: { tab: 'Branding' },
             },
         ],
         StockLocation: [
+            {
+                name: 'cashierFlowEnabled',
+                type: 'boolean',
+                label: [{ languageCode: LanguageCode.en, value: 'Enable Cashier Flow' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Enable cashier/POS interface at this location' }],
+                public: true,
+                defaultValue: false,
+            },
             {
                 name: 'cashierOpen',
                 type: 'boolean',
