@@ -71,6 +71,9 @@ export class ProductCreateComponent implements OnInit {
     // Form: Product + Multiple SKUs
     readonly productForm: FormGroup;
 
+    // Unique suffix for this form session (to ensure SKU uniqueness)
+    private readonly skuUniqueSuffix = Date.now().toString().slice(-6);
+
     // Computed: SKUs FormArray
     get skus(): FormArray {
         return this.productForm.get('skus') as FormArray;
@@ -88,12 +91,17 @@ export class ProductCreateComponent implements OnInit {
     // Identification method chosen
     readonly identificationMethod = signal<'barcode' | 'label-photos' | null>(null);
     readonly photoCount = signal(0);
+    readonly barcodeValue = signal<string>(''); // Track barcode as signal
+    readonly productNameValue = signal<string>(''); // Track name as signal
+    readonly productNameValid = signal<boolean>(false); // Track name validity
+    readonly skuValidityTrigger = signal<number>(0); // Trigger to recompute SKU validation
+    readonly formValid = signal<boolean>(false); // Track overall form validity
 
     // Computed: Has valid identification
     readonly hasValidIdentification = computed(() => {
         const method = this.identificationMethod();
         if (method === 'barcode') {
-            return !!this.productForm.get('barcode')?.value?.trim();
+            return !!this.barcodeValue()?.trim();
         }
         if (method === 'label-photos') {
             return this.photoCount() >= 5;
@@ -103,10 +111,11 @@ export class ProductCreateComponent implements OnInit {
 
     // Computed: Form validity
     readonly canSubmit = computed(() => {
-        const isValid = this.productForm.valid;
+        const isValid = this.formValid(); // Use signal instead of direct form access
         const notSubmitting = !this.isSubmitting();
         const hasLocation = !!this.activeLocationId();
         const hasIdentification = this.hasValidIdentification();
+
         return isValid && notSubmitting && hasLocation && hasIdentification;
     });
 
@@ -119,14 +128,32 @@ export class ProductCreateComponent implements OnInit {
             const photoType = type === 'service' ? 'card' : 'label';
             issues.push(`Barcode OR 5+ ${photoType} photos`);
         }
-        if (this.productForm.get('name')?.invalid) issues.push('Product name required');
+        if (!this.productNameValid()) issues.push('Product name required');
 
-        // SKU validation
+        // SKU validation (trigger ensures recomputation)
+        this.skuValidityTrigger(); // Access signal to track changes
+
         if (this.skus.length === 0) {
             issues.push('At least 1 SKU required');
         } else {
-            // Check for invalid SKUs
-            const invalidSkus = this.skus.controls.filter(sku => sku.invalid).length;
+            // Check for invalid SKUs - must have name, sku, and price
+            const invalidSkus = this.skus.controls.filter(sku => {
+                const name = sku.get('name');
+                const skuCode = sku.get('sku');
+                const price = sku.get('price');
+                const stock = sku.get('stockOnHand');
+
+                // For services, stock is not validated
+                const isService = type === 'service';
+
+                return (
+                    (name?.invalid) ||
+                    (skuCode?.invalid) ||
+                    (price?.invalid) ||
+                    (!isService && stock?.invalid)
+                );
+            }).length;
+
             if (invalidSkus > 0) {
                 issues.push(`${invalidSkus} SKU(s) have errors`);
             }
@@ -172,17 +199,70 @@ export class ProductCreateComponent implements OnInit {
 
         // Add first SKU by default
         this.addSku();
+
+        // Watch for manual barcode entry
+        this.productForm.get('barcode')?.valueChanges.subscribe(value => {
+            // Update signal to trigger reactive updates
+            this.barcodeValue.set(value || '');
+
+            const trimmedValue = value?.trim();
+            if (trimmedValue && trimmedValue.length > 0) {
+                // User is typing a barcode - auto-select barcode method
+                if (this.identificationMethod() !== 'barcode') {
+                    this.identificationMethod.set('barcode');
+                }
+            }
+        });
+
+        // Watch for product name changes
+        this.productForm.get('name')?.valueChanges.subscribe(value => {
+            this.productNameValue.set(value || '');
+            const control = this.productForm.get('name');
+            this.productNameValid.set(control?.valid || false);
+        });
+
+        // Watch for SKU array changes
+        this.skus.valueChanges.subscribe(() => {
+            // Trigger recomputation of SKU validation
+            this.skuValidityTrigger.update(v => v + 1);
+            // Update form validity
+            this.formValid.set(this.productForm.valid);
+        });
+
+        this.skus.statusChanges.subscribe(() => {
+            // Trigger recomputation when validity changes
+            this.skuValidityTrigger.update(v => v + 1);
+            // Update form validity
+            this.formValid.set(this.productForm.valid);
+        });
+
+        // Watch for overall form validity changes
+        this.productForm.statusChanges.subscribe(() => {
+            this.formValid.set(this.productForm.valid);
+        });
+
+        // Initialize signals with current values
+        this.productNameValue.set(this.productForm.get('name')?.value || '');
+        this.productNameValid.set(this.productForm.get('name')?.valid || false);
+        this.barcodeValue.set(this.productForm.get('barcode')?.value || '');
+        this.formValid.set(this.productForm.valid);
     }
 
     /**
      * Create a new SKU FormGroup
+     * Stock validation is conditional: required for products, optional for services
      */
-    private createSkuFormGroup(name: string = '', price: number = 0, stock: number = 0): FormGroup {
+    private createSkuFormGroup(skuCode: string = '', name: string = '', price: number = 0, stock: number = 0): FormGroup {
+        const isService = this.itemType() === 'service';
+
         return this.fb.group({
             name: [name, [Validators.required, Validators.minLength(1)]],
-            sku: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(50)]],
+            sku: [skuCode, [Validators.required, Validators.minLength(1), Validators.maxLength(50)]],
             price: [price, [Validators.required, Validators.min(0.01)]],
-            stockOnHand: [stock, [Validators.required, Validators.min(0)]],
+            stockOnHand: [
+                stock,
+                isService ? [] : [Validators.required, Validators.min(0)]
+            ],
         });
     }
 
@@ -198,10 +278,12 @@ export class ProductCreateComponent implements OnInit {
             ? `${this.generateSku(productName)}-${index}`
             : `SKU-${index}`;
 
-        const skuGroup = this.createSkuFormGroup();
-        skuGroup.patchValue({ sku: skuCode });
-
+        // Create SKU with pre-filled code to avoid validation issues
+        const skuGroup = this.createSkuFormGroup(skuCode);
         this.skus.push(skuGroup);
+
+        // Trigger validation update
+        this.skuValidityTrigger.update(v => v + 1);
     }
 
     /**
@@ -210,6 +292,8 @@ export class ProductCreateComponent implements OnInit {
     removeSku(index: number): void {
         if (this.skus.length > 1) {
             this.skus.removeAt(index);
+            // Trigger validation update
+            this.skuValidityTrigger.update(v => v + 1);
         }
     }
 
@@ -242,8 +326,13 @@ export class ProductCreateComponent implements OnInit {
         this.identificationMethod.set(method);
 
         // Clear other method
-        if (method !== 'barcode') this.productForm.patchValue({ barcode: '' });
-        if (method !== 'label-photos') this.photoCount.set(0);
+        if (method !== 'barcode') {
+            this.productForm.patchValue({ barcode: '' });
+            this.barcodeValue.set('');
+        }
+        if (method !== 'label-photos') {
+            this.photoCount.set(0);
+        }
     }
 
     /**
@@ -251,6 +340,7 @@ export class ProductCreateComponent implements OnInit {
      */
     onBarcodeScanned(barcode: string): void {
         this.productForm.patchValue({ barcode });
+        this.barcodeValue.set(barcode);
         this.identificationMethod.set('barcode');
         console.log('📦 Barcode scanned:', barcode);
     }
@@ -282,6 +372,34 @@ export class ProductCreateComponent implements OnInit {
     toggleItemType(type: 'product' | 'service'): void {
         this.itemType.set(type);
         this.submitError.set(null);
+
+        // Update validators for all existing SKUs
+        this.updateSkuValidators();
+    }
+
+    /**
+     * Update validators for all SKU forms based on current item type
+     */
+    private updateSkuValidators(): void {
+        const isService = this.itemType() === 'service';
+
+        this.skus.controls.forEach(skuGroup => {
+            const stockControl = skuGroup.get('stockOnHand');
+            if (stockControl) {
+                if (isService) {
+                    // Services: no stock validation
+                    stockControl.clearValidators();
+                    stockControl.setValue(0);
+                } else {
+                    // Products: stock is required
+                    stockControl.setValidators([Validators.required, Validators.min(0)]);
+                }
+                stockControl.updateValueAndValidity();
+            }
+        });
+
+        // Trigger validation update
+        this.skuValidityTrigger.update(v => v + 1);
     }
 
     /**
@@ -289,8 +407,9 @@ export class ProductCreateComponent implements OnInit {
      */
     async onSubmit(): Promise<void> {
         if (!this.canSubmit()) {
+            // Mark all fields as touched to show validation errors
             this.productForm.markAllAsTouched();
-            this.skus.markAllAsTouched();
+            this.markFormArrayTouched(this.skus);
             return;
         }
 
@@ -322,19 +441,23 @@ export class ProductCreateComponent implements OnInit {
             // Use Vendure's native trackInventory field:
             // - trackInventory: false → Service (infinite stock, no tracking)
             // - trackInventory: true → Product (tracked stock)
-            const variantInputs = formValue.skus.map((sku: any) => {
+            const variantInputs = formValue.skus.map((sku: any, index: number) => {
+                // Append unique suffix to SKU to prevent duplicates
+                // Format: USER_SKU-TIMESTAMP-INDEX
+                const uniqueSku = `${sku.sku.trim().toUpperCase()}-${this.skuUniqueSuffix}-${index + 1}`;
+
                 if (type === 'service') {
                     return {
-                        sku: sku.sku.trim().toUpperCase(),
+                        sku: uniqueSku,
                         name: sku.name.trim(),
                         price: Number(sku.price),
                         trackInventory: false, // Services: infinite stock
                         stockOnHand: 0,
-                        stockLocationId: stockLocationId || '',
+                        stockLocationId: undefined, // Services don't need location
                     };
                 } else {
                     return {
-                        sku: sku.sku.trim().toUpperCase(),
+                        sku: uniqueSku,
                         name: sku.name.trim(),
                         price: Number(sku.price),
                         trackInventory: true, // Products: track stock
@@ -342,11 +465,6 @@ export class ProductCreateComponent implements OnInit {
                         stockLocationId: stockLocationId!,
                     };
                 }
-            });
-
-            console.log(`📦 Creating ${type} with ${variantInputs.length} SKU(s):`, {
-                product: productInput,
-                variants: variantInputs,
             });
 
             const productId = await this.productService.createProductWithVariants(
@@ -372,12 +490,81 @@ export class ProductCreateComponent implements OnInit {
     }
 
     /**
+     * Submit form (wrapper for handling button click)
+     */
+    submitForm(): void {
+        this.onSubmit();
+    }
+
+    /**
      * Cancel and go back
      */
     cancel(): void {
         if (confirm('Discard this product?')) {
             this.router.navigate(['/dashboard/products']);
         }
+    }
+
+    // --- Validation Helper Methods ---
+
+    /**
+     * Mark all controls in a FormArray as touched
+     */
+    private markFormArrayTouched(formArray: FormArray): void {
+        formArray.controls.forEach(control => {
+            if (control instanceof FormGroup) {
+                Object.keys(control.controls).forEach(key => {
+                    control.get(key)?.markAsTouched();
+                });
+            } else {
+                control.markAsTouched();
+            }
+        });
+    }
+
+    /**
+     * Check if a SKU field has an error
+     */
+    skuFieldHasError(skuIndex: number, fieldName: string): boolean {
+        const control = this.skus.at(skuIndex)?.get(fieldName);
+        return !!(control && control.invalid && (control.dirty || control.touched));
+    }
+
+    /**
+     * Get error message for a SKU field
+     */
+    getSkuFieldError(skuIndex: number, fieldName: string): string {
+        const control = this.skus.at(skuIndex)?.get(fieldName);
+        if (!control?.errors) return '';
+
+        const errors = control.errors;
+        if (errors['required']) return 'Required';
+        if (errors['minlength']) return `Min ${errors['minlength'].requiredLength} chars`;
+        if (errors['maxlength']) return `Max ${errors['maxlength'].requiredLength} chars`;
+        if (errors['min']) return `Min value: ${errors['min'].min}`;
+
+        return 'Invalid';
+    }
+
+    /**
+     * Debug: Get detailed SKU validation state (for development)
+     */
+    getSkuValidationDebug(skuIndex: number): string {
+        const sku = this.skus.at(skuIndex);
+        if (!sku) return 'SKU not found';
+
+        const name = sku.get('name');
+        const skuCode = sku.get('sku');
+        const price = sku.get('price');
+        const stock = sku.get('stockOnHand');
+
+        const errors: string[] = [];
+        if (name?.invalid) errors.push(`name(${name.value || 'empty'})`);
+        if (skuCode?.invalid) errors.push(`sku(${skuCode.value || 'empty'})`);
+        if (price?.invalid) errors.push(`price(${price.value})`);
+        if (stock?.invalid) errors.push(`stock(${stock.value})`);
+
+        return errors.length > 0 ? errors.join(', ') : 'Valid';
     }
 }
 

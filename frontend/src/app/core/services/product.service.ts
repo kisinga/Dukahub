@@ -227,18 +227,17 @@ export class ProductService {
             // Prepare variant inputs for Vendure
             const variantInputs: CreateProductVariantsMutationVariables['input'] = variants.map(
                 (v) => {
+                    // Convert boolean trackInventory to Vendure's GlobalFlag enum ("TRUE" or "FALSE")
+                    const trackInventoryValue = v.trackInventory !== undefined
+                        ? (v.trackInventory ? 'TRUE' : 'FALSE')
+                        : 'TRUE'; // Default to TRUE (track inventory)
+
                     const input: any = {
                         productId,
                         sku: v.sku,
                         price: Math.round(v.price * 100), // Convert to cents
-                        trackInventory: v.trackInventory !== undefined ? v.trackInventory : true, // Default to true (track inventory)
+                        trackInventory: trackInventoryValue, // Use enum string value
                         stockOnHand: v.stockOnHand,
-                        stockLevels: [
-                            {
-                                stockLocationId: v.stockLocationId,
-                                stockOnHand: v.stockOnHand,
-                            },
-                        ],
                         translations: [
                             {
                                 languageCode: 'en' as any,
@@ -246,6 +245,17 @@ export class ProductService {
                             },
                         ],
                     };
+
+                    // Only include stockLevels if we have a valid stockLocationId
+                    // For services (trackInventory: FALSE), stockLocationId may be empty
+                    if (v.stockLocationId && v.stockLocationId.trim() !== '') {
+                        input.stockLevels = [
+                            {
+                                stockLocationId: v.stockLocationId,
+                                stockOnHand: v.stockOnHand,
+                            },
+                        ];
+                    }
 
                     // Include optionIds only if provided (for future Phase 1)
                     if (v.optionIds && v.optionIds.length > 0) {
@@ -266,9 +276,22 @@ export class ProductService {
             console.log('🔧 Mutation result:', result);
             console.log('🔧 Created variants:', result.data?.createProductVariants);
 
-            return result.data?.createProductVariants || null;
-        } catch (error) {
-            console.error('Variant creation failed:', error);
+            // Check for errors in the result
+
+            if (!result.data?.createProductVariants) {
+                console.error('❌ No variants returned from mutation');
+                throw new Error('Mutation returned no data');
+            }
+
+            return result.data.createProductVariants;
+        } catch (error: any) {
+            console.error('❌ Variant creation failed:', error);
+            console.error('❌ Error details:', {
+                message: error.message,
+                graphQLErrors: error.graphQLErrors,
+                networkError: error.networkError,
+                extraInfo: error.extraInfo
+            });
             throw error;
         }
     }

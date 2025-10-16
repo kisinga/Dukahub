@@ -48,48 +48,71 @@
   <!-- Form -->
   <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="space-y-3">
     
-    <!-- Step 1: Identification -->
+    <!-- Step 1: Product Name -->
+    <div class="card bg-base-100 shadow">
+      <div class="card-body p-3">
+        <h3 class="font-bold text-sm mb-2">1️⃣ Product Name</h3>
+        <input
+          type="text"
+          formControlName="name"
+          [placeholder]="itemType() === 'product' ? 'e.g., Tomatoes' : 'e.g., Haircut'"
+          class="input input-bordered w-full"
+          [class.input-error]="productForm.get('name')?.invalid && productForm.get('name')?.touched"
+        />
+      </div>
+    </div>
+
+    <!-- Step 2: Identification -->
     <div class="card bg-base-100 shadow">
       <div class="card-body p-3">
         <h3 class="font-bold text-sm mb-2">
-          {{ itemType() === 'product' ? '1️⃣ How to ID This Item?' : '1️⃣ How to ID This Service?' }}
+          {{ itemType() === 'product' ? '2️⃣ How to ID This Item?' : '2️⃣ How to ID This Service?' }}
         </h3>
         
         <div class="grid gap-2">
           <!-- Option A: Barcode -->
           <div 
-            class="p-2 rounded border-2 cursor-pointer"
+            class="p-2 rounded border-2"
             [class.border-primary]="identificationMethod() === 'barcode'"
             [class.bg-primary/5]="identificationMethod() === 'barcode'"
             [class.border-base-300]="identificationMethod() !== 'barcode'"
-            (click)="chooseIdentificationMethod('barcode')"
           >
-            <div class="flex items-center gap-2">
+            <div 
+              class="flex items-center gap-2 cursor-pointer"
+              (click)="chooseIdentificationMethod('barcode')"
+            >
               <div class="text-xl">🏷️</div>
               <div class="flex-1">
                 <span class="font-semibold text-sm">Barcode</span>
+                @if (productForm.get('barcode')?.value?.trim()) {
+                <span class="text-xs opacity-70 ml-1">({{ productForm.get('barcode')?.value }})</span>
+                }
               </div>
-              @if (identificationMethod() === 'barcode') {
+              @if (identificationMethod() === 'barcode' && productForm.get('barcode')?.value?.trim()) {
               <div class="text-primary">✓</div>
               }
             </div>
             
             @if (identificationMethod() === 'barcode') {
-            <div class="flex gap-2 mt-2">
+            <div class="flex gap-2 mt-2" (click)="$event.stopPropagation()">
               <input
                 type="text"
                 formControlName="barcode"
-                placeholder="Or type manually"
+                placeholder="Type barcode here..."
                 class="input input-sm input-bordered flex-1 font-mono"
+                [class.input-success]="productForm.get('barcode')?.value?.trim()"
+                autofocus
               />
               <button
                 type="button"
-                (click)="startBarcodeScanner(); $event.stopPropagation()"
+                (click)="startBarcodeScanner()"
                 class="btn btn-sm btn-primary"
+                title="Scan with camera"
               >
                 📷
               </button>
             </div>
+            <p class="text-xs opacity-60 mt-1">Type the barcode or scan with camera</p>
             }
           </div>
 
@@ -147,20 +170,6 @@
       </div>
     </div>
 
-    <!-- Step 2: Product Name -->
-    <div class="card bg-base-100 shadow">
-      <div class="card-body p-3">
-        <h3 class="font-bold text-sm mb-2">2️⃣ Product Name</h3>
-        <input
-          type="text"
-          formControlName="name"
-          [placeholder]="itemType() === 'product' ? 'e.g., Tomatoes' : 'e.g., Haircut'"
-          class="input input-bordered w-full"
-          [class.input-error]="productForm.get('name')?.invalid && productForm.get('name')?.touched"
-        />
-      </div>
-    </div>
-
     <!-- Step 3: SKUs (Multiple) -->
     <div class="card bg-base-100 shadow">
       <div class="card-body p-3">
@@ -176,7 +185,7 @@
         </div>
         
         <p class="text-xs opacity-60 mb-3">
-          {{ itemType() === 'product' ? 'e.g., 1kg, 2kg, 5kg' : 'e.g., Kids, Regular, Premium' }}
+          {{ itemType() === 'product' ? 'e.g., 1kg, 2kg, 5kg' : 'e.g., Kids, Regular, Premium' }}. SKU IDs are auto-generated.
         </p>
 
         <!-- SKU List -->
@@ -198,42 +207,62 @@
 
             <div class="space-y-2">
               <!-- SKU Name -->
-              <input
-                type="text"
-                formControlName="name"
-                placeholder="Name (e.g., 1kg or Kids)"
-                class="input input-sm input-bordered w-full"
-              />
+              <div>
+                <label class="text-xs opacity-70 mb-1 block">Name</label>
+                <input
+                  type="text"
+                  formControlName="name"
+                  placeholder="e.g., 1kg or Kids"
+                  class="input input-sm input-bordered w-full"
+                  [class.input-error]="skuFieldHasError($index, 'name')"
+                />
+                @if (skuFieldHasError($index, 'name')) {
+                <p class="text-error text-xs mt-0.5">{{ getSkuFieldError($index, 'name') }}</p>
+                }
+              </div>
 
-              <!-- SKU Code -->
-              <input
-                type="text"
-                formControlName="sku"
-                placeholder="SKU code"
-                class="input input-sm input-bordered w-full font-mono"
-                maxlength="50"
-              />
+              <!-- SKU Code (Read-only preview) -->
+              <div>
+                <label class="text-xs opacity-70 mb-1 block">SKU ID (auto-generated)</label>
+                <div class="px-3 py-2 bg-base-300 rounded text-xs font-mono opacity-70">
+                  {{ sku.get('sku')?.value || 'AUTO' }}
+                </div>
+                <!-- Hidden field for form validation -->
+                <input type="hidden" formControlName="sku" />
+              </div>
 
               <!-- Price & Stock -->
               <div class="grid grid-cols-2 gap-2">
                 <div>
+                  <label class="text-xs opacity-70 mb-1 block">Price</label>
                   <input
                     type="number"
                     formControlName="price"
-                    placeholder="Price"
+                    placeholder="0.00"
                     step="0.01"
+                    min="0.01"
                     class="input input-sm input-bordered w-full"
+                    [class.input-error]="skuFieldHasError($index, 'price')"
                   />
+                  @if (skuFieldHasError($index, 'price')) {
+                  <p class="text-error text-xs mt-0.5">{{ getSkuFieldError($index, 'price') }}</p>
+                  }
                 </div>
 
                 @if (itemType() === 'product') {
                 <div>
+                  <label class="text-xs opacity-70 mb-1 block">Stock</label>
                   <input
                     type="number"
                     formControlName="stockOnHand"
-                    placeholder="Stock"
+                    placeholder="0"
+                    min="0"
                     class="input input-sm input-bordered w-full"
+                    [class.input-error]="skuFieldHasError($index, 'stockOnHand')"
                   />
+                  @if (skuFieldHasError($index, 'stockOnHand')) {
+                  <p class="text-error text-xs mt-0.5">{{ getSkuFieldError($index, 'stockOnHand') }}</p>
+                  }
                 </div>
                 }
               </div>
@@ -273,19 +302,19 @@
       <!-- Validation Issues -->
       @if (!canSubmit() && validationIssues().length > 0) {
       <div class="text-xs text-error text-center mb-2">
-        <span *ngFor="let issue of validationIssues(); let last = last">
-          {{ issue }}<span *ngIf="!last"> · </span>
-        </span>
+        @for (issue of validationIssues(); track issue; let last = $last) {
+          <span>{{ issue }}@if (!last) { · }</span>
+        }
       </div>
       }
 
       <div class="flex gap-2">
-        <button type="button" (click)="cancel()" class="btn btn-ghost btn-sm">Cancel</button>
+        <button type="button" (click)="cancel()" class="btn btn-ghost btn-sm" [disabled]="isSubmitting()">Cancel</button>
         <button
-          type="submit"
-          (click)="onSubmit()"
+          type="button"
           class="btn btn-primary flex-1"
-          [disabled]="!canSubmit()"
+          [disabled]="!canSubmit() || isSubmitting()"
+          (click)="submitForm()"
         >
           @if (isSubmitting()) {
           <span class="loading loading-spinner loading-sm"></span>
