@@ -145,8 +145,15 @@ export class MlAutoExtractService implements OnModuleInit {
      */
     private async processQueue(): Promise<void> {
         try {
+            console.log('[ML Auto-Extract] Checking for due extractions...');
             const dueExtractions = await this.extractionQueueService.getDueExtractions(RequestContext.empty());
 
+            if (dueExtractions.length === 0) {
+                console.log('[ML Auto-Extract] No extractions to process (this is normal when no products have been updated recently)');
+                return;
+            }
+
+            console.log(`[ML Auto-Extract] Processing ${dueExtractions.length} due extractions`);
             for (const extraction of dueExtractions) {
                 try {
                     console.log(`[ML Auto-Extract] Processing extraction ${extraction.id} for channel ${extraction.channelId}`);

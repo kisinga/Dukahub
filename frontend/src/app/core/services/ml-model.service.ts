@@ -119,7 +119,9 @@ export class MlModelService {
             if (source.startsWith('http://') || source.startsWith('https://')) {
                 return source;
             }
-            // Otherwise, prepend /assets/
+            // The source field from Vendure contains the relative path within asset storage
+            // We need to construct the proper asset URL by prepending /assets/
+            // Source format: "source/49/metadata.json" -> URL: "/assets/source/49/metadata.json"
             return `/assets/${source}`;
         };
 

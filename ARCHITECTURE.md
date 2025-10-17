@@ -107,6 +107,89 @@ Our solution: An incredibly fast, intuitive POS system augmented with AI that ma
 | PostgreSQL | 5432          | 5433         | Database           |
 | Redis      | 6379          | 6479         | Cache              |
 
+## Customer & Supplier Management
+
+Dukahub implements a unified customer and supplier management system using Vendure's native Customer entity with custom fields.
+
+### System Design
+
+- **Single Entity Approach**: Both customers and suppliers use Vendure's `Customer` entity
+- **Identification**: `isSupplier: true` custom field marks suppliers
+- **Key Insight**: **Every supplier is also a customer** - enabling suppliers to place orders and be managed through the same system
+- **Payment Tracking**: `outstandingAmount` field tracks financial relationships (positive = owed to supplier, negative = customer owes)
+
+### Custom Fields
+
+```typescript
+{
+  isSupplier: boolean,        // Marks as supplier (default: false)
+  supplierType: string,       // Manufacturer, Distributor, etc.
+  contactPerson: string,      // Primary contact person
+  taxId: string,             // Tax identification number
+  paymentTerms: string,      // Payment terms (Net 30, COD, etc.)
+  notes: text,               // Additional supplier notes
+  outstandingAmount: number  // Amount owed (positive = owed to supplier, negative = customer owes)
+}
+```
+
+### Benefits
+
+1. **KISS Principle**: Simple extension of existing Vendure functionality
+2. **No New Entities**: Reuses proven customer management
+3. **Complete Integration**: Frontend and backend fully integrated
+4. **Flexible**: Easy to extend with additional fields
+5. **Vendure Native**: Uses framework's built-in features
+
+**See [Customer & Supplier Implementation Guide](./docs/technical/CUSTOMER_SUPPLIER_IMPLEMENTATION.md) for complete technical details**
+
+## Cashier Flow - Location-Based Two-Step Payment
+
+Dukahub implements a location-specific cashier flow that enables a two-step sales process:
+
+1. **Salesperson** adds items to cart and sends order to cashier (no customer required)
+2. **Cashier** receives order with PENDING_PAYMENT status and collects payment
+
+### Configuration
+
+**Per-Location Toggles:**
+
+- `cashierFlowEnabled` - Feature toggle (rarely changes)
+- `cashierOpen` - Status toggle (open/close shifts)
+
+**Data Flow:**
+
+```typescript
+// StockLocation custom fields
+{
+  cashierFlowEnabled: boolean,  // Enable feature at this location
+  cashierOpen: boolean          // Currently accepting orders
+}
+```
+
+### UI Behavior
+
+**Sell Page:**
+
+- Shows "Send to Cashier" when `cashierFlowEnabled = true`
+- Hides button when `false`
+- No customer required for cashier orders
+
+**Dashboard:**
+
+- Shows "Cash Register Open" badge when both `true`
+- Shows "Cash Register Closed" when enabled but closed
+- No badge when feature disabled
+
+### Implementation Status
+
+✅ Location-specific cashier flow toggle  
+✅ Conditional UI based on active location  
+✅ Status badge on dashboard  
+✅ Session persistence  
+🔲 Backend order creation (stub)  
+🔲 Cashier station interface  
+🔲 Payment integrations
+
 ## Multi-tenancy Model
 
 Dukahub uses **Vendure Channels** for multi-tenancy, where each business is a separate channel.

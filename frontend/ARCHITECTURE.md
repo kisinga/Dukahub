@@ -1118,3 +1118,465 @@ Edit Product → Change prices/names → Save
                                       ↓
 Inventory Module → Adjustment → Track reason/date → Update stock
 ```
+
+---
+
+## Customer & Supplier Management UI
+
+### Overview
+
+Mobile-optimized customer and supplier management with unified entity approach using Vendure's Customer entity with custom fields.
+
+### Component Architecture
+
+```
+dashboard/pages/
+├── customer-create/           # Single-step customer creation
+│   ├── customer-create.component.ts
+│   ├── customer-create.component.html
+│   └── customer-create.component.scss
+├── customer-edit/             # Customer editing
+│   ├── customer-edit.component.ts
+│   ├── customer-edit.component.html
+│   └── customer-edit.component.scss
+├── supplier-create/           # Two-step supplier creation
+│   ├── supplier-create.component.ts
+│   ├── supplier-create.component.html
+│   └── supplier-create.component.scss
+├── supplier-edit/             # Two-step supplier editing
+│   ├── supplier-edit.component.ts
+│   ├── supplier-edit.component.html
+│   └── supplier-edit.component.scss
+└── shared/                    # Reusable components
+    └── person-edit-form/      # Shared form for customer/supplier editing
+        ├── person-edit-form.component.ts
+        ├── person-edit-form.component.html
+        └── person-edit-form.component.scss
+```
+
+### Mobile-Optimized Forms
+
+#### Customer Creation Form
+
+**Location**: `dashboard/pages/customer-create/`
+
+**Features:**
+
+- Single-step form with minimal required fields
+- Mobile-first responsive design with sticky header
+- Real-time validation with error handling
+- Loading states during submission
+- Dismissible alert for errors
+
+**Required Fields:**
+
+- First Name
+- Last Name
+- Phone Number (format: 0XXXXXXXXX)
+
+**Optional Fields:**
+
+- Email Address
+
+**Validation:**
+
+```typescript
+// Phone format validation: 0XXXXXXXXX (Kenya mobile format)
+phonePattern = /^0[0-9]{9}$/;
+
+// Email validation (optional)
+emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+```
+
+#### Supplier Creation Form
+
+**Location**: `dashboard/pages/supplier-create/`
+
+**Features:**
+
+- Two-step form process (Basic Info → Supplier Details)
+- Progress indicator showing current step
+- Mobile-optimized with sticky header and back navigation
+- All supplier-specific fields are optional
+- Combined form submission
+
+**Step 1 (Required):**
+
+- First Name
+- Last Name
+- Phone Number (format: 0XXXXXXXXX)
+
+**Step 1 (Optional):**
+
+- Email Address
+
+**Step 2 (Optional):**
+
+- Supplier Type (Manufacturer, Distributor, etc.)
+- Contact Person
+- Tax ID
+- Payment Terms (Net 30, COD, etc.)
+- Notes
+
+#### Shared PersonEditFormComponent
+
+**Location**: `dashboard/pages/shared/person-edit-form/`
+
+**Purpose**: Reusable form component for editing basic person information (used by both customer-edit and supplier-edit)
+
+**Features:**
+
+- Mobile-optimized form layout
+- Validation (phone required, email optional)
+- Error handling and display
+- Form submission with loading states
+- Consistent styling across customer and supplier editing
+
+### Design Principles
+
+1. **Mobile-First**: Forms optimized for mobile devices with touch-friendly inputs
+2. **KISS Principle**: Minimal required fields, optional fields clearly marked
+3. **Progressive Enhancement**: Basic info first, then additional details
+4. **Consistent UX**: Both forms follow the same design patterns
+5. **Error Handling**: Clear validation messages and loading states
+
+### Technical Implementation
+
+**Framework**: Angular 18 with standalone components  
+**Styling**: daisyUI 5 with Tailwind CSS  
+**Forms**: Reactive Forms with validation  
+**State Management**: Angular signals for reactive state  
+**Navigation**: Angular Router with back button support
+
+### Component Responsibilities
+
+#### CustomerCreateComponent
+
+- Mobile-optimized header with back button
+- Error handling with dismissible alerts
+- Reactive form with validation (phone required, email optional)
+- Loading states during submission
+
+#### SupplierCreateComponent
+
+- Mobile-optimized header with back button
+- Progress indicator (2-step process)
+- Step 1: Basic person information (shared validation)
+- Step 2: Supplier-specific details (no supplier code)
+- Error handling and navigation between steps
+- Combined form submission
+
+#### CustomerEditComponent & SupplierEditComponent
+
+- Mobile-optimized header with back button
+- Shared PersonEditFormComponent for consistency
+- Data loading with loading states
+- Update functionality with error handling
+
+### Form Validation
+
+**Phone Number Format:**
+
+```typescript
+// Kenya mobile format: 0XXXXXXXXX
+phonePattern = /^0[0-9]{9}$/;
+
+// Validation message
+('Phone must be 10 digits starting with 0 (e.g., 0123456789)');
+```
+
+**Email Format:**
+
+```typescript
+// Standard email validation (optional field)
+emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Validation message
+('Please enter a valid email address');
+```
+
+**Supplier Fields:**
+
+- All supplier-specific fields are optional
+- No validation beyond basic format checks
+- Focus on ease of use over strict validation
+
+### Error Handling
+
+**Form Validation Errors:**
+
+- Real-time validation with clear error messages
+- Field-level error display below each input
+- Form submission blocked until all required fields valid
+
+**Network Errors:**
+
+- Dismissible alert banners for API errors
+- Loading states during submission
+- Retry mechanisms for failed requests
+
+**User Experience:**
+
+- Clear success messages after creation/update
+- Navigation back to list after successful operations
+- Preserve form data on validation errors
+
+### Payment Tracking Integration
+
+**Outstanding Amount Field:**
+
+- Tracks financial relationships between company and customers/suppliers
+- Positive values: Amount owed TO supplier (company owes money)
+- Negative values: Amount owed BY customer (customer owes money)
+- Zero: No outstanding balance
+
+**Future Integration:**
+
+- Payment history tracking
+- Automated payment reminders
+- Integration with accounting systems
+- Purchase order management with payment tracking
+
+### Mobile Optimization Features
+
+**Touch-Friendly Design:**
+
+- Large tap targets (minimum 44px)
+- Generous spacing between form elements
+- Clear visual hierarchy with proper contrast
+
+**Navigation:**
+
+- Sticky headers with back button
+- Progress indicators for multi-step forms
+- Consistent navigation patterns
+
+**Responsive Layout:**
+
+- Single column layout on mobile
+- Optimized input sizing for touch
+- Proper keyboard handling for different input types
+
+### Integration with Backend
+
+**GraphQL Operations:**
+
+- Uses existing customer operations with custom fields
+- No new entities required
+- Leverages Vendure's native customer management
+
+**Custom Fields:**
+
+```typescript
+{
+  isSupplier: boolean,        // Marks as supplier (default: false)
+  supplierType: string,       // Manufacturer, Distributor, etc.
+  contactPerson: string,      // Primary contact person
+  taxId: string,             // Tax identification number
+  paymentTerms: string,      // Payment terms (Net 30, COD, etc.)
+  notes: text,               // Additional supplier notes
+  outstandingAmount: number  // Amount owed tracking
+}
+```
+
+**Service Layer:**
+
+- CustomerService: Standard customer operations
+- SupplierService: Supplier operations using customer entity with filtering
+- Unified approach allows suppliers to also place orders
+
+### Future Enhancements
+
+**UI Improvements:**
+
+- Advanced search and filtering
+- Bulk operations for customers/suppliers
+- Export/import functionality
+- Payment history interface
+
+**Integration:**
+
+- Purchase order management
+- Automated payment reminders
+- Integration with accounting systems
+- Advanced financial reporting
+
+---
+
+## Cashier Flow UI Implementation
+
+### Overview
+
+Location-based two-step payment system that enables salespersons to send orders to dedicated cashier stations for payment collection.
+
+### UI Components
+
+#### Sell Page Integration
+
+**Location**: `dashboard/pages/sell/sell.component.ts`
+
+**Features:**
+
+- Conditional "Send to Cashier" button based on location settings
+- No customer required for cashier orders
+- Cart management for pending orders
+
+**Implementation:**
+
+```typescript
+// Reads from active location
+readonly cashierFlowEnabled = stockLocationService.cashierFlowEnabled;
+readonly cashierOpen = stockLocationService.cashierOpen;
+
+// Conditional UI rendering
+@if (cashierFlowEnabled && cashierOpen) {
+  <button class="btn btn-primary" (click)="handleCompleteCashier()">
+    Send to Cashier
+  </button>
+}
+```
+
+#### Dashboard Status Badge
+
+**Location**: `dashboard/pages/overview/overview.component.ts`
+
+**Status Indicators:**
+
+- "Cash Register Open" badge when both toggles are true
+- "Cash Register Closed" when enabled but closed
+- No badge when feature is disabled
+
+**Implementation:**
+
+```typescript
+// Status computation
+get cashierStatus(): string {
+  if (!this.stockLocationService.cashierFlowEnabled) return '';
+  return this.stockLocationService.cashierOpen ? 'open' : 'closed';
+}
+```
+
+### Data Flow
+
+#### StockLocation Custom Fields
+
+```typescript
+// Backend custom fields on StockLocation entity
+{
+  cashierFlowEnabled: boolean,  // Enable feature at this location
+  cashierOpen: boolean          // Currently accepting orders
+}
+```
+
+#### Service Integration
+
+**StockLocationService:**
+
+- `cashierFlowEnabled()` - Signal for feature toggle
+- `cashierOpen()` - Signal for status toggle
+- Fetches location data including custom fields
+
+**GraphQL Queries:**
+
+- Extended to include cashier custom fields
+- Real-time updates via reactive signals
+
+### Order Creation Flow
+
+#### Current Implementation (Stub)
+
+```typescript
+async handleCompleteCashier(): Promise<void> {
+  // Creates order with PENDING_PAYMENT status
+  // No customer data required
+  // Order sent to cashier station
+  // Cart clears for next customer
+}
+```
+
+#### Future Implementation
+
+**Backend Order Creation:**
+
+- Implement Vendure mutation for PENDING_PAYMENT status
+- Order queuing system for cashier stations
+- Payment processing integration
+
+**Cashier Station Interface:**
+
+- Dedicated interface to view pending orders
+- Payment collection and completion
+- Order status management
+
+### Session Persistence
+
+**LocalStorage Integration:**
+
+```typescript
+localStorage.setItem('company_session', JSON.stringify({
+  companies: [...],
+  activeCompanyId: '1',
+  channelData: { mlModelJsonId: '...' },
+  // Location data fetched separately with cashier settings
+}));
+```
+
+### Configuration Management
+
+#### Admin Configuration
+
+**Vendure Admin Interface:**
+
+1. Go to Settings → Stock Locations
+2. Select location (e.g., "Main Store")
+3. Check "Enable Cashier Flow"
+4. Check "Cashier Open" when ready to accept orders
+5. Save
+
+**Result:** Sell page shows "Send to Cashier" button for that location.
+
+#### Frontend State Management
+
+**Reactive Updates:**
+
+- Location changes automatically update UI
+- Real-time status synchronization
+- Persistent state across sessions
+
+### Mobile Optimization
+
+**Touch-Friendly Design:**
+
+- Large "Send to Cashier" button
+- Clear visual indicators for cashier status
+- Responsive layout for different screen sizes
+
+**User Experience:**
+
+- Immediate feedback on cashier availability
+- Clear status communication
+- Seamless workflow integration
+
+### Files Modified
+
+**Backend:**
+
+- `backend/src/migrations/1760505873000-AddCashierCustomFields.ts`
+- `backend/src/vendure-config.ts` - Both fields on StockLocation
+
+**Frontend:**
+
+- `frontend/src/app/core/services/stock-location.service.ts` - Added cashier fields
+- `frontend/src/app/core/graphql/product.graphql.ts` - Query both fields
+- `frontend/src/app/dashboard/pages/sell/sell.component.ts` - Use location setting
+- `frontend/src/app/dashboard/pages/overview/overview.component.ts` - Status badge
+
+### Future Enhancements
+
+**Phase 2 Features:**
+
+1. **Backend Order Creation** - Implement Vendure mutation for PENDING_PAYMENT
+2. **Cashier Station Interface** - Dedicated UI for cashier operations
+3. **M-PESA Integration** - Auto-detect mobile payments
+4. **Payment History** - Track cashier transactions
+5. **Multi-Cashier Support** - Multiple cashier stations per location

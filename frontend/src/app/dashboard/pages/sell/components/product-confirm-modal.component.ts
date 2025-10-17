@@ -63,23 +63,47 @@ import { ProductSearchResult, ProductVariant } from '../../../../core/services/p
             <p class="text-xs font-medium opacity-60 px-1 mb-1">Select variant:</p>
             @for (variant of product()!.variants; track variant.id) {
             <button
-              class="w-full flex items-center justify-between gap-2 p-2 rounded-lg bg-base-200 hover:bg-base-300 active:scale-[0.98] transition-all border-2 border-transparent hover:border-primary"
-              (click)="variantSelected.emit({ variant, quantity: 1 })"
+              class="w-full flex items-center justify-between gap-2 p-3 rounded-lg transition-all border-2"
+              [class.bg-base-200]="variant.stockLevel === 'IN_STOCK'"
+              [class.bg-error/10]="variant.stockLevel === 'OUT_OF_STOCK'"
+              [class.border-transparent]="variant.stockLevel === 'IN_STOCK'"
+              [class.border-error/30]="variant.stockLevel === 'OUT_OF_STOCK'"
+              [class.hover:bg-base-300]="variant.stockLevel === 'IN_STOCK'"
+              [class.hover:border-primary]="variant.stockLevel === 'IN_STOCK'"
+              [class.active:scale-[0.98]]="variant.stockLevel === 'IN_STOCK'"
+              [class.cursor-pointer]="variant.stockLevel === 'IN_STOCK'"
+              [class.cursor-not-allowed]="variant.stockLevel === 'OUT_OF_STOCK'"
+              [class.opacity-60]="variant.stockLevel === 'OUT_OF_STOCK'"
+              [disabled]="variant.stockLevel === 'OUT_OF_STOCK'"
+              (click)="variant.stockLevel === 'IN_STOCK' && variantSelected.emit({ variant, quantity: 1 })"
             >
               <div class="text-left min-w-0 flex-1">
                 <div class="font-semibold text-sm truncate">{{ variant.name }}</div>
                 <div class="text-xs opacity-60">{{ variant.sku }}</div>
+                @if (variant.stockLevel === 'OUT_OF_STOCK') {
+                <div class="text-xs text-error font-medium mt-1">Out of Stock</div>
+                }
               </div>
               <div class="text-right flex items-center gap-2">
                 <div class="text-base font-bold text-tabular">
                   {{ currencyService.format(variant.priceWithTax) }}
                 </div>
                 <div
-                  class="badge badge-xs"
+                  class="badge badge-sm"
                   [class.badge-success]="variant.stockLevel === 'IN_STOCK'"
                   [class.badge-error]="variant.stockLevel === 'OUT_OF_STOCK'"
                 >
-                  {{ variant.stockLevel === 'IN_STOCK' ? '✓' : '✕' }}
+                  @if (variant.stockLevel === 'IN_STOCK') {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Available
+                  } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Unavailable
+                  }
                 </div>
               </div>
             </button>
@@ -87,18 +111,47 @@ import { ProductSearchResult, ProductVariant } from '../../../../core/services/p
           </div>
           } @else if (product()!.variants.length === 1) {
           <!-- Single Variant -->
-          <div class="bg-base-200 rounded-lg p-2 mb-3">
+          <div 
+            class="rounded-lg p-3 mb-3 border-2"
+            [class.bg-base-200]="product()!.variants[0].stockLevel === 'IN_STOCK'"
+            [class.bg-error/10]="product()!.variants[0].stockLevel === 'OUT_OF_STOCK'"
+            [class.border-transparent]="product()!.variants[0].stockLevel === 'IN_STOCK'"
+            [class.border-error/30]="product()!.variants[0].stockLevel === 'OUT_OF_STOCK'"
+          >
             <div class="flex justify-between items-center">
               <div class="min-w-0 flex-1">
                 <div class="font-semibold text-sm">{{ product()!.variants[0].name }}</div>
                 <div class="text-xs opacity-60">{{ product()!.variants[0].sku }}</div>
+                @if (product()!.variants[0].stockLevel === 'OUT_OF_STOCK') {
+                <div class="text-xs text-error font-medium mt-1">Out of Stock</div>
+                }
               </div>
-              <div class="text-xl font-bold text-primary text-tabular">
-                {{ currencyService.format(product()!.variants[0].priceWithTax) }}
+              <div class="text-right flex items-center gap-2">
+                <div class="text-xl font-bold text-primary text-tabular">
+                  {{ currencyService.format(product()!.variants[0].priceWithTax) }}
+                </div>
+                <div
+                  class="badge badge-sm"
+                  [class.badge-success]="product()!.variants[0].stockLevel === 'IN_STOCK'"
+                  [class.badge-error]="product()!.variants[0].stockLevel === 'OUT_OF_STOCK'"
+                >
+                  @if (product()!.variants[0].stockLevel === 'IN_STOCK') {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Available
+                  } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Unavailable
+                  }
+                </div>
               </div>
             </div>
           </div>
 
+          @if (product()!.variants[0].stockLevel === 'IN_STOCK') {
           <!-- Quantity Selector -->
           <div class="bg-base-100 rounded-lg p-3 mb-3">
             <div class="flex items-center justify-between gap-3">
@@ -147,7 +200,7 @@ import { ProductSearchResult, ProductVariant } from '../../../../core/services/p
 
           <!-- Add to Cart Button -->
           <button
-            class="btn btn-primary btn-block min-h-[3rem]"
+            class="btn btn-primary btn-block min-h-[3rem] hover:scale-105 active:scale-95 transition-transform"
             (click)="variantSelected.emit({ variant: product()!.variants[0], quantity: +quantityInput.value })"
           >
             <svg
@@ -166,6 +219,25 @@ import { ProductSearchResult, ProductVariant } from '../../../../core/services/p
             </svg>
             Add to Cart
           </button>
+          } @else {
+          <!-- Out of Stock Message -->
+          <div class="alert alert-error">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <div>
+              <div class="font-semibold">Product Unavailable</div>
+              <div class="text-sm">This item is currently out of stock and cannot be added to cart.</div>
+            </div>
+          </div>
+          }
           } @else {
           <!-- No Variants -->
           <div class="alert alert-error">

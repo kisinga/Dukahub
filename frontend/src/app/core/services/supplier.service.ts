@@ -18,7 +18,6 @@ export interface SupplierInput {
     phoneNumber?: string;
     password?: string;
     // Supplier-specific custom fields
-    supplierCode?: string;
     supplierType?: string;
     contactPerson?: string;
     taxId?: string;
@@ -65,12 +64,14 @@ export class SupplierService {
         try {
             const client = this.apolloService.getClient();
 
-            // Prepare input with custom fields for supplier
+            // Prepare input with only basic customer fields at top level, supplier fields in customFields
             const supplierInput = {
-                ...input,
+                firstName: input.firstName,
+                lastName: input.lastName,
+                emailAddress: input.emailAddress, // Should be provided by the component (with placeholder if needed)
+                phoneNumber: input.phoneNumber,
                 customFields: {
                     isSupplier: true,
-                    supplierCode: input.supplierCode,
                     supplierType: input.supplierType,
                     contactPerson: input.contactPerson,
                     taxId: input.taxId,
@@ -138,7 +139,6 @@ export class SupplierService {
                 ...input,
                 customFields: {
                     isSupplier: true,
-                    supplierCode: input.supplierCode,
                     supplierType: input.supplierType,
                     contactPerson: input.contactPerson,
                     taxId: input.taxId,
@@ -213,38 +213,27 @@ export class SupplierService {
         try {
             const client = this.apolloService.getClient();
 
-            // Filter to only get customers with isSupplier = true
-            const filterOptions = {
-                ...options,
-                filter: {
-                    ...options?.filter,
-                    customFields: {
-                        isSupplier: { eq: true }
-                    }
-                }
-            };
-
             const result = await client.query<any>({
                 query: GET_SUPPLIERS,
                 variables: {
-                    options: filterOptions || {
-                        take: 50,
-                        skip: 0,
-                        filter: {
-                            customFields: {
-                                isSupplier: { eq: true }
-                            }
-                        }
+                    options: options || {
+                        take: 100, // Fetch more to account for filtering
+                        skip: 0
                     }
                 },
                 fetchPolicy: 'network-only',
             });
 
-            const items = result.data?.customers?.items || [];
-            const total = result.data?.customers?.totalItems || 0;
+            const allItems = result.data?.customers?.items || [];
+            const allTotal = result.data?.customers?.totalItems || 0;
 
-            this.suppliersSignal.set(items);
-            this.totalItemsSignal.set(total);
+            // Filter to only get suppliers (customers with isSupplier = true) on frontend
+            const suppliersOnly = allItems.filter((customer: any) =>
+                customer.customFields?.isSupplier === true
+            );
+
+            this.suppliersSignal.set(suppliersOnly);
+            this.totalItemsSignal.set(suppliersOnly.length);
         } catch (error: any) {
             console.error('❌ Failed to fetch suppliers:', error);
             this.errorSignal.set(error.message || 'Failed to fetch suppliers');

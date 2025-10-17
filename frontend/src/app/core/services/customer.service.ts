@@ -279,22 +279,28 @@ export class CustomerService {
 
         try {
             const client = this.apolloService.getClient();
+
             const result = await client.query<any>({
                 query: GET_CUSTOMERS,
                 variables: {
                     options: options || {
-                        take: 50,
+                        take: 100, // Fetch more to account for filtering
                         skip: 0
                     }
                 },
                 fetchPolicy: 'network-only',
             });
 
-            const items = result.data?.customers?.items || [];
-            const total = result.data?.customers?.totalItems || 0;
+            const allItems = result.data?.customers?.items || [];
+            const allTotal = result.data?.customers?.totalItems || 0;
 
-            this.customersSignal.set(items);
-            this.totalItemsSignal.set(total);
+            // Filter out suppliers (customers with isSupplier = true) on frontend
+            const customersOnly = allItems.filter((customer: any) =>
+                !customer.customFields?.isSupplier
+            );
+
+            this.customersSignal.set(customersOnly);
+            this.totalItemsSignal.set(customersOnly.length);
         } catch (error: any) {
             console.error('❌ Failed to fetch customers:', error);
             this.errorSignal.set(error.message || 'Failed to fetch customers');

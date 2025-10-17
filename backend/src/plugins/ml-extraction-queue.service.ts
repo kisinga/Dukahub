@@ -83,6 +83,13 @@ export class MlExtractionQueueService {
                 return [];
             }
 
+            // Log the number of due extractions found
+            if (result.rows.length === 0) {
+                console.log('[ML Extraction Queue] No due extractions found (this is normal when no products have been updated recently)');
+            } else {
+                console.log(`[ML Extraction Queue] Found ${result.rows.length} due extractions to process`);
+            }
+
             return result.rows.map((row: any) => ({
                 id: row.id,
                 channelId: row.channel_id,

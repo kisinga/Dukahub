@@ -600,6 +600,65 @@ export const TRANSITION_ORDER_TO_STATE = graphql(`
   }
 `);
 
+// Note: These payment operations are not yet implemented in the backend
+// They are placeholders for future cashier flow implementation
+// export const ADD_PAYMENT_TO_ORDER = graphql(`
+//   mutation AddPaymentToOrder($input: AddPaymentToOrderInput!) {
+//     addPaymentToOrder(input: $input) {
+//       ... on Order {
+//         id
+//         code
+//         state
+//         total
+//         totalWithTax
+//         payments {
+//           id
+//           amount
+//           state
+//           method
+//           transactionId
+//         }
+//       }
+//       ... on PaymentFailedError {
+//         paymentErrorMessage
+//       }
+//       ... on PaymentDeclinedError {
+//         paymentErrorMessage
+//       }
+//       ... on IneligiblePaymentMethodError {
+//         eligibilityCheckerMessage
+//       }
+//     }
+//   }
+// `);
+
+// export const SETTLE_ORDER_PAYMENT = graphql(`
+//   mutation SettleOrderPayment($orderId: ID!) {
+//     settleOrderPayment(orderId: $orderId) {
+//       ... on Order {
+//         id
+//         code
+//         state
+//         total
+//         totalWithTax
+//         payments {
+//           id
+//           amount
+//           state
+//           method
+//           transactionId
+//         }
+//       }
+//       ... on PaymentFailedError {
+//         paymentErrorMessage
+//       }
+//       ... on PaymentSettlementError {
+//         settlementErrorMessage
+//       }
+//     }
+//   }
+// `);
+
 export const GET_PAYMENT_METHODS = graphql(`
   query GetPaymentMethods {
     paymentMethods(options: { take: 100 }) {
@@ -719,6 +778,15 @@ export const GET_CUSTOMERS = graphql(`
         phoneNumber
         createdAt
         updatedAt
+        customFields {
+          isSupplier
+          supplierType
+          contactPerson
+          taxId
+          paymentTerms
+          notes
+          outstandingAmount
+        }
         addresses {
           id
           fullName
@@ -752,6 +820,15 @@ export const GET_CUSTOMER = graphql(`
       phoneNumber
       createdAt
       updatedAt
+      customFields {
+        isSupplier
+        supplierType
+        contactPerson
+        taxId
+        paymentTerms
+        notes
+        outstandingAmount
+      }
       addresses {
         id
         fullName
@@ -784,6 +861,15 @@ export const CREATE_CUSTOMER = graphql(`
         emailAddress
         phoneNumber
         createdAt
+        customFields {
+          isSupplier
+          supplierType
+          contactPerson
+          taxId
+          paymentTerms
+          notes
+          outstandingAmount
+        }
       }
       ... on EmailAddressConflictError {
         errorCode
@@ -803,6 +889,15 @@ export const UPDATE_CUSTOMER = graphql(`
         emailAddress
         phoneNumber
         updatedAt
+        customFields {
+          isSupplier
+          supplierType
+          contactPerson
+          taxId
+          paymentTerms
+          notes
+          outstandingAmount
+        }
       }
       ... on EmailAddressConflictError {
         errorCode
@@ -881,7 +976,15 @@ export const GET_SUPPLIERS = graphql(`
         phoneNumber
         createdAt
         updatedAt
-        customFields
+        customFields {
+          isSupplier
+          supplierType
+          contactPerson
+          taxId
+          paymentTerms
+          notes
+          outstandingAmount
+        }
         addresses {
           id
           fullName
@@ -910,7 +1013,15 @@ export const GET_SUPPLIER = graphql(`
       phoneNumber
       createdAt
       updatedAt
-      customFields
+      customFields {
+        isSupplier
+        supplierType
+        contactPerson
+        taxId
+        paymentTerms
+        notes
+        outstandingAmount
+      }
       addresses {
         id
         fullName
@@ -938,7 +1049,15 @@ export const CREATE_SUPPLIER = graphql(`
         emailAddress
         phoneNumber
         createdAt
-        customFields
+        customFields {
+          isSupplier
+          supplierType
+          contactPerson
+          taxId
+          paymentTerms
+          notes
+          outstandingAmount
+        }
       }
       ... on EmailAddressConflictError {
         errorCode
@@ -958,7 +1077,15 @@ export const UPDATE_SUPPLIER = graphql(`
         emailAddress
         phoneNumber
         updatedAt
-        customFields
+        customFields {
+          isSupplier
+          supplierType
+          contactPerson
+          taxId
+          paymentTerms
+          notes
+          outstandingAmount
+        }
       }
       ... on EmailAddressConflictError {
         errorCode

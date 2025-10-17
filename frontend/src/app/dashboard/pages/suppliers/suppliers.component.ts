@@ -66,7 +66,7 @@ export class SuppliersComponent implements OnInit {
             supplier.lastName?.toLowerCase().includes(query) ||
             supplier.emailAddress?.toLowerCase().includes(query) ||
             supplier.phoneNumber?.toLowerCase().includes(query) ||
-            supplier.customFields?.supplierCode?.toLowerCase().includes(query) ||
+            supplier.customFields?.supplierType?.toLowerCase().includes(query) ||
             supplier.customFields?.contactPerson?.toLowerCase().includes(query)
         );
     });
