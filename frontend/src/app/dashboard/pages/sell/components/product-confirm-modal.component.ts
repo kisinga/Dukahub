@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { CurrencyService } from '../../../../core/services/currency.service';
 import { ProductSearchResult, ProductVariant } from '../../../../core/services/product-search.service';
 
 /**
@@ -71,7 +72,7 @@ import { ProductSearchResult, ProductVariant } from '../../../../core/services/p
               </div>
               <div class="text-right flex items-center gap-2">
                 <div class="text-base font-bold text-tabular">
-                  \${{ variant.priceWithTax | number : '1.2-2' }}
+                  {{ currencyService.format(variant.priceWithTax) }}
                 </div>
                 <div
                   class="badge badge-xs"
@@ -93,7 +94,7 @@ import { ProductSearchResult, ProductVariant } from '../../../../core/services/p
                 <div class="text-xs opacity-60">{{ product()!.variants[0].sku }}</div>
               </div>
               <div class="text-xl font-bold text-primary text-tabular">
-                \${{ product()!.variants[0].priceWithTax | number : '1.2-2' }}
+                {{ currencyService.format(product()!.variants[0].priceWithTax) }}
               </div>
             </div>
           </div>
@@ -215,6 +216,8 @@ import { ProductSearchResult, ProductVariant } from '../../../../core/services/p
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductConfirmModalComponent {
+  readonly currencyService = inject(CurrencyService);
+
   readonly isOpen = input.required<boolean>();
   readonly product = input.required<ProductSearchResult | null>();
 

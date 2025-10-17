@@ -73,6 +73,24 @@ export class CompanyService {
     });
 
     /**
+     * Cashier flow enabled for the active channel
+     * Controls whether orders in this channel require cashier approval
+     */
+    readonly cashierFlowEnabled = computed(() => {
+        const channelData = this.activeChannelDataSignal();
+        return channelData?.customFields?.cashierFlowEnabled ?? false;
+    });
+
+    /**
+     * Cashier open status for the active channel
+     * Real-time status of whether a cashier is currently serving
+     */
+    readonly cashierOpen = computed(() => {
+        const channelData = this.activeChannelDataSignal();
+        return channelData?.customFields?.cashierOpen ?? false;
+    });
+
+    /**
      * Company display name (truncated to max 10 characters)
      * Used in navbar to show active shop name
      */
@@ -81,6 +99,15 @@ export class CompanyService {
         if (!company) return '';
         const name = company.code;
         return name.length > 10 ? name.substring(0, 10) + '...' : name;
+    });
+
+    /**
+     * Channel default currency code (e.g., 'KES', 'USD')
+     * All prices in the channel are in this currency
+     */
+    readonly channelCurrency = computed(() => {
+        const channelData = this.activeChannelDataSignal();
+        return channelData?.defaultCurrencyCode ?? 'KES'; // Default to KES
     });
 
     /**

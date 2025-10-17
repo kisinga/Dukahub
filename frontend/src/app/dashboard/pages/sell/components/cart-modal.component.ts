@@ -1,20 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { CurrencyService } from '../../../../core/services/currency.service';
 import { ProductVariant } from '../../../../core/services/product-search.service';
 
 export interface CartItem {
-    variant: ProductVariant;
-    quantity: number;
-    subtotal: number;
+  variant: ProductVariant;
+  quantity: number;
+  subtotal: number;
 }
 
 /**
  * Cart modal with item management
  */
 @Component({
-    selector: 'app-cart-modal',
-    imports: [CommonModule],
-    template: `
+  selector: 'app-cart-modal',
+  imports: [CommonModule],
+  template: `
     @if (isOpen()) {
     <div class="modal modal-open modal-bottom sm:modal-middle">
       <div class="modal-box max-w-2xl p-0 max-h-[90vh] flex flex-col">
@@ -78,13 +79,13 @@ export interface CartItem {
                 <div class="text-xs text-base-content/60 leading-tight truncate">{{ item.variant.name }}</div>
                 }
                 <div class="text-xs text-base-content/50 mt-0.5">
-                  \${{ item.variant.priceWithTax | number : '1.2-2' }}
+                  {{ currencyService.format(item.variant.priceWithTax) }}
                 </div>
               </div>
 
               <!-- Amount & Remove -->
               <div class="flex flex-col items-end justify-center gap-1 min-w-[64px]">
-                <div class="font-bold text-base text-tabular">\${{ item.subtotal | number : '1.2-2' }}</div>
+                <div class="font-bold text-base text-tabular">{{ currencyService.format(item.subtotal) }}</div>
                 <button
                   class="btn btn-xs btn-ghost btn-circle w-6 h-6 min-h-0 p-0 text-error"
                   (click)="removeItem.emit(item.variant.id)"
@@ -118,7 +119,7 @@ export interface CartItem {
           <div class="flex items-center justify-between mb-3 px-1">
             <span class="font-bold text-lg">Total</span>
             <span class="text-2xl font-bold text-primary text-tabular">
-              \${{ total() | number : '1.2-2' }}
+              {{ currencyService.format(total()) }}
             </span>
           </div>
 
@@ -196,23 +197,25 @@ export interface CartItem {
     </div>
     }
   `,
-    changeDetection: ChangeDetectionStrategy.OnPush,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CartModalComponent {
-    readonly isOpen = input.required<boolean>();
-    readonly items = input.required<CartItem[]>();
-    readonly total = input.required<number>();
-    readonly showCashierFlow = input<boolean>(true);
+  readonly currencyService = inject(CurrencyService);
 
-    readonly itemCount = computed(() =>
-        this.items().reduce((sum, item) => sum + item.quantity, 0)
-    );
+  readonly isOpen = input.required<boolean>();
+  readonly items = input.required<CartItem[]>();
+  readonly total = input.required<number>();
+  readonly showCashierFlow = input<boolean>(true);
 
-    readonly quantityChange = output<{ variantId: string; quantity: number }>();
-    readonly removeItem = output<string>();
-    readonly checkoutCredit = output<void>();
-    readonly checkoutCashier = output<void>();
-    readonly checkoutCash = output<void>();
-    readonly closeModal = output<void>();
+  readonly itemCount = computed(() =>
+    this.items().reduce((sum, item) => sum + item.quantity, 0)
+  );
+
+  readonly quantityChange = output<{ variantId: string; quantity: number }>();
+  readonly removeItem = output<string>();
+  readonly checkoutCredit = output<void>();
+  readonly checkoutCashier = output<void>();
+  readonly checkoutCash = output<void>();
+  readonly closeModal = output<void>();
 }
 

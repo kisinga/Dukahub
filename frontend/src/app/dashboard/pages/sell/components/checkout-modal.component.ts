@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { CurrencyService } from '../../../../core/services/currency.service';
 import { Customer, CustomerSelectorComponent } from './customer-selector.component';
 
 type CheckoutType = 'credit' | 'cashier' | 'cash' | null;
@@ -82,7 +83,7 @@ type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
               <div class="flex justify-between items-center">
                 <span class="font-bold">Total</span>
                 <span class="text-2xl font-bold text-info text-tabular">
-                  \${{ total() | number : '1.2-2' }}
+                  {{ currencyService.format(total()) }}
                 </span>
               </div>
             </div>
@@ -143,7 +144,7 @@ type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
                 <div class="flex justify-between items-center">
                   <span class="font-bold">Total Due</span>
                   <span class="text-2xl font-bold text-warning text-tabular">
-                    \${{ total() | number : '1.2-2' }}
+                    {{ currencyService.format(total()) }}
                   </span>
                 </div>
               </div>
@@ -250,7 +251,7 @@ type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
                 <div class="flex justify-between items-center">
                   <span class="font-bold">Total</span>
                   <span class="text-2xl font-bold text-success text-tabular">
-                    \${{ total() | number : '1.2-2' }}
+                    {{ currencyService.format(total()) }}
                   </span>
                 </div>
               </div>
@@ -292,6 +293,8 @@ type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CheckoutModalComponent {
+  readonly currencyService = inject(CurrencyService);
+
   readonly isOpen = input.required<boolean>();
   readonly checkoutType = input.required<CheckoutType>();
   readonly itemCount = input.required<number>();

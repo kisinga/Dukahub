@@ -1063,20 +1063,26 @@ Switch on action type:
 
 - Backend stores prices in cents (integer): `1050` = 10.50
 - Prevents floating-point precision issues
+- **Note:** Vendure (our backend) stores all prices in minor currency units (cents) by design, but the admin UI displays them in major units (e.g., 60.00 KES)
 
 **Display Format:**
 
 - Form inputs show decimal: `10.50`
-- Price lists show decimal: `$10.50`
+- Price lists show decimal with smart formatting: `KES 60` (whole numbers) or `KES 60.50` (decimals)
+- Currency is extracted from channel's `defaultCurrencyCode` (currently KES)
 
 **Conversion Flow:**
 
 ```typescript
-// Edit mode: Load from backend (cents → decimal)
-const priceDecimal = priceInCents / 100; // 1050 → 10.50
+// Services: Load from GraphQL (cents → decimal)
+const priceDecimal = priceInCents / 100; // 6000 → 60.00
+
+// CurrencyService: Format for display (smart decimal handling)
+format(60.00) → "KES 60"      // No decimals for whole numbers
+format(60.50) → "KES 60.50"   // Decimals only when needed
 
 // Save: Convert to cents (decimal → cents)
-const priceInCents = Math.round(price * 100); // 10.50 → 1050
+const priceInCents = Math.round(price * 100); // 60.00 → 6000
 ```
 
 **Why Cents?**

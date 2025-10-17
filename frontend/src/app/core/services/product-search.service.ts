@@ -10,8 +10,7 @@ export interface ProductVariant {
     id: string;
     name: string;
     sku: string;
-    price: number;
-    priceWithTax: number;
+    priceWithTax: number; // Tax-inclusive price
     stockLevel: string;
     productId: string;
     productName: string;
@@ -77,8 +76,7 @@ export class ProductSearchService {
                     id: v.id,
                     name: v.name,
                     sku: v.sku,
-                    price: v.price / 100,
-                    priceWithTax: v.priceWithTax / 100,
+                    priceWithTax: v.priceWithTax, // Keep raw cents for currency service
                     stockLevel: v.stockOnHand > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
                     productId: product.id,
                     productName: product.name,
@@ -128,8 +126,7 @@ export class ProductSearchService {
                     id: v.id,
                     name: v.name,
                     sku: v.sku,
-                    price: v.price / 100,
-                    priceWithTax: v.priceWithTax / 100,
+                    priceWithTax: v.priceWithTax, // Keep raw cents for currency service
                     stockLevel: v.stockLevels?.[0]?.stockOnHand > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
                     productId: product.id,
                     productName: product.name,
@@ -165,8 +162,7 @@ export class ProductSearchService {
                 id: item.productVariantId,
                 name: item.productVariantName,
                 sku: item.sku,
-                price: item.price.value / 100,
-                priceWithTax: item.priceWithTax.value / 100,
+                priceWithTax: item.priceWithTax.value, // Keep raw cents for currency service
                 stockLevel: 'IN_STOCK',
                 productId: item.productId,
                 productName: item.productName,

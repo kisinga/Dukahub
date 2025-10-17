@@ -165,25 +165,34 @@ export const config: VendureConfig = {
                 nullable: true,
                 ui: { tab: 'Branding' },
             },
-        ],
-        StockLocation: [
             {
                 name: 'cashierFlowEnabled',
                 type: 'boolean',
                 label: [{ languageCode: LanguageCode.en, value: 'Enable Cashier Flow' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Enable cashier/POS interface at this location' }],
-                public: true,
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'When enabled, orders in this channel require cashier approval before completion'
+                }],
                 defaultValue: false,
+                public: true,
+                nullable: false,
+                ui: { tab: 'Settings' },
             },
             {
                 name: 'cashierOpen',
                 type: 'boolean',
-                label: [{ languageCode: LanguageCode.en, value: 'Cashier Open' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Whether the cashier is currently open at this location' }],
-                public: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Cashier Currently Open' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Real-time status: Is a cashier currently serving in this channel?'
+                }],
                 defaultValue: false,
+                public: true,
+                nullable: false,
+                ui: { tab: 'Settings' },
             },
         ],
+        StockLocation: [],
     },
     plugins: [
         GraphiqlPlugin.init(),

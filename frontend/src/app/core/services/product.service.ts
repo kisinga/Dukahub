@@ -39,7 +39,7 @@ export interface ProductInput {
 export interface VariantInput {
     sku: string;
     name: string; // Auto-generated name
-    price: number; // In currency units (e.g., 10.99)
+    priceWithTax: number; // In currency units (e.g., 10.99)
     trackInventory?: boolean; // Native Vendure field: false for services (infinite stock), true for products
     stockOnHand: number;
     stockLocationId: string;
@@ -289,7 +289,7 @@ export class ProductService {
                 const input: any = {
                     productId,
                     sku: v.sku,
-                    price: Math.round(v.price * 100), // Convert to cents
+                    priceWithTax: Math.round(v.priceWithTax * 100), // Convert to cents
                     trackInventory: trackInventoryValue, // Use enum string value
                     stockOnHand: v.stockOnHand,
                     translations: [
@@ -365,7 +365,6 @@ export class ProductService {
                 variables: { id },
                 fetchPolicy: 'network-only',
             });
-
             return result.data?.product || null;
         } catch (error) {
             console.error('Failed to fetch product:', error);
@@ -618,7 +617,16 @@ export class ProductService {
             const items = result.data?.products?.items || [];
             const total = result.data?.products?.totalItems || 0;
 
-            this.productsSignal.set(items);
+            // Keep prices in cents for currency service to handle conversion
+            const processedItems = items.map((product: any) => ({
+                ...product,
+                variants: product.variants?.map((variant: any) => ({
+                    ...variant,
+                    priceWithTax: variant.priceWithTax, // Keep raw cents for currency service
+                })) || []
+            }));
+            console.log("fetchProducts", result.data?.products?.items);
+            this.productsSignal.set(processedItems);
             this.totalItemsSignal.set(total);
         } catch (error: any) {
             console.error('❌ Failed to fetch products:', error);

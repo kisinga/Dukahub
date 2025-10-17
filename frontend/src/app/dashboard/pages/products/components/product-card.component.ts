@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { CurrencyService } from '../../../../core/services/currency.service';
 
 export interface ProductCardData {
     id: string;
@@ -11,7 +12,7 @@ export interface ProductCardData {
         id: string;
         name: string;
         sku: string;
-        price: number;
+        priceWithTax: number;
         stockOnHand: number;
     }>;
 }
@@ -29,6 +30,7 @@ export type ProductAction = 'view' | 'edit' | 'purchase' | 'delete';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductCardComponent {
+    private readonly currencyService = inject(CurrencyService);
     readonly product = input.required<ProductCardData>();
     readonly action = output<{ action: ProductAction; productId: string }>();
 
@@ -44,7 +46,7 @@ export class ProductCardComponent {
         const variants = this.product().variants;
         if (!variants || variants.length === 0) return 'N/A';
 
-        const prices = variants.map(v => v.price);
+        const prices = variants.map(v => v.priceWithTax);
         const minPrice = Math.min(...prices);
         const maxPrice = Math.max(...prices);
 
@@ -59,8 +61,8 @@ export class ProductCardComponent {
         return this.product().featuredAsset?.preview || 'https://picsum.photos/200/200';
     }
 
-    private formatPrice(cents: number): string {
-        return (cents / 100).toFixed(2);
+    private formatPrice(price: number): string {
+        return this.currencyService.format(price, false); // Amount only
     }
 
     onAction(actionType: ProductAction): void {

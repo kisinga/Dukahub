@@ -409,7 +409,7 @@ export class ProductCreateComponent implements OnInit {
                     const skuGroup = this.createSkuFormGroup(
                         variant.sku,
                         variant.name,
-                        variant.price,
+                        variant.priceWithTax,
                         variant.stockOnHand || 0
                     );
                     this.skus.push(skuGroup);
@@ -505,7 +505,7 @@ export class ProductCreateComponent implements OnInit {
                     return {
                         sku: uniqueSku,
                         name: sku.name.trim(),
-                        price: Number(sku.price),
+                        priceWithTax: Number(sku.price),
                         trackInventory: false, // Services: infinite stock
                         stockOnHand: 0,
                         stockLocationId: undefined, // Services don't need location
@@ -514,7 +514,7 @@ export class ProductCreateComponent implements OnInit {
                     return {
                         sku: uniqueSku,
                         name: sku.name.trim(),
-                        price: Number(sku.price),
+                        priceWithTax: Number(sku.price),
                         trackInventory: true, // Products: track stock
                         stockOnHand: Number(sku.stockOnHand),
                         stockLocationId: stockLocationId!,

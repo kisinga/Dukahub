@@ -76,8 +76,7 @@ export class ProductCacheService {
           id: v.id,
           name: v.name,
           sku: v.sku,
-          price: v.price / 100,
-          priceWithTax: v.priceWithTax / 100,
+          priceWithTax: v.priceWithTax, // Keep raw cents for currency service
           stockLevel: v.stockOnHand > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
           productId: p.id,
           productName: p.name,
@@ -99,7 +98,7 @@ export class ProductCacheService {
         existing.push(product);
         this.productsByName.set(normalizedName, existing);
       });
-
+      // console.log(products);
       console.log(`✅ Cached ${products.length} products locally`);
 
       this.statusSignal.update((s) => ({

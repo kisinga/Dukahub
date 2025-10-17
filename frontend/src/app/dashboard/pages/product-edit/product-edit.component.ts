@@ -122,7 +122,7 @@ export class ProductEditComponent implements OnInit {
             if (product.variants && product.variants.length > 0) {
                 product.variants.forEach((variant: any) => {
                     // Convert price from cents to decimal
-                    const priceDecimal = variant.price / 100;
+                    const priceDecimal = variant.priceWithTax / 100;
 
                     const skuGroup = this.fb.group({
                         id: [variant.id], // Store variant ID for updates

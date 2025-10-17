@@ -96,11 +96,14 @@ export const GET_ACTIVE_CHANNEL = graphql(`
       id
       code
       token
+      defaultCurrencyCode
       customFields {
         mlModelJsonId
         mlModelBinId
         mlMetadataId
         companyLogoId
+        cashierFlowEnabled
+        cashierOpen
       }
     }
   }
@@ -117,22 +120,6 @@ export const GET_STOCK_LOCATIONS = graphql(`
         id
         name
         description
-      }
-    }
-  }
-`);
-
-export const GET_STOCK_LOCATIONS_WITH_CASHIER = graphql(`
-  query GetStockLocationsWithCashier {
-    stockLocations(options: { take: 100 }) {
-      items {
-        id
-        name
-        description
-        customFields {
-          cashierFlowEnabled
-          cashierOpen
-        }
       }
     }
   }
@@ -170,7 +157,6 @@ export const CREATE_PRODUCT = graphql(`
         name
         sku
         price
-        priceWithTax
         stockOnHand
       }
     }
@@ -184,7 +170,6 @@ export const CREATE_PRODUCT_VARIANTS = graphql(`
       name
       sku
       price
-      priceWithTax
       stockOnHand
       product {
         id
@@ -241,7 +226,6 @@ export const GET_PRODUCT_DETAIL = graphql(`
         name
         sku
         price
-        priceWithTax
         stockOnHand
         stockLevels {
           id
@@ -274,7 +258,6 @@ export const GET_PRODUCTS = graphql(`
           id
           name
           sku
-          price
           priceWithTax
           stockOnHand
         }
@@ -363,7 +346,6 @@ export const SEARCH_PRODUCTS = graphql(`
           name
           sku
           price
-          priceWithTax
           stockOnHand
         }
       }
@@ -384,7 +366,6 @@ export const GET_PRODUCT = graphql(`
         name
         sku
         price
-        priceWithTax
         stockLevels {
           stockLocationId
           stockOnHand
@@ -403,11 +384,6 @@ export const SEARCH_BY_BARCODE = graphql(`
         productVariantId
         productVariantName
         sku
-        price {
-          ... on SinglePrice {
-            value
-          }
-        }
         priceWithTax {
           ... on SinglePrice {
             value
@@ -436,7 +412,6 @@ export const PREFETCH_PRODUCTS = graphql(`
           name
           sku
           price
-          priceWithTax
           stockOnHand
         }
       }

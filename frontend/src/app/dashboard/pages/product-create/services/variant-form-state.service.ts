@@ -89,7 +89,7 @@ export class VariantFormStateService {
                     Validators.maxLength(50),
                 ],
             ],
-            price: [
+            priceWithTax: [
                 defaults?.price || 0,
                 [Validators.required, Validators.min(0.01)],
             ],
