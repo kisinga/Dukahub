@@ -6,6 +6,7 @@ import {
     computed,
     inject,
     signal,
+    viewChild,
 } from '@angular/core';
 import {
     FormArray,
@@ -16,6 +17,8 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
+import { PhotoEditUnlockModalComponent } from './components/photo-edit-unlock-modal.component';
+import { PhotoEditorComponent, ProductAsset } from './components/photo-editor.component';
 
 /**
  * Product Edit Component
@@ -26,7 +29,7 @@ import { ProductService } from '../../../core/services/product.service';
  */
 @Component({
     selector: 'app-product-edit',
-    imports: [CommonModule, ReactiveFormsModule],
+    imports: [CommonModule, ReactiveFormsModule, PhotoEditUnlockModalComponent, PhotoEditorComponent],
     templateUrl: './product-edit.component.html',
     styleUrl: './product-edit.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,6 +51,15 @@ export class ProductEditComponent implements OnInit {
     readonly isSubmitting = signal(false);
     readonly submitError = signal<string | null>(null);
     readonly submitSuccess = signal(false);
+
+    // Photo editing state
+    readonly showPhotoEditor = signal(false);
+    readonly showUnlockModal = signal(false);
+    readonly productAssets = signal<ProductAsset[]>([]);
+    readonly isUpdatingPhotos = signal(false);
+
+    // View child reference
+    readonly photoEditor = viewChild<PhotoEditorComponent>('photoEditor');
 
     // Computed: SKUs FormArray
     get skus(): FormArray {
@@ -117,6 +129,17 @@ export class ProductEditComponent implements OnInit {
             this.productForm.patchValue({
                 name: product.name,
             });
+
+            // Load product assets
+            if (product.assets && product.assets.length > 0) {
+                const assets: ProductAsset[] = product.assets.map((asset: any) => ({
+                    id: asset.id,
+                    name: asset.name,
+                    preview: asset.preview,
+                    source: asset.source || asset.preview
+                }));
+                this.productAssets.set(assets);
+            }
 
             // Load variants as SKUs
             if (product.variants && product.variants.length > 0) {
@@ -281,6 +304,76 @@ export class ProductEditComponent implements OnInit {
         if (errors['min']) return `Min value: ${errors['min'].min}`;
 
         return 'Invalid';
+    }
+
+    /**
+     * Show photo edit unlock modal
+     */
+    showPhotoEditUnlock(): void {
+        this.showUnlockModal.set(true);
+    }
+
+    /**
+     * Handle photo edit unlock confirmation
+     */
+    onPhotoEditUnlocked(): void {
+        this.showUnlockModal.set(false);
+        this.showPhotoEditor.set(true);
+    }
+
+    /**
+     * Handle photo edit unlock cancellation
+     */
+    onPhotoEditCancelled(): void {
+        this.showUnlockModal.set(false);
+    }
+
+    /**
+     * Handle photo changes from photo editor
+     */
+    async onPhotosChanged(event: { newPhotos: File[]; removedAssetIds: string[] }): Promise<void> {
+        const productId = this.productId();
+        if (!productId) {
+            this.submitError.set('Product ID missing');
+            return;
+        }
+
+        this.isUpdatingPhotos.set(true);
+        try {
+            const success = await this.productService.updateProductAssets(
+                productId,
+                event.newPhotos,
+                event.removedAssetIds
+            );
+
+            if (success) {
+                // Reload product to get updated assets
+                await this.loadProduct(productId);
+                this.showPhotoEditor.set(false);
+                this.submitSuccess.set(true);
+
+                // Clear success message after a delay
+                setTimeout(() => {
+                    this.submitSuccess.set(false);
+                }, 3000);
+            } else {
+                this.submitError.set('Failed to update photos');
+            }
+        } catch (error: any) {
+            console.error('Photo update failed:', error);
+            this.submitError.set('Failed to update photos');
+        } finally {
+            this.isUpdatingPhotos.set(false);
+            // Reset photo editor saving state
+            this.photoEditor()?.resetSavingState();
+        }
+    }
+
+    /**
+     * Close photo editor
+     */
+    closePhotoEditor(): void {
+        this.showPhotoEditor.set(false);
     }
 }
 

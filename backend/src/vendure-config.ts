@@ -13,10 +13,8 @@ import { config as dotenvConfig } from 'dotenv';
 import { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
+import { MlModelPlugin } from './plugins/ml-model.plugin';
 import { cashPaymentHandler, mpesaPaymentHandler } from './plugins/payment-handlers';
-// import { MlModelPlugin } from './plugins/ml-model.plugin';
-
-// ML Model functionality handled via existing AssetServerPlugin and custom middleware
 
 // Load environment variables from .env file for local development
 // Docker containers get env vars from docker-compose (these override .env)
@@ -191,12 +189,66 @@ export const config: VendureConfig = {
                 nullable: false,
                 ui: { tab: 'Settings' },
             },
+            {
+                name: 'mlTrainingStatus',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'ML Training Status' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Current status: idle, extracting, ready, training, active, failed' }],
+                defaultValue: 'idle',
+                public: true,
+                nullable: false,
+                ui: { tab: 'ML Model' },
+            },
+            {
+                name: 'mlTrainingProgress',
+                type: 'int',
+                label: [{ languageCode: LanguageCode.en, value: 'Training Progress %' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Progress percentage (0-100)' }],
+                defaultValue: 0,
+                public: true,
+                nullable: false,
+                ui: { tab: 'ML Model' },
+            },
+            {
+                name: 'mlTrainingStartedAt',
+                type: 'datetime',
+                label: [{ languageCode: LanguageCode.en, value: 'Training Started At' }],
+                public: true,
+                nullable: true,
+                ui: { tab: 'ML Model' },
+            },
+            {
+                name: 'mlTrainingError',
+                type: 'text',
+                label: [{ languageCode: LanguageCode.en, value: 'Last Training Error' }],
+                public: false,
+                nullable: true,
+                ui: { tab: 'ML Model' },
+            },
+            {
+                name: 'mlProductCount',
+                type: 'int',
+                label: [{ languageCode: LanguageCode.en, value: 'Product Count in Model' }],
+                defaultValue: 0,
+                public: true,
+                nullable: false,
+                ui: { tab: 'ML Model' },
+            },
+            {
+                name: 'mlImageCount',
+                type: 'int',
+                label: [{ languageCode: LanguageCode.en, value: 'Image Count in Model' }],
+                defaultValue: 0,
+                public: true,
+                nullable: false,
+                ui: { tab: 'ML Model' },
+            },
         ],
         StockLocation: [],
     },
     plugins: [
         GraphiqlPlugin.init(),
-        // MlModelPlugin,
+        MlModelPlugin,
         AssetServerPlugin.init({
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),

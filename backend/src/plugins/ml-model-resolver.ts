@@ -10,6 +10,7 @@ import {
     Transaction,
 } from '@vendure/core';
 import gql from 'graphql-tag';
+import { MlTrainingService, TrainingManifest } from './ml-training.service';
 
 /**
  * GraphQL schema extension for ML model management
@@ -24,9 +25,45 @@ export const ML_MODEL_SCHEMA = gql`
         metadataId: String
     }
 
+    type MlTrainingInfo {
+        status: String!
+        progress: Int!
+        startedAt: DateTime
+        error: String
+        productCount: Int!
+        imageCount: Int!
+        hasActiveModel: Boolean!
+        lastTrainedAt: DateTime
+    }
+
+    type MlTrainingManifest {
+        channelId: String!
+        version: String!
+        extractedAt: DateTime!
+        products: [ProductManifestEntry!]!
+    }
+
+    type ProductManifestEntry {
+        productId: String!
+        productName: String!
+        images: [ImageManifestEntry!]!
+    }
+
+    type ImageManifestEntry {
+        assetId: String!
+        url: String!
+        filename: String!
+    }
+
     extend type Query {
         """Get ML model info for a specific channel"""
         mlModelInfo(channelId: ID!): MlModelInfo!
+        
+        """Get detailed training info including status and stats"""
+        mlTrainingInfo(channelId: ID!): MlTrainingInfo!
+        
+        """Get photo manifest for training (JSON with URLs)"""
+        mlTrainingManifest(channelId: ID!): MlTrainingManifest!
     }
 
     extend type Mutation {
@@ -43,6 +80,25 @@ export const ML_MODEL_SCHEMA = gql`
         
         """Clear all ML model files for a channel"""
         clearMlModel(channelId: ID!): Boolean!
+        
+        """Manually trigger photo extraction"""
+        extractPhotosForTraining(channelId: ID!): Boolean!
+        
+        """Update training status (for external training services)"""
+        updateTrainingStatus(
+            channelId: ID!
+            status: String!
+            progress: Int
+            error: String
+        ): Boolean!
+        
+        """Complete training and upload model files (multipart)"""
+        completeTraining(
+            channelId: ID!
+            modelJson: Upload!
+            weightsFile: Upload!
+            metadata: Upload!
+        ): Boolean!
     }
 `;
 
@@ -54,6 +110,7 @@ export class MlModelResolver {
     constructor(
         private channelService: ChannelService,
         private assetService: AssetService,
+        private mlTrainingService: MlTrainingService,
     ) { }
 
     @Query()
@@ -175,5 +232,154 @@ export class MlModelResolver {
         });
 
         return true;
+    }
+
+    @Query()
+    @Allow(Permission.ReadCatalog)
+    async mlTrainingInfo(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { channelId: ID },
+    ): Promise<any> {
+        return this.mlTrainingService.getTrainingInfo(ctx, args.channelId.toString());
+    }
+
+    @Query()
+    @Allow(Permission.ReadCatalog)
+    async mlTrainingManifest(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { channelId: ID },
+    ): Promise<TrainingManifest> {
+        return this.mlTrainingService.getTrainingManifest(ctx, args.channelId.toString());
+    }
+
+    @Transaction()
+    @Mutation()
+    @Allow(Permission.UpdateCatalog)
+    async extractPhotosForTraining(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { channelId: ID },
+    ): Promise<boolean> {
+        console.log('[ML Model] extractPhotosForTraining called', args);
+
+        await this.mlTrainingService.extractPhotosForChannel(ctx, args.channelId.toString());
+        return true;
+    }
+
+    @Transaction()
+    @Mutation()
+    @Allow(Permission.UpdateCatalog)
+    async updateTrainingStatus(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { channelId: ID; status: string; progress?: number; error?: string },
+    ): Promise<boolean> {
+        console.log('[ML Model] updateTrainingStatus called', args);
+
+        await this.mlTrainingService.updateTrainingStatus(
+            ctx,
+            args.channelId.toString(),
+            args.status,
+            args.progress || 0,
+            args.error,
+        );
+        return true;
+    }
+
+    @Transaction()
+    @Mutation()
+    @Allow(Permission.UpdateCatalog)
+    async completeTraining(
+        @Ctx() ctx: RequestContext,
+        @Args() args: {
+            channelId: ID;
+            modelJson: any;
+            weightsFile: any;
+            metadata: any;
+        },
+    ): Promise<boolean> {
+        console.log('[ML Model] completeTraining called', { channelId: args.channelId });
+
+        try {
+            // Upload the three files as assets with proper tags
+            const trainingDate = new Date().toISOString().split('T')[0];
+            const version = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+            const tags = [
+                'ml-model',
+                `channel-${args.channelId}`,
+                `v${version}`,
+                `trained-${trainingDate}`,
+            ];
+
+            // Upload model.json
+            const modelJsonResult = await this.assetService.create(ctx, {
+                file: args.modelJson,
+                tags,
+            });
+
+            // Upload weights.bin
+            const weightsResult = await this.assetService.create(ctx, {
+                file: args.weightsFile,
+                tags,
+            });
+
+            // Upload metadata.json
+            const metadataResult = await this.assetService.create(ctx, {
+                file: args.metadata,
+                tags,
+            });
+
+            // Check for errors in asset creation
+            if ('message' in modelJsonResult || 'message' in weightsResult || 'message' in metadataResult) {
+                throw new Error('Failed to create assets');
+            }
+
+            // Assign assets to channel
+            await this.assetService.assignToChannel(ctx, {
+                assetIds: [modelJsonResult.id, weightsResult.id, metadataResult.id],
+                channelId: args.channelId.toString(),
+            });
+
+            // Parse metadata to get stats
+            let productCount = 0;
+            let imageCount = 0;
+            try {
+                const metadataContent = await args.metadata.text();
+                const metadataObj = JSON.parse(metadataContent);
+                productCount = metadataObj.productCount || 0;
+                imageCount = metadataObj.imageCount || 0;
+            } catch (e) {
+                console.warn('[ML Model] Could not parse metadata.json for stats');
+            }
+
+            // Update channel with new model assets and stats
+            await this.channelService.update(ctx, {
+                id: args.channelId,
+                customFields: {
+                    mlModelJsonId: modelJsonResult.id.toString(),
+                    mlModelBinId: weightsResult.id.toString(),
+                    mlMetadataId: metadataResult.id.toString(),
+                    mlModelVersion: version,
+                    mlModelStatus: 'active',
+                    mlTrainingStatus: 'active',
+                    mlTrainingProgress: 100,
+                    mlProductCount: productCount,
+                    mlImageCount: imageCount,
+                },
+            });
+
+            console.log('[ML Model] Training completed successfully');
+            return true;
+
+        } catch (error) {
+            console.error('[ML Model] Error completing training:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            await this.mlTrainingService.updateTrainingStatus(
+                ctx,
+                args.channelId.toString(),
+                'failed',
+                0,
+                errorMessage,
+            );
+            throw error;
+        }
     }
 }

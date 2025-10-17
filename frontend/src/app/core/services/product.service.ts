@@ -16,9 +16,11 @@ import {
     CREATE_PRODUCT,
     CREATE_PRODUCT_OPTION_GROUP,
     CREATE_PRODUCT_VARIANTS,
+    DELETE_ASSET,
     DELETE_PRODUCT,
     GET_PRODUCT_DETAIL,
-    GET_PRODUCTS
+    GET_PRODUCTS,
+    UPDATE_PRODUCT_ASSETS
 } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
@@ -582,6 +584,132 @@ export class ProductService {
         } catch (error: any) {
             console.error('❌ Delete product error:', error);
             this.errorSignal.set(error.message || 'Failed to delete product');
+            return false;
+        }
+    }
+
+    /**
+     * Update product assets (add new, remove old)
+     * @param productId - Product ID
+     * @param newPhotos - New photo files to upload
+     * @param removedAssetIds - Asset IDs to remove
+     * @returns true if successful, false otherwise
+     */
+    async updateProductAssets(
+        productId: string,
+        newPhotos: File[],
+        removedAssetIds: string[]
+    ): Promise<boolean> {
+        try {
+            console.log('📸 Updating product assets:', {
+                productId,
+                newPhotosCount: newPhotos.length,
+                removedCount: removedAssetIds.length
+            });
+
+            const client = this.apolloService.getClient();
+
+            // Step 1: Delete removed assets
+            if (removedAssetIds.length > 0) {
+                console.log('🗑️ Deleting removed assets...');
+                for (const assetId of removedAssetIds) {
+                    try {
+                        await client.mutate({
+                            mutation: DELETE_ASSET as any,
+                            variables: { input: { id: assetId } }
+                        });
+                        console.log(`✅ Deleted asset: ${assetId}`);
+                    } catch (error) {
+                        console.warn(`⚠️ Failed to delete asset ${assetId}:`, error);
+                        // Continue with other deletions
+                    }
+                }
+            }
+
+            // Step 2: Upload new photos if any
+            let newAssetIds: string[] = [];
+            if (newPhotos.length > 0) {
+                console.log('📤 Uploading new photos...');
+                const uploadedAssetIds = await this.uploadProductPhotos(productId, newPhotos);
+                if (uploadedAssetIds) {
+                    newAssetIds = uploadedAssetIds;
+                    console.log(`✅ Uploaded ${newAssetIds.length} new assets`);
+                } else {
+                    console.error('❌ Failed to upload new photos');
+                    return false;
+                }
+            }
+
+            // Step 3: Get current product assets (excluding removed ones)
+            const product = await this.getProductById(productId);
+            if (!product) {
+                console.error('❌ Product not found');
+                return false;
+            }
+
+            // Get current asset IDs (excluding removed ones)
+            const currentAssetIds = (product.assets || [])
+                .map((asset: any) => asset.id)
+                .filter((id: string) => !removedAssetIds.includes(id));
+
+            // Combine current and new assets
+            const allAssetIds = [...currentAssetIds, ...newAssetIds];
+            const featuredAssetId = allAssetIds[0] || null; // First asset as featured
+
+            // Step 4: Update product with new asset list
+            console.log('🔄 Updating product assets...');
+            const result = await client.mutate({
+                mutation: UPDATE_PRODUCT_ASSETS as any,
+                variables: {
+                    productId,
+                    assetIds: allAssetIds,
+                    featuredAssetId
+                }
+            });
+
+            if ((result.data as any)?.updateProduct) {
+                console.log('✅ Product assets updated successfully');
+                return true;
+            } else {
+                console.error('❌ Failed to update product assets');
+                return false;
+            }
+
+        } catch (error: any) {
+            console.error('❌ Update product assets failed:', error);
+            this.errorSignal.set(error.message || 'Failed to update product assets');
+            return false;
+        }
+    }
+
+    /**
+     * Delete a single asset
+     * @param assetId - Asset ID to delete
+     * @returns true if successful, false otherwise
+     */
+    async deleteAsset(assetId: string): Promise<boolean> {
+        try {
+            console.log('🗑️ Deleting asset:', assetId);
+            const client = this.apolloService.getClient();
+
+            const result = await client.mutate({
+                mutation: DELETE_ASSET as any,
+                variables: { input: { id: assetId } }
+            });
+
+            const deleteResult = (result.data as any)?.deleteAsset;
+
+            if (deleteResult?.result === 'DELETED') {
+                console.log('✅ Asset deleted successfully');
+                return true;
+            } else {
+                console.error('❌ Asset deletion failed:', deleteResult?.message);
+                this.errorSignal.set(deleteResult?.message || 'Failed to delete asset');
+                return false;
+            }
+        } catch (error: any) {
+            console.error('❌ Delete asset error:', error);
+            this.errorSignal.set(error.message || 'Failed to delete asset');
             return false;
         }
     }

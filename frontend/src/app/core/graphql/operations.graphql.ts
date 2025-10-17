@@ -209,6 +209,33 @@ export const ASSIGN_ASSETS_TO_PRODUCT = graphql(`
   }
 `);
 
+export const DELETE_ASSET = graphql(`
+  mutation DeleteAsset($input: DeleteAssetInput!) {
+    deleteAsset(input: $input) {
+      result
+      message
+    }
+  }
+`);
+
+export const UPDATE_PRODUCT_ASSETS = graphql(`
+  mutation UpdateProductAssets($productId: ID!, $assetIds: [ID!]!, $featuredAssetId: ID) {
+    updateProduct(input: { id: $productId, assetIds: $assetIds, featuredAssetId: $featuredAssetId }) {
+      id
+      assets {
+        id
+        name
+        preview
+        source
+      }
+      featuredAsset {
+        id
+        preview
+      }
+    }
+  }
+`);
+
 export const GET_PRODUCT_DETAIL = graphql(`
   query GetProductDetail($id: ID!) {
     product(id: $id) {
@@ -217,6 +244,12 @@ export const GET_PRODUCT_DETAIL = graphql(`
       slug
       description
       enabled
+      assets {
+        id
+        name
+        preview
+        source
+      }
       featuredAsset {
         id
         preview
@@ -604,7 +637,7 @@ export const GET_ORDER = graphql(`
 `);
 
 // ============================================================================
-// ML MODEL
+// ML MODEL & TRAINING
 // ============================================================================
 
 export const GET_ML_MODEL_ASSETS = graphql(`
@@ -615,5 +648,57 @@ export const GET_ML_MODEL_ASSETS = graphql(`
         source
       }
     }
+  }
+`);
+
+export const GET_ML_TRAINING_INFO = graphql(`
+  query GetMlTrainingInfo($channelId: ID!) {
+    mlTrainingInfo(channelId: $channelId) {
+      status
+      progress
+      startedAt
+      error
+      productCount
+      imageCount
+      hasActiveModel
+      lastTrainedAt
+    }
+  }
+`);
+
+export const GET_ML_TRAINING_MANIFEST = graphql(`
+  query GetMlTrainingManifest($channelId: ID!) {
+    mlTrainingManifest(channelId: $channelId) {
+      channelId
+      version
+      extractedAt
+      products {
+        productId
+        productName
+        images {
+          assetId
+          url
+          filename
+        }
+      }
+    }
+  }
+`);
+
+export const EXTRACT_PHOTOS_FOR_TRAINING = graphql(`
+  mutation ExtractPhotosForTraining($channelId: ID!) {
+    extractPhotosForTraining(channelId: $channelId)
+  }
+`);
+
+export const UPDATE_TRAINING_STATUS = graphql(`
+  mutation UpdateTrainingStatus($channelId: ID!, $status: String!, $progress: Int, $error: String) {
+    updateTrainingStatus(channelId: $channelId, status: $status, progress: $progress, error: $error)
+  }
+`);
+
+export const COMPLETE_TRAINING = graphql(`
+  mutation CompleteTraining($channelId: ID!, $modelJson: Upload!, $weightsFile: Upload!, $metadata: Upload!) {
+    completeTraining(channelId: $channelId, modelJson: $modelJson, weightsFile: $weightsFile, metadata: $metadata)
   }
 `);

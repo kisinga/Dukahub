@@ -55,6 +55,73 @@
       </div>
     </div>
 
+    <!-- Product Photos -->
+    <div class="card bg-base-100 shadow">
+      <div class="card-body p-3">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h3 class="font-bold text-sm">Product Photos</h3>
+            <p class="text-xs opacity-70">AI recognition images</p>
+          </div>
+          @if (!showPhotoEditor()) {
+          <button
+            type="button"
+            (click)="showPhotoEditUnlock()"
+            class="btn btn-xs btn-warning gap-1"
+          >
+            <span>📸</span>
+            <span>Edit Photos</span>
+          </button>
+          }
+        </div>
+
+        <!-- Photo Display -->
+        @if (productAssets().length === 0) {
+        <div class="text-center py-6 bg-base-200 rounded">
+          <div class="text-2xl mb-2">📷</div>
+          <p class="text-sm opacity-70">No photos yet</p>
+          <p class="text-xs opacity-50">Add photos for better AI recognition</p>
+        </div>
+        } @else {
+        <div class="grid grid-cols-4 gap-2">
+          @for (asset of productAssets(); track asset.id) {
+          <div class="aspect-square relative">
+            <img
+              [src]="asset.preview"
+              [alt]="asset.name"
+              class="w-full h-full object-cover rounded border"
+            />
+            @if ($index === 0) {
+            <div class="badge badge-xs badge-primary absolute bottom-1 left-1">⭐ Main</div>
+            }
+          </div>
+          }
+        </div>
+        }
+
+        <!-- Photo Editor -->
+        @if (showPhotoEditor()) {
+        <div class="mt-4 p-3 bg-warning/10 rounded border border-warning/20">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-warning">⚠️</span>
+              <span class="text-sm font-semibold">Photo Editor Active</span>
+            </div>
+            <button type="button" (click)="closePhotoEditor()" class="btn btn-xs btn-ghost">
+              ✕ Close
+            </button>
+          </div>
+
+          <app-photo-editor
+            #photoEditor
+            [existingAssets]="productAssets()"
+            (photosChanged)="onPhotosChanged($event)"
+          />
+        </div>
+        }
+      </div>
+    </div>
+
     <!-- SKUs -->
     <div class="card bg-base-100 shadow">
       <div class="card-body p-3">
@@ -193,5 +260,13 @@
       </div>
     </div>
   </form>
+  }
+
+  <!-- Photo Edit Unlock Modal -->
+  @if (showUnlockModal()) {
+  <app-photo-edit-unlock-modal
+    (confirmed)="onPhotoEditUnlocked()"
+    (cancelled)="onPhotoEditCancelled()"
+  />
   }
 </div>
