@@ -50,16 +50,17 @@
 - Better cookie handling for session consistency
 - Comprehensive Permissions-Policy header
 
-### nginx.conf.template
+### nginx.conf
 
-- Template for environment variable substitution
-- Used by docker entrypoint for dynamic configuration
+- Main nginx configuration with environment variable placeholders
+- Uses ${BACKEND_HOST} and ${BACKEND_PORT} variables
+- Substituted at runtime by docker entrypoint
 
 ### docker-entrypoint.sh
 
-- Enhanced with backend connectivity checks
+- Substitutes environment variables into nginx config at runtime
 - Waits for backend to be available before starting nginx
-- Better error handling and logging
+- Supports flexible backend host/port configuration
 
 ## Deployment
 

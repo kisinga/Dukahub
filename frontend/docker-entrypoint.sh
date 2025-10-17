@@ -31,16 +31,11 @@ if [ $timeout -eq 0 ]; then
   echo "   ⚠️  Backend not reachable, but continuing with proxy configuration"
 fi
 
-# Substitute environment variables in nginx config template
-if [ -f /etc/nginx/conf.d/default.conf.template ]; then
-  envsubst '${BACKEND_HOST} ${BACKEND_PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
-else
-  echo "   ⚠️  Template not found, using static config"
-fi
+# Substitute environment variables in nginx config
+envsubst '${BACKEND_HOST} ${BACKEND_PORT}' < /etc/nginx/conf.d/default.conf > /tmp/nginx.conf
+mv /tmp/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Debug: Show what was actually substituted
-echo "   Substituted config preview:"
-grep -A 2 "set \$backend_url" /etc/nginx/conf.d/default.conf | head -3 || echo "   (config check skipped)"
+echo "   ✅ Configuration updated with environment variables"
 
 # Test nginx configuration
 echo "   Testing nginx configuration..."
