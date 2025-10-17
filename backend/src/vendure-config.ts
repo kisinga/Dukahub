@@ -165,18 +165,6 @@ export const config: VendureConfig = {
                 nullable: true,
                 ui: { tab: 'Branding' },
             },
-            {
-                name: 'defaultStockLocationId',
-                type: 'string',
-                label: [{ languageCode: LanguageCode.en, value: 'Default Stock Location ID' }],
-                description: [{
-                    languageCode: LanguageCode.en,
-                    value: 'Primary stock location for this channel (required for orders)'
-                }],
-                public: false,
-                nullable: true,
-                ui: { tab: 'Settings' },
-            },
         ],
         StockLocation: [
             {

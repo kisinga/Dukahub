@@ -46,7 +46,7 @@ This document tracks known limitations and required manual steps when working wi
 - Save channel
 - **Note:** Copy channel ID for reference
 
-#### Step 2: Create Default Stock Location
+#### Step 2: Create Stock Location
 
 - Navigate: Settings → Stock Locations
 - Click: "Create new stock location"
@@ -55,14 +55,8 @@ This document tracks known limitations and required manual steps when working wi
   - **Description:** Optional
 - Assign: Channel from Step 1
 - Save location
-- **CRITICAL:**
-  - Copy the stock location ID (from URL or response)
-  - Navigate back to: Settings → Channels → Edit the channel
-  - Find: Custom Fields tab → "Default Stock Location ID"
-  - Paste: Stock location ID
-  - Save channel
 
-**Why this matters:** Orders CANNOT be created without a stock location. Vendure uses it for inventory allocation.
+**Why this matters:** Orders CANNOT be created without a stock location. Vendure uses it for inventory allocation. The system will automatically use the first stock location assigned to the channel.
 
 #### Step 3: Create Payment Methods
 
@@ -128,8 +122,7 @@ This document tracks known limitations and required manual steps when working wi
 Before handing off to customer, verify:
 
 - [ ] Channel exists and is active
-- [ ] Stock location created and assigned to channel
-- [ ] `defaultStockLocationId` custom field populated in channel
+- [ ] Stock location created and assigned to channel (first location will be used for orders)
 - [ ] Payment methods (Cash + M-Pesa) created and assigned to channel
 - [ ] Admin role created with all required permissions
 - [ ] Admin user created and assigned to role
@@ -146,7 +139,7 @@ Before handing off to customer, verify:
 **Orders fail to create:**
 
 - **Cause:** No stock location assigned to channel
-- **Solution:** Complete Step 2, ensure `defaultStockLocationId` is set in channel custom fields
+- **Solution:** Complete Step 2, ensure at least one stock location is assigned to the channel
 
 **No payment methods at checkout:**
 
