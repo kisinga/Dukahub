@@ -15,7 +15,7 @@ import {
     ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CompanyService } from '../../../core/services/company.service';
 import { ProductService } from '../../../core/services/product.service';
 import { StockLocationService } from '../../../core/services/stock-location.service';
@@ -57,6 +57,7 @@ import { PhotoManagerComponent } from './components/photo-manager.component';
 export class ProductCreateComponent implements OnInit {
     private readonly fb = inject(FormBuilder);
     private readonly router = inject(Router);
+    private readonly route = inject(ActivatedRoute);
     private readonly productService = inject(ProductService);
     private readonly stockLocationService = inject(StockLocationService);
     readonly companyService = inject(CompanyService);
@@ -64,6 +65,10 @@ export class ProductCreateComponent implements OnInit {
     // View references
     readonly photoManager = viewChild<PhotoManagerComponent>('photoManager');
     readonly barcodeScanner = viewChild<BarcodeScannerComponent>('barcodeScanner');
+
+    // Edit mode
+    readonly isEditMode = signal(false);
+    readonly productId = signal<string | null>(null);
 
     // Item type toggle (product vs service)
     readonly itemType = signal<'product' | 'service'>('product');
@@ -84,9 +89,8 @@ export class ProductCreateComponent implements OnInit {
     readonly submitError = signal<string | null>(null);
     readonly submitSuccess = signal(false);
 
-    // Active location (from navbar context)
-    readonly activeLocation = this.stockLocationService.activeLocation;
-    readonly activeLocationId = this.stockLocationService.activeLocationId;
+    // Default location for the active channel
+    readonly defaultLocation = computed(() => this.stockLocationService.getDefaultLocation());
 
     // Identification method chosen
     readonly identificationMethod = signal<'barcode' | 'label-photos' | null>(null);
@@ -113,7 +117,7 @@ export class ProductCreateComponent implements OnInit {
     readonly canSubmit = computed(() => {
         const isValid = this.formValid(); // Use signal instead of direct form access
         const notSubmitting = !this.isSubmitting();
-        const hasLocation = !!this.activeLocationId();
+        const hasLocation = !!this.defaultLocation();
         const hasIdentification = this.hasValidIdentification();
 
         return isValid && notSubmitting && hasLocation && hasIdentification;
@@ -168,7 +172,7 @@ export class ProductCreateComponent implements OnInit {
             }
         }
 
-        if (type === 'product' && !this.activeLocationId()) {
+        if (type === 'product' && !this.defaultLocation()) {
             issues.push('No location selected');
         }
 
@@ -190,15 +194,25 @@ export class ProductCreateComponent implements OnInit {
         });
     }
 
-    ngOnInit(): void {
+    async ngOnInit(): Promise<void> {
+        // Check if we're in edit mode
+        const productId = this.route.snapshot.paramMap.get('id');
+        if (productId) {
+            this.isEditMode.set(true);
+            this.productId.set(productId);
+            await this.loadProductForEdit(productId);
+        }
+
         // Stock locations are loaded on boot via AppInitService
         // Just check if active location is set
-        if (!this.activeLocationId()) {
+        if (!this.defaultLocation()) {
             this.submitError.set('No active location selected. Please select a location from the navbar.');
         }
 
-        // Add first SKU by default
-        this.addSku();
+        // Add first SKU by default if not in edit mode
+        if (!this.isEditMode()) {
+            this.addSku();
+        }
 
         // Watch for manual barcode entry
         this.productForm.get('barcode')?.valueChanges.subscribe(value => {
@@ -367,6 +381,47 @@ export class ProductCreateComponent implements OnInit {
     }
 
     /**
+     * Load product data for editing
+     */
+    private async loadProductForEdit(productId: string): Promise<void> {
+        try {
+            const product = await this.productService.getProductById(productId);
+            if (!product) {
+                this.submitError.set('Product not found');
+                return;
+            }
+
+            // Populate form with product data
+            this.productForm.patchValue({
+                name: product.name,
+                barcode: product.customFields?.barcode || ''
+            });
+
+            // Set identification method based on existing data
+            if (product.customFields?.barcode) {
+                this.identificationMethod.set('barcode');
+                this.barcodeValue.set(product.customFields.barcode);
+            }
+
+            // Load variants as SKUs
+            if (product.variants && product.variants.length > 0) {
+                product.variants.forEach((variant: any) => {
+                    const skuGroup = this.createSkuFormGroup(
+                        variant.sku,
+                        variant.name,
+                        variant.price,
+                        variant.stockOnHand || 0
+                    );
+                    this.skus.push(skuGroup);
+                });
+            }
+        } catch (error: any) {
+            console.error('Failed to load product:', error);
+            this.submitError.set('Failed to load product data');
+        }
+    }
+
+    /**
      * Toggle between product and service
      */
     toggleItemType(type: 'product' | 'service'): void {
@@ -422,7 +477,7 @@ export class ProductCreateComponent implements OnInit {
             const type = this.itemType();
 
             // For products, location is required. For services, optional (no stock tracking)
-            const stockLocationId = type === 'product' ? this.activeLocationId() : undefined;
+            const stockLocationId = type === 'product' ? this.defaultLocation()?.id : undefined;
 
             if (type === 'product' && !stockLocationId) {
                 this.submitError.set('No active location. Please select a location from the navbar.');

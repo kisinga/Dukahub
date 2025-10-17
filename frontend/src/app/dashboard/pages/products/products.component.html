@@ -1,3 +1,11 @@
+<!-- Delete Confirmation Modal -->
+<app-delete-confirmation-modal
+  #deleteModal
+  [data]="deleteModalData()"
+  (confirm)="onDeleteConfirmed()"
+  (cancel)="onDeleteCancelled()"
+/>
+
 <!-- FAB for Create Product - Mobile Only -->
 <div class="fixed bottom-24 right-4 z-40 lg:hidden">
   <a
@@ -23,7 +31,7 @@
 </div>
 
 <div class="space-y-5 lg:space-y-6">
-  <!-- Header - Enhanced Typography -->
+  <!-- Header -->
   <div class="flex items-start justify-between gap-4">
     <div class="flex-1 min-w-0">
       <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">Products</h1>
@@ -76,284 +84,11 @@
     </div>
   </div>
 
-  <!-- Statistics Cards - Redesigned with Better Scaling -->
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-    <!-- Total Products -->
-    <div class="card bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-      <div class="card-body p-5 lg:p-6">
-        <div class="flex items-start justify-between mb-3">
-          <div class="flex-1">
-            <p class="text-sm font-medium text-base-content/70 mb-2">Total Products</p>
-            <p class="text-4xl lg:text-5xl font-bold text-primary tracking-tight">
-              {{ stats().totalProducts }}
-            </p>
-          </div>
-          <div
-            class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-primary/10 flex items-center justify-center"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 lg:h-7 lg:w-7 text-primary"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
+  <!-- Statistics Cards -->
+  <app-product-stats [stats]="stats()" />
 
-    <!-- Total Variants -->
-    <div class="card bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20">
-      <div class="card-body p-5 lg:p-6">
-        <div class="flex items-start justify-between mb-3">
-          <div class="flex-1">
-            <p class="text-sm font-medium text-base-content/70 mb-2">Variants</p>
-            <p class="text-4xl lg:text-5xl font-bold text-secondary tracking-tight">
-              {{ stats().totalVariants }}
-            </p>
-          </div>
-          <div
-            class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-secondary/10 flex items-center justify-center"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 lg:h-7 lg:w-7 text-secondary"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Total Stock -->
-    <div class="card bg-gradient-to-br from-success/10 to-success/5 border border-success/20">
-      <div class="card-body p-5 lg:p-6">
-        <div class="flex items-start justify-between mb-3">
-          <div class="flex-1">
-            <p class="text-sm font-medium text-base-content/70 mb-2">Total Stock</p>
-            <p class="text-4xl lg:text-5xl font-bold text-success tracking-tight">
-              {{ stats().totalStock }}
-            </p>
-          </div>
-          <div
-            class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-success/10 flex items-center justify-center"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 lg:h-7 lg:w-7 text-success"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Low Stock -->
-    <div class="card bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20">
-      <div class="card-body p-5 lg:p-6">
-        <div class="flex items-start justify-between mb-3">
-          <div class="flex-1">
-            <p class="text-sm font-medium text-base-content/70 mb-2">Low Stock</p>
-            <p class="text-4xl lg:text-5xl font-bold text-warning tracking-tight">
-              {{ stats().lowStock }}
-            </p>
-          </div>
-          <div
-            class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-warning/10 flex items-center justify-center"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 lg:h-7 lg:w-7 text-warning"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Search & Filter Bar - Enhanced -->
-  <div class="card bg-base-100 border border-base-300">
-    <div class="card-body p-4 lg:p-5">
-      <div class="flex gap-3">
-        <!-- Search Input - Improved -->
-        <label class="input input-lg lg:input-md input-bordered flex items-center gap-3 flex-1">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5 opacity-60 shrink-0"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          <input
-            type="text"
-            class="grow text-base"
-            placeholder="Search by name, description, or SKU..."
-            [(ngModel)]="searchQuery"
-            (ngModelChange)="searchQuery.set($event)"
-          />
-          @if (searchQuery()) {
-          <button (click)="searchQuery.set('')" class="btn btn-ghost btn-sm btn-circle">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-          }
-        </label>
-
-        <!-- Filter Button - Improved -->
-        <label for="filter-drawer" class="btn btn-lg lg:btn-md btn-square btn-outline">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 lg:h-5 lg:w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-            />
-          </svg>
-        </label>
-      </div>
-    </div>
-  </div>
-
-  <!-- Filter Drawer -->
-  <div class="drawer drawer-end z-50">
-    <input id="filter-drawer" type="checkbox" class="drawer-toggle" />
-    <div class="drawer-side">
-      <label for="filter-drawer" class="drawer-overlay"></label>
-      <div class="menu bg-base-100 min-h-full w-80 p-4">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-lg font-bold">Filters & Sort</h3>
-          <label for="filter-drawer" class="btn btn-sm btn-circle btn-ghost">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </label>
-        </div>
-
-        <div class="space-y-4">
-          <!-- Status Filter -->
-          <div>
-            <label class="label">
-              <span class="label-text font-semibold">Status</span>
-            </label>
-            <select class="select select-bordered w-full">
-              <option selected>All Status</option>
-              <option>Active</option>
-              <option>Disabled</option>
-            </select>
-          </div>
-
-          <!-- Stock Level Filter -->
-          <div>
-            <label class="label">
-              <span class="label-text font-semibold">Stock Level</span>
-            </label>
-            <select class="select select-bordered w-full">
-              <option selected>All Levels</option>
-              <option>In Stock (>20)</option>
-              <option>Low Stock (1-20)</option>
-              <option>Out of Stock (0)</option>
-            </select>
-          </div>
-
-          <!-- Sort By -->
-          <div>
-            <label class="label">
-              <span class="label-text font-semibold">Sort By</span>
-            </label>
-            <select class="select select-bordered w-full">
-              <option selected>Name (A-Z)</option>
-              <option>Name (Z-A)</option>
-              <option>Price (Low to High)</option>
-              <option>Price (High to Low)</option>
-              <option>Stock (Low to High)</option>
-              <option>Stock (High to Low)</option>
-              <option>Recently Added</option>
-            </select>
-          </div>
-
-          <div class="divider"></div>
-
-          <!-- Actions -->
-          <div class="flex gap-2">
-            <button class="btn btn-ghost flex-1">Reset</button>
-            <label for="filter-drawer" class="btn btn-primary flex-1">Apply</label>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Search & Filter Bar -->
+  <app-product-search-bar [(searchQuery)]="searchQuery" />
 
   <!-- Error Alert -->
   @if (error()) {
@@ -424,30 +159,7 @@
         <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
           Start building your inventory by adding your first product
         </p>
-        <a
-          routerLink="/dashboard/products/create"
-          class="btn btn-primary btn-sm lg:btn-md mt-6 lg:hidden"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-          Create First Product
-        </a>
-        <a
-          routerLink="/dashboard/products/create"
-          class="btn btn-primary btn-md hidden lg:inline-flex mt-6"
-        >
+        <a routerLink="/dashboard/products/create" class="btn btn-primary btn-sm lg:btn-md mt-6">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="h-5 w-5"
@@ -470,13 +182,12 @@
   </div>
   }
 
-  <!-- Products List/Table -->
+  <!-- Products List -->
   @else {
   <!-- List Controls -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
     <div class="text-sm text-base-content/60">
-      Showing {{ (currentPage() - 1) * itemsPerPage() + 1 }} to
-      {{ Math.min(currentPage() * itemsPerPage(), filteredProducts().length) }} of
+      Showing {{ (currentPage() - 1) * itemsPerPage() + 1 }} to {{ endItem() }} of
       {{ filteredProducts().length }} products
     </div>
 
@@ -494,165 +205,10 @@
     </div>
   </div>
 
-  <!-- Mobile: Card View with Collapsible Details -->
+  <!-- Mobile: Card View -->
   <div class="lg:hidden space-y-4">
     @for (product of paginatedProducts(); track trackByProductId($index, product)) {
-    <!-- Collapsible Product Card -->
-    <details
-      class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-2xl shadow-sm"
-    >
-      <summary class="collapse-title p-5 min-h-0">
-        <div class="flex gap-4">
-          <!-- Product Image -->
-          <div class="avatar shrink-0">
-            <div class="w-20 h-20 rounded-xl ring-2 ring-base-300 ring-offset-2">
-              <img [src]="getProductThumbnail(product)" [alt]="product.name" class="object-cover" />
-            </div>
-          </div>
-
-          <!-- Product Summary -->
-          <div class="flex-1 min-w-0">
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <h3 class="text-lg font-bold line-clamp-1 leading-tight">{{ product.name }}</h3>
-              @if (product.enabled) {
-              <span class="badge badge-success badge-sm gap-1 shrink-0">
-                <span class="w-1.5 h-1.5 bg-success-content rounded-full"></span>
-                Active
-              </span>
-              } @else {
-              <span class="badge badge-ghost badge-sm shrink-0">Disabled</span>
-              }
-            </div>
-
-            <!-- Key Metrics -->
-            <div class="flex items-center gap-3 mb-2">
-              <div class="text-sm text-base-content/60">
-                {{ product.variants?.length || 0 }} variants
-              </div>
-              <div class="w-1 h-1 rounded-full bg-base-content/30"></div>
-              <div
-                class="text-sm font-medium"
-                [class.text-success]="getTotalStock(product) > 20"
-                [class.text-warning]="getTotalStock(product) > 0 && getTotalStock(product) <= 20"
-                [class.text-error]="getTotalStock(product) === 0"
-              >
-                {{ getTotalStock(product) }} in stock
-              </div>
-            </div>
-
-            <!-- Price -->
-            <div class="text-xl font-bold text-primary font-mono tracking-tight">
-              ${{ getPriceRange(product) }}
-            </div>
-          </div>
-        </div>
-      </summary>
-
-      <!-- Expanded Content -->
-      <div class="collapse-content px-5 pb-5 pt-0">
-        <div class="divider my-3"></div>
-
-        <!-- Full Description -->
-        @if (product.description) {
-        <div class="mb-4">
-          <h4 class="text-sm font-semibold mb-2">Description</h4>
-          <p class="text-sm text-base-content/70 leading-relaxed">{{ product.description }}</p>
-        </div>
-        }
-
-        <!-- Detailed Info Grid -->
-        <div class="grid grid-cols-2 gap-4 mb-5">
-          <div class="bg-base-200 rounded-lg p-3">
-            <div class="text-xs text-base-content/60 mb-1">Variants</div>
-            <div class="flex items-center gap-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5 text-secondary"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                />
-              </svg>
-              <span class="text-lg font-bold">{{ product.variants?.length || 0 }}</span>
-            </div>
-          </div>
-
-          <div class="bg-base-200 rounded-lg p-3">
-            <div class="text-xs text-base-content/60 mb-1">Stock Level</div>
-            <div class="flex items-center gap-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                [class.text-success]="getTotalStock(product) > 20"
-                [class.text-warning]="getTotalStock(product) > 0 && getTotalStock(product) <= 20"
-                [class.text-error]="getTotalStock(product) === 0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                />
-              </svg>
-              <span class="text-lg font-bold">{{ getTotalStock(product) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex gap-2">
-          <button class="btn btn-primary flex-1 gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-              />
-            </svg>
-            View Details
-          </button>
-          <button class="btn btn-ghost flex-1 gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-              />
-            </svg>
-            Edit
-          </button>
-        </div>
-      </div>
-    </details>
+    <app-product-card [product]="product" (action)="onProductAction($event)" />
     }
   </div>
 
@@ -673,256 +229,21 @@
         </thead>
         <tbody>
           @for (product of paginatedProducts(); track trackByProductId($index, product)) {
-          <tr class="hover">
-            <!-- Thumbnail -->
-            <td>
-              <div class="avatar">
-                <div class="w-12 h-12 rounded">
-                  <img
-                    [src]="getProductThumbnail(product)"
-                    [alt]="product.name"
-                    class="object-cover"
-                  />
-                </div>
-              </div>
-            </td>
-
-            <!-- Product Name & Description -->
-            <td>
-              <div class="flex flex-col">
-                <div class="font-semibold">{{ product.name }}</div>
-                @if (product.description) {
-                <div class="text-xs text-base-content/60 line-clamp-1">
-                  {{ product.description }}
-                </div>
-                }
-              </div>
-            </td>
-
-            <!-- Variants Count -->
-            <td>
-              <span class="badge badge-outline badge-sm">
-                {{ product.variants?.length || 0 }}
-              </span>
-            </td>
-
-            <!-- Price Range -->
-            <td>
-              <span class="font-mono text-sm">${{ getPriceRange(product) }}</span>
-            </td>
-
-            <!-- Total Stock -->
-            <td class="text-center">
-              <span
-                class="badge badge-sm"
-                [class.badge-success]="getTotalStock(product) > 20"
-                [class.badge-warning]="getTotalStock(product) > 0 && getTotalStock(product) <= 20"
-                [class.badge-error]="getTotalStock(product) === 0"
-              >
-                {{ getTotalStock(product) }}
-              </span>
-            </td>
-
-            <!-- Status -->
-            <td class="text-center">
-              @if (product.enabled) {
-              <span class="badge badge-success badge-sm">Active</span>
-              } @else {
-              <span class="badge badge-ghost badge-sm">Disabled</span>
-              }
-            </td>
-
-            <!-- Actions -->
-            <td class="text-right">
-              <div class="flex justify-end gap-1">
-                <button class="btn btn-ghost btn-xs" title="View Details">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
-                </button>
-                <button class="btn btn-ghost btn-xs" title="Edit">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </td>
-          </tr>
+          <tr app-product-table-row [product]="product" (action)="onProductAction($event)"></tr>
           }
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- Pagination - Enhanced Mobile Design -->
-  <div class="card bg-base-100 border border-base-300">
-    <div class="card-body p-4 lg:p-5">
-      <div class="flex flex-col gap-4">
-        <!-- Page Info -->
-        <div class="text-center">
-          <div class="text-sm text-base-content/60">
-            Showing
-            <span class="font-semibold text-base-content">
-              {{ (currentPage() - 1) * itemsPerPage() + 1 }}-{{
-                Math.min(currentPage() * itemsPerPage(), filteredProducts().length)
-              }}
-            </span>
-            of
-            <span class="font-semibold text-base-content">{{ filteredProducts().length }}</span>
-            products
-          </div>
-          <div class="text-xs text-base-content/50 mt-1">
-            Page {{ currentPage() }} of {{ totalPages() }}
-          </div>
-        </div>
-
-        <!-- Pagination Controls -->
-        <div class="flex items-center justify-center gap-2">
-          <!-- First & Previous -->
-          <div class="join">
-            <button
-              class="join-item btn btn-sm lg:btn-md"
-              [disabled]="currentPage() === 1"
-              (click)="goToPage(1)"
-              aria-label="First page"
-              title="First page"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                />
-              </svg>
-            </button>
-            <button
-              class="join-item btn btn-sm lg:btn-md"
-              [disabled]="currentPage() === 1"
-              (click)="goToPage(currentPage() - 1)"
-              aria-label="Previous page"
-              title="Previous page"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <!-- Page Numbers (Mobile: Show only current, Desktop: Show range) -->
-          <div class="join hidden sm:flex">
-            @for (page of pageNumbers(); track page) {
-            <button
-              class="join-item btn btn-sm lg:btn-md min-w-[2.5rem]"
-              [class.btn-active]="page === currentPage()"
-              (click)="goToPage(page)"
-              [attr.aria-current]="page === currentPage() ? 'page' : null"
-            >
-              {{ page }}
-            </button>
-            }
-          </div>
-
-          <!-- Mobile: Current Page Display -->
-          <div class="badge badge-lg badge-primary sm:hidden font-bold px-4">
-            {{ currentPage() }}
-          </div>
-
-          <!-- Next & Last -->
-          <div class="join">
-            <button
-              class="join-item btn btn-sm lg:btn-md"
-              [disabled]="currentPage() === totalPages()"
-              (click)="goToPage(currentPage() + 1)"
-              aria-label="Next page"
-              title="Next page"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-            <button
-              class="join-item btn btn-sm lg:btn-md"
-              [disabled]="currentPage() === totalPages()"
-              (click)="goToPage(totalPages())"
-              aria-label="Last page"
-              title="Last page"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Pagination -->
+  <app-pagination
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [totalItems]="filteredProducts().length"
+    [itemsPerPage]="itemsPerPage()"
+    [itemLabel]="'products'"
+    (pageChange)="goToPage($event)"
+  />
   }
 </div>

@@ -14,9 +14,9 @@ import {
     ASSIGN_ASSETS_TO_PRODUCT,
     CHECK_SKU_EXISTS,
     CREATE_PRODUCT,
-    CREATE_PRODUCT_OPTION,
     CREATE_PRODUCT_OPTION_GROUP,
     CREATE_PRODUCT_VARIANTS,
+    DELETE_PRODUCT,
     GET_PRODUCT_DETAIL,
     GET_PRODUCTS
 } from '../graphql/operations.graphql';
@@ -182,10 +182,22 @@ export class ProductService {
             createdProductId = productId;
             console.log('✅ Product created:', productId);
 
-            // Step 4: Create variants sequentially
+            // Step 4: Create option group and variants
             console.log('📦 Creating variants...');
             try {
-                const createdVariants = await this.createVariants(productId, variants);
+                let variantsWithOptions = variants;
+
+                // Only create option group if we have multiple variants
+                // Vendure requires option groups for products with multiple variants
+                if (variants.length > 1) {
+                    console.log('🔧 Creating option group for multiple variants...');
+                    const result = await this.createVariantOptionGroup(productId, productInput.name, variants);
+                    variantsWithOptions = result.variantsWithOptions;
+                    console.log('✅ Option group created:', result.optionGroupId);
+                    console.log('✅ Variants mapped to options');
+                }
+
+                const createdVariants = await this.createVariants(productId, variantsWithOptions);
                 if (!createdVariants || createdVariants.length === 0) {
                     throw new Error('Failed to create product variants');
                 }
@@ -544,6 +556,38 @@ export class ProductService {
     }
 
     /**
+     * Delete a product by ID
+     * @param productId - The ID of the product to delete
+     * @returns true if successful, false otherwise
+     */
+    async deleteProduct(productId: string): Promise<boolean> {
+        try {
+            console.log('🗑️ Deleting product:', productId);
+            const client = this.apolloService.getClient();
+
+            const result = await client.mutate<any>({
+                mutation: DELETE_PRODUCT,
+                variables: { id: productId },
+            });
+
+            const deleteResult = result.data?.deleteProduct;
+
+            if (deleteResult?.result === 'DELETED') {
+                console.log('✅ Product deleted successfully');
+                return true;
+            } else {
+                console.error('❌ Delete failed:', deleteResult?.message);
+                this.errorSignal.set(deleteResult?.message || 'Failed to delete product');
+                return false;
+            }
+        } catch (error: any) {
+            console.error('❌ Delete product error:', error);
+            this.errorSignal.set(error.message || 'Failed to delete product');
+            return false;
+        }
+    }
+
+    /**
      * Clear error state
      */
     clearError(): void {
@@ -587,13 +631,15 @@ export class ProductService {
     }
 
     /**
-     * Create a hidden option group for variant differentiation
-     * This is invisible to users but required by Vendure for unique option combinations
+     * Create option group with options for variant differentiation
+     * Vendure requires options to be provided when creating the option group
+     * This creates the group and all options in one mutation, then assigns to product
      */
     private async createVariantOptionGroup(
         productId: string,
-        productName: string
-    ): Promise<string | null> {
+        productName: string,
+        variants: VariantInput[]
+    ): Promise<{ optionGroupId: string; variantsWithOptions: VariantInput[] }> {
         try {
             const client = this.apolloService.getClient();
 
@@ -602,6 +648,23 @@ export class ProductService {
             const optionGroupCode = `variants-${randomId}`;
             const optionGroupName = `${productName} Variants`;
 
+            // Prepare options for each variant (required by Vendure)
+            const options = variants.map((variant, i) => ({
+                code: `option-${i + 1}`,
+                translations: [
+                    {
+                        languageCode: 'en' as any,
+                        name: variant.name,
+                    },
+                ],
+            }));
+
+            console.log('🔧 Creating option group with options:', {
+                code: optionGroupCode,
+                optionCount: options.length
+            });
+
+            // Create option group WITH options (required by Vendure)
             const result = await client.mutate<any>({
                 mutation: CREATE_PRODUCT_OPTION_GROUP as any,
                 variables: {
@@ -613,83 +676,64 @@ export class ProductService {
                                 name: optionGroupName,
                             },
                         ],
+                        options: options,
                     },
                 },
             });
 
-            const optionGroupId = result.data?.createProductOptionGroup?.id;
-            if (!optionGroupId) {
-                throw new Error('Failed to get option group ID');
+            console.log('🔧 Option group creation result:', {
+                data: result.data,
+                error: result.error,
+                hasData: !!result.data,
+                hasOptionGroup: !!result.data?.createProductOptionGroup
+            });
+
+            // Check for Apollo errors first
+            if (result.error) {
+                console.error('❌ Apollo error in option group creation:', result.error);
+                throw new Error(`GraphQL Error: ${result.error.message}`);
             }
 
+            const optionGroup = result.data?.createProductOptionGroup;
+            if (!optionGroup?.id) {
+                console.error('❌ No option group ID in response:', {
+                    data: result.data,
+                    error: result.error,
+                    createProductOptionGroup: optionGroup
+                });
+                throw new Error('Failed to get option group ID - mutation returned no data');
+            }
+
+            console.log('✅ Option group created with ID:', optionGroup.id);
+            console.log('✅ Options created:', optionGroup.options?.length || 0);
+
             // Add the option group to the product
-            await client.mutate({
+            const addResult = await client.mutate({
                 mutation: ADD_OPTION_GROUP_TO_PRODUCT as any,
                 variables: {
                     productId,
-                    optionGroupId,
+                    optionGroupId: optionGroup.id,
                 },
             });
 
-            return optionGroupId;
-        } catch (error) {
-            console.error('❌ Failed to create option group:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Create individual options for each variant within the option group
-     * Returns variants with optionIds assigned
-     */
-    private async createVariantOptions(
-        optionGroupId: string,
-        variants: VariantInput[]
-    ): Promise<VariantInput[]> {
-        try {
-            const client = this.apolloService.getClient();
-            const variantsWithOptions: VariantInput[] = [];
-
-            for (let i = 0; i < variants.length; i++) {
-                const variant = variants[i];
-
-                // Create option for this variant using the variant name
-                const optionCode = `option-${i + 1}`;
-                const optionName = `${variant.name}`;
-
-                const result = await client.mutate<any>({
-                    mutation: CREATE_PRODUCT_OPTION as any,
-                    variables: {
-                        input: {
-                            optionGroupId,
-                            code: optionCode,
-                            translations: [
-                                {
-                                    languageCode: 'en' as any,
-                                    name: optionName,
-                                },
-                            ],
-                        },
-                    },
-                });
-
-                const optionId = result.data?.createProductOption?.id;
-                if (!optionId) {
-                    throw new Error(`Failed to create option for variant ${i + 1}`);
-                }
-
-                // Add option ID to variant
-                variantsWithOptions.push({
-                    ...variant,
-                    optionIds: [optionId],
-                });
-
-                console.log(`✅ Option created for variant ${i + 1}:`, optionName);
+            if (addResult.error) {
+                throw new Error(`Failed to add option group to product: ${addResult.error.message}`);
             }
 
-            return variantsWithOptions;
+            console.log('✅ Option group added to product');
+
+            // Map option IDs back to variants
+            const variantsWithOptions = variants.map((variant, i) => ({
+                ...variant,
+                optionIds: [optionGroup.options[i].id],
+            }));
+
+            return {
+                optionGroupId: optionGroup.id,
+                variantsWithOptions,
+            };
         } catch (error) {
-            console.error('❌ Failed to create variant options:', error);
+            console.error('❌ Failed to create option group:', error);
             throw error;
         }
     }

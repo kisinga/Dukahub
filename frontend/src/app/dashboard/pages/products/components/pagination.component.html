@@ -1,0 +1,137 @@
+<div class="card bg-base-100 border border-base-300">
+  <div class="card-body p-4 lg:p-5">
+    <div class="flex flex-col gap-4">
+      <!-- Page Info -->
+      <div class="text-center">
+        <div class="text-sm text-base-content/60">
+          Showing
+          <span class="font-semibold text-base-content"> {{ startItem() }}-{{ endItem() }} </span>
+          of
+          <span class="font-semibold text-base-content">{{ totalItems() }}</span>
+          {{ itemLabel() }}
+        </div>
+        <div class="text-xs text-base-content/50 mt-1">
+          Page {{ currentPage() }} of {{ totalPages() }}
+        </div>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div class="flex items-center justify-center gap-2">
+        <!-- First & Previous -->
+        <div class="join">
+          <button
+            class="join-item btn btn-sm lg:btn-md"
+            [disabled]="currentPage() === 1"
+            (click)="onPageChange(1)"
+            aria-label="First page"
+            title="First page"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+          </button>
+          <button
+            class="join-item btn btn-sm lg:btn-md"
+            [disabled]="currentPage() === 1"
+            (click)="onPageChange(currentPage() - 1)"
+            aria-label="Previous page"
+            title="Previous page"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Page Numbers (Desktop only) -->
+        <div class="join hidden sm:flex">
+          @for (page of pageNumbers(); track page) {
+          <button
+            class="join-item btn btn-sm lg:btn-md min-w-[2.5rem]"
+            [class.btn-active]="page === currentPage()"
+            (click)="onPageChange(page)"
+            [attr.aria-current]="page === currentPage() ? 'page' : null"
+          >
+            {{ page }}
+          </button>
+          }
+        </div>
+
+        <!-- Mobile: Current Page Display -->
+        <div class="badge badge-lg badge-primary sm:hidden font-bold px-4">
+          {{ currentPage() }}
+        </div>
+
+        <!-- Next & Last -->
+        <div class="join">
+          <button
+            class="join-item btn btn-sm lg:btn-md"
+            [disabled]="currentPage() === totalPages()"
+            (click)="onPageChange(currentPage() + 1)"
+            aria-label="Next page"
+            title="Next page"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+          <button
+            class="join-item btn btn-sm lg:btn-md"
+            [disabled]="currentPage() === totalPages()"
+            (click)="onPageChange(totalPages())"
+            aria-label="Last page"
+            title="Last page"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 5l7 7-7 7M5 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -17,63 +17,52 @@ export interface StockLocation {
 /**
  * Service for managing stock locations (shops/warehouses)
  * 
- * ARCHITECTURE:
- * - Stock Location = Individual shop/warehouse within a company
- * - Stock levels are tracked per variant per location
- * - Products must be assigned to a stock location when stock is added
- * - Active location determines which location's data is shown in dashboard
+ * SIMPLIFIED ARCHITECTURE (Nov 2025):
+ * - Each channel has ONE default stock location
+ * - No location switching (removed for simplicity)
+ * - Stock levels tracked at channel level
+ * - Cashier status based on first/default location
  * 
- * UX FLOW:
- * - Fetch stock locations when dashboard loads
- * - User selects active location via navbar dropdown
- * - Dashboard displays location-specific stats
- * - Active location persists to localStorage
+ * RATIONALE:
+ * - Vendure orders are channel-scoped, not location-scoped
+ * - 90% of businesses have one primary location
+ * - Multi-location support deferred to Phase 2 (requires custom plugin)
  */
 @Injectable({
     providedIn: 'root',
 })
 export class StockLocationService {
     private readonly apolloService = inject(ApolloService);
-    private readonly STORAGE_KEY = 'active_location_id';
 
     // State signals
     private readonly locationsSignal = signal<StockLocation[]>([]);
-    private readonly activeLocationIdSignal = signal<string | null>(null);
     private readonly isLoadingSignal = signal(false);
     private readonly errorSignal = signal<string | null>(null);
 
     // Public readonly signals
     readonly locations = this.locationsSignal.asReadonly();
-    readonly activeLocationId = this.activeLocationIdSignal.asReadonly();
     readonly isLoading = this.isLoadingSignal.asReadonly();
     readonly error = this.errorSignal.asReadonly();
 
     // Computed: Check if we have any locations
     readonly hasLocations = computed(() => this.locationsSignal().length > 0);
 
-    // Computed: Active location object
-    readonly activeLocation = computed(() => {
-        const id = this.activeLocationIdSignal();
-        const locations = this.locationsSignal();
-        return locations.find((loc) => loc.id === id) || null;
-    });
-
     /**
-     * Cashier flow enabled for the active stock location
+     * Cashier flow enabled for the default stock location
      * Controls whether to show cashier checkout option
      */
     readonly cashierFlowEnabled = computed(() => {
-        const activeLocation = this.activeLocation();
-        return activeLocation?.cashierFlowEnabled ?? false;
+        const defaultLocation = this.getDefaultLocation();
+        return defaultLocation?.cashierFlowEnabled ?? false;
     });
 
     /**
-     * Cashier open status for the active stock location
-     * Returns the cashier status of the currently active location
+     * Cashier open status for the default stock location
+     * Returns the cashier status of the default location
      */
     readonly cashierOpen = computed(() => {
-        const activeLocation = this.activeLocation();
-        return activeLocation?.cashierOpen ?? false;
+        const defaultLocation = this.getDefaultLocation();
+        return defaultLocation?.cashierOpen ?? false;
     });
 
     /**
@@ -100,11 +89,6 @@ export class StockLocationService {
 
                 if (items.length === 0) {
                     this.errorSignal.set('No stock locations found. Please create a stock location in Vendure admin first.');
-                } else {
-                    // Auto-activate first location if none is active
-                    if (!this.activeLocationIdSignal() && items.length > 0) {
-                        this.activateLocation(items[0].id);
-                    }
                 }
             } else {
                 this.locationsSignal.set([]);
@@ -151,11 +135,6 @@ export class StockLocationService {
 
                 if (items.length === 0) {
                     this.errorSignal.set('No stock locations found. Please create a stock location in Vendure admin first.');
-                } else {
-                    // Auto-activate first location if none is active
-                    if (!this.activeLocationIdSignal() && items.length > 0) {
-                        this.activateLocation(items[0].id);
-                    }
                 }
             } else {
                 this.locationsSignal.set([]);
@@ -179,42 +158,12 @@ export class StockLocationService {
     }
 
     /**
-     * Activate a location - makes it the active location for dashboard filtering
-     * @param locationId - The stock location ID to activate
+     * Get the default stock location (first location)
+     * In simplified architecture, each channel has one primary location
      */
-    activateLocation(locationId: string): void {
-        const location = this.getLocationById(locationId);
-        if (!location) {
-            console.warn(`Cannot activate location ${locationId}: not found in locations list`);
-            return;
-        }
-
-        console.log(`📍 Activating location: ${location.name} (${locationId})`);
-        this.activeLocationIdSignal.set(locationId);
-        this.persistActiveLocation();
-    }
-
-    /**
-     * Initialize active location from localStorage
-     * Called on app initialization
-     */
-    initializeFromStorage(): void {
-        const stored = localStorage.getItem(this.STORAGE_KEY);
-        if (stored) {
-            console.log('📍 Restored active location from storage:', stored);
-            this.activeLocationIdSignal.set(stored);
-        }
-    }
-
-    /**
-     * Persist active location to localStorage
-     */
-    private persistActiveLocation(): void {
-        const locationId = this.activeLocationIdSignal();
-        if (locationId) {
-            localStorage.setItem(this.STORAGE_KEY, locationId);
-            console.log('💾 Persisted active location:', locationId);
-        }
+    getDefaultLocation(): StockLocation | null {
+        const locs = this.locationsSignal();
+        return locs.length > 0 ? locs[0] : null;
     }
 
     /**
@@ -223,9 +172,7 @@ export class StockLocationService {
      */
     clearLocations(): void {
         this.locationsSignal.set([]);
-        this.activeLocationIdSignal.set(null);
         this.errorSignal.set(null);
-        localStorage.removeItem(this.STORAGE_KEY);
     }
 }
 

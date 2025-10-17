@@ -1,0 +1,197 @@
+<!-- Product Edit Form -->
+
+<!-- Header -->
+<div class="sticky top-0 z-30 bg-base-100/95 backdrop-blur-sm border-b">
+  <div class="container-app py-2">
+    <div class="flex items-center justify-between gap-2">
+      <h1 class="text-lg font-bold">✏️ Edit Product</h1>
+      <button type="button" (click)="cancel()" class="btn btn-sm btn-circle btn-ghost">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="container-app py-3 pb-32 max-w-lg mx-auto">
+  <!-- Loading State -->
+  @if (isLoading()) {
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <div class="flex flex-col items-center justify-center py-12">
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+        <p class="text-sm text-base-content/60 mt-4">Loading product...</p>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Alerts -->
+  @if (submitSuccess()) {
+  <div role="alert" class="alert alert-success mb-3">
+    <span>✓ Product updated!</span>
+  </div>
+  } @if (submitError()) {
+  <div role="alert" class="alert alert-error mb-3">
+    <span>{{ submitError() }}</span>
+  </div>
+  }
+
+  <!-- Form -->
+  @if (!isLoading()) {
+  <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="space-y-3">
+    <!-- Product Name -->
+    <div class="card bg-base-100 shadow">
+      <div class="card-body p-3">
+        <h3 class="font-bold text-sm mb-2">Product Name</h3>
+        <input
+          type="text"
+          formControlName="name"
+          placeholder="e.g., Tomatoes"
+          class="input input-bordered w-full"
+          [class.input-error]="productForm.get('name')?.invalid && productForm.get('name')?.touched"
+        />
+        @if (productForm.get('name')?.invalid && productForm.get('name')?.touched) {
+        <p class="text-error text-xs mt-1">Product name is required (min 3 characters)</p>
+        }
+      </div>
+    </div>
+
+    <!-- SKUs -->
+    <div class="card bg-base-100 shadow">
+      <div class="card-body p-3">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-bold text-sm">SKUs (Sizes/Tiers)</h3>
+          <button type="button" (click)="addSku()" class="btn btn-xs btn-primary">+ Add SKU</button>
+        </div>
+
+        <div class="bg-info/10 p-2 rounded text-xs mb-3">
+          <strong>Note:</strong> Stock values are read-only. Use the Inventory module to adjust
+          stock levels.
+        </div>
+
+        <!-- SKU List -->
+        <div formArrayName="skus" class="space-y-3">
+          @for (sku of skus.controls; track $index) {
+          <div [formGroupName]="$index" class="p-3 bg-base-200 rounded">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <span class="text-xs font-semibold opacity-70">SKU #{{ $index + 1 }}</span>
+              @if (skus.length > 1) {
+              <button
+                type="button"
+                (click)="removeSku($index)"
+                class="btn btn-xs btn-ghost btn-circle text-error"
+              >
+                ✕
+              </button>
+              }
+            </div>
+
+            <div class="space-y-2">
+              <!-- SKU Name -->
+              <div>
+                <label class="text-xs opacity-70 mb-1 block">Name</label>
+                <input
+                  type="text"
+                  formControlName="name"
+                  placeholder="e.g., 1kg"
+                  class="input input-sm input-bordered w-full"
+                  [class.input-error]="skuFieldHasError($index, 'name')"
+                />
+                @if (skuFieldHasError($index, 'name')) {
+                <p class="text-error text-xs mt-0.5">{{ getSkuFieldError($index, 'name') }}</p>
+                }
+              </div>
+
+              <!-- SKU Code (Read-only) -->
+              <div>
+                <label class="text-xs opacity-70 mb-1 block">SKU Code</label>
+                <div class="px-3 py-2 bg-base-300 rounded text-xs font-mono opacity-70">
+                  {{ sku.get('sku')?.value }}
+                </div>
+              </div>
+
+              <!-- Price & Stock -->
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-xs opacity-70 mb-1 block">Price (inc tax)</label>
+                  <input
+                    type="number"
+                    formControlName="price"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0.01"
+                    class="input input-sm input-bordered w-full"
+                    [class.input-error]="skuFieldHasError($index, 'price')"
+                  />
+                  @if (skuFieldHasError($index, 'price')) {
+                  <p class="text-error text-xs mt-0.5">{{ getSkuFieldError($index, 'price') }}</p>
+                  }
+                </div>
+
+                <div>
+                  <label class="text-xs opacity-70 mb-1 block">Stock (read-only)</label>
+                  <input
+                    type="number"
+                    formControlName="stockOnHand"
+                    readonly
+                    class="input input-sm input-bordered input-disabled w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Validation Issues -->
+    @if (validationIssues().length > 0 && (productForm.touched || isSubmitting())) {
+    <div role="alert" class="alert alert-warning">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-6 w-6 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+        />
+      </svg>
+      <div class="text-xs">
+        <p class="font-semibold mb-1">Please fix:</p>
+        <ul class="list-disc list-inside space-y-0.5">
+          @for (issue of validationIssues(); track issue) {
+          <li>{{ issue }}</li>
+          }
+        </ul>
+      </div>
+    </div>
+    }
+
+    <!-- Actions -->
+    <div class="card bg-base-100 shadow sticky bottom-2">
+      <div class="card-body p-3">
+        <div class="flex gap-2">
+          <button
+            type="button"
+            (click)="cancel()"
+            class="btn btn-ghost flex-1"
+            [disabled]="isSubmitting()"
+          >
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary flex-1" [disabled]="!canSubmit()">
+            @if (isSubmitting()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Saving... } @else { 💾 Save Changes }
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+  }
+</div>

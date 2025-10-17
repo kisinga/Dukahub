@@ -278,10 +278,10 @@
     <div class="card bg-base-200">
       <div class="card-body p-3">
         <h3 class="font-bold text-sm mb-1">4️⃣ Location</h3>
-        @if (activeLocation()) {
-        <p class="text-sm">📍 {{ activeLocation()!.name }}</p>
+        @if (defaultLocation()) {
+        <p class="text-sm">📍 {{ defaultLocation()!.name }}</p>
         } @else {
-        <p class="text-sm text-error">⚠️ No location selected</p>
+        <p class="text-sm text-error">⚠️ No location available</p>
         }
       </div>
     </div>
@@ -302,7 +302,7 @@
       <!-- Validation Issues -->
       @if (!canSubmit() && validationIssues().length > 0) {
       <div class="text-xs text-error text-center mb-2">
-        @for (issue of validationIssues(); track issue; let last = $last) {
+        @for (issue of validationIssues(); track $index; let last = $last) {
           <span>{{ issue }}@if (!last) { · }</span>
         }
       </div>

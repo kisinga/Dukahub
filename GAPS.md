@@ -2,37 +2,166 @@
 
 This document tracks known limitations and required manual steps when working with Vendure.
 
-## Channel Provisioning Checklist
+## System Setup & Company Provisioning
 
-When creating a new Channel (customer company), manually provision:
+### Phase 1: Initial System Setup (One-Time)
 
-1. ✅ **Stock Location** - At least one required for inventory
-2. ✅ **Payment Method** - Required for sales
-3. ✅ **Roles** - Required for user access
-4. ✅ **Assign Users** - Link users to roles
-5. ✅ **Permissions** - Ensure roles have necessary permissions
+**Prerequisites:**
 
-**See [Frontend Architecture](./frontend/ARCHITECTURE.md) for detailed multi-tenancy model.**
+- PostgreSQL running
+- Backend started
+- Migrations auto-run on startup (`migrationsRun: true` in config)
 
-### Common Permission Issues
+**Steps (via Vendure Admin UI - http://localhost:3002/admin):**
 
-**Product Creation with Photos:**
+1. **Tax Configuration** (Required - all prices tax-inclusive)
 
-- Requires: `CreateProduct`, `CreateProductVariant`, `CreateAsset`, `UpdateProduct`
-- Symptom: Product created but photos fail with 403 error
-- Solution: Assign `CreateAsset` and `UpdateProduct` permissions to user role
+   - Navigate: Settings → Tax Categories
+   - Create: "Standard Tax" category
+   - Navigate: Settings → Tax Rates
+   - Create: Tax rate (e.g., "VAT 0%" or appropriate rate)
+   - Set: "Tax included in price" = YES
+   - Navigate: Settings → Zones
+   - Create: Zone for your country/region
+   - Assign: Tax rate to zone
+   - **Note:** Complex tax systems NOT supported. All prices are tax-inclusive.
 
-**Asset Management:**
+2. **Verify Payment Handlers** (After backend deployment)
+   - Navigate: Settings → Payment Methods
+   - Verify: `cash-payment` and `mpesa-payment` handlers available in dropdown
+   - If missing: Check backend logs, ensure handlers registered in vendure-config.ts
 
-- Requires: `CreateAsset`, `UpdateAsset`, `DeleteAsset`, `ReadAsset`
-- Used for: Product photos, company logos, any uploaded files
+### Phase 2: Company Provisioning (Per Customer/Tenant)
 
-**Debugging Permissions:**
+**Complete ALL steps for each new company. Missing any step will break order creation.**
 
-1. Check user's assigned role(s) in Admin UI
-2. Verify role has required permissions
-3. Test with SuperAdmin account to confirm it's a permission issue
-4. Enable verbose logging in browser console
+#### Step 1: Create Channel
+
+- Navigate: Settings → Channels
+- Click: "Create new channel"
+- Fill:
+  - **Name:** Company name (e.g., "Downtown Groceries")
+  - **Code/Token:** Lowercase, no spaces (e.g., "downtown-groceries")
+  - **Currency:** Default currency
+- Save channel
+- **Note:** Copy channel ID for reference
+
+#### Step 2: Create Default Stock Location
+
+- Navigate: Settings → Stock Locations
+- Click: "Create new stock location"
+- Fill:
+  - **Name:** "{Company Name} - Main Store" (e.g., "Downtown Groceries - Main Store")
+  - **Description:** Optional
+- Assign: Channel from Step 1
+- Save location
+- **CRITICAL:**
+  - Copy the stock location ID (from URL or response)
+  - Navigate back to: Settings → Channels → Edit the channel
+  - Find: Custom Fields tab → "Default Stock Location ID"
+  - Paste: Stock location ID
+  - Save channel
+
+**Why this matters:** Orders CANNOT be created without a stock location. Vendure uses it for inventory allocation.
+
+#### Step 3: Create Payment Methods
+
+- Navigate: Settings → Payment Methods
+- Create **Cash Payment:**
+  - Name: "Cash Payment"
+  - Code: Auto-generated
+  - Handler: Select `cash-payment` from dropdown
+  - Enabled: YES
+  - Channels: Assign the channel from Step 1
+  - Save
+- Create **M-Pesa Payment:**
+  - Name: "M-Pesa Payment"
+  - Code: Auto-generated
+  - Handler: Select `mpesa-payment` from dropdown
+  - Enabled: YES
+  - Channels: Assign the channel from Step 1
+  - Save
+
+**Why this matters:** No payment methods = no checkout options in POS.
+
+#### Step 4: Create Admin Role
+
+- Navigate: Settings → Roles
+- Click: "Create new role"
+- Fill:
+  - **Name:** "{Company Name} Admin" (e.g., "Downtown Groceries Admin")
+  - **Description:** "Full admin access for {Company Name}"
+  - **Channels:** Select the channel from Step 1
+- Permissions: Select ALL for these entities:
+  - **Asset:** CreateAsset, ReadAsset, UpdateAsset, DeleteAsset
+  - **Catalog:** CreateCatalog, ReadCatalog, UpdateCatalog, DeleteCatalog
+  - **Customer:** CreateCustomer, ReadCustomer, UpdateCustomer, DeleteCustomer
+  - **Order:** CreateOrder, ReadOrder, UpdateOrder, DeleteOrder
+  - **Product:** CreateProduct, ReadProduct, UpdateProduct, DeleteProduct
+  - **ProductVariant:** CreateProductVariant, ReadProductVariant, UpdateProductVariant, DeleteProductVariant
+  - **StockLocation:** CreateStockLocation, ReadStockLocation, UpdateStockLocation
+  - **Payment:** CreatePayment, ReadPayment, UpdatePayment, SettlePayment
+  - **Fulfillment:** CreateFulfillment, ReadFulfillment, UpdateFulfillment
+- Save role
+
+**Permission Notes:**
+
+- Asset permissions REQUIRED for product photo uploads (CreateAsset, UpdateAsset)
+- Payment permissions REQUIRED for checkout flow (CreatePayment, SettlePayment)
+- Missing permissions = 403 errors in frontend
+
+#### Step 5: Create Admin User
+
+- Navigate: Settings → Administrators
+- Click: "Create new administrator"
+- Fill:
+  - **Email:** admin@{company-domain}.com
+  - **First name:** Admin first name
+  - **Last name:** Admin last name
+  - **Password:** Generate strong password
+- Assign: Role from Step 4
+- Save user
+- **IMPORTANT:** Send credentials to company admin securely (do NOT send via email unencrypted)
+
+#### Step 6: Verification Checklist
+
+Before handing off to customer, verify:
+
+- [ ] Channel exists and is active
+- [ ] Stock location created and assigned to channel
+- [ ] `defaultStockLocationId` custom field populated in channel
+- [ ] Payment methods (Cash + M-Pesa) created and assigned to channel
+- [ ] Admin role created with all required permissions
+- [ ] Admin user created and assigned to role
+- [ ] Test login: Admin can access frontend with their credentials
+- [ ] Test visibility: Admin sees ONLY their channel's data
+
+### Common Setup Issues
+
+**Product photos fail (403 Forbidden):**
+
+- **Cause:** Missing Asset permissions on role
+- **Solution:** Edit role → Add CreateAsset, ReadAsset, UpdateAsset permissions → Save
+
+**Orders fail to create:**
+
+- **Cause:** No stock location assigned to channel
+- **Solution:** Complete Step 2, ensure `defaultStockLocationId` is set in channel custom fields
+
+**No payment methods at checkout:**
+
+- **Cause:** Payment methods not assigned to channel
+- **Solution:** Edit payment methods → Ensure channel is selected in "Channels" field
+
+**Admin sees all companies (not just theirs):**
+
+- **Cause:** Role not scoped to channel
+- **Solution:** Edit role → Ensure channel is selected in "Channels" field
+
+**User cannot login to frontend:**
+
+- **Cause:** User not assigned to any role, or role not assigned to channel
+- **Solution:** Edit user → Assign role → Ensure role is channel-scoped
 
 ## Known Limitations
 
@@ -109,3 +238,25 @@ Frontend → Temp Storage → Backend Queue → Worker Process
 5. Update frontend to use new flow
 
 **Priority:** Medium (current solution works, but not robust)
+
+---
+
+## Recent Improvements
+
+### Products Page Refactoring (Completed)
+
+**Status:** ✅ Complete
+
+The products page has been refactored into a composable, maintainable architecture:
+
+**Improvements:**
+
+- 60% reduction in main component size (930→245 lines HTML, 195→175 lines TS)
+- 6 focused, reusable components with clear responsibilities
+- Enhanced mobile experience with KISS principles
+- Product edit functionality (reuses create form)
+- Purchase action hook (ready for supplier flow integration)
+- Better type safety with shared interfaces
+- Performance optimizations (OnPush, signals, computed)
+
+**See:** `frontend/ARCHITECTURE.md` → "Products Page - Component Architecture" section for full details.

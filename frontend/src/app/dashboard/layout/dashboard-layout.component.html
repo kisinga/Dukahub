@@ -26,128 +26,26 @@
         </label>
       </div>
 
-      <!-- Company Branding + Location Selector -->
-      <div class="flex-1 min-w-0 px-2 flex items-center gap-2">
+      <!-- Company Branding (Simplified) -->
+      <div class="flex-1 min-w-0 px-2 flex items-center gap-3">
         <!-- Company Logo & Name -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3">
           <div class="avatar">
-            <div class="w-8 h-8 rounded-lg">
+            <div class="w-10 h-10 rounded-lg">
               <img [src]="logoUrl()" [alt]="companyDisplayName()" />
             </div>
           </div>
-          <span class="hidden sm:inline-block font-bold text-sm truncate max-w-[100px]">
-            {{ companyDisplayName() }}
-          </span>
-        </div>
-
-        <!-- Location Switcher (Primary) -->
-        @if (activeLocation(); as location) {
-        <div class="dropdown dropdown-bottom lg:dropdown-end">
-          <div
-            tabindex="0"
-            role="button"
-            class="btn btn-primary btn-sm gap-2 min-h-[2.5rem] h-auto py-2"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-            <span class="font-semibold text-sm truncate max-w-[120px]">
-              {{ displayLocationName() }}
+          <div class="flex flex-col min-w-0">
+            <span class="font-bold text-base truncate max-w-[200px]">
+              {{ companyDisplayName() }}
             </span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 flex-shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </div>
-          <div
-            tabindex="0"
-            class="dropdown-content bg-base-100 rounded-box z-50 mt-2 w-screen max-w-sm sm:w-80 shadow-2xl border border-base-300"
-          >
-            <!-- Header -->
-            <div class="bg-base-200 px-4 py-3 border-b border-base-300">
-              <h3 class="font-semibold">Switch Location</h3>
-              <p class="text-xs opacity-60 mt-0.5">{{ locations().length }} locations available</p>
-            </div>
-
-            <!-- Location List -->
-            <div class="max-h-[60vh] overflow-y-auto">
-              <ul class="menu p-2">
-                @for (loc of locations(); track loc.id) {
-                <li>
-                  <a
-                    (click)="selectLocation(loc.id)"
-                    [class.active]="loc.id === activeLocationId()"
-                    class="flex items-center gap-3 py-3 min-h-[3rem] rounded-lg"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-5 w-5 opacity-70"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                      />
-                    </svg>
-                    <div class="flex-1 min-w-0">
-                      <div class="font-medium truncate">{{ loc.name }}</div>
-                      <div class="text-xs opacity-60 truncate">{{ loc.description }}</div>
-                    </div>
-                    @if (loc.id === activeLocationId()) {
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-5 w-5 text-primary flex-shrink-0"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                    }
-                  </a>
-                </li>
-                }
-              </ul>
-            </div>
+            @if (activeCompany(); as company) {
+            <span class="text-xs opacity-60 truncate max-w-[200px]">
+              {{ company.code }}
+            </span>
+            }
           </div>
         </div>
-        } @else {
-        <div class="skeleton h-10 w-32"></div>
-        }
       </div>
 
       <!-- Right side actions - Mobile Optimized -->

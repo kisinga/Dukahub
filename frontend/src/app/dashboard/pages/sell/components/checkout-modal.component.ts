@@ -9,9 +9,9 @@ type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
  * Unified checkout modal handling all payment flows
  */
 @Component({
-    selector: 'app-checkout-modal',
-    imports: [CommonModule, CustomerSelectorComponent],
-    template: `
+  selector: 'app-checkout-modal',
+  imports: [CommonModule, CustomerSelectorComponent],
+  template: `
     @if (isOpen()) {
     <div class="modal modal-open modal-middle">
       <div class="modal-box max-w-2xl p-0">
@@ -289,55 +289,45 @@ type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
     </div>
     }
   `,
-    changeDetection: ChangeDetectionStrategy.OnPush,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CheckoutModalComponent {
-    readonly isOpen = input.required<boolean>();
-    readonly checkoutType = input.required<CheckoutType>();
-    readonly itemCount = input.required<number>();
-    readonly total = input.required<number>();
-    readonly error = input<string | null>(null);
-    readonly isProcessing = input<boolean>(false);
+  readonly isOpen = input.required<boolean>();
+  readonly checkoutType = input.required<CheckoutType>();
+  readonly itemCount = input.required<number>();
+  readonly total = input.required<number>();
+  readonly error = input<string | null>(null);
+  readonly isProcessing = input<boolean>(false);
 
-    // Credit sale inputs
-    readonly selectedCustomer = input<Customer | null>(null);
-    readonly customerSearchResults = input<Customer[]>([]);
-    readonly isSearchingCustomers = input<boolean>(false);
+  // Credit sale inputs
+  readonly selectedCustomer = input<Customer | null>(null);
+  readonly customerSearchResults = input<Customer[]>([]);
+  readonly isSearchingCustomers = input<boolean>(false);
 
-    // Cash sale inputs
-    readonly selectedPaymentMethod = input<PaymentMethod | null>(null);
+  // Cash sale inputs
+  readonly selectedPaymentMethod = input<PaymentMethod | null>(null);
 
-    // Outputs
-    readonly completeCashier = output<void>();
-    readonly completeCredit = output<void>();
-    readonly completeCash = output<void>();
-    readonly customerSearch = output<string>();
-    readonly customerSelect = output<Customer | null>();
-    readonly customerCreate = output<{ name: string; phone: string; email?: string }>();
-    readonly paymentMethodSelect = output<PaymentMethod>();
-    readonly closeModal = output<void>();
+  // Outputs
+  readonly completeCashier = output<void>();
+  readonly completeCredit = output<void>();
+  readonly completeCash = output<void>();
+  readonly customerSearch = output<string>();
+  readonly customerSelect = output<Customer | null>();
+  readonly customerCreate = output<{ name: string; phone: string; email?: string }>();
+  readonly paymentMethodSelect = output<PaymentMethod>();
+  readonly closeModal = output<void>();
 
-    readonly paymentMethods = [
-        {
-            value: 'CASH' as PaymentMethod,
-            label: 'Cash',
-            icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z',
-        },
-        {
-            value: 'CARD' as PaymentMethod,
-            label: 'Card',
-            icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
-        },
-        {
-            value: 'MOBILE_MONEY' as PaymentMethod,
-            label: 'M-Pesa',
-            icon: 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z',
-        },
-        {
-            value: 'BANK_TRANSFER' as PaymentMethod,
-            label: 'Bank',
-            icon: 'M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z',
-        },
-    ];
+  readonly paymentMethods = [
+    {
+      value: 'CASH' as PaymentMethod,
+      label: 'Cash',
+      icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z',
+    },
+    {
+      value: 'MOBILE_MONEY' as PaymentMethod,
+      label: 'M-Pesa',
+      icon: 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z',
+    },
+  ];
 }
 

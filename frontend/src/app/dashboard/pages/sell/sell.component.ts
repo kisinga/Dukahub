@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CompanyService } from '../../../core/services/company.service';
+import { OrderService } from '../../../core/services/order.service';
 import { ProductSearchResult, ProductSearchService, ProductVariant } from '../../../core/services/product-search.service';
 import { StockLocationService } from '../../../core/services/stock-location.service';
 import { CartItem, CartModalComponent } from './components/cart-modal.component';
@@ -48,6 +49,7 @@ export class SellComponent implements OnInit {
   private readonly productSearchService = inject(ProductSearchService);
   private readonly companyService = inject(CompanyService);
   private readonly stockLocationService = inject(StockLocationService);
+  private readonly orderService = inject(OrderService);
 
   // Configuration
   readonly channelId = computed(() => this.companyService.activeCompanyId() || 'T_1');
@@ -313,30 +315,32 @@ export class SellComponent implements OnInit {
 
   // Complete Checkout Flows
   /**
-   * Send to Cashier - Creates order with PENDING_PAYMENT status
-   * No customer required for cash sales
+   * Send to Cashier - Creates order with cash payment and approval metadata
    */
   async handleCompleteCashier(): Promise<void> {
     this.isProcessingCheckout.set(true);
     this.checkoutError.set(null);
 
     try {
-      console.log('📋 Submitting to cashier:', {
-        items: this.cartItems().length,
-        total: this.cartTotal(),
-        status: 'PENDING_PAYMENT',
+      const order = await this.orderService.createOrder({
+        cartItems: this.cartItems().map(item => ({
+          variantId: item.variant.id,
+          quantity: item.quantity
+        })),
+        paymentMethodCode: 'cash-payment',
+        metadata: {
+          requiresCashierApproval: true
+        }
       });
 
-      // Simulate order creation (stub - backend implementation needed)
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      console.log('✅ Order sent to cashier:', order.code);
 
-      // Success - clear cart and show feedback
-      const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
       this.cartItems.set([]);
       this.showCheckoutModal.set(false);
-      this.showNotification(`Order ${orderNumber} sent to cashier`, 'success');
-
-      console.log('✅ Order sent to cashier:', orderNumber);
+      this.showNotification(
+        `Order ${order.code} sent to cashier`,
+        'success'
+      );
     } catch (error) {
       console.error('❌ Cashier submission failed:', error);
       this.checkoutError.set('Failed to send to cashier. Please try again.');
@@ -385,20 +389,31 @@ export class SellComponent implements OnInit {
     this.checkoutError.set(null);
 
     try {
-      // TODO: Implement order creation with immediate payment
-      console.log('Creating cash sale:', {
-        paymentMethod: this.selectedPaymentMethod(),
-        items: this.cartItems(),
-        total: this.cartTotal(),
+      const paymentCode = this.selectedPaymentMethod() === 'MOBILE_MONEY'
+        ? 'mpesa-payment'
+        : 'cash-payment';
+
+      const order = await this.orderService.createOrder({
+        cartItems: this.cartItems().map(item => ({
+          variantId: item.variant.id,
+          quantity: item.quantity
+        })),
+        paymentMethodCode: paymentCode,
+        metadata: {
+          paymentMethod: this.selectedPaymentMethod()
+        }
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log('✅ Order created:', order.code);
 
       this.cartItems.set([]);
       this.showCheckoutModal.set(false);
-      alert(`Cash sale completed successfully! Payment method: ${this.selectedPaymentMethod()}`);
+      this.showNotification(
+        `Sale completed! Order ${order.code}`,
+        'success'
+      );
     } catch (error) {
-      console.error('Cash sale failed:', error);
+      console.error('❌ Cash sale failed:', error);
       this.checkoutError.set('Failed to complete sale. Please try again.');
     } finally {
       this.isProcessingCheckout.set(false);

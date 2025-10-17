@@ -121,12 +121,12 @@ export class OverviewComponent implements OnInit {
     ];
 
     constructor() {
-        // React to location changes and refresh dashboard
+        // React to company changes and refresh dashboard
         effect(() => {
-            const locationId = this.stockLocationService.activeLocationId();
-            if (locationId) {
-                console.log(`📊 Dashboard filtering by location: ${locationId}`);
-                this.dashboardService.fetchDashboardData(locationId);
+            const companyId = this.companyService.activeCompanyId();
+            if (companyId) {
+                console.log(`📊 Dashboard fetching data for company: ${companyId}`);
+                this.dashboardService.fetchDashboardData();
             }
         }, { allowSignalWrites: true });
     }
@@ -135,9 +135,8 @@ export class OverviewComponent implements OnInit {
         // Fetch stock locations with cashier status
         this.stockLocationService.fetchStockLocationsWithCashier();
 
-        // Fetch dashboard data with active location (if set)
-        const locationId = this.stockLocationService.activeLocationId();
-        this.dashboardService.fetchDashboardData(locationId ?? undefined);
+        // Fetch dashboard data (channel-scoped)
+        this.dashboardService.fetchDashboardData();
     }
 
     /**

@@ -520,139 +520,108 @@ ProductCacheService.getProductById() ← O(1), no network
 ✅ Product search, ML scanning, cart operations, navigation  
 ⚠️ Requires network: checkout, inventory sync
 
-## Location-Based Dashboard (Oct 2025)
+## Channel-Based Dashboard (Nov 2025)
 
-### Architecture
+### Simplified Architecture
 
-Dashboard stats are **location-specific** by default. Users switch between physical locations (shops) via the navbar, and all dashboard data filters to that location.
+Dashboard is **channel-specific** by default. Users with multi-company access can switch between companies via navbar dropdown.
 
 ### Mental Model
 
-- **Company/Channel** = Business entity (rare switch) → In drawer
-- **Location** = Physical shop/branch (frequent switch) → Primary navbar action
-- Dashboard always shows **active location's data**
+- **Channel** = Company + Default Stock Location (primary context)
+- All operations scoped to active channel
+- Stock location shown as metadata, not as user-selectable filter
 
-### Navigation Hierarchy
+### Architectural Rationale
 
-```
-Navbar (Primary):
-[Logo + Company Name] | [📍 Location Switcher ▼] | [Notifications] [User]
+**Why channel-scoped, not location-scoped?**
 
-Drawer (Rare Access):
-- Navigation links
-- Company switcher (if multi-company user)
-- Help & Support
-```
+1. **Native Vendure Support:** Orders, products, payments naturally scoped to channels
+2. **No Custom Plugin Needed:** Location filtering requires custom Vendure plugin
+3. **Business Logic:** Payment accounts owned at company level, not per-location
+4. **Simplicity:** 90% of businesses have one primary location per channel
+
+**Location-based filtering:** Deferred to Phase 2 (requires custom plugin - see Priority 1 below)
 
 ### State Management
 
-#### StockLocationService
+**CompanyService:**
 
-**Purpose**: Manages active location state and persistence
+- `activeCompanyId()` - Single source of truth for current context
+- `activeCompany()` - Full company details including custom fields
+- `selectCompany(id)` - Switch between companies (rare for single-company users)
 
-**Key Features**:
+**StockLocationService (Simplified):**
 
-- Active location stored in `localStorage` (key: `active_location_id`)
-- Auto-activates first location on fetch
-- Computed `cashierOpen` from active location
-- `activateLocation(id)` method triggers dashboard refresh
+- `locations()` - All locations for active channel
+- `getDefaultLocation()` - Returns channel's default stock location
+- Removed: `activeLocationId` signal (no longer needed)
+- Removed: `selectLocation()` method (no multi-location support yet)
+- Removed: localStorage persistence for location
 
-**Persistence Strategy** (KISS):
+**DashboardService:**
 
-```typescript
-// Only store location ID (locations can change server-side)
-localStorage.setItem('active_location_id', locationId);
-```
-
-#### CompanyService Enhancements
-
-**New Computed Properties**:
-
-```typescript
-companyLogoId: string | null; // Asset ID for branding
-companyDisplayName: string; // Truncated to 10 chars
-```
-
-**Branding**:
-
-- Logo stored as `Channel.customFields.companyLogoId`
-- Falls back to default avatar if not set
-- Logo persisted in existing `company_session` object
-
-#### DashboardService Updates
-
-**Location-Aware Fetching**:
-
-```typescript
-fetchDashboardData(locationId?: string): Promise<void>
-```
-
-**Implementation Notes**:
-
-- Accepts optional `locationId` parameter
-- Infrastructure ready for location filtering
-- ⚠️ Vendure standard API doesn't support order filtering by location yet
-- Shows all data regardless of location (future enhancement)
+- `fetchDashboardData()` - Fetches channel-scoped stats
+- No location parameter (orders already channel-scoped by Vendure)
 
 ### Data Flow
 
-#### Application Boot
+**Application Boot:**
 
 ```
 1. Login → Company restored from localStorage
-2. StockLocationService.initializeFromStorage()
-3. Locations fetched → First location auto-activated
-4. Dashboard fetches data with active location ID
+2. StockLocationService.fetchLocations()
+3. Default location identified (first location or from channel.customFields.defaultStockLocationId)
+4. Dashboard fetches channel-scoped data
+5. Orders/products filtered by channel (native Vendure)
 ```
 
-#### Location Switch
+**Company Switch (Multi-Company Users):**
 
 ```
-1. User clicks location in navbar dropdown
-2. selectLocation(id) → Active location persisted
-3. effect() in overview component detects change
-4. Dashboard refetches with new location ID
-5. UI updates with location-specific stats
+6. User clicks company dropdown in navbar
+7. selectCompany(id) → Channel activated in context
+8. Locations refetched for new channel
+9. Dashboard reinitialized with new channel data
+10. All data now scoped to new channel
 ```
 
-#### Company Switch (Rare)
+### UI Structure
 
-```
-1. User opens drawer → Company switcher
-2. selectCompany(id) → Channel activated
-3. Locations cleared and refetched
-4. First location auto-activated
-5. Dashboard reinitialized
-```
+**Navbar:**
+
+- Company selector dropdown (for multi-company users)
+- Notifications
+- User menu
+
+**Removed from UI:**
+
+- Location switcher dropdown (no longer needed)
+- Location-based filtering options
 
 ### Component Architecture
 
-#### DashboardLayoutComponent
+**DashboardLayoutComponent:**
 
-**Responsibilities**:
+- Renders navbar with company switcher (not location switcher)
+- Manages company selection only
+- Initializes dashboard on company change
+- No location-specific logic
 
-- Renders navbar with location switcher
-- Renders drawer with company switcher
-- Manages location/company selection
-- Initializes location from storage
+**OverviewComponent:**
 
-**Key Methods**:
+- No location-specific effects
+- Fetches data on company change only
+- Stats naturally scoped to channel (Vendure native)
 
-```typescript
-selectLocation(locationId: string): void  // Primary action
-selectCompany(companyId: string): void    // Rare action
-```
-
-#### OverviewComponent
-
-**Reactive Updates**:
+**Effect pattern:**
 
 ```typescript
 effect(
   () => {
-    const locationId = stockLocationService.activeLocationId();
-    if (locationId) {
-      dashboardService.fetchDashboardData(locationId);
+    const companyId = this.companyService.activeCompanyId();
+    if (companyId) {
+      this.dashboardService.fetchDashboardData();
     }
   },
   { allowSignalWrites: true }
@@ -665,60 +634,58 @@ effect(
 
 ```typescript
 customFields: {
-  companyLogoId: string | null; // NEW: Asset ID for logo
+  companyLogoId: string | null; // Asset ID for logo
   cashierFlowEnabled: boolean;
+  defaultStockLocationId: string | null; // NEW: Default location for orders
   mlModelJsonId: string | null;
   mlModelBinId: string | null;
   mlMetadataId: string | null;
 }
 ```
 
-**Migration**: `1760510000000-AddCompanyLogoCustomField.ts`
+**Migrations**:
 
-### UI/UX Improvements
-
-**Visual Hierarchy**:
-
-1. Company branding (logo + name) - Identity
-2. Location switcher (primary button) - Main filter
-3. Notifications + User menu - Actions
-
-**Mobile Considerations**:
-
-- Company name hidden on small screens
-- Location dropdown remains accessible
-- Touch targets ≥ 44px
+- `1760510000000-AddCompanyLogoCustomField.ts`
+- `1760525000000-AddDefaultLocationToChannel.ts` (NEW)
 
 ### Known Limitations
 
-1. **Location Filtering Not Implemented**
+**1. Single Location Per Channel**
 
-   - Infrastructure ready, parameter accepted
-   - Vendure standard API doesn't support it
-   - Requires custom plugin to filter orders/products by location
-   - Currently shows all data (location-agnostic)
+- Current architecture supports one stock location per channel
+- Multi-location requires custom plugin (see Future Enhancements)
+- Location shown as metadata only, not as user-selectable filter
+- Sufficient for 90% of use cases (single-location businesses)
 
-2. **Logo URL Construction**
-   - Uses hardcoded backend URL (needs environment config)
-   - Asset URL: `${backendUrl}/assets/${logoId}`
+**2. Revenue Reporting**
+
+- Reports are channel-scoped (native Vendure)
+- No per-location breakdowns (requires custom plugin)
+- Dashboard shows aggregated channel data
 
 ### Future Enhancements
 
-#### Priority 1: Actual Location Filtering
+**Priority 1: Multi-Location Support (Phase 2)**
 
-Create custom Vendure plugin to:
+Requires custom Vendure plugin to:
 
-- Add `locationId` to Order custom fields
+- Add `stockLocationId` to Order custom fields
 - Filter orders query by location
 - Query products with stock at specific location
 
-#### Priority 2: Advanced Location UI
+**Implementation:**
 
-If many locations:
+1. Create custom Vendure plugin
+2. Restore location switcher UI
+3. Add location parameter to dashboard queries
+4. Per-location inventory reporting
 
-- Search/filter in dropdown
-- Location groups/regions
-- Recent locations section
+**Priority 2: Advanced Reporting**
+
+- Revenue by location (requires Priority 1)
+- Stock transfer between locations
+- Location-specific pricing
+- Multi-location order fulfillment
 
 #### Priority 3: Stock Conversion Module (Fresh Produce)
 
@@ -769,25 +736,379 @@ Manual entry: SKU1=50, SKU2=25
 - Fabric sold by meters → converted to standard lengths
 - Any bulk-to-retail conversion
 
-### Files Changed
+### Files Changed (Architecture Simplification)
 
-**Services**:
+**Services:**
 
-- `core/services/stock-location.service.ts` - Active location state
-- `core/services/company.service.ts` - Logo computed properties
-- `core/services/dashboard.service.ts` - Location-aware fetching
+- `core/services/stock-location.service.ts` - Removed active location state, added getDefaultLocation()
+- `core/services/dashboard.service.ts` - Removed location parameter from fetchDashboardData()
+- `core/services/order.service.ts` - NEW: Order creation and payment processing
+- `core/graphql/order.graphql.ts` - NEW: Order mutations
 
-**Components**:
+**Components:**
 
-- `dashboard/layout/dashboard-layout.component.ts` - Location switcher logic
-- `dashboard/layout/dashboard-layout.component.html` - Navbar reorganization
-- `dashboard/pages/overview/overview.component.ts` - Reactive location filtering
+- `dashboard/layout/dashboard-layout.component.ts` - Removed location switcher logic
+- `dashboard/layout/dashboard-layout.component.html` - Removed location dropdown UI
+- `dashboard/pages/overview/overview.component.ts` - Simplified to company-only effects
+- `dashboard/pages/sell/sell.component.ts` - Integrated OrderService for checkout
+- `dashboard/pages/sell/components/checkout-modal.component.ts` - Simplified payment methods
 
-**GraphQL**:
+**Backend:**
 
-- `core/graphql/auth.graphql.ts` - Added `companyLogoId` to query
+- `backend/src/plugins/payment-handlers.ts` - NEW: Cash and M-Pesa payment handlers
+- `backend/src/vendure-config.ts` - Registered payment handlers, added defaultStockLocationId custom field
+- `backend/src/migrations/1760525000000-AddDefaultLocationToChannel.ts` - NEW: Migration for default location
 
-**Backend**:
+**Benefits:**
 
-- `backend/src/vendure-config.ts` - Added companyLogoId custom field
-- `backend/src/migrations/1760510000000-AddCompanyLogoCustomField.ts` - Migration
+- Simpler codebase (less state management)
+- Aligned with Vendure's native scoping
+- No custom filtering logic needed
+- Faster dashboard load times
+
+---
+
+## Products Page - Component Architecture
+
+### Overview
+
+The products page has been refactored from a monolithic component (~930 lines HTML + ~195 lines TS) into a composable architecture with focused, reusable components following SOLID principles and Angular best practices.
+
+### Component Structure
+
+```
+dashboard/pages/products/
+├── products.component.ts           # Main orchestrator (~175 lines)
+├── products.component.html         # Clean template (~245 lines)
+├── products.component.scss         # Styles
+└── components/
+    ├── product-card.component.ts         # Mobile collapsible card
+    ├── product-card.component.html
+    ├── product-stats.component.ts        # Statistics grid (4 cards)
+    ├── product-stats.component.html
+    ├── product-search-bar.component.ts   # Search input + filter toggle
+    ├── product-search-bar.component.html
+    ├── product-table-row.component.ts    # Desktop table row
+    ├── product-table-row.component.html
+    ├── pagination.component.ts           # Responsive pagination
+    └── pagination.component.html
+```
+
+### Component Responsibilities
+
+#### ProductsComponent (Main)
+
+**Role:** Orchestrator - manages state, handles actions, coordinates child components
+
+**State:**
+
+- Products list (from service)
+- Search query (local signal)
+- Pagination state (current page, items per page)
+- Computed: filtered products, paginated products, total pages, statistics
+
+**Actions:**
+
+- `onProductAction()` - Routes view/edit/purchase actions
+- `loadProducts()` - Fetches products from service
+- `goToPage()` - Pagination navigation
+- `changeItemsPerPage()` - Update page size
+
+#### ProductCardComponent
+
+**Role:** Mobile view of product with expandable details
+
+**Features:**
+
+- Summary: image, name, status badge, variants count, stock level, price range
+- Collapsible details (native `<details>` element):
+  - Full description
+  - Detailed info grid (variants, stock with icons)
+  - Action buttons: Purchase (primary), Edit (ghost)
+- Stock color coding: success (>20), warning (1-20), error (0)
+- Touch-optimized: large tap targets, clear visual hierarchy
+
+#### ProductStatsComponent
+
+**Role:** Display key metrics in responsive grid
+
+**Stats Displayed:**
+
+- Total Products (primary color)
+- Total Variants (secondary color)
+- Total Stock (success color)
+- Low Stock Alert (warning color)
+
+**Design:**
+
+- Gradient backgrounds with subtle borders
+- Icon + number display
+- Responsive: 2-column (mobile) → 4-column (desktop)
+
+#### ProductSearchBarComponent
+
+**Role:** Search and filter controls
+
+**Features:**
+
+- Search input with two-way binding (`model()` signal)
+- Clear button (shows when search active)
+- Filter drawer toggle button
+- Responsive sizing: `btn-lg` (mobile), `btn-md` (desktop)
+
+#### ProductTableRowComponent
+
+**Role:** Compact row for desktop table view
+
+**Features:**
+
+- Product thumbnail (12x12 rounded)
+- Name with truncated description
+- Variant count badge
+- Price range (formatted)
+- Stock badge (color-coded)
+- Status badge (Active/Disabled)
+- Action buttons: Purchase, Edit (icon-only, with tooltips)
+
+#### PaginationComponent
+
+**Role:** Navigate through paginated results
+
+**Features:**
+
+- First/Previous/Next/Last buttons
+- Page numbers (desktop: up to 5 visible)
+- Current page badge (mobile: single number)
+- Page info: "Showing X-Y of Z items"
+- Configurable: items per page, item label
+
+### Type Safety
+
+**Shared Interfaces:**
+
+```typescript
+// Product data passed to card/row components
+interface ProductCardData {
+  id: string;
+  name: string;
+  description?: string;
+  enabled: boolean;
+  featuredAsset?: { preview?: string };
+  variants?: Array<{
+    id: string;
+    name: string;
+    sku: string;
+    price: number;
+    stockOnHand: number;
+  }>;
+}
+
+// Actions emitted from product components
+type ProductAction = 'view' | 'edit' | 'purchase';
+
+// Statistics data
+interface ProductStats {
+  totalProducts: number;
+  totalVariants: number;
+  totalStock: number;
+  lowStock: number;
+}
+```
+
+### Product Actions
+
+**Action Flow:**
+
+```
+User clicks action button
+    ↓
+Child component emits: { action: ProductAction, productId: string }
+    ↓
+Parent catches via: (action)="onProductAction($event)"
+    ↓
+Switch on action type:
+    - 'view'     → (Future) Navigate to detail page
+    - 'edit'     → Navigate to /products/edit/:id
+    - 'purchase' → (Future) Navigate to supplier purchase flow
+```
+
+**Edit Mode:**
+
+- Route: `/dashboard/products/edit/:id`
+- **Separate component:** `ProductEditComponent` (not reusing create component)
+- Loads product data via `productService.getProductById(id)`
+- Pre-fills form with existing values
+- Clean, focused interface for editing:
+  - Product name
+  - SKU names and prices
+  - Stock displayed as read-only
+- No identification fields (barcode/photos - set during creation only)
+- No creation-specific validation
+- Clear "Save Changes" button (not "Create Product")
+- Prices converted from cents to decimal for editing
+
+**Purchase Hook:**
+
+- Ready for supplier integration
+- Current: Console log (placeholder)
+- Future: Navigate to `/dashboard/purchases/create?productId=X`
+- Accessible from both mobile card and desktop table
+
+### Mobile Optimization (KISS)
+
+**Principles Applied:**
+
+1. **Single column layout** - No complex multi-column grids
+2. **Native collapsible** - `<details>` element for expand/collapse
+3. **Touch-friendly** - Large buttons (btn-lg), generous tap areas
+4. **Simplified pagination** - Show only current page number badge
+5. **FAB for primary action** - Floating "+" button for create
+6. **Clear hierarchy** - Bold headings, ample spacing
+7. **Responsive sizing** - Larger UI elements on mobile
+
+**Mobile-Specific Features:**
+
+- Collapsible product cards (summary + expandable details)
+- Ring-bordered thumbnails (visual depth without shadows)
+- 2-column info grid in expanded view
+- Full-width action buttons (easy thumb access)
+- Status badges with dot indicators
+- FAB positioned above bottom nav bar
+
+### Performance Optimizations
+
+**Change Detection:**
+
+- All components use `OnPush` strategy
+- State managed via signals (fine-grained reactivity)
+- Computed signals for derived state (auto-memoized)
+
+**Rendering:**
+
+- `trackBy` functions for list rendering
+- Conditional rendering via `@if` / `@for`
+- Lazy component loading (route-level code splitting)
+
+**Bundle Size:**
+
+- Separated concerns = better tree-shaking
+- Smaller components = smaller chunks
+- Reusable code = less duplication
+
+### Key Improvements
+
+**Before Refactoring:**
+
+- Single 930-line HTML file
+- Mixed concerns (stats, search, cards, table, pagination)
+- Difficult to maintain and test
+- Monolithic component logic
+
+**After Refactoring:**
+
+- 6 focused components (avg ~50 lines each)
+- Clear separation of concerns
+- Easy to test in isolation
+- Reusable across application
+- Better type safety
+- Improved mobile UX
+- 60% reduction in main component size
+
+### Future Enhancements
+
+**Ready for Implementation:**
+
+1. **View Details Page** - Product detail view with variant management
+2. **Supplier Purchase Flow** - Complete purchase action integration
+3. **Advanced Filtering** - Status, stock level, price range filters
+4. **Batch Operations** - Select multiple products for bulk actions
+5. **Export/Import** - CSV/Excel export of product list
+6. **Bulk Edit** - Update multiple products simultaneously
+
+**Extensibility Points:**
+
+- Add new actions via `ProductAction` type union
+- Custom stat cards via props injection
+- Alternative view modes (grid, compact list)
+- Advanced search with filters sidebar
+- Real-time updates via WebSocket/polling
+
+### Files Structure
+
+**Main Component:**
+
+- `products.component.ts` - State management, action handling
+- `products.component.html` - Layout orchestration
+- `products.component.scss` - Custom styles (minimal)
+
+**Reusable Components (all in `components/`):**
+
+- `product-card.*` - Mobile collapsible card view
+- `product-stats.*` - Statistics cards grid
+- `product-search-bar.*` - Search input + filter button
+- `product-table-row.*` - Desktop table row
+- `pagination.*` - Pagination controls
+
+**Shared:**
+
+- Types exported from components (ProductCardData, ProductAction, etc.)
+- Utility functions (price formatting, stock calculation) in component classes
+- No shared services needed (all props-based communication)
+
+### Price Handling
+
+**IMPORTANT: All prices in the app are inclusive of tax** (KISS - no tax calculations needed)
+
+**Storage Format:**
+
+- Backend stores prices in cents (integer): `1050` = 10.50
+- Prevents floating-point precision issues
+
+**Display Format:**
+
+- Form inputs show decimal: `10.50`
+- Price lists show decimal: `$10.50`
+
+**Conversion Flow:**
+
+```typescript
+// Edit mode: Load from backend (cents → decimal)
+const priceDecimal = priceInCents / 100; // 1050 → 10.50
+
+// Save: Convert to cents (decimal → cents)
+const priceInCents = Math.round(price * 100); // 10.50 → 1050
+```
+
+**Why Cents?**
+
+- ✅ No floating-point errors (0.1 + 0.2 ≠ 0.3)
+- ✅ Accurate arithmetic for financial calculations
+- ✅ Database stores as integer (faster, smaller)
+- ✅ Industry standard for monetary values
+
+### Stock Management in Edit Mode
+
+**Philosophy:** Edit form is for product metadata, not inventory
+
+**Behavior:**
+
+- Existing SKUs: Show current stock (read-only)
+- New SKUs: Locked to 0 stock
+- Message: "Use inventory adjustments to modify stock"
+
+**Why Read-Only?**
+
+- ✅ Prevents accidental stock changes
+- ✅ Maintains audit trail via inventory adjustments
+- ✅ Clear separation: Edit form = metadata, Inventory module = stock
+- ✅ Follows accounting best practices
+
+**Stock Modification Flow:**
+
+```
+Edit Product → Change prices/names → Save
+                                      ↓
+                            Stock unchanged
+                                      ↓
+Inventory Module → Adjustment → Track reason/date → Update stock
+```

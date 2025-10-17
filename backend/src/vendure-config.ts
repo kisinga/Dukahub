@@ -4,7 +4,6 @@ import {
     DefaultJobQueuePlugin,
     DefaultSchedulerPlugin,
     DefaultSearchPlugin,
-    dummyPaymentHandler,
     LanguageCode,
     VendureConfig
 } from '@vendure/core';
@@ -14,6 +13,7 @@ import { config as dotenvConfig } from 'dotenv';
 import { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
+import { cashPaymentHandler, mpesaPaymentHandler } from './plugins/payment-handlers';
 // import { MlModelPlugin } from './plugins/ml-model.plugin';
 
 // ML Model functionality handled via existing AssetServerPlugin and custom middleware
@@ -108,7 +108,10 @@ export const config: VendureConfig = {
         password: process.env.DB_PASSWORD,
     },
     paymentOptions: {
-        paymentMethodHandlers: [dummyPaymentHandler],
+        paymentMethodHandlers: [
+            cashPaymentHandler,
+            mpesaPaymentHandler,
+        ],
     },
     // ML Model Management: Tag-based versioning + custom field activation
     // - Assets tagged: ml-model, channel-{id}, v{version}, trained-{date}
@@ -161,6 +164,18 @@ export const config: VendureConfig = {
                 public: true,
                 nullable: true,
                 ui: { tab: 'Branding' },
+            },
+            {
+                name: 'defaultStockLocationId',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'Default Stock Location ID' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Primary stock location for this channel (required for orders)'
+                }],
+                public: false,
+                nullable: true,
+                ui: { tab: 'Settings' },
             },
         ],
         StockLocation: [

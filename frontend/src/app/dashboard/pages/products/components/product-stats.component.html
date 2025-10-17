@@ -1,0 +1,129 @@
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+  <!-- Total Products -->
+  <div class="card bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+    <div class="card-body p-5 lg:p-6">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex-1">
+          <p class="text-sm font-medium text-base-content/70 mb-2">Total Products</p>
+          <p class="text-4xl lg:text-5xl font-bold text-primary tracking-tight">
+            {{ stats().totalProducts }}
+          </p>
+        </div>
+        <div
+          class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-primary/10 flex items-center justify-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 lg:h-7 lg:w-7 text-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Variants -->
+  <div class="card bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20">
+    <div class="card-body p-5 lg:p-6">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex-1">
+          <p class="text-sm font-medium text-base-content/70 mb-2">Variants</p>
+          <p class="text-4xl lg:text-5xl font-bold text-secondary tracking-tight">
+            {{ stats().totalVariants }}
+          </p>
+        </div>
+        <div
+          class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-secondary/10 flex items-center justify-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 lg:h-7 lg:w-7 text-secondary"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Stock -->
+  <div class="card bg-gradient-to-br from-success/10 to-success/5 border border-success/20">
+    <div class="card-body p-5 lg:p-6">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex-1">
+          <p class="text-sm font-medium text-base-content/70 mb-2">Total Stock</p>
+          <p class="text-4xl lg:text-5xl font-bold text-success tracking-tight">
+            {{ stats().totalStock }}
+          </p>
+        </div>
+        <div
+          class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-success/10 flex items-center justify-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 lg:h-7 lg:w-7 text-success"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Low Stock -->
+  <div class="card bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20">
+    <div class="card-body p-5 lg:p-6">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex-1">
+          <p class="text-sm font-medium text-base-content/70 mb-2">Low Stock</p>
+          <p class="text-4xl lg:text-5xl font-bold text-warning tracking-tight">
+            {{ stats().lowStock }}
+          </p>
+        </div>
+        <div
+          class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-warning/10 flex items-center justify-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 lg:h-7 lg:w-7 text-warning"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

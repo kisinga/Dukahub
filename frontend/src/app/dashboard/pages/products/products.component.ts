@@ -1,35 +1,61 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
+import { DeleteConfirmationData, DeleteConfirmationModalComponent } from './components/delete-confirmation-modal.component';
+import { PaginationComponent } from './components/pagination.component';
+import { ProductAction, ProductCardComponent } from './components/product-card.component';
+import { ProductSearchBarComponent } from './components/product-search-bar.component';
+import { ProductStats, ProductStatsComponent } from './components/product-stats.component';
+import { ProductTableRowComponent } from './components/product-table-row.component';
 
+/**
+ * Products list page - refactored with composable components
+ * 
+ * ARCHITECTURE:
+ * - Uses composable components for better maintainability
+ * - Separates mobile (cards) and desktop (table) views
+ * - Centralized action handling
+ * - KISS principles applied
+ */
 @Component({
   selector: 'app-products',
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [
+    CommonModule,
+    RouterLink,
+    ProductCardComponent,
+    ProductStatsComponent,
+    ProductSearchBarComponent,
+    ProductTableRowComponent,
+    PaginationComponent,
+    DeleteConfirmationModalComponent
+  ],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductsComponent implements OnInit {
   private readonly productService = inject(ProductService);
+  private readonly router = inject(Router);
 
-  // State
+  // View references
+  readonly deleteModal = viewChild<DeleteConfirmationModalComponent>('deleteModal');
+
+  // State from service
   readonly products = this.productService.products;
   readonly isLoading = this.productService.isLoading;
   readonly error = this.productService.error;
   readonly totalItems = this.productService.totalItems;
 
-  // Local state for search and filters
+  // Local UI state
   readonly searchQuery = signal('');
-  readonly showFilters = signal(false);
-
-  // Pagination state
   readonly currentPage = signal(1);
   readonly itemsPerPage = signal(10);
   readonly pageOptions = [10, 25, 50, 100];
+  readonly deleteModalData = signal<DeleteConfirmationData>({ productName: '', variantCount: 0 });
+  readonly productToDelete = signal<string | null>(null);
 
-  // Computed: filtered products based on search
+  // Computed: filtered products
   readonly filteredProducts = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
     const allProducts = this.products();
@@ -58,33 +84,11 @@ export class ProductsComponent implements OnInit {
   readonly totalPages = computed(() => {
     const filtered = this.filteredProducts();
     const perPage = this.itemsPerPage();
-    return Math.ceil(filtered.length / perPage);
-  });
-
-  // Computed: page numbers to display
-  readonly pageNumbers = computed(() => {
-    const total = this.totalPages();
-    const current = this.currentPage();
-    const pages: number[] = [];
-
-    // Show max 5 page numbers
-    let start = Math.max(1, current - 2);
-    let end = Math.min(total, start + 4);
-
-    // Adjust start if we're near the end
-    if (end - start < 4) {
-      start = Math.max(1, end - 4);
-    }
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-
-    return pages;
+    return Math.ceil(filtered.length / perPage) || 1;
   });
 
   // Computed: statistics
-  readonly stats = computed(() => {
+  readonly stats = computed((): ProductStats => {
     const prods = this.products();
     const totalProducts = prods.length;
     const totalVariants = prods.reduce((sum, p) => sum + (p.variants?.length || 0), 0);
@@ -96,6 +100,11 @@ export class ProductsComponent implements OnInit {
     ).length;
 
     return { totalProducts, totalVariants, totalStock, lowStock };
+  });
+
+  // Computed: end item for pagination display
+  readonly endItem = computed(() => {
+    return Math.min(this.currentPage() * this.itemsPerPage(), this.filteredProducts().length);
   });
 
   ngOnInit(): void {
@@ -113,8 +122,89 @@ export class ProductsComponent implements OnInit {
     await this.loadProducts();
   }
 
-  toggleFilters(): void {
-    this.showFilters.update(v => !v);
+  /**
+   * Handle product actions (view, edit, purchase, delete)
+   */
+  onProductAction(event: { action: ProductAction; productId: string }): void {
+    const { action, productId } = event;
+
+    switch (action) {
+      case 'view':
+        // Navigate to product detail view (to be implemented)
+        console.log('View product:', productId);
+        break;
+
+      case 'edit':
+        this.router.navigate(['/dashboard/products/edit', productId]);
+        break;
+
+      case 'purchase':
+        // Navigate to purchase flow with supplier (to be implemented)
+        console.log('Purchase product:', productId);
+        // TODO: Navigate to supplier purchase flow
+        // this.router.navigate(['/dashboard/purchases/create'], { queryParams: { productId } });
+        break;
+
+      case 'delete':
+        this.confirmDeleteProduct(productId);
+        break;
+    }
+  }
+
+  /**
+   * Show delete confirmation modal
+   */
+  confirmDeleteProduct(productId: string): void {
+    const product = this.products().find(p => p.id === productId);
+    if (!product) return;
+
+    this.productToDelete.set(productId);
+    this.deleteModalData.set({
+      productName: product.name,
+      variantCount: product.variants?.length || 0
+    });
+
+    // Show modal
+    const modal = this.deleteModal();
+    if (modal) {
+      modal.show();
+    }
+  }
+
+  /**
+   * Handle delete confirmation
+   */
+  async onDeleteConfirmed(): Promise<void> {
+    const productId = this.productToDelete();
+    if (!productId) return;
+
+    // Hide modal
+    const modal = this.deleteModal();
+    if (modal) {
+      modal.hide();
+    }
+
+    // Delete the product
+    const success = await this.productService.deleteProduct(productId);
+
+    if (success) {
+      // Clear state
+      this.productToDelete.set(null);
+
+      // Refresh the product list
+      await this.refreshProducts();
+    }
+  }
+
+  /**
+   * Handle delete cancellation
+   */
+  onDeleteCancelled(): void {
+    const modal = this.deleteModal();
+    if (modal) {
+      modal.hide();
+    }
+    this.productToDelete.set(null);
   }
 
   /**
@@ -135,41 +225,10 @@ export class ProductsComponent implements OnInit {
   }
 
   /**
-   * Get total stock for a product
+   * Clear error message
    */
-  getTotalStock(product: any): number {
-    return product.variants?.reduce((sum: number, v: any) => sum + (v.stockOnHand || 0), 0) || 0;
-  }
-
-  /**
-   * Get price range for a product
-   */
-  getPriceRange(product: any): string {
-    if (!product.variants || product.variants.length === 0) return 'N/A';
-
-    const prices = product.variants.map((v: any) => v.price);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-
-    if (minPrice === maxPrice) {
-      return this.formatPrice(minPrice);
-    }
-
-    return `${this.formatPrice(minPrice)} - ${this.formatPrice(maxPrice)}`;
-  }
-
-  /**
-   * Format price from cents to currency
-   */
-  formatPrice(cents: number): string {
-    return (cents / 100).toFixed(2);
-  }
-
-  /**
-   * Get product thumbnail
-   */
-  getProductThumbnail(product: any): string {
-    return product.featuredAsset?.preview || 'https://picsum.photos/200/200';
+  clearError(): void {
+    this.productService.clearError();
   }
 
   /**
@@ -177,13 +236,6 @@ export class ProductsComponent implements OnInit {
    */
   trackByProductId(index: number, product: any): string {
     return product.id;
-  }
-
-  /**
-   * Clear error message
-   */
-  clearError(): void {
-    this.productService.clearError();
   }
 
   /**

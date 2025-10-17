@@ -89,22 +89,10 @@ export class DashboardLayoutComponent implements OnInit {
     protected readonly companyDisplayName = this.companyService.companyDisplayName;
     protected readonly companyLogoId = this.companyService.companyLogoId;
 
-    // Stock location service signals
-    protected readonly locations = this.stockLocationService.locations;
-    protected readonly activeLocationId = this.stockLocationService.activeLocationId;
-    protected readonly activeLocation = this.stockLocationService.activeLocation;
-
     // Computed values
     protected readonly unreadCount = computed(() =>
         this.notifications.filter(n => n.unread).length
     );
-
-    protected readonly displayLocationName = computed(() => {
-        const location = this.activeLocation();
-        if (!location) return 'Select Location';
-        const name = location.name;
-        return name.length > 20 ? name.substring(0, 20) + '...' : name;
-    });
 
     protected readonly userAvatar = computed(() =>
         this.user()?.emailAddress ? 'default_avatar.png' : 'default_avatar.png'
@@ -134,9 +122,6 @@ export class DashboardLayoutComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        // Initialize stock location from storage
-        this.stockLocationService.initializeFromStorage();
-
         // If company already active on init, trigger initialization
         const companyId = this.activeCompanyId();
         if (companyId) {
@@ -157,15 +142,6 @@ export class DashboardLayoutComponent implements OnInit {
         // Also clear and refetch locations for new company
         this.stockLocationService.clearLocations();
         this.stockLocationService.fetchStockLocationsWithCashier();
-    }
-
-    selectLocation(locationId: string): void {
-        this.stockLocationService.activateLocation(locationId);
-        // Trigger dashboard refresh with new location
-        const companyId = this.activeCompanyId();
-        if (companyId) {
-            this.appInitService.initializeDashboard(companyId);
-        }
     }
 
     async logout(): Promise<void> {

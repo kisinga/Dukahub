@@ -502,6 +502,133 @@ export const GET_RECENT_ORDERS = graphql(`
 `);
 
 // ============================================================================
+// ORDER MANAGEMENT (Admin API)
+// ============================================================================
+
+export const CREATE_DRAFT_ORDER = graphql(`
+  mutation CreateDraftOrder {
+    createDraftOrder {
+      id
+      code
+      state
+      total
+      totalWithTax
+    }
+  }
+`);
+
+export const ADD_ITEM_TO_DRAFT_ORDER = graphql(`
+  mutation AddItemToDraftOrder($orderId: ID!, $input: AddItemToDraftOrderInput!) {
+    addItemToDraftOrder(orderId: $orderId, input: $input) {
+      ... on Order {
+        id
+        code
+        state
+        lines {
+          id
+          quantity
+          linePrice
+          linePriceWithTax
+          productVariant {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+`);
+
+export const ADD_MANUAL_PAYMENT_TO_ORDER = graphql(`
+  mutation AddManualPaymentToOrder($input: ManualPaymentInput!) {
+    addManualPaymentToOrder(input: $input) {
+      ... on Order {
+        id
+        code
+        state
+        total
+        totalWithTax
+        payments {
+          id
+          state
+          amount
+          method
+          metadata
+        }
+      }
+      ... on ManualPaymentStateError {
+        errorCode
+        message
+      }
+    }
+  }
+`);
+
+export const TRANSITION_ORDER_TO_STATE = graphql(`
+  mutation TransitionOrderToState($id: ID!, $state: String!) {
+    transitionOrderToState(id: $id, state: $state) {
+      ... on Order {
+        id
+        code
+        state
+        total
+        totalWithTax
+        lines {
+          id
+          quantity
+          linePrice
+          productVariant {
+            id
+            name
+          }
+        }
+      }
+      ... on OrderStateTransitionError {
+        errorCode
+        message
+        transitionError
+      }
+    }
+  }
+`);
+
+export const GET_PAYMENT_METHODS = graphql(`
+  query GetPaymentMethods {
+    paymentMethods(options: { take: 100 }) {
+      items {
+        id
+        code
+        name
+        description
+        enabled
+      }
+    }
+  }
+`);
+
+export const GET_ORDER = graphql(`
+  query GetOrder($id: ID!) {
+    order(id: $id) {
+      id
+      code
+      state
+      total
+      totalWithTax
+      lines {
+        id
+        quantity
+        linePrice
+        linePriceWithTax
+        productVariant {
+          id
+          name
+        }
+      }
+    }
+  }
+`);
+
+// ============================================================================
 // ML MODEL
 // ============================================================================
 
