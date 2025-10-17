@@ -1,4 +1,4 @@
-import { graphql } from './generated/gql';
+import { graphql } from './generated';
 
 /**
  * GraphQL operations for product management
@@ -96,24 +96,38 @@ export const CREATE_PRODUCT_VARIANTS = graphql(`
 `);
 
 /**
- * Mutation to update stock levels for a variant at a specific location
- * Used after creating variants to set initial stock
+ * Mutation to create assets (photos) from files
+ * Returns asset IDs that can be assigned to products
  */
-export const UPDATE_STOCK = graphql(`
-  mutation UpdateStock($input: [UpdateProductVariantInput!]!) {
-    updateProductVariants(input: $input) {
-      id
-      sku
-      stockOnHand
-      stockAllocated
-      stockLevels {
+export const CREATE_ASSETS = graphql(`
+  mutation CreateAssets($input: [CreateAssetInput!]!) {
+    createAssets(input: $input) {
+      ... on Asset {
         id
-        stockOnHand
-        stockAllocated
-        stockLocation {
-          id
-          name
-        }
+        name
+        preview
+        source
+      }
+    }
+  }
+`);
+
+/**
+ * Mutation to assign assets to a product
+ * This makes photos appear on the product page
+ */
+export const ASSIGN_ASSETS_TO_PRODUCT = graphql(`
+  mutation AssignAssetsToProduct($productId: ID!, $assetIds: [ID!]!) {
+    updateProduct(input: { id: $productId, assetIds: $assetIds, featuredAssetId: $assetIds[0] }) {
+      id
+      assets {
+        id
+        name
+        preview
+      }
+      featuredAsset {
+        id
+        preview
       }
     }
   }
@@ -160,7 +174,7 @@ export const GET_PRODUCT_DETAIL = graphql(`
  * Used for validation before creating variants
  */
 export const CHECK_SKU_EXISTS = graphql(`
-  query CheckSKUExists($sku: String!) {
+  query CheckSkuExists($sku: String!) {
     productVariants(options: { filter: { sku: { eq: $sku } }, take: 1 }) {
       items {
         id
@@ -175,27 +189,8 @@ export const CHECK_SKU_EXISTS = graphql(`
 `);
 
 /**
- * Query to get all product option groups with their options
- * Used for displaying available option groups during product creation
- */
-export const GET_PRODUCT_OPTION_GROUPS = graphql(`
-  query GetProductOptionGroups {
-    productOptionGroups {
-      id
-      code
-      name
-      options {
-        id
-        code
-        name
-      }
-    }
-  }
-`);
-
-/**
  * Mutation to create a new product option group
- * Useful for adding custom option groups like "Weight", "Size", etc.
+ * Used internally for variant differentiation when products have multiple SKUs
  */
 export const CREATE_PRODUCT_OPTION_GROUP = graphql(`
   mutation CreateProductOptionGroup($input: CreateProductOptionGroupInput!) {
@@ -214,7 +209,7 @@ export const CREATE_PRODUCT_OPTION_GROUP = graphql(`
 
 /**
  * Mutation to create a new product option within an existing option group
- * Example: Adding "2kg" to the "Weight" option group
+ * Used internally for variant differentiation when products have multiple SKUs
  */
 export const CREATE_PRODUCT_OPTION = graphql(`
   mutation CreateProductOption($input: CreateProductOptionInput!) {
@@ -232,7 +227,7 @@ export const CREATE_PRODUCT_OPTION = graphql(`
 
 /**
  * Mutation to add an option group to a product
- * This must be done before creating variants that use those options
+ * Required before creating variants with options
  */
 export const ADD_OPTION_GROUP_TO_PRODUCT = graphql(`
   mutation AddOptionGroupToProduct($productId: ID!, $optionGroupId: ID!) {
@@ -249,6 +244,19 @@ export const ADD_OPTION_GROUP_TO_PRODUCT = graphql(`
           name
         }
       }
+    }
+  }
+`);
+
+/**
+ * Mutation to delete a product
+ * Used for rollback operations when variant creation fails
+ */
+export const DELETE_PRODUCT = graphql(`
+  mutation DeleteProduct($id: ID!) {
+    deleteProduct(id: $id) {
+      result
+      message
     }
   }
 `);

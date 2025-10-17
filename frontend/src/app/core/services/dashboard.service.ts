@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { gql } from '@apollo/client';
+import { GET_ORDERS_FOR_PERIOD, GET_PRODUCT_STATS, GET_RECENT_ORDERS } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
 
@@ -157,25 +157,6 @@ export class DashboardService {
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
             // Fetch orders for the month (includes all periods)
-            const GET_ORDERS_QUERY = gql`
-        query GetOrdersForPeriod($startDate: DateTime!) {
-          orders(options: { 
-            filter: { 
-              orderPlacedAt: { after: $startDate }
-            }
-            take: 1000
-          }) {
-            items {
-              id
-              total
-              totalWithTax
-              orderPlacedAt
-              state
-            }
-          }
-        }
-      `;
-
             const result = await client.query<{
                 orders: {
                     items: Array<{
@@ -187,7 +168,7 @@ export class DashboardService {
                     }>;
                 };
             }>({
-                query: GET_ORDERS_QUERY,
+                query: GET_ORDERS_FOR_PERIOD,
                 variables: {
                     startDate: startOfMonth.toISOString()
                 }
@@ -248,17 +229,6 @@ export class DashboardService {
         const client = this.apolloService.getClient();
 
         try {
-            const GET_PRODUCT_STATS = gql`
-        query GetProductStats {
-          products(options: { take: 1 }) {
-            totalItems
-          }
-          productVariants(options: { take: 1 }) {
-            totalItems
-          }
-        }
-      `;
-
             const result = await client.query<{
                 products: { totalItems: number };
                 productVariants: { totalItems: number };
@@ -286,29 +256,6 @@ export class DashboardService {
         const client = this.apolloService.getClient();
 
         try {
-            const GET_RECENT_ORDERS = gql`
-        query GetRecentOrders {
-          orders(options: { take: 10, sort: { createdAt: DESC } }) {
-            items {
-              id
-              code
-              total
-              totalWithTax
-              state
-              createdAt
-              currencyCode
-              lines {
-                id
-                productVariant {
-                  name
-                }
-                quantity
-              }
-            }
-          }
-        }
-      `;
-
             const result = await client.query<{
                 orders: {
                     items: Array<{

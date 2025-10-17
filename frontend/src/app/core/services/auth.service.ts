@@ -5,7 +5,7 @@ import {
   GET_ACTIVE_ADMIN,
   LOGIN,
   LOGOUT,
-} from '../graphql/auth.graphql';
+} from '../graphql/operations.graphql';
 import type {
   ActiveAdministrator,
   GetActiveAdministratorQuery,

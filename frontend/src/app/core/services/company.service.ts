@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { GET_ACTIVE_CHANNEL, GET_USER_CHANNELS } from '../graphql/auth.graphql';
 import type { GetActiveChannelQuery, GetUserChannelsQuery } from '../graphql/generated/graphql';
+import { GET_ACTIVE_CHANNEL, GET_USER_CHANNELS } from '../graphql/operations.graphql';
 import type { Company } from '../models/company.model';
 import { ApolloService } from './apollo.service';
 

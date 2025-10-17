@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { GetStockLocationsQuery, GetStockLocationsWithCashierQuery } from '../graphql/generated/graphql';
-import { GET_STOCK_LOCATIONS, GET_STOCK_LOCATIONS_WITH_CASHIER } from '../graphql/product.graphql';
+import { GET_STOCK_LOCATIONS, GET_STOCK_LOCATIONS_WITH_CASHIER } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
 
 /**
@@ -138,7 +138,7 @@ export class StockLocationService {
             console.log('📦 Stock locations with cashier query result:', result);
 
             if (result.data?.stockLocations?.items) {
-                const items = result.data.stockLocations.items.map(item => ({
+                const items = result.data.stockLocations.items.map((item: any) => ({
                     id: item.id,
                     name: item.name,
                     description: item.description,

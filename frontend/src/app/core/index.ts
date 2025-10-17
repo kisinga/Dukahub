@@ -17,7 +17,7 @@ export * from './models/company.model';
 export * from './models/user.model';
 
 // GraphQL Operations
-export * from './graphql/auth.graphql';
+export * from './graphql/operations.graphql';
 
 // GraphQL Generated Types
 export { graphql } from './graphql/generated';

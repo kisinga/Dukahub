@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { gql } from '@apollo/client';
 import * as tf from '@tensorflow/tfjs';
+import { GET_ML_MODEL_ASSETS } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
 
@@ -96,16 +96,7 @@ export class MlModelService {
                 }>;
             };
         }>({
-            query: gql`
-                query GetMLModelAssets($ids: [String!]!) {
-                    assets(options: { filter: { id: { in: $ids } } }) {
-                        items {
-                            id
-                            source
-                        }
-                    }
-                }
-            `,
+            query: GET_ML_MODEL_ASSETS,
             variables: {
                 ids: [assetIds.mlModelJsonId, assetIds.mlModelBinId, assetIds.mlMetadataId],
             },

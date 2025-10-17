@@ -231,10 +231,11 @@ https://domain.com/assets/ml-models/{channelId}/latest/metadata.json
 
 ### Authentication & Authorization
 
-- **JWT Tokens**: Stateless authentication
+- **Cookie-based Sessions**: Vendure admin-api uses HTTP-only cookies (not JWT)
+- **Session Storage**: Redis-backed for performance and scalability
 - **Role-based Access**: Channel-scoped permissions
 - **Password Hashing**: bcrypt with appropriate cost
-- **Session Management**: Redis-backed sessions
+- **CORS Credentials**: `credentials: 'include'` for cross-origin requests
 
 ### API Security
 
@@ -303,6 +304,152 @@ Dukahub uses platform-agnostic container images for flexible deployment.
 - **Metrics**: Performance and business metrics
 - **Error Tracking**: Centralized error reporting
 - **Health Checks**: Service availability monitoring
+
+## Product Creation Flow (Transactional)
+
+The product creation process is implemented as a **two-phase transaction**:
+
+### Phase 1: Core Transaction (Blocking)
+
+This phase ensures data consistency. All steps must succeed or the entire operation fails.
+
+```
+1. VALIDATION
+   - Check all SKUs are unique
+   - Check no SKUs already exist in system
+   ↓
+2. CREATE PRODUCT
+   - Creates base product in Vendure
+   ↓
+3. CREATE VARIANTS (Sequential)
+   - Creates each variant one-at-a-time
+   - Avoids Vendure's unique option combination constraint
+   - If ANY variant fails → ROLLBACK entire product
+```
+
+**Entry Point:** `ProductService.createProductWithVariants()`
+
+**Error Handling:**
+
+- Validates all inputs BEFORE making any mutations
+- If variant creation fails, attempts to rollback (delete) the product
+- Returns `productId` on success, `null` on any failure
+- Error message is saved to `productService.error()` signal
+
+### Phase 2: Photo Upload (Non-Blocking)
+
+This phase is optional and does not block the overall transaction success.
+
+```
+4. UPLOAD PHOTOS (Separate)
+   - Frontend uploads files directly to admin-api
+   - Uses GraphQL multipart protocol
+   - Creates assets from files
+   - Assigns assets to product
+   ↓
+   If fails: User is warned but product/variants remain created
+   Photos can be added manually later via product edit
+```
+
+**Current Implementation (Frontend Upload):**
+
+- Photos uploaded directly from browser to admin-api
+- Uses `credentials: 'include'` for cookie-based auth
+- Simple, works immediately, no backend code needed
+- **Limitation:** Large uploads can fail on slow networks
+
+**Future Implementation (Backend Batch Processor):**
+
+Move photo upload to backend for better reliability:
+
+```
+Frontend: Save photos to temp storage
+    ↓
+Backend: Queue upload job (Redis/BullMQ)
+    ↓
+Worker: Process uploads in background
+    ↓
+    - Retry on failure (3 attempts)
+    - Progress updates via websocket
+    - Cleanup temp files after success
+```
+
+Benefits:
+
+- Resilient to network issues
+- Progress tracking
+- Better error recovery
+- No browser timeout limits
+
+**Key Design Decisions:**
+
+1. **Sequential Variants** (not batch)
+
+   - Vendure requires unique option combinations per variant
+   - Creating variants sequentially avoids this constraint
+   - Each variant gets its own mutation call
+
+2. **SKU Validation**
+
+   - Checked BEFORE creating product
+   - Prevents orphaned products with invalid variants
+   - Uses `CHECK_SKU_EXISTS` query
+
+3. **Non-Blocking Photos**
+
+   - Product/variants success doesn't depend on photos
+   - If upload fails, user can retry or add photos later
+   - Prevents data loss from file upload issues
+
+4. **Rollback Strategy**
+   - Variant failure → delete product (automatic cleanup)
+   - Photo failure → no rollback (product already created)
+   - This ensures no orphaned products
+
+### Console Logging
+
+The process logs each phase for debugging:
+
+```
+🔍 Validating product and variants...
+✅ Validation passed
+📦 Creating product...
+✅ Product created: 22
+📦 Creating variants...
+🔧 Creating variant 1/2: 1kg
+✅ Variant 1 created: 1kg
+🔧 Creating variant 2/2: 2kg
+✅ Variant 2 created: 2kg
+✅ All 2 variants created successfully
+✅ Product and variants created successfully
+
+[Phase 2 - Non-blocking]
+📸 Transaction Phase 2: Uploading 5 photo(s)...
+✅ Transaction Phase 2 COMPLETE: Photos uploaded
+```
+
+Or if Phase 2 fails:
+
+```
+⚠️ Transaction Phase 2 FAILED: Photos upload failed
+⚠️ But product was successfully created (photos can be added later)
+```
+
+### Future Improvements
+
+1. **Implement Product Deletion Mutation**
+
+   - Currently rollback just logs (DELETE_PRODUCT needs implementation)
+   - Add `DELETE_PRODUCT` GraphQL mutation to backend
+
+2. **Batch Asset Upload**
+
+   - Create all assets in one mutation instead of sequentially
+   - Will require backend optimization
+
+3. **Transaction Support**
+   - Coordinate with Vendure to see if they support real transactions
+   - May require backend changes
 
 ---
 

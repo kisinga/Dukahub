@@ -473,7 +473,38 @@ export class ProductCreateComponent implements OnInit {
             );
 
             if (productId) {
-                this.submitSuccess.set(true);
+                console.log('✅ Transaction Phase 1 COMPLETE: Product & Variants created');
+
+                // Upload photos if any were added (Phase 2 - non-blocking)
+                const photoManager = this.photoManager();
+                if (photoManager) {
+                    const photos = photoManager.getPhotos();
+                    if (photos.length > 0) {
+                        console.log(`📸 Transaction Phase 2: Uploading ${photos.length} photo(s)...`);
+                        try {
+                            const assetIds = await this.productService.uploadProductPhotos(productId, photos);
+                            if (assetIds && assetIds.length > 0) {
+                                console.log('✅ Transaction Phase 2 COMPLETE: Photos uploaded');
+                                this.submitSuccess.set(true);
+                            } else {
+                                console.warn('⚠️ Transaction Phase 2 FAILED: Photos upload failed');
+                                console.warn('⚠️ But product was successfully created (photos can be added later)');
+                                // Show partial success message
+                                this.submitError.set('Product created, but photo upload failed. You can add photos later.');
+                            }
+                        } catch (photoError: any) {
+                            console.error('❌ Photo upload error:', photoError);
+                            this.submitError.set('Product created, but photo upload failed. You can add photos later.');
+                        }
+                    } else {
+                        console.log('📸 No photos to upload');
+                        this.submitSuccess.set(true);
+                    }
+                } else {
+                    this.submitSuccess.set(true);
+                }
+
+                // Navigate after a delay to show success/warning message
                 setTimeout(() => {
                     this.router.navigate(['/dashboard/products']);
                 }, 1500);

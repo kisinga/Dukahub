@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { gql } from '@apollo/client';
+import { PREFETCH_PRODUCTS } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
 import { ProductSearchResult } from './product-search.service';
 
@@ -48,29 +48,6 @@ export class ProductCacheService {
 
     this.statusSignal.update((s) => ({ ...s, isLoading: true, error: null }));
 
-    const query = gql`
-      query PrefetchProducts($take: Int!) {
-        products(options: { take: $take, skip: 0 }) {
-          totalItems
-          items {
-            id
-            name
-            featuredAsset {
-              preview
-            }
-            variants {
-              id
-              name
-              sku
-              price
-              priceWithTax
-              stockOnHand
-            }
-          }
-        }
-      }
-    `;
-
     try {
       const client = this.apolloService.getClient();
 
@@ -81,7 +58,7 @@ export class ProductCacheService {
           items: any[];
         };
       }>({
-        query,
+        query: PREFETCH_PRODUCTS,
         variables: { take: 1000 }, // Adjust based on your needs
         fetchPolicy: 'network-only', // Force fresh fetch on boot
       });

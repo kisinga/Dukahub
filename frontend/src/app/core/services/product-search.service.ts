@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { gql } from '@apollo/client';
+import { GET_PRODUCT, SEARCH_BY_BARCODE, SEARCH_PRODUCTS } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
 import { ProductCacheService } from './product-cache.service';
 
@@ -54,32 +54,6 @@ export class ProductSearchService {
                 return cachedResults;
             }
         }
-        const query = gql`
-            query SearchProducts($term: String!) {
-                products(options: { 
-                    filter: { 
-                        name: { contains: $term }
-                    },
-                    take: 5 
-                }) {
-                    items {
-                        id
-                        name
-                        featuredAsset {
-                            preview
-                        }
-                        variants {
-                            id
-                            name
-                            sku
-                            price
-                            priceWithTax
-                            stockOnHand
-                        }
-                    }
-                }
-            }
-        `;
 
         try {
             const client = this.apolloService.getClient();
@@ -88,7 +62,7 @@ export class ProductSearchService {
                     items: any[];
                 };
             }>({
-                query,
+                query: SEARCH_PRODUCTS,
                 variables: { term: searchTerm },
                 fetchPolicy: 'network-only',
             });
@@ -129,35 +103,13 @@ export class ProductSearchService {
 
         // Fallback to network if not in cache
         console.log(`🌐 Fetching product ${productId} from network...`);
-        const query = gql`
-            query GetProduct($id: ID!) {
-                product(id: $id) {
-                    id
-                    name
-                    featuredAsset {
-                        preview
-                    }
-                    variants {
-                        id
-                        name
-                        sku
-                        price
-                        priceWithTax
-                        stockLevels {
-                            stockLocationId
-                            stockOnHand
-                        }
-                    }
-                }
-            }
-        `;
 
         try {
             const client = this.apolloService.getClient();
             const result = await client.query<{
                 product: any | null;
             }>({
-                query,
+                query: GET_PRODUCT,
                 variables: { id: productId },
             });
 
@@ -193,33 +145,6 @@ export class ProductSearchService {
      * Search by barcode
      */
     async searchByBarcode(barcode: string): Promise<ProductVariant | null> {
-        const query = gql`
-            query SearchByBarcode($sku: String!) {
-                search(input: { term: $sku, take: 1 }) {
-                    items {
-                        productId
-                        productName
-                        productVariantId
-                        productVariantName
-                        sku
-                        price {
-                            ... on SinglePrice {
-                                value
-                            }
-                        }
-                        priceWithTax {
-                            ... on SinglePrice {
-                                value
-                            }
-                        }
-                        productAsset {
-                            preview
-                        }
-                    }
-                }
-            }
-        `;
-
         try {
             const client = this.apolloService.getClient();
             const result = await client.query<{
@@ -227,7 +152,7 @@ export class ProductSearchService {
                     items: any[];
                 };
             }>({
-                query,
+                query: SEARCH_BY_BARCODE,
                 variables: { sku: barcode },
             });
 
