@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class CreateMlExtractionQueue1760540000001 implements MigrationInterface {
+export class CreateMlExtractionQueueTable1760540000003 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<any> {
         // Create ML extraction queue table

@@ -43,38 +43,64 @@ export class MlExtractionQueueService {
      * Check if a channel has a recent pending extraction (within 30 seconds)
      */
     async hasRecentPendingExtraction(ctx: RequestContext, channelId: string): Promise<boolean> {
-        const result = await this.connection.rawConnection.query(`
-            SELECT id FROM ml_extraction_queue 
-            WHERE channel_id = $1 
-            AND status = 'pending' 
-            AND created_at > NOW() - INTERVAL '30 seconds'
-            LIMIT 1
-        `, [channelId]);
+        try {
+            const result = await this.connection.rawConnection.query(`
+                SELECT id FROM ml_extraction_queue 
+                WHERE channel_id = $1 
+                AND status = 'pending' 
+                AND created_at > NOW() - INTERVAL '30 seconds'
+                LIMIT 1
+            `, [channelId]);
 
-        return result.rows.length > 0;
+            return result.rows.length > 0;
+        } catch (error) {
+            // Handle table not existing
+            if (error instanceof Error && error.message.includes('relation "ml_extraction_queue" does not exist')) {
+                console.log('[ML Extraction Queue] Table does not exist yet, returning false for recent check');
+                return false;
+            }
+            console.error('[ML Extraction Queue] Error checking recent pending extraction:', error);
+            return false;
+        }
     }
 
     /**
      * Get all pending extractions that are due for processing
      */
     async getDueExtractions(ctx: RequestContext): Promise<ScheduledExtraction[]> {
-        const result = await this.connection.rawConnection.query(`
-            SELECT id, channel_id, scheduled_at, status, created_at, updated_at, error
-            FROM ml_extraction_queue 
-            WHERE status = 'pending' 
-            AND scheduled_at <= NOW()
-            ORDER BY scheduled_at ASC
-        `);
+        try {
+            const result = await this.connection.rawConnection.query(`
+                SELECT id, channel_id, scheduled_at, status, created_at, updated_at, error
+                FROM ml_extraction_queue 
+                WHERE status = 'pending' 
+                AND scheduled_at <= NOW()
+                ORDER BY scheduled_at ASC
+            `);
 
-        return result.rows.map((row: any) => ({
-            id: row.id,
-            channelId: row.channel_id,
-            scheduledAt: new Date(row.scheduled_at),
-            status: row.status,
-            createdAt: new Date(row.created_at),
-            updatedAt: new Date(row.updated_at),
-            error: row.error,
-        }));
+            // Handle case where table doesn't exist yet or query fails
+            if (!result || !result.rows) {
+                console.log('[ML Extraction Queue] Table not found or no results, returning empty array');
+                return [];
+            }
+
+            return result.rows.map((row: any) => ({
+                id: row.id,
+                channelId: row.channel_id,
+                scheduledAt: new Date(row.scheduled_at),
+                status: row.status,
+                createdAt: new Date(row.created_at),
+                updatedAt: new Date(row.updated_at),
+                error: row.error,
+            }));
+        } catch (error) {
+            // Handle table not existing or other database errors
+            if (error instanceof Error && error.message.includes('relation "ml_extraction_queue" does not exist')) {
+                console.log('[ML Extraction Queue] Table does not exist yet, returning empty array');
+                return [];
+            }
+            console.error('[ML Extraction Queue] Error getting due extractions:', error);
+            return [];
+        }
     }
 
     /**
