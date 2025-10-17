@@ -378,7 +378,7 @@ export const SEARCH_PRODUCTS = graphql(`
           id
           name
           sku
-          price
+          priceWithTax
           stockOnHand
         }
       }
@@ -398,7 +398,7 @@ export const GET_PRODUCT = graphql(`
         id
         name
         sku
-        price
+        priceWithTax
         stockLevels {
           stockLocationId
           stockOnHand
@@ -444,7 +444,7 @@ export const PREFETCH_PRODUCTS = graphql(`
           id
           name
           sku
-          price
+          priceWithTax
           stockOnHand
         }
       }
@@ -700,5 +700,293 @@ export const UPDATE_TRAINING_STATUS = graphql(`
 export const COMPLETE_TRAINING = graphql(`
   mutation CompleteTraining($channelId: ID!, $modelJson: Upload!, $weightsFile: Upload!, $metadata: Upload!) {
     completeTraining(channelId: $channelId, modelJson: $modelJson, weightsFile: $weightsFile, metadata: $metadata)
+  }
+`);
+
+// ============================================================================
+// CUSTOMER MANAGEMENT
+// ============================================================================
+
+export const GET_CUSTOMERS = graphql(`
+  query GetCustomers($options: CustomerListOptions) {
+    customers(options: $options) {
+      totalItems
+      items {
+        id
+        firstName
+        lastName
+        emailAddress
+        phoneNumber
+        createdAt
+        updatedAt
+        addresses {
+          id
+          fullName
+          streetLine1
+          streetLine2
+          city
+          postalCode
+          countryCode
+          phoneNumber
+        }
+        user {
+          id
+          identifier
+          verified
+        }
+      }
+    }
+  }
+`);
+
+export const GET_CUSTOMER = graphql(`
+  query GetCustomer($id: ID!) {
+    customer(id: $id) {
+      id
+      firstName
+      lastName
+      emailAddress
+      phoneNumber
+      createdAt
+      updatedAt
+      addresses {
+        id
+        fullName
+        streetLine1
+        streetLine2
+        city
+        postalCode
+        countryCode
+        phoneNumber
+      }
+      user {
+        id
+        identifier
+        verified
+      }
+    }
+  }
+`);
+
+export const CREATE_CUSTOMER = graphql(`
+  mutation CreateCustomer($input: CreateCustomerInput!) {
+    createCustomer(input: $input) {
+      ... on Customer {
+        id
+        firstName
+        lastName
+        emailAddress
+        phoneNumber
+        createdAt
+      }
+      ... on EmailAddressConflictError {
+        errorCode
+        message
+      }
+    }
+  }
+`);
+
+export const UPDATE_CUSTOMER = graphql(`
+  mutation UpdateCustomer($input: UpdateCustomerInput!) {
+    updateCustomer(input: $input) {
+      ... on Customer {
+        id
+        firstName
+        lastName
+        emailAddress
+        phoneNumber
+        updatedAt
+      }
+      ... on EmailAddressConflictError {
+        errorCode
+        message
+      }
+    }
+  }
+`);
+
+export const DELETE_CUSTOMER = graphql(`
+  mutation DeleteCustomer($id: ID!) {
+    deleteCustomer(id: $id) {
+      result
+      message
+    }
+  }
+`);
+
+export const CREATE_CUSTOMER_ADDRESS = graphql(`
+  mutation CreateCustomerAddress($customerId: ID!, $input: CreateAddressInput!) {
+    createCustomerAddress(customerId: $customerId, input: $input) {
+      id
+      fullName
+      streetLine1
+      streetLine2
+      city
+      postalCode
+      countryCode
+      phoneNumber
+    }
+  }
+`);
+
+export const UPDATE_CUSTOMER_ADDRESS = graphql(`
+  mutation UpdateCustomerAddress($input: UpdateAddressInput!) {
+    updateCustomerAddress(input: $input) {
+      id
+      fullName
+      streetLine1
+      streetLine2
+      city
+      postalCode
+      countryCode
+      phoneNumber
+    }
+  }
+`);
+
+export const DELETE_CUSTOMER_ADDRESS = graphql(`
+  mutation DeleteCustomerAddress($id: ID!) {
+    deleteCustomerAddress(id: $id) {
+      success
+    }
+  }
+`);
+
+// ============================================================================
+// SUPPLIER MANAGEMENT (Custom Fields)
+// ============================================================================
+
+export const GET_SUPPLIERS = graphql(`
+  query GetSuppliers($options: CustomerListOptions) {
+    customers(options: $options) {
+      totalItems
+      items {
+        id
+        firstName
+        lastName
+        emailAddress
+        phoneNumber
+        createdAt
+        updatedAt
+        customFields {
+          isSupplier
+          supplierCode
+          supplierType
+          contactPerson
+          taxId
+          paymentTerms
+          notes
+        }
+        addresses {
+          id
+          fullName
+          streetLine1
+          streetLine2
+          city
+          postalCode
+          countryCode
+          phoneNumber
+        }
+      }
+    }
+  }
+`);
+
+export const GET_SUPPLIER = graphql(`
+  query GetSupplier($id: ID!) {
+    customer(id: $id) {
+      id
+      firstName
+      lastName
+      emailAddress
+      phoneNumber
+      createdAt
+      updatedAt
+      customFields {
+        isSupplier
+        supplierCode
+        supplierType
+        contactPerson
+        taxId
+        paymentTerms
+        notes
+      }
+      addresses {
+        id
+        fullName
+        streetLine1
+        streetLine2
+        city
+        postalCode
+        countryCode
+        phoneNumber
+      }
+    }
+  }
+`);
+
+export const CREATE_SUPPLIER = graphql(`
+  mutation CreateSupplier($input: CreateCustomerInput!) {
+    createCustomer(input: $input) {
+      ... on Customer {
+        id
+        firstName
+        lastName
+        emailAddress
+        phoneNumber
+        createdAt
+        customFields {
+          isSupplier
+          supplierCode
+          supplierType
+          contactPerson
+          taxId
+          paymentTerms
+          notes
+        }
+      }
+      ... on EmailAddressConflictError {
+        errorCode
+        message
+      }
+    }
+  }
+`);
+
+export const UPDATE_SUPPLIER = graphql(`
+  mutation UpdateSupplier($input: UpdateCustomerInput!) {
+    updateCustomer(input: $input) {
+      ... on Customer {
+        id
+        firstName
+        lastName
+        emailAddress
+        phoneNumber
+        updatedAt
+        customFields {
+          isSupplier
+          supplierCode
+          supplierType
+          contactPerson
+          taxId
+          paymentTerms
+          notes
+        }
+      }
+      ... on EmailAddressConflictError {
+        errorCode
+        message
+      }
+    }
+  }
+`);
+
+export const DELETE_SUPPLIER = graphql(`
+  mutation DeleteSupplier($id: ID!) {
+    deleteCustomer(id: $id) {
+      result
+      message
+    }
   }
 `);

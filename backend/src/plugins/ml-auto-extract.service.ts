@@ -7,6 +7,7 @@ import {
     RequestContext,
     TransactionalConnection,
 } from '@vendure/core';
+import { MlExtractionQueueService } from './ml-extraction-queue.service';
 import { MlTrainingService } from './ml-training.service';
 
 /**
@@ -17,13 +18,14 @@ import { MlTrainingService } from './ml-training.service';
  */
 @Injectable()
 export class MlAutoExtractService implements OnModuleInit {
-    private extractionQueue = new Map<string, NodeJS.Timeout>();
+    private processingInterval: NodeJS.Timeout | null = null;
 
     constructor(
         private eventBus: EventBus,
         private mlTrainingService: MlTrainingService,
         private channelService: ChannelService,
         private connection: TransactionalConnection,
+        private extractionQueueService: MlExtractionQueueService,
     ) { }
 
     onModuleInit() {
@@ -42,6 +44,12 @@ export class MlAutoExtractService implements OnModuleInit {
         });
 
         console.log('[ML Auto-Extract] Event listeners initialized');
+
+        // Start processing queue every 30 seconds
+        this.startQueueProcessor();
+
+        // Clean up old extractions on startup
+        this.cleanupOldExtractions();
     }
 
     /**
@@ -81,44 +89,100 @@ export class MlAutoExtractService implements OnModuleInit {
     }
 
     /**
-     * Schedule extraction for a channel with debouncing
+     * Schedule extraction for a channel with database persistence
      */
     private async scheduleExtractionForChannel(ctx: RequestContext, channelId: string): Promise<void> {
-        // Clear existing timeout for this channel
-        const existingTimeout = this.extractionQueue.get(channelId);
-        if (existingTimeout) {
-            clearTimeout(existingTimeout);
-        }
+        try {
+            // Check if channel has ML enabled
+            const channel = await this.channelService.findOne(ctx, channelId);
+            if (!channel) return;
 
-        // Check if channel has ML enabled
-        const channel = await this.channelService.findOne(ctx, channelId);
-        if (!channel) return;
+            const customFields = channel.customFields as any;
+            const hasMlEnabled = customFields.mlModelJsonId ||
+                customFields.mlTrainingStatus === 'training' ||
+                customFields.mlTrainingStatus === 'ready' ||
+                customFields.mlTrainingStatus === 'active';
 
-        const customFields = channel.customFields as any;
-        const hasMlEnabled = customFields.mlModelJsonId ||
-            customFields.mlTrainingStatus === 'training' ||
-            customFields.mlTrainingStatus === 'ready' ||
-            customFields.mlTrainingStatus === 'active';
-
-        if (!hasMlEnabled) {
-            console.log(`[ML Auto-Extract] Channel ${channelId} does not have ML enabled, skipping`);
-            return;
-        }
-
-        // Schedule extraction with 5-minute debounce
-        const timeout = setTimeout(async () => {
-            try {
-                console.log(`[ML Auto-Extract] Triggering extraction for channel ${channelId}`);
-                await this.mlTrainingService.scheduleAutoExtraction(ctx, channelId);
-            } catch (error) {
-                console.error(`[ML Auto-Extract] Error during extraction for channel ${channelId}:`, error);
-            } finally {
-                this.extractionQueue.delete(channelId);
+            if (!hasMlEnabled) {
+                console.log(`[ML Auto-Extract] Channel ${channelId} does not have ML enabled, skipping`);
+                return;
             }
-        }, 5 * 60 * 1000); // 5 minutes
 
-        this.extractionQueue.set(channelId, timeout);
-        console.log(`[ML Auto-Extract] Scheduled extraction for channel ${channelId} in 5 minutes`);
+            // Check for recent pending extractions to prevent duplicates
+            const hasRecent = await this.extractionQueueService.hasRecentPendingExtraction(ctx, channelId);
+            if (hasRecent) {
+                console.log(`[ML Auto-Extract] Channel ${channelId} already has a recent pending extraction, skipping duplicate`);
+                return;
+            }
+
+            // Schedule extraction in database
+            await this.extractionQueueService.scheduleExtraction(ctx, channelId, 5);
+            console.log(`[ML Auto-Extract] Scheduled extraction for channel ${channelId} in database`);
+
+        } catch (error) {
+            console.error(`[ML Auto-Extract] Error scheduling extraction for channel ${channelId}:`, error);
+        }
+    }
+
+    /**
+     * Start the queue processor to handle due extractions
+     */
+    private startQueueProcessor(): void {
+        // Process queue every 30 seconds
+        this.processingInterval = setInterval(async () => {
+            try {
+                await this.processQueue();
+            } catch (error) {
+                console.error('[ML Auto-Extract] Error processing queue:', error);
+            }
+        }, 30000);
+
+        console.log('[ML Auto-Extract] Queue processor started (30s interval)');
+    }
+
+    /**
+     * Process due extractions from the queue
+     */
+    private async processQueue(): Promise<void> {
+        try {
+            const dueExtractions = await this.extractionQueueService.getDueExtractions(RequestContext.empty());
+
+            for (const extraction of dueExtractions) {
+                try {
+                    console.log(`[ML Auto-Extract] Processing extraction ${extraction.id} for channel ${extraction.channelId}`);
+
+                    // Mark as processing
+                    await this.extractionQueueService.markAsProcessing(RequestContext.empty(), extraction.id);
+
+                    // Perform the extraction
+                    await this.mlTrainingService.scheduleAutoExtraction(RequestContext.empty(), extraction.channelId);
+
+                    // Mark as completed
+                    await this.extractionQueueService.markAsCompleted(RequestContext.empty(), extraction.id);
+
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                    console.error(`[ML Auto-Extract] Error processing extraction ${extraction.id}:`, error);
+                    await this.extractionQueueService.markAsFailed(RequestContext.empty(), extraction.id, errorMessage);
+                }
+            }
+        } catch (error) {
+            console.error('[ML Auto-Extract] Error getting due extractions:', error);
+        }
+    }
+
+    /**
+     * Clean up old extractions on startup
+     */
+    private async cleanupOldExtractions(): Promise<void> {
+        try {
+            const cleanedCount = await this.extractionQueueService.cleanupOldExtractions(RequestContext.empty());
+            if (cleanedCount > 0) {
+                console.log(`[ML Auto-Extract] Cleaned up ${cleanedCount} old extractions on startup`);
+            }
+        } catch (error) {
+            console.error('[ML Auto-Extract] Error cleaning up old extractions:', error);
+        }
     }
 
     /**
@@ -151,12 +215,17 @@ export class MlAutoExtractService implements OnModuleInit {
     /**
      * Clear all pending extractions
      */
-    clearAllPending(): void {
-        for (const [channelId, timeout] of this.extractionQueue) {
-            clearTimeout(timeout);
+    async clearAllPending(): Promise<void> {
+        try {
+            // Cancel all pending extractions in the database
+            const channels = await this.channelService.findAll(RequestContext.empty());
+            for (const channel of channels.items) {
+                await this.extractionQueueService.cancelPendingExtractions(RequestContext.empty(), channel.id.toString());
+            }
+            console.log('[ML Auto-Extract] Cleared all pending extractions from database');
+        } catch (error) {
+            console.error('[ML Auto-Extract] Error clearing pending extractions:', error);
         }
-        this.extractionQueue.clear();
-        console.log('[ML Auto-Extract] Cleared all pending extractions');
     }
 }
 

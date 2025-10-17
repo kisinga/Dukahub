@@ -76,7 +76,7 @@ export class ProductSearchService {
                     id: v.id,
                     name: v.name,
                     sku: v.sku,
-                    priceWithTax: v.priceWithTax, // Keep raw cents for currency service
+                    priceWithTax: v.priceWithTax?.value || v.priceWithTax || 0, // Handle Money object or direct value
                     stockLevel: v.stockOnHand > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
                     productId: product.id,
                     productName: product.name,
@@ -126,7 +126,7 @@ export class ProductSearchService {
                     id: v.id,
                     name: v.name,
                     sku: v.sku,
-                    priceWithTax: v.priceWithTax, // Keep raw cents for currency service
+                    priceWithTax: v.priceWithTax?.value || v.priceWithTax || 0, // Handle Money object or direct value
                     stockLevel: v.stockLevels?.[0]?.stockOnHand > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
                     productId: product.id,
                     productName: product.name,
