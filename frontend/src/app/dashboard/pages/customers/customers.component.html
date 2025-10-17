@@ -1,0 +1,145 @@
+<!-- Customers Page -->
+<div class="min-h-screen bg-base-100">
+  <!-- Header -->
+  <div class="bg-base-200 border-b border-base-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="py-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-base-content">Customers</h1>
+            <p class="mt-1 text-sm text-base-content/70">
+              Manage your customer database
+            </p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <button 
+              class="btn btn-primary"
+              (click)="router.navigate(['/dashboard/customers/create'])">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              Add Customer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Stats -->
+    <app-customer-stats [stats]="stats()" />
+
+    <!-- Search and Filters -->
+    <div class="mb-6">
+      <app-customer-search-bar 
+        [searchQuery]="searchQuery()"
+        (searchChange)="searchQuery.set($event)" />
+    </div>
+
+    <!-- Error Alert -->
+    @if (error()) {
+      <div class="alert alert-error mb-6">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+        </svg>
+        <span>{{ error() }}</span>
+        <button class="btn btn-sm btn-ghost" (click)="clearError()">Dismiss</button>
+      </div>
+    }
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="flex justify-center items-center py-12">
+        <span class="loading loading-spinner loading-lg"></span>
+      </div>
+    } @else {
+      <!-- Content -->
+      <div class="bg-base-100 rounded-lg border border-base-300">
+        <!-- Desktop Table View -->
+        <div class="hidden lg:block overflow-x-auto">
+          <table class="table table-zebra">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Contact</th>
+                <th>Addresses</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (customer of paginatedCustomers(); track trackByCustomerId($index, customer)) {
+                <app-customer-table-row 
+                  [customer]="customer"
+                  (action)="onCustomerAction($event)" />
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile Card View -->
+        <div class="lg:hidden">
+          @for (customer of paginatedCustomers(); track trackByCustomerId($index, customer)) {
+            <app-customer-card 
+              [customer]="customer"
+              (action)="onCustomerAction($event)" />
+          }
+        </div>
+
+        <!-- Empty State -->
+        @if (paginatedCustomers().length === 0 && !isLoading()) {
+          <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-base-content">No customers found</h3>
+            <p class="mt-1 text-sm text-base-content/60">
+              @if (searchQuery()) {
+                Try adjusting your search terms.
+              } @else {
+                Get started by adding your first customer.
+              }
+            </p>
+            @if (!searchQuery()) {
+              <div class="mt-6">
+                <button 
+                  class="btn btn-primary"
+                  (click)="router.navigate(['/dashboard/customers/create'])">
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                  </svg>
+                  Add Customer
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Pagination -->
+      @if (paginatedCustomers().length > 0) {
+        <div class="mt-6">
+          <app-pagination
+            [currentPage]="currentPage()"
+            [totalPages]="totalPages()"
+            [itemsPerPage]="itemsPerPage()"
+            [pageOptions]="pageOptions"
+            [endItem]="endItem()"
+            [totalItems]="filteredCustomers().length"
+            (pageChange)="goToPage($event)"
+            (itemsPerPageChange)="changeItemsPerPage($event)" />
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<app-delete-confirmation-modal
+  #deleteModal
+  [data]="deleteModalData()"
+  (confirmed)="onDeleteConfirmed()"
+  (cancelled)="onDeleteCancelled()" />

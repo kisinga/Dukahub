@@ -61,6 +61,48 @@ export const routes: Routes = [
                     )
             },
             {
+                path: 'customers',
+                loadComponent: () =>
+                    import('./dashboard/pages/customers/customers.component').then(
+                        (m) => m.CustomersComponent
+                    )
+            },
+            {
+                path: 'customers/create',
+                loadComponent: () =>
+                    import('./dashboard/pages/customer-create/customer-create.component').then(
+                        (m) => m.CustomerCreateComponent
+                    )
+            },
+            {
+                path: 'customers/edit/:id',
+                loadComponent: () =>
+                    import('./dashboard/pages/customer-edit/customer-edit.component').then(
+                        (m) => m.CustomerEditComponent
+                    )
+            },
+            {
+                path: 'suppliers',
+                loadComponent: () =>
+                    import('./dashboard/pages/suppliers/suppliers.component').then(
+                        (m) => m.SuppliersComponent
+                    )
+            },
+            {
+                path: 'suppliers/create',
+                loadComponent: () =>
+                    import('./dashboard/pages/supplier-create/supplier-create.component').then(
+                        (m) => m.SupplierCreateComponent
+                    )
+            },
+            {
+                path: 'suppliers/edit/:id',
+                loadComponent: () =>
+                    import('./dashboard/pages/supplier-edit/supplier-edit.component').then(
+                        (m) => m.SupplierEditComponent
+                    )
+            },
+            {
                 path: 'inventory',
                 loadComponent: () =>
                     import('./dashboard/pages/inventory/inventory.component').then(

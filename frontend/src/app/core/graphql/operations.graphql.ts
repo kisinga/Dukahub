@@ -726,7 +726,10 @@ export const GET_CUSTOMERS = graphql(`
           streetLine2
           city
           postalCode
-          countryCode
+          country {
+            code
+            name
+          }
           phoneNumber
         }
         user {
@@ -756,7 +759,10 @@ export const GET_CUSTOMER = graphql(`
         streetLine2
         city
         postalCode
-        countryCode
+        country {
+          code
+          name
+        }
         phoneNumber
       }
       user {
@@ -824,7 +830,10 @@ export const CREATE_CUSTOMER_ADDRESS = graphql(`
       streetLine2
       city
       postalCode
-      countryCode
+      country {
+        code
+        name
+      }
       phoneNumber
     }
   }
@@ -839,7 +848,10 @@ export const UPDATE_CUSTOMER_ADDRESS = graphql(`
       streetLine2
       city
       postalCode
-      countryCode
+      country {
+        code
+        name
+      }
       phoneNumber
     }
   }
@@ -869,15 +881,7 @@ export const GET_SUPPLIERS = graphql(`
         phoneNumber
         createdAt
         updatedAt
-        customFields {
-          isSupplier
-          supplierCode
-          supplierType
-          contactPerson
-          taxId
-          paymentTerms
-          notes
-        }
+        customFields
         addresses {
           id
           fullName
@@ -885,7 +889,10 @@ export const GET_SUPPLIERS = graphql(`
           streetLine2
           city
           postalCode
-          countryCode
+          country {
+            code
+            name
+          }
           phoneNumber
         }
       }
@@ -903,15 +910,7 @@ export const GET_SUPPLIER = graphql(`
       phoneNumber
       createdAt
       updatedAt
-      customFields {
-        isSupplier
-        supplierCode
-        supplierType
-        contactPerson
-        taxId
-        paymentTerms
-        notes
-      }
+      customFields
       addresses {
         id
         fullName
@@ -919,7 +918,10 @@ export const GET_SUPPLIER = graphql(`
         streetLine2
         city
         postalCode
-        countryCode
+        country {
+          code
+          name
+        }
         phoneNumber
       }
     }
@@ -936,15 +938,7 @@ export const CREATE_SUPPLIER = graphql(`
         emailAddress
         phoneNumber
         createdAt
-        customFields {
-          isSupplier
-          supplierCode
-          supplierType
-          contactPerson
-          taxId
-          paymentTerms
-          notes
-        }
+        customFields
       }
       ... on EmailAddressConflictError {
         errorCode
@@ -964,15 +958,7 @@ export const UPDATE_SUPPLIER = graphql(`
         emailAddress
         phoneNumber
         updatedAt
-        customFields {
-          isSupplier
-          supplierCode
-          supplierType
-          contactPerson
-          taxId
-          paymentTerms
-          notes
-        }
+        customFields
       }
       ... on EmailAddressConflictError {
         errorCode

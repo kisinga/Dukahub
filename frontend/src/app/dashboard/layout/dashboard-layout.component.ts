@@ -28,6 +28,8 @@ export class DashboardLayoutComponent implements OnInit {
         { label: 'Overview', icon: '📊', route: '/dashboard' },
         { label: 'Sell', icon: '💰', route: '/dashboard/sell' },
         { label: 'Products', icon: '📦', route: '/dashboard/products' },
+        { label: 'Customers', icon: '👥', route: '/dashboard/customers' },
+        { label: 'Suppliers', icon: '🏢', route: '/dashboard/suppliers' },
         { label: 'Inventory', icon: '📋', route: '/dashboard/inventory' },
         { label: 'Reports', icon: '📈', route: '/dashboard/reports' },
         { label: 'Settings', icon: '⚙️', route: '/dashboard/settings' }
