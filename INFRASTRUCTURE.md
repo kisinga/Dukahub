@@ -176,71 +176,105 @@ docker compose -f docker-compose.dev.yml down -v
 
 ## Production Deployment
 
-Deploy to any container platform (Coolify, Railway, Render, Fly.io, etc.).
+Deploy using Docker Compose with hosted images for a complete, self-contained setup.
 
 ### Architecture
 
-| Service      | Image/Version        | Port | Requirements         |
-| ------------ | -------------------- | ---- | -------------------- |
-| **Frontend** | `dukahub-frontend`   | 4200 | Backend API          |
-| **Backend**  | `dukahub-backend`    | 3000 | Postgres 16, Redis 7 |
-| **Postgres** | `postgres:16-alpine` | 5432 | Persistent storage   |
-| **Redis**    | `redis:7-alpine`     | 6379 | Persistent storage   |
+| Service      | Image/Version                             | Port | Requirements         |
+| ------------ | ----------------------------------------- | ---- | -------------------- |
+| **Frontend** | `ghcr.io/kisinga/dukahub/frontend:latest` | 4200 | Backend API          |
+| **Backend**  | `ghcr.io/kisinga/dukahub/backend:latest`  | 3000 | Postgres 17, Redis 7 |
+| **Postgres** | `postgres:17-alpine`                      | 5432 | Persistent storage   |
+| **Redis**    | `redis:7-alpine`                          | 6379 | Persistent storage   |
 
-### Coolify Deployment
-
-#### 1. Setup Database and Redis Services
-
-Create PostgreSQL 16 and Redis 7 services in Coolify. Note their internal service names.
-
-#### 2. Deploy Backend
-
-**Environment Variables:**
-
-Set all variables from [Backend & Database](#backend--database) section:
-
-- Database credentials and connection details
-- Redis connection details
-- Admin credentials
-- Security keys (Cookie secret)
-
-**Storage (CRITICAL):**
-
-Add persistent storage to retain uploaded assets across redeployments:
-
-```
-Volume Name: dukahub_backend_assets
-Source Path: (leave empty)
-Destination Path: /usr/src/app/static/assets
-```
-
-**Why this is critical:**
-
-- Without this volume, all uploaded product images are lost on every redeploy
-- Persists: product images, previews, cached transformations, ML models
-- Can be shared with other containers (backup services, image processors)
-
-**After deployment:**
-
-Note the backend's **service ID** (e.g., `a4skko0gg448sk4o0kg4gco8`) - you'll need this for frontend configuration.
-
-Populate the database (one-time):
+### Quick Start
 
 ```bash
-# Access backend container shell in Coolify
-npm run populate
+# 1. Clone the repository
+git clone <repository-url>
+cd Dukahub
+
+# 2. Set up environment
+cp env.example .env
+# Edit .env with your production values
+
+# 3. Deploy
+docker compose up -d
+
+# 4. Check status
+docker compose ps
 ```
 
-#### 3. Deploy Frontend
+### Docker Compose Deployment
 
-**Environment Variables:**
+This is the recommended deployment method for production environments.
+
+#### Prerequisites
+
+- Docker and Docker Compose installed
+- At least 4GB RAM available
+- At least 10GB disk space for data volumes
+
+#### Configuration
+
+1. **Environment Setup:**
 
 ```bash
-BACKEND_HOST=a4skko0gg448sk4o0kg4gco8  # Use backend's service ID from step 2
-BACKEND_PORT=3000
+cp env.example .env
 ```
 
-**Important:** Use the backend's **service ID** (the long alphanumeric prefix from the container name), NOT the resource name. The service ID is stable across redeployments.
+2. **Edit `.env` file with your production values:**
+
+```bash
+# Database
+DB_PASSWORD=your_secure_database_password
+SUPERADMIN_PASSWORD=your_secure_admin_password
+COOKIE_SECRET=your-32-character-secret-key
+
+# URLs (update with your domain)
+CORS_ORIGIN=https://yourdomain.com
+FRONTEND_URL=https://yourdomain.com
+```
+
+3. **Deploy:**
+
+```bash
+docker compose up -d
+```
+
+#### Management Commands
+
+```bash
+# Check status
+docker compose ps
+
+# View logs
+docker compose logs -f
+docker compose logs -f backend  # specific service
+
+# Update services
+docker compose pull
+docker compose up -d --force-recreate
+
+# Restart services
+docker compose restart
+
+# Stop services
+docker compose down
+
+# Database operations
+docker compose exec backend npm run populate    # populate with sample data
+docker compose exec postgres_db pg_dump -U vendure vendure > backup.sql  # backup
+```
+
+#### Service Discovery
+
+The Docker Compose setup automatically handles service discovery:
+
+- Frontend connects to backend using service name `backend`
+- Backend connects to database using service name `postgres_db`
+- Backend connects to Redis using service name `redis`
+- All services are on the same Docker network for secure communication
 
 ### Other Platforms (Railway, Render, Fly.io, etc.)
 

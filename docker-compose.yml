@@ -1,0 +1,275 @@
+# =====================================
+# Dukahub Production Docker Compose
+# =====================================
+#
+# Complete production setup with hosted images, proper networking,
+# resource limits, and comprehensive monitoring.
+#
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f
+#   docker compose down
+
+version: "3.8"
+
+services:
+  # ========================================
+  # Database Service
+  # ========================================
+  postgres_db:
+    image: postgres:17-alpine
+    container_name: dukahub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-vendure}
+      POSTGRES_USER: ${DB_USERNAME:-vendure}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-vendure}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/scripts:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USERNAME:-vendure} -d ${DB_NAME:-vendure}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - dukahub_network
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ========================================
+  # Redis Cache Service
+  # ========================================
+  redis:
+    image: redis:7-alpine
+    container_name: dukahub-redis
+    restart: unless-stopped
+    command: >
+      redis-server 
+      --appendonly yes 
+      --maxmemory 512mb 
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks:
+      - dukahub_network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ========================================
+  # Backend Service (Vendure)
+  # ========================================
+  backend:
+    image: ghcr.io/kisinga/dukahub/backend:latest
+    container_name: dukahub-backend
+    restart: unless-stopped
+    environment:
+      # Database configuration
+      DB_HOSTNAME: postgres_db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SCHEMA: ${DB_SCHEMA}
+
+      # Redis configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # Application configuration
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+
+      # Admin credentials
+      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME:-superadmin}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-admin123}
+
+      # Security
+      COOKIE_SECRET: ${COOKIE_SECRET:-your-32-character-secret-key-change-me}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+
+      # CORS configuration
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4200}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+
+      # Asset storage
+      ASSET_STORAGE_STRATEGY: ${ASSET_STORAGE_STRATEGY:-LocalAssetStorageStrategy}
+      ASSET_UPLOAD_DIR: ${ASSET_UPLOAD_DIR:-/app/static/assets}
+      ASSET_URL_PREFIX: ${ASSET_URL_PREFIX:-}
+
+      # Email configuration (optional)
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-SMTP}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+
+      # Population flag
+      RUN_POPULATE: ${RUN_POPULATE:-false}
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - backend_assets:/app/static/assets
+      - backend_uploads:/app/static/uploads
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - dukahub_network
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+        reservations:
+          cpus: "1.0"
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ========================================
+  # Frontend Service (Angular + Nginx)
+  # ========================================
+  frontend:
+    image: ghcr.io/kisinga/dukahub/frontend:latest
+    container_name: dukahub-frontend
+    restart: unless-stopped
+    environment:
+      # Backend connection - using service name for reliable discovery
+      BACKEND_HOST: backend
+      BACKEND_PORT: 3000
+
+      # Additional frontend configuration
+      NODE_ENV: ${NODE_ENV:-production}
+    ports:
+      - "${FRONTEND_PORT:-4200}:4200"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4200/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - dukahub_network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+# ========================================
+# Networks
+# ========================================
+networks:
+  dukahub_network:
+    driver: bridge
+    name: dukahub_network
+    driver_opts:
+      com.docker.network.bridge.name: dukahub-br
+      com.docker.network.driver.mtu: 1500
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ========================================
+# Volumes
+# ========================================
+volumes:
+  postgres_data:
+    driver: local
+    name: dukahub_postgres_data
+    driver_opts:
+      type: none
+      o: bind
+      device: ${POSTGRES_DATA_PATH:-./data/postgres}
+
+  redis_data:
+    driver: local
+    name: dukahub_redis_data
+    driver_opts:
+      type: none
+      o: bind
+      device: ${REDIS_DATA_PATH:-./data/redis}
+
+  backend_assets:
+    driver: local
+    name: dukahub_backend_assets
+    driver_opts:
+      type: none
+      o: bind
+      device: ${BACKEND_ASSETS_PATH:-./data/assets}
+
+  backend_uploads:
+    driver: local
+    name: dukahub_backend_uploads
+    driver_opts:
+      type: none
+      o: bind
+      device: ${BACKEND_UPLOADS_PATH:-./data/uploads}
