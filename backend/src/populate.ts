@@ -13,14 +13,18 @@ const productsCsvPath = require.resolve('@vendure/create/assets/products.csv');
 async function smartPopulate() {
     console.log('🔍 Checking database state...');
 
-    const app = await bootstrap({
+    // Create a clean config for populate that doesn't run migrations
+    const populateConfig = {
         ...config,
         dbConnectionOptions: {
             ...config.dbConnectionOptions,
             synchronize: true, // Enable for initial setup - creates schema
             migrationsRun: false, // Don't run migrations during populate
+            migrations: [], // Don't load migrations at all
         },
-    });
+    };
+
+    const app = await bootstrap(populateConfig);
 
     try {
         const channelService = app.get('ChannelService');
@@ -39,14 +43,9 @@ async function smartPopulate() {
         await populate(
             () =>
                 bootstrap({
-                    ...config,
+                    ...populateConfig,
                     importExportOptions: {
                         importAssetsDir: path.join(productsCsvPath, '../images'),
-                    },
-                    dbConnectionOptions: {
-                        ...config.dbConnectionOptions,
-                        synchronize: true,
-                        migrationsRun: false, // Don't run migrations during populate
                     },
                 }),
             require(initialDataPath),
