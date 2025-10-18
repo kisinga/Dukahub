@@ -41,6 +41,22 @@
 2. **Cookie Path Mapping**: Added `proxy_cookie_path` for consistent paths
 3. **Header Forwarding**: Ensured all cookie headers are properly forwarded
 
+### 4. HTTPS Mixed Content Issues
+
+**Issue**: Browser blocks HTTP requests when page is served over HTTPS.
+
+**Root Causes**:
+
+- Frontend served over HTTPS but backend assets requested over HTTP
+- Mixed content security policy blocking insecure requests
+
+**Solutions**:
+
+1. **Protocol Detection**: Added HTTPS detection for proxy termination
+2. **Proper Headers**: Added `X-Forwarded-Proto` to inform backend of HTTPS context
+3. **Unified Asset Handling**: Single location block for all `/assets/` requests
+4. **Security Headers**: Added HSTS and other security headers
+
 ## Configuration Files
 
 ### nginx.conf
