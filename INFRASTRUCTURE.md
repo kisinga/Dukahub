@@ -180,8 +180,23 @@ docker compose logs -f backend
 
 3. **Step 3: Graceful Shutdown:**
    - Container exits after successful initialization
+   - **Vendure server does NOT start during FIRST_RUN=true**
    - You set `FIRST_RUN=false` and restart
    - Application starts normally with all data and custom fields
+
+### Expected Behavior
+
+**During FIRST_RUN=true:**
+
+- Container runs populate + migrations
+- Container exits after completion
+- **Vendure server does NOT start**
+- You must set `FIRST_RUN=false` and restart
+
+**During FIRST_RUN=false:**
+
+- Container starts Vendure server normally
+- All data and custom fields are available
 
 ### Verification
 
