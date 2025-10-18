@@ -62,7 +62,7 @@ The nginx configuration supports both Docker internal DNS and public DNS resolut
 | `COOKIE_SECURE`    | `true` / `false`          | `false`       | HTTPS-only cookies                |
 | `FRONTEND_URL`     | `http://example.com`      | —             | CORS origins (comma-separated)    |
 | `ASSET_URL_PREFIX` | `https://cdn.example.com` | —             | CDN URL for assets                |
-| `RUN_POPULATE`     | `true` / `false`          | `false`       | Auto-populate database on startup |
+| `FIRST_RUN`        | `true` / `false`          | `false`       | First-time initialization process |
 
 ### Security
 
@@ -94,13 +94,13 @@ openssl rand -base64 24 | tr -d "=+/" | cut -c1-20
 
 ---
 
-## Fresh Setup
+## Fresh Setup (Production Docker)
 
-This section covers setting up a completely fresh installation of Dukahub, including the database initialization process.
+This section covers setting up a completely fresh **production Docker** installation of Dukahub, including the database initialization process.
 
 ### The Problem
 
-When setting `RUN_POPULATE=true` for fresh installations, you might encounter this error:
+When setting up a fresh production Docker installation, you might encounter this error:
 
 ```
 ERROR: relation "channel" does not exist
@@ -111,11 +111,11 @@ This happens because migrations try to run before the database schema is properl
 
 ### The Solution
 
-The issue has been fixed by:
+The issue has been fixed by introducing a **FIRST_RUN** environment flag that handles the complete initialization process sequentially:
 
-1. **Populate script now uses `synchronize: true`** - This creates the base Vendure schema
-2. **Populate script disables migrations** - Prevents migration conflicts during initial setup
-3. **Main application runs migrations after populate** - Ensures custom fields are properly added
+1. **Step 1: Populate database** - Creates base Vendure schema + sample data
+2. **Step 2: Run migrations** - Adds custom fields to existing tables
+3. **Step 3: Shutdown gracefully** - Allows you to toggle off and restart normally
 
 ### Quick Setup
 
@@ -140,10 +140,10 @@ docker compose logs -f backend
    mkdir -p data/{postgres,redis,assets,uploads}
    ```
 
-2. **Set environment variables:**
+2. **Set FIRST_RUN flag:**
 
    ```bash
-   export RUN_POPULATE=true
+   export FIRST_RUN=true
    ```
 
 3. **Start the application:**
@@ -158,30 +158,30 @@ docker compose logs -f backend
    docker compose logs -f backend
    ```
 
-5. **After population completes, disable populate:**
+5. **After initialization completes, disable FIRST_RUN:**
    ```bash
-   export RUN_POPULATE=false
+   export FIRST_RUN=false
    docker compose restart backend
    ```
 
-### What Happens During Setup
+### What Happens During FIRST_RUN Setup
 
-1. **Database Initialization:**
+1. **Step 1: Database Population:**
 
    - PostgreSQL starts and creates the database
    - Vendure creates the base schema using `synchronize: true`
    - Sample data is populated (channels, products, etc.)
 
-2. **Migration Application:**
+2. **Step 2: Migration Application:**
 
    - Custom fields are added to existing tables
    - ML training fields are added to Channel
    - Customer/Supplier fields are added to Customer
 
-3. **Application Startup:**
-   - Backend API becomes available
-   - Frontend serves the application
-   - Admin UI is accessible
+3. **Step 3: Graceful Shutdown:**
+   - Container exits after successful initialization
+   - You set `FIRST_RUN=false` and restart
+   - Application starts normally with all data and custom fields
 
 ### Verification
 
@@ -564,7 +564,7 @@ docker build -t dukahub-frontend .
 
 - Health check on `/health`
 - Automatic migrations on startup
-- Optional database population via `RUN_POPULATE=true`
+- First-time initialization via `FIRST_RUN=true`
 
 **Frontend:**
 
@@ -817,12 +817,12 @@ If issues occur, the old direct file access can be restored by:
 If you see errors like `relation "channel" does not exist`:
 
 ```bash
-# Check if RUN_POPULATE is set correctly
-echo $RUN_POPULATE
+# Check if FIRST_RUN is set correctly
+echo $FIRST_RUN
 
 # Reset and try again
 docker compose down -v
-export RUN_POPULATE=true
+export FIRST_RUN=true
 docker compose up -d
 ```
 

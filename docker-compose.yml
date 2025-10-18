@@ -146,8 +146,8 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
 
-      # Population flag
-      RUN_POPULATE: ${RUN_POPULATE:-false}
+      # First run initialization flag
+      FIRST_RUN: ${FIRST_RUN:-false}
 
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-info}

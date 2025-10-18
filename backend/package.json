@@ -10,7 +10,8 @@
     "start:server": "node ./dist/index.js",
     "start:worker": "node ./dist/index-worker.js",
     "start": "concurrently npm:start:*",
-    "populate": "node ./dist/populate.js"
+    "populate": "node ./dist/populate.js",
+    "migration:run": "node -e \"require('@vendure/core').runMigrations(require('./dist/vendure-config').config).then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); })\""
   },
   "dependencies": {
     "@vendure/admin-ui-plugin": "3.4.3",
