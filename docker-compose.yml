@@ -106,10 +106,10 @@ services:
     restart: unless-stopped
     environment:
       # Database configuration
-      DB_HOSTNAME: postgres_db
+      DB_HOST: postgres_db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-vendure}
-      DB_USER: ${DB_USER:-vendure}
+      DB_USERNAME: ${DB_USER:-vendure}
       DB_PASSWORD: ${DB_PASSWORD:-vendure}
       DB_SCHEMA: ${DB_SCHEMA:-public}
 

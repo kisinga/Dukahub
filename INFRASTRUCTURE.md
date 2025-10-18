@@ -7,6 +7,7 @@ Complete guide for local development and production deployment.
 ## Table of Contents
 
 - [Environment Variables](#environment-variables)
+- [Fresh Setup](#fresh-setup)
 - [Local Development](#local-development)
 - [Production Deployment](#production-deployment)
 - [Docker Containers](#docker-containers)
@@ -24,7 +25,8 @@ All configuration is managed via environment variables.
 | Variable              | Example           | Default   | Notes                                             |
 | --------------------- | ----------------- | --------- | ------------------------------------------------- |
 | `DB_NAME`             | `vendure`         | `vendure` | Database name                                     |
-| `DB_USER`             | `vendure`         | `vendure` | Database user                                     |
+| `DB_USER`             | `vendure`         | `vendure` | Database user (used in Docker Compose)            |
+| `DB_USERNAME`         | `vendure`         | `vendure` | Database username (used by backend)               |
 | `DB_PASSWORD`         | `secure-password` | `vendure` | Database password **[CHANGE IN PRODUCTION]**      |
 | `DB_SCHEMA`           | `public`          | `public`  | PostgreSQL schema                                 |
 | `POSTGRES_PORT`       | `5432`            | `5432`    | Database port (exposed to host)                   |
@@ -89,6 +91,150 @@ openssl rand -base64 24 | tr -d "=+/" | cut -c1-20
 - Backend requires all database/Redis variables
 - Frontend only needs `BACKEND_HOST` and `BACKEND_PORT`
 - All configuration at container runtime
+
+---
+
+## Fresh Setup
+
+This section covers setting up a completely fresh installation of Dukahub, including the database initialization process.
+
+### The Problem
+
+When setting `RUN_POPULATE=true` for fresh installations, you might encounter this error:
+
+```
+ERROR: relation "channel" does not exist
+STATEMENT: ALTER TABLE "channel" DROP CONSTRAINT IF EXISTS "FK_94e272d93bd32e4930f534bf1f9"
+```
+
+This happens because migrations try to run before the database schema is properly initialized.
+
+### The Solution
+
+The issue has been fixed by:
+
+1. **Populate script now uses `synchronize: true`** - This creates the base Vendure schema
+2. **Populate script disables migrations** - Prevents migration conflicts during initial setup
+3. **Main application runs migrations after populate** - Ensures custom fields are properly added
+
+### Quick Setup
+
+#### Option 1: Automated Setup (Recommended)
+
+```bash
+# Run the setup script
+./setup-fresh.sh
+
+# Start the application
+docker compose up -d
+
+# Monitor the setup process
+docker compose logs -f backend
+```
+
+#### Option 2: Manual Setup
+
+1. **Create data directories:**
+
+   ```bash
+   mkdir -p data/{postgres,redis,assets,uploads}
+   ```
+
+2. **Set environment variables:**
+
+   ```bash
+   export RUN_POPULATE=true
+   ```
+
+3. **Start the application:**
+
+   ```bash
+   docker compose up -d
+   ```
+
+4. **Monitor the setup:**
+
+   ```bash
+   docker compose logs -f backend
+   ```
+
+5. **After population completes, disable populate:**
+   ```bash
+   export RUN_POPULATE=false
+   docker compose restart backend
+   ```
+
+### What Happens During Setup
+
+1. **Database Initialization:**
+
+   - PostgreSQL starts and creates the database
+   - Vendure creates the base schema using `synchronize: true`
+   - Sample data is populated (channels, products, etc.)
+
+2. **Migration Application:**
+
+   - Custom fields are added to existing tables
+   - ML training fields are added to Channel
+   - Customer/Supplier fields are added to Customer
+
+3. **Application Startup:**
+   - Backend API becomes available
+   - Frontend serves the application
+   - Admin UI is accessible
+
+### Verification
+
+After setup, verify everything is working:
+
+1. **Check backend health:**
+
+   ```bash
+   curl http://localhost:3000/health
+   ```
+
+2. **Check frontend:**
+
+   ```bash
+   curl http://localhost:4200
+   ```
+
+3. **Access admin UI:**
+   - Open http://localhost:3000/admin
+   - Login with credentials from .env file
+
+### Fresh Setup Troubleshooting
+
+#### Database Connection Issues
+
+```bash
+# Check database logs
+docker compose logs postgres_db
+
+# Check if database is ready
+docker compose exec postgres_db pg_isready -U vendure -d vendure
+```
+
+#### Migration Issues
+
+```bash
+# Check migration status
+docker compose exec backend npm run migration:show
+
+# Reset database (DESTRUCTIVE)
+docker compose down -v
+docker compose up -d
+```
+
+#### Population Issues
+
+```bash
+# Check populate logs
+docker compose logs backend | grep -E "(populate|error|✅|❌)"
+
+# Force re-populate
+docker compose exec backend npm run populate
+```
 
 ---
 
@@ -663,6 +809,43 @@ If issues occur, the old direct file access can be restored by:
 ---
 
 ## Troubleshooting
+
+### Fresh Setup Issues
+
+#### Database Schema Errors
+
+If you see errors like `relation "channel" does not exist`:
+
+```bash
+# Check if RUN_POPULATE is set correctly
+echo $RUN_POPULATE
+
+# Reset and try again
+docker compose down -v
+export RUN_POPULATE=true
+docker compose up -d
+```
+
+#### Population Not Working
+
+```bash
+# Check populate logs
+docker compose logs backend | grep -E "(populate|error|✅|❌)"
+
+# Force re-populate
+docker compose exec backend npm run populate
+```
+
+#### Migration Conflicts
+
+```bash
+# Check migration status
+docker compose exec backend npm run migration:show
+
+# Reset database (DESTRUCTIVE)
+docker compose down -v
+docker compose up -d
+```
 
 ### Backend won't connect to database
 

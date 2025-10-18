@@ -17,7 +17,8 @@ async function smartPopulate() {
         ...config,
         dbConnectionOptions: {
             ...config.dbConnectionOptions,
-            synchronize: true, // Enable for initial setup
+            synchronize: true, // Enable for initial setup - creates schema
+            migrationsRun: false, // Don't run migrations during populate
         },
     });
 
@@ -45,6 +46,7 @@ async function smartPopulate() {
                     dbConnectionOptions: {
                         ...config.dbConnectionOptions,
                         synchronize: true,
+                        migrationsRun: false, // Don't run migrations during populate
                     },
                 }),
             require(initialDataPath),

@@ -7,6 +7,7 @@ Dukahub helps shopkeepers ditch manual data entry and expensive barcode scanners
 ## Quick Links
 
 - 🚀 **[Setup & Deployment](./INFRASTRUCTURE.md)** - Get started, deploy anywhere
+- 🆕 **[Fresh Setup](./INFRASTRUCTURE.md#fresh-setup)** - First-time installation guide
 - 🏗️ **[Architecture](./ARCHITECTURE.md)** - System design and decisions
 - 🤖 **[ML Guide](./ML_GUIDE.md)** - AI model training
 - 🗺️ **[Roadmap](./ROADMAP.md)** - Planned features
