@@ -21,26 +21,26 @@ All configuration is managed via environment variables.
 
 ### Backend & Database
 
-| Variable              | Example           | Default | Notes                                             |
-| --------------------- | ----------------- | ------- | ------------------------------------------------- |
-| `DB_NAME`             | `vendure`         | —       | Database name                                     |
-| `DB_USERNAME`         | `vendure`         | —       | Database user                                     |
-| `DB_PASSWORD`         | `secure-password` | —       | Database password **[CHANGE IN PRODUCTION]**      |
-| `DB_SCHEMA`           | `public`          | —       | PostgreSQL schema                                 |
-| `DB_HOST`             | `postgres_db`     | —       | Database hostname                                 |
-| `DB_PORT`             | `5432`            | —       | Database port                                     |
-| `REDIS_HOST`          | `redis`           | —       | Redis hostname                                    |
-| `REDIS_PORT`          | `6379`            | —       | Redis port                                        |
-| `SUPERADMIN_USERNAME` | `superadmin`      | —       | Initial admin login                               |
-| `SUPERADMIN_PASSWORD` | `secure-password` | —       | Initial admin password **[CHANGE IN PRODUCTION]** |
-| `COOKIE_SECRET`       | `random-32-chars` | —       | Session encryption key **[CHANGE IN PRODUCTION]** |
+| Variable              | Example           | Default   | Notes                                             |
+| --------------------- | ----------------- | --------- | ------------------------------------------------- |
+| `DB_NAME`             | `vendure`         | `vendure` | Database name                                     |
+| `DB_USER`             | `vendure`         | `vendure` | Database user                                     |
+| `DB_PASSWORD`         | `secure-password` | `vendure` | Database password **[CHANGE IN PRODUCTION]**      |
+| `DB_SCHEMA`           | `public`          | `public`  | PostgreSQL schema                                 |
+| `POSTGRES_PORT`       | `5432`            | `5432`    | Database port (exposed to host)                   |
+| `REDIS_HOST`          | `redis`           | —         | Redis hostname                                    |
+| `REDIS_PORT`          | `6379`            | —         | Redis port                                        |
+| `SUPERADMIN_USERNAME` | `superadmin`      | —         | Initial admin login                               |
+| `SUPERADMIN_PASSWORD` | `secure-password` | —         | Initial admin password **[CHANGE IN PRODUCTION]** |
+| `COOKIE_SECRET`       | `random-32-chars` | —         | Session encryption key **[CHANGE IN PRODUCTION]** |
 
 ### Frontend (Docker Only)
 
-| Variable       | Example           | Default   | Notes                                         |
-| -------------- | ----------------- | --------- | --------------------------------------------- |
-| `BACKEND_HOST` | `api.example.com` | `backend` | Backend hostname, IP, or domain to connect to |
-| `BACKEND_PORT` | `3000`            | `3000`    | Backend port to connect to                    |
+| Variable        | Example           | Default   | Notes                                         |
+| --------------- | ----------------- | --------- | --------------------------------------------- |
+| `BACKEND_HOST`  | `api.example.com` | `backend` | Backend hostname, IP, or domain to connect to |
+| `BACKEND_PORT`  | `3000`            | `3000`    | Backend port to connect to                    |
+| `FRONTEND_PORT` | `4200`            | `4200`    | Frontend port (exposed to host)               |
 
 **Flexible Backend Connection:** The frontend can connect to backends anywhere:
 
@@ -116,9 +116,7 @@ nano configs/.env
 **Required changes in `.env`:**
 
 ```bash
-DB_HOST=localhost
-DB_PORT=5433
-REDIS_HOST=localhost
+POSTGRES_PORT=5433
 REDIS_PORT=6479
 ```
 
