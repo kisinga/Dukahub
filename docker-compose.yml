@@ -74,7 +74,7 @@ services:
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-vendure}
       DB_USERNAME: ${DB_USER:-vendure}
-      DB_PASSWORD: ${DB_PASSWORD:-vendure}
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_SCHEMA: ${DB_SCHEMA:-public}
 
       # Redis configuration
@@ -86,11 +86,11 @@ services:
       PORT: 3000
 
       # Admin credentials
-      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME:-superadmin}
-      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-admin123}
+      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
 
       # Security
-      COOKIE_SECRET: ${COOKIE_SECRET:-your-32-character-secret-key-change-me}
+      COOKIE_SECRET: ${COOKIE_SECRET}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
 
       # CORS configuration
