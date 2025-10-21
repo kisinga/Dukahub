@@ -8,9 +8,9 @@
 
 - **[System Architecture](../ARCHITECTURE.md)** - Technical design and stack decisions
 - **[Infrastructure & Deployment](../INFRASTRUCTURE.md)** - Local dev and production setup
-- **[ML Implementation Guide](../ML_GUIDE.md)** - AI product recognition setup
+- **[MLTraining Setup](../ML_TRAINING_SETUP.md)** - AI product recognition setup
 - **[Development Roadmap](../ROADMAP.md)** - Planned features and timeline
-- **[Known Gaps](../GAPS.md)** - Vendure limitations and workarounds
+- **[Vendure Setup](../VENDURE_SETUP.md)** - Vendure setup, limitations and workarounds
 
 ### Frontend Documentation
 

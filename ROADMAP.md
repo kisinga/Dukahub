@@ -4,7 +4,7 @@ All future plans consolidated.
 
 ---
 
-## Phase 1: Core POS (Q1 2026)
+## Phase 1: Core POS
 
 ### Product Management
 
@@ -51,7 +51,7 @@ All future plans consolidated.
 
 ---
 
-## Phase 3: Mobile PWA (Q3 2026)
+## Phase 3: Mobile PWA
 
 ### Features
 
@@ -72,7 +72,7 @@ All future plans consolidated.
 
 ---
 
-## Phase 4: ML & Automation (Q4 2026)
+## Phase 4: ML & Automation
 
 ### AI Features
 

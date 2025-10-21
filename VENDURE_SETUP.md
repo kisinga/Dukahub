@@ -16,20 +16,15 @@ This document tracks known limitations and required manual steps when working wi
 
 1. **Tax Configuration** (Required - all prices tax-inclusive)
 
+   - Navigate: Settings → Zones
+   - Create: Zone for your country/region
    - Navigate: Settings → Tax Categories
    - Create: "Standard Tax" category
    - Navigate: Settings → Tax Rates
    - Create: Tax rate (e.g., "VAT 0%" or appropriate rate)
    - Set: "Tax included in price" = YES
-   - Navigate: Settings → Zones
-   - Create: Zone for your country/region
    - Assign: Tax rate to zone
-   - **Note:** Complex tax systems NOT supported. All prices are tax-inclusive.
-
-2. **Verify Payment Handlers** (After backend deployment)
-   - Navigate: Settings → Payment Methods
-   - Verify: `cash-payment` and `mpesa-payment` handlers available in dropdown
-   - If missing: Check backend logs, ensure handlers registered in vendure-config.ts
+   - **Note:** Complex tax systems NOT yet supported. All prices are tax-inclusive.
 
 ### Phase 2: Company Provisioning (Per Customer/Tenant)
 
@@ -116,6 +111,13 @@ This document tracks known limitations and required manual steps when working wi
 - Assign: Role from Step 4
 - Save user
 - **IMPORTANT:** Send credentials to company admin securely (do NOT send via email unencrypted)
+
+#### Step 6: Create Payment Methods
+
+Create Payment Methods. Each customer needs to have their own payment methods.
+
+- Navigate: Settings → Payment Methods
+- Create: `cash-payment` and `mpesa-payment` methods and choose the respective handlers in dropdown
 
 #### Step 6: Verification Checklist
 
@@ -205,13 +207,15 @@ Before handing off to customer, verify:
 **Architecture Plan:**
 
 ```
+
 Frontend → Temp Storage → Backend Queue → Worker Process
-                              ↓
-                         Progress Updates
-                              ↓
-                         Retry Logic (3x)
-                              ↓
-                         Asset Creation
+↓
+Progress Updates
+↓
+Retry Logic (3x)
+↓
+Asset Creation
+
 ```
 
 **Benefits:**
@@ -253,3 +257,7 @@ The products page has been refactored into a composable, maintainable architectu
 - Performance optimizations (OnPush, signals, computed)
 
 **See:** `frontend/ARCHITECTURE.md` → "Products Page - Component Architecture" section for full details.
+
+```
+
+```

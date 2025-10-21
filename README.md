@@ -9,8 +9,13 @@ Dukahub helps shopkeepers ditch manual data entry and expensive barcode scanners
 - 🚀 **[Setup & Deployment](./INFRASTRUCTURE.md)** - Get started, deploy anywhere
 - 🆕 **[Fresh Setup](./INFRASTRUCTURE.md#fresh-setup)** - First-time installation guide
 - 🏗️ **[Architecture](./ARCHITECTURE.md)** - System design and decisions
-- 🤖 **[ML Guide](./ML_GUIDE.md)** - AI model training
+- 🤖 **[ML Guide](./ML_TRAINING_SETUP.md)** - AI model training
 - 🗺️ **[Roadmap](./ROADMAP.md)** - Planned features
+- **[Vendure Setup](../VENDURE_SETUP.md)** - Vendure setup, limitations and workarounds
+
+- **[Frontend Architecture](../frontend/ARCHITECTURE.md)** - Angular app structure
+- **[Design System](../frontend/DESIGN-SYSTEM.md)** - UI components and patterns
+- **[POS Guide](../frontend/POS_README.md)** - Point-of-sale workflow
 
 ## Current Status
 

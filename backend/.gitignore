@@ -6,3 +6,4 @@ static/email/test-emails
 .env
 .env.*
 !.env.example
+server.log
