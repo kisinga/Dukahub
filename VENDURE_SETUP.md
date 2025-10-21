@@ -237,27 +237,3 @@ Asset Creation
 **Priority:** Medium (current solution works, but not robust)
 
 ---
-
-## Recent Improvements
-
-### Products Page Refactoring (Completed)
-
-**Status:** ✅ Complete
-
-The products page has been refactored into a composable, maintainable architecture:
-
-**Improvements:**
-
-- 60% reduction in main component size (930→245 lines HTML, 195→175 lines TS)
-- 6 focused, reusable components with clear responsibilities
-- Enhanced mobile experience with KISS principles
-- Product edit functionality (reuses create form)
-- Purchase action hook (ready for supplier flow integration)
-- Better type safety with shared interfaces
-- Performance optimizations (OnPush, signals, computed)
-
-**See:** `frontend/ARCHITECTURE.md` → "Products Page - Component Architecture" section for full details.
-
-```
-
-```

@@ -41,7 +41,7 @@ export interface ProductInput {
 export interface VariantInput {
     sku: string;
     name: string; // Auto-generated name
-    priceWithTax: number; // In currency units (e.g., 10.99)
+    price: number; // In currency units (e.g., 10.99) - the base price for the variant
     trackInventory?: boolean; // Native Vendure field: false for services (infinite stock), true for products
     stockOnHand: number;
     stockLocationId: string;
@@ -291,7 +291,7 @@ export class ProductService {
                 const input: any = {
                     productId,
                     sku: v.sku,
-                    priceWithTax: Math.round(v.priceWithTax * 100), // Convert to cents
+                    price: Math.round(v.price * 100), // Convert price to cents for GraphQL Money type
                     trackInventory: trackInventoryValue, // Use enum string value
                     stockOnHand: v.stockOnHand,
                     translations: [
