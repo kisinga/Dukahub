@@ -67,6 +67,11 @@ export class StockLocationService {
      * Called when product creation page loads (without cashier data)
      */
     async fetchStockLocations(): Promise<void> {
+        // KIS: Prevent duplicate fetches if already loading or have data
+        if (this.isLoadingSignal() || this.locationsSignal().length > 0) {
+            return;
+        }
+
         this.isLoadingSignal.set(true);
         this.errorSignal.set(null);
 
