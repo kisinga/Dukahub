@@ -90,7 +90,8 @@ export class DashboardLayoutComponent implements OnInit {
     protected readonly activeCompanyId = this.companyService.activeCompanyId;
     protected readonly activeCompany = this.companyService.activeCompany;
     protected readonly companyDisplayName = this.companyService.companyDisplayName;
-    protected readonly companyLogoId = this.companyService.companyLogoId;
+    protected readonly companyLogoAsset = this.companyService.companyLogoAsset;
+    protected readonly companyLogoUrl = this.companyService.companyLogoUrl;
 
     // Computed values
     protected readonly unreadCount = computed(() =>
@@ -102,11 +103,8 @@ export class DashboardLayoutComponent implements OnInit {
     );
 
     protected readonly logoUrl = computed(() => {
-        const logoId = this.companyLogoId();
-        if (!logoId) return 'default_avatar.png';
-        // Construct asset URL from Vendure backend
-        const backendUrl = 'http://localhost:3000'; // TODO: Get from environment
-        return `${backendUrl}/assets/${logoId}`;
+        // Use the new proxy-compatible logo URL directly
+        return this.companyLogoUrl() || 'default_avatar.png';
     });
 
     constructor() {

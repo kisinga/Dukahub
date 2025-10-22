@@ -1,6 +1,7 @@
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
 import {
+    Asset,
     DefaultJobQueuePlugin,
     DefaultSchedulerPlugin,
     DefaultSearchPlugin,
@@ -128,40 +129,72 @@ export const config: VendureConfig = {
         ],
         Channel: [
             {
-                name: 'mlModelJsonId',
-                type: 'string',
-                label: [{ languageCode: LanguageCode.en, value: 'ML Model JSON Asset ID' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Asset ID for model.json file' }],
+                name: 'mlModelJsonAsset',
+                type: 'relation',
+                entity: Asset,
+                label: [{ languageCode: LanguageCode.en, value: 'ML Model JSON Asset' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Asset for model.json file' }],
                 public: false,
                 nullable: true,
-                ui: { tab: 'ML Model' },
+                ui: {
+                    tab: 'ML Model',
+                    component: 'asset-selector',
+                    props: {
+                        acceptedFileTypes: ['application/json', 'text/json', '.json'],
+                        multiple: false
+                    }
+                },
             },
             {
-                name: 'mlModelBinId',
-                type: 'string',
-                label: [{ languageCode: LanguageCode.en, value: 'ML Model Weights Asset ID' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Asset ID for weights.bin file' }],
+                name: 'mlModelBinAsset',
+                type: 'relation',
+                entity: Asset,
+                label: [{ languageCode: LanguageCode.en, value: 'ML Model Weights Asset' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Asset for weights.bin file' }],
                 public: false,
                 nullable: true,
-                ui: { tab: 'ML Model' },
+                ui: {
+                    tab: 'ML Model',
+                    component: 'asset-selector',
+                    props: {
+                        acceptedFileTypes: ['application/octet-stream', 'application/binary', '.bin'],
+                        multiple: false
+                    }
+                },
             },
             {
-                name: 'mlMetadataId',
-                type: 'string',
-                label: [{ languageCode: LanguageCode.en, value: 'ML Metadata Asset ID' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Asset ID for metadata.json file' }],
+                name: 'mlMetadataAsset',
+                type: 'relation',
+                entity: Asset,
+                label: [{ languageCode: LanguageCode.en, value: 'ML Metadata Asset' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Asset for metadata.json file' }],
                 public: false,
                 nullable: true,
-                ui: { tab: 'ML Model' },
+                ui: {
+                    tab: 'ML Model',
+                    component: 'asset-selector',
+                    props: {
+                        acceptedFileTypes: ['application/json', 'text/json', '.json'],
+                        multiple: false
+                    }
+                },
             },
             {
-                name: 'companyLogoId',
-                type: 'string',
-                label: [{ languageCode: LanguageCode.en, value: 'Company Logo Asset ID' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Asset ID for the company logo image' }],
+                name: 'companyLogoAsset',
+                type: 'relation',
+                entity: Asset,
+                label: [{ languageCode: LanguageCode.en, value: 'Company Logo Asset' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Asset for the company logo image' }],
                 public: true,
                 nullable: true,
-                ui: { tab: 'Branding' },
+                ui: {
+                    tab: 'Branding',
+                    component: 'asset-selector',
+                    props: {
+                        acceptedFileTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
+                        multiple: false
+                    }
+                },
             },
             {
                 name: 'cashierFlowEnabled',
@@ -313,21 +346,30 @@ export const config: VendureConfig = {
         ],
         PaymentMethod: [
             {
-                name: 'icon',
-                type: 'string',
-                label: [{ languageCode: LanguageCode.en, value: 'Payment Method Icon' }],
-                description: [{ languageCode: LanguageCode.en, value: 'SVG icon path or class name for the payment method' }],
+                name: 'imageAsset',
+                type: 'relation',
+                entity: Asset,
+                label: [{ languageCode: LanguageCode.en, value: 'Payment Method Image Asset' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Asset for payment method image/logo' }],
                 public: true,
                 nullable: true,
-                ui: { tab: 'Display' },
+                ui: {
+                    tab: 'Display',
+                    component: 'asset-selector',
+                    props: {
+                        acceptedFileTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
+                        multiple: false
+                    }
+                },
             },
             {
-                name: 'image',
-                type: 'string',
-                label: [{ languageCode: LanguageCode.en, value: 'Payment Method Image' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Asset ID for payment method image/logo' }],
+                name: 'isActive',
+                type: 'boolean',
+                label: [{ languageCode: LanguageCode.en, value: 'Is Active' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Whether this payment method is active' }],
                 public: true,
                 nullable: true,
+                defaultValue: true,
                 ui: { tab: 'Display' },
             },
         ],

@@ -1,6 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
 import * as tf from '@tensorflow/tfjs';
-import { GET_ML_MODEL_ASSETS } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
 
@@ -78,6 +77,10 @@ export class MlModelService {
      * Get ML model asset sources for a channel
      * Returns file paths needed to load the model
      * Uses CompanyService as single source of truth for channel custom fields
+     * 
+     * ARCHITECTURE CHANGE:
+     * - OLD: String asset IDs → Secondary query to fetch Asset objects
+     * - NEW: Direct Asset objects from channel custom fields → No secondary query needed
      */
     private async getModelSources(channelId: string): Promise<{
         modelUrl: string;
@@ -90,65 +93,20 @@ export class MlModelService {
             return this.assetSourcesCache.get(cacheKey) || null;
         }
 
-        const client = this.apolloService.getClient();
+        // Get asset objects from CompanyService
+        const mlModelAssets = this.companyService.mlModelAssets();
 
-        // Get asset IDs from CompanyService (already fetched on boot)
-        const assetIds = this.companyService.mlModelAssetIds();
-
-        if (!assetIds) {
+        if (!mlModelAssets) {
+            console.warn('❌ ML model assets not configured for this channel');
             this.assetSourcesCache.set(cacheKey, null);
             return null;
         }
 
         try {
-            // Get asset source paths using the IDs from CompanyService
-            const assetsResult = await client.query<{
-                assets: {
-                    items: Array<{
-                        id: string;
-                        source: string;
-                    }>;
-                };
-            }>({
-                query: GET_ML_MODEL_ASSETS,
-                variables: {
-                    ids: [assetIds.mlModelJsonId, assetIds.mlModelBinId, assetIds.mlMetadataId],
-                },
-                fetchPolicy: 'network-only',
-                errorPolicy: 'all', // Return partial data even if there are errors
-            });
+            const { mlModelJsonAsset, mlModelBinAsset, mlMetadataAsset } = mlModelAssets;
 
-            if (assetsResult.error) {
-                console.error('❌ Assets query error:', assetsResult.error);
-            }
-
-            const assets = assetsResult.data?.assets?.items || [];
-
-            if (assets.length === 0) {
-                console.error('❌ No assets found for ML model IDs:', {
-                    requestedIds: [assetIds.mlModelJsonId, assetIds.mlModelBinId, assetIds.mlMetadataId],
-                    foundAssets: assets
-                });
-                return null;
-            }
-
-            const modelAsset = assets.find((a: any) => a.id === assetIds.mlModelJsonId);
-            const weightsAsset = assets.find((a: any) => a.id === assetIds.mlModelBinId);
-            const metadataAsset = assets.find((a: any) => a.id === assetIds.mlMetadataId);
-
-
-            if (!modelAsset || !weightsAsset || !metadataAsset) {
-                console.error('❌ Missing required assets:', {
-                    hasModelAsset: !!modelAsset,
-                    hasWeightsAsset: !!weightsAsset,
-                    hasMetadataAsset: !!metadataAsset,
-                    availableAssets: assets.map(a => ({ id: a.id, source: a.source }))
-                });
-                return null;
-            }
-
-            // Helper: convert source to URL (handle proxy scenarios)
-            const toUrl = (source: string): string => {
+            // Helper: convert source to proxy-compatible URL
+            const toProxyUrl = (source: string): string => {
                 // If source is already a full URL, extract the path for proxy compatibility
                 if (source.startsWith('http://') || source.startsWith('https://')) {
                     // Extract path from full URL for proxy compatibility
@@ -163,23 +121,27 @@ export class MlModelService {
             };
 
             const sources = {
-                modelUrl: toUrl(modelAsset.source),
-                weightsUrl: toUrl(weightsAsset.source),
-                metadataUrl: toUrl(metadataAsset.source),
+                modelUrl: toProxyUrl(mlModelJsonAsset.source),
+                weightsUrl: toProxyUrl(mlModelBinAsset.source),
+                metadataUrl: toProxyUrl(mlMetadataAsset.source),
             };
 
-            console.log('✅ ML model sources resolved');
+            console.log('✅ ML model sources resolved from channel custom fields:', {
+                modelAsset: { id: mlModelJsonAsset.id, name: mlModelJsonAsset.name },
+                weightsAsset: { id: mlModelBinAsset.id, name: mlModelBinAsset.name },
+                metadataAsset: { id: mlMetadataAsset.id, name: mlMetadataAsset.name },
+                sources
+            });
 
-            // Cache the results to prevent duplicate queries
+            // Cache the results to prevent duplicate processing
             this.assetSourcesCache.set(cacheKey, sources);
             return sources;
 
         } catch (error: any) {
-            console.error('❌ Failed to fetch ML model assets:', error);
+            console.error('❌ Failed to process ML model assets:', error);
             console.error('❌ Error details:', {
                 message: error.message,
-                graphQLErrors: error.graphQLErrors,
-                networkError: error.networkError
+                mlModelAssets
             });
 
             // Cache the failure to prevent repeated attempts

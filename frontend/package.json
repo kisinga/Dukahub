@@ -7,8 +7,13 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:suite": "ts-node ./test/test-suite.ts",
+    "test:build": "SKIP_GRAPHQL=true SKIP_LINT=true ts-node ./test/test-suite.ts",
+    "test:graphql": "SKIP_BUILD=true SKIP_LINT=true ts-node ./test/test-suite.ts",
+    "test:all": "npm run test:suite",
     "codegen": "graphql-codegen --config codegen.ts",
-    "codegen:watch": "graphql-codegen --config codegen.ts"
+    "codegen:watch": "graphql-codegen --config codegen.ts",
+    "lint": "ng lint"
   },
   "prettier": {
     "printWidth": 100,
@@ -56,6 +61,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "ts-node": "^10.9.2",
     "typescript": "~5.9.2"
   }
 }

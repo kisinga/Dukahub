@@ -11,7 +11,11 @@
     "start:worker": "node ./dist/index-worker.js",
     "start": "concurrently npm:start:*",
     "populate": "node ./dist/populate.js",
-    "migration:run": "node -e \"require('@vendure/core').runMigrations(require('./dist/vendure-config').config).then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); })\""
+    "migration:run": "node -e \"require('@vendure/core').runMigrations(require('./dist/vendure-config').config).then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); })\"",
+    "entrypoint": "ts-node ./src/entrypoint.ts",
+    "test": "ts-node ./src/test-suite.ts",
+    "test:fresh-setup": "TEST_FRESH_SETUP_ONLY=true ts-node ./src/test-suite.ts",
+    "test:all": "npm run build && npm run test"
   },
   "dependencies": {
     "@vendure/admin-ui-plugin": "3.4.3",

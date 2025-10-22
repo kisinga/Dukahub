@@ -98,10 +98,27 @@ export const GET_ACTIVE_CHANNEL = graphql(`
       token
       defaultCurrencyCode
       customFields {
-        mlModelJsonId
-        mlModelBinId
-        mlMetadataId
-        companyLogoId
+        mlModelJsonAsset {
+          id
+          source
+          name
+        }
+        mlModelBinAsset {
+          id
+          source
+          name
+        }
+        mlMetadataAsset {
+          id
+          source
+          name
+        }
+        companyLogoAsset {
+          id
+          source
+          name
+          preview
+        }
         cashierFlowEnabled
         cashierOpen
       }
@@ -712,8 +729,13 @@ export const GET_PAYMENT_METHODS = graphql(`
         description
         enabled
         customFields {
-          icon
-          image
+          imageAsset {
+            id
+            source
+            name
+            preview
+          }
+          isActive
         }
       }
     }
@@ -730,8 +752,13 @@ export const GET_CHANNEL_PAYMENT_METHODS = graphql(`
         description
         enabled
         customFields {
-          icon
-          image
+          imageAsset {
+            id
+            source
+            name
+            preview
+          }
+          isActive
         }
       }
     }
@@ -764,16 +791,8 @@ export const GET_ORDER = graphql(`
 // ML MODEL & TRAINING
 // ============================================================================
 
-export const GET_ML_MODEL_ASSETS = graphql(`
-  query GetMLModelAssets($ids: [String!]!) {
-    assets(options: { filter: { id: { in: $ids } } }) {
-      items {
-        id
-        source
-      }
-    }
-  }
-`);
+// REMOVED: GET_ML_MODEL_ASSETS - No longer needed with Asset relationships
+// The ML model assets are now fetched directly as part of the channel custom fields
 
 export const GET_ML_TRAINING_INFO = graphql(`
   query GetMlTrainingInfo($channelId: ID!) {
