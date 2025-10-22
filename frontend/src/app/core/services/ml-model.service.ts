@@ -63,6 +63,13 @@ export class MlModelService {
 
     private readonly MODEL_CACHE_NAME = 'dukahub-ml-models';
 
+    // Cache for asset sources to prevent duplicate queries
+    private assetSourcesCache = new Map<string, {
+        modelUrl: string;
+        weightsUrl: string;
+        metadataUrl: string;
+    } | null>();
+
     readonly isLoading = this.isLoadingSignal.asReadonly();
     readonly isInitialized = this.isInitializedSignal.asReadonly();
     readonly error = this.errorSignal.asReadonly();
@@ -77,6 +84,13 @@ export class MlModelService {
         weightsUrl: string;
         metadataUrl: string;
     } | null> {
+        // Check cache first to prevent duplicate queries
+        const cacheKey = channelId;
+        if (this.assetSourcesCache.has(cacheKey)) {
+            console.log('📦 Using cached asset sources for channel:', channelId);
+            return this.assetSourcesCache.get(cacheKey) || null;
+        }
+
         const client = this.apolloService.getClient();
 
         // Get asset IDs from CompanyService (already fetched on boot)
@@ -84,52 +98,100 @@ export class MlModelService {
 
         if (!assetIds) {
             console.log('No ML model configured for this channel');
+            this.assetSourcesCache.set(cacheKey, null);
             return null;
         }
 
-        // Get asset source paths using the IDs from CompanyService
-        const assetsResult = await client.query<{
-            assets: {
-                items: Array<{
-                    id: string;
-                    source: string;
-                }>;
-            };
-        }>({
-            query: GET_ML_MODEL_ASSETS,
-            variables: {
-                ids: [assetIds.mlModelJsonId, assetIds.mlModelBinId, assetIds.mlMetadataId],
-            },
-            fetchPolicy: 'network-only',
-        });
+        try {
+            // Get asset source paths using the IDs from CompanyService
+            const assetsResult = await client.query<{
+                assets: {
+                    items: Array<{
+                        id: string;
+                        source: string;
+                    }>;
+                };
+            }>({
+                query: GET_ML_MODEL_ASSETS,
+                variables: {
+                    ids: [assetIds.mlModelJsonId, assetIds.mlModelBinId, assetIds.mlMetadataId],
+                },
+                fetchPolicy: 'network-only',
+                errorPolicy: 'all', // Return partial data even if there are errors
+            });
 
-        const assets = assetsResult.data?.assets?.items || [];
+            console.log('📦 Assets query result:', {
+                hasData: !!assetsResult.data,
+                hasError: !!assetsResult.error,
+                itemsCount: assetsResult.data?.assets?.items?.length || 0,
+                items: assetsResult.data?.assets?.items || []
+            });
 
-        const modelAsset = assets.find((a: any) => a.id === assetIds.mlModelJsonId);
-        const weightsAsset = assets.find((a: any) => a.id === assetIds.mlModelBinId);
-        const metadataAsset = assets.find((a: any) => a.id === assetIds.mlMetadataId);
-
-        if (!modelAsset || !weightsAsset || !metadataAsset) {
-            return null;
-        }
-
-        // Helper: convert source to URL (handle both relative paths and full URLs)
-        const toUrl = (source: string): string => {
-            // If source is already a full URL, use it as-is
-            if (source.startsWith('http://') || source.startsWith('https://')) {
-                return source;
+            if (assetsResult.error) {
+                console.error('❌ Assets query error:', assetsResult.error);
             }
-            // The source field from Vendure contains the relative path within asset storage
-            // We need to construct the proper asset URL by prepending /assets/
-            // Source format: "source/49/metadata.json" -> URL: "/assets/source/49/metadata.json"
-            return `/assets/${source}`;
-        };
 
-        return {
-            modelUrl: toUrl(modelAsset.source),
-            weightsUrl: toUrl(weightsAsset.source),
-            metadataUrl: toUrl(metadataAsset.source),
-        };
+            const assets = assetsResult.data?.assets?.items || [];
+
+            if (assets.length === 0) {
+                console.error('❌ No assets found for ML model IDs:', {
+                    requestedIds: [assetIds.mlModelJsonId, assetIds.mlModelBinId, assetIds.mlMetadataId],
+                    foundAssets: assets
+                });
+                return null;
+            }
+
+            const modelAsset = assets.find((a: any) => a.id === assetIds.mlModelJsonId);
+            const weightsAsset = assets.find((a: any) => a.id === assetIds.mlModelBinId);
+            const metadataAsset = assets.find((a: any) => a.id === assetIds.mlMetadataId);
+
+
+            if (!modelAsset || !weightsAsset || !metadataAsset) {
+                console.error('❌ Missing required assets:', {
+                    hasModelAsset: !!modelAsset,
+                    hasWeightsAsset: !!weightsAsset,
+                    hasMetadataAsset: !!metadataAsset,
+                    availableAssets: assets.map(a => ({ id: a.id, source: a.source }))
+                });
+                return null;
+            }
+
+            // Helper: convert source to URL (handle both relative paths and full URLs)
+            const toUrl = (source: string): string => {
+                // If source is already a full URL, use it as-is
+                if (source.startsWith('http://') || source.startsWith('https://')) {
+                    return source;
+                }
+                // The source field from Vendure contains the relative path within asset storage
+                // We need to construct the proper asset URL by prepending /assets/
+                // Source format: "source/49/metadata.json" -> URL: "/assets/source/49/metadata.json"
+                return `/assets/${source}`;
+            };
+
+            const sources = {
+                modelUrl: toUrl(modelAsset.source),
+                weightsUrl: toUrl(weightsAsset.source),
+                metadataUrl: toUrl(metadataAsset.source),
+            };
+
+            console.log('✅ ML model sources resolved:', sources);
+
+            // Cache the results to prevent duplicate queries
+            this.assetSourcesCache.set(cacheKey, sources);
+            return sources;
+
+        } catch (error: any) {
+            console.error('❌ Failed to fetch ML model assets:', error);
+            console.error('❌ Error details:', {
+                message: error.message,
+                graphQLErrors: error.graphQLErrors,
+                networkError: error.networkError
+            });
+
+            // Cache the failure to prevent repeated attempts
+            this.assetSourcesCache.set(cacheKey, null);
+            return null;
+        }
     }
 
     /**
@@ -341,6 +403,14 @@ export class MlModelService {
         } catch (error) {
             console.error('Error clearing model cache:', error);
         }
+    }
+
+    /**
+     * Clear asset sources cache (useful when channel changes)
+     */
+    clearAssetSourcesCache(): void {
+        this.assetSourcesCache.clear();
+        console.log('🗑️ Asset sources cache cleared');
     }
 
     /**
