@@ -309,14 +309,14 @@
       }
 
       <div class="flex gap-2">
-        <button type="button" (click)="cancel()" class="btn btn-ghost btn-sm" [disabled]="isSubmitting()">Cancel</button>
+        <button type="button" (click)="cancel()" class="btn btn-ghost btn-sm" [disabled]="isLoading()">Cancel</button>
         <button
           type="button"
           class="btn btn-primary flex-1"
-          [disabled]="!canSubmit() || isSubmitting()"
+          [disabled]="!canSubmit() || isLoading()"
           (click)="submitForm()"
         >
-          @if (isSubmitting()) {
+          @if (isLoading()) {
           <span class="loading loading-spinner loading-sm"></span>
           <span>Creating...</span>
           } @else {

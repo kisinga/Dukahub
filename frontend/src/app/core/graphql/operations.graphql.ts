@@ -711,6 +711,28 @@ export const GET_PAYMENT_METHODS = graphql(`
         name
         description
         enabled
+        customFields {
+          icon
+          image
+        }
+      }
+    }
+  }
+`);
+
+export const GET_CHANNEL_PAYMENT_METHODS = graphql(`
+  query GetChannelPaymentMethods {
+    paymentMethods(options: { take: 100 }) {
+      items {
+        id
+        code
+        name
+        description
+        enabled
+        customFields {
+          icon
+          image
+        }
       }
     }
   }

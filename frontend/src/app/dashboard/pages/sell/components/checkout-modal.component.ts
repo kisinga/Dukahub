@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { CurrencyService } from '../../../../core/services/currency.service';
+import { PaymentMethod, PaymentMethodService } from '../../../../core/services/payment-method.service';
 import { Customer, CustomerSelectorComponent } from './customer-selector.component';
 
 type CheckoutType = 'credit' | 'cashier' | 'cash' | null;
-type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
+type PaymentMethodCode = string;
 
 /**
  * Unified checkout modal handling all payment flows
@@ -267,6 +268,28 @@ type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
               <p class="text-base-content/60">Select your preferred payment method</p>
             </div>
 
+            @if (paymentMethodsError()) {
+            <div class="alert alert-error animate-in slide-in-from-top-2 duration-300 delay-100">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <div class="text-sm">
+                <p class="font-semibold">Payment Methods Not Available</p>
+                <p class="mt-1">{{ paymentMethodsError() }}</p>
+              </div>
+            </div>
+            } @else {
             <div class="alert alert-info animate-in slide-in-from-top-2 duration-300 delay-100">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -282,44 +305,65 @@ type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
                   d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span class="text-sm">Payment processing integration coming soon</span>
+              <span class="text-sm">Select your preferred payment method</span>
             </div>
 
             <!-- Payment Method Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-bottom-2 duration-300 delay-200">
-              @for (method of paymentMethods; track method.value; let i = $index) {
+              @for (method of paymentMethods(); track method.id; let i = $index) {
               <button
                 class="card hover:bg-base-200 border-2 transition-all duration-200 p-6 hover:scale-105 active:scale-95"
-                [class.border-success]="selectedPaymentMethod() === method.value"
-                [class.bg-success/10]="selectedPaymentMethod() === method.value"
-                [class.border-base-300]="selectedPaymentMethod() !== method.value"
-                [class.animate-in]="selectedPaymentMethod() === method.value"
-                [class.slide-in-from-left-2]="selectedPaymentMethod() === method.value"
-                (click)="paymentMethodSelect.emit(method.value)"
+                [class.border-success]="selectedPaymentMethod() === method.code"
+                [class.bg-success/10]="selectedPaymentMethod() === method.code"
+                [class.border-base-300]="selectedPaymentMethod() !== method.code"
+                [class.animate-in]="selectedPaymentMethod() === method.code"
+                [class.slide-in-from-left-2]="selectedPaymentMethod() === method.code"
+                (click)="onPaymentMethodSelect(method.code)"
                 [style.animation-delay]="(i * 100) + 'ms'"
               >
                 <div class="flex flex-col items-center gap-3">
                   <div class="w-12 h-12 rounded-full flex items-center justify-center"
-                       [class.bg-success/20]="selectedPaymentMethod() === method.value"
-                       [class.bg-base-200]="selectedPaymentMethod() !== method.value">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-6 w-6"
-                      [class.text-success]="selectedPaymentMethod() === method.value"
-                      [class.text-base-content/60]="selectedPaymentMethod() !== method.value"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        [attr.d]="method.icon"
-                      />
-                    </svg>
+                       [class.bg-success/20]="selectedPaymentMethod() === method.code"
+                       [class.bg-base-200]="selectedPaymentMethod() !== method.code">
+                    @if (method.customFields?.image) {
+                      <img [src]="method.customFields?.image" [alt]="method.name" class="w-8 h-8 object-contain" />
+                    } @else if (method.customFields?.icon) {
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-6 w-6"
+                        [class.text-success]="selectedPaymentMethod() === method.code"
+                        [class.text-base-content/60]="selectedPaymentMethod() !== method.code"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          [attr.d]="method.customFields?.icon"
+                        />
+                      </svg>
+                    } @else {
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-6 w-6"
+                        [class.text-success]="selectedPaymentMethod() === method.code"
+                        [class.text-base-content/60]="selectedPaymentMethod() !== method.code"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                      </svg>
+                    }
                   </div>
-                  <span class="font-semibold text-sm">{{ method.label }}</span>
+                  <span class="font-semibold text-sm">{{ method.name }}</span>
                 </div>
               </button>
               }
@@ -335,7 +379,7 @@ type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
                 </div>
                 <div class="flex justify-between items-center mb-3">
                   <span class="text-sm text-base-content/60">Payment Method</span>
-                  <span class="badge badge-success badge-lg">{{ selectedPaymentMethod() }}</span>
+                  <span class="badge badge-success badge-lg">{{ getSelectedPaymentMethodName() }}</span>
                 </div>
                 <div class="divider my-3"></div>
                 <div class="flex justify-between items-center">
@@ -372,6 +416,7 @@ type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
               </button>
             </div>
             }
+            }
           </div>
           }
         </div>
@@ -382,8 +427,9 @@ type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CheckoutModalComponent {
+export class CheckoutModalComponent implements OnInit {
   readonly currencyService = inject(CurrencyService);
+  readonly paymentMethodService = inject(PaymentMethodService);
 
   readonly isOpen = input.required<boolean>();
   readonly checkoutType = input.required<CheckoutType>();
@@ -398,7 +444,7 @@ export class CheckoutModalComponent {
   readonly isSearchingCustomers = input<boolean>(false);
 
   // Cash sale inputs
-  readonly selectedPaymentMethod = input<PaymentMethod | null>(null);
+  readonly selectedPaymentMethod = input<PaymentMethodCode | null>(null);
 
   // Outputs
   readonly completeCashier = output<void>();
@@ -407,20 +453,35 @@ export class CheckoutModalComponent {
   readonly customerSearch = output<string>();
   readonly customerSelect = output<Customer | null>();
   readonly customerCreate = output<{ name: string; phone: string; email?: string }>();
-  readonly paymentMethodSelect = output<PaymentMethod>();
+  readonly paymentMethodSelect = output<PaymentMethodCode>();
   readonly closeModal = output<void>();
 
-  readonly paymentMethods = [
-    {
-      value: 'CASH' as PaymentMethod,
-      label: 'Cash',
-      icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z',
-    },
-    {
-      value: 'MOBILE_MONEY' as PaymentMethod,
-      label: 'M-Pesa',
-      icon: 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z',
-    },
-  ];
+  // Dynamic payment methods
+  readonly paymentMethods = signal<PaymentMethod[]>([]);
+  readonly paymentMethodsError = signal<string | null>(null);
+
+  async ngOnInit() {
+    try {
+      const methods = await this.paymentMethodService.getPaymentMethods();
+      this.paymentMethods.set(methods);
+      this.paymentMethodsError.set(null);
+    } catch (error) {
+      console.error('Failed to load payment methods:', error);
+      this.paymentMethodsError.set(error instanceof Error ? error.message : 'Failed to load payment methods');
+      this.paymentMethods.set([]);
+    }
+  }
+
+  getSelectedPaymentMethodName(): string {
+    const selectedCode = this.selectedPaymentMethod();
+    if (!selectedCode) return '';
+
+    const method = this.paymentMethods().find(m => m.code === selectedCode);
+    return method?.name || selectedCode;
+  }
+
+  onPaymentMethodSelect(code: string): void {
+    this.paymentMethodSelect.emit(code as PaymentMethodCode);
+  }
 }
 

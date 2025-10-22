@@ -311,6 +311,26 @@ export const config: VendureConfig = {
                 ui: { tab: 'Financial' },
             },
         ],
+        PaymentMethod: [
+            {
+                name: 'icon',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'Payment Method Icon' }],
+                description: [{ languageCode: LanguageCode.en, value: 'SVG icon path or class name for the payment method' }],
+                public: true,
+                nullable: true,
+                ui: { tab: 'Display' },
+            },
+            {
+                name: 'image',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'Payment Method Image' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Asset ID for payment method image/logo' }],
+                public: true,
+                nullable: true,
+                ui: { tab: 'Display' },
+            },
+        ],
         StockLocation: [],
     },
     plugins: [

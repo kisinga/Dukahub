@@ -89,6 +89,9 @@ export class ProductCreateComponent implements OnInit {
     readonly submitError = signal<string | null>(null);
     readonly submitSuccess = signal(false);
 
+    // Computed: Combined loading state (component + service)
+    readonly isLoading = computed(() => this.isSubmitting() || this.productService.isCreating());
+
     // Default location for the active channel
     readonly defaultLocation = computed(() => this.stockLocationService.getDefaultLocation());
 
@@ -116,11 +119,11 @@ export class ProductCreateComponent implements OnInit {
     // Computed: Form validity
     readonly canSubmit = computed(() => {
         const isValid = this.formValid(); // Use signal instead of direct form access
-        const notSubmitting = !this.isSubmitting();
+        const notLoading = !this.isLoading();
         const hasLocation = !!this.defaultLocation();
         const hasIdentification = this.hasValidIdentification();
 
-        return isValid && notSubmitting && hasLocation && hasIdentification;
+        return isValid && notLoading && hasLocation && hasIdentification;
     });
 
     // Computed: Validation issues
@@ -481,6 +484,7 @@ export class ProductCreateComponent implements OnInit {
 
             if (type === 'product' && !stockLocationId) {
                 this.submitError.set('No active location. Please select a location from the navbar.');
+                this.isSubmitting.set(false);
                 return;
             }
 

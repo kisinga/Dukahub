@@ -11,7 +11,7 @@ export interface CreateOrderInput {
         variantId: string;
         quantity: number;
     }>;
-    paymentMethodCode: 'cash-payment' | 'mpesa-payment';
+    paymentMethodCode: string;
     customerId?: string;
     metadata?: Record<string, any>;
 }

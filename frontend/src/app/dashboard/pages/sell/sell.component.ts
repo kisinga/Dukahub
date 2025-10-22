@@ -12,7 +12,7 @@ import { ProductScannerComponent } from './components/product-scanner.component'
 import { ProductSearchComponent } from './components/product-search.component';
 
 type CheckoutType = 'credit' | 'cashier' | 'cash' | null;
-type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY' | 'BANK_TRANSFER';
+type PaymentMethodCode = string;
 
 /**
  * Main POS sell page - orchestrates child components
@@ -99,7 +99,7 @@ export class SellComponent implements OnInit {
   readonly isSearchingCustomers = signal<boolean>(false);
 
   // Payment method state (for cash sales)
-  readonly selectedPaymentMethod = signal<PaymentMethod | null>(null);
+  readonly selectedPaymentMethod = signal<PaymentMethodCode | null>(null);
 
   ngOnInit(): void {
     // Component initialization handled by child components
@@ -309,7 +309,7 @@ export class SellComponent implements OnInit {
   }
 
   // Payment Method Handler (Cash Sales)
-  handlePaymentMethodSelect(method: PaymentMethod): void {
+  handlePaymentMethodSelect(method: PaymentMethodCode): void {
     this.selectedPaymentMethod.set(method);
   }
 
@@ -389,16 +389,12 @@ export class SellComponent implements OnInit {
     this.checkoutError.set(null);
 
     try {
-      const paymentCode = this.selectedPaymentMethod() === 'MOBILE_MONEY'
-        ? 'mpesa-payment'
-        : 'cash-payment';
-
       const order = await this.orderService.createOrder({
         cartItems: this.cartItems().map(item => ({
           variantId: item.variant.id,
           quantity: item.quantity
         })),
-        paymentMethodCode: paymentCode,
+        paymentMethodCode: this.selectedPaymentMethod()!,
         metadata: {
           paymentMethod: this.selectedPaymentMethod()
         }
