@@ -87,7 +87,6 @@ export class MlModelService {
         // Check cache first to prevent duplicate queries
         const cacheKey = channelId;
         if (this.assetSourcesCache.has(cacheKey)) {
-            console.log('📦 Using cached asset sources for channel:', channelId);
             return this.assetSourcesCache.get(cacheKey) || null;
         }
 
@@ -97,7 +96,6 @@ export class MlModelService {
         const assetIds = this.companyService.mlModelAssetIds();
 
         if (!assetIds) {
-            console.log('No ML model configured for this channel');
             this.assetSourcesCache.set(cacheKey, null);
             return null;
         }
@@ -118,13 +116,6 @@ export class MlModelService {
                 },
                 fetchPolicy: 'network-only',
                 errorPolicy: 'all', // Return partial data even if there are errors
-            });
-
-            console.log('📦 Assets query result:', {
-                hasData: !!assetsResult.data,
-                hasError: !!assetsResult.error,
-                itemsCount: assetsResult.data?.assets?.items?.length || 0,
-                items: assetsResult.data?.assets?.items || []
             });
 
             if (assetsResult.error) {
@@ -156,11 +147,14 @@ export class MlModelService {
                 return null;
             }
 
-            // Helper: convert source to URL (handle both relative paths and full URLs)
+            // Helper: convert source to URL (handle proxy scenarios)
             const toUrl = (source: string): string => {
-                // If source is already a full URL, use it as-is
+                // If source is already a full URL, extract the path for proxy compatibility
                 if (source.startsWith('http://') || source.startsWith('https://')) {
-                    return source;
+                    // Extract path from full URL for proxy compatibility
+                    // "http://localhost:3000/assets/source/fa/model__02.json" -> "/assets/source/fa/model__02.json"
+                    const url = new URL(source);
+                    return url.pathname;
                 }
                 // The source field from Vendure contains the relative path within asset storage
                 // We need to construct the proper asset URL by prepending /assets/
@@ -174,7 +168,7 @@ export class MlModelService {
                 metadataUrl: toUrl(metadataAsset.source),
             };
 
-            console.log('✅ ML model sources resolved:', sources);
+            console.log('✅ ML model sources resolved');
 
             // Cache the results to prevent duplicate queries
             this.assetSourcesCache.set(cacheKey, sources);
@@ -231,7 +225,6 @@ export class MlModelService {
      */
     async loadModel(channelId: string): Promise<boolean> {
         if (this.model) {
-            console.log('✅ Model already loaded in memory');
             return true;
         }
 
@@ -249,10 +242,6 @@ export class MlModelService {
             // Initialize TensorFlow backend
             await tf.setBackend('webgl');
             await tf.ready();
-            console.log(`🔧 TensorFlow.js backend ready: ${tf.getBackend()}`);
-
-            // Load metadata
-            console.log('📄 Loading metadata from:', sources.metadataUrl);
             const metadataResponse = await fetch(sources.metadataUrl);
             if (!metadataResponse.ok) {
                 throw new Error(`Failed to fetch metadata: HTTP ${metadataResponse.status}`);
@@ -264,29 +253,14 @@ export class MlModelService {
             const cacheKey = `indexeddb://${this.MODEL_CACHE_NAME}/${channelId}`;
 
             try {
-                console.log('💾 Loading from IndexedDB cache...');
                 this.model = await tf.loadLayersModel(cacheKey);
-                console.log('✅ Model loaded from cache');
             } catch {
                 // Cache miss - load from network
-                console.log('🌐 Loading from network:', sources.modelUrl);
                 this.model = await tf.loadLayersModel(sources.modelUrl);
-
-                // Save to cache
-                console.log('💾 Caching model...');
                 await this.model.save(cacheKey);
-                console.log('✅ Model cached');
             }
 
             this.isInitializedSignal.set(true);
-
-            console.log('✅ Model ready:', {
-                channelId,
-                version: this.metadata?.version,
-                productCount: this.metadata?.productCount,
-                labels: this.metadata?.labels?.length || 0,
-            });
-
             return true;
         } catch (error: any) {
             console.error('❌ Failed to load model:', error);
@@ -383,7 +357,6 @@ export class MlModelService {
             this.metadata = null;
             this.isInitializedSignal.set(false);
             this.errorSignal.set(null);
-            console.log('🗑️ Model unloaded from memory');
         }
     }
 
@@ -398,7 +371,6 @@ export class MlModelService {
             const models = await tf.io.listModels();
             if (models[cacheKey]) {
                 await tf.io.removeModel(cacheKey);
-                console.log(`🗑️ Model cache cleared for channel ${channelId}`);
             }
         } catch (error) {
             console.error('Error clearing model cache:', error);
@@ -410,7 +382,6 @@ export class MlModelService {
      */
     clearAssetSourcesCache(): void {
         this.assetSourcesCache.clear();
-        console.log('🗑️ Asset sources cache cleared');
     }
 
     /**
