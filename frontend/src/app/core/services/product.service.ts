@@ -1,14 +1,12 @@
 import { inject, Injectable, signal } from '@angular/core';
-// Types will be available after first codegen run
-// import type {
-//     CheckSkuExistsQuery,
-//     CreateProductMutation,
-//     CreateProductMutationVariables,
-//     CreateProductVariantsMutation,
-//     GetProductDetailQuery,
-//     GetProductsQuery,
-//     GetProductsQueryVariables
-// } from '../graphql/generated/graphql';
+import type {
+    CreateProductVariantsMutation,
+    CreateProductVariantsMutationVariables,
+    DeleteProductMutation,
+    DeleteProductMutationVariables,
+    UpdateProductVariantMutation,
+    UpdateProductVariantMutationVariables
+} from '../graphql/generated/graphql';
 import {
     ADD_OPTION_GROUP_TO_PRODUCT,
     ASSIGN_ASSETS_TO_PRODUCT,
@@ -20,7 +18,8 @@ import {
     DELETE_PRODUCT,
     GET_PRODUCT_DETAIL,
     GET_PRODUCTS,
-    UPDATE_PRODUCT_ASSETS
+    UPDATE_PRODUCT_ASSETS,
+    UPDATE_PRODUCT_VARIANT
 } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
@@ -157,7 +156,17 @@ export class ProductService {
                 throw new Error('Duplicate SKUs detected. Each variant must have a unique SKU.');
             }
 
-            // Step 2: Check if any SKUs already exist in the system
+            // Step 2: Validate all variant prices
+            const invalidPrices = variants
+                .map((v, i) => ({ index: i, price: v.price, sku: v.sku }))
+                .filter(v => v.price === null || v.price === undefined || isNaN(v.price) || v.price <= 0);
+
+            if (invalidPrices.length > 0) {
+                const invalidDetails = invalidPrices.map(v => `Variant ${v.index + 1} (${v.sku}): ${v.price}`).join(', ');
+                throw new Error(`Invalid prices detected: ${invalidDetails}. All prices must be positive numbers.`);
+            }
+
+            // Step 3: Check if any SKUs already exist in the system
             const skuChecks = await Promise.all(
                 variants.map((v) => this.checkSKUExists(v.sku))
             );
@@ -175,7 +184,7 @@ export class ProductService {
 
             // EXECUTION PHASE: Create in order, with automatic rollback on failure
 
-            // Step 3: Create the product
+            // Step 4: Create the product
             console.log('📦 Creating product...');
             const productId = await this.createProduct(productInput);
             if (!productId) {
@@ -184,7 +193,7 @@ export class ProductService {
             createdProductId = productId;
             console.log('✅ Product created:', productId);
 
-            // Step 4: Create option group and variants
+            // Step 5: Create option group and variants
             console.log('📦 Creating variants...');
             try {
                 let variantsWithOptions = variants;
@@ -218,7 +227,7 @@ export class ProductService {
                 throw new Error(`Variant creation failed - product cleanup pending. Details: ${variantError.message}`);
             }
 
-            // Step 5: Upload photos (non-blocking - if it fails, product/variants are still created)
+            // Step 6: Upload photos (non-blocking - if it fails, product/variants are still created)
             console.log('✅ Product and variants created successfully');
             return productId;
         } catch (error: any) {
@@ -283,15 +292,29 @@ export class ProductService {
             for (let i = 0; i < variants.length; i++) {
                 const v = variants[i];
 
+                // Validate price before proceeding
+                if (v.price === null || v.price === undefined || isNaN(v.price) || v.price <= 0) {
+                    console.error(`❌ Invalid price for variant ${i + 1}:`, v.price);
+                    throw new Error(`Invalid price for variant ${i + 1}: ${v.price}. Price must be a positive number.`);
+                }
+
                 // Convert boolean trackInventory to Vendure's GlobalFlag enum ("TRUE" or "FALSE")
                 const trackInventoryValue = v.trackInventory !== undefined
                     ? (v.trackInventory ? 'TRUE' : 'FALSE')
                     : 'TRUE'; // Default to TRUE (track inventory)
 
+                // Since prices include tax, use the price directly
+                // Use prices array for proper multi-currency support
                 const input: any = {
                     productId,
                     sku: v.sku,
                     price: Math.round(v.price * 100), // Convert price to cents for GraphQL Money type
+                    prices: [
+                        {
+                            price: Math.round(v.price * 100), // Convert price to cents
+                            currencyCode: 'KES' as any // Use channel currency
+                        }
+                    ],
                     trackInventory: trackInventoryValue, // Use enum string value
                     stockOnHand: v.stockOnHand,
                     translations: [
@@ -319,8 +342,9 @@ export class ProductService {
                 }
 
                 console.log(`🔧 Creating variant ${i + 1}/${variants.length}:`, v.sku);
+                console.log(`🔧 Variant input data:`, JSON.stringify(input, null, 2));
 
-                const result = await client.mutate<any>({
+                const result = await client.mutate<CreateProductVariantsMutation, CreateProductVariantsMutationVariables>({
                     mutation: CREATE_PRODUCT_VARIANTS,
                     variables: { input: [input] }, // Send as single-item array
                 });
@@ -337,6 +361,13 @@ export class ProductService {
                 if (!variantResult) {
                     throw new Error(`Variant ${i + 1} was not created`);
                 }
+
+                console.log(`🔧 Created variant details:`, {
+                    id: variantResult.id,
+                    sku: variantResult.sku,
+                    price: variantResult.price,
+                    priceWithTax: variantResult.priceWithTax
+                });
 
                 createdVariants.push(variantResult);
                 console.log(`✅ Variant ${i + 1} created:`, variantResult.sku);
@@ -566,7 +597,7 @@ export class ProductService {
             console.log('🗑️ Deleting product:', productId);
             const client = this.apolloService.getClient();
 
-            const result = await client.mutate<any>({
+            const result = await client.mutate<DeleteProductMutation, DeleteProductMutationVariables>({
                 mutation: DELETE_PRODUCT,
                 variables: { id: productId },
             });
@@ -714,6 +745,51 @@ export class ProductService {
         }
     }
 
+
+    /**
+     * Update variant prices to fix tax calculation issues
+     * This method should be called to fix existing products with incorrect pricing
+     * @param productId - Product ID to update
+     * @param variants - Array of variants with corrected prices
+     */
+    async updateVariantPrices(productId: string, variants: { id: string; price: number }[]): Promise<boolean> {
+        try {
+            console.log('🔄 Updating variant prices for product:', productId);
+            const client = this.apolloService.getClient();
+
+            for (const variant of variants) {
+                const result = await client.mutate<UpdateProductVariantMutation, UpdateProductVariantMutationVariables>({
+                    mutation: UPDATE_PRODUCT_VARIANT,
+                    variables: {
+                        input: {
+                            id: variant.id,
+                            price: Math.round(variant.price * 100), // Convert to cents
+                            prices: [
+                                {
+                                    price: Math.round(variant.price * 100), // Convert to cents
+                                    currencyCode: 'KES' as any // Use channel currency
+                                }
+                            ]
+                        }
+                    }
+                });
+
+                if (result.error) {
+                    console.error(`❌ Failed to update variant ${variant.id}:`, result.error);
+                    return false;
+                }
+
+                console.log(`✅ Updated variant ${variant.id} price to: ${variant.price}`);
+            }
+
+            return true;
+        } catch (error: any) {
+            console.error('❌ Failed to update variant prices:', error);
+            this.errorSignal.set(error.message || 'Failed to update variant prices');
+            return false;
+        }
+    }
+
     /**
      * Clear error state
      */
@@ -745,13 +821,27 @@ export class ProductService {
             const items = result.data?.products?.items || [];
             const total = result.data?.products?.totalItems || 0;
 
-            // Keep prices in cents for currency service to handle conversion
+            // Process products to ensure prices are displayed correctly
             const processedItems = items.map((product: any) => ({
                 ...product,
-                variants: product.variants?.map((variant: any) => ({
-                    ...variant,
-                    priceWithTax: variant.priceWithTax, // Keep raw cents for currency service
-                })) || []
+                variants: product.variants?.map((variant: any) => {
+                    // Find the KES price from the prices array
+                    const kesPrice = variant.prices?.find((p: any) => p.currencyCode === 'KES');
+                    const displayPrice = kesPrice?.price || variant.priceWithTax || variant.price || 0;
+
+                    return {
+                        ...variant,
+                        // Use the KES price from prices array as the display price
+                        displayPrice: displayPrice,
+                        // Keep both price and priceWithTax for compatibility
+                        price: variant.price,
+                        priceWithTax: variant.priceWithTax,
+                        // Extract currency from prices array if available
+                        currencyCode: kesPrice?.currencyCode || 'KES',
+                        // Add the KES price for easy access
+                        kesPrice: displayPrice
+                    };
+                }) || []
             }));
             console.log("fetchProducts", result.data?.products?.items);
             this.productsSignal.set(processedItems);

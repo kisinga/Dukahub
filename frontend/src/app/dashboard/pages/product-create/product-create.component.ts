@@ -496,7 +496,12 @@ export class ProductCreateComponent implements OnInit {
             // Use Vendure's native trackInventory field:
             // - trackInventory: false → Service (infinite stock, no tracking)
             // - trackInventory: true → Product (tracked stock)
+            console.log('🔍 Form data before processing:', formValue);
+            console.log('🔍 SKUs from form:', formValue.skus);
+
             const variantInputs = formValue.skus.map((sku: any, index: number) => {
+                console.log(`🔍 Processing SKU ${index + 1}:`, sku);
+
                 // Append unique suffix to SKU to prevent duplicates
                 // Format: USER_SKU-TIMESTAMP-INDEX
                 const uniqueSku = `${sku.sku.trim().toUpperCase()}-${this.skuUniqueSuffix}-${index + 1}`;
@@ -505,7 +510,7 @@ export class ProductCreateComponent implements OnInit {
                     return {
                         sku: uniqueSku,
                         name: sku.name.trim(),
-                        priceWithTax: Number(sku.price),
+                        price: Number(sku.price), // Use 'price' field as expected by VariantInput interface
                         trackInventory: false, // Services: infinite stock
                         stockOnHand: 0,
                         stockLocationId: undefined, // Services don't need location
@@ -514,13 +519,15 @@ export class ProductCreateComponent implements OnInit {
                     return {
                         sku: uniqueSku,
                         name: sku.name.trim(),
-                        priceWithTax: Number(sku.price),
+                        price: Number(sku.price), // Use 'price' field as expected by VariantInput interface
                         trackInventory: true, // Products: track stock
                         stockOnHand: Number(sku.stockOnHand),
                         stockLocationId: stockLocationId!,
                     };
                 }
             });
+
+            console.log('🔍 Final variant inputs:', variantInputs);
 
             const productId = await this.productService.createProductWithVariants(
                 productInput,
