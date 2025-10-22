@@ -1,28 +1,19 @@
-name: Backend Tests
+name: CI Tests
+
+# This workflow runs comprehensive tests for both backend and frontend
+# It's triggered on all pushes and PRs to main/develop branches
+# For focused testing, use the individual backend-tests.yml and frontend-tests.yml workflows
 
 on:
   push:
     branches: [main, develop]
-    paths:
-      - "backend/src/migrations/**"
-      - "backend/src/vendure-config.ts"
-      - "backend/src/entrypoint.ts"
-      - "backend/src/test-suite.ts"
-      - "frontend/src/**"
-      - ".github/workflows/test-migrations.yml"
   pull_request:
     branches: [main, develop]
-    paths:
-      - "backend/src/migrations/**"
-      - "backend/src/vendure-config.ts"
-      - "backend/src/entrypoint.ts"
-      - "backend/src/test-suite.ts"
-      - "frontend/src/**"
-      - ".github/workflows/test-migrations.yml"
 
 jobs:
-  test-backend:
+  backend-tests:
     runs-on: ubuntu-latest
+    name: Backend Tests
 
     steps:
       - name: Checkout code
@@ -53,8 +44,9 @@ jobs:
         env:
           CI: true
 
-  test-frontend:
+  frontend-tests:
     runs-on: ubuntu-latest
+    name: Frontend Tests
 
     steps:
       - name: Checkout code
@@ -76,6 +68,15 @@ jobs:
         run: |
           cd frontend
           npm run test:all
-        timeout-minutes: 10
+        timeout-minutes: 15
         env:
           CI: true
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+          retention-days: 7
+

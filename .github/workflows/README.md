@@ -1,59 +1,54 @@
 # GitHub Actions Workflows
 
-## Docker Build and Push – v2
+This directory contains the CI/CD workflows for the Dukahub project.
 
-Builds images using your existing `docker-compose.yml` and pushes to GitHub Container Registry.
+## Workflow Overview
 
-### Why This Approach?
+### 1. `backend-tests.yml`
+- **Purpose**: Runs backend-specific tests
+- **Triggers**: Changes to `backend/**` or the workflow file itself
+- **Branches**: `main`, `develop`
+- **Node.js**: v20
+- **Tests**: Backend build and test suite
 
-✅ **Consistency**: Uses the same docker-compose.yml as local development  
-✅ **Single source of truth**: One build configuration everywhere  
-✅ **Easier maintenance**: Update Dockerfile once, works everywhere
+### 2. `frontend-tests.yml`
+- **Purpose**: Runs frontend-specific tests
+- **Triggers**: Changes to `frontend/**` or the workflow file itself
+- **Branches**: `main`, `develop`
+- **Node.js**: v20
+- **Tests**: Frontend build and test suite
 
-### Triggers
+### 3. `ci.yml`
+- **Purpose**: Comprehensive CI that runs both backend and frontend tests
+- **Triggers**: All pushes and PRs to `main`/`develop` branches
+- **Branches**: `main`, `develop`
+- **Node.js**: v20
+- **Tests**: Both backend and frontend test suites
 
-- Push to `v2` branch
-- Manual trigger via workflow_dispatch
+### 4. `build-and-push.yml`
+- **Purpose**: Builds and pushes Docker images
+- **Triggers**: Changes to backend/frontend code or Docker files
+- **Branches**: `main`, `master`
+- **Output**: Docker images to GitHub Container Registry
 
-### Images
+## Branch Protection Setup
 
-- **Frontend**: `ghcr.io/kisinga/dukahub/frontend:latest`
-- **Backend**: `ghcr.io/kisinga/dukahub/backend:latest`
+To require these tests for merging to main:
 
-### Usage
+1. Go to repository Settings → Branches
+2. Add rule for `main` branch
+3. Enable "Require status checks to pass before merging"
+4. Select the required status checks:
+   - `backend-tests` (from backend-tests.yml)
+   - `frontend-tests` (from frontend-tests.yml)
+   - Or `CI Tests` (from ci.yml for comprehensive testing)
 
-#### Development (Build Locally)
+## Workflow Selection
 
-Use the standard docker-compose for development:
+- **For focused testing**: Use individual `backend-tests.yml` or `frontend-tests.yml`
+- **For comprehensive testing**: Use `ci.yml`
+- **For production builds**: Use `build-and-push.yml`
 
-```bash
-cd v2
-docker compose up --build
-```
+## Node.js Version
 
-This builds images from source. Best for active development.
-
-#### Production (Use Pre-Built Images)
-
-Use the production compose file with pre-built images from GHCR:
-
-```bash
-cd v2
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml up -d
-```
-
-This pulls the latest tested images. Best for deployment.
-
-#### Manual Image Pull
-
-```bash
-docker pull ghcr.io/kisinga/dukahub/frontend:latest
-docker pull ghcr.io/kisinga/dukahub/backend:latest
-```
-
-#### Making Images Public
-
-1. Go to repository → Packages
-2. Click package → Package settings
-3. Change visibility to Public
+All workflows use Node.js v20 to ensure compatibility with Angular CLI requirements.
