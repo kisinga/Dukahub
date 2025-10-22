@@ -185,4 +185,12 @@ const options: FrontendTestOptions = {
 };
 
 const frontendTestSuite = new FrontendTestSuite(options);
-frontendTestSuite.runAllTests().catch(console.error);
+frontendTestSuite.runAllTests()
+    .then(() => {
+        console.log('✅ Frontend tests completed successfully');
+        process.exit(0);
+    })
+    .catch((error) => {
+        console.error('❌ Frontend test suite failed:', error);
+        process.exit(1);
+    });

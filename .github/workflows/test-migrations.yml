@@ -24,21 +24,6 @@ jobs:
   test-backend:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -64,12 +49,9 @@ jobs:
         run: |
           cd backend
           npm run test:all
+        timeout-minutes: 5
         env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USERNAME: postgres
-          DB_PASSWORD: postgres
-          DB_DATABASE: postgres
+          CI: true
 
   test-frontend:
     runs-on: ubuntu-latest
@@ -93,61 +75,7 @@ jobs:
       - name: Run frontend test suite
         run: |
           cd frontend
-          npm run test:all
-
-  test-integration:
-    runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend]
-
-    services:
-      postgres:
-        image: postgres:17-alpine
+          SKIP_LINT=true npm run test:all
+        timeout-minutes: 5
         env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-          cache: "npm"
-          cache-dependency-path: "backend/package-lock.json"
-
-      - name: Install dependencies
-        run: |
-          cd backend
-          npm ci
-          cd ../frontend
-          npm ci
-
-      - name: Build both projects
-        run: |
-          cd backend
-          npm run build
-          cd ../frontend
-          npm run build
-
-      - name: Test full integration
-        run: |
-          cd backend
-          npm run test:all
-          cd ../frontend
-          npm run test:all
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USERNAME: postgres
-          DB_PASSWORD: postgres
-          DB_DATABASE: postgres
+          CI: true

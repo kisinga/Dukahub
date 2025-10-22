@@ -106,33 +106,11 @@ export class DukahubTestSuite {
     }
 
     /**
-     * Cleanup any running processes and exit properly
+     * Cleanup test environment (mocked - no real cleanup needed)
      */
     async cleanup(): Promise<void> {
         console.log('🧹 Cleaning up test environment...');
-
-        try {
-            // Kill any processes on port 3000
-            const { execSync } = require('child_process');
-            try {
-                execSync('kill -9 $(lsof -t -i:3000) 2>/dev/null || true', { stdio: 'inherit' });
-                console.log('✅ Killed processes on port 3000');
-            } catch (err) {
-                // Port might not be in use, that's fine
-            }
-
-            // Kill any Node processes that might be running our tests
-            try {
-                execSync('pkill -f "ts-node.*test-suite" 2>/dev/null || true', { stdio: 'inherit' });
-                console.log('✅ Killed test processes');
-            } catch (err) {
-                // No processes to kill, that's fine
-            }
-
-            console.log('✅ Test environment cleaned up');
-        } catch (error) {
-            console.warn('⚠️ Error during cleanup:', error);
-        }
+        console.log('✅ Test environment cleaned up (mocked)');
     }
 
 }
@@ -150,10 +128,13 @@ if (require.main === module) {
         process.exit(0);
     };
 
-    process.on('SIGINT', cleanup);
-    process.on('SIGTERM', cleanup);
-    process.on('SIGUSR1', cleanup);
-    process.on('SIGUSR2', cleanup);
+    // Only setup signal handlers in development, not in CI
+    if (process.env.NODE_ENV !== 'test' && !process.env.CI) {
+        process.on('SIGINT', cleanup);
+        process.on('SIGTERM', cleanup);
+        process.on('SIGUSR1', cleanup);
+        process.on('SIGUSR2', cleanup);
+    }
 
     // Check if we should run specific tests based on environment
     const runFreshSetupOnly = process.env.TEST_FRESH_SETUP_ONLY === 'true';
