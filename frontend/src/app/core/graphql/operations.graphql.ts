@@ -632,6 +632,95 @@ export const ADD_MANUAL_PAYMENT_TO_ORDER = graphql(`
   }
 `);
 
+export const SET_CUSTOMER_FOR_DRAFT_ORDER = graphql(`
+  mutation SetCustomerForDraftOrder($orderId: ID!, $customerId: ID!) {
+    setCustomerForDraftOrder(orderId: $orderId, customerId: $customerId) {
+      ... on Order {
+        id
+        code
+        state
+        total
+        totalWithTax
+        customer {
+          id
+          firstName
+          lastName
+          emailAddress
+        }
+      }
+      ... on EmailAddressConflictError {
+        errorCode
+        message
+      }
+    }
+  }
+`);
+
+export const SET_DRAFT_ORDER_SHIPPING_METHOD = graphql(`
+  mutation SetDraftOrderShippingMethod($orderId: ID!, $shippingMethodId: ID!) {
+    setDraftOrderShippingMethod(orderId: $orderId, shippingMethodId: $shippingMethodId) {
+      ... on Order {
+        id
+        code
+        state
+        total
+        totalWithTax
+        shippingLines {
+          id
+          shippingMethod {
+            id
+            name
+            code
+          }
+        }
+      }
+      ... on OrderModificationError {
+        errorCode
+        message
+      }
+    }
+  }
+`);
+
+export const SET_DRAFT_ORDER_BILLING_ADDRESS = graphql(`
+  mutation SetDraftOrderBillingAddress($orderId: ID!, $input: CreateAddressInput!) {
+    setDraftOrderBillingAddress(orderId: $orderId, input: $input) {
+      id
+      code
+      state
+      total
+      totalWithTax
+      billingAddress {
+        fullName
+        streetLine1
+        city
+        postalCode
+        country
+      }
+    }
+  }
+`);
+
+export const SET_DRAFT_ORDER_SHIPPING_ADDRESS = graphql(`
+  mutation SetDraftOrderShippingAddress($orderId: ID!, $input: CreateAddressInput!) {
+    setDraftOrderShippingAddress(orderId: $orderId, input: $input) {
+      id
+      code
+      state
+      total
+      totalWithTax
+      shippingAddress {
+        fullName
+        streetLine1
+        city
+        postalCode
+        country
+      }
+    }
+  }
+`);
+
+
 export const TRANSITION_ORDER_TO_STATE = graphql(`
   mutation TransitionOrderToState($id: ID!, $state: String!) {
     transitionOrderToState(id: $id, state: $state) {

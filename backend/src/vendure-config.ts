@@ -2,6 +2,7 @@ import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
 import {
     Asset,
+    configureDefaultOrderProcess,
     DefaultJobQueuePlugin,
     DefaultSchedulerPlugin,
     DefaultSearchPlugin,
@@ -31,6 +32,12 @@ if (envPath) {
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const serverPort = +process.env.PORT || 3000;
 const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
+
+// Configure order process to disable shipping requirements for POS
+const customOrderProcess = configureDefaultOrderProcess({
+    arrangingPaymentRequiresShipping: false, // Disable shipping requirement for POS
+    arrangingPaymentRequiresCustomer: true, // Keep customer requirement
+});
 
 export const config: VendureConfig = {
     apiOptions: {
@@ -374,6 +381,9 @@ export const config: VendureConfig = {
             },
         ],
         StockLocation: [],
+    },
+    orderOptions: {
+        process: [customOrderProcess],
     },
     plugins: [
         GraphiqlPlugin.init(),
