@@ -14,6 +14,8 @@ module.exports = {
     "!src/vendure-config.ts",
     "!src/environment.d.ts",
     "!src/entrypoint.ts",
+    "!src/**/*.spec.ts",
+    "!src/**/*.test.ts",
   ],
   coverageThreshold: {
     global: {
