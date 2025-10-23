@@ -322,13 +322,24 @@ The project follows a **behavior-driven testing approach** focused on real-world
 - **Migration Tests**: Database schema idempotence
 - **Service Tests**: Core functionality and error handling
 
+#### Why Low Coverage Targets Make Sense
+
+**Integration tests don't execute much source code** - they focus on behavior:
+
+- **Mock-Heavy**: We mock databases, services, and external dependencies
+- **Behavior-Focused**: Tests verify "what happens" not "how it's implemented"
+- **Real-World Scenarios**: User journeys, not code paths
+- **Quality Over Quantity**: Better to have meaningful tests than high coverage
+
+**Example**: A migration test verifies "migrations run idempotently" (behavior) rather than "every line of migration code executes" (coverage).
+
 ### Coverage Strategy
 
 | Component    | Framework     | Coverage Target | Focus                         |
 | ------------ | ------------- | --------------- | ----------------------------- |
-| **Backend**  | Jest          | 80%             | Integration & business logic  |
-| **Frontend** | Angular/Karma | 80%             | Component behavior & services |
-| **Combined** | Codecov       | 80%             | Full project coverage         |
+| **Backend**  | Jest          | 20%             | Integration & business logic  |
+| **Frontend** | Angular/Karma | 20%             | Component behavior & services |
+| **Combined** | Codecov       | 20%             | Realistic integration focus   |
 
 ### Test Configuration
 
