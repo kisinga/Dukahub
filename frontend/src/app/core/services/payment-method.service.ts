@@ -9,8 +9,13 @@ export interface PaymentMethod {
     description: string;
     enabled: boolean;
     customFields?: {
-        icon?: string;
-        image?: string;
+        imageAsset?: {
+            id: string;
+            source: string;
+            name: string;
+            preview: string;
+        };
+        isActive?: boolean;
     };
 }
 
