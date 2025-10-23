@@ -30,13 +30,13 @@ jobs:
         timeout-minutes: 10
 
       - name: Upload backend coverage artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: backend-coverage
           path: ./backend/coverage/
 
       - name: Upload backend coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./backend/coverage/lcov.info
           flags: backend
@@ -66,13 +66,13 @@ jobs:
         timeout-minutes: 10
 
       - name: Upload frontend coverage artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage
           path: ./frontend/coverage/
 
       - name: Upload frontend coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./frontend/coverage/lcov.info
           flags: frontend
@@ -94,19 +94,19 @@ jobs:
           node-version: "18"
 
       - name: Download backend coverage
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: backend-coverage
           path: ./backend/coverage
 
       - name: Download frontend coverage
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: frontend-coverage
           path: ./frontend/coverage
 
       - name: Upload combined coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: ./backend/coverage/lcov.info,./frontend/coverage/lcov.info
           flags: combined
