@@ -742,29 +742,6 @@ export const GET_PAYMENT_METHODS = graphql(`
   }
 `);
 
-export const GET_CHANNEL_PAYMENT_METHODS = graphql(`
-  query GetChannelPaymentMethods {
-    paymentMethods(options: { take: 100 }) {
-      items {
-        id
-        code
-        name
-        description
-        enabled
-        customFields {
-          imageAsset {
-            id
-            source
-            name
-            preview
-          }
-          isActive
-        }
-      }
-    }
-  }
-`);
-
 export const GET_ORDER = graphql(`
   query GetOrder($id: ID!) {
     order(id: $id) {
