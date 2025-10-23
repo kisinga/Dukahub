@@ -11,7 +11,7 @@ const productsCsvPath = require.resolve('@vendure/create/assets/products.csv');
  * Safe to run multiple times - idempotent.
  */
 async function smartPopulate() {
-    console.log('🔍 Checking database state...');
+    console.log('📦 Populating database with sample data...');
 
     // Create a clean config for populate that doesn't run migrations
     const populateConfig = {
@@ -22,24 +22,11 @@ async function smartPopulate() {
             migrationsRun: false, // Don't run migrations during populate
             migrations: [], // Don't load migrations at all
         },
+        // Ensure all required plugins are included for populate
+        plugins: config.plugins,
     };
 
-    const app = await bootstrap(populateConfig);
-
     try {
-        const channelService = app.get('ChannelService');
-        const channels = await channelService.findAll();
-
-        if (channels.items.length > 1) {
-            // Default channel always exists, so >1 means already populated
-            console.log('✅ Database already has data, skipping populate');
-            await app.close();
-            return;
-        }
-
-        console.log('📦 Database is empty, populating with sample data...');
-        await app.close(); // Close before populate (it bootstraps its own instance)
-
         await populate(
             () =>
                 bootstrap({

@@ -36,45 +36,57 @@ export class AppInitService {
     error: null,
   });
 
+  private readonly isInitializingSignal = signal<boolean>(false);
+  private readonly lastInitChannelId = signal<string | null>(null);
+
   readonly initStatus = this.initStatusSignal.asReadonly();
 
   /**
    * Initialize dashboard data when channel is set
-   * Pre-fetches products, stock locations, and ML model for offline operation
+   * Idempotent: prevents duplicate initialization for same channel
    */
   async initializeDashboard(channelId: string): Promise<void> {
-    console.log(`🚀 Initializing dashboard for channel ${channelId}...`);
+    // Prevent duplicate initialization
+    if (this.isInitializingSignal() || this.lastInitChannelId() === channelId) {
+      return;
+    }
 
+    this.isInitializingSignal.set(true);
+    this.lastInitChannelId.set(channelId);
     this.initStatusSignal.update((s) => ({ ...s, channelId, error: null }));
 
-    // Run prefetch operations in parallel for faster boot
-    const [productsSuccess, modelSuccess, locationsSuccess] = await Promise.allSettled([
-      this.prefetchProducts(channelId),
-      this.prefetchModel(channelId),
-      this.prefetchStockLocations(),
-    ]);
+    try {
+      // Run prefetch operations in parallel
+      const [productsSuccess, modelSuccess, locationsSuccess] = await Promise.allSettled([
+        this.prefetchProducts(channelId),
+        this.prefetchModel(channelId),
+        this.prefetchStockLocations(),
+      ]);
 
-    // Update status based on results
-    this.initStatusSignal.update((s) => ({
-      ...s,
-      productsLoaded: productsSuccess.status === 'fulfilled' && productsSuccess.value,
-      modelLoaded: modelSuccess.status === 'fulfilled' && modelSuccess.value,
-      locationsLoaded: locationsSuccess.status === 'fulfilled' && locationsSuccess.value,
-      error:
-        productsSuccess.status === 'rejected' || 
-        modelSuccess.status === 'rejected' ||
-        locationsSuccess.status === 'rejected'
-          ? 'Some features failed to initialize'
-          : null,
-    }));
+      // Update status based on results
+      this.initStatusSignal.update((s) => ({
+        ...s,
+        productsLoaded: productsSuccess.status === 'fulfilled' && productsSuccess.value,
+        modelLoaded: modelSuccess.status === 'fulfilled' && modelSuccess.value,
+        locationsLoaded: locationsSuccess.status === 'fulfilled' && locationsSuccess.value,
+        error:
+          productsSuccess.status === 'rejected' ||
+            modelSuccess.status === 'rejected' ||
+            locationsSuccess.status === 'rejected'
+            ? 'Some features failed to initialize'
+            : null,
+      }));
 
-    const status = this.initStatusSignal();
-    if (status.productsLoaded && status.modelLoaded && status.locationsLoaded) {
-      console.log('✅ Dashboard fully initialized (offline-capable)');
-    } else if (status.productsLoaded && status.locationsLoaded) {
-      console.log('⚠️ Dashboard initialized (camera scanning unavailable)');
-    } else {
-      console.error('❌ Dashboard initialization incomplete');
+      const status = this.initStatusSignal();
+      if (status.productsLoaded && status.modelLoaded && status.locationsLoaded) {
+        console.log('✅ Dashboard initialized');
+      } else if (status.productsLoaded && status.locationsLoaded) {
+        console.log('⚠️ Dashboard initialized (ML unavailable)');
+      } else {
+        console.error('❌ Dashboard initialization incomplete');
+      }
+    } finally {
+      this.isInitializingSignal.set(false);
     }
   }
 
@@ -129,6 +141,8 @@ export class AppInitService {
     this.productCacheService.clearCache();
     this.mlModelService.unloadModel();
     this.stockLocationService.clearLocations();
+    this.isInitializingSignal.set(false);
+    this.lastInitChannelId.set(null);
     this.initStatusSignal.set({
       productsLoaded: false,
       modelLoaded: false,

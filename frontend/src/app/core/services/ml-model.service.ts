@@ -1,6 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
 import * as tf from '@tensorflow/tfjs';
-import { GET_ML_MODEL_ASSETS } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
 
@@ -63,6 +62,13 @@ export class MlModelService {
 
     private readonly MODEL_CACHE_NAME = 'dukahub-ml-models';
 
+    // Cache for asset sources to prevent duplicate queries
+    private assetSourcesCache = new Map<string, {
+        modelUrl: string;
+        weightsUrl: string;
+        metadataUrl: string;
+    } | null>();
+
     readonly isLoading = this.isLoadingSignal.asReadonly();
     readonly isInitialized = this.isInitializedSignal.asReadonly();
     readonly error = this.errorSignal.asReadonly();
@@ -71,65 +77,77 @@ export class MlModelService {
      * Get ML model asset sources for a channel
      * Returns file paths needed to load the model
      * Uses CompanyService as single source of truth for channel custom fields
+     * 
+     * ARCHITECTURE CHANGE:
+     * - OLD: String asset IDs → Secondary query to fetch Asset objects
+     * - NEW: Direct Asset objects from channel custom fields → No secondary query needed
      */
     private async getModelSources(channelId: string): Promise<{
         modelUrl: string;
         weightsUrl: string;
         metadataUrl: string;
     } | null> {
-        const client = this.apolloService.getClient();
+        // Check cache first to prevent duplicate queries
+        const cacheKey = channelId;
+        if (this.assetSourcesCache.has(cacheKey)) {
+            return this.assetSourcesCache.get(cacheKey) || null;
+        }
 
-        // Get asset IDs from CompanyService (already fetched on boot)
-        const assetIds = this.companyService.mlModelAssetIds();
+        // Get asset objects from CompanyService
+        const mlModelAssets = this.companyService.mlModelAssets();
 
-        if (!assetIds) {
-            console.log('No ML model configured for this channel');
+        if (!mlModelAssets) {
+            console.warn('❌ ML model assets not configured for this channel');
+            this.assetSourcesCache.set(cacheKey, null);
             return null;
         }
 
-        // Get asset source paths using the IDs from CompanyService
-        const assetsResult = await client.query<{
-            assets: {
-                items: Array<{
-                    id: string;
-                    source: string;
-                }>;
+        try {
+            const { mlModelJsonAsset, mlModelBinAsset, mlMetadataAsset } = mlModelAssets;
+
+            // Helper: convert source to proxy-compatible URL
+            const toProxyUrl = (source: string): string => {
+                // If source is already a full URL, extract the path for proxy compatibility
+                if (source.startsWith('http://') || source.startsWith('https://')) {
+                    // Extract path from full URL for proxy compatibility
+                    // "http://localhost:3000/assets/source/fa/model__02.json" -> "/assets/source/fa/model__02.json"
+                    const url = new URL(source);
+                    return url.pathname;
+                }
+                // The source field from Vendure contains the relative path within asset storage
+                // We need to construct the proper asset URL by prepending /assets/
+                // Source format: "source/49/metadata.json" -> URL: "/assets/source/49/metadata.json"
+                return `/assets/${source}`;
             };
-        }>({
-            query: GET_ML_MODEL_ASSETS,
-            variables: {
-                ids: [assetIds.mlModelJsonId, assetIds.mlModelBinId, assetIds.mlMetadataId],
-            },
-            fetchPolicy: 'network-only',
-        });
 
-        const assets = assetsResult.data?.assets?.items || [];
+            const sources = {
+                modelUrl: toProxyUrl(mlModelJsonAsset.source),
+                weightsUrl: toProxyUrl(mlModelBinAsset.source),
+                metadataUrl: toProxyUrl(mlMetadataAsset.source),
+            };
 
-        const modelAsset = assets.find((a: any) => a.id === assetIds.mlModelJsonId);
-        const weightsAsset = assets.find((a: any) => a.id === assetIds.mlModelBinId);
-        const metadataAsset = assets.find((a: any) => a.id === assetIds.mlMetadataId);
+            console.log('✅ ML model sources resolved from channel custom fields:', {
+                modelAsset: { id: mlModelJsonAsset.id, name: mlModelJsonAsset.name },
+                weightsAsset: { id: mlModelBinAsset.id, name: mlModelBinAsset.name },
+                metadataAsset: { id: mlMetadataAsset.id, name: mlMetadataAsset.name },
+                sources
+            });
 
-        if (!modelAsset || !weightsAsset || !metadataAsset) {
+            // Cache the results to prevent duplicate processing
+            this.assetSourcesCache.set(cacheKey, sources);
+            return sources;
+
+        } catch (error: any) {
+            console.error('❌ Failed to process ML model assets:', error);
+            console.error('❌ Error details:', {
+                message: error.message,
+                mlModelAssets
+            });
+
+            // Cache the failure to prevent repeated attempts
+            this.assetSourcesCache.set(cacheKey, null);
             return null;
         }
-
-        // Helper: convert source to URL (handle both relative paths and full URLs)
-        const toUrl = (source: string): string => {
-            // If source is already a full URL, use it as-is
-            if (source.startsWith('http://') || source.startsWith('https://')) {
-                return source;
-            }
-            // The source field from Vendure contains the relative path within asset storage
-            // We need to construct the proper asset URL by prepending /assets/
-            // Source format: "source/49/metadata.json" -> URL: "/assets/source/49/metadata.json"
-            return `/assets/${source}`;
-        };
-
-        return {
-            modelUrl: toUrl(modelAsset.source),
-            weightsUrl: toUrl(weightsAsset.source),
-            metadataUrl: toUrl(metadataAsset.source),
-        };
     }
 
     /**
@@ -169,7 +187,6 @@ export class MlModelService {
      */
     async loadModel(channelId: string): Promise<boolean> {
         if (this.model) {
-            console.log('✅ Model already loaded in memory');
             return true;
         }
 
@@ -187,10 +204,6 @@ export class MlModelService {
             // Initialize TensorFlow backend
             await tf.setBackend('webgl');
             await tf.ready();
-            console.log(`🔧 TensorFlow.js backend ready: ${tf.getBackend()}`);
-
-            // Load metadata
-            console.log('📄 Loading metadata from:', sources.metadataUrl);
             const metadataResponse = await fetch(sources.metadataUrl);
             if (!metadataResponse.ok) {
                 throw new Error(`Failed to fetch metadata: HTTP ${metadataResponse.status}`);
@@ -202,29 +215,14 @@ export class MlModelService {
             const cacheKey = `indexeddb://${this.MODEL_CACHE_NAME}/${channelId}`;
 
             try {
-                console.log('💾 Loading from IndexedDB cache...');
                 this.model = await tf.loadLayersModel(cacheKey);
-                console.log('✅ Model loaded from cache');
             } catch {
                 // Cache miss - load from network
-                console.log('🌐 Loading from network:', sources.modelUrl);
                 this.model = await tf.loadLayersModel(sources.modelUrl);
-
-                // Save to cache
-                console.log('💾 Caching model...');
                 await this.model.save(cacheKey);
-                console.log('✅ Model cached');
             }
 
             this.isInitializedSignal.set(true);
-
-            console.log('✅ Model ready:', {
-                channelId,
-                version: this.metadata?.version,
-                productCount: this.metadata?.productCount,
-                labels: this.metadata?.labels?.length || 0,
-            });
-
             return true;
         } catch (error: any) {
             console.error('❌ Failed to load model:', error);
@@ -321,7 +319,6 @@ export class MlModelService {
             this.metadata = null;
             this.isInitializedSignal.set(false);
             this.errorSignal.set(null);
-            console.log('🗑️ Model unloaded from memory');
         }
     }
 
@@ -336,11 +333,17 @@ export class MlModelService {
             const models = await tf.io.listModels();
             if (models[cacheKey]) {
                 await tf.io.removeModel(cacheKey);
-                console.log(`🗑️ Model cache cleared for channel ${channelId}`);
             }
         } catch (error) {
             console.error('Error clearing model cache:', error);
         }
+    }
+
+    /**
+     * Clear asset sources cache (useful when channel changes)
+     */
+    clearAssetSourcesCache(): void {
+        this.assetSourcesCache.clear();
     }
 
     /**

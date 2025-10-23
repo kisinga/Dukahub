@@ -45,31 +45,62 @@ export class CompanyService {
     });
 
     /**
-     * ML Model asset IDs for the active channel
+     * ML Model assets for the active channel
      * All ML model custom fields consolidated here
+     * 
+     * ARCHITECTURE CHANGE:
+     * - OLD: String asset IDs requiring secondary URL resolution
+     * - NEW: Direct Asset objects with source URLs
      */
-    readonly mlModelAssetIds = computed(() => {
+    readonly mlModelAssets = computed(() => {
         const channelData = this.activeChannelDataSignal();
         const customFields = channelData?.customFields;
 
-        if (!customFields?.mlModelJsonId || !customFields?.mlModelBinId || !customFields?.mlMetadataId) {
+        if (!customFields?.mlModelJsonAsset || !customFields?.mlModelBinAsset || !customFields?.mlMetadataAsset) {
             return null;
         }
 
         return {
-            mlModelJsonId: customFields.mlModelJsonId,
-            mlModelBinId: customFields.mlModelBinId,
-            mlMetadataId: customFields.mlMetadataId,
+            mlModelJsonAsset: customFields.mlModelJsonAsset,
+            mlModelBinAsset: customFields.mlModelBinAsset,
+            mlMetadataAsset: customFields.mlMetadataAsset,
         };
     });
 
     /**
-     * Company logo asset ID for the active channel
+     * Company logo asset for the active channel
      * Used to display company branding in navbar
+     * 
+     * ARCHITECTURE CHANGE:
+     * - OLD: String asset ID requiring secondary URL resolution
+     * - NEW: Direct Asset object with source URL
      */
-    readonly companyLogoId = computed(() => {
+    readonly companyLogoAsset = computed(() => {
         const channelData = this.activeChannelDataSignal();
-        return channelData?.customFields?.companyLogoId ?? null;
+        return channelData?.customFields?.companyLogoAsset ?? null;
+    });
+
+    /**
+     * Company logo URL for the active channel (proxy-compatible)
+     * Helper method to get the logo URL directly
+     */
+    readonly companyLogoUrl = computed(() => {
+        const logoAsset = this.companyLogoAsset();
+        if (!logoAsset?.source) return null;
+
+        // Handle proxy-compatible URLs
+        if (logoAsset.source.startsWith('http://') || logoAsset.source.startsWith('https://')) {
+            const url = new URL(logoAsset.source);
+            return url.pathname; // Extract path for proxy compatibility
+        }
+
+        // Handle relative paths
+        if (logoAsset.source.startsWith('/')) {
+            return logoAsset.source;
+        }
+
+        // Handle other cases
+        return `/assets/${logoAsset.source}`;
     });
 
     /**
@@ -130,8 +161,8 @@ export class CompanyService {
                 this.persistSession();
 
                 console.log('✅ Channel data cached:', {
-                    mlModelConfigured: !!result.data.activeChannel.customFields?.mlModelJsonId,
-                    companyLogoConfigured: !!result.data.activeChannel.customFields?.companyLogoId,
+                    mlModelConfigured: !!result.data.activeChannel.customFields?.mlModelJsonAsset,
+                    companyLogoConfigured: !!result.data.activeChannel.customFields?.companyLogoAsset,
                 });
             }
         } catch (error: any) {

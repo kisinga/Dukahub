@@ -161,6 +161,12 @@ export class MlModelResolver {
             throw new Error('One or more assets not found');
         }
 
+        // Assign assets to channel (CRITICAL: assets must be channel-aware)
+        await this.assetService.assignToChannel(ctx, {
+            assetIds: [args.modelJsonId, args.modelBinId, args.metadataId],
+            channelId: args.channelId.toString(),
+        });
+
         const version = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
 
         await this.channelService.update(ctx, {
@@ -175,7 +181,7 @@ export class MlModelResolver {
             },
         });
 
-        console.log('[ML Model] Assets linked successfully');
+        console.log('[ML Model] Assets linked and assigned to channel successfully');
         return true;
     }
 
@@ -332,7 +338,7 @@ export class MlModelResolver {
                 throw new Error('Failed to create assets');
             }
 
-            // Assign assets to channel
+            // Assign assets to channel (CRITICAL: assets must be channel-aware for queries)
             await this.assetService.assignToChannel(ctx, {
                 assetIds: [modelJsonResult.id, weightsResult.id, metadataResult.id],
                 channelId: args.channelId.toString(),

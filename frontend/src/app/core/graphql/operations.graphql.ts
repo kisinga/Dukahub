@@ -98,10 +98,27 @@ export const GET_ACTIVE_CHANNEL = graphql(`
       token
       defaultCurrencyCode
       customFields {
-        mlModelJsonId
-        mlModelBinId
-        mlMetadataId
-        companyLogoId
+        mlModelJsonAsset {
+          id
+          source
+          name
+        }
+        mlModelBinAsset {
+          id
+          source
+          name
+        }
+        mlMetadataAsset {
+          id
+          source
+          name
+        }
+        companyLogoAsset {
+          id
+          source
+          name
+          preview
+        }
         cashierFlowEnabled
         cashierOpen
       }
@@ -170,6 +187,7 @@ export const CREATE_PRODUCT_VARIANTS = graphql(`
       name
       sku
       price
+      priceWithTax
       stockOnHand
       product {
         id
@@ -259,7 +277,12 @@ export const GET_PRODUCT_DETAIL = graphql(`
         name
         sku
         price
+        priceWithTax
         stockOnHand
+        prices {
+          price
+          currencyCode
+        }
         stockLevels {
           id
           stockOnHand
@@ -291,8 +314,13 @@ export const GET_PRODUCTS = graphql(`
           id
           name
           sku
+          price
           priceWithTax
           stockOnHand
+          prices {
+            price
+            currencyCode
+          }
         }
       }
     }
@@ -356,6 +384,23 @@ export const ADD_OPTION_GROUP_TO_PRODUCT = graphql(`
   }
 `);
 
+export const UPDATE_PRODUCT_VARIANT = graphql(`
+  mutation UpdateProductVariant($input: UpdateProductVariantInput!) {
+    updateProductVariant(input: $input) {
+      id
+      name
+      sku
+      price
+      priceWithTax
+      stockOnHand
+      product {
+        id
+        name
+      }
+    }
+  }
+`);
+
 // ============================================================================
 // PRODUCT SEARCH & CACHE (POS)
 // ============================================================================
@@ -378,8 +423,13 @@ export const SEARCH_PRODUCTS = graphql(`
           id
           name
           sku
+          price
           priceWithTax
           stockOnHand
+          prices {
+            price
+            currencyCode
+          }
         }
       }
     }
@@ -398,7 +448,12 @@ export const GET_PRODUCT = graphql(`
         id
         name
         sku
+        price
         priceWithTax
+        prices {
+          price
+          currencyCode
+        }
         stockLevels {
           stockLocationId
           stockOnHand
@@ -444,8 +499,13 @@ export const PREFETCH_PRODUCTS = graphql(`
           id
           name
           sku
+          price
           priceWithTax
           stockOnHand
+          prices {
+            price
+            currencyCode
+          }
         }
       }
     }
@@ -668,6 +728,38 @@ export const GET_PAYMENT_METHODS = graphql(`
         name
         description
         enabled
+        customFields {
+          imageAsset {
+            id
+            source
+            name
+            preview
+          }
+          isActive
+        }
+      }
+    }
+  }
+`);
+
+export const GET_CHANNEL_PAYMENT_METHODS = graphql(`
+  query GetChannelPaymentMethods {
+    paymentMethods(options: { take: 100 }) {
+      items {
+        id
+        code
+        name
+        description
+        enabled
+        customFields {
+          imageAsset {
+            id
+            source
+            name
+            preview
+          }
+          isActive
+        }
       }
     }
   }
@@ -699,16 +791,8 @@ export const GET_ORDER = graphql(`
 // ML MODEL & TRAINING
 // ============================================================================
 
-export const GET_ML_MODEL_ASSETS = graphql(`
-  query GetMLModelAssets($ids: [String!]!) {
-    assets(options: { filter: { id: { in: $ids } } }) {
-      items {
-        id
-        source
-      }
-    }
-  }
-`);
+// REMOVED: GET_ML_MODEL_ASSETS - No longer needed with Asset relationships
+// The ML model assets are now fetched directly as part of the channel custom fields
 
 export const GET_ML_TRAINING_INFO = graphql(`
   query GetMlTrainingInfo($channelId: ID!) {

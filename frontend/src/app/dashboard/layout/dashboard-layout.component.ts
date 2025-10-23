@@ -23,6 +23,7 @@ export class DashboardLayoutComponent implements OnInit {
     private readonly companyService = inject(CompanyService);
     private readonly stockLocationService = inject(StockLocationService);
     private readonly appInitService = inject(AppInitService);
+    private lastCompanyId: string | null = null;
 
     protected readonly navItems: NavItem[] = [
         { label: 'Overview', icon: '📊', route: '/dashboard' },
@@ -89,7 +90,8 @@ export class DashboardLayoutComponent implements OnInit {
     protected readonly activeCompanyId = this.companyService.activeCompanyId;
     protected readonly activeCompany = this.companyService.activeCompany;
     protected readonly companyDisplayName = this.companyService.companyDisplayName;
-    protected readonly companyLogoId = this.companyService.companyLogoId;
+    protected readonly companyLogoAsset = this.companyService.companyLogoAsset;
+    protected readonly companyLogoUrl = this.companyService.companyLogoUrl;
 
     // Computed values
     protected readonly unreadCount = computed(() =>
@@ -101,11 +103,8 @@ export class DashboardLayoutComponent implements OnInit {
     );
 
     protected readonly logoUrl = computed(() => {
-        const logoId = this.companyLogoId();
-        if (!logoId) return 'default_avatar.png';
-        // Construct asset URL from Vendure backend
-        const backendUrl = 'http://localhost:3000'; // TODO: Get from environment
-        return `${backendUrl}/assets/${logoId}`;
+        // Use the new proxy-compatible logo URL directly
+        return this.companyLogoUrl() || 'default_avatar.png';
     });
 
     constructor() {
@@ -115,20 +114,16 @@ export class DashboardLayoutComponent implements OnInit {
         // Watch for active company changes and initialize dashboard
         effect(() => {
             const companyId = this.activeCompanyId();
-            if (companyId) {
-                console.log(`🔄 Active company changed: ${companyId}`);
-                // Initialize dashboard data in background (non-blocking)
+            if (companyId && companyId !== this.lastCompanyId) {
+                this.lastCompanyId = companyId;
                 this.appInitService.initializeDashboard(companyId);
             }
         });
     }
 
     ngOnInit(): void {
-        // If company already active on init, trigger initialization
-        const companyId = this.activeCompanyId();
-        if (companyId) {
-            this.appInitService.initializeDashboard(companyId);
-        }
+        // Initialization is handled by the effect in constructor
+        // No need for duplicate call here
     }
 
     closeDrawer(): void {

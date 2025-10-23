@@ -89,6 +89,9 @@ export class ProductCreateComponent implements OnInit {
     readonly submitError = signal<string | null>(null);
     readonly submitSuccess = signal(false);
 
+    // Computed: Combined loading state (component + service)
+    readonly isLoading = computed(() => this.isSubmitting() || this.productService.isCreating());
+
     // Default location for the active channel
     readonly defaultLocation = computed(() => this.stockLocationService.getDefaultLocation());
 
@@ -116,11 +119,11 @@ export class ProductCreateComponent implements OnInit {
     // Computed: Form validity
     readonly canSubmit = computed(() => {
         const isValid = this.formValid(); // Use signal instead of direct form access
-        const notSubmitting = !this.isSubmitting();
+        const notLoading = !this.isLoading();
         const hasLocation = !!this.defaultLocation();
         const hasIdentification = this.hasValidIdentification();
 
-        return isValid && notSubmitting && hasLocation && hasIdentification;
+        return isValid && notLoading && hasLocation && hasIdentification;
     });
 
     // Computed: Validation issues
@@ -481,6 +484,7 @@ export class ProductCreateComponent implements OnInit {
 
             if (type === 'product' && !stockLocationId) {
                 this.submitError.set('No active location. Please select a location from the navbar.');
+                this.isSubmitting.set(false);
                 return;
             }
 
@@ -496,7 +500,12 @@ export class ProductCreateComponent implements OnInit {
             // Use Vendure's native trackInventory field:
             // - trackInventory: false → Service (infinite stock, no tracking)
             // - trackInventory: true → Product (tracked stock)
+            console.log('🔍 Form data before processing:', formValue);
+            console.log('🔍 SKUs from form:', formValue.skus);
+
             const variantInputs = formValue.skus.map((sku: any, index: number) => {
+                console.log(`🔍 Processing SKU ${index + 1}:`, sku);
+
                 // Append unique suffix to SKU to prevent duplicates
                 // Format: USER_SKU-TIMESTAMP-INDEX
                 const uniqueSku = `${sku.sku.trim().toUpperCase()}-${this.skuUniqueSuffix}-${index + 1}`;
@@ -505,7 +514,7 @@ export class ProductCreateComponent implements OnInit {
                     return {
                         sku: uniqueSku,
                         name: sku.name.trim(),
-                        priceWithTax: Number(sku.price),
+                        price: Number(sku.price), // Use 'price' field as expected by VariantInput interface
                         trackInventory: false, // Services: infinite stock
                         stockOnHand: 0,
                         stockLocationId: undefined, // Services don't need location
@@ -514,13 +523,15 @@ export class ProductCreateComponent implements OnInit {
                     return {
                         sku: uniqueSku,
                         name: sku.name.trim(),
-                        priceWithTax: Number(sku.price),
+                        price: Number(sku.price), // Use 'price' field as expected by VariantInput interface
                         trackInventory: true, // Products: track stock
                         stockOnHand: Number(sku.stockOnHand),
                         stockLocationId: stockLocationId!,
                     };
                 }
             });
+
+            console.log('🔍 Final variant inputs:', variantInputs);
 
             const productId = await this.productService.createProductWithVariants(
                 productInput,
