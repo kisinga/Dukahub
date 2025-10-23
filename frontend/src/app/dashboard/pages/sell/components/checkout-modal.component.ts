@@ -325,25 +325,8 @@ type PaymentMethodCode = string;
                   <div class="w-12 h-12 rounded-full flex items-center justify-center"
                        [class.bg-success/20]="selectedPaymentMethod() === method.code"
                        [class.bg-base-200]="selectedPaymentMethod() !== method.code">
-                    @if (method.customFields?.image) {
-                      <img [src]="method.customFields?.image" [alt]="method.name" class="w-8 h-8 object-contain" />
-                    } @else if (method.customFields?.icon) {
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-6 w-6"
-                        [class.text-success]="selectedPaymentMethod() === method.code"
-                        [class.text-base-content/60]="selectedPaymentMethod() !== method.code"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          [attr.d]="method.customFields?.icon"
-                        />
-                      </svg>
+                    @if (method.customFields?.imageAsset?.preview) {
+                      <img [src]="method.customFields?.imageAsset?.preview" [alt]="method.name" class="w-8 h-8 object-contain" />
                     } @else {
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
