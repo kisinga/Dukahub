@@ -4,6 +4,11 @@
 
 Dukahub helps shopkeepers ditch manual data entry and expensive barcode scanners. Use your phone's camera to instantly recognize products, process sales, and manage inventory—all powered by custom AI trained on your products.
 
+[![Tests](https://github.com/kisinga/Dukahub/actions/workflows/test.yml/badge.svg)](https://github.com/kisinga/Dukahub/actions/workflows/test.yml)
+[![Coverage](https://codecov.io/gh/kisinga/Dukahub/branch/main/graph/badge.svg)](https://codecov.io/gh/kisinga/Dukahub)
+[![Backend Coverage](https://codecov.io/gh/kisinga/Dukahub/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/kisinga/Dukahub)
+[![Frontend Coverage](https://codecov.io/gh/kisinga/Dukahub/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/kisinga/Dukahub)
+
 ## Quick Links
 
 - 🚀 **[Setup & Deployment](./INFRASTRUCTURE.md)** - Get started, deploy anywhere

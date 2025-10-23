@@ -1,0 +1,35 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 5%
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+
+flags:
+  backend:
+    paths:
+      - backend/src/
+    carryforward: true
+  frontend:
+    paths:
+      - frontend/src/
+    carryforward: true
+  combined:
+    paths:
+      - backend/src/
+      - frontend/src/
+    carryforward: true
+
+comment:
+  layout: "header,diff,files,footer"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: yes
+
+github_checks:
+  annotations: true
