@@ -7,3 +7,4 @@ static/email/test-emails
 .env.*
 !.env.example
 server.log
+coverage

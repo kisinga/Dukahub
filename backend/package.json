@@ -13,9 +13,10 @@
     "populate": "node ./dist/populate.js",
     "migration:run": "node -e \"require('@vendure/core').runMigrations(require('./dist/vendure-config').config).then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); })\"",
     "entrypoint": "ts-node ./src/entrypoint.ts",
-    "test": "ts-node ./src/test-suite.ts",
-    "test:fresh-setup": "TEST_FRESH_SETUP_ONLY=true ts-node ./src/test-suite.ts",
-    "test:all": "npm run build && npm run test"
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:migrations": "jest --testNamePattern='Migration Idempotence'",
+    "test:all": "npm run build && npm run test:coverage"
   },
   "dependencies": {
     "@vendure/admin-ui-plugin": "3.4.3",
@@ -30,7 +31,12 @@
     "type-graphql": "^2.0.0-rc.2"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/pg": "^8.15.5",
     "@vendure/cli": "3.4.3",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.2",
     "typescript": "5.9.3"
   }
 }
