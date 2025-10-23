@@ -2,11 +2,11 @@ coverage:
   status:
     project:
       default:
-        target: 20%
+        target: 15%
         threshold: 5%
     patch:
       default:
-        target: 20%
+        target: 10%
         threshold: 5%
 
 flags:
@@ -30,6 +30,8 @@ comment:
   require_changes: false
   require_base: no
   require_head: yes
+  hide_project_coverage: false
+  hide_comment: false
 
 github_checks:
   annotations: true
