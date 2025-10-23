@@ -11,6 +11,7 @@
 - [Multi-tenancy Model](#multi-tenancy-model)
 - [Data Flow](#data-flow)
 - [ML Integration](#ml-integration)
+- [Testing & Coverage](#testing--coverage)
 - [Security](#security)
 
 ## Overview
@@ -309,6 +310,124 @@ https://domain.com/assets/ml-models/{channelId}/latest/metadata.json
 - **Client-side caching** in IndexedDB for offline use
 
 **See [ML_GUIDE.md](./ML_GUIDE.md) for complete implementation details**
+
+## Testing & Coverage
+
+### Testing Philosophy
+
+The project follows a **behavior-driven testing approach** focused on real-world scenarios rather than implementation details:
+
+- **Integration Tests**: Critical business logic and data flow
+- **Behavioral Tests**: User journeys and system interactions
+- **Migration Tests**: Database schema idempotence
+- **Service Tests**: Core functionality and error handling
+
+### Coverage Strategy
+
+| Component    | Framework     | Coverage Target | Focus                         |
+| ------------ | ------------- | --------------- | ----------------------------- |
+| **Backend**  | Jest          | 80%             | Integration & business logic  |
+| **Frontend** | Angular/Karma | 80%             | Component behavior & services |
+| **Combined** | Codecov       | 80%             | Full project coverage         |
+
+### Test Configuration
+
+#### Backend Testing (`backend/jest.config.js`)
+
+```javascript
+module.exports = {
+  preset: "ts-jest",
+  testEnvironment: "node",
+  collectCoverageFrom: [
+    "src/**/*.ts",
+    "!src/**/*.d.ts",
+    "!src/migrations/**/*.ts",
+    "!src/index.ts",
+    "!src/index-worker.ts",
+    "!src/populate.ts",
+    "!src/vendure-config.ts",
+    "!src/environment.d.ts",
+  ],
+  coverageDirectory: "coverage",
+  coverageReporters: ["text", "lcov", "html"],
+};
+```
+
+#### Frontend Testing (`frontend/karma.conf.js`)
+
+```javascript
+coverageReporter: {
+  dir: require('path').join(__dirname, './coverage/'),
+  subdir: '.',
+  reporters: [
+    { type: 'html' },
+    { type: 'text-summary' },
+    { type: 'lcov' }
+  ],
+},
+```
+
+### GitHub Integration
+
+#### Coverage Badges
+
+```markdown
+[![Tests](https://github.com/kisinga/Dukahub/actions/workflows/test.yml/badge.svg)](https://github.com/kisinga/Dukahub/actions/workflows/test.yml)
+[![Coverage](https://codecov.io/gh/kisinga/Dukahub/branch/main/graph/badge.svg)](https://codecov.io/gh/kisinga/Dukahub)
+[![Backend Coverage](https://codecov.io/gh/kisinga/Dukahub/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/kisinga/Dukahub)
+[![Frontend Coverage](https://codecov.io/gh/kisinga/Dukahub/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/kisinga/Dukahub)
+```
+
+#### CI/CD Pipeline
+
+- **Separate Jobs**: Backend and frontend tests run independently
+- **Artifact Upload**: Coverage files stored for combined reporting
+- **Codecov Integration**: Automatic coverage upload with flags
+- **PR Comments**: Coverage feedback on pull requests
+
+### Local Development
+
+#### Running Tests
+
+```bash
+# Backend coverage
+cd backend
+npm run test:coverage
+npm run coverage:report
+
+# Frontend coverage
+cd frontend
+npm run test:coverage
+npm run coverage:report
+```
+
+#### Coverage Reports
+
+- **Backend**: `backend/coverage/index.html`
+- **Frontend**: `frontend/coverage/lcov-report/index.html`
+- **Combined**: Available in CI only
+
+### Best Practices
+
+1. **Focus on Integration**: Tests prioritize real-world scenarios
+2. **Behavioral Testing**: Avoid overly specific implementation tests
+3. **Mock Coverage**: Acceptable for development, real coverage in CI
+4. **Incremental Improvement**: Gradually increase coverage targets
+5. **Environment Independence**: Tests don't rely on `.env` files
+
+### Troubleshooting
+
+#### Local Issues
+
+- **No Chrome**: Frontend uses mock coverage
+- **Empty Coverage**: Tests are mostly mocks (expected)
+- **Missing Reports**: Run `npm run coverage:report`
+
+#### CI Issues
+
+- **Upload Failures**: Check Codecov token
+- **Missing Badges**: Verify repository settings
+- **Coverage Gaps**: Review test coverage patterns
 
 ## Security
 
