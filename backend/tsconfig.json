@@ -13,14 +13,12 @@
     "skipLibCheck": true,
     "outDir": "./dist",
     "baseUrl": "./",
-    "rootDir": "./src",
+    "rootDir": "./",
     "declaration": false,
     "removeComments": true,
     "noEmitOnError": true
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*", "spec/**/*"],
   "exclude": [
     "node_modules",
     "migration.ts",

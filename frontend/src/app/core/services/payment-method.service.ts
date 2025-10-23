@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { GET_CHANNEL_PAYMENT_METHODS } from '../graphql/operations.graphql';
+import { GET_PAYMENT_METHODS } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
 
 export interface PaymentMethod {
@@ -9,8 +9,13 @@ export interface PaymentMethod {
     description: string;
     enabled: boolean;
     customFields?: {
-        icon?: string;
-        image?: string;
+        imageAsset?: {
+            id: string;
+            source: string;
+            name: string;
+            preview: string;
+        };
+        isActive?: boolean;
     };
 }
 
@@ -35,7 +40,7 @@ export class PaymentMethodService {
             const client = this.apolloService.getClient();
 
             const result = await client.query({
-                query: GET_CHANNEL_PAYMENT_METHODS,
+                query: GET_PAYMENT_METHODS,
                 fetchPolicy: 'cache-first'
             });
 

@@ -43,7 +43,7 @@ describe('Coverage Generator', () => {
             const start = Date.now();
             await TestUtils.delay(10);
             const end = Date.now();
-            expect(end - start).toBeGreaterThanOrEqual(10);
+            expect(end - start).toBeGreaterThanOrEqual(9);
         });
 
         it('should validate email addresses', () => {

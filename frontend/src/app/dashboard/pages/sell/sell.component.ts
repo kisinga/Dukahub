@@ -328,6 +328,7 @@ export class SellComponent implements OnInit {
           quantity: item.quantity
         })),
         paymentMethodCode: 'cash-payment',
+        isCashierFlow: true,
         metadata: {
           requiresCashierApproval: true
         }
@@ -359,18 +360,29 @@ export class SellComponent implements OnInit {
     this.checkoutError.set(null);
 
     try {
-      // TODO: Implement order creation with credit status
-      console.log('Creating credit sale:', {
-        customer: this.selectedCustomer(),
-        items: this.cartItems(),
-        total: this.cartTotal(),
+      const order = await this.orderService.createOrder({
+        cartItems: this.cartItems().map(item => ({
+          variantId: item.variant.id,
+          quantity: item.quantity
+        })),
+        paymentMethodCode: 'credit-payment',
+        customerId: this.selectedCustomer()?.id,
+        isCreditSale: true,
+        metadata: {
+          creditSale: true,
+          customerId: this.selectedCustomer()?.id,
+          customerName: this.selectedCustomer()?.name
+        }
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log('✅ Credit sale created:', order.code);
 
       this.cartItems.set([]);
       this.showCheckoutModal.set(false);
-      alert(`Credit sale created successfully for ${this.selectedCustomer()?.name}`);
+      this.showNotification(
+        `Credit sale created for ${this.selectedCustomer()?.name} - Order ${order.code}`,
+        'success'
+      );
     } catch (error) {
       console.error('Credit sale failed:', error);
       this.checkoutError.set('Failed to create credit sale. Please try again.');

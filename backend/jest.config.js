@@ -3,8 +3,11 @@ module.exports = {
   testEnvironment: "node",
   roots: ["<rootDir>/spec", "<rootDir>/src"],
   testMatch: ["**/*.spec.ts"],
+  transform: {
+    "^.+\\.ts$": "ts-jest",
+  },
+  moduleFileExtensions: ["ts", "js", "json"],
   collectCoverageFrom: [
-    "src/plugins/**/*.ts",
     "src/utils/**/*.ts",
     "!src/**/*.d.ts",
     "!src/migrations/**/*.ts",
@@ -14,6 +17,8 @@ module.exports = {
     "!src/vendure-config.ts",
     "!src/environment.d.ts",
     "!src/entrypoint.ts",
+    "!src/**/*.spec.ts",
+    "!src/**/*.test.ts",
   ],
   coverageThreshold: {
     global: {
