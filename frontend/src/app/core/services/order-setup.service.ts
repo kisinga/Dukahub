@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import {
     CREATE_CUSTOMER,
+    GET_COUNTRIES,
     GET_CUSTOMERS,
     SET_CUSTOMER_FOR_DRAFT_ORDER,
     SET_DRAFT_ORDER_BILLING_ADDRESS,
@@ -33,6 +34,36 @@ export interface Order {
 @Injectable({ providedIn: 'root' })
 export class OrderSetupService {
     private apolloService = inject(ApolloService);
+
+    /**
+     * Get the first available country for address setup
+     */
+    private async getFirstAvailableCountry(): Promise<string> {
+        try {
+            const client = this.apolloService.getClient();
+
+            const result = await client.query({
+                query: GET_COUNTRIES,
+                variables: {
+                    options: {
+                        filter: { enabled: { eq: true } },
+                        take: 1
+                    }
+                }
+            });
+
+            const countries = result.data?.countries?.items;
+            if (countries && countries.length > 0) {
+                return countries[0].code;
+            }
+
+            // Fallback to Kenya if no countries found
+            return 'KE';
+        } catch (error) {
+            console.warn('⚠️ Could not fetch countries, using fallback:', error);
+            return 'KE';
+        }
+    }
 
     /**
      * Set up a complete order with all required details for state transitions
@@ -202,14 +233,16 @@ export class OrderSetupService {
         try {
             const client = this.apolloService.getClient();
 
+            // Get the first available country
+            const countryCode = await this.getFirstAvailableCountry();
 
             // Set a default address for both billing and shipping
             const defaultAddress = {
                 fullName: 'Walk-in Customer',
                 streetLine1: 'Store Location',
                 city: 'Local City',
-                postalCode: '12345',
-                countryCode: 'US'
+                postalCode: '00100',
+                countryCode: countryCode
             };
 
             // Set billing address

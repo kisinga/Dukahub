@@ -1010,6 +1010,20 @@ export const GET_CUSTOMERS = graphql(`
   }
 `);
 
+export const GET_COUNTRIES = graphql(`
+  query GetCountries($options: CountryListOptions) {
+    countries(options: $options) {
+      totalItems
+      items {
+        id
+        code
+        name
+        enabled
+      }
+    }
+  }
+`);
+
 export const GET_CUSTOMER = graphql(`
   query GetCustomer($id: ID!) {
     customer(id: $id) {
@@ -1300,6 +1314,111 @@ export const DELETE_SUPPLIER = graphql(`
     deleteCustomer(id: $id) {
       result
       message
+    }
+  }
+`);
+
+// ============================================================================
+// CHANNEL SETTINGS
+// ============================================================================
+
+export const GET_CHANNEL_SETTINGS = graphql(`
+  query GetChannelSettings {
+    getChannelSettings {
+      cashierFlowEnabled
+      cashierOpen
+      companyLogoAsset {
+        id
+        source
+        preview
+      }
+    }
+  }
+`);
+
+export const UPDATE_CHANNEL_SETTINGS = graphql(`
+  mutation UpdateChannelSettings($input: UpdateChannelSettingsInput!) {
+    updateChannelSettings(input: $input) {
+      cashierFlowEnabled
+      cashierOpen
+      companyLogoAsset {
+        id
+        source
+        preview
+      }
+    }
+  }
+`);
+
+export const GET_CHANNEL_ADMINISTRATORS = graphql(`
+  query GetChannelAdministrators {
+    getChannelAdministrators {
+      id
+      firstName
+      lastName
+      emailAddress
+      user {
+        id
+        identifier
+        verified
+      }
+    }
+  }
+`);
+
+export const INVITE_CHANNEL_ADMINISTRATOR = graphql(`
+  mutation InviteChannelAdministrator($input: InviteAdministratorInput!) {
+    inviteChannelAdministrator(input: $input) {
+      id
+      firstName
+      lastName
+      emailAddress
+    }
+  }
+`);
+
+export const GET_CHANNEL_PAYMENT_METHODS = graphql(`
+  query GetChannelPaymentMethods {
+    getChannelPaymentMethods {
+      id
+      code
+      name
+      description
+      enabled
+      customFields {
+        imageAsset {
+          id
+          preview
+        }
+        isActive
+      }
+    }
+  }
+`);
+
+export const CREATE_CHANNEL_PAYMENT_METHOD = graphql(`
+  mutation CreateChannelPaymentMethod($input: CreatePaymentMethodInput!) {
+    createChannelPaymentMethod(input: $input) {
+      id
+      code
+      name
+    }
+  }
+`);
+
+export const UPDATE_CHANNEL_PAYMENT_METHOD = graphql(`
+  mutation UpdateChannelPaymentMethod($input: UpdatePaymentMethodInput!) {
+    updateChannelPaymentMethod(input: $input) {
+      id
+      code
+      name
+      customFields {
+        imageAsset {
+          id
+          preview
+        }
+        isActive
+      }
     }
   }
 `);
