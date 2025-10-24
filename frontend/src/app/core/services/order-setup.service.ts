@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import {
     CREATE_CUSTOMER,
+    GET_CUSTOMERS,
     SET_CUSTOMER_FOR_DRAFT_ORDER,
     SET_DRAFT_ORDER_BILLING_ADDRESS,
     SET_DRAFT_ORDER_SHIPPING_ADDRESS
@@ -59,11 +60,47 @@ export class OrderSetupService {
 
 
     /**
+     * Get or create the shared walk-in customer for all POS orders
+     * 
+     * @returns Shared walk-in customer
+     */
+    async getOrCreateWalkInCustomer(): Promise<Customer> {
+        try {
+            const client = this.apolloService.getClient();
+
+            // Try to get existing walk-in customer by email
+            const existingResult = await client.query({
+                query: GET_CUSTOMERS,
+                variables: {
+                    options: {
+                        filter: {
+                            emailAddress: { eq: 'walkin@pos.local' }
+                        }
+                    }
+                }
+            });
+
+            if (existingResult.data?.customers?.items && existingResult.data.customers.items.length > 0) {
+                console.log('✅ Using existing walk-in customer');
+                return existingResult.data.customers.items[0] as Customer;
+            }
+
+            // Create if doesn't exist
+            console.log('📝 Creating new shared walk-in customer');
+            return this.createDefaultCustomer();
+
+        } catch (error) {
+            console.error('❌ Getting walk-in customer failed:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Create a default customer for walk-in orders
      * 
      * @returns Created customer
      */
-    async createDefaultCustomer(): Promise<Customer> {
+    private async createDefaultCustomer(): Promise<Customer> {
         try {
             const client = this.apolloService.getClient();
 
@@ -73,7 +110,7 @@ export class OrderSetupService {
                     input: {
                         firstName: 'Walk-in',
                         lastName: 'Customer',
-                        emailAddress: `walkin-${Date.now()}@example.com`,
+                        emailAddress: 'walkin@pos.local',
                         phoneNumber: '+1234567890'
                     }
                 }
@@ -102,7 +139,7 @@ export class OrderSetupService {
      * Set customer for a draft order
      * 
      * @param orderId Order ID to set customer for
-     * @param customerId Customer ID (optional, will create default if not provided)
+     * @param customerId Customer ID (optional, will use shared walk-in customer if not provided)
      * @returns Order with customer set
      */
     private async setCustomerForOrder(orderId: string, customerId?: string): Promise<Order> {
@@ -111,10 +148,10 @@ export class OrderSetupService {
 
             let finalCustomerId = customerId;
 
-            // If no customer provided, create a default one
+            // If no customer provided, use shared walk-in customer
             if (!finalCustomerId) {
-                const defaultCustomer = await this.createDefaultCustomer();
-                finalCustomerId = defaultCustomer.id;
+                const walkInCustomer = await this.getOrCreateWalkInCustomer();
+                finalCustomerId = walkInCustomer.id;
             }
 
 

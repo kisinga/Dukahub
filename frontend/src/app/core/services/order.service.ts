@@ -1,8 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import {
+    ADD_FULFILLMENT_TO_ORDER,
     ADD_ITEM_TO_DRAFT_ORDER,
     ADD_MANUAL_PAYMENT_TO_ORDER,
     CREATE_DRAFT_ORDER,
+    GET_ORDER_DETAILS,
     GET_PAYMENT_METHODS,
     TRANSITION_ORDER_TO_STATE
 } from '../graphql/operations.graphql';
@@ -154,9 +156,10 @@ export class OrderService {
 
             // Check if payment addition already completed the order
             if (orderWithPayment.state === 'PaymentSettled') {
-                finalOrder = orderWithPayment;
+                // 7. Fulfill the order (items handed to customer)
+                finalOrder = await this.fulfillOrder(orderWithPayment.id);
             } else if (input.isCashierFlow) {
-                // Cashier flow: stay in ArrangingPayment state
+                // Cashier flow: stay in ArrangingPayment state (not fulfilled yet)
                 finalOrder = orderWithPayment; // Already in ArrangingPayment
             } else if (input.isCreditSale) {
                 // Credit sale: stay in ArrangingPayment state (payment authorized but not settled)
@@ -164,7 +167,9 @@ export class OrderService {
             } else {
                 // Regular cash sale: try to complete if not already done
                 if (orderWithPayment.state === 'ArrangingPayment') {
-                    finalOrder = await this.transitionOrderState(orderWithPayment.id, 'PaymentSettled');
+                    const settledOrder = await this.transitionOrderState(orderWithPayment.id, 'PaymentSettled');
+                    // 7. Fulfill the order (items handed to customer)
+                    finalOrder = await this.fulfillOrder(settledOrder.id);
                 } else {
                     finalOrder = orderWithPayment;
                 }
@@ -282,6 +287,83 @@ export class OrderService {
 
         } catch (error) {
             console.error('❌ Order state transition failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Fulfill an order (items handed to customer)
+     * For POS systems, this represents the physical handover of items
+     * 
+     * @param orderId Order ID to fulfill
+     * @returns Fulfilled order
+     */
+    private async fulfillOrder(orderId: string): Promise<Order> {
+        try {
+            const client = this.apolloService.getClient();
+
+            // 1. Get order lines to fulfill
+            const orderResult = await client.query({
+                query: GET_ORDER_DETAILS,
+                variables: { id: orderId }
+            });
+
+            const order = orderResult.data?.order;
+            if (!order) {
+                throw new Error('Order not found');
+            }
+
+            // 2. Create fulfillment with all order lines
+            const fulfillmentInput = {
+                lines: order.lines.map((line: any) => ({
+                    orderLineId: line.id,
+                    quantity: line.quantity
+                })),
+                handler: {
+                    code: 'manual-fulfillment',
+                    arguments: [
+                        {
+                            name: 'method',
+                            value: 'POS Handover'
+                        },
+                        {
+                            name: 'trackingCode',
+                            value: `POS-${Date.now()}`
+                        }
+                    ]
+                }
+            };
+
+            const fulfillmentResult = await client.mutate({
+                mutation: ADD_FULFILLMENT_TO_ORDER,
+                variables: { input: fulfillmentInput }
+            });
+
+            if (fulfillmentResult.error) {
+                console.error('Fulfillment error:', fulfillmentResult.error);
+                throw new Error(`Fulfillment failed: ${fulfillmentResult.error.message}`);
+            }
+
+            const fulfillment = fulfillmentResult.data?.addFulfillmentToOrder;
+            if (!fulfillment || fulfillment.__typename !== 'Fulfillment') {
+                console.error('Fulfillment creation failed:', fulfillment);
+                const errorMessage = fulfillment && 'message' in fulfillment ? fulfillment.message : 'Unknown error';
+                throw new Error(`Fulfillment creation failed: ${errorMessage}`);
+            }
+
+            // 3. Fulfillment created - stock automatically decremented
+            // Return order in final PaymentSettled state (no need to transition further)
+            console.log('✅ Order fulfilled - stock decremented:', {
+                orderCode: order.code,
+                fulfillmentId: fulfillment.id,
+                state: fulfillment.state,
+                method: fulfillment.method,
+                trackingCode: fulfillment.trackingCode
+            });
+            return order as unknown as Order;
+
+        } catch (error) {
+            console.error('❌ Order fulfillment failed:', error);
             throw error;
         }
     }

@@ -7,6 +7,7 @@ import {
     DefaultSchedulerPlugin,
     DefaultSearchPlugin,
     LanguageCode,
+    manualFulfillmentHandler,
     VendureConfig
 } from '@vendure/core';
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
@@ -384,6 +385,9 @@ export const config: VendureConfig = {
     },
     orderOptions: {
         process: [customOrderProcess],
+    },
+    shippingOptions: {
+        fulfillmentHandlers: [manualFulfillmentHandler],
     },
     plugins: [
         GraphiqlPlugin.init(),

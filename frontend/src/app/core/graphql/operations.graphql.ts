@@ -749,6 +749,36 @@ export const TRANSITION_ORDER_TO_STATE = graphql(`
   }
 `);
 
+export const ADD_FULFILLMENT_TO_ORDER = graphql(`
+  mutation AddFulfillmentToOrder($input: FulfillOrderInput!) {
+    addFulfillmentToOrder(input: $input) {
+      ... on Fulfillment {
+        id
+        state
+        nextStates
+        createdAt
+        updatedAt
+        method
+        lines {
+          orderLineId
+          quantity
+        }
+        trackingCode
+      }
+      ... on CreateFulfillmentError {
+        errorCode
+        message
+        fulfillmentHandlerError
+      }
+      ... on FulfillmentStateTransitionError {
+        errorCode
+        message
+        transitionError
+      }
+    }
+  }
+`);
+
 // Note: These payment operations are not yet implemented in the backend
 // They are placeholders for future cashier flow implementation
 // export const ADD_PAYMENT_TO_ORDER = graphql(`
@@ -830,6 +860,26 @@ export const GET_PAYMENT_METHODS = graphql(`
     }
   }
 `);
+
+export const GET_ORDER_DETAILS = graphql(`
+  query GetOrderDetails($id: ID!) {
+    order(id: $id) {
+      id
+      code
+      state
+      lines {
+        id
+        quantity
+        productVariant {
+          id
+          name
+          sku
+        }
+      }
+    }
+  }
+`);
+
 
 export const GET_ORDER = graphql(`
   query GetOrder($id: ID!) {
