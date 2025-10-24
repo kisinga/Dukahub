@@ -94,6 +94,9 @@ jobs:
         with:
           node-version: "18"
 
+      - name: Install codecov CLI
+        run: npm install -g codecov
+
       - name: Download backend coverage
         uses: actions/download-artifact@v4
         with:
@@ -105,6 +108,7 @@ jobs:
         with:
           name: frontend-coverage
           path: ./frontend/coverage
+        continue-on-error: true
 
       - name: Check for coverage files
         run: |
@@ -121,10 +125,20 @@ jobs:
           fi
 
       - name: Upload combined coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./backend/coverage/lcov.info,./frontend/coverage/lcov.info
-          flags: combined
-          name: combined-coverage
-          fail_ci_if_error: false
+        run: |
+          # Create a list of available coverage files
+          COVERAGE_FILES=""
+          if [ -f "./backend/coverage/lcov.info" ]; then
+            COVERAGE_FILES="$COVERAGE_FILES ./backend/coverage/lcov.info"
+          fi
+          if [ -f "./frontend/coverage/lcov.info" ]; then
+            COVERAGE_FILES="$COVERAGE_FILES ./frontend/coverage/lcov.info"
+          fi
+
+          if [ -n "$COVERAGE_FILES" ]; then
+            echo "Uploading combined coverage with files: $COVERAGE_FILES"
+            npx codecov --files $COVERAGE_FILES --flags combined --name combined-coverage
+          else
+            echo "No coverage files found, skipping combined coverage upload"
+          fi
         continue-on-error: true
