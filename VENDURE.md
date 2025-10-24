@@ -1,19 +1,33 @@
-# Vendure Setup & Configuration Guide
+# Vendure Technical Configuration Guide
 
-This comprehensive guide covers Vendure setup, asset management, migrations, and company provisioning.
+This guide covers the technical setup, configuration, and advanced features of the Vendure backend system for Dukahub.
+
+## What This Guide Covers
+
+- **System setup & configuration** - One-time technical setup
+- **Asset management & migrations** - Database schema changes and asset handling
+- **Advanced configuration** - Custom fields, selectors, and technical features
+- **Known limitations** - Technical constraints and workarounds
+- **Product creation workflow** - Technical implementation details
+
+## What This Guide Does NOT Cover
+
+- **Customer provisioning** - See [CUSTOMER_PROVISIONING.md](./CUSTOMER_PROVISIONING.md)
+- **Infrastructure deployment** - See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md)
+- **ML model training** - See [ML_TRAINING_SETUP.md](./ML_TRAINING_SETUP.md)
 
 ## Table of Contents
 
-1. [System Setup & Company Provisioning](#system-setup--company-provisioning)
+1. [System Setup & Configuration](#system-setup--configuration)
 2. [Asset Management & Migration](#asset-management--migration)
 3. [Asset Selector Configuration](#asset-selector-configuration)
 4. [Channel Asset Fields Refactoring](#channel-asset-fields-refactoring)
 5. [Known Limitations](#known-limitations)
 6. [Product Creation Workflow](#product-creation-workflow)
 
-## System Setup & Company Provisioning
+## System Setup & Configuration
 
-### Phase 1: Initial System Setup (One-Time)
+### Initial System Setup (One-Time)
 
 **Prerequisites:**
 
@@ -21,144 +35,82 @@ This comprehensive guide covers Vendure setup, asset management, migrations, and
 - Backend started
 - Migrations auto-run on startup (`migrationsRun: true` in config)
 
-**Steps (via Vendure Admin UI - http://localhost:3002/admin):**
+**Steps (via Vendure Admin UI - http://localhost:3000/admin):**
 
-1. **Tax Configuration** (Required - all prices tax-inclusive)
+#### 1. Tax Configuration (Required)
 
-   - Navigate: Settings → Zones
-   - Create: Zone for your country/region
-   - Navigate: Settings → Tax Categories
-   - Create: "Standard Tax" category
-   - Navigate: Settings → Tax Rates
-   - Create: Tax rate (e.g., "VAT 0%" or appropriate rate)
-   - Set: "Tax included in price" = YES
-   - Assign: Tax rate to zone
-   - **Note:** Complex tax systems NOT yet supported. All prices are tax-inclusive.
+All prices are tax-inclusive in the POS system:
 
-### Phase 2: Company Provisioning (Per Customer/Tenant)
+1. Navigate: Settings → Zones
+2. Create: Zone for your country/region
+3. Navigate: Settings → Tax Categories
+4. Create: "Standard Tax" category
+5. Navigate: Settings → Tax Rates
+6. Create: Tax rate (e.g., "VAT 0%" or appropriate rate)
+7. Set: "Tax included in price" = YES
+8. Assign: Tax rate to zone
 
-**Complete ALL steps for each new company. Missing any step will break order creation.**
+**Note:** Complex tax systems NOT yet supported. All prices are tax-inclusive.
 
-#### Step 1: Create Channel
+#### 2. Create Walk-in Customer (One-Time Per System)
 
-- Navigate: Settings → Channels
-- Click: "Create new channel"
-- Fill:
-  - **Name:** Company name (e.g., "Downtown Groceries")
-  - **Code/Token:** Lowercase, no spaces (e.g., "downtown-groceries")
-  - **Currency:** Default currency
-- Save channel
-- **Note:** Copy channel ID for reference
+This customer is reused for all anonymous POS sales:
 
-#### Step 2: Create Stock Location
+1. Navigate: Customers → Customers
+2. Click: "Create new customer"
+3. Fill:
+   - **Email:** `walkin@pos.local`
+   - **First Name:** Walk-in
+   - **Last Name:** Customer
+   - **Phone:** (Optional)
+4. Save customer
 
-- Navigate: Settings → Stock Locations
-- Click: "Create new stock location"
-- Fill:
-  - **Name:** "{Company Name} - Main Store" (e.g., "Downtown Groceries - Main Store")
-  - **Description:** Optional
-- Assign: Channel from Step 1
-- Save location
+**Why this matters:** Vendure requires a customer for all orders. Using a shared walk-in customer prevents creating duplicate customer records for every sale.
 
-**Why this matters:** Orders CANNOT be created without a stock location. Vendure uses it for inventory allocation. The system will automatically use the first stock location assigned to the channel.
+### POS System Configuration
 
-#### Step 3: Create Payment Methods
+The system is configured for **in-store sales** without shipping:
 
-- Navigate: Settings → Payment Methods
-- Create **Cash Payment:**
-  - Name: "Cash Payment"
-  - Code: Auto-generated
-  - Handler: Select `cash-payment` from dropdown
-  - Enabled: YES
-  - Channels: Assign the channel from Step 1
-  - Save
-- Create **M-Pesa Payment:**
-  - Name: "M-Pesa Payment"
-  - Code: Auto-generated
-  - Handler: Select `mpesa-payment` from dropdown
-  - Enabled: YES
-  - Channels: Assign the channel from Step 1
-  - Save
+```typescript
+// backend/src/vendure-config.ts
+const customOrderProcess = configureDefaultOrderProcess({
+  arrangingPaymentRequiresShipping: false, // Disabled for POS
+  arrangingPaymentRequiresCustomer: true, // Keep customer requirement
+});
 
-**Why this matters:** No payment methods = no checkout options in POS.
+export const config: VendureConfig = {
+  orderOptions: {
+    process: [customOrderProcess],
+  },
+  // ... rest of config
+};
+```
 
-#### Step 4: Create Admin Role
+**Benefits:**
 
-- Navigate: Settings → Roles
-- Click: "Create new role"
-- Fill:
-  - **Name:** "{Company Name} Admin" (e.g., "Downtown Groceries Admin")
-  - **Description:** "Full admin access for {Company Name}"
-  - **Channels:** Select the channel from Step 1
-- Permissions: Select ALL for these entities:
-  - **Asset:** CreateAsset, ReadAsset, UpdateAsset, DeleteAsset
-  - **Catalog:** CreateCatalog, ReadCatalog, UpdateCatalog, DeleteCatalog
-  - **Customer:** CreateCustomer, ReadCustomer, UpdateCustomer, DeleteCustomer
-  - **Order:** CreateOrder, ReadOrder, UpdateOrder, DeleteOrder
-  - **Product:** CreateProduct, ReadProduct, UpdateProduct, DeleteProduct
-  - **ProductVariant:** CreateProductVariant, ReadProductVariant, UpdateProductVariant, DeleteProductVariant
-  - **StockLocation:** CreateStockLocation, ReadStockLocation, UpdateStockLocation
-  - **Payment:** CreatePayment, ReadPayment, UpdatePayment, SettlePayment
-  - **Fulfillment:** CreateFulfillment, ReadFulfillment, UpdateFulfillment
-- Save role
+- **Simplicity**: No shipping configuration needed for POS
+- **Performance**: Faster order creation (no shipping lookup)
+- **Flexibility**: Can enable shipping per channel if needed
+- **Maintainability**: Less code, fewer edge cases
+- **User Experience**: Faster checkout for walk-in customers
 
-**Permission Notes:**
+### Order Flow
 
-- Asset permissions REQUIRED for product photo uploads (CreateAsset, UpdateAsset)
-- Payment permissions REQUIRED for checkout flow (CreatePayment, SettlePayment)
-- Missing permissions = 403 errors in frontend
+```
+1. Create draft order
+2. Add items to cart (via AI camera, barcode, or search)
+3. Set customer (walk-in or registered)
+4. Set minimal address (store location)
+5. Transition to ArrangingPayment
+6. Add payment (Cash, M-Pesa, etc.)
+7. Complete order ✅
+```
 
-#### Step 5: Create Admin User
+### Product Entry Methods
 
-- Navigate: Settings → Administrators
-- Click: "Create new administrator"
-- Fill:
-  - **Email:** admin@{company-domain}.com
-  - **First name:** Admin first name
-  - **Last name:** Admin last name
-  - **Password:** Generate strong password
-- Assign: Role from Step 4
-- Save user
-- **IMPORTANT:** Send credentials to company admin securely (do NOT send via email unencrypted)
-
-#### Step 6: Verification Checklist
-
-Before handing off to customer, verify:
-
-- [ ] Channel exists and is active
-- [ ] Stock location created and assigned to channel (first location will be used for orders)
-- [ ] Payment methods (Cash + M-Pesa) created and assigned to channel
-- [ ] Admin role created with all required permissions
-- [ ] Admin user created and assigned to role
-- [ ] Test login: Admin can access frontend with their credentials
-- [ ] Test visibility: Admin sees ONLY their channel's data
-
-### Common Setup Issues
-
-**Product photos fail (403 Forbidden):**
-
-- **Cause:** Missing Asset permissions on role
-- **Solution:** Edit role → Add CreateAsset, ReadAsset, UpdateAsset permissions → Save
-
-**Orders fail to create:**
-
-- **Cause:** No stock location assigned to channel
-- **Solution:** Complete Step 2, ensure at least one stock location is assigned to the channel
-
-**No payment methods at checkout:**
-
-- **Cause:** Payment methods not assigned to channel
-- **Solution:** Edit payment methods → Ensure channel is selected in "Channels" field
-
-**Admin sees all companies (not just theirs):**
-
-- **Cause:** Role not scoped to channel
-- **Solution:** Edit role → Ensure channel is selected in "Channels" field
-
-**User cannot login to frontend:**
-
-- **Cause:** User not assigned to any role, or role not assigned to channel
-- **Solution:** Edit user → Assign role → Ensure role is channel-scoped
+1. **📷 AI Camera** - Auto-detects product at 90% confidence
+2. **📱 Barcode** - Direct SKU scan (Chrome/Edge)
+3. **🔍 Search** - Manual name/SKU lookup
 
 ## Asset Management & Migration
 
@@ -864,10 +816,10 @@ Asset Creation
 
 ---
 
-## Support
+## Related Documentation
 
-For issues or questions:
-
-1. Check the Vendure documentation: https://docs.vendure.io
-2. Review the migration logs for specific error messages
-3. Ensure all dependencies are up to date
+- **Customer Provisioning:** [CUSTOMER_PROVISIONING.md](./CUSTOMER_PROVISIONING.md) - Step-by-step customer setup process
+- **Infrastructure:** [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) - Server setup and deployment
+- **ML Training:** [ML_TRAINING_SETUP.md](./ML_TRAINING_SETUP.md) - Machine learning model setup
+- **General:** [README.md](./README.md) - Project overview and getting started
+- **Vendure Documentation:** https://docs.vendure.io
