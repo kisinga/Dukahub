@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ReplaySubject, firstValueFrom } from 'rxjs';
+import { Permission } from '../graphql/generated/graphql';
 import {
   GET_ACTIVE_ADMIN,
   LOGIN,
@@ -47,6 +48,24 @@ export class AuthService {
     return `${user.firstName} ${user.lastName}`.trim() || user.emailAddress;
   });
 
+  readonly hasUpdateSettingsPermission = computed(() => {
+    const user = this.userSignal();
+    if (!user?.user?.roles) return false;
+
+    // Check if user has UpdateSettings permission in ANY role
+    const hasPermission = user.user.roles.some(role =>
+      role.permissions.includes(Permission.UpdateSettings)
+    );
+
+    console.log('🔐 Permission check:', {
+      user: user?.firstName,
+      roles: user?.user?.roles?.map(r => ({ code: r.code, permissions: r.permissions })),
+      hasPermission
+    });
+
+    return hasPermission;
+  });
+
   constructor() {
     // Register session expiration handler with Apollo service
     this.apolloService.onSessionExpired(() => {
@@ -76,6 +95,7 @@ export class AuthService {
       this.initialized$.complete();
     }
   }
+
 
   /**
    * Fetch the currently authenticated administrator

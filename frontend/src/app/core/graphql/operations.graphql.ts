@@ -29,6 +29,15 @@ export const GET_ACTIVE_ADMIN = graphql(`
       firstName
       lastName
       emailAddress
+      user {
+        id
+        identifier
+        roles {
+          id
+          code
+          permissions
+        }
+      }
     }
   }
 `);

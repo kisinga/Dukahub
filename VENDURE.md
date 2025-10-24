@@ -758,6 +758,31 @@ async updateChannelAssets(channelId: string, assets: Partial<ChannelAssets>): Pr
 - Roles must be created per Channel unless explicitly shared
 - Users in shared roles can see all associated Channels
 
+### Custom Field Relations
+
+**Issue**: Custom field relations (e.g., `companyLogoAsset` on Channel entity) are not properly loaded by custom resolvers.
+
+**Symptoms**:
+
+- Settings page shows "No logo set" despite logo being configured
+- `GET_CHANNEL_SETTINGS` query returns `null` for relation fields
+- Logo displays correctly in navbar (using `GET_ACTIVE_CHANNEL` query)
+
+**Root Cause**:
+
+- Custom resolvers using `channelService.findOne()` don't automatically load custom field relations
+- Vendure's built-in `activeChannel` resolver handles this correctly, but custom resolvers require manual relation loading
+
+**Current Workaround**:
+
+- Frontend uses `CompanyService` (which uses `GET_ACTIVE_CHANNEL`) for logo display in settings
+- Backend `getChannelSettings` resolver returns `null` for relation fields with comment explaining the workaround
+
+**Future Fix Required**:
+
+- Implement proper custom field relation loading in custom resolvers
+- Either use Vendure's built-in relation loading mechanisms or manually load relations using `TransactionalConnection`
+
 ## Product Creation Workflow
 
 ### Current State (Frontend Direct Upload)

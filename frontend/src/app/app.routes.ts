@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, noAuthGuard } from './core/guards/auth.guard';
+import { settingsGuard } from './core/guards/settings.guard';
 
 export const routes: Routes = [
     // Marketing pages (include their own navbar/footer)
@@ -116,6 +117,7 @@ export const routes: Routes = [
             },
             {
                 path: 'settings',
+                canActivate: [settingsGuard],
                 loadComponent: () =>
                     import('./dashboard/pages/settings/settings.component').then((m) => m.SettingsComponent)
             }

@@ -25,16 +25,24 @@ export class DashboardLayoutComponent implements OnInit {
     private readonly appInitService = inject(AppInitService);
     private lastCompanyId: string | null = null;
 
-    protected readonly navItems: NavItem[] = [
-        { label: 'Overview', icon: '📊', route: '/dashboard' },
-        { label: 'Sell', icon: '💰', route: '/dashboard/sell' },
-        { label: 'Products', icon: '📦', route: '/dashboard/products' },
-        { label: 'Customers', icon: '👥', route: '/dashboard/customers' },
-        { label: 'Suppliers', icon: '🏢', route: '/dashboard/suppliers' },
-        { label: 'Inventory', icon: '📋', route: '/dashboard/inventory' },
-        { label: 'Reports', icon: '📈', route: '/dashboard/reports' },
-        { label: 'Settings', icon: '⚙️', route: '/dashboard/settings' }
-    ];
+    protected readonly navItems = computed(() => {
+        const baseItems: NavItem[] = [
+            { label: 'Overview', icon: '📊', route: '/dashboard' },
+            { label: 'Sell', icon: '💰', route: '/dashboard/sell' },
+            { label: 'Products', icon: '📦', route: '/dashboard/products' },
+            { label: 'Customers', icon: '👥', route: '/dashboard/customers' },
+            { label: 'Suppliers', icon: '🏢', route: '/dashboard/suppliers' },
+            { label: 'Inventory', icon: '📋', route: '/dashboard/inventory' },
+            { label: 'Reports', icon: '📈', route: '/dashboard/reports' },
+        ];
+
+        // Only add Settings if user has UpdateSettings permission
+        if (this.authService.hasUpdateSettingsPermission()) {
+            baseItems.push({ label: 'Settings', icon: '⚙️', route: '/dashboard/settings' });
+        }
+
+        return baseItems;
+    });
 
     protected readonly notifications = [
         {
@@ -104,7 +112,7 @@ export class DashboardLayoutComponent implements OnInit {
 
     protected readonly logoUrl = computed(() => {
         // Use the new proxy-compatible logo URL directly
-        return this.companyLogoUrl() || 'default_avatar.png';
+        return this.companyLogoUrl() || 'shop_icon.png';
     });
 
     constructor() {

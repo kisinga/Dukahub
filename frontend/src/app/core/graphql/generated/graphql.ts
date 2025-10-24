@@ -487,6 +487,13 @@ export type ChannelListOptions = {
   take?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type ChannelSettings = {
+  __typename?: 'ChannelSettings';
+  cashierFlowEnabled: Scalars['Boolean']['output'];
+  cashierOpen: Scalars['Boolean']['output'];
+  companyLogoAsset?: Maybe<Asset>;
+};
+
 export type ChannelSortParameter = {
   cashierFlowEnabled?: InputMaybe<SortOrder>;
   cashierOpen?: InputMaybe<SortOrder>;
@@ -2268,6 +2275,12 @@ export type InvalidFulfillmentHandlerError = ErrorResult & {
   message: Scalars['String']['output'];
 };
 
+export type InviteAdministratorInput = {
+  emailAddress: Scalars['String']['input'];
+  firstName: Scalars['String']['input'];
+  lastName: Scalars['String']['input'];
+};
+
 /** Returned if the specified items are already part of a Fulfillment */
 export type ItemsAlreadyFulfilledError = ErrorResult & {
   __typename?: 'ItemsAlreadyFulfilledError';
@@ -2941,6 +2954,7 @@ export type Mutation = {
   createAssets: Array<CreateAssetResult>;
   /** Create a new Channel */
   createChannel: CreateChannelResult;
+  createChannelPaymentMethod: PaymentMethod;
   /** Create a new Collection */
   createCollection: Collection;
   /** Create a new Country */
@@ -3082,6 +3096,7 @@ export type Mutation = {
   extractPhotosForTraining: Scalars['Boolean']['output'];
   flushBufferedJobs: Success;
   importProducts?: Maybe<ImportInfo>;
+  inviteChannelAdministrator: Administrator;
   /** Link existing Asset IDs to channel (simpler than file upload) */
   linkMlModelAssets: Scalars['Boolean']['output'];
   /**
@@ -3171,6 +3186,8 @@ export type Mutation = {
   updateAsset: Asset;
   /** Update an existing Channel */
   updateChannel: UpdateChannelResult;
+  updateChannelPaymentMethod: PaymentMethod;
+  updateChannelSettings: ChannelSettings;
   /** Update an existing Collection */
   updateCollection: Collection;
   /** Update an existing Country */
@@ -3381,6 +3398,11 @@ export type MutationCreateAssetsArgs = {
 
 export type MutationCreateChannelArgs = {
   input: CreateChannelInput;
+};
+
+
+export type MutationCreateChannelPaymentMethodArgs = {
+  input: CreatePaymentMethodInput;
 };
 
 
@@ -3756,6 +3778,11 @@ export type MutationImportProductsArgs = {
 };
 
 
+export type MutationInviteChannelAdministratorArgs = {
+  input: InviteAdministratorInput;
+};
+
+
 export type MutationLinkMlModelAssetsArgs = {
   channelId: Scalars['ID']['input'];
   metadataId: Scalars['ID']['input'];
@@ -3980,6 +4007,16 @@ export type MutationUpdateAssetArgs = {
 
 export type MutationUpdateChannelArgs = {
   input: UpdateChannelInput;
+};
+
+
+export type MutationUpdateChannelPaymentMethodArgs = {
+  input: UpdatePaymentMethodInput;
+};
+
+
+export type MutationUpdateChannelSettingsArgs = {
+  input: UpdateChannelSettingsInput;
 };
 
 
@@ -5376,6 +5413,9 @@ export type Query = {
   facetValues: FacetValueList;
   facets: FacetList;
   fulfillmentHandlers: Array<ConfigurableOperationDefinition>;
+  getChannelAdministrators: Array<Administrator>;
+  getChannelPaymentMethods: Array<PaymentMethod>;
+  getChannelSettings: ChannelSettings;
   /** Get value for a specific key (automatically scoped based on field configuration) */
   getSettingsStoreValue?: Maybe<Scalars['JSON']['output']>;
   /** Get multiple key-value pairs (each automatically scoped) */
@@ -6806,6 +6846,12 @@ export type UpdateChannelInput = {
 
 export type UpdateChannelResult = Channel | LanguageNotAvailableError;
 
+export type UpdateChannelSettingsInput = {
+  cashierFlowEnabled?: InputMaybe<Scalars['Boolean']['input']>;
+  cashierOpen?: InputMaybe<Scalars['Boolean']['input']>;
+  companyLogoAssetId?: InputMaybe<Scalars['ID']['input']>;
+};
+
 export type UpdateCollectionInput = {
   assetIds?: InputMaybe<Array<Scalars['ID']['input']>>;
   customFields?: InputMaybe<Scalars['JSON']['input']>;
@@ -7146,7 +7192,7 @@ export type ZoneSortParameter = {
 export type GetActiveAdministratorQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetActiveAdministratorQuery = { __typename?: 'Query', activeAdministrator?: { __typename?: 'Administrator', id: string, firstName: string, lastName: string, emailAddress: string } | null };
+export type GetActiveAdministratorQuery = { __typename?: 'Query', activeAdministrator?: { __typename?: 'Administrator', id: string, firstName: string, lastName: string, emailAddress: string, user: { __typename?: 'User', id: string, identifier: string, roles: Array<{ __typename?: 'Role', id: string, code: string, permissions: Array<Permission> }> } } | null };
 
 export type LoginMutationVariables = Exact<{
   username: Scalars['String']['input'];
@@ -7609,8 +7655,51 @@ export type DeleteSupplierMutationVariables = Exact<{
 
 export type DeleteSupplierMutation = { __typename?: 'Mutation', deleteCustomer: { __typename?: 'DeletionResponse', result: DeletionResult, message?: string | null } };
 
+export type GetChannelSettingsQueryVariables = Exact<{ [key: string]: never; }>;
 
-export const GetActiveAdministratorDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetActiveAdministrator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activeAdministrator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}}]}}]}}]} as unknown as DocumentNode<GetActiveAdministratorQuery, GetActiveAdministratorQueryVariables>;
+
+export type GetChannelSettingsQuery = { __typename?: 'Query', getChannelSettings: { __typename?: 'ChannelSettings', cashierFlowEnabled: boolean, cashierOpen: boolean, companyLogoAsset?: { __typename?: 'Asset', id: string, source: string, preview: string } | null } };
+
+export type UpdateChannelSettingsMutationVariables = Exact<{
+  input: UpdateChannelSettingsInput;
+}>;
+
+
+export type UpdateChannelSettingsMutation = { __typename?: 'Mutation', updateChannelSettings: { __typename?: 'ChannelSettings', cashierFlowEnabled: boolean, cashierOpen: boolean, companyLogoAsset?: { __typename?: 'Asset', id: string, source: string, preview: string } | null } };
+
+export type GetChannelAdministratorsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetChannelAdministratorsQuery = { __typename?: 'Query', getChannelAdministrators: Array<{ __typename?: 'Administrator', id: string, firstName: string, lastName: string, emailAddress: string, user: { __typename?: 'User', id: string, identifier: string, verified: boolean } }> };
+
+export type InviteChannelAdministratorMutationVariables = Exact<{
+  input: InviteAdministratorInput;
+}>;
+
+
+export type InviteChannelAdministratorMutation = { __typename?: 'Mutation', inviteChannelAdministrator: { __typename?: 'Administrator', id: string, firstName: string, lastName: string, emailAddress: string } };
+
+export type GetChannelPaymentMethodsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetChannelPaymentMethodsQuery = { __typename?: 'Query', getChannelPaymentMethods: Array<{ __typename?: 'PaymentMethod', id: string, code: string, name: string, description: string, enabled: boolean, customFields?: { __typename?: 'PaymentMethodCustomFields', isActive?: boolean | null, imageAsset?: { __typename?: 'Asset', id: string, preview: string } | null } | null }> };
+
+export type CreateChannelPaymentMethodMutationVariables = Exact<{
+  input: CreatePaymentMethodInput;
+}>;
+
+
+export type CreateChannelPaymentMethodMutation = { __typename?: 'Mutation', createChannelPaymentMethod: { __typename?: 'PaymentMethod', id: string, code: string, name: string } };
+
+export type UpdateChannelPaymentMethodMutationVariables = Exact<{
+  input: UpdatePaymentMethodInput;
+}>;
+
+
+export type UpdateChannelPaymentMethodMutation = { __typename?: 'Mutation', updateChannelPaymentMethod: { __typename?: 'PaymentMethod', id: string, code: string, name: string, customFields?: { __typename?: 'PaymentMethodCustomFields', isActive?: boolean | null, imageAsset?: { __typename?: 'Asset', id: string, preview: string } | null } | null } };
+
+
+export const GetActiveAdministratorDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetActiveAdministrator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activeAdministrator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"identifier"}},{"kind":"Field","name":{"kind":"Name","value":"roles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetActiveAdministratorQuery, GetActiveAdministratorQueryVariables>;
 export const LoginDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Login"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"username"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"password"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"rememberMe"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"login"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"username"},"value":{"kind":"Variable","name":{"kind":"Name","value":"username"}}},{"kind":"Argument","name":{"kind":"Name","value":"password"},"value":{"kind":"Variable","name":{"kind":"Name","value":"password"}}},{"kind":"Argument","name":{"kind":"Name","value":"rememberMe"},"value":{"kind":"Variable","name":{"kind":"Name","value":"rememberMe"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CurrentUser"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"identifier"}},{"kind":"Field","name":{"kind":"Name","value":"channels"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"token"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"InvalidCredentialsError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"NativeAuthStrategyError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]}}]} as unknown as DocumentNode<LoginMutation, LoginMutationVariables>;
 export const LogoutDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Logout"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"logout"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<LogoutMutation, LogoutMutationVariables>;
 export const UpdateAdministratorDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateAdministrator"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateActiveAdministratorInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateActiveAdministrator"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}}]}}]}}]} as unknown as DocumentNode<UpdateAdministratorMutation, UpdateAdministratorMutationVariables>;
@@ -7669,3 +7758,10 @@ export const GetSupplierDocument = {"kind":"Document","definitions":[{"kind":"Op
 export const CreateSupplierDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateSupplier"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateCustomerInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createCustomer"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Customer"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isSupplier"}},{"kind":"Field","name":{"kind":"Name","value":"supplierType"}},{"kind":"Field","name":{"kind":"Name","value":"contactPerson"}},{"kind":"Field","name":{"kind":"Name","value":"taxId"}},{"kind":"Field","name":{"kind":"Name","value":"paymentTerms"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"outstandingAmount"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"EmailAddressConflictError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]}}]} as unknown as DocumentNode<CreateSupplierMutation, CreateSupplierMutationVariables>;
 export const UpdateSupplierDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateSupplier"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateCustomerInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateCustomer"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Customer"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isSupplier"}},{"kind":"Field","name":{"kind":"Name","value":"supplierType"}},{"kind":"Field","name":{"kind":"Name","value":"contactPerson"}},{"kind":"Field","name":{"kind":"Name","value":"taxId"}},{"kind":"Field","name":{"kind":"Name","value":"paymentTerms"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"outstandingAmount"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"EmailAddressConflictError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateSupplierMutation, UpdateSupplierMutationVariables>;
 export const DeleteSupplierDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteSupplier"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteCustomer"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"result"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]} as unknown as DocumentNode<DeleteSupplierMutation, DeleteSupplierMutationVariables>;
+export const GetChannelSettingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetChannelSettings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getChannelSettings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cashierFlowEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"cashierOpen"}},{"kind":"Field","name":{"kind":"Name","value":"companyLogoAsset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"source"}},{"kind":"Field","name":{"kind":"Name","value":"preview"}}]}}]}}]}}]} as unknown as DocumentNode<GetChannelSettingsQuery, GetChannelSettingsQueryVariables>;
+export const UpdateChannelSettingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateChannelSettings"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateChannelSettingsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateChannelSettings"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cashierFlowEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"cashierOpen"}},{"kind":"Field","name":{"kind":"Name","value":"companyLogoAsset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"source"}},{"kind":"Field","name":{"kind":"Name","value":"preview"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateChannelSettingsMutation, UpdateChannelSettingsMutationVariables>;
+export const GetChannelAdministratorsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetChannelAdministrators"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getChannelAdministrators"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"identifier"}},{"kind":"Field","name":{"kind":"Name","value":"verified"}}]}}]}}]}}]} as unknown as DocumentNode<GetChannelAdministratorsQuery, GetChannelAdministratorsQueryVariables>;
+export const InviteChannelAdministratorDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"InviteChannelAdministrator"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"InviteAdministratorInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"inviteChannelAdministrator"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}}]}}]}}]} as unknown as DocumentNode<InviteChannelAdministratorMutation, InviteChannelAdministratorMutationVariables>;
+export const GetChannelPaymentMethodsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetChannelPaymentMethods"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getChannelPaymentMethods"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"enabled"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"imageAsset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"preview"}}]}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}}]}}]}}]}}]} as unknown as DocumentNode<GetChannelPaymentMethodsQuery, GetChannelPaymentMethodsQueryVariables>;
+export const CreateChannelPaymentMethodDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateChannelPaymentMethod"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreatePaymentMethodInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createChannelPaymentMethod"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<CreateChannelPaymentMethodMutation, CreateChannelPaymentMethodMutationVariables>;
+export const UpdateChannelPaymentMethodDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateChannelPaymentMethod"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdatePaymentMethodInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateChannelPaymentMethod"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"imageAsset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"preview"}}]}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateChannelPaymentMethodMutation, UpdateChannelPaymentMethodMutationVariables>;
