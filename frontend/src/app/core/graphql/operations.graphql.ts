@@ -29,6 +29,15 @@ export const GET_ACTIVE_ADMIN = graphql(`
       firstName
       lastName
       emailAddress
+      user {
+        id
+        identifier
+        roles {
+          id
+          code
+          permissions
+        }
+      }
     }
   }
 `);
@@ -749,6 +758,36 @@ export const TRANSITION_ORDER_TO_STATE = graphql(`
   }
 `);
 
+export const ADD_FULFILLMENT_TO_ORDER = graphql(`
+  mutation AddFulfillmentToOrder($input: FulfillOrderInput!) {
+    addFulfillmentToOrder(input: $input) {
+      ... on Fulfillment {
+        id
+        state
+        nextStates
+        createdAt
+        updatedAt
+        method
+        lines {
+          orderLineId
+          quantity
+        }
+        trackingCode
+      }
+      ... on CreateFulfillmentError {
+        errorCode
+        message
+        fulfillmentHandlerError
+      }
+      ... on FulfillmentStateTransitionError {
+        errorCode
+        message
+        transitionError
+      }
+    }
+  }
+`);
+
 // Note: These payment operations are not yet implemented in the backend
 // They are placeholders for future cashier flow implementation
 // export const ADD_PAYMENT_TO_ORDER = graphql(`
@@ -830,6 +869,26 @@ export const GET_PAYMENT_METHODS = graphql(`
     }
   }
 `);
+
+export const GET_ORDER_DETAILS = graphql(`
+  query GetOrderDetails($id: ID!) {
+    order(id: $id) {
+      id
+      code
+      state
+      lines {
+        id
+        quantity
+        productVariant {
+          id
+          name
+          sku
+        }
+      }
+    }
+  }
+`);
+
 
 export const GET_ORDER = graphql(`
   query GetOrder($id: ID!) {
@@ -955,6 +1014,20 @@ export const GET_CUSTOMERS = graphql(`
           identifier
           verified
         }
+      }
+    }
+  }
+`);
+
+export const GET_COUNTRIES = graphql(`
+  query GetCountries($options: CountryListOptions) {
+    countries(options: $options) {
+      totalItems
+      items {
+        id
+        code
+        name
+        enabled
       }
     }
   }
@@ -1250,6 +1323,111 @@ export const DELETE_SUPPLIER = graphql(`
     deleteCustomer(id: $id) {
       result
       message
+    }
+  }
+`);
+
+// ============================================================================
+// CHANNEL SETTINGS
+// ============================================================================
+
+export const GET_CHANNEL_SETTINGS = graphql(`
+  query GetChannelSettings {
+    getChannelSettings {
+      cashierFlowEnabled
+      cashierOpen
+      companyLogoAsset {
+        id
+        source
+        preview
+      }
+    }
+  }
+`);
+
+export const UPDATE_CHANNEL_SETTINGS = graphql(`
+  mutation UpdateChannelSettings($input: UpdateChannelSettingsInput!) {
+    updateChannelSettings(input: $input) {
+      cashierFlowEnabled
+      cashierOpen
+      companyLogoAsset {
+        id
+        source
+        preview
+      }
+    }
+  }
+`);
+
+export const GET_CHANNEL_ADMINISTRATORS = graphql(`
+  query GetChannelAdministrators {
+    getChannelAdministrators {
+      id
+      firstName
+      lastName
+      emailAddress
+      user {
+        id
+        identifier
+        verified
+      }
+    }
+  }
+`);
+
+export const INVITE_CHANNEL_ADMINISTRATOR = graphql(`
+  mutation InviteChannelAdministrator($input: InviteAdministratorInput!) {
+    inviteChannelAdministrator(input: $input) {
+      id
+      firstName
+      lastName
+      emailAddress
+    }
+  }
+`);
+
+export const GET_CHANNEL_PAYMENT_METHODS = graphql(`
+  query GetChannelPaymentMethods {
+    getChannelPaymentMethods {
+      id
+      code
+      name
+      description
+      enabled
+      customFields {
+        imageAsset {
+          id
+          preview
+        }
+        isActive
+      }
+    }
+  }
+`);
+
+export const CREATE_CHANNEL_PAYMENT_METHOD = graphql(`
+  mutation CreateChannelPaymentMethod($input: CreatePaymentMethodInput!) {
+    createChannelPaymentMethod(input: $input) {
+      id
+      code
+      name
+    }
+  }
+`);
+
+export const UPDATE_CHANNEL_PAYMENT_METHOD = graphql(`
+  mutation UpdateChannelPaymentMethod($input: UpdatePaymentMethodInput!) {
+    updateChannelPaymentMethod(input: $input) {
+      id
+      code
+      name
+      customFields {
+        imageAsset {
+          id
+          preview
+        }
+        isActive
+      }
     }
   }
 `);

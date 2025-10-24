@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import {
     CREATE_CUSTOMER,
+    GET_COUNTRIES,
+    GET_CUSTOMERS,
     SET_CUSTOMER_FOR_DRAFT_ORDER,
     SET_DRAFT_ORDER_BILLING_ADDRESS,
     SET_DRAFT_ORDER_SHIPPING_ADDRESS
@@ -34,6 +36,36 @@ export class OrderSetupService {
     private apolloService = inject(ApolloService);
 
     /**
+     * Get the first available country for address setup
+     */
+    private async getFirstAvailableCountry(): Promise<string> {
+        try {
+            const client = this.apolloService.getClient();
+
+            const result = await client.query({
+                query: GET_COUNTRIES,
+                variables: {
+                    options: {
+                        filter: { enabled: { eq: true } },
+                        take: 1
+                    }
+                }
+            });
+
+            const countries = result.data?.countries?.items;
+            if (countries && countries.length > 0) {
+                return countries[0].code;
+            }
+
+            // Fallback to Kenya if no countries found
+            return 'KE';
+        } catch (error) {
+            console.warn('⚠️ Could not fetch countries, using fallback:', error);
+            return 'KE';
+        }
+    }
+
+    /**
      * Set up a complete order with all required details for state transitions
      * 
      * @param orderId Order ID to set up
@@ -59,11 +91,47 @@ export class OrderSetupService {
 
 
     /**
+     * Get or create the shared walk-in customer for all POS orders
+     * 
+     * @returns Shared walk-in customer
+     */
+    async getOrCreateWalkInCustomer(): Promise<Customer> {
+        try {
+            const client = this.apolloService.getClient();
+
+            // Try to get existing walk-in customer by email
+            const existingResult = await client.query({
+                query: GET_CUSTOMERS,
+                variables: {
+                    options: {
+                        filter: {
+                            emailAddress: { eq: 'walkin@pos.local' }
+                        }
+                    }
+                }
+            });
+
+            if (existingResult.data?.customers?.items && existingResult.data.customers.items.length > 0) {
+                console.log('✅ Using existing walk-in customer');
+                return existingResult.data.customers.items[0] as Customer;
+            }
+
+            // Create if doesn't exist
+            console.log('📝 Creating new shared walk-in customer');
+            return this.createDefaultCustomer();
+
+        } catch (error) {
+            console.error('❌ Getting walk-in customer failed:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Create a default customer for walk-in orders
      * 
      * @returns Created customer
      */
-    async createDefaultCustomer(): Promise<Customer> {
+    private async createDefaultCustomer(): Promise<Customer> {
         try {
             const client = this.apolloService.getClient();
 
@@ -73,7 +141,7 @@ export class OrderSetupService {
                     input: {
                         firstName: 'Walk-in',
                         lastName: 'Customer',
-                        emailAddress: `walkin-${Date.now()}@example.com`,
+                        emailAddress: 'walkin@pos.local',
                         phoneNumber: '+1234567890'
                     }
                 }
@@ -102,7 +170,7 @@ export class OrderSetupService {
      * Set customer for a draft order
      * 
      * @param orderId Order ID to set customer for
-     * @param customerId Customer ID (optional, will create default if not provided)
+     * @param customerId Customer ID (optional, will use shared walk-in customer if not provided)
      * @returns Order with customer set
      */
     private async setCustomerForOrder(orderId: string, customerId?: string): Promise<Order> {
@@ -111,10 +179,10 @@ export class OrderSetupService {
 
             let finalCustomerId = customerId;
 
-            // If no customer provided, create a default one
+            // If no customer provided, use shared walk-in customer
             if (!finalCustomerId) {
-                const defaultCustomer = await this.createDefaultCustomer();
-                finalCustomerId = defaultCustomer.id;
+                const walkInCustomer = await this.getOrCreateWalkInCustomer();
+                finalCustomerId = walkInCustomer.id;
             }
 
 
@@ -165,14 +233,16 @@ export class OrderSetupService {
         try {
             const client = this.apolloService.getClient();
 
+            // Get the first available country
+            const countryCode = await this.getFirstAvailableCountry();
 
             // Set a default address for both billing and shipping
             const defaultAddress = {
                 fullName: 'Walk-in Customer',
                 streetLine1: 'Store Location',
                 city: 'Local City',
-                postalCode: '12345',
-                countryCode: 'US'
+                postalCode: '00100',
+                countryCode: countryCode
             };
 
             // Set billing address

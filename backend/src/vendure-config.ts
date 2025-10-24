@@ -7,6 +7,7 @@ import {
     DefaultSchedulerPlugin,
     DefaultSearchPlugin,
     LanguageCode,
+    manualFulfillmentHandler,
     VendureConfig
 } from '@vendure/core';
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
@@ -15,6 +16,7 @@ import { config as dotenvConfig } from 'dotenv';
 import { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
+import { ChannelSettingsPlugin } from './plugins/channel-settings.plugin';
 import { MlModelPlugin } from './plugins/ml-model.plugin';
 import { cashPaymentHandler, mpesaPaymentHandler } from './plugins/payment-handlers';
 
@@ -385,9 +387,13 @@ export const config: VendureConfig = {
     orderOptions: {
         process: [customOrderProcess],
     },
+    shippingOptions: {
+        fulfillmentHandlers: [manualFulfillmentHandler],
+    },
     plugins: [
         GraphiqlPlugin.init(),
         MlModelPlugin,
+        ChannelSettingsPlugin,
         AssetServerPlugin.init({
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),
