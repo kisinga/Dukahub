@@ -112,7 +112,7 @@ describe('Behavioral Smoke Tests', () => {
 
             // Test missing company data
             companyService.activateCompany('non-existent');
-            expect(companyService.activeCompanyId()).toBe('non-existent');
+            expect(companyService.activeCompanyId()).toBeNull();
             expect(companyService.activeCompany()).toBeNull();
         });
     });

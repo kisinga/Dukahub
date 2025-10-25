@@ -92,7 +92,7 @@ describe('Service Behavior Tests', () => {
         it('should handle missing data gracefully', () => {
             // Test: Services should handle missing data
             companyService.activateCompany('non-existent');
-            expect(companyService.activeCompanyId()).toBe('non-existent');
+            expect(companyService.activeCompanyId()).toBeNull();
             expect(companyService.activeCompany()).toBeNull();
         });
 

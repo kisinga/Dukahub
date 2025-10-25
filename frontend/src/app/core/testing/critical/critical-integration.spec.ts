@@ -87,7 +87,7 @@ describe('Critical Integration Points', () => {
 
             // Test: Service should handle missing data
             companyService.activateCompany('non-existent');
-            expect(companyService.activeCompanyId()).toBe('non-existent');
+            expect(companyService.activeCompanyId()).toBeNull();
             expect(companyService.activeCompany()).toBeNull();
         });
     });

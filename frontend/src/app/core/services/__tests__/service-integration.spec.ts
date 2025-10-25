@@ -89,7 +89,7 @@ describe('Service Integration', () => {
     describe('Error Handling', () => {
         it('should handle missing data gracefully', () => {
             companyService.activateCompany('non-existent');
-            expect(companyService.activeCompanyId()).toBe('non-existent');
+            expect(companyService.activeCompanyId()).toBeNull();
             expect(companyService.activeCompany()).toBeNull();
         });
     });
