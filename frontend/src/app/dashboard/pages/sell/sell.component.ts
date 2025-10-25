@@ -1,15 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { AuthService } from '../../../core/services/auth.service';
+import { CartService } from '../../../core/services/cart.service';
 import { CompanyService } from '../../../core/services/company.service';
 import { OrderService } from '../../../core/services/order.service';
 import { ProductSearchResult, ProductSearchService, ProductVariant } from '../../../core/services/product-search.service';
 import { StockLocationService } from '../../../core/services/stock-location.service';
-import { CartItem, CartModalComponent } from './components/cart-modal.component';
+import { CartComponent, CartItem } from './components/cart.component';
+import { CheckoutFabComponent } from './components/checkout-fab.component';
 import { CheckoutModalComponent } from './components/checkout-modal.component';
 import { Customer } from './components/customer-selector.component';
 import { ProductConfirmModalComponent } from './components/product-confirm-modal.component';
 import { ProductScannerComponent } from './components/product-scanner.component';
-import { ProductSearchComponent } from './components/product-search.component';
+import { SearchViewComponent } from './components/search-view.component';
 
 type CheckoutType = 'credit' | 'cashier' | 'cash' | null;
 type PaymentMethodCode = string;
@@ -36,9 +39,10 @@ type PaymentMethodCode = string;
   imports: [
     CommonModule,
     ProductScannerComponent,
-    ProductSearchComponent,
+    SearchViewComponent,
     ProductConfirmModalComponent,
-    CartModalComponent,
+    CartComponent,
+    CheckoutFabComponent,
     CheckoutModalComponent,
   ],
   templateUrl: './sell.component.html',
@@ -50,18 +54,25 @@ export class SellComponent implements OnInit {
   private readonly companyService = inject(CompanyService);
   private readonly stockLocationService = inject(StockLocationService);
   private readonly orderService = inject(OrderService);
+  private readonly authService = inject(AuthService);
+  private readonly cartService = inject(CartService);
 
   // Configuration
   readonly channelId = computed(() => this.companyService.activeCompanyId() || 'T_1');
   readonly cashierFlowEnabled = this.stockLocationService.cashierFlowEnabled;
 
   // Search state
+  readonly searchTerm = signal<string>('');
   readonly searchResults = signal<ProductSearchResult[]>([]);
   readonly isSearching = signal<boolean>(false);
 
   // Scanner state - simple flags for UI
   readonly isScannerActive = signal<boolean>(false);
   readonly canStartScanner = signal<boolean>(false);
+
+  // View computed
+  readonly isManualSearchActive = computed(() => this.searchTerm().length > 0);
+  readonly shouldShowCamera = computed(() => !this.isManualSearchActive());
 
   // Scanner component reference (to call methods)
   scannerComponent?: ProductScannerComponent;
@@ -74,6 +85,10 @@ export class SellComponent implements OnInit {
   readonly notificationMessage = signal<string | null>(null);
   readonly notificationType = signal<'success' | 'warning' | 'error'>('success');
 
+  // Clear cart confirmation
+  readonly showClearCartConfirm = signal<boolean>(false);
+  readonly cartItemAdded = signal<boolean>(false); // Visual feedback flag
+
   // Cart state
   readonly cartItems = signal<CartItem[]>([]);
   readonly cartSubtotal = computed(() =>
@@ -81,11 +96,10 @@ export class SellComponent implements OnInit {
   );
   readonly cartTax = computed(() => this.cartSubtotal() * 0.0);
   readonly cartTotal = computed(() => this.cartSubtotal() + this.cartTax());
+  readonly canOverridePrices = computed(() => this.authService.hasOverridePricePermission());
   readonly cartItemCount = computed(() =>
     this.cartItems().reduce((sum, item) => sum + item.quantity, 0)
   );
-  readonly showCartModal = signal<boolean>(false);
-  readonly cartItemAdded = signal<boolean>(false); // Visual feedback flag
 
   // Checkout state
   readonly showCheckoutModal = signal<boolean>(false);
@@ -101,12 +115,18 @@ export class SellComponent implements OnInit {
   // Payment method state (for cash sales)
   readonly selectedPaymentMethod = signal<PaymentMethodCode | null>(null);
 
-  ngOnInit(): void {
-    // Component initialization handled by child components
+  async ngOnInit(): Promise<void> {
+    // Load cart from cache on initialization
+    this.cartService.loadCartFromCache();
+
+    // Sync with cart service state
+    this.cartItems.set(this.cartService.cartItems());
   }
 
   // Product Search Handlers
   async handleSearchTermChange(term: string): Promise<void> {
+    this.searchTerm.set(term);
+
     const trimmed = term.trim();
     if (trimmed.length < 2) {
       this.searchResults.set([]);
@@ -125,10 +145,16 @@ export class SellComponent implements OnInit {
     }
   }
 
+  handleClearSearch(): void {
+    this.searchTerm.set('');
+    this.searchResults.set([]);
+    // Camera will auto-mount via shouldShowCamera() computed
+  }
+
   handleProductSelected(product: ProductSearchResult): void {
     this.detectedProduct.set(product);
     this.showConfirmModal.set(true);
-    this.searchResults.set([]);
+    this.handleClearSearch(); // Return to camera view
   }
 
   // Scanner Handlers
@@ -169,21 +195,11 @@ export class SellComponent implements OnInit {
 
   // Cart Management
   private addToCart(variant: ProductVariant, quantity: number): void {
-    const items = this.cartItems();
-    const existingIndex = items.findIndex((item) => item.variant.id === variant.id);
+    // Use CartService for persistence
+    this.cartService.addItemLocal(variant, quantity);
 
-    if (existingIndex >= 0) {
-      items[existingIndex].quantity += quantity;
-      items[existingIndex].subtotal = items[existingIndex].quantity * variant.priceWithTax;
-    } else {
-      items.push({
-        variant,
-        quantity,
-        subtotal: quantity * variant.priceWithTax,
-      });
-    }
-
-    this.cartItems.set([...items]);
+    // Update local state
+    this.cartItems.set(this.cartService.cartItems());
     this.showConfirmModal.set(false);
     this.detectedProduct.set(null);
 
@@ -193,49 +209,77 @@ export class SellComponent implements OnInit {
   }
 
   handleCartQuantityChange(data: { variantId: string; quantity: number }): void {
+    // Use CartService for persistence
+    this.cartService.updateItemQuantityLocal(data.variantId, data.quantity);
+
+    // Update local state
+    this.cartItems.set(this.cartService.cartItems());
+  }
+
+  handleCartItemRemove(variantId: string): void {
+    // Use CartService for persistence
+    this.cartService.removeItemLocal(variantId);
+
+    // Update local state
+    this.cartItems.set(this.cartService.cartItems());
+  }
+
+  handleClearCart(): void {
+    this.showClearCartConfirm.set(true);
+  }
+
+  handleConfirmClearCart(): void {
+    // Use CartService for persistence
+    this.cartService.clearCart();
+
+    // Update local state
+    this.cartItems.set(this.cartService.cartItems());
+    this.showClearCartConfirm.set(false);
+    this.showNotification('Cart cleared', 'success');
+  }
+
+  handleCancelClearCart(): void {
+    this.showClearCartConfirm.set(false);
+  }
+
+  handlePriceOverrideChange(data: { variantId: string; customLinePrice?: number; reason?: string }): void {
     const items = this.cartItems();
     const item = items.find((i) => i.variant.id === data.variantId);
 
     if (item) {
-      if (data.quantity <= 0) {
-        this.handleCartItemRemove(data.variantId);
+      if (data.customLinePrice && data.customLinePrice > 0) {
+        item.customLinePrice = data.customLinePrice;
+        item.priceOverrideReason = data.reason;
+        item.subtotal = data.customLinePrice / 100;
       } else {
-        item.quantity = data.quantity;
-        item.subtotal = data.quantity * item.variant.priceWithTax;
-        this.cartItems.set([...items]);
+        item.customLinePrice = undefined;
+        item.priceOverrideReason = undefined;
+        item.subtotal = item.quantity * item.variant.priceWithTax;
       }
+
+      this.cartItems.set([...items]);
     }
   }
 
-  handleCartItemRemove(variantId: string): void {
-    this.cartItems.set(this.cartItems().filter((item) => item.variant.id !== variantId));
-  }
-
-  handleCartModalClose(): void {
-    this.showCartModal.set(false);
-  }
-
-  openCartModal(): void {
-    this.showCartModal.set(true);
+  handleProceedToCheckout(): void {
+    this.checkoutType.set(null); // Show payment selection, don't pre-select
+    this.showCheckoutModal.set(true);
   }
 
   // Checkout Handlers
   handleCheckoutCredit(): void {
-    this.showCartModal.set(false);
     this.checkoutType.set('credit');
     this.showCheckoutModal.set(true);
     this.resetCheckoutState();
   }
 
   handleCheckoutCashier(): void {
-    this.showCartModal.set(false);
     this.checkoutType.set('cashier');
     this.showCheckoutModal.set(true);
     this.resetCheckoutState();
   }
 
   handleCheckoutCash(): void {
-    this.showCartModal.set(false);
     this.checkoutType.set('cash');
     this.showCheckoutModal.set(true);
     this.resetCheckoutState();
@@ -325,7 +369,9 @@ export class SellComponent implements OnInit {
       const order = await this.orderService.createOrder({
         cartItems: this.cartItems().map(item => ({
           variantId: item.variant.id,
-          quantity: item.quantity
+          quantity: item.quantity,
+          customLinePrice: item.customLinePrice,
+          priceOverrideReason: item.priceOverrideReason
         })),
         paymentMethodCode: 'cash-payment',
         isCashierFlow: true,
@@ -336,6 +382,8 @@ export class SellComponent implements OnInit {
 
       console.log('✅ Order sent to cashier:', order.code);
 
+      // Clear cart using CartService for persistence
+      this.cartService.clearCart();
       this.cartItems.set([]);
       this.showCheckoutModal.set(false);
       this.showNotification(
@@ -363,7 +411,9 @@ export class SellComponent implements OnInit {
       const order = await this.orderService.createOrder({
         cartItems: this.cartItems().map(item => ({
           variantId: item.variant.id,
-          quantity: item.quantity
+          quantity: item.quantity,
+          customLinePrice: item.customLinePrice,
+          priceOverrideReason: item.priceOverrideReason
         })),
         paymentMethodCode: 'credit-payment',
         customerId: this.selectedCustomer()?.id,
@@ -377,6 +427,8 @@ export class SellComponent implements OnInit {
 
       console.log('✅ Credit sale created:', order.code);
 
+      // Clear cart using CartService for persistence
+      this.cartService.clearCart();
       this.cartItems.set([]);
       this.showCheckoutModal.set(false);
       this.showNotification(
@@ -404,7 +456,9 @@ export class SellComponent implements OnInit {
       const order = await this.orderService.createOrder({
         cartItems: this.cartItems().map(item => ({
           variantId: item.variant.id,
-          quantity: item.quantity
+          quantity: item.quantity,
+          customLinePrice: item.customLinePrice,
+          priceOverrideReason: item.priceOverrideReason
         })),
         paymentMethodCode: this.selectedPaymentMethod()!,
         metadata: {
@@ -414,6 +468,8 @@ export class SellComponent implements OnInit {
 
       console.log('✅ Order created:', order.code);
 
+      // Clear cart using CartService for persistence
+      this.cartService.clearCart();
       this.cartItems.set([]);
       this.showCheckoutModal.set(false);
       this.showNotification(

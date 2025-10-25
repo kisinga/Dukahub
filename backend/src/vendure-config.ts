@@ -19,6 +19,8 @@ import path from 'path';
 import { ChannelSettingsPlugin } from './plugins/channel-settings.plugin';
 import { MlModelPlugin } from './plugins/ml-model.plugin';
 import { cashPaymentHandler, mpesaPaymentHandler } from './plugins/payment-handlers';
+import { OverridePricePermission } from './plugins/price-override.permission';
+import { PriceOverridePlugin } from './plugins/price-override.plugin';
 
 // Load environment variables from .env file for local development
 // Docker containers get env vars from docker-compose (these override .env)
@@ -101,6 +103,7 @@ export const config: VendureConfig = {
             sameSite: 'lax',
             secure: COOKIE_SECURE,
         },
+        customPermissions: [OverridePricePermission],
     },
     dbConnectionOptions: {
         type: 'postgres',
@@ -382,6 +385,24 @@ export const config: VendureConfig = {
                 ui: { tab: 'Display' },
             },
         ],
+        OrderLine: [
+            {
+                name: 'customLinePrice',
+                type: 'int',
+                label: [{ languageCode: LanguageCode.en, value: 'Custom Line Price' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Total custom price for this line in cents (overrides variant price)' }],
+                public: true,
+                nullable: true,
+            },
+            {
+                name: 'priceOverrideReason',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'Price Override Reason' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Reason code for price override' }],
+                public: true,
+                nullable: true,
+            },
+        ],
         StockLocation: [],
     },
     orderOptions: {
@@ -393,6 +414,7 @@ export const config: VendureConfig = {
     plugins: [
         GraphiqlPlugin.init(),
         MlModelPlugin,
+        PriceOverridePlugin,
         ChannelSettingsPlugin,
         AssetServerPlugin.init({
             route: 'assets',

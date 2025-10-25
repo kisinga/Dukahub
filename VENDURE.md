@@ -22,8 +22,9 @@ This guide covers the technical setup, configuration, and advanced features of t
 2. [Asset Management & Migration](#asset-management--migration)
 3. [Asset Selector Configuration](#asset-selector-configuration)
 4. [Channel Asset Fields Refactoring](#channel-asset-fields-refactoring)
-5. [Known Limitations](#known-limitations)
-6. [Product Creation Workflow](#product-creation-workflow)
+5. [Price Override Permissions](#price-override-permissions)
+6. [Known Limitations](#known-limitations)
+7. [Product Creation Workflow](#product-creation-workflow)
 
 ## System Setup & Configuration
 
@@ -737,6 +738,55 @@ async updateChannelAssets(channelId: string, assets: Partial<ChannelAssets>): Pr
   // Implementation for bulk asset updates
 }
 ```
+
+## Price Override Permissions
+
+### Overview
+
+The `OverridePrice` permission controls who can modify order line prices in the POS system. This feature allows authorized users to override product prices during order creation, with full audit trail support.
+
+### Permission Details
+
+- **Name**: `OverridePrice`
+- **Description**: Allows overriding product prices on order lines
+- **Scope**: Channel-wide (applies to all channels)
+- **Authentication Required**: User must be logged in to admin interface
+
+### AdminUI Configuration
+
+The permission is automatically available in the Vendure AdminUI under:
+
+- **Settings** → **Administrators** → **Roles** → **Permissions**
+
+### Usage
+
+1. **Grant Permission**: Add `OverridePrice` to administrator roles in AdminUI
+2. **Authentication Required**: User must be logged in to admin interface
+3. **Frontend Check**: The POS automatically checks this permission
+4. **UI Behavior**: Price override controls are hidden for users without permission
+
+### Technical Implementation
+
+- **Backend**: Custom permission defined in `price-override.permission.ts`
+- **Frontend**: Permission checked via `canOverridePrices()` GraphQL query
+- **Database**: Stored in `OrderLine.customFields.customLinePrice`
+- **Tax Handling**: Custom prices are treated as tax-inclusive
+
+### Security
+
+- Permission enforced at GraphQL resolver level
+- Frontend UI conditionally rendered based on permission
+- Audit trail maintained via `priceOverrideReason` field
+- Line-level price overrides (total price, not per-unit)
+
+### Mobile Optimization
+
+The price override UI is optimized for mobile POS usage:
+
+- **Quick Adjustments**: Percentage-based price modifications (5%, 10%, 15%, 20%)
+- **Custom Input**: Direct price entry for precise control
+- **Line-Level Control**: Override entire line price, backend calculates per-unit price
+- **Intuitive Interface**: Large, touch-friendly controls
 
 ## Known Limitations
 
