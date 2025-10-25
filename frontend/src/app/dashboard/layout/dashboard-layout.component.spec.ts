@@ -4,6 +4,7 @@
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
 import { DashboardLayoutComponent } from './dashboard-layout.component';
@@ -29,6 +30,7 @@ describe('DashboardLayoutComponent', () => {
             imports: [DashboardLayoutComponent],
             providers: [
                 provideZonelessChangeDetection(),
+                provideRouter([]), // Provide empty router for testing
                 { provide: CompanyService, useValue: companySpy },
                 { provide: AuthService, useValue: authSpy }
             ]

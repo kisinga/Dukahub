@@ -30,6 +30,15 @@ describe('Critical Integration Points', () => {
         authService = TestBed.inject(AuthService);
         companyService = TestBed.inject(CompanyService);
         apolloService = TestBed.inject(ApolloService);
+
+        // Set up test companies data
+        const testCompanies = [
+            { id: 'company-1', code: 'COMP1', name: 'Test Company 1', token: 'token1' },
+            { id: 'company-2', code: 'COMP2', name: 'Test Company 2', token: 'token2' }
+        ];
+
+        // Use reflection to set private companies signal
+        (companyService as any).companiesSignal.set(testCompanies);
     });
 
     describe('Authentication + Company Context Integration', () => {
