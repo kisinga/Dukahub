@@ -1184,6 +1184,37 @@ export const DELETE_CUSTOMER_ADDRESS = graphql(`
 `);
 
 // ============================================================================
+// PRICE OVERRIDE OPERATIONS
+// ============================================================================
+
+export const SET_ORDER_LINE_CUSTOM_PRICE = graphql(`
+  mutation SetOrderLineCustomPrice($input: SetOrderLineCustomPriceInput!) {
+    setOrderLineCustomPrice(input: $input) {
+      ... on OrderLine {
+        id
+        quantity
+        linePrice
+        linePriceWithTax
+        customFields {
+          customLinePrice
+          priceOverrideReason
+        }
+        productVariant {
+          id
+          name
+          price
+        }
+      }
+      ... on Error {
+        errorCode
+        message
+      }
+    }
+  }
+`);
+
+
+// ============================================================================
 // SUPPLIER MANAGEMENT (Custom Fields)
 // ============================================================================
 

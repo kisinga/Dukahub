@@ -27,11 +27,13 @@ export type Scalars = {
 export type AddFulfillmentToOrderResult = CreateFulfillmentError | EmptyOrderLineSelectionError | Fulfillment | FulfillmentStateTransitionError | InsufficientStockOnHandError | InvalidFulfillmentHandlerError | ItemsAlreadyFulfilledError;
 
 export type AddItemInput = {
+  customFields?: InputMaybe<OrderLineCustomFieldsInput>;
   productVariantId: Scalars['ID']['input'];
   quantity: Scalars['Int']['input'];
 };
 
 export type AddItemToDraftOrderInput = {
+  customFields?: InputMaybe<OrderLineCustomFieldsInput>;
   productVariantId: Scalars['ID']['input'];
   quantity: Scalars['Int']['input'];
 };
@@ -70,6 +72,7 @@ export type Address = Node & {
 };
 
 export type AdjustDraftOrderLineInput = {
+  customFields?: InputMaybe<OrderLineCustomFieldsInput>;
   orderLineId: Scalars['ID']['input'];
   quantity: Scalars['Int']['input'];
 };
@@ -1767,6 +1770,12 @@ export type EntityDuplicatorDefinition = {
   requiresPermission: Array<Permission>;
 };
 
+export type Error = {
+  __typename?: 'Error';
+  errorCode: ErrorCode;
+  message: Scalars['String']['output'];
+};
+
 export enum ErrorCode {
   ALREADY_REFUNDED_ERROR = 'ALREADY_REFUNDED_ERROR',
   CANCEL_ACTIVE_ORDER_ERROR = 'CANCEL_ACTIVE_ORDER_ERROR',
@@ -3165,6 +3174,7 @@ export type Mutation = {
   setOrderCustomFields?: Maybe<Order>;
   /** Allows a different Customer to be assigned to an Order. Added in v2.2.0. */
   setOrderCustomer?: Maybe<Order>;
+  setOrderLineCustomPrice: SetOrderLineCustomPriceResult;
   /** Set a single key-value pair (automatically scoped based on field configuration) */
   setSettingsStoreValue: SetSettingsStoreValueResult;
   /** Set multiple key-value pairs in a transaction (each automatically scoped) */
@@ -3942,6 +3952,11 @@ export type MutationSetOrderCustomerArgs = {
 };
 
 
+export type MutationSetOrderLineCustomPriceArgs = {
+  input: SetOrderLineCustomPriceInput;
+};
+
+
 export type MutationSetSettingsStoreValueArgs = {
   input: SettingsStoreInput;
 };
@@ -4369,7 +4384,7 @@ export type OrderLimitError = ErrorResult & {
 export type OrderLine = Node & {
   __typename?: 'OrderLine';
   createdAt: Scalars['DateTime']['output'];
-  customFields?: Maybe<Scalars['JSON']['output']>;
+  customFields?: Maybe<OrderLineCustomFields>;
   /** The price of the line including discounts, excluding tax */
   discountedLinePrice: Scalars['Money']['output'];
   /** The price of the line including discounts and tax */
@@ -4430,7 +4445,19 @@ export type OrderLine = Node & {
   updatedAt: Scalars['DateTime']['output'];
 };
 
+export type OrderLineCustomFields = {
+  __typename?: 'OrderLineCustomFields';
+  customLinePrice?: Maybe<Scalars['Int']['output']>;
+  priceOverrideReason?: Maybe<Scalars['String']['output']>;
+};
+
+export type OrderLineCustomFieldsInput = {
+  customLinePrice?: InputMaybe<Scalars['Int']['input']>;
+  priceOverrideReason?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type OrderLineInput = {
+  customFields?: InputMaybe<OrderLineCustomFieldsInput>;
   orderLineId: Scalars['ID']['input'];
   quantity: Scalars['Int']['input'];
 };
@@ -4812,6 +4839,8 @@ export enum Permission {
   DeleteTaxRate = 'DeleteTaxRate',
   /** Grants permission to delete Zone */
   DeleteZone = 'DeleteZone',
+  /** Allows overriding order line prices during order creation */
+  OverridePrice = 'OverridePrice',
   /** Owner means the user owns this entity, e.g. a Customer's own Order */
   Owner = 'Owner',
   /** Public means any unauthenticated user may perform the operation */
@@ -5392,6 +5421,7 @@ export type Query = {
   asset?: Maybe<Asset>;
   /** Get a list of Assets */
   assets: AssetList;
+  canOverridePrices: Scalars['Boolean']['output'];
   channel?: Maybe<Channel>;
   channels: ChannelList;
   /** Get a Collection either by id or slug. If neither id nor slug is specified, an error will result. */
@@ -6192,6 +6222,14 @@ export type SetOrderCustomerInput = {
   note?: InputMaybe<Scalars['String']['input']>;
   orderId: Scalars['ID']['input'];
 };
+
+export type SetOrderLineCustomPriceInput = {
+  customLinePrice: Scalars['Int']['input'];
+  orderLineId: Scalars['ID']['input'];
+  reason?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type SetOrderLineCustomPriceResult = Error | OrderLine;
 
 export type SetOrderShippingMethodResult = IneligibleShippingMethodError | NoActiveOrderError | Order | OrderModificationError;
 
@@ -7614,6 +7652,21 @@ export type DeleteCustomerAddressMutationVariables = Exact<{
 
 export type DeleteCustomerAddressMutation = { __typename?: 'Mutation', deleteCustomerAddress: { __typename?: 'Success', success: boolean } };
 
+export type SetOrderLineCustomPriceMutationVariables = Exact<{
+  input: SetOrderLineCustomPriceInput;
+}>;
+
+
+export type SetOrderLineCustomPriceMutation = { __typename?: 'Mutation', setOrderLineCustomPrice:
+    | { __typename?: 'Error', errorCode: ErrorCode, message: string }
+    | { __typename?: 'OrderLine', id: string, quantity: number, linePrice: number, linePriceWithTax: number, customFields?: { __typename?: 'OrderLineCustomFields', customLinePrice?: number | null, priceOverrideReason?: string | null } | null, productVariant: { __typename?: 'ProductVariant', id: string, name: string, price: number } }
+   };
+
+export type CanOverridePricesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type CanOverridePricesQuery = { __typename?: 'Query', canOverridePrices: boolean };
+
 export type GetSuppliersQueryVariables = Exact<{
   options?: InputMaybe<CustomerListOptions>;
 }>;
@@ -7753,6 +7806,8 @@ export const DeleteCustomerDocument = {"kind":"Document","definitions":[{"kind":
 export const CreateCustomerAddressDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateCustomerAddress"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"customerId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateAddressInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createCustomerAddress"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"customerId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"customerId"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"fullName"}},{"kind":"Field","name":{"kind":"Name","value":"streetLine1"}},{"kind":"Field","name":{"kind":"Name","value":"streetLine2"}},{"kind":"Field","name":{"kind":"Name","value":"city"}},{"kind":"Field","name":{"kind":"Name","value":"postalCode"}},{"kind":"Field","name":{"kind":"Name","value":"country"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}}]}}]}}]} as unknown as DocumentNode<CreateCustomerAddressMutation, CreateCustomerAddressMutationVariables>;
 export const UpdateCustomerAddressDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateCustomerAddress"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateAddressInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateCustomerAddress"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"fullName"}},{"kind":"Field","name":{"kind":"Name","value":"streetLine1"}},{"kind":"Field","name":{"kind":"Name","value":"streetLine2"}},{"kind":"Field","name":{"kind":"Name","value":"city"}},{"kind":"Field","name":{"kind":"Name","value":"postalCode"}},{"kind":"Field","name":{"kind":"Name","value":"country"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}}]}}]}}]} as unknown as DocumentNode<UpdateCustomerAddressMutation, UpdateCustomerAddressMutationVariables>;
 export const DeleteCustomerAddressDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteCustomerAddress"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteCustomerAddress"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<DeleteCustomerAddressMutation, DeleteCustomerAddressMutationVariables>;
+export const SetOrderLineCustomPriceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SetOrderLineCustomPrice"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SetOrderLineCustomPriceInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setOrderLineCustomPrice"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"OrderLine"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"linePrice"}},{"kind":"Field","name":{"kind":"Name","value":"linePriceWithTax"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"customLinePrice"}},{"kind":"Field","name":{"kind":"Name","value":"priceOverrideReason"}}]}},{"kind":"Field","name":{"kind":"Name","value":"productVariant"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"price"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Error"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]}}]} as unknown as DocumentNode<SetOrderLineCustomPriceMutation, SetOrderLineCustomPriceMutationVariables>;
+export const CanOverridePricesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"CanOverridePrices"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"canOverridePrices"}}]}}]} as unknown as DocumentNode<CanOverridePricesQuery, CanOverridePricesQueryVariables>;
 export const GetSuppliersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetSuppliers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"options"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"CustomerListOptions"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"customers"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"Variable","name":{"kind":"Name","value":"options"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalItems"}},{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isSupplier"}},{"kind":"Field","name":{"kind":"Name","value":"supplierType"}},{"kind":"Field","name":{"kind":"Name","value":"contactPerson"}},{"kind":"Field","name":{"kind":"Name","value":"taxId"}},{"kind":"Field","name":{"kind":"Name","value":"paymentTerms"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"outstandingAmount"}}]}},{"kind":"Field","name":{"kind":"Name","value":"addresses"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"fullName"}},{"kind":"Field","name":{"kind":"Name","value":"streetLine1"}},{"kind":"Field","name":{"kind":"Name","value":"streetLine2"}},{"kind":"Field","name":{"kind":"Name","value":"city"}},{"kind":"Field","name":{"kind":"Name","value":"postalCode"}},{"kind":"Field","name":{"kind":"Name","value":"country"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetSuppliersQuery, GetSuppliersQueryVariables>;
 export const GetSupplierDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetSupplier"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"customer"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isSupplier"}},{"kind":"Field","name":{"kind":"Name","value":"supplierType"}},{"kind":"Field","name":{"kind":"Name","value":"contactPerson"}},{"kind":"Field","name":{"kind":"Name","value":"taxId"}},{"kind":"Field","name":{"kind":"Name","value":"paymentTerms"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"outstandingAmount"}}]}},{"kind":"Field","name":{"kind":"Name","value":"addresses"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"fullName"}},{"kind":"Field","name":{"kind":"Name","value":"streetLine1"}},{"kind":"Field","name":{"kind":"Name","value":"streetLine2"}},{"kind":"Field","name":{"kind":"Name","value":"city"}},{"kind":"Field","name":{"kind":"Name","value":"postalCode"}},{"kind":"Field","name":{"kind":"Name","value":"country"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}}]}}]}}]}}]} as unknown as DocumentNode<GetSupplierQuery, GetSupplierQueryVariables>;
 export const CreateSupplierDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateSupplier"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateCustomerInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createCustomer"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Customer"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}},{"kind":"Field","name":{"kind":"Name","value":"phoneNumber"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isSupplier"}},{"kind":"Field","name":{"kind":"Name","value":"supplierType"}},{"kind":"Field","name":{"kind":"Name","value":"contactPerson"}},{"kind":"Field","name":{"kind":"Name","value":"taxId"}},{"kind":"Field","name":{"kind":"Name","value":"paymentTerms"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"outstandingAmount"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"EmailAddressConflictError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]}}]} as unknown as DocumentNode<CreateSupplierMutation, CreateSupplierMutationVariables>;

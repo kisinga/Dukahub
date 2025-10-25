@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Order } from '../graphql/generated/graphql';
 import {
     ADD_FULFILLMENT_TO_ORDER,
     ADD_ITEM_TO_DRAFT_ORDER,
@@ -6,6 +7,7 @@ import {
     CREATE_DRAFT_ORDER,
     GET_ORDER_DETAILS,
     GET_PAYMENT_METHODS,
+    SET_ORDER_LINE_CUSTOM_PRICE,
     TRANSITION_ORDER_TO_STATE
 } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
@@ -15,6 +17,8 @@ export interface CreateOrderInput {
     cartItems: Array<{
         variantId: string;
         quantity: number;
+        customLinePrice?: number;  // Line price in cents
+        priceOverrideReason?: string;  // Reason code
     }>;
     paymentMethodCode: string;
     customerId?: string;
@@ -24,7 +28,7 @@ export interface CreateOrderInput {
     isCreditSale?: boolean;   // True = authorize but don't settle payment
 }
 
-export interface Order {
+export interface OrderData {
     id: string;
     code: string;
     state: string;
@@ -136,6 +140,31 @@ export class OrderService {
                     throw new Error(`Failed to add item ${item.variantId} to order: ${error?.message || error?.errorCode || 'Unknown error'}`);
                 }
 
+                // If custom line price is set, apply it to the order line
+                if (item.customLinePrice && item.customLinePrice > 0) {
+                    console.log('💰 Applying custom line price to order line:', {
+                        variantId: item.variantId,
+                        customLinePrice: item.customLinePrice,
+                        reason: item.priceOverrideReason
+                    });
+
+                    // Find the order line that was just added
+                    const orderLines = itemData.lines;
+                    const addedLine = orderLines.find((line: any) =>
+                        line.productVariant.id === item.variantId
+                    );
+
+                    if (addedLine) {
+                        await this.setOrderLineCustomPrice(
+                            addedLine.id,
+                            item.customLinePrice,
+                            item.priceOverrideReason
+                        );
+                        console.log('✅ Custom line price applied to order line:', addedLine.id);
+                    } else {
+                        console.warn('⚠️ Could not find order line for custom line price application');
+                    }
+                }
             }
 
             // 3. Set up complete order with all required details for state transitions
@@ -175,7 +204,6 @@ export class OrderService {
                 }
             }
             return finalOrder;
-
         } catch (error) {
             console.error('❌ Order creation failed:', error);
             throw error;
@@ -367,5 +395,72 @@ export class OrderService {
             throw error;
         }
     }
+
+    /**
+     * Set custom price for an order line
+     * 
+     * @param orderLineId Order line ID
+     * @param customPrice Custom price in cents
+     * @param reason Reason for price override
+     * @returns Updated order line
+     */
+    async setOrderLineCustomPrice(
+        orderLineId: string,
+        customLinePrice: number | undefined,
+        reason?: string
+    ): Promise<any> {
+        try {
+            const client = this.apolloService.getClient();
+
+            console.log('💰 Setting custom line price for order line:', {
+                orderLineId,
+                customLinePrice,
+                reason
+            });
+
+            // If customLinePrice is undefined, we're resetting the price
+            if (customLinePrice === undefined) {
+                console.log('🔄 Resetting custom line price to default');
+                // For now, we'll just return success since the backend should handle undefined values
+                return { success: true };
+            }
+
+            const result = await client.mutate({
+                mutation: SET_ORDER_LINE_CUSTOM_PRICE as any,
+                variables: {
+                    input: {
+                        orderLineId,
+                        customLinePrice,
+                        reason
+                    }
+                }
+            });
+
+            // Check for GraphQL errors
+            if (result.error) {
+                console.error('GraphQL error setting custom line price:', result.error);
+                throw new Error(`GraphQL error setting custom line price: ${result.error.message}`);
+            }
+
+            const data = (result.data as any)?.setOrderLineCustomPrice;
+            if (!data) {
+                throw new Error('No data returned from setOrderLineCustomPrice');
+            }
+
+            // Check for error result
+            if (data.__typename === 'Error') {
+                console.error('Custom line price setting failed:', data);
+                throw new Error(`Failed to set custom line price: ${data.message}`);
+            }
+
+            console.log('✅ Custom line price set successfully');
+            return data;
+
+        } catch (error) {
+            console.error('❌ Setting custom line price failed:', error);
+            throw error;
+        }
+    }
+
 }
 

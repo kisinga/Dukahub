@@ -6,6 +6,7 @@
  * Designed to be flexible and not break with refactoring.
  */
 
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ApolloService } from '../../services/apollo.service';
 import { AuthService } from '../../services/auth.service';
@@ -19,6 +20,7 @@ describe('Critical Integration Points', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
+                provideZonelessChangeDetection(),
                 AuthService,
                 CompanyService,
                 ApolloService
@@ -28,6 +30,15 @@ describe('Critical Integration Points', () => {
         authService = TestBed.inject(AuthService);
         companyService = TestBed.inject(CompanyService);
         apolloService = TestBed.inject(ApolloService);
+
+        // Set up test companies data
+        const testCompanies = [
+            { id: 'company-1', code: 'COMP1', name: 'Test Company 1', token: 'token1' },
+            { id: 'company-2', code: 'COMP2', name: 'Test Company 2', token: 'token2' }
+        ];
+
+        // Use reflection to set private companies signal
+        (companyService as any).companiesSignal.set(testCompanies);
     });
 
     describe('Authentication + Company Context Integration', () => {
@@ -76,7 +87,7 @@ describe('Critical Integration Points', () => {
 
             // Test: Service should handle missing data
             companyService.activateCompany('non-existent');
-            expect(companyService.activeCompanyId()).toBe('non-existent');
+            expect(companyService.activeCompanyId()).toBeNull();
             expect(companyService.activeCompany()).toBeNull();
         });
     });

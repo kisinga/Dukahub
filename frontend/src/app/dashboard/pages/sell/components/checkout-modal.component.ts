@@ -244,6 +244,128 @@ type PaymentMethodCode = string;
           </div>
           }
 
+          <!-- Payment Selection (Default) -->
+          @if (!checkoutType()) {
+          <div class="space-y-6 animate-in slide-in-from-bottom-2 duration-300">
+            <div class="text-center">
+              <div class="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-8 w-8 text-primary"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                  />
+                </svg>
+              </div>
+              <h4 class="font-bold text-xl mb-2">Choose Payment Method</h4>
+              <p class="text-base-content/60">Select how you'd like to process this order</p>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="bg-base-200 rounded-xl p-6 animate-in slide-in-from-bottom-2 duration-300 delay-100">
+              <div class="flex justify-between items-center mb-3">
+                <span class="text-sm text-base-content/60">Items</span>
+                <span class="font-semibold text-lg">{{ itemCount() }}</span>
+              </div>
+              <div class="divider my-3"></div>
+              <div class="flex justify-between items-center">
+                <span class="font-bold text-xl">Total</span>
+                <span class="text-3xl font-bold text-primary text-tabular">
+                  {{ currencyService.format(total()) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Payment Options -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in slide-in-from-bottom-2 duration-300 delay-200"
+                 [class.sm:grid-cols-3]="cashierFlowEnabled()">
+              <!-- Credit Sale -->
+              <button
+                class="btn btn-outline btn-warning btn-lg flex flex-col items-center gap-2 hover:scale-105 active:scale-95 transition-transform"
+                (click)="selectCredit.emit()"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-8 w-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <div class="text-center">
+                  <div class="font-bold">Credit Sale</div>
+                  <div class="text-xs opacity-70">Customer account</div>
+                </div>
+              </button>
+
+              <!-- Cash Sale -->
+              <button
+                class="btn btn-outline btn-success btn-lg flex flex-col items-center gap-2 hover:scale-105 active:scale-95 transition-transform"
+                (click)="selectCash.emit()"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-8 w-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                <div class="text-center">
+                  <div class="font-bold">Cash Sale</div>
+                  <div class="text-xs opacity-70">Immediate payment</div>
+                </div>
+              </button>
+
+              <!-- Cashier Flow (only show if enabled) -->
+              @if (cashierFlowEnabled()) {
+                <button
+                  class="btn btn-outline btn-info btn-lg flex flex-col items-center gap-2 hover:scale-105 active:scale-95 transition-transform"
+                  (click)="selectCashier.emit()"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-8 w-8"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                  <div class="text-center">
+                    <div class="font-bold">Send to Cashier</div>
+                    <div class="text-xs opacity-70">Process at station</div>
+                  </div>
+                </button>
+              }
+            </div>
+          </div>
+          }
+
           <!-- Cash Sale Flow -->
           @if (checkoutType() === 'cash') {
           <div class="space-y-6 animate-in slide-in-from-left-2 duration-300">
@@ -420,6 +542,7 @@ export class CheckoutModalComponent implements OnInit {
   readonly total = input.required<number>();
   readonly error = input<string | null>(null);
   readonly isProcessing = input<boolean>(false);
+  readonly cashierFlowEnabled = input<boolean>(false);
 
   // Credit sale inputs
   readonly selectedCustomer = input<Customer | null>(null);
@@ -438,6 +561,11 @@ export class CheckoutModalComponent implements OnInit {
   readonly customerCreate = output<{ name: string; phone: string; email?: string }>();
   readonly paymentMethodSelect = output<PaymentMethodCode>();
   readonly closeModal = output<void>();
+
+  // Payment selection outputs
+  readonly selectCredit = output<void>();
+  readonly selectCash = output<void>();
+  readonly selectCashier = output<void>();
 
   // Dynamic payment methods
   readonly paymentMethods = signal<PaymentMethod[]>([]);

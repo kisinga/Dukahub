@@ -66,6 +66,24 @@ export class AuthService {
     return hasPermission;
   });
 
+  readonly hasOverridePricePermission = computed(() => {
+    const user = this.userSignal();
+    if (!user?.user?.roles) return false;
+
+    // Check if user has OverridePrice permission in ANY role
+    const hasPermission = user.user.roles.some(role =>
+      role.permissions.includes(Permission.OverridePrice)
+    );
+
+    console.log('🔐 OverridePrice permission check:', {
+      user: user?.firstName,
+      roles: user?.user?.roles?.map(r => ({ code: r.code, permissions: r.permissions })),
+      hasPermission
+    });
+
+    return hasPermission;
+  });
+
   constructor() {
     // Register session expiration handler with Apollo service
     this.apolloService.onSessionExpired(() => {

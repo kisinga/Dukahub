@@ -1,17 +1,19 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApolloService } from './apollo.service';
 import { AuthService } from './auth.service';
+import { CACHE_CONFIGS, CacheService } from './cache.service';
+import { CompanyService } from './company.service';
+import { ProductVariant } from './product-search.service';
 
 /**
- * Cart item interface
+ * Cart item interface - aligned with cart component
  */
 export interface CartItem {
-  id: string;
-  productVariantId: string;
-  productName: string;
+  variant: ProductVariant;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
+  subtotal: number;
+  customLinePrice?: number;  // Line price in cents
+  priceOverrideReason?: string;  // Reason code
 }
 
 /**
@@ -47,6 +49,8 @@ export interface CartSummary {
 export class CartService {
   private readonly authService = inject(AuthService);
   private readonly apolloService = inject(ApolloService);
+  private readonly cacheService = inject(CacheService);
+  private readonly companyService = inject(CompanyService);
 
   // Cart state signals
   private readonly cartItemsSignal = signal<CartItem[]>([]);
@@ -59,7 +63,7 @@ export class CartService {
     this.cartItemsSignal().reduce((sum, item) => sum + item.quantity, 0)
   );
   readonly subtotal = computed(() =>
-    this.cartItemsSignal().reduce((sum, item) => sum + item.totalPrice, 0)
+    this.cartItemsSignal().reduce((sum, item) => sum + item.subtotal, 0)
   );
   readonly isEmpty = computed(() => this.cartItemsSignal().length === 0);
 
@@ -140,6 +144,38 @@ export class CartService {
    */
   clearCart(): void {
     this.cartItemsSignal.set([]);
+    this.persistCart();
+  }
+
+  /**
+   * Load cart from cache
+   */
+  loadCartFromCache(): void {
+    const channelId = this.companyService.activeCompanyId();
+    if (!channelId) {
+      console.log('No active channel, skipping cart load');
+      return;
+    }
+
+    const cachedCart = this.cacheService.get<CartItem[]>(CACHE_CONFIGS.CART, 'items', channelId);
+    if (cachedCart) {
+      this.cartItemsSignal.set(cachedCart);
+      console.log(`📦 Loaded cart from cache: ${cachedCart.length} items`);
+    }
+  }
+
+  /**
+   * Persist cart to cache
+   */
+  private persistCart(): void {
+    const channelId = this.companyService.activeCompanyId();
+    if (!channelId) {
+      console.log('No active channel, skipping cart persist');
+      return;
+    }
+
+    const cartItems = this.cartItemsSignal();
+    this.cacheService.set(CACHE_CONFIGS.CART, 'items', cartItems, channelId);
   }
 
   /**
@@ -166,41 +202,40 @@ export class CartService {
    * Add item locally (for POS quick add)
    * This is a local-only operation for the POS system
    */
-  addItemLocal(productVariantId: string, productName: string, quantity: number, unitPrice: number): void {
+  addItemLocal(variant: ProductVariant, quantity: number): void {
     const items = this.cartItemsSignal();
-    const existingItem = items.find((item) => item.productVariantId === productVariantId);
+    const existingItem = items.find((item) => item.variant.id === variant.id);
 
     if (existingItem) {
       existingItem.quantity += quantity;
-      existingItem.totalPrice = existingItem.quantity * existingItem.unitPrice;
+      existingItem.subtotal = existingItem.quantity * variant.priceWithTax;
     } else {
       items.push({
-        id: `temp-${Date.now()}`,
-        productVariantId,
-        productName,
+        variant,
         quantity,
-        unitPrice,
-        totalPrice: quantity * unitPrice,
+        subtotal: quantity * variant.priceWithTax,
       });
     }
 
     this.cartItemsSignal.set([...items]);
+    this.persistCart();
   }
 
   /**
    * Update item quantity locally
    */
-  updateItemQuantityLocal(productVariantId: string, quantity: number): void {
+  updateItemQuantityLocal(variantId: string, quantity: number): void {
     const items = this.cartItemsSignal();
-    const item = items.find((i) => i.productVariantId === productVariantId);
+    const item = items.find((i) => i.variant.id === variantId);
 
     if (item) {
       if (quantity <= 0) {
-        this.removeItemLocal(productVariantId);
+        this.removeItemLocal(variantId);
       } else {
         item.quantity = quantity;
-        item.totalPrice = quantity * item.unitPrice;
+        item.subtotal = quantity * item.variant.priceWithTax;
         this.cartItemsSignal.set([...items]);
+        this.persistCart();
       }
     }
   }
@@ -208,9 +243,10 @@ export class CartService {
   /**
    * Remove item locally
    */
-  removeItemLocal(productVariantId: string): void {
+  removeItemLocal(variantId: string): void {
     const items = this.cartItemsSignal();
-    this.cartItemsSignal.set(items.filter((item) => item.productVariantId !== productVariantId));
+    this.cartItemsSignal.set(items.filter((item) => item.variant.id !== variantId));
+    this.persistCart();
   }
 }
 
