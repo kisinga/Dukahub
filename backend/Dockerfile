@@ -25,8 +25,8 @@ RUN npm run build
 # Verify build output
 RUN echo "Build verification:" && \
     ls -la dist/ && \
-    if [ ! -f "dist/index.js" ]; then echo "❌ dist/index.js not found!"; exit 1; fi && \
-    if [ ! -f "dist/index-worker.js" ]; then echo "❌ dist/index-worker.js not found!"; exit 1; fi && \
+    if [ ! -f "dist/src/index.js" ]; then echo "❌ dist/src/index.js not found!"; exit 1; fi && \
+    if [ ! -f "dist/src/index-worker.js" ]; then echo "❌ dist/src/index-worker.js not found!"; exit 1; fi && \
     echo "✅ Build verification successful"
 
 # Stage 2: Production runtime
@@ -61,8 +61,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # Verify copied files exist
 RUN echo "Verifying production files:" && \
     ls -la dist/ && \
-    if [ ! -f "dist/index.js" ]; then echo "❌ dist/index.js not found in production stage!"; exit 1; fi && \
-    if [ ! -f "dist/index-worker.js" ]; then echo "❌ dist/index-worker.js not found in production stage!"; exit 1; fi && \
+    if [ ! -f "dist/src/index.js" ]; then echo "❌ dist/src/index.js not found in production stage!"; exit 1; fi && \
+    if [ ! -f "dist/src/index-worker.js" ]; then echo "❌ dist/src/index-worker.js not found in production stage!"; exit 1; fi && \
     echo "✅ Production stage verification successful"
 
 # Create non-root user for security
