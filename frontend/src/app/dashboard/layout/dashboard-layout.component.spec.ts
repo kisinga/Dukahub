@@ -2,7 +2,7 @@
  * Component tests for Dashboard Layout
  */
 
-import { signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
@@ -28,6 +28,7 @@ describe('DashboardLayoutComponent', () => {
         await TestBed.configureTestingModule({
             imports: [DashboardLayoutComponent],
             providers: [
+                provideZonelessChangeDetection(),
                 { provide: CompanyService, useValue: companySpy },
                 { provide: AuthService, useValue: authSpy }
             ]

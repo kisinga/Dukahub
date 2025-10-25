@@ -6,6 +6,7 @@
  * Designed to be flexible and not break with refactoring.
  */
 
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ApolloService } from '../../services/apollo.service';
 import { AuthService } from '../../services/auth.service';
@@ -19,6 +20,7 @@ describe('Critical Integration Points', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
+                provideZonelessChangeDetection(),
                 AuthService,
                 CompanyService,
                 ApolloService

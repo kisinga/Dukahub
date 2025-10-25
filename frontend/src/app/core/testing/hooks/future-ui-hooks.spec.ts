@@ -6,12 +6,15 @@
  * Focus on behavior, not implementation details.
  */
 
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 describe('Future UI Test Hooks', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: []
+            providers: [
+                provideZonelessChangeDetection()
+            ]
         });
     });
 

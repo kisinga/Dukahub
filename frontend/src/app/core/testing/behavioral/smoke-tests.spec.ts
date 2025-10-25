@@ -6,6 +6,7 @@
  * These tests should remain stable even as implementation details change.
  */
 
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ApolloService } from '../../services/apollo.service';
 import { AuthService } from '../../services/auth.service';
@@ -19,6 +20,7 @@ describe('Behavioral Smoke Tests', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
+                provideZonelessChangeDetection(),
                 AuthService,
                 CompanyService,
                 ApolloService

@@ -5,6 +5,7 @@
  * Focuses on real-world scenarios without over-specification.
  */
 
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ApolloService } from '../apollo.service';
 import { AuthService } from '../auth.service';
@@ -18,6 +19,7 @@ describe('Service Integration', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
+                provideZonelessChangeDetection(),
                 AuthService,
                 CompanyService,
                 ApolloService
