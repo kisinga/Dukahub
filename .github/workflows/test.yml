@@ -61,8 +61,7 @@ jobs:
         run: |
           cd frontend
           npm ci
-          # Use custom test runner that handles browser availability gracefully
-          npm run test:coverage
+          npm run test:ci
         timeout-minutes: 10
 
       - name: Upload frontend coverage artifacts
