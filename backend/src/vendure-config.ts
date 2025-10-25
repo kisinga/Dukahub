@@ -426,10 +426,10 @@ export const config: VendureConfig = {
         DefaultSearchPlugin.init({ bufferUpdates: false, indexStockStatus: true }),
         EmailPlugin.init({
             devMode: true,
-            outputPath: path.join(__dirname, '../static/email/test-emails'),
+            outputPath: path.join(process.cwd(), 'static/email/test-emails'),
             route: 'mailbox',
             handlers: defaultEmailHandlers,
-            templateLoader: new FileBasedTemplateLoader(path.join(__dirname, '../static/email/templates')),
+            templateLoader: new FileBasedTemplateLoader(path.join(process.cwd(), 'static/email/templates')),
             globalTemplateVars: {
                 // The following variables will change depending on your storefront implementation.
                 // Here we are assuming a storefront running at http://localhost:8080.
