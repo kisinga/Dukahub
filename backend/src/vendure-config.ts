@@ -17,6 +17,7 @@ import { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 import { ChannelSettingsPlugin } from './plugins/channel-settings.plugin';
+import { FractionalQuantityPlugin } from './plugins/fractional-quantity.plugin';
 import { MlModelPlugin } from './plugins/ml-model.plugin';
 import { cashPaymentHandler, mpesaPaymentHandler } from './plugins/payment-handlers';
 import { OverridePricePermission } from './plugins/price-override.permission';
@@ -404,6 +405,27 @@ export const config: VendureConfig = {
             },
         ],
         StockLocation: [],
+        ProductVariant: [
+            {
+                name: 'wholesalePrice',
+                type: 'int',
+                label: [{ languageCode: LanguageCode.en, value: 'Wholesale Price' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Maximum discounted price in cents (serves as discount limit)' }],
+                public: true,
+                nullable: true,
+                ui: { tab: 'Pricing' },
+            },
+            {
+                name: 'allowFractionalQuantity',
+                type: 'boolean',
+                label: [{ languageCode: LanguageCode.en, value: 'Allow Fractional Sales' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Enable fractional quantity sales (e.g., 0.5kg)' }],
+                defaultValue: false,
+                public: true,
+                nullable: false,
+                ui: { tab: 'Pricing' },
+            },
+        ],
     },
     orderOptions: {
         process: [customOrderProcess],
@@ -416,6 +438,7 @@ export const config: VendureConfig = {
         MlModelPlugin,
         PriceOverridePlugin,
         ChannelSettingsPlugin,
+        FractionalQuantityPlugin,
         AssetServerPlugin.init({
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),

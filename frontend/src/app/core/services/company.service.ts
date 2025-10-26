@@ -36,6 +36,7 @@ export class CompanyService {
     readonly companies = this.companiesSignal.asReadonly();
     readonly activeCompanyId = this.activeCompanyIdSignal.asReadonly();
     readonly isLoading = this.isLoadingSignal.asReadonly();
+    readonly activeChannel = computed(() => this.activeChannelDataSignal());
 
     // Computed: Current active company (the one all dashboard operations use)
     readonly activeCompany = computed(() => {

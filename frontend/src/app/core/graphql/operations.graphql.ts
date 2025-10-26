@@ -184,6 +184,10 @@ export const CREATE_PRODUCT = graphql(`
         sku
         price
         stockOnHand
+                customFields {
+                  wholesalePrice
+                  allowFractionalQuantity
+                }
       }
     }
   }
@@ -288,6 +292,10 @@ export const GET_PRODUCT_DETAIL = graphql(`
         price
         priceWithTax
         stockOnHand
+                customFields {
+                  wholesalePrice
+                  allowFractionalQuantity
+                }
         prices {
           price
           currencyCode
@@ -326,6 +334,10 @@ export const GET_PRODUCTS = graphql(`
           price
           priceWithTax
           stockOnHand
+                customFields {
+                  wholesalePrice
+                  allowFractionalQuantity
+                }
           prices {
             price
             currencyCode
@@ -435,6 +447,10 @@ export const SEARCH_PRODUCTS = graphql(`
           price
           priceWithTax
           stockOnHand
+                customFields {
+                  wholesalePrice
+                  allowFractionalQuantity
+                }
           prices {
             price
             currencyCode
@@ -511,6 +527,10 @@ export const PREFETCH_PRODUCTS = graphql(`
           price
           priceWithTax
           stockOnHand
+                customFields {
+                  wholesalePrice
+                  allowFractionalQuantity
+                }
           prices {
             price
             currencyCode
