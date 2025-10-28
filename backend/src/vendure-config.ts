@@ -19,6 +19,7 @@ import path from 'path';
 import { ChannelSettingsPlugin } from './plugins/channel-settings.plugin';
 import { FractionalQuantityPlugin } from './plugins/fractional-quantity.plugin';
 import { MlModelPlugin } from './plugins/ml-model.plugin';
+import { NotificationPlugin } from './plugins/notification.plugin';
 import { cashPaymentHandler, mpesaPaymentHandler } from './plugins/payment-handlers';
 import { OverridePricePermission } from './plugins/price-override.permission';
 import { PriceOverridePlugin } from './plugins/price-override.plugin';
@@ -439,6 +440,7 @@ export const config: VendureConfig = {
         PriceOverridePlugin,
         ChannelSettingsPlugin,
         FractionalQuantityPlugin,
+        NotificationPlugin,
         AssetServerPlugin.init({
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),

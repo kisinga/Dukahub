@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AppInitService } from '../../core/services/app-init.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { StockLocationService } from '../../core/services/stock-location.service';
 
 interface NavItem {
@@ -23,6 +24,7 @@ export class DashboardLayoutComponent implements OnInit {
     private readonly companyService = inject(CompanyService);
     private readonly stockLocationService = inject(StockLocationService);
     private readonly appInitService = inject(AppInitService);
+    private readonly notificationService = inject(NotificationService);
     private lastCompanyId: string | null = null;
 
     protected readonly navItems = computed(() => {
@@ -44,50 +46,8 @@ export class DashboardLayoutComponent implements OnInit {
         return baseItems;
     });
 
-    protected readonly notifications = [
-        {
-            icon: '⚠️',
-            text: 'Low stock alert: Panadol Extra only 5 units remaining',
-            time: '2 minutes ago',
-            type: 'warning',
-            unread: true
-        },
-        {
-            icon: '⚠️',
-            text: 'Critical: Aspirin out of stock',
-            time: '15 minutes ago',
-            type: 'warning',
-            unread: true
-        },
-        {
-            icon: '✅',
-            text: 'Sale completed: KES 5,400 (Receipt #1247)',
-            time: '1 hour ago',
-            type: 'success',
-            unread: false
-        },
-        {
-            icon: '💰',
-            text: 'Payment received: KES 12,000 from wholesale order',
-            time: '2 hours ago',
-            type: 'success',
-            unread: false
-        },
-        {
-            icon: '📦',
-            text: '15 new products added to inventory',
-            time: '5 hours ago',
-            type: 'info',
-            unread: false
-        },
-        {
-            icon: 'ℹ️',
-            text: 'Monthly report is ready for review',
-            time: '1 day ago',
-            type: 'info',
-            unread: false
-        }
-    ];
+    // Use notification service
+    protected readonly notifications = this.notificationService.notifications;
 
     // Auth service signals
     protected readonly user = this.authService.user;
@@ -101,10 +61,8 @@ export class DashboardLayoutComponent implements OnInit {
     protected readonly companyLogoAsset = this.companyService.companyLogoAsset;
     protected readonly companyLogoUrl = this.companyService.companyLogoUrl;
 
-    // Computed values
-    protected readonly unreadCount = computed(() =>
-        this.notifications.filter(n => n.unread).length
-    );
+    // Use notification service
+    protected readonly unreadCount = this.notificationService.unreadCount;
 
     protected readonly userAvatar = computed(() =>
         this.user()?.emailAddress ? 'default_avatar.png' : 'default_avatar.png'
@@ -132,6 +90,10 @@ export class DashboardLayoutComponent implements OnInit {
     ngOnInit(): void {
         // Initialization is handled by the effect in constructor
         // No need for duplicate call here
+
+        // Load notifications
+        this.notificationService.loadNotifications();
+        this.notificationService.loadUnreadCount();
     }
 
     closeDrawer(): void {
@@ -153,6 +115,63 @@ export class DashboardLayoutComponent implements OnInit {
         // Clear cached data before logout
         this.appInitService.clearCache();
         await this.authService.logout();
+    }
+
+    // Notification handling methods
+    async markNotificationAsRead(notificationId: string): Promise<void> {
+        await this.notificationService.markAsRead(notificationId);
+    }
+
+    async markAllNotificationsAsRead(): Promise<void> {
+        await this.notificationService.markAllAsRead();
+    }
+
+    getNotificationIcon(type: string): string {
+        switch (type) {
+            case 'ORDER':
+                return '💰';
+            case 'STOCK':
+                return '⚠️';
+            case 'ML_TRAINING':
+                return '🤖';
+            case 'PAYMENT':
+                return '💳';
+            default:
+                return 'ℹ️';
+        }
+    }
+
+    getNotificationTypeClass(type: string): string {
+        switch (type) {
+            case 'ORDER':
+                return 'success';
+            case 'STOCK':
+                return 'warning';
+            case 'ML_TRAINING':
+                return 'info';
+            case 'PAYMENT':
+                return 'success';
+            default:
+                return 'info';
+        }
+    }
+
+    formatNotificationTime(createdAt: string): string {
+        const now = new Date();
+        const notificationTime = new Date(createdAt);
+        const diffInMinutes = Math.floor((now.getTime() - notificationTime.getTime()) / (1000 * 60));
+
+        if (diffInMinutes < 1) {
+            return 'Just now';
+        } else if (diffInMinutes < 60) {
+            return `${diffInMinutes} minutes ago`;
+        } else if (diffInMinutes < 1440) {
+            const hours = Math.floor(diffInMinutes / 60);
+            return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        } else {
+            const days = Math.floor(diffInMinutes / 1440);
+            return `${days} day${days > 1 ? 's' : ''} ago`;
+        }
     }
 }
 
