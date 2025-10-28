@@ -82,6 +82,12 @@ type Documents = {
     "\n  query GetChannelPaymentMethods {\n    getChannelPaymentMethods {\n      id\n      code\n      name\n      description\n      enabled\n      customFields {\n        imageAsset {\n          id\n          preview\n        }\n        isActive\n      }\n    }\n  }\n": typeof types.GetChannelPaymentMethodsDocument,
     "\n  mutation CreateChannelPaymentMethod($input: CreatePaymentMethodInput!) {\n    createChannelPaymentMethod(input: $input) {\n      id\n      code\n      name\n    }\n  }\n": typeof types.CreateChannelPaymentMethodDocument,
     "\n  mutation UpdateChannelPaymentMethod($input: UpdatePaymentMethodInput!) {\n    updateChannelPaymentMethod(input: $input) {\n      id\n      code\n      name\n      customFields {\n        imageAsset {\n          id\n          preview\n        }\n        isActive\n      }\n    }\n  }\n": typeof types.UpdateChannelPaymentMethodDocument,
+    "\n  query GetUserNotifications($options: NotificationListOptions) {\n    getUserNotifications(options: $options) {\n      items {\n        id\n        userId\n        channelId\n        type\n        title\n        message\n        data\n        read\n        createdAt\n      }\n      totalItems\n    }\n  }\n": typeof types.GetUserNotificationsDocument,
+    "\n  query GetUnreadCount {\n    getUnreadCount\n  }\n": typeof types.GetUnreadCountDocument,
+    "\n  mutation MarkNotificationAsRead($id: ID!) {\n    markNotificationAsRead(id: $id)\n  }\n": typeof types.MarkNotificationAsReadDocument,
+    "\n  mutation MarkAllAsRead {\n    markAllAsRead\n  }\n": typeof types.MarkAllAsReadDocument,
+    "\n  mutation SubscribeToPush($subscription: PushSubscriptionInput!) {\n    subscribeToPush(subscription: $subscription)\n  }\n": typeof types.SubscribeToPushDocument,
+    "\n  mutation UnsubscribeToPush {\n    unsubscribeToPush\n  }\n": typeof types.UnsubscribeToPushDocument,
 };
 const documents: Documents = {
     "\n  mutation UpdateOrderLineQuantity($orderLineId: ID!, $quantity: Float!) {\n    updateOrderLineQuantity(orderLineId: $orderLineId, quantity: $quantity) {\n      ... on Order {\n        id\n        lines {\n          id\n          quantity\n          productVariant {\n            id\n            name\n            customFields {\n              allowFractionalQuantity\n            }\n          }\n        }\n      }\n      ... on ErrorResult {\n        errorCode\n        message\n      }\n    }\n  }\n": types.UpdateOrderLineQuantityDocument,
@@ -152,6 +158,12 @@ const documents: Documents = {
     "\n  query GetChannelPaymentMethods {\n    getChannelPaymentMethods {\n      id\n      code\n      name\n      description\n      enabled\n      customFields {\n        imageAsset {\n          id\n          preview\n        }\n        isActive\n      }\n    }\n  }\n": types.GetChannelPaymentMethodsDocument,
     "\n  mutation CreateChannelPaymentMethod($input: CreatePaymentMethodInput!) {\n    createChannelPaymentMethod(input: $input) {\n      id\n      code\n      name\n    }\n  }\n": types.CreateChannelPaymentMethodDocument,
     "\n  mutation UpdateChannelPaymentMethod($input: UpdatePaymentMethodInput!) {\n    updateChannelPaymentMethod(input: $input) {\n      id\n      code\n      name\n      customFields {\n        imageAsset {\n          id\n          preview\n        }\n        isActive\n      }\n    }\n  }\n": types.UpdateChannelPaymentMethodDocument,
+    "\n  query GetUserNotifications($options: NotificationListOptions) {\n    getUserNotifications(options: $options) {\n      items {\n        id\n        userId\n        channelId\n        type\n        title\n        message\n        data\n        read\n        createdAt\n      }\n      totalItems\n    }\n  }\n": types.GetUserNotificationsDocument,
+    "\n  query GetUnreadCount {\n    getUnreadCount\n  }\n": types.GetUnreadCountDocument,
+    "\n  mutation MarkNotificationAsRead($id: ID!) {\n    markNotificationAsRead(id: $id)\n  }\n": types.MarkNotificationAsReadDocument,
+    "\n  mutation MarkAllAsRead {\n    markAllAsRead\n  }\n": types.MarkAllAsReadDocument,
+    "\n  mutation SubscribeToPush($subscription: PushSubscriptionInput!) {\n    subscribeToPush(subscription: $subscription)\n  }\n": types.SubscribeToPushDocument,
+    "\n  mutation UnsubscribeToPush {\n    unsubscribeToPush\n  }\n": types.UnsubscribeToPushDocument,
 };
 
 /**
@@ -440,6 +452,30 @@ export function graphql(source: "\n  mutation CreateChannelPaymentMethod($input:
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpdateChannelPaymentMethod($input: UpdatePaymentMethodInput!) {\n    updateChannelPaymentMethod(input: $input) {\n      id\n      code\n      name\n      customFields {\n        imageAsset {\n          id\n          preview\n        }\n        isActive\n      }\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateChannelPaymentMethod($input: UpdatePaymentMethodInput!) {\n    updateChannelPaymentMethod(input: $input) {\n      id\n      code\n      name\n      customFields {\n        imageAsset {\n          id\n          preview\n        }\n        isActive\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetUserNotifications($options: NotificationListOptions) {\n    getUserNotifications(options: $options) {\n      items {\n        id\n        userId\n        channelId\n        type\n        title\n        message\n        data\n        read\n        createdAt\n      }\n      totalItems\n    }\n  }\n"): (typeof documents)["\n  query GetUserNotifications($options: NotificationListOptions) {\n    getUserNotifications(options: $options) {\n      items {\n        id\n        userId\n        channelId\n        type\n        title\n        message\n        data\n        read\n        createdAt\n      }\n      totalItems\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetUnreadCount {\n    getUnreadCount\n  }\n"): (typeof documents)["\n  query GetUnreadCount {\n    getUnreadCount\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation MarkNotificationAsRead($id: ID!) {\n    markNotificationAsRead(id: $id)\n  }\n"): (typeof documents)["\n  mutation MarkNotificationAsRead($id: ID!) {\n    markNotificationAsRead(id: $id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation MarkAllAsRead {\n    markAllAsRead\n  }\n"): (typeof documents)["\n  mutation MarkAllAsRead {\n    markAllAsRead\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation SubscribeToPush($subscription: PushSubscriptionInput!) {\n    subscribeToPush(subscription: $subscription)\n  }\n"): (typeof documents)["\n  mutation SubscribeToPush($subscription: PushSubscriptionInput!) {\n    subscribeToPush(subscription: $subscription)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UnsubscribeToPush {\n    unsubscribeToPush\n  }\n"): (typeof documents)["\n  mutation UnsubscribeToPush {\n    unsubscribeToPush\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

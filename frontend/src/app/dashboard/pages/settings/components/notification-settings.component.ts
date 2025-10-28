@@ -3,9 +3,9 @@ import { NotificationService } from '../../../../core/services/notification.serv
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
-    selector: 'app-notification-settings',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `
+  selector: 'app-notification-settings',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
     <div class="space-y-6">
       <div class="card bg-base-100 shadow-sm border border-base-300">
         <div class="card-body">
@@ -19,26 +19,37 @@ import { ToastService } from '../../../../core/services/toast.service';
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full flex items-center justify-center"
                    [class.bg-success]="isPushEnabled()"
-                   [class.bg-error]="!isPushEnabled()">
-                <span class="text-xl">{{ isPushEnabled() ? '🔔' : '🔕' }}</span>
+                   [class.bg-warning]="permission() === 'default'"
+                   [class.bg-error]="!isPushEnabled() && permission() !== 'default'">
+                <span class="text-xl">{{ getStatusIcon() }}</span>
               </div>
               <div>
                 <h3 class="font-semibold">Push Notifications</h3>
                 <p class="text-sm opacity-70">
-                  {{ isPushEnabled() ? 'Enabled - You will receive real-time notifications' : 'Disabled - You will not receive push notifications' }}
+                  {{ getStatusMessage() }}
                 </p>
+                @if (permission() === 'denied') {
+                  <p class="text-xs text-error mt-1">
+                    Notifications are blocked. Please enable them in your browser settings.
+                  </p>
+                } @else if (permission() === 'default') {
+                  <p class="text-xs text-warning mt-1">
+                    Click "Enable" to request notification permission.
+                  </p>
+                }
               </div>
             </div>
             <button 
               class="btn"
               [class.btn-success]="isPushEnabled()"
-              [class.btn-outline]="!isPushEnabled()"
-              [disabled]="isLoading()"
+              [class.btn-warning]="permission() === 'default'"
+              [class.btn-outline]="!isPushEnabled() && permission() !== 'default'"
+              [disabled]="isLoading() || permission() === 'denied'"
               (click)="togglePushNotifications()">
               @if (isLoading()) {
                 <span class="loading loading-spinner loading-sm"></span>
               } @else {
-                {{ isPushEnabled() ? 'Disable' : 'Enable' }}
+                {{ getButtonText() }}
               }
             </button>
           </div>
@@ -130,137 +141,165 @@ import { ToastService } from '../../../../core/services/toast.service';
   `,
 })
 export class NotificationSettingsComponent {
-    private readonly notificationService = inject(NotificationService);
-    private readonly toastService = inject(ToastService);
+  private readonly notificationService = inject(NotificationService);
+  private readonly toastService = inject(ToastService);
 
-    // State
-    private readonly selectedTypeSignal = signal<string>('');
-    private readonly isLoadingSignal = signal<boolean>(false);
+  // State
+  private readonly selectedTypeSignal = signal<string>('');
+  private readonly isLoadingSignal = signal<boolean>(false);
 
-    // Computed values
-    readonly isPushEnabled = this.notificationService.isPushEnabled;
-    readonly isLoading = this.isLoadingSignal.asReadonly();
-    readonly selectedType = this.selectedTypeSignal.asReadonly();
-    readonly notifications = this.notificationService.notifications;
+  // Computed values
+  readonly isPushEnabled = this.notificationService.isPushEnabled;
+  readonly isLoading = this.isLoadingSignal.asReadonly();
+  readonly selectedType = this.selectedTypeSignal.asReadonly();
+  readonly notifications = this.notificationService.notifications;
+  readonly permission = this.notificationService.permission;
 
-    readonly notificationTypes = [
-        {
-            key: 'ORDER',
-            label: 'Orders',
-            icon: '💰',
-            description: 'Order status updates and payments',
-            enabled: true
-        },
-        {
-            key: 'STOCK',
-            label: 'Stock Alerts',
-            icon: '⚠️',
-            description: 'Low stock and inventory warnings',
-            enabled: true
-        },
-        {
-            key: 'ML_TRAINING',
-            label: 'ML Training',
-            icon: '🤖',
-            description: 'Machine learning model updates',
-            enabled: true
-        },
-        {
-            key: 'PAYMENT',
-            label: 'Payments',
-            icon: '💳',
-            description: 'Payment confirmations and issues',
-            enabled: true
-        }
-    ];
+  readonly notificationTypes = [
+    {
+      key: 'ORDER',
+      label: 'Orders',
+      icon: '💰',
+      description: 'Order status updates and payments',
+      enabled: true
+    },
+    {
+      key: 'STOCK',
+      label: 'Stock Alerts',
+      icon: '⚠️',
+      description: 'Low stock and inventory warnings',
+      enabled: true
+    },
+    {
+      key: 'ML_TRAINING',
+      label: 'ML Training',
+      icon: '🤖',
+      description: 'Machine learning model updates',
+      enabled: true
+    },
+    {
+      key: 'PAYMENT',
+      label: 'Payments',
+      icon: '💳',
+      description: 'Payment confirmations and issues',
+      enabled: true
+    }
+  ];
 
-    readonly filteredNotifications = computed(() => {
-        const notifications = this.notifications();
-        const selectedType = this.selectedType();
+  readonly filteredNotifications = computed(() => {
+    const notifications = this.notifications();
+    const selectedType = this.selectedType();
 
-        if (!selectedType) {
-            return notifications;
-        }
-
-        return notifications.filter(notification => notification.type === selectedType);
-    });
-
-    async togglePushNotifications(): Promise<void> {
-        this.isLoadingSignal.set(true);
-
-        try {
-            if (this.isPushEnabled()) {
-                await this.notificationService.unsubscribeToPush();
-            } else {
-                await this.notificationService.subscribeToPush();
-            }
-        } catch (error) {
-            console.error('Failed to toggle push notifications:', error);
-            this.toastService.show('Error', 'Failed to update notification settings', 'error');
-        } finally {
-            this.isLoadingSignal.set(false);
-        }
+    if (!selectedType) {
+      return notifications;
     }
 
-    onTypeFilterChange(event: Event): void {
-        const target = event.target as HTMLSelectElement;
-        this.selectedTypeSignal.set(target.value);
-    }
+    return notifications.filter(notification => notification.type === selectedType);
+  });
 
-    async markAsRead(notificationId: string): Promise<void> {
-        await this.notificationService.markAsRead(notificationId);
-    }
+  async togglePushNotifications(): Promise<void> {
+    this.isLoadingSignal.set(true);
 
-    async markAllAsRead(): Promise<void> {
-        await this.notificationService.markAllAsRead();
+    try {
+      if (this.isPushEnabled()) {
+        await this.notificationService.unsubscribeToPush();
+      } else {
+        await this.notificationService.subscribeToPush();
+      }
+    } catch (error) {
+      console.error('Failed to toggle push notifications:', error);
+      this.toastService.show('Error', 'Failed to update notification settings', 'error');
+    } finally {
+      this.isLoadingSignal.set(false);
     }
+  }
 
-    getNotificationIcon(type: string): string {
-        switch (type) {
-            case 'ORDER':
-                return '💰';
-            case 'STOCK':
-                return '⚠️';
-            case 'ML_TRAINING':
-                return '🤖';
-            case 'PAYMENT':
-                return '💳';
-            default:
-                return 'ℹ️';
-        }
+  onTypeFilterChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.selectedTypeSignal.set(target.value);
+  }
+
+  async markAsRead(notificationId: string): Promise<void> {
+    await this.notificationService.markAsRead(notificationId);
+  }
+
+  async markAllAsRead(): Promise<void> {
+    await this.notificationService.markAllAsRead();
+  }
+
+  getNotificationIcon(type: string): string {
+    switch (type) {
+      case 'ORDER':
+        return '💰';
+      case 'STOCK':
+        return '⚠️';
+      case 'ML_TRAINING':
+        return '🤖';
+      case 'PAYMENT':
+        return '💳';
+      default:
+        return 'ℹ️';
     }
+  }
 
-    getNotificationTypeClass(type: string): string {
-        switch (type) {
-            case 'ORDER':
-                return 'success';
-            case 'STOCK':
-                return 'warning';
-            case 'ML_TRAINING':
-                return 'info';
-            case 'PAYMENT':
-                return 'success';
-            default:
-                return 'info';
-        }
+  getNotificationTypeClass(type: string): string {
+    switch (type) {
+      case 'ORDER':
+        return 'success';
+      case 'STOCK':
+        return 'warning';
+      case 'ML_TRAINING':
+        return 'info';
+      case 'PAYMENT':
+        return 'success';
+      default:
+        return 'info';
     }
+  }
 
-    formatNotificationTime(createdAt: string): string {
-        const now = new Date();
-        const notificationTime = new Date(createdAt);
-        const diffInMinutes = Math.floor((now.getTime() - notificationTime.getTime()) / (1000 * 60));
+  formatNotificationTime(createdAt: string): string {
+    const now = new Date();
+    const notificationTime = new Date(createdAt);
+    const diffInMinutes = Math.floor((now.getTime() - notificationTime.getTime()) / (1000 * 60));
 
-        if (diffInMinutes < 1) {
-            return 'Just now';
-        } else if (diffInMinutes < 60) {
-            return `${diffInMinutes} minutes ago`;
-        } else if (diffInMinutes < 1440) {
-            const hours = Math.floor(diffInMinutes / 60);
-            return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-        } else {
-            const days = Math.floor(diffInMinutes / 1440);
-            return `${days} day${days > 1 ? 's' : ''} ago`;
-        }
+    if (diffInMinutes < 1) {
+      return 'Just now';
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes} minutes ago`;
+    } else if (diffInMinutes < 1440) {
+      const hours = Math.floor(diffInMinutes / 60);
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else {
+      const days = Math.floor(diffInMinutes / 1440);
+      return `${days} day${days > 1 ? 's' : ''} ago`;
     }
+  }
+
+  getStatusIcon(): string {
+    if (this.isPushEnabled()) return '🔔';
+    if (this.permission() === 'default') return '❓';
+    if (this.permission() === 'denied') return '🚫';
+    return '🔕';
+  }
+
+  getStatusMessage(): string {
+    if (this.isPushEnabled()) {
+      return 'Enabled - You will receive real-time notifications';
+    }
+    if (this.permission() === 'default') {
+      return 'Not configured - Click "Enable" to request permission';
+    }
+    if (this.permission() === 'denied') {
+      return 'Blocked - Notifications are disabled in browser settings';
+    }
+    return 'Disabled - You will not receive push notifications';
+  }
+
+  getButtonText(): string {
+    if (this.isPushEnabled()) return 'Disable';
+    if (this.permission() === 'denied') return 'Blocked';
+    return 'Enable';
+  }
 }
+
 

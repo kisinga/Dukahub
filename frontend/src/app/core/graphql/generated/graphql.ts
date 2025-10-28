@@ -3121,6 +3121,8 @@ export type Mutation = {
    */
   login: NativeAuthenticationResult;
   logout: Success;
+  markAllAsRead: Scalars['Int']['output'];
+  markNotificationAsRead: Scalars['Boolean']['output'];
   /**
    * Allows an Order to be modified after it has been completed by the Customer. The Order must first
    * be in the `Modifying` state.
@@ -3186,6 +3188,7 @@ export type Mutation = {
   setSettingsStoreValues: Array<SetSettingsStoreValueResult>;
   settlePayment: SettlePaymentResult;
   settleRefund: SettleRefundResult;
+  subscribeToPush: Scalars['Boolean']['output'];
   transitionFulfillmentToState: TransitionFulfillmentToStateResult;
   transitionOrderToState?: Maybe<TransitionOrderToStateResult>;
   transitionPaymentToState: TransitionPaymentToStateResult;
@@ -3193,6 +3196,7 @@ export type Mutation = {
   unsetDraftOrderBillingAddress: Order;
   /** Unsets the shipping address for a draft Order */
   unsetDraftOrderShippingAddress: Order;
+  unsubscribeToPush: Scalars['Boolean']['output'];
   /** Update the active (currently logged-in) Administrator */
   updateActiveAdministrator: Administrator;
   /** Update an existing Administrator */
@@ -3814,6 +3818,11 @@ export type MutationLoginArgs = {
 };
 
 
+export type MutationMarkNotificationAsReadArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationModifyOrderArgs = {
   input: ModifyOrderInput;
 };
@@ -3980,6 +3989,11 @@ export type MutationSettlePaymentArgs = {
 
 export type MutationSettleRefundArgs = {
   input: SettleRefundInput;
+};
+
+
+export type MutationSubscribeToPushArgs = {
+  subscription: PushSubscriptionInput;
 };
 
 
@@ -4247,6 +4261,38 @@ export type NothingToRefundError = ErrorResult & {
   errorCode: ErrorCode;
   message: Scalars['String']['output'];
 };
+
+export type Notification = {
+  __typename?: 'Notification';
+  channelId: Scalars['ID']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  data?: Maybe<Scalars['JSON']['output']>;
+  id: Scalars['ID']['output'];
+  message: Scalars['String']['output'];
+  read: Scalars['Boolean']['output'];
+  title: Scalars['String']['output'];
+  type: NotificationType;
+  userId: Scalars['ID']['output'];
+};
+
+export type NotificationList = {
+  __typename?: 'NotificationList';
+  items: Array<Notification>;
+  totalItems: Scalars['Int']['output'];
+};
+
+export type NotificationListOptions = {
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  take?: InputMaybe<Scalars['Int']['input']>;
+  type?: InputMaybe<NotificationType>;
+};
+
+export enum NotificationType {
+  ML_TRAINING = 'ML_TRAINING',
+  ORDER = 'ORDER',
+  PAYMENT = 'PAYMENT',
+  STOCK = 'STOCK'
+}
 
 /** Operators for filtering on a list of Number fields */
 export type NumberListOperators = {
@@ -5426,6 +5472,11 @@ export type ProvinceTranslationInput = {
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type PushSubscriptionInput = {
+  endpoint: Scalars['String']['input'];
+  keys: Scalars['JSON']['input'];
+};
+
 /** Returned if the specified quantity of an OrderLine is greater than the number of items in that line */
 export type QuantityTooGreatError = ErrorResult & {
   __typename?: 'QuantityTooGreatError';
@@ -5471,6 +5522,8 @@ export type Query = {
   getSettingsStoreValue?: Maybe<Scalars['JSON']['output']>;
   /** Get multiple key-value pairs (each automatically scoped) */
   getSettingsStoreValues?: Maybe<Scalars['JSON']['output']>;
+  getUnreadCount: Scalars['Int']['output'];
+  getUserNotifications: NotificationList;
   globalSettings: GlobalSettings;
   job?: Maybe<Job>;
   jobBufferSize: Array<JobBufferSize>;
@@ -5639,6 +5692,11 @@ export type QueryGetSettingsStoreValueArgs = {
 
 export type QueryGetSettingsStoreValuesArgs = {
   keys: Array<Scalars['String']['input']>;
+};
+
+
+export type QueryGetUserNotificationsArgs = {
+  options?: InputMaybe<NotificationListOptions>;
 };
 
 
@@ -7787,6 +7845,42 @@ export type UpdateChannelPaymentMethodMutationVariables = Exact<{
 
 export type UpdateChannelPaymentMethodMutation = { __typename?: 'Mutation', updateChannelPaymentMethod: { __typename?: 'PaymentMethod', id: string, code: string, name: string, customFields?: { __typename?: 'PaymentMethodCustomFields', isActive?: boolean | null, imageAsset?: { __typename?: 'Asset', id: string, preview: string } | null } | null } };
 
+export type GetUserNotificationsQueryVariables = Exact<{
+  options?: InputMaybe<NotificationListOptions>;
+}>;
+
+
+export type GetUserNotificationsQuery = { __typename?: 'Query', getUserNotifications: { __typename?: 'NotificationList', totalItems: number, items: Array<{ __typename?: 'Notification', id: string, userId: string, channelId: string, type: NotificationType, title: string, message: string, data?: any | null, read: boolean, createdAt: any }> } };
+
+export type GetUnreadCountQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetUnreadCountQuery = { __typename?: 'Query', getUnreadCount: number };
+
+export type MarkNotificationAsReadMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type MarkNotificationAsReadMutation = { __typename?: 'Mutation', markNotificationAsRead: boolean };
+
+export type MarkAllAsReadMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MarkAllAsReadMutation = { __typename?: 'Mutation', markAllAsRead: number };
+
+export type SubscribeToPushMutationVariables = Exact<{
+  subscription: PushSubscriptionInput;
+}>;
+
+
+export type SubscribeToPushMutation = { __typename?: 'Mutation', subscribeToPush: boolean };
+
+export type UnsubscribeToPushMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type UnsubscribeToPushMutation = { __typename?: 'Mutation', unsubscribeToPush: boolean };
+
 
 export const UpdateOrderLineQuantityDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateOrderLineQuantity"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderLineId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"quantity"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateOrderLineQuantity"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderLineId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderLineId"}}},{"kind":"Argument","name":{"kind":"Name","value":"quantity"},"value":{"kind":"Variable","name":{"kind":"Name","value":"quantity"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Order"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"lines"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"productVariant"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allowFractionalQuantity"}}]}}]}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ErrorResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateOrderLineQuantityMutation, UpdateOrderLineQuantityMutationVariables>;
 export const GetActiveAdministratorDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetActiveAdministrator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activeAdministrator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"identifier"}},{"kind":"Field","name":{"kind":"Name","value":"roles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetActiveAdministratorQuery, GetActiveAdministratorQueryVariables>;
@@ -7856,3 +7950,9 @@ export const InviteChannelAdministratorDocument = {"kind":"Document","definition
 export const GetChannelPaymentMethodsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetChannelPaymentMethods"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getChannelPaymentMethods"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"enabled"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"imageAsset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"preview"}}]}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}}]}}]}}]}}]} as unknown as DocumentNode<GetChannelPaymentMethodsQuery, GetChannelPaymentMethodsQueryVariables>;
 export const CreateChannelPaymentMethodDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateChannelPaymentMethod"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreatePaymentMethodInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createChannelPaymentMethod"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<CreateChannelPaymentMethodMutation, CreateChannelPaymentMethodMutationVariables>;
 export const UpdateChannelPaymentMethodDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateChannelPaymentMethod"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdatePaymentMethodInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateChannelPaymentMethod"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"imageAsset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"preview"}}]}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateChannelPaymentMethodMutation, UpdateChannelPaymentMethodMutationVariables>;
+export const GetUserNotificationsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetUserNotifications"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"options"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"NotificationListOptions"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getUserNotifications"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"Variable","name":{"kind":"Name","value":"options"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"channelId"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"data"}},{"kind":"Field","name":{"kind":"Name","value":"read"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalItems"}}]}}]}}]} as unknown as DocumentNode<GetUserNotificationsQuery, GetUserNotificationsQueryVariables>;
+export const GetUnreadCountDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetUnreadCount"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getUnreadCount"}}]}}]} as unknown as DocumentNode<GetUnreadCountQuery, GetUnreadCountQueryVariables>;
+export const MarkNotificationAsReadDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"MarkNotificationAsRead"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"markNotificationAsRead"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<MarkNotificationAsReadMutation, MarkNotificationAsReadMutationVariables>;
+export const MarkAllAsReadDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"MarkAllAsRead"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"markAllAsRead"}}]}}]} as unknown as DocumentNode<MarkAllAsReadMutation, MarkAllAsReadMutationVariables>;
+export const SubscribeToPushDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SubscribeToPush"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"subscription"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"PushSubscriptionInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"subscribeToPush"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"subscription"},"value":{"kind":"Variable","name":{"kind":"Name","value":"subscription"}}}]}]}}]} as unknown as DocumentNode<SubscribeToPushMutation, SubscribeToPushMutationVariables>;
+export const UnsubscribeToPushDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UnsubscribeToPush"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"unsubscribeToPush"}}]}}]} as unknown as DocumentNode<UnsubscribeToPushMutation, UnsubscribeToPushMutationVariables>;

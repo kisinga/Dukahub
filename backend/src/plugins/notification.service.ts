@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { RequestContext, TransactionalConnection } from '@vendure/core';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 export interface NotificationData {
     [key: string]: any;
@@ -21,15 +22,36 @@ export enum NotificationType {
     PAYMENT = 'payment',
 }
 
+@Entity()
 export class Notification {
+    @PrimaryGeneratedColumn('uuid')
     id: string;
+
+    @Column()
     userId: string;
+
+    @Column()
     channelId: string;
+
+    @Column({
+        type: 'enum',
+        enum: NotificationType,
+    })
     type: NotificationType;
+
+    @Column()
     title: string;
+
+    @Column()
     message: string;
+
+    @Column('jsonb', { nullable: true })
     data: NotificationData;
+
+    @Column({ default: false })
     read: boolean;
+
+    @CreateDateColumn()
     createdAt: Date;
 }
 
@@ -62,9 +84,12 @@ export class NotificationService {
         notification.read = false;
         notification.createdAt = new Date();
 
-        // In a real implementation, you would save to database
-        // For now, we'll simulate the creation
-        return notification;
+        // Save to database
+        const savedNotification = await this.connection.rawConnection
+            .getRepository(Notification)
+            .save(notification);
+
+        return savedNotification;
     }
 
     async getUserNotifications(
@@ -73,17 +98,41 @@ export class NotificationService {
         channelId: string,
         options: { skip?: number; take?: number } = {}
     ): Promise<{ items: Notification[]; totalItems: number }> {
-        // In a real implementation, you would query the database
-        // For now, return empty array
+        const skip = options.skip || 0;
+        const take = options.take || 20;
+
+        const [items, totalItems] = await this.connection.rawConnection
+            .getRepository(Notification)
+            .findAndCount({
+                where: {
+                    userId,
+                    channelId,
+                },
+                order: {
+                    createdAt: 'DESC',
+                },
+                skip,
+                take,
+            });
+
         return {
-            items: [],
-            totalItems: 0,
+            items,
+            totalItems,
         };
     }
 
     async getUnreadCount(ctx: RequestContext, userId: string, channelId: string): Promise<number> {
-        // In a real implementation, you would count unread notifications
-        return 0;
+        const count = await this.connection.rawConnection
+            .getRepository(Notification)
+            .count({
+                where: {
+                    userId,
+                    channelId,
+                    read: false,
+                },
+            });
+
+        return count;
     }
 
     async markAsRead(ctx: RequestContext, notificationId: string): Promise<boolean> {

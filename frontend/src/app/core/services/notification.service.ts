@@ -1,5 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { SwPush } from '@angular/service-worker';
+import { environment } from '../../../environments/environment';
+import { GetUnreadCountDocument, GetUserNotificationsDocument, NotificationType } from '../graphql/generated/graphql';
 import type {
     Notification
 } from '../graphql/notification.types';
@@ -26,6 +28,10 @@ export class NotificationService {
     readonly isPushEnabled = this.isPushEnabledSignal.asReadonly();
     readonly isLoading = this.isLoadingSignal.asReadonly();
 
+    // Permission status signal
+    private readonly permissionSignal = signal<NotificationPermission>('default');
+    readonly permission = this.permissionSignal.asReadonly();
+
     // Polling interval for fallback
     private pollingInterval?: number;
 
@@ -37,8 +43,15 @@ export class NotificationService {
         try {
             // Check if push notifications are supported
             if ('serviceWorker' in navigator && 'PushManager' in window) {
+                await this.checkPermissionStatus();
                 await this.checkPushPermission();
-                await this.setupPushSubscription();
+                
+                // Only setup push subscription if service worker is enabled
+                if (this.swPush.isEnabled) {
+                    await this.setupPushSubscription();
+                } else if (this.isDevMode()) {
+                    console.log('Service worker not enabled in development mode - push notifications will use polling fallback');
+                }
             }
 
             // Load initial notifications
@@ -112,11 +125,30 @@ export class NotificationService {
         try {
             if (!this.swPush.isEnabled) {
                 console.warn('Service worker not enabled');
+                if (this.isDevMode()) {
+                    this.toastService.show('Push Notifications', 'Service worker not available in development mode. Push notifications will work in production.', 'info', 5000);
+                } else {
+                    this.toastService.show('Push Notifications', 'Service worker not available. Please refresh the page.', 'warning', 5000);
+                }
                 return false;
             }
 
+            // Check current permission status
+            const permission = await this.getNotificationPermission();
+
+            if (permission === 'denied') {
+                this.toastService.show('Push Notifications', 'Notifications are blocked. Please enable them in your browser settings.', 'error', 5000);
+                return false;
+            }
+
+            if (permission === 'granted') {
+                // Already have permission, just create subscription
+                return await this.createPushSubscription();
+            }
+
+            // Permission is 'default' - request it
             const subscription = await this.swPush.requestSubscription({
-                serverPublicKey: 'BF0sBtWcGxHBOWR1WY5m4YS3HJ2NQpY1nS1LU12yWV-mxMxey_A96hrNgM6G0gLQEb6jm7ZtFVgLG5F_ME_zg8o', // VAPID public key
+                serverPublicKey: 'BG8TDv8Aka5nR1E3aZ8m5sAkdt639rPGSszRG-l1_KJZbRnUpDveXswRoxp_3zqdLVCSRatg1wk_8i5zHUpUbL0', // VAPID public key
             });
 
             // Mock success for now - replace with actual GraphQL call when backend is ready
@@ -129,6 +161,13 @@ export class NotificationService {
             return true;
         } catch (error) {
             console.error('Failed to subscribe to push notifications:', error);
+
+            if (error instanceof Error && error.message.includes('user dismissed')) {
+                this.toastService.show('Push Notifications', 'Permission request was dismissed. You can enable notifications later in settings.', 'info', 5000);
+            } else {
+                this.toastService.show('Push Notifications', 'Failed to enable push notifications. Please try again.', 'error', 5000);
+            }
+
             return false;
         }
     }
@@ -148,11 +187,30 @@ export class NotificationService {
         }
     }
 
-    async loadNotifications(options: { skip?: number; take?: number; type?: string } = {}): Promise<void> {
+    async loadNotifications(options: { skip?: number; take?: number; type?: NotificationType } = {}): Promise<void> {
         try {
             this.isLoadingSignal.set(true);
 
-            // Mock data for now - replace with actual GraphQL call when backend is ready
+            // In development, try to use real GraphQL, fallback to mock data
+            if (this.isDevMode()) {
+                try {
+                    // Try to fetch from real backend
+                    const client = this.apolloService.getClient();
+                    const result = await client.query({
+                        query: GetUserNotificationsDocument,
+                        variables: { options }
+                    });
+
+                    if (result?.data?.getUserNotifications?.items) {
+                        this.notificationsSignal.set(result.data.getUserNotifications.items);
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Backend not available, using mock data:', error);
+                }
+            }
+
+            // Mock data fallback
             const mockNotifications: Notification[] = [
                 {
                     id: '1',
@@ -188,12 +246,69 @@ export class NotificationService {
 
     async loadUnreadCount(): Promise<void> {
         try {
-            // Mock data for now - replace with actual GraphQL call when backend is ready
+            // In development, try to use real GraphQL, fallback to mock data
+            if (this.isDevMode()) {
+                try {
+                    const client = this.apolloService.getClient();
+                    const result = await client.query({
+                        query: GetUnreadCountDocument
+                    });
+
+                    if (typeof result?.data?.getUnreadCount === 'number') {
+                        this.unreadCountSignal.set(result.data.getUnreadCount);
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Backend not available for unread count, using mock data:', error);
+                }
+            }
+
+            // Mock data fallback
             const notifications = this.notificationsSignal();
             const unreadCount = notifications.filter(n => !n.read).length;
             this.unreadCountSignal.set(unreadCount);
         } catch (error) {
             console.error('Failed to load unread count:', error);
+        }
+    }
+
+    private isDevMode(): boolean {
+        return !environment.production;
+    }
+
+    private async getNotificationPermission(): Promise<NotificationPermission> {
+        if (!('Notification' in window)) {
+            return 'denied';
+        }
+        return Notification.permission;
+    }
+
+    private async createPushSubscription(): Promise<boolean> {
+        try {
+            const subscription = await this.swPush.requestSubscription({
+                serverPublicKey: 'BG8TDv8Aka5nR1E3aZ8m5sAkdt639rPGSszRG-l1_KJZbRnUpDveXswRoxp_3zqdLVCSRatg1wk_8i5zHUpUbL0',
+            });
+
+            console.log('Push subscription created:', subscription);
+            this.isPushEnabledSignal.set(true);
+            this.toastService.show('Push Notifications', 'Successfully subscribed to push notifications', 'success', 5000);
+
+            return true;
+        } catch (error) {
+            console.error('Failed to create push subscription:', error);
+            return false;
+        }
+    }
+
+    private async checkPermissionStatus(): Promise<void> {
+        const permission = await this.getNotificationPermission();
+        this.permissionSignal.set(permission);
+
+        // Update push enabled status based on permission
+        if (permission === 'granted') {
+            this.isPushEnabledSignal.set(true);
+        } else {
+            this.isPushEnabledSignal.set(false);
         }
     }
 

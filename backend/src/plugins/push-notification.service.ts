@@ -8,7 +8,7 @@ export class PushNotificationService {
     private vapidKeys = {
         publicKey: process.env.VAPID_PUBLIC_KEY || '',
         privateKey: process.env.VAPID_PRIVATE_KEY || '',
-        subject: process.env.VAPID_SUBJECT || 'mailto:admin@dukahub.com',
+        subject: process.env.VAPID_EMAIL || 'mailto:admin@dukahub.com',
     };
 
     constructor(private notificationService: NotificationService) {
