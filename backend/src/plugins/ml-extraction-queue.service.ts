@@ -153,18 +153,28 @@ export class MlExtractionQueueService {
      * Clean up old completed extractions (older than 7 days)
      */
     async cleanupOldExtractions(ctx: RequestContext): Promise<number> {
-        const result = await this.connection.rawConnection.query(`
-            DELETE FROM ml_extraction_queue 
-            WHERE status IN ('completed', 'failed') 
-            AND updated_at < NOW() - INTERVAL '7 days'
-        `);
+        try {
+            const result = await this.connection.rawConnection.query(`
+                DELETE FROM ml_extraction_queue 
+                WHERE status IN ('completed', 'failed') 
+                AND updated_at < NOW() - INTERVAL '7 days'
+            `);
 
-        const deletedCount = result.rowCount || 0;
-        if (deletedCount > 0) {
-            console.log(`[ML Extraction Queue] Cleaned up ${deletedCount} old extractions`);
+            const deletedCount = result.rowCount || 0;
+            if (deletedCount > 0) {
+                console.log(`[ML Extraction Queue] Cleaned up ${deletedCount} old extractions`);
+            }
+
+            return deletedCount;
+        } catch (error) {
+            // Handle table not existing or other database errors
+            if (error instanceof Error && error.message.includes('relation "ml_extraction_queue" does not exist')) {
+                console.log('[ML Extraction Queue] Table does not exist yet, skipping cleanup');
+                return 0;
+            }
+            console.error('[ML Extraction Queue] Error cleaning up old extractions:', error);
+            return 0;
         }
-
-        return deletedCount;
     }
 
     /**
