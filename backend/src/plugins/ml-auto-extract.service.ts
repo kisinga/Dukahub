@@ -48,8 +48,10 @@ export class MlAutoExtractService implements OnModuleInit {
         // Start processing queue every 30 seconds
         this.startQueueProcessor();
 
-        // Clean up old extractions on startup
-        this.cleanupOldExtractions();
+        // Clean up old extractions on startup (with delay to ensure migrations complete)
+        setTimeout(() => {
+            this.cleanupOldExtractions();
+        }, 5000); // 5 second delay to allow migrations to complete
     }
 
     /**
