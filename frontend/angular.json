@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "dukahub-frontend": {
+    "dukahub": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -67,10 +67,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "dukahub-frontend:build:production"
+              "buildTarget": "dukahub:build:production"
             },
             "development": {
-              "buildTarget": "dukahub-frontend:build:development"
+              "buildTarget": "dukahub:build:development"
             }
           },
           "defaultConfiguration": "development"
