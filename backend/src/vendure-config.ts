@@ -20,6 +20,9 @@ import { ChannelSettingsPlugin } from './plugins/channel-settings.plugin';
 import { FractionalQuantityPlugin } from './plugins/fractional-quantity.plugin';
 import { MlModelPlugin } from './plugins/ml-model.plugin';
 import { NotificationPlugin } from './plugins/notification.plugin';
+import { PhoneAuthPlugin } from './plugins/phone-auth.plugin';
+import { OtpTokenAuthStrategy } from './plugins/otp-token-auth.strategy';
+import { OtpService } from './plugins/otp.service';
 import { cashPaymentHandler, mpesaPaymentHandler } from './plugins/payment-handlers';
 import { OverridePricePermission } from './plugins/price-override.permission';
 import { PriceOverridePlugin } from './plugins/price-override.plugin';
@@ -106,6 +109,8 @@ export const config: VendureConfig = {
             secure: COOKIE_SECURE,
         },
         customPermissions: [OverridePricePermission],
+        // OTP token auth strategy will be registered by PhoneAuthPlugin before bootstrap
+        // It must be first in the array to be found by getAuthenticationStrategy (which uses find())
     },
     dbConnectionOptions: {
         type: 'postgres',
@@ -427,6 +432,17 @@ export const config: VendureConfig = {
                 ui: { tab: 'Pricing' },
             },
         ],
+        User: [
+            {
+                name: 'authorizationStatus',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'Authorization Status' }],
+                description: [{ languageCode: LanguageCode.en, value: 'User authorization status for login access' }],
+                defaultValue: 'PENDING',
+                public: false,
+                nullable: false,
+            },
+        ],
     },
     orderOptions: {
         process: [customOrderProcess],
@@ -441,6 +457,8 @@ export const config: VendureConfig = {
         ChannelSettingsPlugin,
         FractionalQuantityPlugin,
         NotificationPlugin,
+        // PhoneAuthPlugin must be registered early so its strategy can be added to adminAuthenticationStrategy
+        PhoneAuthPlugin,
         AssetServerPlugin.init({
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),

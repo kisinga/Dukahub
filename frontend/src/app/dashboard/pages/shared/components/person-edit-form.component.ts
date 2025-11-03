@@ -92,7 +92,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
                     <input
                         type="tel"
                         formControlName="phoneNumber"
-                        placeholder="0XXXXXXXXX (required)"
+                        placeholder="07XXXXXXXX (required)"
                         class="input input-bordered w-full"
                         [class.input-error]="hasError('phoneNumber')"
                     />
@@ -147,7 +147,7 @@ export class PersonEditFormComponent {
             businessName: ['', [Validators.required, Validators.minLength(2)]],
             contactPerson: ['', [Validators.required, Validators.minLength(2)]],
             emailAddress: ['', [Validators.email]],
-            phoneNumber: ['', [Validators.required, Validators.pattern(/^0\d{9}$/)]]
+            phoneNumber: ['', [Validators.required, Validators.pattern(/^07\d{8}$/)]]
         });
 
         // Watch for initial data changes using effect
@@ -199,7 +199,7 @@ export class PersonEditFormComponent {
             return `Minimum ${errors['minlength'].requiredLength} characters required`;
         }
         if (errors['email']) return 'Please enter a valid email address';
-        if (errors['pattern']) return 'Phone must be in format 0XXXXXXXXX (10 digits starting with 0)';
+        if (errors['pattern']) return 'Phone must be in format 07XXXXXXXX (10 digits starting with 07)';
 
         return 'Invalid value';
     }

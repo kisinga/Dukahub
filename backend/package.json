@@ -27,6 +27,7 @@
     "@vendure/graphiql-plugin": "3.4.3",
     "concurrently": "9.2.1",
     "dotenv": "17.2.3",
+    "ioredis": "^5.8.2",
     "pg": "8.16.3",
     "type-graphql": "^2.0.0-rc.2",
     "web-push": "^3.6.7"

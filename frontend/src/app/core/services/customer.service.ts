@@ -9,6 +9,7 @@ import {
     UPDATE_CUSTOMER,
     UPDATE_CUSTOMER_ADDRESS
 } from '../graphql/operations.graphql';
+import { formatPhoneNumber } from '../utils/phone.utils';
 import { ApolloService } from './apollo.service';
 
 /**
@@ -74,9 +75,15 @@ export class CustomerService {
         try {
             const client = this.apolloService.getClient();
 
+            // Normalize phone number to 07XXXXXXXX format
+            const normalizedInput = {
+                ...input,
+                phoneNumber: input.phoneNumber ? formatPhoneNumber(input.phoneNumber) : undefined,
+            };
+
             const result = await client.mutate<any>({
                 mutation: CREATE_CUSTOMER,
-                variables: { input },
+                variables: { input: normalizedInput },
             });
 
             const customer = result.data?.createCustomer;
@@ -127,9 +134,15 @@ export class CustomerService {
         try {
             const client = this.apolloService.getClient();
 
+            // Normalize phone number to 07XXXXXXXX format if provided
+            const normalizedInput = {
+                ...input,
+                phoneNumber: input.phoneNumber ? formatPhoneNumber(input.phoneNumber) : input.phoneNumber,
+            };
+
             const result = await client.mutate<any>({
                 mutation: UPDATE_CUSTOMER,
-                variables: { input: { id, ...input } },
+                variables: { input: { id, ...normalizedInput } },
             });
 
             const customer = result.data?.updateCustomer;

@@ -42,6 +42,7 @@ export const GET_ACTIVE_ADMIN = graphql(`
   }
 `);
 
+// Legacy login mutation (kept for backward compatibility during transition)
 export const LOGIN = graphql(`
   mutation Login($username: String!, $password: String!, $rememberMe: Boolean) {
     login(username: $username, password: $password, rememberMe: $rememberMe) {
@@ -62,6 +63,60 @@ export const LOGIN = graphql(`
         errorCode
         message
       }
+    }
+  }
+`);
+
+// Phone-based OTP authentication mutations
+export const REQUEST_REGISTRATION_OTP = graphql(`
+  mutation RequestRegistrationOTP($phoneNumber: String!) {
+    requestRegistrationOTP(phoneNumber: $phoneNumber) {
+      success
+      message
+      expiresAt
+    }
+  }
+`);
+
+export const VERIFY_REGISTRATION_OTP = graphql(`
+  mutation VerifyRegistrationOTP($phoneNumber: String!, $otp: String!, $registrationData: RegistrationInput!) {
+    verifyRegistrationOTP(phoneNumber: $phoneNumber, otp: $otp, registrationData: $registrationData) {
+      success
+      userId
+      message
+    }
+  }
+`);
+
+export const REQUEST_LOGIN_OTP = graphql(`
+  mutation RequestLoginOTP($phoneNumber: String!) {
+    requestLoginOTP(phoneNumber: $phoneNumber) {
+      success
+      message
+      expiresAt
+    }
+  }
+`);
+
+export const VERIFY_LOGIN_OTP = graphql(`
+  mutation VerifyLoginOTP($phoneNumber: String!, $otp: String!) {
+    verifyLoginOTP(phoneNumber: $phoneNumber, otp: $otp) {
+      success
+      token
+      user {
+        id
+        identifier
+      }
+      message
+    }
+  }
+`);
+
+export const CHECK_AUTHORIZATION_STATUS = graphql(`
+  query CheckAuthorizationStatus($identifier: String!) {
+    checkAuthorizationStatus(identifier: $identifier) {
+      status
+      message
     }
   }
 `);

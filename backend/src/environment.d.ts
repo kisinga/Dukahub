@@ -18,6 +18,14 @@ declare global {
             DB_PASSWORD: string;
             DB_SCHEMA: string;
             DB_SYNCHRONIZE: string;
+            REDIS_HOST?: string;
+            REDIS_PORT?: string;
+            // SMS Provider Configuration
+            SMS_PROVIDER?: string; // 'hostpinnacle', 'twilio', 'aws-sns', etc.
+            HOSTPINNACLE_API_URL?: string;
+            HOSTPINNACLE_USERID?: string;
+            HOSTPINNACLE_PASSWORD?: string;
+            HOSTPINNACLE_SENDER_ID?: string;
         }
     }
 }

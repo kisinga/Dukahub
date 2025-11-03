@@ -7,6 +7,7 @@ import {
     UPDATE_SUPPLIER
 } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
+import { formatPhoneNumber } from '../utils/phone.utils';
 
 /**
  * Supplier creation input
@@ -65,11 +66,12 @@ export class SupplierService {
             const client = this.apolloService.getClient();
 
             // Prepare input with only basic customer fields at top level, supplier fields in customFields
+            // Normalize phone number to 07XXXXXXXX format
             const supplierInput = {
                 firstName: input.firstName,
                 lastName: input.lastName,
                 emailAddress: input.emailAddress, // Should be provided by the component (with placeholder if needed)
-                phoneNumber: input.phoneNumber,
+                phoneNumber: input.phoneNumber ? formatPhoneNumber(input.phoneNumber) : undefined,
                 customFields: {
                     isSupplier: true,
                     supplierType: input.supplierType,
@@ -134,9 +136,11 @@ export class SupplierService {
             const client = this.apolloService.getClient();
 
             // Prepare input with custom fields for supplier
+            // Normalize phone number to 07XXXXXXXX format if provided
             const supplierInput = {
                 id,
                 ...input,
+                phoneNumber: input.phoneNumber ? formatPhoneNumber(input.phoneNumber) : input.phoneNumber,
                 customFields: {
                     isSupplier: true,
                     supplierType: input.supplierType,

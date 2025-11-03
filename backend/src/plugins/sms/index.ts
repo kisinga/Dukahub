@@ -1,0 +1,16 @@
+/**
+ * SMS Module Barrel Export
+ * 
+ * Provides clean imports for SMS-related services and providers
+ */
+
+// Interfaces
+export * from './interfaces/sms-provider.interface';
+
+// Providers
+export * from './providers/hostpinnacle.provider';
+
+// Services
+export * from './sms-provider.factory';
+export * from './sms.service';
+
