@@ -8,7 +8,7 @@
 export * from './interfaces/sms-provider.interface';
 
 // Providers
-export * from './providers/hostpinnacle.provider';
+export * from './providers/africastalking.provider';
 
 // Services
 export * from './sms-provider.factory';

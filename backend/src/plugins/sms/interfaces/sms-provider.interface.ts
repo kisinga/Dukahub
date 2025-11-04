@@ -2,7 +2,7 @@
  * SMS Provider Interface
  * 
  * Defines the contract for SMS provider implementations.
- * This abstraction allows easy swapping of SMS providers (Hostpinnacle, Twilio, AWS SNS, etc.)
+ * This abstraction allows easy swapping of SMS providers (AfricasTalking, Twilio, AWS SNS, etc.)
  */
 
 /**

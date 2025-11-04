@@ -32,12 +32,18 @@ export class SmsService {
 
             // Check if provider is configured
             if (!this.provider.isConfigured()) {
+                // Get detailed configuration status for better error messages
+                const configStatus = (this.provider as any).getConfigurationStatus?.() || { missing: [] };
+                const missingVars = configStatus.missing?.length > 0 
+                    ? ` Missing: ${configStatus.missing.join(', ')}`
+                    : '';
+                
                 console.warn(
-                    `[SMS Service] Provider "${this.provider.getName()}" is not configured. Message: ${message}`
+                    `[SMS Service] Provider "${this.provider.getName()}" is not configured.${missingVars}`
                 );
                 return {
                     success: false,
-                    error: `SMS provider "${this.provider.getName()}" is not configured`,
+                    error: `SMS provider "${this.provider.getName()}" is not configured.${missingVars}`,
                 };
             }
 

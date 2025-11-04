@@ -111,11 +111,19 @@ services:
       SMTP_FROM: ${SMTP_FROM:-}
 
       # SMS Provider configuration
-      SMS_PROVIDER: ${SMS_PROVIDER:-hostpinnacle}
-      HOSTPINNACLE_API_URL: ${HOSTPINNACLE_API_URL:-https://smsportal.hostpinnacle.co.ke/SMSApi/send}
-      HOSTPINNACLE_USERID: ${HOSTPINNACLE_USERID:-}
-      HOSTPINNACLE_PASSWORD: ${HOSTPINNACLE_PASSWORD:-}
-      HOSTPINNACLE_SENDER_ID: ${HOSTPINNACLE_SENDER_ID:-DUKAHUB}
+      SMS_PROVIDER: ${SMS_PROVIDER:-africastalking}
+      
+      # AfricasTalking Configuration (default provider)
+      AFRICASTALKING_USERNAME: ${AFRICASTALKING_USERNAME:-}
+      AFRICASTALKING_API_KEY: ${AFRICASTALKING_API_KEY:-}
+      AFRICASTALKING_SENDER_ID: ${AFRICASTALKING_SENDER_ID:-}
+      AFRICASTALKING_ENVIRONMENT: ${AFRICASTALKING_ENVIRONMENT:-production}
+      AFRICASTALKING_API_URL: ${AFRICASTALKING_API_URL:-}
+
+      # Push Notification Configuration (VAPID)
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_EMAIL: ${VAPID_EMAIL:-mailto:admin@dukahub.com}
 
       # First run initialization flag
       FIRST_RUN: ${FIRST_RUN:-false}

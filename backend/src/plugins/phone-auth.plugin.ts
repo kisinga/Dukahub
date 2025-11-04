@@ -5,13 +5,11 @@ import { OtpService } from './otp.service';
 import { OtpTokenAuthStrategy } from './otp-token-auth.strategy';
 import { SmsService } from './sms/sms.service';
 import { SmsProviderFactory } from './sms/sms-provider.factory';
-import { HostpinnacleProvider } from './sms/providers/hostpinnacle.provider';
 
 @VendurePlugin({
     imports: [PluginCommonModule],
     providers: [
         // SMS Provider Infrastructure
-        HostpinnacleProvider,
         SmsProviderFactory,
         SmsService,
         // Phone Auth Infrastructure

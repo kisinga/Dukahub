@@ -168,3 +168,4 @@ if (user.channels[0]?.validationStatus === 'REJECTED') {
 5. Remove any blocking checks based on status (already done for authorization status)
 
 
+
