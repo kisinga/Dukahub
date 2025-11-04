@@ -75,14 +75,26 @@ export class PhoneAuthService {
 
     /**
      * Request login OTP
+     * Validates that the phone number has an associated account before sending OTP
      */
-    async requestLoginOTP(phoneNumber: string): Promise<{
+    async requestLoginOTP(phoneNumber: string, ctx: RequestContext): Promise<{
         success: boolean;
         message: string;
         expiresAt?: number;
     }> {
         try {
             const formattedPhone = formatPhoneNumber(phoneNumber);
+
+            // Check if user account exists before sending OTP
+            const existingUser = await this.userService.getUserByEmailAddress(ctx, formattedPhone);
+            if (!existingUser) {
+                return {
+                    success: false,
+                    message: 'No account found with this phone number. Please register first.',
+                };
+            }
+
+            // Account exists - proceed with sending OTP
             return await this.otpService.requestOTP(formattedPhone, 'login');
         } catch (error: any) {
             throw new Error(error?.message || 'Failed to request OTP');
@@ -280,7 +292,7 @@ export class PhoneAuthService {
     }> {
         // Normalize phone number first for OTP verification
         const formattedPhone = formatPhoneNumber(phoneNumber);
-        
+
         const verification = await this.otpService.verifyOTP(formattedPhone, otp.trim());
         if (!verification.valid) {
             return {
@@ -291,7 +303,7 @@ export class PhoneAuthService {
 
         // Find user (phone number already normalized)
         const user = await this.userService.getUserByEmailAddress(ctx, formattedPhone);
-        
+
         if (!user) {
             return {
                 success: false,
@@ -304,7 +316,7 @@ export class PhoneAuthService {
 
         // OTP verified - create session token for login
         const sessionToken = `otp_session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-        
+
         if (!this.otpService.redis) {
             throw new Error('Redis not available');
         }

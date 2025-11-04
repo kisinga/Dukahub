@@ -65,7 +65,7 @@ export const phoneAuthSchema = gql`
 
 @Resolver()
 export class PhoneAuthResolver {
-    constructor(private phoneAuthService: PhoneAuthService) {}
+    constructor(private phoneAuthService: PhoneAuthService) { }
 
     // Helper to get Request/Response from context
     private getRequestFromContext(ctx: RequestContext): { req: Request; res: Response } | null {
@@ -106,7 +106,7 @@ export class PhoneAuthResolver {
         @Ctx() ctx: RequestContext,
         @Args('phoneNumber') phoneNumber: string,
     ) {
-        return this.phoneAuthService.requestLoginOTP(phoneNumber);
+        return this.phoneAuthService.requestLoginOTP(phoneNumber, ctx);
     }
 
     @Mutation()
