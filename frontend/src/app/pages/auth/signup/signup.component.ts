@@ -8,7 +8,7 @@ import { formatPhoneNumber, generateCompanyCode } from '../../../core/utils/phon
 type Step = 1 | 2 | 3;
 
 @Component({
-    selector: 'app-signup',
+  selector: 'app-signup',
   imports: [RouterLink, FormsModule],
   templateUrl: './signup.component.html',
   styleUrl: './signup.component.css',
@@ -59,6 +59,7 @@ export class SignupComponent implements OnDestroy {
   // Step 3: OTP
   private otpTimer: any = null;
   protected readonly displayedOTP = signal<string | null>(null); // For development - shows OTP on screen
+  private registrationSessionId = signal<string | null>(null); // Store sessionId from OTP request
 
   ngOnDestroy(): void {
     if (this.otpTimer) {
@@ -119,31 +120,62 @@ export class SignupComponent implements OnDestroy {
       return;
     }
 
-    // Check if phone number already exists (mock check - backend will do real check)
+    // Store registration data and request OTP
     this.errorMessage.set(null);
     this.isLoading.set(true);
 
     try {
+      // Get and validate registration data
+      const registrationData = this.registrationService.getRegistrationData();
+      if (!registrationData) {
+        // Re-validate to get specific error messages
+        const companyValidation = this.registrationService.validateCompanyInfo();
+        const adminValidation = this.registrationService.validateAdminInfo();
+        const storeValidation = this.registrationService.validateStoreInfo();
+
+        const errors: string[] = [];
+        if (!companyValidation.valid) errors.push(...companyValidation.errors);
+        if (!adminValidation.valid) errors.push(...adminValidation.errors);
+        if (!storeValidation.valid) errors.push(...storeValidation.errors);
+
+        throw new Error(errors.length > 0
+          ? `Please complete all required fields: ${errors.join(', ')}`
+          : 'Invalid registration data. Please go back and complete all fields.');
+      }
+
       const phoneNumber = this.formattedPhone();
+      if (!phoneNumber) {
+        throw new Error('Phone number is required. Please go back to step 1.');
+      }
 
-      // TODO: Replace with actual backend check when ready
-      // For now, we'll let the backend handle this during verification
+      // Prepare registration data for backend
+      const registrationPayload = {
+        companyName: registrationData.company.companyName.trim(),
+        companyCode: registrationData.company.companyCode.trim(),
+        currency: registrationData.company.currency,
+        adminFirstName: registrationData.admin.firstName.trim(),
+        adminLastName: registrationData.admin.lastName.trim(),
+        adminPhoneNumber: formatPhoneNumber(registrationData.admin.phoneNumber),
+        adminEmail: registrationData.admin.email?.trim() || undefined,
+        storeName: registrationData.store.storeName.trim(),
+        storeAddress: registrationData.store.storeAddress?.trim() || undefined,
+      };
 
-      const result = await this.authService.requestRegistrationOTP(phoneNumber);
+      // NEW: Store registration data and request OTP
+      // Backend will store data in Redis and return sessionId
+      const result = await this.authService.requestRegistrationOTP(phoneNumber, registrationPayload);
+
+      if (!result.sessionId) {
+        throw new Error('Failed to create registration session. Please try again.');
+      }
+
+      // Store sessionId for OTP verification
+      this.registrationSessionId.set(result.sessionId);
 
       // For development: Get OTP from mock service (console.log shows it)
       // In production, OTP will be sent via SMS
       console.log('[DEV] OTP sent. Check browser console for the OTP code.');
-
-      // In development, we can show OTP on screen for testing
-      // This will be removed when backend is ready
-      if (typeof window !== 'undefined' && window.localStorage) {
-        // Try to get from mock service (for dev display only)
-        setTimeout(() => {
-          // OTP is logged to console by mock service
-          // User should check console for the 6-digit code
-        }, 100);
-      }
+      console.log('[DEV] Registration session ID:', result.sessionId);
 
       this.otpSent.set(true);
       this.currentStep.set(3);
@@ -169,51 +201,88 @@ export class SignupComponent implements OnDestroy {
       return;
     }
 
+    // Validate OTP format (must be 6 digits)
+    if (!/^\d{6}$/.test(otpValue)) {
+      this.errorMessage.set('OTP must be exactly 6 digits');
+      return;
+    }
+
     this.errorMessage.set(null);
     this.isLoading.set(true);
 
     try {
-      const registrationData = this.registrationService.getRegistrationData();
-      if (!registrationData) {
-        throw new Error('Invalid registration data. Please go back and complete all fields.');
+      // Get sessionId from stored registration request
+      const sessionId = this.registrationSessionId();
+      if (!sessionId) {
+        throw new Error('Registration session expired. Please start registration again.');
       }
 
       const phoneNumber = this.formattedPhone();
+      if (!phoneNumber) {
+        throw new Error('Phone number is required. Please go back to step 1.');
+      }
 
-      // Check for existing account before verifying OTP
-      // This will be handled by backend, but we can show user-friendly message
-
+      // NEW: Verify OTP using sessionId (registration data is retrieved from Redis)
+      // This creates all entities in a transaction
       const result = await this.authService.verifyRegistrationOTP(
         phoneNumber,
         otpValue,
-        registrationData
+        sessionId
       );
 
       if (result.success) {
-        this.successMessage.set('Registration successful! Your account is pending admin approval. You will be redirected to login...');
+        // Get registration data for success message (from service)
+        const registrationData = this.registrationService.getRegistrationData();
+        const companyName = registrationData?.company.companyName || 'Your account';
+        const storeName = registrationData?.store.storeName || 'your store';
 
-        // Clear OTP code
+        const successMsg = `Registration successful! Your account "${companyName}" with store "${storeName}" has been created. Your account is pending admin approval. Redirecting to login...`;
+
+        this.successMessage.set(successMsg);
+        this.errorMessage.set(null);
+
+        // Clear OTP code and session
         this.otpCode.set('');
+        this.registrationSessionId.set(null);
 
-        // Reset form after 3 seconds and redirect to login
+        // Reset form and redirect to login after 2 seconds
+        // User must login separately (tokens can't be assigned during signup)
         setTimeout(() => {
           this.registrationService.reset();
           this.router.navigate(['/login'], {
             queryParams: { registered: 'true' }
           });
-        }, 3000);
+        }, 2000);
       } else {
         this.errorMessage.set(result.message || 'Registration failed. Please try again.');
+        this.successMessage.set(null);
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Registration failed. Please try again.';
 
-      // Check if error indicates existing account
-      if (errorMsg.toLowerCase().includes('already') || errorMsg.toLowerCase().includes('exists') || errorMsg.toLowerCase().includes('registered')) {
-        this.errorMessage.set('An account with this phone number already exists. Please login instead.');
-      } else {
-        this.errorMessage.set(errorMsg);
+      // Provide user-friendly error messages
+      let displayMessage = errorMsg;
+
+      // Check for specific error types
+      if (errorMsg.toLowerCase().includes('already') ||
+        errorMsg.toLowerCase().includes('exists') ||
+        errorMsg.toLowerCase().includes('duplicate')) {
+        displayMessage = 'An account with this phone number already exists. Please login instead.';
+      } else if (errorMsg.toLowerCase().includes('otp') ||
+        errorMsg.toLowerCase().includes('invalid') ||
+        errorMsg.toLowerCase().includes('expired')) {
+        displayMessage = 'Invalid or expired OTP code. Please request a new OTP.';
+      } else if (errorMsg.toLowerCase().includes('network') ||
+        errorMsg.toLowerCase().includes('connection') ||
+        errorMsg.toLowerCase().includes('fetch')) {
+        displayMessage = 'Unable to connect to server. Please check your internet connection and try again.';
+      } else if (errorMsg.toLowerCase().includes('company code') ||
+        errorMsg.toLowerCase().includes('channel')) {
+        displayMessage = 'Company code is already taken. Please go back and choose a different company name.';
       }
+
+      this.errorMessage.set(displayMessage);
+      this.successMessage.set(null);
     } finally {
       this.isLoading.set(false);
     }
@@ -228,8 +297,39 @@ export class SignupComponent implements OnDestroy {
     this.errorMessage.set(null);
 
     try {
+      // Get registration data for resending OTP
+      const registrationData = this.registrationService.getRegistrationData();
+      if (!registrationData) {
+        throw new Error('Registration data not found. Please start registration again.');
+      }
+
       const phoneNumber = this.formattedPhone();
-      await this.authService.requestRegistrationOTP(phoneNumber);
+      if (!phoneNumber) {
+        throw new Error('Phone number is required.');
+      }
+
+      // Prepare registration data for backend
+      const registrationPayload = {
+        companyName: registrationData.company.companyName.trim(),
+        companyCode: registrationData.company.companyCode.trim(),
+        currency: registrationData.company.currency,
+        adminFirstName: registrationData.admin.firstName.trim(),
+        adminLastName: registrationData.admin.lastName.trim(),
+        adminPhoneNumber: formatPhoneNumber(registrationData.admin.phoneNumber),
+        adminEmail: registrationData.admin.email?.trim() || undefined,
+        storeName: registrationData.store.storeName.trim(),
+        storeAddress: registrationData.store.storeAddress?.trim() || undefined,
+      };
+
+      // Resend OTP with registration data (gets new sessionId)
+      const result = await this.authService.requestRegistrationOTP(phoneNumber, registrationPayload);
+
+      if (!result.sessionId) {
+        throw new Error('Failed to create registration session. Please try again.');
+      }
+
+      // Update sessionId for OTP verification
+      this.registrationSessionId.set(result.sessionId);
 
       this.otpCode.set('');
       this.startOTPResendCooldown();

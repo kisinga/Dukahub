@@ -21,8 +21,12 @@ declare global {
             REDIS_HOST?: string;
             REDIS_PORT?: string;
             // SMS Provider Configuration
-            SMS_PROVIDER?: string; // 'africastalking', 'twilio', 'aws-sns', etc.
-            // AfricasTalking Configuration
+            SMS_PROVIDER?: string; // 'textsms', 'africastalking', 'twilio', 'aws-sns', etc.
+            // TextSMS Configuration (default provider)
+            TEXTSMS_API_KEY?: string; // Required - Your TextSMS API key
+            TEXTSMS_PARTNER_ID?: string; // Required - Your TextSMS Partner ID
+            TEXTSMS_SHORTCODE?: string; // Required - Your TextSMS Sender ID/Shortcode
+            // AfricasTalking Configuration (alternative provider)
             AFRICASTALKING_USERNAME?: string; // Required - Your AfricasTalking username
             AFRICASTALKING_API_KEY?: string; // Required - Your AfricasTalking API key
             AFRICASTALKING_SENDER_ID?: string; // Optional - will use default if not provided

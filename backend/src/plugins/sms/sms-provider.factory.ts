@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ISmsProvider } from './interfaces/sms-provider.interface';
 import { AfricasTalkingProvider } from './providers/africastalking.provider';
+import { TextsmsProvider } from './providers/textsms.provider';
 
 /**
  * SMS Provider Factory
@@ -17,7 +18,7 @@ export class SmsProviderFactory {
      * Uses singleton pattern to ensure only one instance per provider type
      */
     getProvider(): ISmsProvider {
-        const providerName = (process.env.SMS_PROVIDER || 'africastalking').toLowerCase();
+        const providerName = (process.env.SMS_PROVIDER || 'textsms').toLowerCase();
 
         // Return cached instance if available
         if (this.providerCache.has(providerName)) {
@@ -38,6 +39,8 @@ export class SmsProviderFactory {
      */
     private createProvider(providerName: string): ISmsProvider {
         switch (providerName) {
+            case 'textsms':
+                return new TextsmsProvider();
             case 'africastalking':
                 return new AfricasTalkingProvider();
 
@@ -51,9 +54,9 @@ export class SmsProviderFactory {
 
             default:
                 console.warn(
-                    `[SMS Factory] Unknown provider "${providerName}", falling back to africastalking`
+                    `[SMS Factory] Unknown provider "${providerName}", falling back to textsms`
                 );
-                return new AfricasTalkingProvider();
+                return new TextsmsProvider();
         }
     }
 

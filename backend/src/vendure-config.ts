@@ -20,10 +20,8 @@ import { ChannelSettingsPlugin } from './plugins/channel-settings.plugin';
 import { FractionalQuantityPlugin } from './plugins/fractional-quantity.plugin';
 import { MlModelPlugin } from './plugins/ml-model.plugin';
 import { NotificationPlugin } from './plugins/notification.plugin';
-import { PhoneAuthPlugin } from './plugins/phone-auth.plugin';
-import { OtpTokenAuthStrategy } from './plugins/otp-token-auth.strategy';
-import { OtpService } from './plugins/otp.service';
 import { cashPaymentHandler, mpesaPaymentHandler } from './plugins/payment-handlers';
+import { PhoneAuthPlugin } from './plugins/phone-auth.plugin';
 import { OverridePricePermission } from './plugins/price-override.permission';
 import { PriceOverridePlugin } from './plugins/price-override.plugin';
 

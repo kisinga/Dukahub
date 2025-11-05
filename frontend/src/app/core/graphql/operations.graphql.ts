@@ -69,18 +69,19 @@ export const LOGIN = graphql(`
 
 // Phone-based OTP authentication mutations
 export const REQUEST_REGISTRATION_OTP = graphql(`
-  mutation RequestRegistrationOTP($phoneNumber: String!) {
-    requestRegistrationOTP(phoneNumber: $phoneNumber) {
+  mutation RequestRegistrationOTP($phoneNumber: String!, $registrationData: RegistrationInput!) {
+    requestRegistrationOTP(phoneNumber: $phoneNumber, registrationData: $registrationData) {
       success
       message
+      sessionId
       expiresAt
     }
   }
 `);
 
 export const VERIFY_REGISTRATION_OTP = graphql(`
-  mutation VerifyRegistrationOTP($phoneNumber: String!, $otp: String!, $registrationData: RegistrationInput!) {
-    verifyRegistrationOTP(phoneNumber: $phoneNumber, otp: $otp, registrationData: $registrationData) {
+  mutation VerifyRegistrationOTP($phoneNumber: String!, $otp: String!, $sessionId: String!) {
+    verifyRegistrationOTP(phoneNumber: $phoneNumber, otp: $otp, sessionId: $sessionId) {
       success
       userId
       message

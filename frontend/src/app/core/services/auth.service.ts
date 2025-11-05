@@ -31,7 +31,6 @@ import type {
 import { formatPhoneNumber } from '../utils/phone.utils';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
-import type { RegistrationData } from './registration.service';
 
 /**
  * Global authentication service for admin users
@@ -317,13 +316,17 @@ export class AuthService {
 
   /**
    * Request registration OTP
+   * NEW: Now stores registration data and returns sessionId
    */
-  async requestRegistrationOTP(phoneNumber: string): Promise<{ success: boolean; message: string; expiresAt?: number }> {
+  async requestRegistrationOTP(
+    phoneNumber: string,
+    registrationData: any
+  ): Promise<{ success: boolean; message: string; sessionId?: string; expiresAt?: number }> {
     try {
       const client = this.apolloService.getClient();
       const result = await client.mutate<RequestRegistrationOtpMutation, RequestRegistrationOtpMutationVariables>({
         mutation: REQUEST_REGISTRATION_OTP,
-        variables: { phoneNumber },
+        variables: { phoneNumber, registrationData },
         context: { skipChannelToken: true },
       });
 
@@ -335,6 +338,7 @@ export class AuthService {
       return {
         success: data.success,
         message: data.message,
+        sessionId: data.sessionId ?? undefined,
         expiresAt: data.expiresAt ?? undefined,
       };
     } catch (error: any) {
@@ -346,48 +350,107 @@ export class AuthService {
 
   /**
    * Verify registration OTP and create account
+   * NEW: Uses sessionId to retrieve stored registration data
+   * After successful creation, user must login separately (tokens can't be assigned during signup)
    */
   async verifyRegistrationOTP(
     phoneNumber: string,
     otp: string,
-    registrationData: RegistrationData
+    sessionId: string
   ): Promise<{ success: boolean; userId?: string; message: string }> {
     try {
       const client = this.apolloService.getClient();
+
+      // Normalize phone number to ensure consistency with backend
+      const normalizedPhone = formatPhoneNumber(phoneNumber);
+
+      // Validate sessionId
+      if (!sessionId || !sessionId.trim()) {
+        throw new Error('Session expired. Please start registration again.');
+      }
+
       const result = await client.mutate<VerifyRegistrationOtpMutation, VerifyRegistrationOtpMutationVariables>({
         mutation: VERIFY_REGISTRATION_OTP,
         variables: {
-          phoneNumber,
-          otp,
-          registrationData: {
-            companyName: registrationData.company.companyName,
-            companyCode: registrationData.company.companyCode,
-            currency: registrationData.company.currency,
-            adminFirstName: registrationData.admin.firstName,
-            adminLastName: registrationData.admin.lastName,
-            adminPhoneNumber: registrationData.admin.phoneNumber,
-            adminEmail: registrationData.admin.email,
-            storeName: registrationData.store.storeName,
-            storeAddress: registrationData.store.storeAddress,
-          },
+          phoneNumber: normalizedPhone,
+          otp: otp.trim(),
+          sessionId: sessionId.trim(),
         },
         context: { skipChannelToken: true },
       });
 
       const data = result.data?.verifyRegistrationOTP;
       if (!data) {
-        throw new Error('Registration failed - no response from server');
+        throw new Error('Registration failed - no response from server. Please try again.');
       }
 
-      // Success
+      // Check if backend returned an error (even if mutation succeeded)
+      if (!data.success) {
+        // Extract specific error messages
+        const errorMsg = data.message || 'Registration failed';
+
+        // Provide user-friendly messages for common errors
+        if (errorMsg.toLowerCase().includes('already exists') || errorMsg.toLowerCase().includes('duplicate')) {
+          throw new Error('An account with this phone number already exists. Please login instead.');
+        }
+
+        if (errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('expired')) {
+          throw new Error('Registration session expired. Please start registration again.');
+        }
+
+        if (errorMsg.toLowerCase().includes('otp') || errorMsg.toLowerCase().includes('invalid')) {
+          throw new Error('Invalid or expired OTP code. Please request a new OTP.');
+        }
+
+        if (errorMsg.toLowerCase().includes('channel') || errorMsg.toLowerCase().includes('company code')) {
+          throw new Error('Company code is already taken. Please choose a different company name.');
+        }
+
+        throw new Error(errorMsg);
+      }
+
+      // Success - entities created on backend
+      // Note: User must login separately (tokens can't be assigned during signup)
       return {
         success: data.success,
         userId: data.userId ?? undefined,
-        message: data.message,
+        message: data.message || 'Registration successful. Your account is pending admin approval. Please login to continue.',
       };
     } catch (error: any) {
       console.error('Verify registration OTP error:', error);
-      const errorMessage = error?.message || error?.graphQLErrors?.[0]?.message || 'Registration failed';
+
+      // Handle GraphQL errors
+      if (error?.graphQLErrors && error.graphQLErrors.length > 0) {
+        const graphQLError = error.graphQLErrors[0];
+        const errorMessage = graphQLError.message || 'Registration failed';
+
+        // Provide user-friendly messages for common GraphQL errors
+        if (errorMessage.toLowerCase().includes('already exists') || errorMessage.toLowerCase().includes('duplicate')) {
+          throw new Error('An account with this phone number already exists. Please login instead.');
+        }
+
+        if (errorMessage.toLowerCase().includes('not found') || errorMessage.toLowerCase().includes('expired')) {
+          throw new Error('Registration session expired. Please start registration again.');
+        }
+
+        if (errorMessage.toLowerCase().includes('otp') || errorMessage.toLowerCase().includes('invalid')) {
+          throw new Error('Invalid or expired OTP code. Please request a new OTP.');
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      // Handle network errors
+      if (error?.networkError) {
+        const networkError = error.networkError;
+        if (networkError.statusCode === 0 || networkError.message?.includes('Failed to fetch')) {
+          throw new Error('Unable to connect to server. Please check your internet connection and try again.');
+        }
+        throw new Error('Network error occurred. Please try again.');
+      }
+
+      // Handle other errors
+      const errorMessage = error?.message || 'Registration failed. Please try again.';
       throw new Error(errorMessage);
     }
   }

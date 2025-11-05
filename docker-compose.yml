@@ -111,9 +111,14 @@ services:
       SMTP_FROM: ${SMTP_FROM:-}
 
       # SMS Provider configuration
-      SMS_PROVIDER: ${SMS_PROVIDER:-africastalking}
+      SMS_PROVIDER: ${SMS_PROVIDER:-textsms}
       
-      # AfricasTalking Configuration (default provider)
+      # TextSMS Configuration (default provider)
+      TEXTSMS_API_KEY: ${TEXTSMS_API_KEY:-}
+      TEXTSMS_PARTNER_ID: ${TEXTSMS_PARTNER_ID:-}
+      TEXTSMS_SHORTCODE: ${TEXTSMS_SHORTCODE:-}
+      
+      # AfricasTalking Configuration (alternative provider)
       AFRICASTALKING_USERNAME: ${AFRICASTALKING_USERNAME:-}
       AFRICASTALKING_API_KEY: ${AFRICASTALKING_API_KEY:-}
       AFRICASTALKING_SENDER_ID: ${AFRICASTALKING_SENDER_ID:-}

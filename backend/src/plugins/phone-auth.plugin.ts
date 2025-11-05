@@ -3,6 +3,8 @@ import { PhoneAuthResolver, phoneAuthSchema } from './phone-auth.resolver';
 import { PhoneAuthService } from './phone-auth.service';
 import { OtpService } from './otp.service';
 import { OtpTokenAuthStrategy } from './otp-token-auth.strategy';
+import { RegistrationService } from './registration.service';
+import { RegistrationStorageService } from './registration-storage.service';
 import { SmsService } from './sms/sms.service';
 import { SmsProviderFactory } from './sms/sms-provider.factory';
 
@@ -12,6 +14,9 @@ import { SmsProviderFactory } from './sms/sms-provider.factory';
         // SMS Provider Infrastructure
         SmsProviderFactory,
         SmsService,
+        // Registration Infrastructure
+        RegistrationService,
+        RegistrationStorageService,
         // Phone Auth Infrastructure
         PhoneAuthResolver,
         PhoneAuthService,

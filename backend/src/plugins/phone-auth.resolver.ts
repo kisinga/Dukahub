@@ -8,6 +8,7 @@ export const phoneAuthSchema = gql`
     type OTPResponse {
         success: Boolean!
         message: String!
+        sessionId: String  # Session ID for retrieving stored registration data
         expiresAt: Int
     }
 
@@ -48,11 +49,17 @@ export const phoneAuthSchema = gql`
     }
 
     extend type Mutation {
-        requestRegistrationOTP(phoneNumber: String!): OTPResponse!
+        # NEW: Store registration data and request OTP
+        # Returns sessionId that must be used during verification
+        requestRegistrationOTP(
+            phoneNumber: String!
+            registrationData: RegistrationInput!
+        ): OTPResponse!
+        # UPDATED: Now uses sessionId instead of registrationData
         verifyRegistrationOTP(
             phoneNumber: String!
             otp: String!
-            registrationData: RegistrationInput!
+            sessionId: String!
         ): RegistrationResult!
         requestLoginOTP(phoneNumber: String!): OTPResponse!
         verifyLoginOTP(phoneNumber: String!, otp: String!): LoginResult!
@@ -80,8 +87,9 @@ export class PhoneAuthResolver {
     async requestRegistrationOTP(
         @Ctx() ctx: RequestContext,
         @Args('phoneNumber') phoneNumber: string,
+        @Args('registrationData') registrationData: RegistrationInput,
     ) {
-        return this.phoneAuthService.requestRegistrationOTP(phoneNumber);
+        return this.phoneAuthService.requestRegistrationOTP(phoneNumber, registrationData);
     }
 
     @Mutation()
@@ -90,13 +98,13 @@ export class PhoneAuthResolver {
         @Ctx() ctx: RequestContext,
         @Args('phoneNumber') phoneNumber: string,
         @Args('otp') otp: string,
-        @Args('registrationData') registrationData: RegistrationInput,
+        @Args('sessionId') sessionId: string,
     ) {
         return this.phoneAuthService.verifyRegistrationOTP(
             ctx,
             phoneNumber,
             otp,
-            registrationData
+            sessionId
         );
     }
 
