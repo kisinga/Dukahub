@@ -31,12 +31,14 @@ RUN apk add --no-cache curl
 # Remove default nginx config and content
 RUN rm -rf /etc/nginx/conf.d/default.conf /usr/share/nginx/html/*
 
-# Copy built app from builder - handle different Angular build outputs
-COPY --from=builder /app/dist/dukahub-frontend/browser /usr/share/nginx/html
-RUN if [ ! -f /usr/share/nginx/html/index.html ]; then \
-      echo "Browser subdirectory not found, trying direct dist copy..."; \
+# Copy build output from builder (Angular 18 default path is dist/dukahub/browser)
+COPY --from=builder /app/dist/dukahub/browser /usr/share/nginx/html
+
+# Fallback: older CLI versions may emit dist/dukahub-frontend instead
+RUN if [ ! -f /usr/share/nginx/html/index.html ] && [ -d /app/dist/dukahub-frontend ]; then \
+      echo "Primary dist path missing, copying from dist/dukahub-frontend fallback..."; \
       rm -rf /usr/share/nginx/html/*; \
-      cp -r /app/dist/dukahub-frontend/* /usr/share/nginx/html/; \
+      cp -r /app/dist/dukahub-frontend/browser/* /usr/share/nginx/html/; \
     fi
 
 # Copy nginx configuration as template (will be processed at runtime)
