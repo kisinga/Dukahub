@@ -53,7 +53,7 @@ export const config: VendureConfig = {
         port: serverPort,
         adminApiPath: 'admin-api',
         shopApiPath: 'shop-api',
-        trustProxy: true,
+        trustProxy: IS_PRODUCTION ? 1 : false,
         cors: {
             origin: IS_PRODUCTION
                 ? process.env.FRONTEND_URL?.split(',') || true
