@@ -143,6 +143,60 @@ export class CompanyService {
     });
 
     /**
+     * Subscription status for the active channel
+     */
+    readonly subscriptionStatus = computed(() => {
+        const channelData = this.activeChannelDataSignal();
+        return channelData?.customFields?.subscriptionStatus ?? 'trial';
+    });
+
+    /**
+     * Trial ends at date for the active channel
+     */
+    readonly trialEndsAt = computed(() => {
+        const channelData = this.activeChannelDataSignal();
+        const trialEndsAt = channelData?.customFields?.trialEndsAt;
+        return trialEndsAt ? new Date(trialEndsAt) : null;
+    });
+
+    /**
+     * Subscription expires at date for the active channel
+     */
+    readonly subscriptionExpiresAt = computed(() => {
+        const channelData = this.activeChannelDataSignal();
+        const expiresAt = channelData?.customFields?.subscriptionExpiresAt;
+        return expiresAt ? new Date(expiresAt) : null;
+    });
+
+    /**
+     * Check if trial is active
+     */
+    readonly isTrialActive = computed(() => {
+        const status = this.subscriptionStatus();
+        if (status !== 'trial') return false;
+        const trialEnds = this.trialEndsAt();
+        return trialEnds ? trialEnds > new Date() : false;
+    });
+
+    /**
+     * Check if subscription is active
+     */
+    readonly isSubscriptionActive = computed(() => {
+        const status = this.subscriptionStatus();
+        if (status !== 'active') return false;
+        const expiresAt = this.subscriptionExpiresAt();
+        return expiresAt ? expiresAt > new Date() : false;
+    });
+
+    /**
+     * Check if subscription is expired
+     */
+    readonly isSubscriptionExpired = computed(() => {
+        const status = this.subscriptionStatus();
+        return status === 'expired' || status === 'cancelled';
+    });
+
+    /**
      * Fetch active channel data with custom fields
      * Called when channel is activated or on app initialization
      * Persists complete session to localStorage

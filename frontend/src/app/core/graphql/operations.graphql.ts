@@ -186,6 +186,9 @@ export const GET_ACTIVE_CHANNEL = graphql(`
         }
         cashierFlowEnabled
         cashierOpen
+        subscriptionStatus
+        trialEndsAt
+        subscriptionExpiresAt
       }
     }
   }
@@ -1590,5 +1593,97 @@ export const SUBSCRIBE_TO_PUSH = graphql(`
 export const UNSUBSCRIBE_TO_PUSH = graphql(`
   mutation UnsubscribeToPush {
     unsubscribeToPush
+  }
+`);
+
+// ============================================================================
+// SUBSCRIPTION & PAYMENT
+// ============================================================================
+
+export const GET_SUBSCRIPTION_TIERS = graphql(`
+  query GetSubscriptionTiers {
+    getSubscriptionTiers {
+      id
+      code
+      name
+      description
+      priceMonthly
+      priceYearly
+      features
+      isActive
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+export const GET_CHANNEL_SUBSCRIPTION = graphql(`
+  query GetChannelSubscription($channelId: ID) {
+    getChannelSubscription(channelId: $channelId) {
+      tier {
+        id
+        code
+        name
+        description
+        priceMonthly
+        priceYearly
+        features
+      }
+      status
+      trialEndsAt
+      subscriptionStartedAt
+      subscriptionExpiresAt
+      billingCycle
+      lastPaymentDate
+      lastPaymentAmount
+    }
+  }
+`);
+
+export const CHECK_SUBSCRIPTION_STATUS = graphql(`
+  query CheckSubscriptionStatus($channelId: ID) {
+    checkSubscriptionStatus(channelId: $channelId) {
+      isValid
+      status
+      daysRemaining
+      expiresAt
+      trialEndsAt
+      canPerformAction
+    }
+  }
+`);
+
+export const INITIATE_SUBSCRIPTION_PURCHASE = graphql(`
+  mutation InitiateSubscriptionPurchase(
+    $channelId: ID!
+    $tierId: ID!
+    $billingCycle: String!
+    $phoneNumber: String!
+    $email: String!
+  ) {
+    initiateSubscriptionPurchase(
+      channelId: $channelId
+      tierId: $tierId
+      billingCycle: $billingCycle
+      phoneNumber: $phoneNumber
+      email: $email
+    ) {
+      success
+      reference
+      authorizationUrl
+      message
+    }
+  }
+`);
+
+export const VERIFY_SUBSCRIPTION_PAYMENT = graphql(`
+  mutation VerifySubscriptionPayment($channelId: ID!, $reference: String!) {
+    verifySubscriptionPayment(channelId: $channelId, reference: $reference)
+  }
+`);
+
+export const CANCEL_SUBSCRIPTION = graphql(`
+  mutation CancelSubscription($channelId: ID!) {
+    cancelSubscription(channelId: $channelId)
   }
 `);

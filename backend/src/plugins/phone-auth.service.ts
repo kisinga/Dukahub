@@ -153,15 +153,15 @@ export class PhoneAuthService {
         });
 
         // Step 6: Update User's authorization status to PENDING
-        await this.connection.getRepository(ctx, User).update(
+            await this.connection.getRepository(ctx, User).update(
             { id: provisionResult.userId },
-            {
-                identifier: formattedPhone, // Ensure identifier is phone
-                customFields: {
-                    authorizationStatus: AuthorizationStatus.PENDING,
-                },
-            }
-        );
+                {
+                    identifier: formattedPhone, // Ensure identifier is phone
+                    customFields: {
+                        authorizationStatus: AuthorizationStatus.PENDING,
+                    },
+                }
+            );
 
         return {
             success: true,

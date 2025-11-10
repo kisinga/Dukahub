@@ -24,6 +24,8 @@ import { cashPaymentHandler, mpesaPaymentHandler } from './plugins/payment-handl
 import { PhoneAuthPlugin } from './plugins/phone-auth.plugin';
 import { OverridePricePermission } from './plugins/price-override.permission';
 import { PriceOverridePlugin } from './plugins/price-override.plugin';
+import { SubscriptionTier } from './plugins/subscription.entity';
+import { SubscriptionPlugin } from './plugins/subscription.plugin';
 
 // Load environment variables from .env file for local development
 // Docker containers get env vars from docker-compose (these override .env)
@@ -51,7 +53,7 @@ export const config: VendureConfig = {
         port: serverPort,
         adminApiPath: 'admin-api',
         shopApiPath: 'shop-api',
-        trustProxy: IS_PRODUCTION ? 1 : false,
+        trustProxy: true,
         cors: {
             origin: IS_PRODUCTION
                 ? process.env.FRONTEND_URL?.split(',') || true
@@ -293,6 +295,98 @@ export const config: VendureConfig = {
                 nullable: false,
                 ui: { tab: 'ML Model' },
             },
+            {
+                name: 'subscriptionTier',
+                type: 'relation',
+                entity: SubscriptionTier,
+                label: [{ languageCode: LanguageCode.en, value: 'Subscription Tier' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Current subscription tier' }],
+                public: false,
+                nullable: true,
+                ui: { tab: 'Subscription' },
+            },
+            {
+                name: 'subscriptionStatus',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'Subscription Status' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Current subscription status: trial, active, expired, or cancelled' }],
+                defaultValue: 'trial',
+                public: true,
+                nullable: false,
+                ui: { tab: 'Subscription' },
+            },
+            {
+                name: 'trialEndsAt',
+                type: 'datetime',
+                label: [{ languageCode: LanguageCode.en, value: 'Trial Ends At' }],
+                description: [{ languageCode: LanguageCode.en, value: 'When the trial period ends' }],
+                public: true,
+                nullable: true,
+                ui: { tab: 'Subscription' },
+            },
+            {
+                name: 'subscriptionStartedAt',
+                type: 'datetime',
+                label: [{ languageCode: LanguageCode.en, value: 'Subscription Started At' }],
+                description: [{ languageCode: LanguageCode.en, value: 'When the paid subscription started' }],
+                public: true,
+                nullable: true,
+                ui: { tab: 'Subscription' },
+            },
+            {
+                name: 'subscriptionExpiresAt',
+                type: 'datetime',
+                label: [{ languageCode: LanguageCode.en, value: 'Subscription Expires At' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Next billing date' }],
+                public: true,
+                nullable: true,
+                ui: { tab: 'Subscription' },
+            },
+            {
+                name: 'billingCycle',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'Billing Cycle' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Billing cycle: monthly or yearly' }],
+                public: true,
+                nullable: true,
+                ui: { tab: 'Subscription' },
+            },
+            {
+                name: 'paystackCustomerCode',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'Paystack Customer Code' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Paystack customer reference code' }],
+                public: false,
+                nullable: true,
+                ui: { tab: 'Subscription' },
+            },
+            {
+                name: 'paystackSubscriptionCode',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'Paystack Subscription Code' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Paystack subscription reference code' }],
+                public: false,
+                nullable: true,
+                ui: { tab: 'Subscription' },
+            },
+            {
+                name: 'lastPaymentDate',
+                type: 'datetime',
+                label: [{ languageCode: LanguageCode.en, value: 'Last Payment Date' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Date of last successful payment' }],
+                public: true,
+                nullable: true,
+                ui: { tab: 'Subscription' },
+            },
+            {
+                name: 'lastPaymentAmount',
+                type: 'int',
+                label: [{ languageCode: LanguageCode.en, value: 'Last Payment Amount' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Amount of last payment in cents' }],
+                public: true,
+                nullable: true,
+                ui: { tab: 'Subscription' },
+            },
         ],
         Customer: [
             {
@@ -455,6 +549,7 @@ export const config: VendureConfig = {
         ChannelSettingsPlugin,
         FractionalQuantityPlugin,
         NotificationPlugin,
+        SubscriptionPlugin,
         // PhoneAuthPlugin must be registered early so its strategy can be added to adminAuthenticationStrategy
         PhoneAuthPlugin,
         AssetServerPlugin.init({

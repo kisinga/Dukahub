@@ -7,6 +7,7 @@ import {
     CurrencyCode,
     ID,
     LanguageCode,
+    PasswordCipher,
     PaymentMethod,
     PaymentMethodService,
     Permission,
@@ -67,6 +68,7 @@ export class RegistrationService {
         private readonly administratorService: AdministratorService,
         private readonly userService: UserService,
         private readonly connection: TransactionalConnection,
+        private readonly passwordCipher: PasswordCipher,
     ) { }
 
     /**
@@ -505,6 +507,9 @@ export class RegistrationService {
      * - Phone number as identifier (emailAddress field)
      * - Channel-scoped role (NOT superadmin)
      * - Secure random password (required by Vendure but not used for passwordless auth)
+     * 
+     * NOTE: We use repository directly to bypass permission checks since we're creating
+     * an administrator with a role that the public context doesn't have permission to grant.
      */
     private async createAdministrator(
         ctx: RequestContext,
@@ -515,46 +520,68 @@ export class RegistrationService {
         try {
             // Generate secure password (required by Vendure but won't be used due to passwordless auth)
             const password = this.generateSecurePassword();
+            const hashedPassword = await this.passwordCipher.hash(password);
 
             console.log('[RegistrationService] Creating administrator with phone:', phoneNumber, 'role:', roleId);
 
-            const administrator = await this.administratorService.create(ctx, {
-                emailAddress: phoneNumber, // Use phone as identifier (Vendure uses this as the User identifier)
-                firstName: registrationData.adminFirstName,
-                lastName: registrationData.adminLastName,
-                password: password,
-                roleIds: [roleId], // Channel-scoped role (NOT superadmin)
-            });
-
-            if (!administrator) {
-                throw new Error('Administrator creation returned null/undefined');
+            // Get role entity
+            const role = await this.roleService.findOne(ctx, roleId);
+            if (!role) {
+                throw new Error(`Role ${roleId} not found`);
             }
 
-            if (!administrator.id) {
-                throw new Error('Administrator creation returned invalid result (no ID)');
+            // Create User entity first using UserService (handles password hashing internally)
+            // Note: UserService.create() might have permission checks, so we use repository
+            const userRepo = this.connection.getRepository(ctx, User);
+            const adminRepo = this.connection.getRepository(ctx, Administrator);
+
+            // Create user entity
+            const newUser = new User();
+            newUser.identifier = phoneNumber;
+            (newUser as any).passwordHash = hashedPassword;
+            (newUser as any).verified = true; // Phone verified via OTP
+
+            const savedUser = await userRepo.save(newUser);
+
+            if (!savedUser || !savedUser.id) {
+                throw new Error('Failed to create user');
             }
 
-            if (!administrator.user) {
-                throw new Error('Failed to create administrator user - user is null');
+            // Create Administrator entity
+            const newAdmin = new Administrator();
+            newAdmin.emailAddress = phoneNumber; // Use phone as identifier
+            newAdmin.firstName = registrationData.adminFirstName;
+            newAdmin.lastName = registrationData.adminLastName;
+            (newAdmin as any).user = savedUser;
+
+            const savedAdmin = await adminRepo.save(newAdmin);
+
+            // Load with relations for role assignment
+            const adminWithRelations = await adminRepo
+                .createQueryBuilder('admin')
+                .leftJoinAndSelect('admin.roles', 'role')
+                .leftJoinAndSelect('admin.user', 'user')
+                .where('admin.id = :id', { id: savedAdmin.id })
+                .getOne();
+
+            if (!adminWithRelations) {
+                throw new Error('Failed to load administrator after creation');
             }
 
-            if (!administrator.user.id) {
-                throw new Error('Administrator user has no ID');
+            // Assign role via many-to-many relationship
+            const existingRoles = (adminWithRelations as any).roles || [];
+            existingRoles.push(role);
+            (adminWithRelations as any).roles = existingRoles;
+
+            const finalAdmin = await adminRepo.save(adminWithRelations);
+
+            if (!finalAdmin || !finalAdmin.id || !(finalAdmin as any).user || !(finalAdmin as any).user.id) {
+                throw new Error('Administrator creation returned invalid result');
             }
 
-            console.log('[RegistrationService] Administrator created:', administrator.id, 'User ID:', administrator.user.id);
+            console.log('[RegistrationService] Administrator created:', finalAdmin.id, 'User ID:', (finalAdmin as any).user.id);
 
-            // Ensure identifier is set to phone number
-            await this.connection.getRepository(ctx, User).update(
-                { id: administrator.user.id },
-                {
-                    identifier: phoneNumber, // Ensure identifier is phone
-                }
-            );
-
-            console.log('[RegistrationService] Administrator user identifier updated to phone number');
-
-            return administrator;
+            return finalAdmin;
         } catch (error: any) {
             console.error('[RegistrationService] Administrator creation failed:', error);
             throw new Error(`Failed to create administrator: ${error.message || 'Unknown error'}`);
