@@ -89,12 +89,19 @@ export class AddSubscriptionFields1761900000000 implements MigrationInterface {
 
         // Add foreign key constraint for subscription tier
         await queryRunner.query(`
-            ALTER TABLE "channel" 
-            ADD CONSTRAINT "FK_cfa828418e58de180707fd03e1a" 
-            FOREIGN KEY ("customFieldsSubscriptiontierid") 
-            REFERENCES "subscription_tier"("id") 
-            ON DELETE NO ACTION 
-            ON UPDATE NO ACTION
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint WHERE conname = 'FK_cfa828418e58de180707fd03e1a'
+                ) THEN
+                    ALTER TABLE "channel" 
+                        ADD CONSTRAINT "FK_cfa828418e58de180707fd03e1a" 
+                        FOREIGN KEY ("customFieldsSubscriptiontierid") 
+                        REFERENCES "subscription_tier"("id") 
+                        ON DELETE NO ACTION 
+                        ON UPDATE NO ACTION;
+                END IF;
+            END $$;
         `, undefined);
 
         // Seed default subscription tier (Basic Plan)
