@@ -1,5 +1,5 @@
 {
-  "name": "dukahub-frontend",
+  "name": "dukahub",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
@@ -33,7 +33,9 @@
     "@angular/core": "^20.3.0",
     "@angular/forms": "^20.3.0",
     "@angular/platform-browser": "^20.3.0",
+    "@angular/pwa": "^20.3.0",
     "@angular/router": "^20.3.0",
+    "@angular/service-worker": "^20.3.0",
     "@apollo/client": "^4.0.7",
     "@tailwindcss/postcss": "^4.1.14",
     "@tensorflow/tfjs": "^4.22.0",
@@ -46,7 +48,7 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "@angular/build": "^20.3.3",
+    "@angular/build": "^20.3.0",
     "@angular/cli": "^20.3.4",
     "@angular/compiler-cli": "^20.3.0",
     "@graphql-codegen/cli": "^6.0.0",

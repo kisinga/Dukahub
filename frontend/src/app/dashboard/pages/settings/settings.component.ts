@@ -3,6 +3,8 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { AdminManagementComponent } from './components/admin-management.component';
 import { GeneralSettingsComponent } from './components/general-settings.component';
 import { MlModelStatusComponent } from './components/ml-model-status.component';
+import { NotificationSettingsComponent } from './components/notification-settings.component';
+import { NotificationTestComponent } from './components/notification-test.component';
 import { PaymentMethodsComponent } from './components/payment-methods.component';
 
 @Component({
@@ -12,6 +14,8 @@ import { PaymentMethodsComponent } from './components/payment-methods.component'
     GeneralSettingsComponent,
     AdminManagementComponent,
     MlModelStatusComponent,
+    NotificationSettingsComponent,
+    NotificationTestComponent,
     PaymentMethodsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,6 +34,14 @@ import { PaymentMethodsComponent } from './components/payment-methods.component'
                [checked]="activeTab() === 'ml-model'"
                (change)="setActiveTab('ml-model')" />
         <input type="radio" name="settings_tabs" 
+               class="tab" aria-label="Notifications" 
+               [checked]="activeTab() === 'notifications'"
+               (change)="setActiveTab('notifications')" />
+        <input type="radio" name="settings_tabs" 
+               class="tab" aria-label="Test Notifications" 
+               [checked]="activeTab() === 'test-notifications'"
+               (change)="setActiveTab('test-notifications')" />
+        <input type="radio" name="settings_tabs" 
                class="tab" aria-label="Admins" 
                [checked]="activeTab() === 'admins'"
                (change)="setActiveTab('admins')" />
@@ -47,6 +59,12 @@ import { PaymentMethodsComponent } from './components/payment-methods.component'
         @case ('ml-model') {
           <app-ml-model-status />
         }
+        @case ('notifications') {
+          <app-notification-settings />
+        }
+        @case ('test-notifications') {
+          <app-notification-test />
+        }
         @case ('admins') {
           <app-admin-management />
         }
@@ -58,9 +76,9 @@ import { PaymentMethodsComponent } from './components/payment-methods.component'
   `,
 })
 export class SettingsComponent {
-  readonly activeTab = signal<'general' | 'ml-model' | 'admins' | 'payments'>('general');
+  readonly activeTab = signal<'general' | 'ml-model' | 'notifications' | 'test-notifications' | 'admins' | 'payments'>('general');
 
-  setActiveTab(tab: 'general' | 'ml-model' | 'admins' | 'payments'): void {
+  setActiveTab(tab: 'general' | 'ml-model' | 'notifications' | 'test-notifications' | 'admins' | 'payments'): void {
     this.activeTab.set(tab);
   }
 }

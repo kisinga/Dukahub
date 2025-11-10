@@ -81,32 +81,34 @@
                 }
               </div>
               @if (unreadCount() > 0) {
-              <button class="btn btn-ghost btn-xs">Mark all read</button>
+              <button class="btn btn-ghost btn-xs" (click)="markAllNotificationsAsRead()">Mark all read</button>
               }
             </div>
 
             <!-- Notifications List - Better Spacing -->
             <div class="max-h-[70vh] overflow-y-auto">
-              @for (notif of notifications; track $index) {
+              @for (notif of notifications(); track notif.id) {
               <div
                 class="flex items-start gap-3 p-4 hover:bg-base-200 active:bg-base-300 cursor-pointer transition-colors border-b border-base-300 last:border-b-0"
-                [class.bg-base-200]="notif.unread"
+                [class.bg-base-200]="!notif.read"
+                (click)="markNotificationAsRead(notif.id)"
               >
                 <div
                   class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
-                  [class.bg-warning]="notif.type === 'warning'"
-                  [class.bg-success]="notif.type === 'success'"
-                  [class.bg-info]="notif.type === 'info'"
+                  [class.bg-warning]="getNotificationTypeClass(notif.type) === 'warning'"
+                  [class.bg-success]="getNotificationTypeClass(notif.type) === 'success'"
+                  [class.bg-info]="getNotificationTypeClass(notif.type) === 'info'"
                 >
-                  <span class="text-xl">{{ notif.icon }}</span>
+                  <span class="text-xl">{{ getNotificationIcon(notif.type) }}</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm leading-relaxed" [class.font-semibold]="notif.unread">
-                    {{ notif.text }}
+                  <p class="text-sm leading-relaxed" [class.font-semibold]="!notif.read">
+                    {{ notif.title }}
                   </p>
-                  <p class="text-xs opacity-60 mt-1">{{ notif.time }}</p>
+                  <p class="text-xs opacity-60 mt-1">{{ notif.message }}</p>
+                  <p class="text-xs opacity-60 mt-1">{{ formatNotificationTime(notif.createdAt) }}</p>
                 </div>
-                @if (notif.unread) {
+                @if (!notif.read) {
                 <div class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1"></div>
                 }
               </div>

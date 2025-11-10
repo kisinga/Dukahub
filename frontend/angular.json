@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "dukahub-frontend": {
+    "dukahub": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -48,12 +48,14 @@
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.prod.ts"
                 }
-              ]
+              ],
+              "serviceWorker": "ngsw-config.json"
             },
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true
+              "sourceMap": true,
+              "serviceWorker": "ngsw-config.json"
             }
           },
           "defaultConfiguration": "production"
@@ -65,10 +67,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "dukahub-frontend:build:production"
+              "buildTarget": "dukahub:build:production"
             },
             "development": {
-              "buildTarget": "dukahub-frontend:build:development"
+              "buildTarget": "dukahub:build:development"
             }
           },
           "defaultConfiguration": "development"

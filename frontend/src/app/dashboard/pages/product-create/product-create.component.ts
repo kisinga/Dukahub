@@ -11,6 +11,7 @@ import {
 import {
     FormArray,
     FormBuilder,
+    FormControl,
     FormGroup,
     ReactiveFormsModule,
     Validators,
@@ -19,36 +20,52 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CompanyService } from '../../../core/services/company.service';
 import { ProductService } from '../../../core/services/product.service';
 import { StockLocationService } from '../../../core/services/stock-location.service';
-import { BarcodeScannerComponent } from './components/barcode-scanner.component';
-import { PhotoManagerComponent } from './components/photo-manager.component';
+import { IdentificationSelectorComponent } from './components/identification-selector.component';
+import { ItemTypeSelectorComponent } from './components/item-type-selector.component';
+import { LocationDisplayComponent } from './components/location-display.component';
+import { MeasurementUnitSelectorComponent } from './components/measurement-unit-selector.component';
+import { ProductNameInputComponent } from './components/product-name-input.component';
+import { ProductTypeSelectorComponent } from './components/product-type-selector.component';
+import { ServiceSkuEditorComponent } from './components/service-sku-editor.component';
+import { SkuListEditorComponent } from './components/sku-list-editor.component';
+import { SubmitBarComponent } from './components/submit-bar.component';
+import { ValidationIssuesPanelComponent } from './components/validation-issues-panel.component';
+import { VariantDimensionEditorComponent } from './components/variant-dimension-editor.component';
+import { ItemType, ProductType, VariantDimension } from './types/product-creation.types';
 
 /**
- * Item Creation Component (Products & Services)
+ * Product Creation Component - MEASURED vs DISCRETE Model
  * 
- * ARCHITECTURE: 1 Product = Multiple Independent SKUs (KISS - No Option Groups)
+ * ARCHITECTURE: Simple, modular, mobile-first
  * 
  * FLOW:
- * 1. Identify product: Barcode OR Label/Card Photos
- * 2. Name product: "Tomatoes", "Haircut", "Coca Cola"
- * 3. Add SKUs: Each with name, price, stock (e.g., "1kg @ 100/=", "2kg @ 180/=")
+ * 1. Choose item type: Product or Service
+ * 2. For products: Choose MEASURED (fractional) or DISCRETE (whole units)
+ * 3. Configure variants and generate SKUs automatically
+ * 4. Set prices and stock for each SKU
  * 
- * EXAMPLES:
- * - Tomatoes: 1kg@100/=, 2kg@180/=, 5kg@400/=
- * - Haircut: Kids@300/=, Regular@500/=, Premium@800/=
- * - Coca Cola: 300ml@50/=, 500ml@80/=, 1L@120/=
- * 
- * DESIGN (KISS - Mobile-First):
- * - No complex option groups
- * - Simple SKU list with add/remove
- * - Each SKU is independent
+ * DESIGN PRINCIPLES:
+ * - Each component handles ONE concern
+ * - No over-engineering - build only what's needed
+ * - Mobile-first with progressive disclosure
+ * - Clear visual feedback for fractional vs discrete
  */
 @Component({
     selector: 'app-product-create',
     imports: [
         CommonModule,
         ReactiveFormsModule,
-        PhotoManagerComponent,
-        BarcodeScannerComponent,
+        ItemTypeSelectorComponent,
+        ProductTypeSelectorComponent,
+        ProductNameInputComponent,
+        IdentificationSelectorComponent,
+        MeasurementUnitSelectorComponent,
+        VariantDimensionEditorComponent,
+        SkuListEditorComponent,
+        LocationDisplayComponent,
+        ServiceSkuEditorComponent,
+        ValidationIssuesPanelComponent,
+        SubmitBarComponent,
     ],
     templateUrl: './product-create.component.html',
     styleUrl: './product-create.component.scss',
@@ -62,16 +79,18 @@ export class ProductCreateComponent implements OnInit {
     private readonly stockLocationService = inject(StockLocationService);
     readonly companyService = inject(CompanyService);
 
-    // View references
-    readonly photoManager = viewChild<PhotoManagerComponent>('photoManager');
-    readonly barcodeScanner = viewChild<BarcodeScannerComponent>('barcodeScanner');
+    // View references (for photo upload in submit)
+    readonly identificationSelector = viewChild<IdentificationSelectorComponent>('identificationSelector');
 
     // Edit mode
     readonly isEditMode = signal(false);
     readonly productId = signal<string | null>(null);
 
-    // Item type toggle (product vs service)
-    readonly itemType = signal<'product' | 'service'>('product');
+    // New model: Item type and product type
+    readonly itemType = signal<ItemType>('product');
+    readonly productType = signal<ProductType | null>(null);
+    readonly measurementUnit = signal<string | null>(null);
+    readonly variantDimensions = signal<VariantDimension[]>([]);
 
     // Form: Product + Multiple SKUs
     readonly productForm: FormGroup;
@@ -82,6 +101,19 @@ export class ProductCreateComponent implements OnInit {
     // Computed: SKUs FormArray
     get skus(): FormArray {
         return this.productForm.get('skus') as FormArray;
+    }
+
+    // Getters for form controls
+    get nameControl(): FormControl {
+        return this.productForm.get('name') as FormControl;
+    }
+
+    get barcodeControl(): FormControl {
+        return this.productForm.get('barcode') as FormControl;
+    }
+
+    get firstSkuFormGroup(): FormGroup {
+        return this.skus.at(0) as FormGroup;
     }
 
     // Submission state
@@ -132,8 +164,7 @@ export class ProductCreateComponent implements OnInit {
         const type = this.itemType();
 
         if (!this.hasValidIdentification()) {
-            const photoType = type === 'service' ? 'card' : 'label';
-            issues.push(`Barcode OR 5+ ${photoType} photos`);
+            issues.push(`Barcode OR 5+ label photos`);
         }
         if (!this.productNameValid()) issues.push('Product name required');
 
@@ -150,14 +181,12 @@ export class ProductCreateComponent implements OnInit {
                 const price = sku.get('price');
                 const stock = sku.get('stockOnHand');
 
-                // For services, stock is not validated
-                const isService = type === 'service';
-
+                // All products require stock validation
                 return (
                     (name?.invalid) ||
                     (skuCode?.invalid) ||
                     (price?.invalid) ||
-                    (!isService && stock?.invalid)
+                    (stock?.invalid)
                 );
             }).length;
 
@@ -267,24 +296,179 @@ export class ProductCreateComponent implements OnInit {
 
     /**
      * Create a new SKU FormGroup
-     * Stock validation is conditional: required for products, optional for services
      */
-    private createSkuFormGroup(skuCode: string = '', name: string = '', price: number = 0, stock: number = 0): FormGroup {
-        const isService = this.itemType() === 'service';
-
+    private createSkuFormGroup(
+        skuCode: string = '',
+        name: string = '',
+        price: number = 1,
+        stock: number = 0,
+        allowFractionalQuantity: boolean = false,
+        wholesalePrice: number = 0
+    ): FormGroup {
         return this.fb.group({
             name: [name, [Validators.required, Validators.minLength(1)]],
             sku: [skuCode, [Validators.required, Validators.minLength(1), Validators.maxLength(50)]],
-            price: [price, [Validators.required, Validators.min(0.01)]],
-            stockOnHand: [
-                stock,
-                isService ? [] : [Validators.required, Validators.min(0)]
-            ],
+            price: [price, [Validators.required, Validators.min(1)]],
+            stockOnHand: [stock, [Validators.required, Validators.min(0)]],
+            allowFractionalQuantity: [allowFractionalQuantity],
+            wholesalePrice: [wholesalePrice, [Validators.min(0)]],
         });
     }
 
+    // ============================================================================
+    // NEW MODEL METHODS
+    // ============================================================================
+
     /**
-     * Add a new SKU to the list
+     * Set item type (product or service)
+     */
+    setItemType(type: ItemType): void {
+        this.itemType.set(type);
+        if (type === 'service') {
+            this.productType.set(null);
+            this.measurementUnit.set(null);
+            this.variantDimensions.set([]);
+            this.generateSkus();
+        }
+    }
+
+    /**
+     * Set product type (measured or discrete)
+     */
+    setProductType(type: ProductType): void {
+        this.productType.set(type);
+        this.generateSkus();
+    }
+
+    /**
+     * Set measurement unit for measured products
+     */
+    setMeasurementUnit(unit: string): void {
+        this.measurementUnit.set(unit);
+        this.generateSkus();
+    }
+
+    /**
+     * Add a new variant dimension
+     */
+    addVariantDimension(): void {
+        const newDimension: VariantDimension = {
+            id: Date.now().toString(),
+            name: '',
+            options: []
+        };
+        this.variantDimensions.update(dims => [...dims, newDimension]);
+    }
+
+    /**
+     * Remove a variant dimension
+     */
+    removeVariantDimension(id: string): void {
+        this.variantDimensions.update(dims => dims.filter(dim => dim.id !== id));
+        this.generateSkus();
+    }
+
+    /**
+     * Update dimension options from array or comma-separated string
+     */
+    updateDimensionOptions(id: string, options: string[] | string): void {
+        const optionsArray = Array.isArray(options)
+            ? options
+            : options.split(',').map(opt => opt.trim()).filter(opt => opt);
+        this.variantDimensions.update(dims =>
+            dims.map(dim => dim.id === id ? { ...dim, options: optionsArray } : dim)
+        );
+        this.generateSkus();
+    }
+
+    /**
+     * Generate SKUs based on current configuration
+     */
+    generateSkus(): void {
+        this.skus.clear();
+
+        if (this.itemType() === 'service') {
+            this.generateServiceSkus();
+        } else if (this.productType() === 'measured') {
+            this.generateMeasuredSkus();
+        } else if (this.productType() === 'discrete') {
+            this.generateDiscreteSkus();
+        }
+
+        // Trigger validation update
+        this.skuValidityTrigger.update(v => v + 1);
+    }
+
+    /**
+     * Generate SKUs for services (single SKU)
+     */
+    private generateServiceSkus(): void {
+        const productName = this.productForm.get('name')?.value || 'Service';
+        const skuCode = this.generateSku(productName);
+        const skuGroup = this.createSkuFormGroup(skuCode, productName, 1, 0, false, 0);
+        this.skus.push(skuGroup);
+    }
+
+    /**
+     * Generate SKUs for measured products
+     */
+    private generateMeasuredSkus(): void {
+        const unit = this.measurementUnit() || 'UNIT';
+        const dimensions = this.variantDimensions();
+
+        if (dimensions.length === 0) {
+            // Pure measured: just the unit
+            const skuCode = this.generateSku(unit);
+            this.skus.push(this.createSkuFormGroup(skuCode, unit, 1, 0, true, 0));
+        } else {
+            // Measured with variants: "Grade A - KG", "Grade B - KG"
+            dimensions[0].options.forEach(option => {
+                const name = `${option} - ${unit}`;
+                const skuCode = this.generateSku(name);
+                this.skus.push(this.createSkuFormGroup(skuCode, name, 1, 0, true, 0));
+            });
+        }
+    }
+
+    /**
+     * Generate SKUs for discrete products
+     */
+    private generateDiscreteSkus(): void {
+        const dimensions = this.variantDimensions();
+
+        if (dimensions.length === 0) {
+            // Single discrete SKU
+            const name = this.productForm.get('name')?.value || 'Product';
+            const skuCode = this.generateSku(name);
+            this.skus.push(this.createSkuFormGroup(skuCode, name, 1, 0, false, 0));
+        } else if (dimensions.length === 1) {
+            // Single dimension: "Red", "Blue", "Yellow"
+            dimensions[0].options.forEach(option => {
+                const skuCode = this.generateSku(option);
+                this.skus.push(this.createSkuFormGroup(skuCode, option, 1, 0, false, 0));
+            });
+        } else {
+            // Multiple dimensions: Cartesian product
+            this.generateCartesianProduct(dimensions).forEach(combination => {
+                const name = combination.join(' - ');
+                const skuCode = this.generateSku(name);
+                this.skus.push(this.createSkuFormGroup(skuCode, name, 1, 0, false, 0));
+            });
+        }
+    }
+
+    /**
+     * Generate all combinations from multiple dimensions
+     */
+    private generateCartesianProduct(dimensions: VariantDimension[]): string[][] {
+        return dimensions.reduce((acc, dim) => {
+            if (acc.length === 0) return dim.options.map(opt => [opt]);
+            return acc.flatMap(combo => dim.options.map(opt => [...combo, opt]));
+        }, [] as string[][]);
+    }
+
+    /**
+     * Add a new SKU to the list (manual override)
      */
     addSku(): void {
         const productName = this.productForm.get('name')?.value || '';
@@ -296,7 +480,7 @@ export class ProductCreateComponent implements OnInit {
             : `SKU-${index}`;
 
         // Create SKU with pre-filled code to avoid validation issues
-        const skuGroup = this.createSkuFormGroup(skuCode);
+        const skuGroup = this.createSkuFormGroup(skuCode, '', 0, 0, false, 0);
         this.skus.push(skuGroup);
 
         // Trigger validation update
@@ -362,23 +546,13 @@ export class ProductCreateComponent implements OnInit {
         console.log('📦 Barcode scanned:', barcode);
     }
 
-    /**
-     * Start barcode scanner
-     */
-    async startBarcodeScanner(): Promise<void> {
-        const scanner = this.barcodeScanner();
-        if (scanner) {
-            this.chooseIdentificationMethod('barcode');
-            await scanner.startScanning();
-        }
-    }
 
     /**
      * Handle label photos uploaded
      */
-    onPhotosChanged(count: number): void {
-        this.photoCount.set(count);
-        if (count >= 5) {
+    onPhotosChanged(photos: File[]): void {
+        this.photoCount.set(photos.length);
+        if (photos.length >= 5) {
             this.identificationMethod.set('label-photos');
         }
     }
@@ -413,7 +587,9 @@ export class ProductCreateComponent implements OnInit {
                         variant.sku,
                         variant.name,
                         variant.priceWithTax,
-                        variant.stockOnHand || 0
+                        variant.stockOnHand || 0,
+                        variant.customFields?.allowFractionalQuantity || false,
+                        variant.customFields?.wholesalePrice || 0
                     );
                     this.skus.push(skuGroup);
                 });
@@ -424,34 +600,18 @@ export class ProductCreateComponent implements OnInit {
         }
     }
 
-    /**
-     * Toggle between product and service
-     */
-    toggleItemType(type: 'product' | 'service'): void {
-        this.itemType.set(type);
-        this.submitError.set(null);
-
-        // Update validators for all existing SKUs
-        this.updateSkuValidators();
-    }
+    // Removed toggleItemType - now always products only
 
     /**
      * Update validators for all SKU forms based on current item type
      */
     private updateSkuValidators(): void {
-        const isService = this.itemType() === 'service';
 
         this.skus.controls.forEach(skuGroup => {
             const stockControl = skuGroup.get('stockOnHand');
             if (stockControl) {
-                if (isService) {
-                    // Services: no stock validation
-                    stockControl.clearValidators();
-                    stockControl.setValue(0);
-                } else {
-                    // Products: stock is required
-                    stockControl.setValidators([Validators.required, Validators.min(0)]);
-                }
+                // All products require stock validation
+                stockControl.setValidators([Validators.required, Validators.min(0)]);
                 stockControl.updateValueAndValidity();
             }
         });
@@ -477,12 +637,11 @@ export class ProductCreateComponent implements OnInit {
 
         try {
             const formValue = this.productForm.value;
-            const type = this.itemType();
 
-            // For products, location is required. For services, optional (no stock tracking)
-            const stockLocationId = type === 'product' ? this.defaultLocation()?.id : undefined;
+            // Location is required for products
+            const stockLocationId = this.defaultLocation()?.id;
 
-            if (type === 'product' && !stockLocationId) {
+            if (!stockLocationId) {
                 this.submitError.set('No active location. Please select a location from the navbar.');
                 this.isSubmitting.set(false);
                 return;
@@ -497,9 +656,7 @@ export class ProductCreateComponent implements OnInit {
             };
 
             // Multiple variant inputs from SKUs FormArray
-            // Use Vendure's native trackInventory field:
-            // - trackInventory: false → Service (infinite stock, no tracking)
-            // - trackInventory: true → Product (tracked stock)
+            // All variants are products with tracked inventory
             console.log('🔍 Form data before processing:', formValue);
             console.log('🔍 SKUs from form:', formValue.skus);
 
@@ -510,25 +667,18 @@ export class ProductCreateComponent implements OnInit {
                 // Format: USER_SKU-TIMESTAMP-INDEX
                 const uniqueSku = `${sku.sku.trim().toUpperCase()}-${this.skuUniqueSuffix}-${index + 1}`;
 
-                if (type === 'service') {
-                    return {
-                        sku: uniqueSku,
-                        name: sku.name.trim(),
-                        price: Number(sku.price), // Use 'price' field as expected by VariantInput interface
-                        trackInventory: false, // Services: infinite stock
-                        stockOnHand: 0,
-                        stockLocationId: undefined, // Services don't need location
-                    };
-                } else {
-                    return {
-                        sku: uniqueSku,
-                        name: sku.name.trim(),
-                        price: Number(sku.price), // Use 'price' field as expected by VariantInput interface
-                        trackInventory: true, // Products: track stock
-                        stockOnHand: Number(sku.stockOnHand),
-                        stockLocationId: stockLocationId!,
-                    };
-                }
+                return {
+                    sku: uniqueSku,
+                    name: sku.name.trim(),
+                    price: Number(sku.price),
+                    trackInventory: true, // Products: track stock
+                    stockOnHand: Number(sku.stockOnHand),
+                    stockLocationId: stockLocationId!,
+                    customFields: {
+                        wholesalePrice: sku.wholesalePrice ? Number(sku.wholesalePrice) * 100 : null, // Convert to cents
+                        allowFractionalQuantity: Boolean(sku.allowFractionalQuantity),
+                    },
+                };
             });
 
             console.log('🔍 Final variant inputs:', variantInputs);
@@ -542,28 +692,33 @@ export class ProductCreateComponent implements OnInit {
                 console.log('✅ Transaction Phase 1 COMPLETE: Product & Variants created');
 
                 // Upload photos if any were added (Phase 2 - non-blocking)
-                const photoManager = this.photoManager();
-                if (photoManager) {
-                    const photos = photoManager.getPhotos();
-                    if (photos.length > 0) {
-                        console.log(`📸 Transaction Phase 2: Uploading ${photos.length} photo(s)...`);
-                        try {
-                            const assetIds = await this.productService.uploadProductPhotos(productId, photos);
-                            if (assetIds && assetIds.length > 0) {
-                                console.log('✅ Transaction Phase 2 COMPLETE: Photos uploaded');
-                                this.submitSuccess.set(true);
-                            } else {
-                                console.warn('⚠️ Transaction Phase 2 FAILED: Photos upload failed');
-                                console.warn('⚠️ But product was successfully created (photos can be added later)');
-                                // Show partial success message
+                const identificationSelector = this.identificationSelector();
+                if (identificationSelector) {
+                    const photoManager = identificationSelector.photoManager();
+                    if (photoManager) {
+                        const photos = photoManager.getPhotos();
+                        if (photos.length > 0) {
+                            console.log(`📸 Transaction Phase 2: Uploading ${photos.length} photo(s)...`);
+                            try {
+                                const assetIds = await this.productService.uploadProductPhotos(productId, photos);
+                                if (assetIds && assetIds.length > 0) {
+                                    console.log('✅ Transaction Phase 2 COMPLETE: Photos uploaded');
+                                    this.submitSuccess.set(true);
+                                } else {
+                                    console.warn('⚠️ Transaction Phase 2 FAILED: Photos upload failed');
+                                    console.warn('⚠️ But product was successfully created (photos can be added later)');
+                                    // Show partial success message
+                                    this.submitError.set('Product created, but photo upload failed. You can add photos later.');
+                                }
+                            } catch (photoError: any) {
+                                console.error('❌ Photo upload error:', photoError);
                                 this.submitError.set('Product created, but photo upload failed. You can add photos later.');
                             }
-                        } catch (photoError: any) {
-                            console.error('❌ Photo upload error:', photoError);
-                            this.submitError.set('Product created, but photo upload failed. You can add photos later.');
+                        } else {
+                            console.log('📸 No photos to upload');
+                            this.submitSuccess.set(true);
                         }
                     } else {
-                        console.log('📸 No photos to upload');
                         this.submitSuccess.set(true);
                     }
                 } else {
@@ -576,7 +731,7 @@ export class ProductCreateComponent implements OnInit {
                 }, 1500);
             } else {
                 const error = this.productService.error();
-                this.submitError.set(error || `Failed to create ${type}`);
+                this.submitError.set(error || `Failed to create product`);
             }
         } catch (error: any) {
             console.error(`❌ ${this.itemType()} creation failed:`, error);
@@ -663,5 +818,6 @@ export class ProductCreateComponent implements OnInit {
 
         return errors.length > 0 ? errors.join(', ') : 'Valid';
     }
+
 }
 

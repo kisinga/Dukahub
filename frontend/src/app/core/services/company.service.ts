@@ -36,6 +36,7 @@ export class CompanyService {
     readonly companies = this.companiesSignal.asReadonly();
     readonly activeCompanyId = this.activeCompanyIdSignal.asReadonly();
     readonly isLoading = this.isLoadingSignal.asReadonly();
+    readonly activeChannel = computed(() => this.activeChannelDataSignal());
 
     // Computed: Current active company (the one all dashboard operations use)
     readonly activeCompany = computed(() => {
@@ -139,6 +140,60 @@ export class CompanyService {
     readonly channelCurrency = computed(() => {
         const channelData = this.activeChannelDataSignal();
         return channelData?.defaultCurrencyCode ?? 'KES'; // Default to KES
+    });
+
+    /**
+     * Subscription status for the active channel
+     */
+    readonly subscriptionStatus = computed(() => {
+        const channelData = this.activeChannelDataSignal();
+        return channelData?.customFields?.subscriptionStatus ?? 'trial';
+    });
+
+    /**
+     * Trial ends at date for the active channel
+     */
+    readonly trialEndsAt = computed(() => {
+        const channelData = this.activeChannelDataSignal();
+        const trialEndsAt = channelData?.customFields?.trialEndsAt;
+        return trialEndsAt ? new Date(trialEndsAt) : null;
+    });
+
+    /**
+     * Subscription expires at date for the active channel
+     */
+    readonly subscriptionExpiresAt = computed(() => {
+        const channelData = this.activeChannelDataSignal();
+        const expiresAt = channelData?.customFields?.subscriptionExpiresAt;
+        return expiresAt ? new Date(expiresAt) : null;
+    });
+
+    /**
+     * Check if trial is active
+     */
+    readonly isTrialActive = computed(() => {
+        const status = this.subscriptionStatus();
+        if (status !== 'trial') return false;
+        const trialEnds = this.trialEndsAt();
+        return trialEnds ? trialEnds > new Date() : false;
+    });
+
+    /**
+     * Check if subscription is active
+     */
+    readonly isSubscriptionActive = computed(() => {
+        const status = this.subscriptionStatus();
+        if (status !== 'active') return false;
+        const expiresAt = this.subscriptionExpiresAt();
+        return expiresAt ? expiresAt > new Date() : false;
+    });
+
+    /**
+     * Check if subscription is expired
+     */
+    readonly isSubscriptionExpired = computed(() => {
+        const status = this.subscriptionStatus();
+        return status === 'expired' || status === 'cancelled';
     });
 
     /**

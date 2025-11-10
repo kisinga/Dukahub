@@ -42,6 +42,7 @@ export const GET_ACTIVE_ADMIN = graphql(`
   }
 `);
 
+// Legacy login mutation (kept for backward compatibility during transition)
 export const LOGIN = graphql(`
   mutation Login($username: String!, $password: String!, $rememberMe: Boolean) {
     login(username: $username, password: $password, rememberMe: $rememberMe) {
@@ -62,6 +63,61 @@ export const LOGIN = graphql(`
         errorCode
         message
       }
+    }
+  }
+`);
+
+// Phone-based OTP authentication mutations
+export const REQUEST_REGISTRATION_OTP = graphql(`
+  mutation RequestRegistrationOTP($phoneNumber: String!, $registrationData: RegistrationInput!) {
+    requestRegistrationOTP(phoneNumber: $phoneNumber, registrationData: $registrationData) {
+      success
+      message
+      sessionId
+      expiresAt
+    }
+  }
+`);
+
+export const VERIFY_REGISTRATION_OTP = graphql(`
+  mutation VerifyRegistrationOTP($phoneNumber: String!, $otp: String!, $sessionId: String!) {
+    verifyRegistrationOTP(phoneNumber: $phoneNumber, otp: $otp, sessionId: $sessionId) {
+      success
+      userId
+      message
+    }
+  }
+`);
+
+export const REQUEST_LOGIN_OTP = graphql(`
+  mutation RequestLoginOTP($phoneNumber: String!) {
+    requestLoginOTP(phoneNumber: $phoneNumber) {
+      success
+      message
+      expiresAt
+    }
+  }
+`);
+
+export const VERIFY_LOGIN_OTP = graphql(`
+  mutation VerifyLoginOTP($phoneNumber: String!, $otp: String!) {
+    verifyLoginOTP(phoneNumber: $phoneNumber, otp: $otp) {
+      success
+      token
+      user {
+        id
+        identifier
+      }
+      message
+    }
+  }
+`);
+
+export const CHECK_AUTHORIZATION_STATUS = graphql(`
+  query CheckAuthorizationStatus($identifier: String!) {
+    checkAuthorizationStatus(identifier: $identifier) {
+      status
+      message
     }
   }
 `);
@@ -130,6 +186,9 @@ export const GET_ACTIVE_CHANNEL = graphql(`
         }
         cashierFlowEnabled
         cashierOpen
+        subscriptionStatus
+        trialEndsAt
+        subscriptionExpiresAt
       }
     }
   }
@@ -184,6 +243,10 @@ export const CREATE_PRODUCT = graphql(`
         sku
         price
         stockOnHand
+                customFields {
+                  wholesalePrice
+                  allowFractionalQuantity
+                }
       }
     }
   }
@@ -288,6 +351,10 @@ export const GET_PRODUCT_DETAIL = graphql(`
         price
         priceWithTax
         stockOnHand
+                customFields {
+                  wholesalePrice
+                  allowFractionalQuantity
+                }
         prices {
           price
           currencyCode
@@ -326,6 +393,10 @@ export const GET_PRODUCTS = graphql(`
           price
           priceWithTax
           stockOnHand
+                customFields {
+                  wholesalePrice
+                  allowFractionalQuantity
+                }
           prices {
             price
             currencyCode
@@ -435,6 +506,10 @@ export const SEARCH_PRODUCTS = graphql(`
           price
           priceWithTax
           stockOnHand
+                customFields {
+                  wholesalePrice
+                  allowFractionalQuantity
+                }
           prices {
             price
             currencyCode
@@ -511,6 +586,10 @@ export const PREFETCH_PRODUCTS = graphql(`
           price
           priceWithTax
           stockOnHand
+                customFields {
+                  wholesalePrice
+                  allowFractionalQuantity
+                }
           prices {
             price
             currencyCode
@@ -1460,5 +1539,151 @@ export const UPDATE_CHANNEL_PAYMENT_METHOD = graphql(`
         isActive
       }
     }
+  }
+`);
+
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+export const GET_USER_NOTIFICATIONS = graphql(`
+  query GetUserNotifications($options: NotificationListOptions) {
+    getUserNotifications(options: $options) {
+      items {
+        id
+        userId
+        channelId
+        type
+        title
+        message
+        data
+        read
+        createdAt
+      }
+      totalItems
+    }
+  }
+`);
+
+export const GET_UNREAD_COUNT = graphql(`
+  query GetUnreadCount {
+    getUnreadCount
+  }
+`);
+
+export const MARK_NOTIFICATION_AS_READ = graphql(`
+  mutation MarkNotificationAsRead($id: ID!) {
+    markNotificationAsRead(id: $id)
+  }
+`);
+
+export const MARK_ALL_AS_READ = graphql(`
+  mutation MarkAllAsRead {
+    markAllAsRead
+  }
+`);
+
+export const SUBSCRIBE_TO_PUSH = graphql(`
+  mutation SubscribeToPush($subscription: PushSubscriptionInput!) {
+    subscribeToPush(subscription: $subscription)
+  }
+`);
+
+export const UNSUBSCRIBE_TO_PUSH = graphql(`
+  mutation UnsubscribeToPush {
+    unsubscribeToPush
+  }
+`);
+
+// ============================================================================
+// SUBSCRIPTION & PAYMENT
+// ============================================================================
+
+export const GET_SUBSCRIPTION_TIERS = graphql(`
+  query GetSubscriptionTiers {
+    getSubscriptionTiers {
+      id
+      code
+      name
+      description
+      priceMonthly
+      priceYearly
+      features
+      isActive
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+export const GET_CHANNEL_SUBSCRIPTION = graphql(`
+  query GetChannelSubscription($channelId: ID) {
+    getChannelSubscription(channelId: $channelId) {
+      tier {
+        id
+        code
+        name
+        description
+        priceMonthly
+        priceYearly
+        features
+      }
+      status
+      trialEndsAt
+      subscriptionStartedAt
+      subscriptionExpiresAt
+      billingCycle
+      lastPaymentDate
+      lastPaymentAmount
+    }
+  }
+`);
+
+export const CHECK_SUBSCRIPTION_STATUS = graphql(`
+  query CheckSubscriptionStatus($channelId: ID) {
+    checkSubscriptionStatus(channelId: $channelId) {
+      isValid
+      status
+      daysRemaining
+      expiresAt
+      trialEndsAt
+      canPerformAction
+    }
+  }
+`);
+
+export const INITIATE_SUBSCRIPTION_PURCHASE = graphql(`
+  mutation InitiateSubscriptionPurchase(
+    $channelId: ID!
+    $tierId: ID!
+    $billingCycle: String!
+    $phoneNumber: String!
+    $email: String!
+  ) {
+    initiateSubscriptionPurchase(
+      channelId: $channelId
+      tierId: $tierId
+      billingCycle: $billingCycle
+      phoneNumber: $phoneNumber
+      email: $email
+    ) {
+      success
+      reference
+      authorizationUrl
+      message
+    }
+  }
+`);
+
+export const VERIFY_SUBSCRIPTION_PAYMENT = graphql(`
+  mutation VerifySubscriptionPayment($channelId: ID!, $reference: String!) {
+    verifySubscriptionPayment(channelId: $channelId, reference: $reference)
+  }
+`);
+
+export const CANCEL_SUBSCRIPTION = graphql(`
+  mutation CancelSubscription($channelId: ID!) {
+    cancelSubscription(channelId: $channelId)
   }
 `);

@@ -114,6 +114,9 @@ export class DukahubEntrypoint {
             return;
         }
 
+        // Always ensure the latest migrations are applied before starting
+        await this.runMigrations();
+
         // Start the application
         await this.startApplication();
     }

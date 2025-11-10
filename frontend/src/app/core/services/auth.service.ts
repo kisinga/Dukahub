@@ -1,11 +1,25 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ReplaySubject, firstValueFrom } from 'rxjs';
+import type {
+  RequestLoginOtpMutation,
+  RequestLoginOtpMutationVariables,
+  RequestRegistrationOtpMutation,
+  RequestRegistrationOtpMutationVariables,
+  VerifyLoginOtpMutation,
+  VerifyLoginOtpMutationVariables,
+  VerifyRegistrationOtpMutation,
+  VerifyRegistrationOtpMutationVariables
+} from '../graphql/generated/graphql';
 import { Permission } from '../graphql/generated/graphql';
 import {
   GET_ACTIVE_ADMIN,
   LOGIN,
   LOGOUT,
+  REQUEST_LOGIN_OTP,
+  REQUEST_REGISTRATION_OTP,
+  VERIFY_LOGIN_OTP,
+  VERIFY_REGISTRATION_OTP
 } from '../graphql/operations.graphql';
 import type {
   ActiveAdministrator,
@@ -14,6 +28,7 @@ import type {
   LoginMutationVariables,
   LogoutMutation
 } from '../models/user.model';
+import { formatPhoneNumber } from '../utils/phone.utils';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
 
@@ -122,39 +137,50 @@ export class AuthService {
   private async fetchActiveAdministrator(): Promise<void> {
     try {
       const client = this.apolloService.getClient();
-      const result = await client.query<GetActiveAdministratorQuery>({
+
+      // Add timeout to prevent hanging indefinitely
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Query timeout')), 5000); // 5 second timeout (reduced for faster failure)
+      });
+
+      const queryPromise = client.query<GetActiveAdministratorQuery>({
         query: GET_ACTIVE_ADMIN,
         fetchPolicy: 'network-only',
         context: { skipChannelToken: true },
+        errorPolicy: 'all', // Return partial results even on error
       });
+
+      const result = await Promise.race([queryPromise, timeoutPromise]);
       const { data } = result;
 
       if (data?.activeAdministrator) {
         // Use the generated type directly - it's the source of truth
         this.userSignal.set(data.activeAdministrator);
-        console.log('✅ Active admin fetched, now restoring session and fetching channels...');
+        console.log('✅ Active admin fetched, now restoring session...');
 
         // CRITICAL: Restore session BEFORE fetching channels
         // This prevents fetchUserChannels from resetting to first company
         this.companyService.initializeFromStorage();
 
-        // Fetch user channels to restore channel state (on refresh/initialization)
-        // This ensures channels are available even on hard refresh
-        await this.companyService.fetchUserChannels();
+        // Fetch user channels asynchronously (non-blocking) to restore channel state
+        // This ensures channels are available even on hard refresh, but doesn't block initialization
+        this.companyService.fetchUserChannels().catch(error => {
+          console.warn('Failed to fetch user channels (non-critical):', error);
+          // Don't fail initialization if channel fetch fails
+        });
       } else {
         // No administrator data means not authenticated
         this.userSignal.set(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch active administrator:', error);
 
-      // Check if this is an authentication error
-      if (this.isAuthError(error)) {
-        console.warn('Authentication error detected, clearing session');
-        this.userSignal.set(null);
-        // Note: Apollo error link will handle redirect
-      }
-      // For other errors (network issues, etc.), don't clear session during initialization
+      // Always set user to null on error to prevent hanging
+      // This ensures the auth guard can make a decision
+      this.userSignal.set(null);
+
+      // Don't throw - initialization must complete so guards can proceed
+      // This allows the app to load even if backend is unavailable
     }
   }
 
@@ -185,12 +211,285 @@ export class AuthService {
   }
 
   /**
-   * Login with username and password
-   * Returns the login mutation result directly from the generated types
+   * Login with phone number and OTP (passwordless)
+   * This is the new primary login method
+   */
+  async loginWithOTP(phoneNumber: string, otp: string): Promise<void> {
+    this.isLoadingSignal.set(true);
+    try {
+      const client = this.apolloService.getClient();
+
+      // Verify OTP and get session token
+      const verifyResult = await client.mutate<VerifyLoginOtpMutation, VerifyLoginOtpMutationVariables>({
+        mutation: VERIFY_LOGIN_OTP,
+        variables: { phoneNumber, otp: otp.trim() },
+        context: { skipChannelToken: true },
+      });
+
+      const verifyData = verifyResult.data?.verifyLoginOTP;
+      if (!verifyData) {
+        throw new Error('No response from server. Please try again.');
+      }
+
+      if (!verifyData.success || !verifyData.token) {
+        throw new Error(verifyData.message || 'OTP verification failed');
+      }
+
+      // Use token to complete login
+      // Ensure phone number is normalized for login (must match format used during OTP verification)
+      const normalizedPhone = formatPhoneNumber(phoneNumber);
+      console.log('[AUTH SERVICE] Attempting login with:', {
+        username: normalizedPhone,
+        originalPhone: phoneNumber,
+        tokenPrefix: verifyData.token?.substring(0, 20),
+        tokenLength: verifyData.token?.length,
+      });
+
+      const loginResult = await client.mutate<LoginMutation, LoginMutationVariables>({
+        mutation: LOGIN,
+        variables: {
+          username: normalizedPhone,
+          password: verifyData.token,
+          rememberMe: false,
+        },
+        context: { skipChannelToken: true },
+      });
+
+      const loginData = loginResult.data?.login;
+      if (!loginData || 'errorCode' in loginData) {
+        throw new Error(loginData?.message || 'Login failed');
+      }
+
+      await this.fetchActiveAdministrator();
+
+    } catch (error: any) {
+      console.error('Login error:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        graphQLErrors: error?.graphQLErrors,
+        networkError: error?.networkError,
+      });
+
+      // Extract error message from various sources
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        'Login failed. Please try again.';
+
+      throw new Error(errorMessage);
+    } finally {
+      this.isLoadingSignal.set(false);
+    }
+  }
+
+  /**
+   * Request login OTP
+   */
+  async requestLoginOTP(phoneNumber: string): Promise<{ success: boolean; message: string; expiresAt?: number }> {
+    try {
+      const client = this.apolloService.getClient();
+      const result = await client.mutate<RequestLoginOtpMutation, RequestLoginOtpMutationVariables>({
+        mutation: REQUEST_LOGIN_OTP,
+        variables: { phoneNumber },
+        context: { skipChannelToken: true },
+      });
+
+      const data = result.data?.requestLoginOTP;
+      if (!data || !data.success) {
+        throw new Error(data?.message || 'Failed to request OTP');
+      }
+
+      return {
+        success: data.success,
+        message: data.message,
+        expiresAt: data.expiresAt ?? undefined,
+      };
+    } catch (error: any) {
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.message ||
+        'Failed to request OTP';
+      throw new Error(errorMessage);
+    }
+  }
+
+  /**
+   * Request registration OTP
+   * NEW: Now stores registration data and returns sessionId
+   */
+  async requestRegistrationOTP(
+    phoneNumber: string,
+    registrationData: any
+  ): Promise<{ success: boolean; message: string; sessionId?: string; expiresAt?: number }> {
+    try {
+      const client = this.apolloService.getClient();
+      const result = await client.mutate<RequestRegistrationOtpMutation, RequestRegistrationOtpMutationVariables>({
+        mutation: REQUEST_REGISTRATION_OTP,
+        variables: { phoneNumber, registrationData },
+        context: { skipChannelToken: true },
+      });
+
+      const data = result.data?.requestRegistrationOTP;
+      if (!data || !data.success) {
+        throw new Error(data?.message || 'Failed to request OTP');
+      }
+
+      return {
+        success: data.success,
+        message: data.message,
+        sessionId: data.sessionId ?? undefined,
+        expiresAt: data.expiresAt ?? undefined,
+      };
+    } catch (error: any) {
+      console.error('Failed to request registration OTP:', error);
+      const errorMessage = error?.message || error?.graphQLErrors?.[0]?.message || 'Failed to request OTP';
+      throw new Error(errorMessage);
+    }
+  }
+
+  /**
+   * Verify registration OTP and create account
+   * NEW: Uses sessionId to retrieve stored registration data
+   * After successful creation, user must login separately (tokens can't be assigned during signup)
+   */
+  async verifyRegistrationOTP(
+    phoneNumber: string,
+    otp: string,
+    sessionId: string
+  ): Promise<{ success: boolean; userId?: string; message: string }> {
+    try {
+      const client = this.apolloService.getClient();
+
+      // Normalize phone number to ensure consistency with backend
+      const normalizedPhone = formatPhoneNumber(phoneNumber);
+
+      // Validate sessionId
+      if (!sessionId || !sessionId.trim()) {
+        throw new Error('Session expired. Please start registration again.');
+      }
+
+      const result = await client.mutate<VerifyRegistrationOtpMutation, VerifyRegistrationOtpMutationVariables>({
+        mutation: VERIFY_REGISTRATION_OTP,
+        variables: {
+          phoneNumber: normalizedPhone,
+          otp: otp.trim(),
+          sessionId: sessionId.trim(),
+        },
+        context: { skipChannelToken: true },
+      });
+
+      const data = result.data?.verifyRegistrationOTP;
+      if (!data) {
+        throw new Error('Registration failed - no response from server. Please try again.');
+      }
+
+      // Check if backend returned an error (even if mutation succeeded)
+      if (!data.success) {
+        // Extract specific error messages
+        const errorMsg = data.message || 'Registration failed';
+
+        // Provide user-friendly messages for common errors
+        if (errorMsg.toLowerCase().includes('already exists') || errorMsg.toLowerCase().includes('duplicate')) {
+          throw new Error('An account with this phone number already exists. Please login instead.');
+        }
+
+        if (errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('expired')) {
+          throw new Error('Registration session expired. Please start registration again.');
+        }
+
+        if (errorMsg.toLowerCase().includes('otp') || errorMsg.toLowerCase().includes('invalid')) {
+          throw new Error('Invalid or expired OTP code. Please request a new OTP.');
+        }
+
+        if (errorMsg.toLowerCase().includes('channel') || errorMsg.toLowerCase().includes('company code')) {
+          throw new Error('Company code is already taken. Please choose a different company name.');
+        }
+
+        throw new Error(errorMsg);
+      }
+
+      // Success - entities created on backend
+      // Note: User must login separately (tokens can't be assigned during signup)
+      return {
+        success: data.success,
+        userId: data.userId ?? undefined,
+        message: data.message || 'Registration successful. Your account is pending admin approval. Please login to continue.',
+      };
+    } catch (error: any) {
+      console.error('Verify registration OTP error:', error);
+
+      // Handle GraphQL errors
+      if (error?.graphQLErrors && error.graphQLErrors.length > 0) {
+        const graphQLError = error.graphQLErrors[0];
+        const errorMessage = graphQLError.message || 'Registration failed';
+
+        // Provide user-friendly messages for common GraphQL errors
+        if (errorMessage.toLowerCase().includes('already exists') || errorMessage.toLowerCase().includes('duplicate')) {
+          throw new Error('An account with this phone number already exists. Please login instead.');
+        }
+
+        if (errorMessage.toLowerCase().includes('not found') || errorMessage.toLowerCase().includes('expired')) {
+          throw new Error('Registration session expired. Please start registration again.');
+        }
+
+        if (errorMessage.toLowerCase().includes('otp') || errorMessage.toLowerCase().includes('invalid')) {
+          throw new Error('Invalid or expired OTP code. Please request a new OTP.');
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      // Handle network errors
+      if (error?.networkError) {
+        const networkError = error.networkError;
+        if (networkError.statusCode === 0 || networkError.message?.includes('Failed to fetch')) {
+          throw new Error('Unable to connect to server. Please check your internet connection and try again.');
+        }
+        throw new Error('Network error occurred. Please try again.');
+      }
+
+      // Handle other errors
+      const errorMessage = error?.message || 'Registration failed. Please try again.';
+      throw new Error(errorMessage);
+    }
+  }
+
+  /**
+   * Check authorization status
+   */
+  async checkAuthorizationStatus(identifier: string): Promise<{ status: 'PENDING' | 'APPROVED' | 'REJECTED'; message: string }> {
+    try {
+      // TODO: Replace with actual GraphQL query when backend is ready
+      // const client = this.apolloService.getClient();
+      // const result = await client.query({
+      //   query: CHECK_AUTHORIZATION_STATUS,
+      //   variables: { identifier },
+      //   context: { skipChannelToken: true },
+      // });
+      // return result.data?.checkAuthorizationStatus;
+
+      // Mock response - assume approved for now (backend will handle actual check)
+      return {
+        status: 'APPROVED' as const,
+        message: 'Account is approved',
+      };
+    } catch (error) {
+      console.error('Check authorization status error:', error);
+      // Default to pending if check fails
+      return {
+        status: 'PENDING' as const,
+        message: 'Unable to verify authorization status',
+      };
+    }
+  }
+
+  /**
+   * Legacy login with username and password (kept for backward compatibility)
+   * @deprecated Use loginWithOTP instead
    */
   async login(credentials: LoginMutationVariables): Promise<LoginMutation['login']> {
     this.isLoadingSignal.set(true);
-    // console.log('login', credentials);
     try {
       const client = this.apolloService.getClient();
       const result = await client.mutate<LoginMutation, LoginMutationVariables>({
@@ -199,7 +498,6 @@ export class AuthService {
         context: { skipChannelToken: true },
       });
       const { data } = result;
-      // console.log('data', data);
 
       const loginResult = data?.login;
 

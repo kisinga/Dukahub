@@ -8,8 +8,6 @@
 #   docker compose logs -f
 #   docker compose down
 
-version: "3.8"
-
 services:
   # ========================================
   # Database Service
@@ -74,7 +72,7 @@ services:
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-vendure}
       DB_USERNAME: ${DB_USER:-vendure}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PASSWORD: ${DB_PASSWORD:-vendure}
       DB_SCHEMA: ${DB_SCHEMA:-public}
 
       # Redis configuration
@@ -86,11 +84,11 @@ services:
       PORT: 3000
 
       # Admin credentials
-      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME}
-      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
+      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME:-superadmin}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-superadmin}
 
       # Security
-      COOKIE_SECRET: ${COOKIE_SECRET}
+      COOKIE_SECRET: ${COOKIE_SECRET:-default-secret-key}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
 
       # CORS configuration
@@ -109,6 +107,26 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
+
+      # SMS Provider configuration
+      SMS_PROVIDER: ${SMS_PROVIDER:-textsms}
+      
+      # TextSMS Configuration (default provider)
+      TEXTSMS_API_KEY: ${TEXTSMS_API_KEY:-}
+      TEXTSMS_PARTNER_ID: ${TEXTSMS_PARTNER_ID:-}
+      TEXTSMS_SHORTCODE: ${TEXTSMS_SHORTCODE:-}
+      
+      # AfricasTalking Configuration (alternative provider)
+      AFRICASTALKING_USERNAME: ${AFRICASTALKING_USERNAME:-}
+      AFRICASTALKING_API_KEY: ${AFRICASTALKING_API_KEY:-}
+      AFRICASTALKING_SENDER_ID: ${AFRICASTALKING_SENDER_ID:-}
+      AFRICASTALKING_ENVIRONMENT: ${AFRICASTALKING_ENVIRONMENT:-production}
+      AFRICASTALKING_API_URL: ${AFRICASTALKING_API_URL:-}
+
+      # Push Notification Configuration (VAPID)
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_EMAIL: ${VAPID_EMAIL:-mailto:admin@dukahub.com}
 
       # First run initialization flag
       FIRST_RUN: ${FIRST_RUN:-false}
