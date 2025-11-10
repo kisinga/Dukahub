@@ -303,7 +303,9 @@ export const config: VendureConfig = {
                 description: [{ languageCode: LanguageCode.en, value: 'Current subscription tier' }],
                 public: false,
                 nullable: true,
-                ui: { tab: 'Subscription' },
+                ui: {
+                    tab: 'Subscription',
+                },
             },
             {
                 name: 'subscriptionStatus',
@@ -314,6 +316,24 @@ export const config: VendureConfig = {
                 public: true,
                 nullable: false,
                 ui: { tab: 'Subscription' },
+                options: [
+                    {
+                        value: 'trial',
+                        label: [{ languageCode: LanguageCode.en, value: 'Trial' }],
+                    },
+                    {
+                        value: 'active',
+                        label: [{ languageCode: LanguageCode.en, value: 'Active' }],
+                    },
+                    {
+                        value: 'expired',
+                        label: [{ languageCode: LanguageCode.en, value: 'Expired' }],
+                    },
+                    {
+                        value: 'cancelled',
+                        label: [{ languageCode: LanguageCode.en, value: 'Cancelled' }],
+                    },
+                ],
             },
             {
                 name: 'trialEndsAt',
@@ -350,6 +370,16 @@ export const config: VendureConfig = {
                 public: true,
                 nullable: true,
                 ui: { tab: 'Subscription' },
+                options: [
+                    {
+                        value: 'monthly',
+                        label: [{ languageCode: LanguageCode.en, value: 'Monthly' }],
+                    },
+                    {
+                        value: 'yearly',
+                        label: [{ languageCode: LanguageCode.en, value: 'Yearly' }],
+                    },
+                ],
             },
             {
                 name: 'paystackCustomerCode',

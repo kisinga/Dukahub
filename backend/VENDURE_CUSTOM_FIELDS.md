@@ -40,6 +40,14 @@ When touching `config.customFields.Channel`:
 3. **UI metadata**: Keep `ui.tab` / `component` definitions updated alongside schema changes to avoid admin UI issues.  
 4. **Code usage**: Services such as `subscription.service.ts` must handle both new and legacy custom field shapes during migrations (string ID, object, legacy snake case).
 
+### 2.1 Admin UI management tips
+
+- Subscription fields surface on the Channel detail view under the **Subscription** tab.  
+- `subscriptionStatus` renders as a dropdown (Trial, Active, Expired, Cancelled); use it to unblock a customer after manual payment.  
+- `billingCycle` renders as a dropdown (Monthly, Yearly); align any manual change with the customer’s Paystack plan.  
+- Datetime fields (`trialEndsAt`, `subscriptionStartedAt`, `subscriptionExpiresAt`, `lastPaymentDate`) support manual edits—provide ISO timestamps or use the picker.  
+- `paystackCustomerCode` / `paystackSubscriptionCode` stay editable for recovery scenarios; update the Paystack references before activating a channel manually.
+
 ---
 
 ## 3. Migration Pattern Template
