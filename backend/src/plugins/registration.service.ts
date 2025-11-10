@@ -524,8 +524,12 @@ export class RegistrationService {
 
             console.log('[RegistrationService] Creating administrator with phone:', phoneNumber, 'role:', roleId);
 
-            // Get role entity
-            const role = await this.roleService.findOne(ctx, roleId);
+            // Get role entity using repository to avoid permission restrictions
+            const roleRepo = this.connection.getRepository(ctx, Role);
+            const role = await roleRepo.findOne({
+                where: { id: roleId },
+                relations: ['channels'],
+            });
             if (!role) {
                 throw new Error(`Role ${roleId} not found`);
             }
@@ -540,6 +544,7 @@ export class RegistrationService {
             newUser.identifier = phoneNumber;
             (newUser as any).passwordHash = hashedPassword;
             (newUser as any).verified = true; // Phone verified via OTP
+            (newUser as any).roles = [role];
 
             const savedUser = await userRepo.save(newUser);
 
@@ -554,26 +559,7 @@ export class RegistrationService {
             newAdmin.lastName = registrationData.adminLastName;
             (newAdmin as any).user = savedUser;
 
-            const savedAdmin = await adminRepo.save(newAdmin);
-
-            // Load with relations for role assignment
-            const adminWithRelations = await adminRepo
-                .createQueryBuilder('admin')
-                .leftJoinAndSelect('admin.roles', 'role')
-                .leftJoinAndSelect('admin.user', 'user')
-                .where('admin.id = :id', { id: savedAdmin.id })
-                .getOne();
-
-            if (!adminWithRelations) {
-                throw new Error('Failed to load administrator after creation');
-            }
-
-            // Assign role via many-to-many relationship
-            const existingRoles = (adminWithRelations as any).roles || [];
-            existingRoles.push(role);
-            (adminWithRelations as any).roles = existingRoles;
-
-            const finalAdmin = await adminRepo.save(adminWithRelations);
+            const finalAdmin = await adminRepo.save(newAdmin);
 
             if (!finalAdmin || !finalAdmin.id || !(finalAdmin as any).user || !(finalAdmin as any).user.id) {
                 throw new Error('Administrator creation returned invalid result');
