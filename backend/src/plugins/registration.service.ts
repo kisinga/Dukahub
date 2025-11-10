@@ -241,10 +241,10 @@ export class RegistrationService {
         // Get the channel and stock location with relations
         const channelRepo = this.connection.getRepository(ctx, Channel);
         const stockLocationRepo = this.connection.getRepository(ctx, StockLocation);
-        
+
         const channel = await channelRepo.findOne({ where: { id: channelId }, relations: ['stockLocations'] });
         const stockLocation = await stockLocationRepo.findOne({ where: { id: stockLocationId } });
-        
+
         if (!channel || !stockLocation) {
             throw new Error('Channel or stock location not found');
         }
@@ -300,11 +300,11 @@ export class RegistrationService {
 
             // Assign Cash Payment to Channel
             const channelRepoForCash = this.connection.getRepository(ctx, Channel);
-            const channelForCash = await channelRepoForCash.findOne({ 
-                where: { id: channelId }, 
-                relations: ['paymentMethods'] 
+            const channelForCash = await channelRepoForCash.findOne({
+                where: { id: channelId },
+                relations: ['paymentMethods']
             });
-            
+
             if (!channelForCash) {
                 throw new Error(`Channel ${channelId} not found for Cash payment assignment`);
             }
@@ -312,7 +312,7 @@ export class RegistrationService {
             const cashPaymentMethod = await this.connection
                 .getRepository(ctx, PaymentMethod)
                 .findOne({ where: { id: cashPayment.id }, relations: ['channels'] });
-            
+
             if (!cashPaymentMethod) {
                 throw new Error(`Cash payment method ${cashPayment.id} not found`);
             }
@@ -359,11 +359,11 @@ export class RegistrationService {
 
             // Assign M-Pesa Payment to Channel
             const channelRepoForMpesa = this.connection.getRepository(ctx, Channel);
-            const channelForMpesa = await channelRepoForMpesa.findOne({ 
-                where: { id: channelId }, 
-                relations: ['paymentMethods'] 
+            const channelForMpesa = await channelRepoForMpesa.findOne({
+                where: { id: channelId },
+                relations: ['paymentMethods']
             });
-            
+
             if (!channelForMpesa) {
                 throw new Error(`Channel ${channelId} not found for M-Pesa payment assignment`);
             }
@@ -371,7 +371,7 @@ export class RegistrationService {
             const mpesaPaymentMethod = await this.connection
                 .getRepository(ctx, PaymentMethod)
                 .findOne({ where: { id: mpesaPayment.id }, relations: ['channels'] });
-            
+
             if (!mpesaPaymentMethod) {
                 throw new Error(`M-Pesa payment method ${mpesaPayment.id} not found`);
             }
@@ -405,6 +405,9 @@ export class RegistrationService {
      * - Product: CreateProduct, ReadProduct, UpdateProduct, DeleteProduct
      * - StockLocation: CreateStockLocation, ReadStockLocation, UpdateStockLocation
      * - Settings: ReadSettings, UpdateSettings
+     * 
+     * NOTE: We use repository directly to bypass permission checks since we're creating
+     * a role for a newly created channel that the public context doesn't have access to yet.
      */
     private async createAdminRole(
         ctx: RequestContext,
@@ -414,11 +417,21 @@ export class RegistrationService {
         try {
             const roleCode = `${registrationData.companyCode}-admin`;
             console.log('[RegistrationService] Creating role with code:', roleCode, 'for channel:', channelId);
-            
-            const roleResult = await this.roleService.create(ctx, {
+
+            // Get channel entity
+            const channel = await this.channelService.findOne(ctx, channelId);
+            if (!channel) {
+                throw new Error(`Channel ${channelId} not found`);
+            }
+
+            // Create role using repository directly to bypass permission checks
+            // This is necessary because the public context doesn't have permission
+            // to assign roles to the newly created channel via RoleService.create()
+            const roleRepo = this.connection.getRepository(ctx, Role);
+
+            const role = roleRepo.create({
                 code: roleCode,
                 description: `Full admin access for ${registrationData.companyName}`,
-                channelIds: [channelId], // Channel-scoped (NOT superadmin)
                 permissions: [
                     // Asset permissions
                     Permission.CreateAsset,
@@ -455,19 +468,30 @@ export class RegistrationService {
                 ],
             });
 
-            if ('errorCode' in roleResult) {
-                const error = roleResult as any;
-                console.error('[RegistrationService] Role creation error:', error);
-                throw new Error(`Failed to create role: ${error.message || error.errorCode || 'Unknown error'}`);
+            // Save role first
+            const savedRole = await roleRepo.save(role);
+
+            // Then assign channel via many-to-many relationship
+            // Load role with channels relation
+            const roleWithChannels = await roleRepo.findOne({
+                where: { id: savedRole.id },
+                relations: ['channels'],
+            });
+
+            if (!roleWithChannels) {
+                throw new Error('Failed to load role after creation');
             }
 
-            const role = roleResult as Role;
-            if (!role || !role.id) {
-                throw new Error('Role creation returned invalid result');
+            // Assign channel
+            if (!roleWithChannels.channels) {
+                roleWithChannels.channels = [];
             }
+            roleWithChannels.channels.push(channel);
 
-            console.log('[RegistrationService] Role created successfully:', role.id, 'Code:', role.code);
-            return role;
+            await roleRepo.save(roleWithChannels);
+
+            console.log('[RegistrationService] Role created successfully:', roleWithChannels.id, 'Code:', roleWithChannels.code);
+            return roleWithChannels;
         } catch (error: any) {
             console.error('[RegistrationService] Role creation failed:', error);
             throw new Error(`Failed to create admin role: ${error.message || 'Unknown error'}`);
@@ -493,7 +517,7 @@ export class RegistrationService {
             const password = this.generateSecurePassword();
 
             console.log('[RegistrationService] Creating administrator with phone:', phoneNumber, 'role:', roleId);
-            
+
             const administrator = await this.administratorService.create(ctx, {
                 emailAddress: phoneNumber, // Use phone as identifier (Vendure uses this as the User identifier)
                 firstName: registrationData.adminFirstName,
