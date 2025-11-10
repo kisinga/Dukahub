@@ -40,23 +40,45 @@ export class RenameSubscriptionTierColumn1761900000001 implements MigrationInter
         await queryRunner.query(`
             DO $$
             BEGIN
+                -- Normalize legacy constraint name if present
                 IF EXISTS (
                     SELECT 1
-                    FROM information_schema.constraint_column_usage
-                    WHERE table_schema = current_schema()
-                        AND table_name = 'channel'
-                        AND column_name = 'customFieldsSubscriptiontierid'
-                        AND constraint_name = 'FK_channel_subscription_tier'
+                    FROM pg_constraint
+                    WHERE conname = 'FK_channel_subscription_tier'
                 ) THEN
                     ALTER TABLE "channel"
                         RENAME CONSTRAINT "FK_channel_subscription_tier" TO "FK_cfa828418e58de180707fd03e1a";
-                ELSIF NOT EXISTS (
+                END IF;
+
+                -- Drop conflicting constraint that references unexpected column
+                IF EXISTS (
+                    SELECT 1
+                    FROM pg_constraint con
+                    JOIN pg_class rel ON rel.oid = con.conrelid
+                    JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+                    WHERE con.conname = 'FK_cfa828418e58de180707fd03e1a'
+                        AND nsp.nspname = current_schema()
+                        AND rel.relname = 'channel'
+                ) AND NOT EXISTS (
                     SELECT 1
                     FROM information_schema.constraint_column_usage
-                    WHERE table_schema = current_schema()
+                    WHERE constraint_name = 'FK_cfa828418e58de180707fd03e1a'
+                        AND table_schema = current_schema()
                         AND table_name = 'channel'
                         AND column_name = 'customFieldsSubscriptiontierid'
-                        AND constraint_name = 'FK_cfa828418e58de180707fd03e1a'
+                ) THEN
+                    ALTER TABLE "channel"
+                        DROP CONSTRAINT "FK_cfa828418e58de180707fd03e1a";
+                END IF;
+
+                -- Ensure the normalized constraint exists with correct definition
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM information_schema.constraint_column_usage
+                    WHERE constraint_name = 'FK_cfa828418e58de180707fd03e1a'
+                        AND table_schema = current_schema()
+                        AND table_name = 'channel'
+                        AND column_name = 'customFieldsSubscriptiontierid'
                 ) THEN
                     ALTER TABLE "channel"
                         ADD CONSTRAINT "FK_cfa828418e58de180707fd03e1a"
@@ -97,23 +119,25 @@ export class RenameSubscriptionTierColumn1761900000001 implements MigrationInter
         await queryRunner.query(`
             DO $$
             BEGIN
+                -- Drop normalized constraint if it still targets the normalized column
                 IF EXISTS (
                     SELECT 1
                     FROM information_schema.constraint_column_usage
-                    WHERE table_schema = current_schema()
+                    WHERE constraint_name = 'FK_cfa828418e58de180707fd03e1a'
+                        AND table_schema = current_schema()
                         AND table_name = 'channel'
-                        AND column_name = 'customFieldsSubscriptiontieridid'
-                        AND constraint_name = 'FK_cfa828418e58de180707fd03e1a'
                 ) THEN
                     ALTER TABLE "channel"
-                        RENAME CONSTRAINT "FK_cfa828418e58de180707fd03e1a" TO "FK_channel_subscription_tier";
-                ELSIF NOT EXISTS (
+                        DROP CONSTRAINT "FK_cfa828418e58de180707fd03e1a";
+                END IF;
+
+                -- Recreate the legacy constraint only if the legacy column exists
+                IF EXISTS (
                     SELECT 1
-                    FROM information_schema.constraint_column_usage
+                    FROM information_schema.columns
                     WHERE table_schema = current_schema()
                         AND table_name = 'channel'
                         AND column_name = 'customFieldsSubscriptiontieridid'
-                        AND constraint_name = 'FK_channel_subscription_tier'
                 ) THEN
                     ALTER TABLE "channel"
                         ADD CONSTRAINT "FK_channel_subscription_tier"
