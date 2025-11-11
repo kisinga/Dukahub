@@ -1,12 +1,12 @@
-import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { NativeAuthenticationStrategy, PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { OtpTokenAuthStrategy } from './otp-token-auth.strategy';
+import { OtpService } from './otp.service';
 import { PhoneAuthResolver, phoneAuthSchema } from './phone-auth.resolver';
 import { PhoneAuthService } from './phone-auth.service';
-import { OtpService } from './otp.service';
-import { OtpTokenAuthStrategy } from './otp-token-auth.strategy';
-import { RegistrationService } from './registration.service';
 import { RegistrationStorageService } from './registration-storage.service';
-import { SmsService } from './sms/sms.service';
+import { RegistrationService } from './registration.service';
 import { SmsProviderFactory } from './sms/sms-provider.factory';
+import { SmsService } from './sms/sms.service';
 
 @VendurePlugin({
     imports: [PluginCommonModule],
@@ -22,22 +22,29 @@ import { SmsProviderFactory } from './sms/sms-provider.factory';
         PhoneAuthService,
         OtpService,
         OtpTokenAuthStrategy,
+        NativeAuthenticationStrategy,
     ],
     configuration: (config: any) => {
         // Initialize array if it doesn't exist
-        if (!config.authOptions.adminAuthenticationStrategy) {
-            config.authOptions.adminAuthenticationStrategy = [];
-        }
-        
+        const existingStrategies = config.authOptions.adminAuthenticationStrategy ?? [];
+
+        const hasNative = existingStrategies.some(
+            (strategy: any) => strategy instanceof NativeAuthenticationStrategy
+        );
+        const nativeStrategy = hasNative ? [] : [new NativeAuthenticationStrategy()];
+
         // Instantiate the strategy here, before bootstrap
         // OtpService will be injected via DI during init()
         const strategy = new OtpTokenAuthStrategy();
-        
-        // Add strategy at the beginning so it's found first by getAuthenticationStrategy's find()
-        // Since both our strategy and NativeAuthenticationStrategy have name='native',
-        // we MUST be first in the array or the native strategy will be used instead
-        config.authOptions.adminAuthenticationStrategy.unshift(strategy);
-        
+
+        // Add OTP strategy before any existing ones so it gets checked first, but keep the originals intact
+        config.authOptions.adminAuthenticationStrategy = [
+            strategy,
+            ...nativeStrategy,
+            ...existingStrategies,
+        ];
+
+
         return config;
     },
     adminApiExtensions: {
@@ -49,5 +56,5 @@ import { SmsProviderFactory } from './sms/sms-provider.factory';
         schema: phoneAuthSchema,
     },
 })
-export class PhoneAuthPlugin {}
+export class PhoneAuthPlugin { }
 
