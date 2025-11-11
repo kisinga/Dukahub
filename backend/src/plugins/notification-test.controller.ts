@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { RequestContext } from '@vendure/core';
 import { NotificationService } from './notification.service';
 import { PushNotificationService } from './push-notification.service';
@@ -15,8 +15,12 @@ export class NotificationTestController {
         @Query('type') type: string = 'ORDER',
         @Query('title') title?: string,
         @Query('message') message?: string,
+        @Query('userId') userId?: string,
+        @Query('channelId') channelId?: string,
     ) {
         const ctx = RequestContext.empty();
+        const targetUserId = userId || (ctx.activeUserId ? String(ctx.activeUserId) : '2');
+        const targetChannelId = channelId || (ctx.channelId ? String(ctx.channelId) : '2');
 
         // Generate test notification data
         const testData = this.generateTestNotification(type, title, message);
@@ -24,8 +28,8 @@ export class NotificationTestController {
         try {
             // Create notification in the system
             const notification = await this.notificationService.createNotification(ctx, {
-                userId: '2',
-                channelId: '2',
+                userId: targetUserId,
+                channelId: targetChannelId,
                 type: testData.type as any,
                 title: testData.title,
                 message: testData.message,
@@ -35,7 +39,7 @@ export class NotificationTestController {
             // Send push notification if enabled
             await this.pushNotificationService.sendPushNotification(
                 ctx,
-                'test-user',
+                targetUserId,
                 testData.title,
                 testData.message,
                 testData.data
@@ -55,9 +59,14 @@ export class NotificationTestController {
     }
 
     @Post('trigger-all')
-    async triggerAllTestNotifications() {
+    async triggerAllTestNotifications(
+        @Body('userId') userId?: string,
+        @Body('channelId') channelId?: string,
+    ) {
         const ctx = RequestContext.empty();
         const results = [];
+        const targetUserId = userId || (ctx.activeUserId ? String(ctx.activeUserId) : '2');
+        const targetChannelId = channelId || (ctx.channelId ? String(ctx.channelId) : '2');
 
         const testTypes = ['ORDER', 'STOCK', 'ML_TRAINING', 'PAYMENT'];
 
@@ -65,8 +74,8 @@ export class NotificationTestController {
             try {
                 const testData = this.generateTestNotification(type);
                 const notification = await this.notificationService.createNotification(ctx, {
-                    userId: 'test-user',
-                    channelId: 'test-channel',
+                    userId: targetUserId,
+                    channelId: targetChannelId,
                     type: testData.type as any,
                     title: testData.title,
                     message: testData.message,
@@ -75,7 +84,7 @@ export class NotificationTestController {
 
                 await this.pushNotificationService.sendPushNotification(
                     ctx,
-                    'test-user',
+                    targetUserId,
                     testData.title,
                     testData.message,
                     testData.data
