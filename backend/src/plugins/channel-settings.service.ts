@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import {
     Administrator,
     AdministratorService,
     Asset,
+    Channel,
     ChannelService,
     PaymentMethod,
     PaymentMethodService,
@@ -17,7 +18,13 @@ import { OverridePricePermission } from './price-override.permission';
 export interface ChannelSettings {
     cashierFlowEnabled: boolean;
     cashierOpen: boolean;
-    companyLogoAsset?: Asset;
+    companyLogoAsset?: Asset | null;
+}
+
+export interface UpdateChannelSettingsInput {
+    cashierFlowEnabled?: boolean | null;
+    cashierOpen?: boolean | null;
+    companyLogoAssetId?: string | null;
 }
 
 export interface InviteAdministratorInput {
@@ -28,6 +35,8 @@ export interface InviteAdministratorInput {
 
 @Injectable()
 export class ChannelSettingsService {
+    private readonly logger = new Logger(ChannelSettingsService.name);
+
     constructor(
         private readonly channelService: ChannelService,
         private readonly paymentMethodService: PaymentMethodService,
@@ -36,47 +45,90 @@ export class ChannelSettingsService {
         private readonly connection: TransactionalConnection
     ) { }
 
-    async getChannelSettings(ctx: RequestContext): Promise<ChannelSettings> {
-        const channel = await this.channelService.findOne(ctx, ctx.channelId!);
+    async updateChannelSettings(ctx: RequestContext, input: UpdateChannelSettingsInput): Promise<ChannelSettings> {
+        const channelId = ctx.channelId!;
+        const channel = await this.channelService.findOne(ctx, channelId);
         if (!channel) {
             throw new Error('Channel not found');
         }
 
-        const customFields = channel.customFields as any;
-
-        return {
-            cashierFlowEnabled: customFields?.cashierFlowEnabled || false,
-            cashierOpen: customFields?.cashierOpen || false,
-            companyLogoAsset: undefined, // WORKAROUND: Logo loaded via CompanyService in frontend due to custom field relation loading issues
-        };
-    }
-
-    async updateChannelSettings(ctx: RequestContext, input: any): Promise<ChannelSettings> {
-        const updateInput = {
-            id: ctx.channelId!,
-            customFields: {
-                cashierFlowEnabled: input.cashierFlowEnabled,
-                cashierOpen: input.cashierOpen,
-                companyLogoAsset: input.companyLogoAssetId,
-            },
+        const current = (channel.customFields ?? {}) as {
+            cashierFlowEnabled?: boolean;
+            cashierOpen?: boolean;
+            companyLogoAsset?: Asset | null;
         };
 
-        await this.channelService.update(ctx, updateInput);
-        return this.getChannelSettings(ctx);
-    }
+        const nextCashierFlowEnabled =
+            input.cashierFlowEnabled ?? current.cashierFlowEnabled ?? false;
+        const nextCashierOpen = input.cashierOpen ?? current.cashierOpen ?? false;
 
-    async getChannelAdministrators(ctx: RequestContext): Promise<Administrator[]> {
-        // Get administrators assigned to the current channel
-        const administrators = await this.connection
-            .getRepository(ctx, Administrator)
-            .createQueryBuilder('administrator')
-            .leftJoinAndSelect('administrator.user', 'user')
-            .leftJoinAndSelect('administrator.roles', 'role')
-            .leftJoinAndSelect('role.channels', 'channel')
-            .where('channel.id = :channelId', { channelId: ctx.channelId })
-            .getMany();
+        if (!nextCashierFlowEnabled && nextCashierOpen) {
+            throw new BadRequestException(
+                'Cashier cannot be open when the cashier approval flow is disabled.'
+            );
+        }
 
-        return administrators;
+        const customFieldsUpdate: Record<string, any> = {};
+
+        if (
+            input.cashierFlowEnabled !== undefined &&
+            input.cashierFlowEnabled !== current.cashierFlowEnabled
+        ) {
+            customFieldsUpdate.cashierFlowEnabled = input.cashierFlowEnabled;
+        }
+
+        if (
+            input.cashierOpen !== undefined &&
+            input.cashierOpen !== current.cashierOpen
+        ) {
+            customFieldsUpdate.cashierOpen = input.cashierOpen;
+        }
+
+        if (
+            input.cashierFlowEnabled !== undefined &&
+            input.cashierFlowEnabled === false &&
+            input.cashierOpen === undefined &&
+            current.cashierOpen !== false
+        ) {
+            customFieldsUpdate.cashierOpen = false;
+        }
+
+        if (input.companyLogoAssetId !== undefined) {
+            if (!input.companyLogoAssetId) {
+                customFieldsUpdate.companyLogoAsset = null;
+            } else {
+                const asset = await this.connection.getRepository(ctx, Asset).findOne({
+                    where: { id: input.companyLogoAssetId },
+                });
+
+                if (!asset) {
+                    throw new BadRequestException('Company logo asset not found.');
+                }
+
+                if (current.companyLogoAsset?.id !== input.companyLogoAssetId) {
+                    customFieldsUpdate.companyLogoAsset = input.companyLogoAssetId;
+                }
+            }
+        }
+
+        if (Object.keys(customFieldsUpdate).length > 0) {
+            await this.channelService.update(ctx, {
+                id: channelId,
+                customFields: customFieldsUpdate,
+            });
+
+            this.logger.log('Channel settings updated', {
+                channelId,
+                fields: Object.keys(customFieldsUpdate),
+            });
+        }
+
+        const updatedChannel = await this.channelService.findOne(ctx, channelId);
+        if (!updatedChannel) {
+            throw new Error('Channel not found after update');
+        }
+
+        return this.mapChannelSettings(updatedChannel);
     }
 
     async inviteChannelAdministrator(
@@ -131,17 +183,6 @@ export class ChannelSettingsService {
         return administrator;
     }
 
-    async getChannelPaymentMethods(ctx: RequestContext): Promise<PaymentMethod[]> {
-        // Get payment methods available for the current channel
-        const paymentMethods = await this.paymentMethodService.findAll(ctx, {
-            filter: {
-                enabled: { eq: true },
-            },
-        });
-
-        return paymentMethods.items;
-    }
-
     async createChannelPaymentMethod(
         ctx: RequestContext,
         input: any
@@ -162,21 +203,51 @@ export class ChannelSettingsService {
         ctx: RequestContext,
         input: any
     ): Promise<PaymentMethod> {
-        const updateInput = {
+        const updateInput: Record<string, any> = {
             id: input.id,
-            name: input.name,
-            description: input.description,
-            customFields: {
-                imageAssetId: input.imageAssetId,
-                isActive: input.isActive,
-            },
         };
 
-        return this.paymentMethodService.update(ctx, updateInput);
+        if (input.name !== undefined) {
+            updateInput.name = input.name;
+        }
+
+        if (input.description !== undefined) {
+            updateInput.description = input.description;
+        }
+
+        const customFields: Record<string, any> = {};
+
+        if (input.imageAssetId !== undefined) {
+            customFields.imageAssetId = input.imageAssetId;
+        }
+
+        if (input.isActive !== undefined) {
+            customFields.isActive = input.isActive;
+        }
+
+        if (Object.keys(customFields).length > 0) {
+            updateInput.customFields = customFields;
+        }
+
+        return this.paymentMethodService.update(ctx, updateInput as any);
     }
 
     private generateTemporaryPassword(): string {
         // Generate a secure temporary password
         return Math.random().toString(36).slice(-12) + '!A1';
+    }
+
+    private mapChannelSettings(channel: Channel): ChannelSettings {
+        const customFields = (channel.customFields ?? {}) as {
+            cashierFlowEnabled?: boolean;
+            cashierOpen?: boolean;
+            companyLogoAsset?: Asset | null;
+        };
+
+        return {
+            cashierFlowEnabled: customFields.cashierFlowEnabled ?? false,
+            cashierOpen: customFields.cashierOpen ?? false,
+            companyLogoAsset: customFields.companyLogoAsset ?? null,
+        };
     }
 }

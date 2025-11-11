@@ -1437,24 +1437,6 @@ export const DELETE_SUPPLIER = graphql(`
   }
 `);
 
-// ============================================================================
-// CHANNEL SETTINGS
-// ============================================================================
-
-export const GET_CHANNEL_SETTINGS = graphql(`
-  query GetChannelSettings {
-    getChannelSettings {
-      cashierFlowEnabled
-      cashierOpen
-      companyLogoAsset {
-        id
-        source
-        preview
-      }
-    }
-  }
-`);
-
 export const UPDATE_CHANNEL_SETTINGS = graphql(`
   mutation UpdateChannelSettings($input: UpdateChannelSettingsInput!) {
     updateChannelSettings(input: $input) {
@@ -1464,22 +1446,6 @@ export const UPDATE_CHANNEL_SETTINGS = graphql(`
         id
         source
         preview
-      }
-    }
-  }
-`);
-
-export const GET_CHANNEL_ADMINISTRATORS = graphql(`
-  query GetChannelAdministrators {
-    getChannelAdministrators {
-      id
-      firstName
-      lastName
-      emailAddress
-      user {
-        id
-        identifier
-        verified
       }
     }
   }
@@ -1496,20 +1462,26 @@ export const INVITE_CHANNEL_ADMINISTRATOR = graphql(`
   }
 `);
 
-export const GET_CHANNEL_PAYMENT_METHODS = graphql(`
-  query GetChannelPaymentMethods {
-    getChannelPaymentMethods {
-      id
-      code
-      name
-      description
-      enabled
-      customFields {
-        imageAsset {
+export const GET_ADMINISTRATORS = graphql(`
+  query GetAdministrators($options: AdministratorListOptions) {
+    administrators(options: $options) {
+      items {
+        id
+        firstName
+        lastName
+        emailAddress
+        user {
           id
-          preview
+          identifier
+          verified
+          roles {
+            id
+            code
+            channels {
+              id
+            }
+          }
         }
-        isActive
       }
     }
   }

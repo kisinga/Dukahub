@@ -12,6 +12,7 @@ configs/.env
 node_modules
 
 # npm
+.npm-cache/*
 npm-debug.log
 yarn-error.log
 

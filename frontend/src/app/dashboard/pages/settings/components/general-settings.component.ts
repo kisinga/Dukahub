@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { CompanyService } from '../../../../core/services/company.service';
-import { SettingsService, UpdateChannelSettingsInput } from '../../../../core/services/settings.service';
+import { ChannelSettings, SettingsService, UpdateChannelSettingsInput } from '../../../../core/services/settings.service';
 
 @Component({
   selector: 'app-general-settings',
@@ -129,9 +129,8 @@ import { SettingsService, UpdateChannelSettingsInput } from '../../../../core/se
 export class GeneralSettingsComponent {
   readonly settingsService = inject(SettingsService);
   private readonly companyService = inject(CompanyService);
-  private readonly fb = inject(FormBuilder);
-
-  readonly settings = this.settingsService.channelSettings;
+  private readonly settingsState = signal<ChannelSettings | null>(null);
+  readonly settings = this.settingsState.asReadonly();
   readonly hasChanges = signal(false);
   readonly selectedLogoFile = signal<File | null>(null);
   readonly logoPreview = signal<string | null>(null);
@@ -139,52 +138,98 @@ export class GeneralSettingsComponent {
   // WORKAROUND: Use CompanyService for logo due to custom field relation loading issues in SettingsService
   readonly companyLogoAsset = this.companyService.companyLogoAsset;
 
-  private originalSettings: any = null;
+  private originalSettings: ChannelSettings | null = null;
+  private lastRemoteSnapshot: ChannelSettings | null = null;
 
   constructor() {
-    // Load settings on component init
-    this.settingsService.getChannelSettings();
-
-    // Track changes for form state
     effect(() => {
-      const currentSettings = this.settings();
+      const remoteSettings = this.settingsService.channelSettings();
+      const hasChanges = this.hasChanges();
 
-      if (currentSettings) {
-        // Set original settings for change tracking
-        if (!this.originalSettings) {
-          this.originalSettings = { ...currentSettings };
+      if (!remoteSettings) {
+        this.settingsState.set(null);
+        this.originalSettings = null;
+        this.lastRemoteSnapshot = null;
+        return;
+      }
+
+      const remoteChanged =
+        !this.lastRemoteSnapshot || !this.areSettingsEqual(this.lastRemoteSnapshot, remoteSettings);
+
+      if (remoteChanged) {
+        this.lastRemoteSnapshot = { ...remoteSettings };
+        this.originalSettings = { ...remoteSettings };
+
+        if (!hasChanges) {
+          this.settingsState.set({ ...remoteSettings });
+          this.logoPreview.set(null);
+          this.selectedLogoFile.set(null);
+          this.evaluateChanges(remoteSettings);
         }
+      } else if (!this.settingsState()) {
+        this.settingsState.set({ ...remoteSettings });
+        this.evaluateChanges(remoteSettings);
       }
     });
   }
 
+  private areSettingsEqual(a: ChannelSettings, b: ChannelSettings): boolean {
+    return (
+      a.cashierFlowEnabled === b.cashierFlowEnabled &&
+      a.cashierOpen === b.cashierOpen &&
+      (a.companyLogoAsset?.id ?? null) === (b.companyLogoAsset?.id ?? null)
+    );
+  }
+
+  private evaluateChanges(next: ChannelSettings | null): void {
+    if (!next || !this.originalSettings) {
+      this.hasChanges.set(false);
+      return;
+    }
+
+    this.hasChanges.set(!this.areSettingsEqual(next, this.originalSettings));
+  }
+
   toggleCashierFlow(event: Event): void {
     const target = event.target as HTMLInputElement;
-    this.hasChanges.set(true);
 
     // If disabling cashier flow, also disable cashier open
-    if (!target.checked) {
-      this.settings.update(settings => ({
-        ...settings!,
-        cashierFlowEnabled: false,
-        cashierOpen: false,
-      }));
-    } else {
-      this.settings.update(settings => ({
-        ...settings!,
+    this.settingsState.update(settings => {
+      if (!settings) {
+        return settings;
+      }
+
+      if (!target.checked) {
+        return {
+          ...settings,
+          cashierFlowEnabled: false,
+          cashierOpen: false,
+        };
+      }
+
+      return {
+        ...settings,
         cashierFlowEnabled: true,
-      }));
-    }
+      };
+    });
+
+    this.evaluateChanges(this.settingsState());
   }
 
   toggleCashierOpen(event: Event): void {
     const target = event.target as HTMLInputElement;
-    this.hasChanges.set(true);
 
-    this.settings.update(settings => ({
-      ...settings!,
-      cashierOpen: target.checked,
-    }));
+    this.settingsState.update(settings => {
+      if (!settings) {
+        return settings;
+      }
+      return {
+        ...settings,
+        cashierOpen: target.checked,
+      };
+    });
+
+    this.evaluateChanges(this.settingsState());
   }
 
   selectLogoFile(): void {
@@ -238,13 +283,23 @@ export class GeneralSettingsComponent {
   removeSelectedLogo(): void {
     this.selectedLogoFile.set(null);
     this.logoPreview.set(null);
-    this.hasChanges.set(true);
+    this.evaluateChanges(this.settings());
   }
 
   removeExistingLogo(): void {
     // Clear the preview and mark for removal
     this.logoPreview.set(null);
-    this.hasChanges.set(true);
+    this.selectedLogoFile.set(null);
+    this.settingsState.update(settings => {
+      if (!settings) {
+        return settings;
+      }
+      return {
+        ...settings,
+        companyLogoAsset: null,
+      };
+    });
+    this.evaluateChanges(this.settings());
     console.log('🗑️ Marked existing logo for removal');
   }
 
@@ -252,7 +307,7 @@ export class GeneralSettingsComponent {
     const currentSettings = this.settings();
     if (!currentSettings) return;
 
-    let logoAssetId: string | undefined = currentSettings.companyLogoAsset?.id;
+    let logoAssetId: string | null | undefined = currentSettings.companyLogoAsset?.id ?? undefined;
 
     // Upload logo if a new file was selected
     const selectedFile = this.selectedLogoFile();
@@ -269,7 +324,7 @@ export class GeneralSettingsComponent {
       console.log('✅ Logo uploaded successfully');
     } else if (!this.logoPreview() && currentSettings.companyLogoAsset) {
       // Logo was removed (preview cleared but no new file selected)
-      logoAssetId = undefined;
+      logoAssetId = null;
       console.log('🗑️ Logo marked for removal');
     }
 
@@ -285,13 +340,10 @@ export class GeneralSettingsComponent {
     if (!this.settingsService.error()) {
       // Clear selected file but keep preview (it will be updated with the new logo)
       this.selectedLogoFile.set(null);
-      this.hasChanges.set(false);
       this.originalSettings = { ...currentSettings };
+      this.evaluateChanges(this.settings());
 
-      // Refresh settings to show the new logo
-      await this.settingsService.getChannelSettings();
-
-      // The logoPreview will be updated by the effect that watches settings()
+      // The effect watching channel settings will sync UI state
       console.log('✅ Settings saved and refreshed');
     }
   }
