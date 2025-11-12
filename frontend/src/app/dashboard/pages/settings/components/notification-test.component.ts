@@ -1,12 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { AuthService } from '../../../../core/services/auth.service';
+import { CompanyService } from '../../../../core/services/company.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
-    selector: 'app-notification-test',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `
+  selector: 'app-notification-test',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
     <div class="space-y-6">
       <div class="card bg-base-100 shadow-sm border border-base-300">
         <div class="card-body">
@@ -114,136 +116,165 @@ import { ToastService } from '../../../../core/services/toast.service';
   `,
 })
 export class NotificationTestComponent {
-    private readonly notificationService = inject(NotificationService);
-    private readonly toastService = inject(ToastService);
-    private readonly http = inject(HttpClient);
+  private readonly notificationService = inject(NotificationService);
+  private readonly toastService = inject(ToastService);
+  private readonly http = inject(HttpClient);
+  private readonly authService = inject(AuthService);
+  private readonly companyService = inject(CompanyService);
 
-    // State
-    private readonly activityLogSignal = signal<Array<{
-        id: string;
-        type: 'success' | 'warning' | 'error' | 'info';
-        message: string;
-        icon: string;
-        timestamp: string;
-    }>>([]);
-    private readonly isLoadingSignal = signal<boolean>(false);
+  // State
+  private readonly activityLogSignal = signal<Array<{
+    id: string;
+    type: 'success' | 'warning' | 'error' | 'info';
+    message: string;
+    icon: string;
+    timestamp: string;
+  }>>([]);
+  private readonly isLoadingSignal = signal<boolean>(false);
 
-    // Computed values
-    readonly notifications = this.notificationService.notifications;
-    readonly unreadCount = this.notificationService.unreadCount;
-    readonly isPushEnabled = this.notificationService.isPushEnabled;
-    readonly isLoading = this.isLoadingSignal.asReadonly();
+  // Computed values
+  readonly notifications = this.notificationService.notifications;
+  readonly unreadCount = this.notificationService.unreadCount;
+  readonly isPushEnabled = this.notificationService.isPushEnabled;
+  readonly isLoading = this.isLoadingSignal.asReadonly();
 
-    readonly totalNotifications = computed(() => this.notifications().length);
-    readonly unreadNotifications = computed(() => this.unreadCount());
+  readonly totalNotifications = computed(() => this.notifications().length);
+  readonly unreadNotifications = computed(() => this.unreadCount());
 
-    readonly swStatus = computed(() => {
-        return 'serviceWorker' in navigator && navigator.serviceWorker.controller !== null;
-    });
+  private readonly currentUserId = computed(() => this.authService.user()?.user?.id ?? null);
+  private readonly currentChannelId = computed(() => this.companyService.activeChannel()?.id ?? null);
 
-    readonly activityLog = this.activityLogSignal.asReadonly();
+  readonly swStatus = computed(() => {
+    return 'serviceWorker' in navigator && navigator.serviceWorker.controller !== null;
+  });
 
-    readonly testScenarios = [
-        {
-            type: 'ORDER',
-            label: 'Order',
-            icon: '💰',
-            description: 'Test order notifications from server'
-        },
-        {
-            type: 'STOCK',
-            label: 'Stock',
-            icon: '⚠️',
-            description: 'Test low stock alerts from server'
-        },
-        {
-            type: 'ML_TRAINING',
-            label: 'ML Training',
-            icon: '🤖',
-            description: 'Test ML model updates from server'
-        },
-        {
-            type: 'PAYMENT',
-            label: 'Payment',
-            icon: '💳',
-            description: 'Test payment notifications from server'
-        }
-    ];
+  readonly activityLog = this.activityLogSignal.asReadonly();
 
-    async triggerServerNotification(type: string): Promise<void> {
-        this.isLoadingSignal.set(true);
-        
-        try {
-            const response = await this.http.get(`http://localhost:3000/test-notifications/trigger`, {
-                params: { type }
-            }).toPromise();
-
-            this.addActivityLog('success', '✅', `Server ${type} notification triggered`);
-            this.toastService.show('Server Notification', `Test ${type} notification sent from server`, 'success', 3000);
-            
-            // Refresh notifications to get the new one from server
-            this.refreshNotifications();
-        } catch (error) {
-            this.addActivityLog('error', '❌', `Failed to trigger server ${type} notification`);
-            this.toastService.show('Error', `Failed to trigger server notification: ${error}`, 'error', 5000);
-        } finally {
-            this.isLoadingSignal.set(false);
-        }
+  readonly testScenarios = [
+    {
+      type: 'ORDER',
+      label: 'Order',
+      icon: '💰',
+      description: 'Test order notifications from server'
+    },
+    {
+      type: 'STOCK',
+      label: 'Stock',
+      icon: '⚠️',
+      description: 'Test low stock alerts from server'
+    },
+    {
+      type: 'ML_TRAINING',
+      label: 'ML Training',
+      icon: '🤖',
+      description: 'Test ML model updates from server'
+    },
+    {
+      type: 'PAYMENT',
+      label: 'Payment',
+      icon: '💳',
+      description: 'Test payment notifications from server'
     }
+  ];
 
-    async triggerAllServerNotifications(): Promise<void> {
-        this.isLoadingSignal.set(true);
-        
-        try {
-            const response = await this.http.post(`http://localhost:3000/test-notifications/trigger-all`, {}).toPromise();
-            
-            this.addActivityLog('success', '🚀', 'All server notifications triggered');
-            this.toastService.show('Server Notifications', 'All test notifications sent from server', 'success', 3000);
-            
-            // Refresh notifications
-            this.refreshNotifications();
-        } catch (error) {
-            this.addActivityLog('error', '❌', 'Failed to trigger all server notifications');
-            this.toastService.show('Error', `Failed to trigger all notifications: ${error}`, 'error', 5000);
-        } finally {
-            this.isLoadingSignal.set(false);
-        }
+  async triggerServerNotification(type: string): Promise<void> {
+    this.isLoadingSignal.set(true);
+
+    try {
+      const params: Record<string, string> = { type };
+      const userId = this.currentUserId();
+      const channelId = this.currentChannelId();
+
+      if (userId) {
+        params['userId'] = userId;
+      }
+
+      if (channelId) {
+        params['channelId'] = channelId;
+      }
+
+      await this.http.get(`/test-notifications/trigger`, {
+        params
+      }).toPromise();
+
+      this.addActivityLog('success', '✅', `Server ${type} notification triggered`);
+      this.toastService.show('Server Notification', `Test ${type} notification sent from server`, 'success', 3000);
+
+      // Refresh notifications to get the new one from server
+      this.refreshNotifications();
+    } catch (error) {
+      this.addActivityLog('error', '❌', `Failed to trigger server ${type} notification`);
+      this.toastService.show('Error', `Failed to trigger server notification: ${error}`, 'error', 5000);
+    } finally {
+      this.isLoadingSignal.set(false);
     }
+  }
 
-    refreshNotifications(): void {
-        this.notificationService.loadNotifications();
-        this.notificationService.loadUnreadCount();
-        this.addActivityLog('info', '🔄', 'Refreshed notifications');
+  async triggerAllServerNotifications(): Promise<void> {
+    this.isLoadingSignal.set(true);
+
+    try {
+      const payload: Record<string, string> = {};
+      const userId = this.currentUserId();
+      const channelId = this.currentChannelId();
+
+      if (userId) {
+        payload['userId'] = userId;
+      }
+
+      if (channelId) {
+        payload['channelId'] = channelId;
+      }
+
+      await this.http.post(`/test-notifications/trigger-all`, payload).toPromise();
+
+      this.addActivityLog('success', '🚀', 'All server notifications triggered');
+      this.toastService.show('Server Notifications', 'All test notifications sent from server', 'success', 3000);
+
+      // Refresh notifications
+      this.refreshNotifications();
+    } catch (error) {
+      this.addActivityLog('error', '❌', 'Failed to trigger all server notifications');
+      this.toastService.show('Error', `Failed to trigger all notifications: ${error}`, 'error', 5000);
+    } finally {
+      this.isLoadingSignal.set(false);
     }
+  }
 
-    async testPushSubscription(): Promise<void> {
-        try {
-            if (this.isPushEnabled()) {
-                await this.notificationService.unsubscribeToPush();
-                this.addActivityLog('info', '📱', 'Unsubscribed from push notifications');
-            } else {
-                await this.notificationService.subscribeToPush();
-                this.addActivityLog('success', '📱', 'Subscribed to push notifications');
-            }
-        } catch (error) {
-            this.addActivityLog('error', '❌', 'Failed to toggle push subscription');
-        }
+  refreshNotifications(): void {
+    this.notificationService.loadNotifications();
+    this.notificationService.loadUnreadCount();
+    this.addActivityLog('info', '🔄', 'Refreshed notifications');
+  }
+
+  async testPushSubscription(): Promise<void> {
+    try {
+      if (this.isPushEnabled()) {
+        await this.notificationService.unsubscribeToPush();
+        this.addActivityLog('info', '📱', 'Unsubscribed from push notifications');
+      } else {
+        await this.notificationService.subscribeToPush();
+        this.addActivityLog('success', '📱', 'Subscribed to push notifications');
+      }
+    } catch (error) {
+      this.addActivityLog('error', '❌', 'Failed to toggle push subscription');
     }
+  }
 
 
-    private addActivityLog(type: 'success' | 'warning' | 'error' | 'info', icon: string, message: string): void {
-        const log = {
-            id: this.generateId(),
-            type,
-            icon,
-            message,
-            timestamp: new Date().toLocaleTimeString()
-        };
+  private addActivityLog(type: 'success' | 'warning' | 'error' | 'info', icon: string, message: string): void {
+    const log = {
+      id: this.generateId(),
+      type,
+      icon,
+      message,
+      timestamp: new Date().toLocaleTimeString()
+    };
 
-        this.activityLogSignal.update(logs => [log, ...logs].slice(0, 20)); // Keep last 20 logs
-    }
+    this.activityLogSignal.update(logs => [log, ...logs].slice(0, 20)); // Keep last 20 logs
+  }
 
-    private generateId(): string {
-        return Math.random().toString(36).substring(2, 9);
-    }
+  private generateId(): string {
+    return Math.random().toString(36).substring(2, 9);
+  }
 }

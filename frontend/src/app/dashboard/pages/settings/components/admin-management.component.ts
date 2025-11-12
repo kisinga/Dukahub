@@ -1,7 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { InviteAdministratorInput, SettingsService } from '../../../../core/services/settings.service';
+import { GET_ADMINISTRATORS } from '../../../../core/graphql/operations.graphql';
+import type { GetAdministratorsQuery } from '../../../../core/graphql/generated/graphql';
+import { ApolloService } from '../../../../core/services/apollo.service';
+import { CompanyService } from '../../../../core/services/company.service';
+import { InviteAdministratorInput, SettingsService, Administrator } from '../../../../core/services/settings.service';
 
 @Component({
     selector: 'app-admin-management',
@@ -171,21 +175,31 @@ import { InviteAdministratorInput, SettingsService } from '../../../../core/serv
 })
 export class AdminManagementComponent {
     readonly settingsService = inject(SettingsService);
+    private readonly apolloService = inject(ApolloService);
+    private readonly companyService = inject(CompanyService);
     private readonly fb = inject(FormBuilder);
 
-    readonly administrators = this.settingsService.administrators;
+    private readonly administratorsSignal = signal<Administrator[]>([]);
+    readonly administrators = this.administratorsSignal.asReadonly();
     readonly showInviteModal = signal(false);
     readonly inviteForm: FormGroup;
 
     // TODO: Get current admin ID from auth service
     readonly currentAdminId = 'current-admin-id';
+    private currentFetchChannelId: string | null = null;
 
     constructor() {
         this.inviteForm = this.createInviteForm();
 
-        // Load administrators on component init
         effect(() => {
-            this.settingsService.getChannelAdministrators();
+            const channel = this.companyService.activeChannel();
+
+            if (!channel) {
+                this.administratorsSignal.set([]);
+                return;
+            }
+
+            void this.loadAdministrators(channel.id);
         });
     }
 
@@ -219,6 +233,10 @@ export class AdminManagementComponent {
         const result = await this.settingsService.inviteAdministrator(input);
 
         if (result) {
+            const channel = this.companyService.activeChannel();
+            if (channel) {
+                await this.loadAdministrators(channel.id);
+            }
             this.closeInviteModal();
         }
     }
@@ -235,5 +253,55 @@ export class AdminManagementComponent {
 
     getInitials(firstName: string, lastName: string): string {
         return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    }
+
+    private async loadAdministrators(channelId: string): Promise<void> {
+        this.currentFetchChannelId = channelId;
+        this.settingsService.loading.set(true);
+        this.settingsService.clearError();
+
+        try {
+            const client = this.apolloService.getClient();
+            const result = await client.query<GetAdministratorsQuery>({
+                query: GET_ADMINISTRATORS,
+                variables: { options: { take: 100 } },
+                fetchPolicy: 'network-only',
+            });
+
+            const admins = result.data?.administrators.items ?? [];
+            const filtered = admins.filter(admin =>
+                admin.user?.roles?.some(role =>
+                    role.channels?.some(channel => channel.id === channelId)
+                )
+            );
+
+            if (this.currentFetchChannelId === channelId) {
+                const normalized: Administrator[] = filtered.map(admin => ({
+                    id: admin.id,
+                    firstName: admin.firstName,
+                    lastName: admin.lastName,
+                    emailAddress: admin.emailAddress,
+                    user: admin.user
+                        ? {
+                            id: admin.user.id,
+                            identifier: admin.user.identifier,
+                            verified: admin.user.verified,
+                            roles: admin.user.roles?.map(role => ({
+                                id: role.id,
+                                code: role.code,
+                                channels: role.channels?.map(channel => ({ id: channel.id })) ?? [],
+                            })),
+                        }
+                        : null,
+                }));
+
+                this.administratorsSignal.set(normalized);
+            }
+        } catch (error) {
+            console.error('Failed to load administrators:', error);
+            this.settingsService.error.set('Failed to load administrators');
+        } finally {
+            this.settingsService.loading.set(false);
+        }
     }
 }

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
 import { CurrencyService } from '../../../../core/services/currency.service';
 import { PaymentMethod, PaymentMethodService } from '../../../../core/services/payment-method.service';
 import { Customer, CustomerSelectorComponent } from './customer-selector.component';
@@ -200,6 +200,49 @@ type PaymentMethodCode = string;
             <!-- Complete Credit Sale -->
             @if (selectedCustomer()) {
             <div class="space-y-6 animate-in slide-in-from-bottom-2 duration-300 delay-200">
+              <div class="grid grid-cols-3 gap-2">
+                <div class="bg-base-200 rounded-xl p-4 text-center">
+                  <div class="text-xs text-base-content/60 uppercase tracking-wide">Limit</div>
+                  <div class="text-lg font-bold text-base-content">
+                    {{ selectedCustomer()!.creditLimit | number:'1.0-0' }}
+                  </div>
+                </div>
+                <div class="bg-base-200 rounded-xl p-4 text-center">
+                  <div class="text-xs text-base-content/60 uppercase tracking-wide">Outstanding</div>
+                  <div class="text-lg font-bold text-base-content">
+                    {{ selectedCustomer()!.outstandingAmount | number:'1.0-0' }}
+                  </div>
+                </div>
+                <div class="bg-base-300 rounded-xl p-4 text-center">
+                  <div class="text-xs text-base-content/60 uppercase tracking-wide">Available</div>
+                  <div class="text-lg font-bold text-success">
+                    {{ selectedCustomer()!.availableCredit | number:'1.0-0' }}
+                  </div>
+                </div>
+              </div>
+
+              @if (!selectedCustomer()!.isCreditApproved) {
+              <div class="alert alert-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Customer is pending credit approval.</span>
+              </div>
+              }
+
+              @if (selectedCustomer()!.availableCredit < total()) {
+              <div class="alert alert-error">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Insufficient credit. Available {{ selectedCustomer()!.availableCredit | number:'1.0-0' }}.</span>
+              </div>
+              }
+
               <!-- Order Summary -->
               <div class="bg-base-200 rounded-xl p-6">
                 <div class="flex justify-between items-center mb-3">
@@ -218,7 +261,7 @@ type PaymentMethodCode = string;
               <button
                 class="btn btn-warning btn-lg w-full hover:scale-105 active:scale-95 transition-transform"
                 (click)="completeCredit.emit()"
-                [disabled]="isProcessing()"
+                [disabled]="isProcessing() || !canCompleteCredit()"
               >
                 @if (isProcessing()) {
                 <span class="loading loading-spinner"></span>
@@ -570,6 +613,16 @@ export class CheckoutModalComponent implements OnInit {
   // Dynamic payment methods
   readonly paymentMethods = signal<PaymentMethod[]>([]);
   readonly paymentMethodsError = signal<string | null>(null);
+  readonly canCompleteCredit = computed(() => {
+    const customer = this.selectedCustomer();
+    if (!customer) {
+      return false;
+    }
+    if (!customer.isCreditApproved) {
+      return false;
+    }
+    return customer.availableCredit >= this.total();
+  });
 
   async ngOnInit() {
     try {

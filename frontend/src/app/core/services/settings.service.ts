@@ -1,11 +1,8 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { LanguageCode } from '../graphql/generated/graphql';
 import {
     CREATE_CHANNEL_PAYMENT_METHOD,
-    GET_CHANNEL_ADMINISTRATORS,
-    GET_CHANNEL_PAYMENT_METHODS,
-    GET_CHANNEL_SETTINGS,
     INVITE_CHANNEL_ADMINISTRATOR,
     UPDATE_CHANNEL_PAYMENT_METHOD,
     UPDATE_CHANNEL_SETTINGS
@@ -32,6 +29,11 @@ export interface Administrator {
         id: string;
         identifier: string;
         verified: boolean;
+        roles?: Array<{
+            id: string;
+            code: string;
+            channels?: Array<{ id: string }>;
+        }>;
     } | null;
 }
 
@@ -53,7 +55,7 @@ export interface PaymentMethod {
 export interface UpdateChannelSettingsInput {
     cashierFlowEnabled?: boolean;
     cashierOpen?: boolean;
-    companyLogoAssetId?: string;
+    companyLogoAssetId?: string | null;
 }
 
 export interface InviteAdministratorInput {
@@ -93,36 +95,27 @@ export class SettingsService {
     private readonly companyService = inject(CompanyService);
 
     // Signals for reactive state
-    readonly channelSettings = signal<ChannelSettings | null>(null);
-    readonly administrators = signal<Administrator[]>([]);
-    readonly paymentMethods = signal<PaymentMethod[]>([]);
+    readonly channelSettings = computed<ChannelSettings | null>(() => {
+        const channel = this.companyService.activeChannel();
+        const customFields = channel?.customFields;
+
+        if (!customFields) {
+            return null;
+        }
+
+        return {
+            cashierFlowEnabled: customFields.cashierFlowEnabled ?? false,
+            cashierOpen: customFields.cashierOpen ?? false,
+            companyLogoAsset: customFields.companyLogoAsset ?? null,
+        };
+    });
+
+    readonly cashierFlowEnabled = this.companyService.cashierFlowEnabled;
+    readonly cashierOpen = this.companyService.cashierOpen;
+    readonly companyLogoAsset = this.companyService.companyLogoAsset;
+
     readonly loading = signal(false);
     readonly error = signal<string | null>(null);
-
-    /**
-     * Fetch channel settings
-     */
-    async getChannelSettings(): Promise<void> {
-        this.loading.set(true);
-        this.error.set(null);
-
-        try {
-            const client = this.apolloService.getClient();
-            const result = await client.query({
-                query: GET_CHANNEL_SETTINGS,
-                fetchPolicy: 'network-only',
-            });
-
-            if (result.data?.getChannelSettings) {
-                this.channelSettings.set(result.data.getChannelSettings);
-            }
-        } catch (err) {
-            console.error('Failed to fetch channel settings:', err);
-            this.error.set('Failed to load channel settings');
-        } finally {
-            this.loading.set(false);
-        }
-    }
 
     /**
      * Update channel settings
@@ -139,39 +132,11 @@ export class SettingsService {
             });
 
             if (result.data?.updateChannelSettings) {
-                this.channelSettings.set(result.data.updateChannelSettings);
-
-                // Trigger company service to refresh active channel data for dashboard layout sync
                 await this.companyService.fetchActiveChannel();
             }
         } catch (err) {
             console.error('Failed to update channel settings:', err);
             this.error.set('Failed to update channel settings');
-        } finally {
-            this.loading.set(false);
-        }
-    }
-
-    /**
-     * Fetch channel administrators
-     */
-    async getChannelAdministrators(): Promise<void> {
-        this.loading.set(true);
-        this.error.set(null);
-
-        try {
-            const client = this.apolloService.getClient();
-            const result = await client.query({
-                query: GET_CHANNEL_ADMINISTRATORS,
-                fetchPolicy: 'cache-first',
-            });
-
-            if (result.data?.getChannelAdministrators) {
-                this.administrators.set(result.data.getChannelAdministrators);
-            }
-        } catch (err) {
-            console.error('Failed to fetch administrators:', err);
-            this.error.set('Failed to load administrators');
         } finally {
             this.loading.set(false);
         }
@@ -192,41 +157,13 @@ export class SettingsService {
             });
 
             if (result.data?.inviteChannelAdministrator) {
-                const newAdmin = result.data.inviteChannelAdministrator;
-                // Add to current list
-                this.administrators.update(admins => [...admins, newAdmin]);
-                return newAdmin;
+                return result.data.inviteChannelAdministrator as Administrator;
             }
             return null;
         } catch (err) {
             console.error('Failed to invite administrator:', err);
             this.error.set('Failed to invite administrator');
             return null;
-        } finally {
-            this.loading.set(false);
-        }
-    }
-
-    /**
-     * Fetch channel payment methods
-     */
-    async getChannelPaymentMethods(): Promise<void> {
-        this.loading.set(true);
-        this.error.set(null);
-
-        try {
-            const client = this.apolloService.getClient();
-            const result = await client.query({
-                query: GET_CHANNEL_PAYMENT_METHODS,
-                fetchPolicy: 'cache-first',
-            });
-
-            if (result.data?.getChannelPaymentMethods) {
-                this.paymentMethods.set(result.data.getChannelPaymentMethods);
-            }
-        } catch (err) {
-            console.error('Failed to fetch payment methods:', err);
-            this.error.set('Failed to load payment methods');
         } finally {
             this.loading.set(false);
         }
@@ -247,8 +184,6 @@ export class SettingsService {
             });
 
             if (result.data?.createChannelPaymentMethod) {
-                // Refresh payment methods list
-                await this.getChannelPaymentMethods();
                 return result.data.createChannelPaymentMethod as PaymentMethod;
             }
             return null;
@@ -264,33 +199,19 @@ export class SettingsService {
     /**
      * Update a payment method
      */
-    async updatePaymentMethod(input: UpdatePaymentMethodInput): Promise<PaymentMethod | null> {
+    async updatePaymentMethod(input: UpdatePaymentMethodInput): Promise<void> {
         this.loading.set(true);
         this.error.set(null);
 
         try {
             const client = this.apolloService.getClient();
-            const result = await client.mutate({
+            await client.mutate({
                 mutation: UPDATE_CHANNEL_PAYMENT_METHOD,
                 variables: { input },
             });
-
-            if (result.data?.updateChannelPaymentMethod) {
-                // Update in current list
-                this.paymentMethods.update(methods =>
-                    methods.map(method =>
-                        method.id === input.id
-                            ? { ...method, ...result.data!.updateChannelPaymentMethod }
-                            : method
-                    )
-                );
-                return result.data.updateChannelPaymentMethod as PaymentMethod;
-            }
-            return null;
         } catch (err) {
             console.error('Failed to update payment method:', err);
             this.error.set('Failed to update payment method');
-            return null;
         } finally {
             this.loading.set(false);
         }
@@ -426,9 +347,6 @@ export class SettingsService {
      * Reset all data
      */
     reset(): void {
-        this.channelSettings.set(null);
-        this.administrators.set([]);
-        this.paymentMethods.set([]);
         this.loading.set(false);
         this.error.set(null);
     }

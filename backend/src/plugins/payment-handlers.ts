@@ -1,4 +1,18 @@
-import { CreatePaymentResult, LanguageCode, PaymentMethodHandler, SettlePaymentResult } from '@vendure/core';
+import {
+    CreatePaymentResult,
+    LanguageCode,
+    PaymentMethodHandler,
+    SettlePaymentResult,
+    UserInputError
+} from '@vendure/core';
+
+// Service locator for CreditService
+// This will be set by the plugin when it initializes
+let creditServiceRef: any | null = null;
+
+export function setPaymentHandlerCreditService(creditService: any): void {
+    creditServiceRef = creditService;
+}
 
 /**
  * Cash Payment Handler
@@ -21,7 +35,7 @@ export const cashPaymentHandler = new PaymentMethodHandler({
             transactionId: `CASH-${Date.now()}`,
             metadata: {
                 paymentType: 'cash',
-                ...metadata
+                ...(metadata || {})
             }
         };
     },
@@ -60,8 +74,8 @@ export const mpesaPaymentHandler = new PaymentMethodHandler({
             transactionId: `MPESA-${Date.now()}`,
             metadata: {
                 paymentType: 'mpesa',
-                phoneNumber: metadata.phoneNumber || null, // Capture for future API integration
-                ...metadata
+                phoneNumber: metadata?.phoneNumber || null, // Capture for future API integration
+                ...(metadata || {})
             }
         };
     },
@@ -70,5 +84,61 @@ export const mpesaPaymentHandler = new PaymentMethodHandler({
         // Already settled (future: handle async confirmation)
         return { success: true };
     }
+});
+
+/**
+ * Credit Payment Handler
+ */
+export const creditPaymentHandler = new PaymentMethodHandler({
+    code: 'credit-payment',
+    description: [{
+        languageCode: LanguageCode.en,
+        value: 'Customer credit payment',
+    }],
+    args: {},
+    createPayment: async (ctx, order): Promise<CreatePaymentResult> => {
+        const customerId = order.customer?.id;
+
+        if (!customerId) {
+            throw new UserInputError('Credit payments require an associated customer.');
+        }
+
+        // Get CreditService from service locator
+        // Note: This requires the service to be set by a plugin during initialization
+        if (!creditServiceRef) {
+            throw new UserInputError('Credit service not initialized. Please ensure credit plugin is loaded.');
+        }
+
+        // Get credit summary
+        const summary = await creditServiceRef.getCreditSummary(ctx, customerId);
+
+        if (!summary.isCreditApproved) {
+            throw new UserInputError('Customer is not approved for credit purchases.');
+        }
+
+        if (summary.availableCredit < order.total) {
+            throw new UserInputError('Customer credit limit exceeded.');
+        }
+
+        // Apply credit charge
+        await creditServiceRef.applyCreditCharge(ctx, customerId, order.total);
+
+        return {
+            amount: order.total,
+            state: 'Authorized',
+            transactionId: `CREDIT-${Date.now()}`,
+            metadata: {
+                paymentType: 'credit',
+                customerId,
+                creditLimit: summary.creditLimit,
+                outstandingAmount: summary.outstandingAmount - order.total,
+            },
+        };
+    },
+    settlePayment: async (): Promise<SettlePaymentResult> => {
+        // Credit payment is already authorized in createPayment
+        // Settlement just confirms the authorization
+        return { success: true };
+    },
 });
 

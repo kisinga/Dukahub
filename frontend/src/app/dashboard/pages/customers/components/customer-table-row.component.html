@@ -13,30 +13,19 @@
       <!-- Name and Contact -->
       <div class="flex-1 min-w-0">
         <div class="font-semibold truncate">{{ getFullName() }}</div>
-        <div class="text-sm text-base-content/70 truncate">{{ getContactInfo() }}</div>
+        <div class="text-sm text-base-content/70 truncate">
+          @if (customer.emailAddress) {
+            <div class="truncate">{{ customer.emailAddress }}</div>
+          }
+          @if (customer.phoneNumber) {
+            <div class="text-base-content/60 truncate">{{ customer.phoneNumber }}</div>
+          }
+        </div>
       </div>
     </div>
   </td>
 
-  <!-- Contact Details -->
-  <td>
-    <div class="text-sm">
-      <div class="truncate">{{ customer.emailAddress }}</div>
-      @if (customer.phoneNumber) {
-        <div class="text-base-content/60">{{ customer.phoneNumber }}</div>
-      }
-    </div>
-  </td>
-
-  <!-- Addresses -->
-  <td>
-    <div class="text-center">
-      <div class="text-lg font-semibold text-primary">{{ getAddressCount() }}</div>
-      <div class="text-xs text-base-content/60">addresses</div>
-    </div>
-  </td>
-
-  <!-- Status -->
+  <!-- Verification Status -->
   <td>
     @if (isVerified()) {
       <div class="badge badge-success badge-sm gap-1">
@@ -50,9 +39,69 @@
     }
   </td>
 
-  <!-- Created Date -->
+  <!-- Credit Status -->
   <td>
-    <div class="text-sm">{{ getCreatedDate() }}</div>
+    @if (isCreditApproved()) {
+      <div class="badge badge-success badge-sm">Approved</div>
+    } @else {
+      <div class="badge badge-warning badge-sm">Not Approved</div>
+    }
+  </td>
+
+  <!-- Credit Limit -->
+  <td class="text-right text-sm">
+    @if (getCreditLimit() > 0) {
+      <div class="font-semibold">{{ formatCurrency(getCreditLimit()) }}</div>
+    } @else {
+      <span class="text-base-content/50">—</span>
+    }
+  </td>
+
+  <!-- Outstanding Amount -->
+  <td class="text-right text-sm">
+    @if (getOutstandingAmount() !== 0) {
+      <div [class.text-warning]="getOutstandingAmount() < 0" [class.text-success]="getOutstandingAmount() > 0">
+        {{ formatCurrency(getOutstandingAmountAbs()) }}
+      </div>
+      <div class="text-xs text-base-content/60">
+        {{ getOutstandingAmount() < 0 ? 'Owed' : 'Credit' }}
+      </div>
+    } @else {
+      <span class="text-base-content/50">—</span>
+    }
+  </td>
+
+  <!-- Available Credit -->
+  <td class="text-right text-sm">
+    @if (isCreditApproved() && getCreditLimit() > 0) {
+      <div [class.text-success]="getAvailableCredit() > 0" [class.text-error]="getAvailableCredit() === 0">
+        {{ formatCurrency(getAvailableCredit()) }}
+      </div>
+    } @else {
+      <span class="text-base-content/50">—</span>
+    }
+  </td>
+
+  <!-- Repayment Period -->
+  <td class="text-sm text-center">
+    @if (getCreditDuration() > 0) {
+      <div class="font-semibold">{{ getCreditDuration() }}</div>
+      <div class="text-xs text-base-content/60">days</div>
+    } @else {
+      <span class="text-base-content/50">—</span>
+    }
+  </td>
+
+  <!-- Last Repayment -->
+  <td class="text-sm">
+    @if (getLastRepaymentDate()) {
+      <div class="text-xs">{{ formatDate(getLastRepaymentDate()) }}</div>
+      @if (getLastRepaymentAmount() > 0) {
+        <div class="text-xs text-base-content/60">{{ formatCurrency(getLastRepaymentAmount()) }}</div>
+      }
+    } @else {
+      <span class="text-base-content/50">—</span>
+    }
   </td>
 
   <!-- Actions -->
@@ -64,15 +113,7 @@
         </svg>
       </div>
       <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-300">
-        <li>
-          <button (click)="onAction('view')" class="flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-            </svg>
-            View Details
-          </button>
-        </li>
+        @if (!isWalkInCustomer()) {
         <li>
           <button (click)="onAction('edit')" class="flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,6 +122,16 @@
             Edit Customer
           </button>
         </li>
+        } @else {
+        <li>
+          <button disabled class="flex items-center gap-2 opacity-50 cursor-not-allowed" title="Walk-in customers cannot be edited">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+            Edit (Locked)
+          </button>
+        </li>
+        }
         <li>
           <button (click)="onAction('delete')" class="flex items-center gap-2 text-error">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

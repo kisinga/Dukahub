@@ -115,7 +115,11 @@ export class OtpTokenAuthStrategy implements AuthenticationStrategy<{ username: 
             if (!this.nativeStrategy) {
                 return false;
             }
-            return this.nativeStrategy.authenticate(ctx, data);
+            if (typeof (this.nativeStrategy as any)?.init === 'function') {
+                await (this.nativeStrategy as any).init(this.injector);
+            }
+            const result = await this.nativeStrategy.authenticate(ctx, data);
+            return result;
         }
         
         // If it's an OTP token but Redis isn't available, we can't authenticate

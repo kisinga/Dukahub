@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
 import { CartService } from '../../../core/services/cart.service';
+import { CustomerService } from '../../../core/services/customer.service';
 import { CompanyService } from '../../../core/services/company.service';
 import { OrderService } from '../../../core/services/order.service';
 import { ProductSearchResult, ProductSearchService, ProductVariant } from '../../../core/services/product-search.service';
@@ -56,6 +57,7 @@ export class SellComponent implements OnInit {
   private readonly orderService = inject(OrderService);
   private readonly authService = inject(AuthService);
   private readonly cartService = inject(CartService);
+  private readonly customerService = inject(CustomerService);
 
   // Configuration
   readonly channelId = computed(() => this.companyService.activeCompanyId() || 'T_1');
@@ -307,43 +309,70 @@ export class SellComponent implements OnInit {
     }
 
     this.isSearchingCustomers.set(true);
+    this.checkoutError.set(null);
     try {
-      // TODO: Implement actual customer search via GraphQL
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      const mockCustomers: Customer[] = [
-        { id: '1', name: `Customer matching "${trimmed}"`, phone: '+254712345678' },
-        { id: '2', name: `Another ${trimmed}`, phone: '+254787654321', email: 'test@example.com' },
-      ];
-
-      this.customerSearchResults.set(mockCustomers);
+      const results = await this.customerService.searchCreditCustomers(trimmed);
+      this.customerSearchResults.set(results);
+      if (results.length === 0) {
+        this.checkoutError.set('No approved credit customers found.');
+      }
     } catch (error) {
       console.error('Customer search failed:', error);
       this.customerSearchResults.set([]);
+      this.checkoutError.set('Customer search failed. Please try again.');
     } finally {
       this.isSearchingCustomers.set(false);
     }
   }
 
-  handleCustomerSelect(customer: Customer | null): void {
-    this.selectedCustomer.set(customer);
+  async handleCustomerSelect(customer: Customer | null): Promise<void> {
+    this.checkoutError.set(null);
     this.customerSearchResults.set([]);
+
+    if (!customer) {
+      this.selectedCustomer.set(null);
+      return;
+    }
+
+    try {
+      const { summary, error } = await this.customerService.validateCustomerCredit(
+        customer.id,
+        this.cartTotal(),
+        customer
+      );
+      this.selectedCustomer.set(summary);
+      if (error) {
+        this.checkoutError.set(error);
+      }
+    } catch (error) {
+      console.error('Failed to validate customer credit:', error);
+      this.checkoutError.set('Unable to validate customer credit. Please try again.');
+      this.selectedCustomer.set(null);
+    }
   }
 
   async handleCustomerCreate(data: { name: string; phone: string; email?: string }): Promise<void> {
     this.isProcessingCheckout.set(true);
+    this.checkoutError.set(null);
     try {
-      // TODO: Implement actual customer creation via GraphQL
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const customerId = await this.customerService.quickCreateCustomer(data);
+      if (!customerId) {
+        this.checkoutError.set('Failed to create customer. Please try again.');
+        return;
+      }
 
-      const newCustomer: Customer = {
-        id: `new-${Date.now()}`,
+      const summary = await this.customerService.getCreditSummary(customerId, {
         name: data.name,
         phone: data.phone,
         email: data.email,
-      };
+        isCreditApproved: false,
+        creditLimit: 0,
+        outstandingAmount: 0,
+        availableCredit: 0,
+      });
 
-      this.selectedCustomer.set(newCustomer);
+      this.selectedCustomer.set(summary);
+      this.checkoutError.set('Customer created. Await credit approval before completing the sale.');
     } catch (error) {
       console.error('Failed to create customer:', error);
       this.checkoutError.set('Failed to create customer. Please try again.');
@@ -404,8 +433,38 @@ export class SellComponent implements OnInit {
       return;
     }
 
+    const selected = this.selectedCustomer();
+    if (!selected) {
+      this.checkoutError.set('Please select or create a customer');
+      return;
+    }
+
     this.isProcessingCheckout.set(true);
     this.checkoutError.set(null);
+
+    let validatedCustomer = selected;
+    try {
+      const validation = await this.customerService.validateCustomerCredit(
+        selected.id,
+        this.cartTotal(),
+        selected
+      );
+      validatedCustomer = validation.summary;
+      this.selectedCustomer.set(validation.summary);
+
+      if (validation.error) {
+        this.checkoutError.set(validation.error);
+        this.isProcessingCheckout.set(false);
+        return;
+      }
+    } catch (error) {
+      console.error('Credit validation failed:', error);
+      this.checkoutError.set('Failed to validate credit before checkout.');
+      this.isProcessingCheckout.set(false);
+      return;
+    }
+
+    const customerName = validatedCustomer.name;
 
     try {
       const order = await this.orderService.createOrder({
@@ -416,12 +475,12 @@ export class SellComponent implements OnInit {
           priceOverrideReason: item.priceOverrideReason
         })),
         paymentMethodCode: 'credit-payment',
-        customerId: this.selectedCustomer()?.id,
+        customerId: validatedCustomer.id,
         isCreditSale: true,
         metadata: {
           creditSale: true,
-          customerId: this.selectedCustomer()?.id,
-          customerName: this.selectedCustomer()?.name
+          customerId: validatedCustomer.id,
+          customerName
         }
       });
 
@@ -432,9 +491,10 @@ export class SellComponent implements OnInit {
       this.cartItems.set([]);
       this.showCheckoutModal.set(false);
       this.showNotification(
-        `Credit sale created for ${this.selectedCustomer()?.name} - Order ${order.code}`,
+        `Credit sale created for ${customerName} - Order ${order.code}`,
         'success'
       );
+      this.selectedCustomer.set(null);
     } catch (error) {
       console.error('Credit sale failed:', error);
       this.checkoutError.set('Failed to create credit sale. Please try again.');

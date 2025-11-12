@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 export interface CustomerStats {
   totalCustomers: number;
   verifiedCustomers: number;
-  customersWithAddresses: number;
+  creditApprovedCustomers: number;
   recentCustomers: number;
 }
 

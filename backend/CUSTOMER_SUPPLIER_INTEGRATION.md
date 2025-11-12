@@ -72,6 +72,26 @@ Customer: [
         ui: { tab: 'Supplier Info' },
     },
     {
+        name: 'isCreditApproved',
+        type: 'boolean',
+        label: [{ languageCode: LanguageCode.en, value: 'Credit Approved' }],
+        description: [{ languageCode: LanguageCode.en, value: 'Whether the customer is eligible for credit purchases' }],
+        defaultValue: false,
+        public: false,
+        nullable: false,
+        ui: { tab: 'Financial' },
+    },
+    {
+        name: 'creditLimit',
+        type: 'float',
+        label: [{ languageCode: LanguageCode.en, value: 'Credit Limit' }],
+        description: [{ languageCode: LanguageCode.en, value: 'Maximum allowed credit balance in currency units' }],
+        defaultValue: 0,
+        public: false,
+        nullable: false,
+        ui: { tab: 'Financial' },
+    },
+    {
         name: 'outstandingAmount',
         type: 'float',
         label: [{ languageCode: LanguageCode.en, value: 'Outstanding Amount' }],
@@ -290,6 +310,13 @@ ALTER TABLE customer ADD COLUMN IF NOT EXISTS "customFieldsOutstandingamount" DO
 5. **KISS Principle** - Simple, maintainable implementation
 6. **Scalable** - Foundation for future payment and accounting features
 7. **Consistent UX** - Shared components ensure consistent user experience
+
+### Credit Management Workflow (Nov 2025)
+
+- Credit approvals and limit adjustments flow through the new credit plugin (`backend/src/plugins/credit`).
+- Back-office roles need the custom permissions `ApproveCustomerCredit` (toggle eligibility) and `ManageCustomerCreditLimit` (set ceilings).
+- The POS blocks credit checkout unless the customer is approved **and** `creditLimit - abs(outstandingAmount)` covers the cart total.
+- The admin dashboard now exposes `/dashboard/credit`, allowing staff to review balances, approve/revoke credit, and adjust limits inline.
 
 ## Future Enhancements
 

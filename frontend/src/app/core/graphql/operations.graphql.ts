@@ -1073,7 +1073,12 @@ export const GET_CUSTOMERS = graphql(`
           taxId
           paymentTerms
           notes
+          isCreditApproved
+          creditLimit
           outstandingAmount
+          lastRepaymentDate
+          lastRepaymentAmount
+          creditDuration
         }
         addresses {
           id
@@ -1170,6 +1175,8 @@ export const CREATE_CUSTOMER = graphql(`
           taxId
           paymentTerms
           notes
+          isCreditApproved
+          creditLimit
           outstandingAmount
         }
       }
@@ -1198,6 +1205,8 @@ export const UPDATE_CUSTOMER = graphql(`
           taxId
           paymentTerms
           notes
+          isCreditApproved
+          creditLimit
           outstandingAmount
         }
       }
@@ -1263,6 +1272,70 @@ export const DELETE_CUSTOMER_ADDRESS = graphql(`
 `);
 
 // ============================================================================
+// CREDIT MANAGEMENT
+// ============================================================================
+
+export const GET_CREDIT_SUMMARY = graphql(`
+  query GetCreditSummary($customerId: ID!) {
+    creditSummary(customerId: $customerId) {
+      customerId
+      isCreditApproved
+      creditLimit
+      outstandingAmount
+      availableCredit
+      lastRepaymentDate
+      lastRepaymentAmount
+      creditDuration
+    }
+  }
+`);
+
+export const APPROVE_CUSTOMER_CREDIT = graphql(`
+  mutation ApproveCustomerCredit($input: ApproveCustomerCreditInput!) {
+    approveCustomerCredit(input: $input) {
+      customerId
+      isCreditApproved
+      creditLimit
+      outstandingAmount
+      availableCredit
+      lastRepaymentDate
+      lastRepaymentAmount
+      creditDuration
+    }
+  }
+`);
+
+export const UPDATE_CUSTOMER_CREDIT_LIMIT = graphql(`
+  mutation UpdateCustomerCreditLimit($input: UpdateCustomerCreditLimitInput!) {
+    updateCustomerCreditLimit(input: $input) {
+      customerId
+      isCreditApproved
+      creditLimit
+      outstandingAmount
+      availableCredit
+      lastRepaymentDate
+      lastRepaymentAmount
+      creditDuration
+    }
+  }
+`);
+
+export const UPDATE_CREDIT_DURATION = graphql(`
+  mutation UpdateCreditDuration($input: UpdateCreditDurationInput!) {
+    updateCreditDuration(input: $input) {
+      customerId
+      isCreditApproved
+      creditLimit
+      outstandingAmount
+      availableCredit
+      lastRepaymentDate
+      lastRepaymentAmount
+      creditDuration
+    }
+  }
+`);
+
+// ============================================================================
 // PRICE OVERRIDE OPERATIONS
 // ============================================================================
 
@@ -1316,6 +1389,8 @@ export const GET_SUPPLIERS = graphql(`
           taxId
           paymentTerms
           notes
+          isCreditApproved
+          creditLimit
           outstandingAmount
         }
         addresses {
@@ -1353,7 +1428,12 @@ export const GET_SUPPLIER = graphql(`
         taxId
         paymentTerms
         notes
+        isCreditApproved
+        creditLimit
         outstandingAmount
+        lastRepaymentDate
+        lastRepaymentAmount
+        creditDuration
       }
       addresses {
         id
@@ -1389,6 +1469,8 @@ export const CREATE_SUPPLIER = graphql(`
           taxId
           paymentTerms
           notes
+          isCreditApproved
+          creditLimit
           outstandingAmount
         }
       }
@@ -1437,24 +1519,6 @@ export const DELETE_SUPPLIER = graphql(`
   }
 `);
 
-// ============================================================================
-// CHANNEL SETTINGS
-// ============================================================================
-
-export const GET_CHANNEL_SETTINGS = graphql(`
-  query GetChannelSettings {
-    getChannelSettings {
-      cashierFlowEnabled
-      cashierOpen
-      companyLogoAsset {
-        id
-        source
-        preview
-      }
-    }
-  }
-`);
-
 export const UPDATE_CHANNEL_SETTINGS = graphql(`
   mutation UpdateChannelSettings($input: UpdateChannelSettingsInput!) {
     updateChannelSettings(input: $input) {
@@ -1464,22 +1528,6 @@ export const UPDATE_CHANNEL_SETTINGS = graphql(`
         id
         source
         preview
-      }
-    }
-  }
-`);
-
-export const GET_CHANNEL_ADMINISTRATORS = graphql(`
-  query GetChannelAdministrators {
-    getChannelAdministrators {
-      id
-      firstName
-      lastName
-      emailAddress
-      user {
-        id
-        identifier
-        verified
       }
     }
   }
@@ -1496,20 +1544,26 @@ export const INVITE_CHANNEL_ADMINISTRATOR = graphql(`
   }
 `);
 
-export const GET_CHANNEL_PAYMENT_METHODS = graphql(`
-  query GetChannelPaymentMethods {
-    getChannelPaymentMethods {
-      id
-      code
-      name
-      description
-      enabled
-      customFields {
-        imageAsset {
+export const GET_ADMINISTRATORS = graphql(`
+  query GetAdministrators($options: AdministratorListOptions) {
+    administrators(options: $options) {
+      items {
+        id
+        firstName
+        lastName
+        emailAddress
+        user {
           id
-          preview
+          identifier
+          verified
+          roles {
+            id
+            code
+            channels {
+              id
+            }
+          }
         }
-        isActive
       }
     }
   }

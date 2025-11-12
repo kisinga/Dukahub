@@ -99,6 +99,20 @@ export class AuthService {
     return hasPermission;
   });
 
+  readonly hasCreditManagementPermission = computed(() => {
+    const user = this.userSignal();
+    if (!user?.user?.roles) return false;
+
+    const hasPermission = user.user.roles.some(role =>
+      role.permissions.some(permission => {
+        const value = String(permission);
+        return value === 'ApproveCustomerCredit' || value === 'ManageCustomerCreditLimit';
+      })
+    );
+
+    return hasPermission;
+  });
+
   constructor() {
     // Register session expiration handler with Apollo service
     this.apolloService.onSessionExpired(() => {
