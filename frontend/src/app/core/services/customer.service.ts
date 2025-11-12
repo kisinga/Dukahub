@@ -1,13 +1,17 @@
 import { inject, Injectable, signal } from '@angular/core';
 import {
+    APPROVE_CUSTOMER_CREDIT,
     CREATE_CUSTOMER,
     CREATE_CUSTOMER_ADDRESS,
     DELETE_CUSTOMER,
     DELETE_CUSTOMER_ADDRESS,
+    GET_CREDIT_SUMMARY,
     GET_CUSTOMER,
     GET_CUSTOMERS,
+    UPDATE_CREDIT_DURATION,
     UPDATE_CUSTOMER,
-    UPDATE_CUSTOMER_ADDRESS
+    UPDATE_CUSTOMER_ADDRESS,
+    UPDATE_CUSTOMER_CREDIT_LIMIT
 } from '../graphql/operations.graphql';
 import { formatPhoneNumber } from '../utils/phone.utils';
 import { ApolloService } from './apollo.service';
@@ -34,6 +38,45 @@ export interface CustomerAddressInput {
     postalCode: string;
     countryCode: string;
     phoneNumber?: string;
+}
+
+/**
+ * Credit customer summary interface
+ */
+export interface CreditCustomerSummary {
+    id: string;
+    name: string;
+    phone?: string;
+    email?: string;
+    isCreditApproved: boolean;
+    creditLimit: number;
+    outstandingAmount: number;
+    availableCredit: number;
+    lastRepaymentDate?: string | null;
+    lastRepaymentAmount: number;
+    creditDuration: number;
+}
+
+interface CustomerRecord {
+    id: string;
+    firstName: string;
+    lastName: string;
+    emailAddress?: string | null;
+    phoneNumber?: string | null;
+    customFields?: {
+        isSupplier?: boolean | null;
+        supplierType?: string | null;
+        contactPerson?: string | null;
+        taxId?: string | null;
+        paymentTerms?: string | null;
+        notes?: string | null;
+        outstandingAmount?: number | null;
+        isCreditApproved?: boolean | null;
+        creditLimit?: number | null;
+        lastRepaymentDate?: string | null;
+        lastRepaymentAmount?: number | null;
+        creditDuration?: number | null;
+    } | null;
 }
 
 /**
@@ -325,9 +368,391 @@ export class CustomerService {
     }
 
     /**
+     * Search for customers eligible for credit sales.
+     */
+    async searchCreditCustomers(term: string, take = 50): Promise<CreditCustomerSummary[]> {
+        const normalizedTerm = term.trim().toLowerCase();
+        if (normalizedTerm.length === 0) {
+            return [];
+        }
+
+        const client = this.apolloService.getClient();
+        const result = await client.query<{ customers: { items: CustomerRecord[] } }>({
+            query: GET_CUSTOMERS,
+            variables: {
+                options: {
+                    take,
+                    skip: 0,
+                    filter: {
+                        firstName: { contains: term },
+                    },
+                },
+            },
+            fetchPolicy: 'network-only',
+        });
+
+        const items = result.data?.customers?.items ?? [];
+        return items
+            .filter((customer) => Boolean(customer.customFields?.isCreditApproved))
+            .map((customer) => this.mapToCreditSummary(customer))
+            .filter((customer) => {
+                const phone = customer.phone?.toLowerCase() ?? '';
+                return (
+                    customer.name.toLowerCase().includes(normalizedTerm) ||
+                    phone.includes(normalizedTerm)
+                );
+            })
+            .sort((a, b) => b.availableCredit - a.availableCredit)
+            .slice(0, 20);
+    }
+
+    /**
+     * Retrieve up-to-date credit summary for a customer.
+     */
+    async getCreditSummary(
+        customerId: string,
+        base?: Partial<CreditCustomerSummary>
+    ): Promise<CreditCustomerSummary> {
+        const client = this.apolloService.getClient();
+
+        try {
+            const result = await client.query<{
+                creditSummary: {
+                    customerId: string;
+                    isCreditApproved: boolean;
+                    creditLimit: number;
+                    outstandingAmount: number;
+                    availableCredit: number;
+                    lastRepaymentDate?: string | null;
+                    lastRepaymentAmount: number;
+                    creditDuration: number;
+                };
+            }>({
+                query: GET_CREDIT_SUMMARY,
+                variables: { customerId },
+                fetchPolicy: 'network-only',
+            });
+
+            const summary = result.data?.creditSummary;
+            if (!summary) {
+                throw new Error('Credit summary unavailable');
+            }
+
+            return {
+                id: summary.customerId,
+                name: base?.name ?? '',
+                phone: base?.phone,
+                email: base?.email,
+                isCreditApproved: summary.isCreditApproved,
+                creditLimit: summary.creditLimit,
+                outstandingAmount: summary.outstandingAmount,
+                availableCredit: summary.availableCredit,
+                lastRepaymentDate: summary.lastRepaymentDate,
+                lastRepaymentAmount: summary.lastRepaymentAmount,
+                creditDuration: summary.creditDuration,
+            };
+        } catch (error) {
+            console.warn('⚠️ Failed to load credit summary from API, falling back to cached data.', error);
+            if (!base) {
+                throw error;
+            }
+            return {
+                id: customerId,
+                name: base.name ?? '',
+                phone: base.phone,
+                email: base.email,
+                isCreditApproved: base.isCreditApproved ?? false,
+                creditLimit: base.creditLimit ?? 0,
+                outstandingAmount: base.outstandingAmount ?? 0,
+                availableCredit: Math.max(
+                    (base.creditLimit ?? 0) - Math.abs(base.outstandingAmount ?? 0),
+                    0
+                ),
+                lastRepaymentDate: base.lastRepaymentDate,
+                lastRepaymentAmount: base.lastRepaymentAmount ?? 0,
+                creditDuration: base.creditDuration ?? 30,
+            };
+        }
+    }
+
+    /**
+     * Validate credit availability for a given order total.
+     */
+    async validateCustomerCredit(
+        customerId: string,
+        orderTotal: number,
+        base?: Partial<CreditCustomerSummary>
+    ): Promise<{ summary: CreditCustomerSummary; error?: string }> {
+        const summary = await this.getCreditSummary(customerId, base);
+
+        if (!summary.isCreditApproved) {
+            return {
+                summary,
+                error: 'Customer is not approved for credit purchases yet.',
+            };
+        }
+
+        if (summary.availableCredit < orderTotal) {
+            return {
+                summary,
+                error: `Insufficient credit. Available balance: ${summary.availableCredit.toFixed(2)}`,
+            };
+        }
+
+        return { summary };
+    }
+
+    /**
+     * Quickly create a customer record for checkout flows.
+     */
+    async quickCreateCustomer(input: { name: string; phone: string; email?: string }): Promise<string | null> {
+        const { firstName, lastName } = this.splitName(input.name);
+        return this.createCustomer({
+            firstName,
+            lastName,
+            emailAddress: input.email || '',
+            phoneNumber: input.phone,
+        });
+    }
+
+    async listCreditCustomers(take = 200): Promise<CreditCustomerSummary[]> {
+        const client = this.apolloService.getClient();
+        const result = await client.query<{ customers: { items: CustomerRecord[] } }>({
+            query: GET_CUSTOMERS,
+            variables: {
+                options: {
+                    take,
+                    skip: 0,
+                    sort: {
+                        createdAt: 'DESC',
+                    },
+                },
+            },
+            fetchPolicy: 'network-only',
+        });
+
+        const items = result.data?.customers?.items ?? [];
+        return items.map((customer) => this.mapToCreditSummary(customer));
+    }
+
+    async approveCustomerCredit(
+        customerId: string,
+        approved: boolean,
+        creditLimit?: number,
+        base?: Partial<CreditCustomerSummary>,
+        creditDuration?: number
+    ): Promise<CreditCustomerSummary> {
+        const client = this.apolloService.getClient();
+        try {
+            const result = await client.mutate<{
+                approveCustomerCredit: {
+                    customerId: string;
+                    isCreditApproved: boolean;
+                    creditLimit: number;
+                    outstandingAmount: number;
+                    availableCredit: number;
+                    lastRepaymentDate?: string | null;
+                    lastRepaymentAmount: number;
+                    creditDuration: number;
+                };
+            }>({
+                mutation: APPROVE_CUSTOMER_CREDIT,
+                variables: {
+                    input: {
+                        customerId,
+                        approved,
+                        creditLimit,
+                        creditDuration,
+                    },
+                },
+            });
+
+            if (result.error) {
+                console.error('❌ GraphQL error:', result.error);
+                const errorMessage = result.error.message || 'Unknown error';
+                throw new Error(`Failed to update customer credit approval: ${errorMessage}`);
+            }
+
+            const summary = result.data?.approveCustomerCredit;
+            if (!summary) {
+                throw new Error('Failed to update customer credit approval: No data returned.');
+            }
+
+            return {
+                id: summary.customerId,
+                name: base?.name ?? '',
+                phone: base?.phone,
+                email: base?.email,
+                isCreditApproved: summary.isCreditApproved,
+                creditLimit: summary.creditLimit,
+                outstandingAmount: summary.outstandingAmount,
+                availableCredit: summary.availableCredit,
+                lastRepaymentDate: summary.lastRepaymentDate,
+                lastRepaymentAmount: summary.lastRepaymentAmount,
+                creditDuration: summary.creditDuration,
+            };
+        } catch (error: any) {
+            console.error('Error in approveCustomerCredit:', error);
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error(`Failed to update customer credit approval: ${error?.message || 'Unknown error'}`);
+        }
+    }
+
+    async updateCustomerCreditLimit(
+        customerId: string,
+        creditLimit: number,
+        base?: Partial<CreditCustomerSummary>,
+        creditDuration?: number
+    ): Promise<CreditCustomerSummary> {
+        const client = this.apolloService.getClient();
+        const result = await client.mutate<{
+            updateCustomerCreditLimit: {
+                customerId: string;
+                isCreditApproved: boolean;
+                creditLimit: number;
+                outstandingAmount: number;
+                availableCredit: number;
+                lastRepaymentDate?: string | null;
+                lastRepaymentAmount: number;
+                creditDuration: number;
+            };
+        }>({
+            mutation: UPDATE_CUSTOMER_CREDIT_LIMIT,
+            variables: {
+                input: {
+                    customerId,
+                    creditLimit,
+                    creditDuration,
+                },
+            },
+        });
+
+        if (result.error) {
+            console.error('❌ GraphQL error:', result.error);
+            const errorMessage = result.error.message || 'Unknown error';
+            throw new Error(`Failed to update customer credit limit: ${errorMessage}`);
+        }
+
+        const summary = result.data?.updateCustomerCreditLimit;
+        if (!summary) {
+            throw new Error('Failed to update customer credit limit: No data returned.');
+        }
+
+        return {
+            id: summary.customerId,
+            name: base?.name ?? '',
+            phone: base?.phone,
+            email: base?.email,
+            isCreditApproved: summary.isCreditApproved,
+            creditLimit: summary.creditLimit,
+            outstandingAmount: summary.outstandingAmount,
+            availableCredit: summary.availableCredit,
+            lastRepaymentDate: summary.lastRepaymentDate,
+            lastRepaymentAmount: summary.lastRepaymentAmount,
+            creditDuration: summary.creditDuration,
+        };
+    }
+
+    async updateCreditDuration(
+        customerId: string,
+        creditDuration: number,
+        base?: Partial<CreditCustomerSummary>
+    ): Promise<CreditCustomerSummary> {
+        const client = this.apolloService.getClient();
+        const result = await client.mutate<{
+            updateCreditDuration: {
+                customerId: string;
+                isCreditApproved: boolean;
+                creditLimit: number;
+                outstandingAmount: number;
+                availableCredit: number;
+                lastRepaymentDate?: string | null;
+                lastRepaymentAmount: number;
+                creditDuration: number;
+            };
+        }>({
+            mutation: UPDATE_CREDIT_DURATION,
+            variables: {
+                input: {
+                    customerId,
+                    creditDuration,
+                },
+            },
+        });
+
+        if (result.error) {
+            console.error('❌ GraphQL error:', result.error);
+            const errorMessage = result.error.message || 'Unknown error';
+            throw new Error(`Failed to update customer credit duration: ${errorMessage}`);
+        }
+
+        const summary = result.data?.updateCreditDuration;
+        if (!summary) {
+            throw new Error('Failed to update customer credit duration: No data returned.');
+        }
+
+        return {
+            id: summary.customerId,
+            name: base?.name ?? '',
+            phone: base?.phone,
+            email: base?.email,
+            isCreditApproved: summary.isCreditApproved,
+            creditLimit: summary.creditLimit,
+            outstandingAmount: summary.outstandingAmount,
+            availableCredit: summary.availableCredit,
+            lastRepaymentDate: summary.lastRepaymentDate,
+            lastRepaymentAmount: summary.lastRepaymentAmount,
+            creditDuration: summary.creditDuration,
+        };
+    }
+
+    /**
      * Clear error state
      */
     clearError(): void {
         this.errorSignal.set(null);
+    }
+
+    private mapToCreditSummary(customer: CustomerRecord): CreditCustomerSummary {
+        const creditLimit = Number(customer.customFields?.creditLimit ?? 0);
+        const outstandingAmount = Number(customer.customFields?.outstandingAmount ?? 0);
+        const availableCredit = Math.max(creditLimit - Math.abs(outstandingAmount), 0);
+        const lastRepaymentDate = customer.customFields?.lastRepaymentDate ?? null;
+        const lastRepaymentAmount = Number(customer.customFields?.lastRepaymentAmount ?? 0);
+        const creditDuration = Number(customer.customFields?.creditDuration ?? 30);
+
+        return {
+            id: customer.id,
+            name: this.buildDisplayName(customer),
+            phone: customer.phoneNumber ?? undefined,
+            email: customer.emailAddress ?? undefined,
+            isCreditApproved: Boolean(customer.customFields?.isCreditApproved),
+            creditLimit,
+            outstandingAmount,
+            availableCredit,
+            lastRepaymentDate,
+            lastRepaymentAmount,
+            creditDuration,
+        };
+    }
+
+    private buildDisplayName(customer: CustomerRecord): string {
+        const parts = [customer.firstName, customer.lastName].filter(Boolean);
+        return parts.join(' ').trim();
+    }
+
+    private splitName(name: string): { firstName: string; lastName: string } {
+        const trimmed = name.trim();
+        if (!trimmed.includes(' ')) {
+            return { firstName: trimmed, lastName: 'POS' };
+        }
+
+        const [firstName, ...rest] = trimmed.split(' ');
+        return {
+            firstName,
+            lastName: rest.join(' ') || 'POS',
+        };
     }
 }

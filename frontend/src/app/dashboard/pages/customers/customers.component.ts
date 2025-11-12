@@ -92,7 +92,7 @@ export class CustomersComponent implements OnInit {
         const customers = this.customers();
         const totalCustomers = customers.length;
         const verifiedCustomers = customers.filter(c => c.user?.verified).length;
-        const customersWithAddresses = customers.filter(c => c.addresses?.length > 0).length;
+        const creditApprovedCustomers = customers.filter(c => c.customFields?.isCreditApproved).length;
         const recentCustomers = customers.filter(c => {
             const createdAt = new Date(c.createdAt);
             const thirtyDaysAgo = new Date();
@@ -100,7 +100,7 @@ export class CustomersComponent implements OnInit {
             return createdAt >= thirtyDaysAgo;
         }).length;
 
-        return { totalCustomers, verifiedCustomers, customersWithAddresses, recentCustomers };
+        return { totalCustomers, verifiedCustomers, creditApprovedCustomers, recentCustomers };
     });
 
     // Computed: end item for pagination display
@@ -124,18 +124,30 @@ export class CustomersComponent implements OnInit {
     }
 
     /**
+     * Check if customer is a walk-in customer
+     */
+    private isWalkInCustomer(customerId: string): boolean {
+        const customer = this.customers().find(c => c.id === customerId);
+        if (!customer) return false;
+        const email = customer.emailAddress?.toLowerCase() || '';
+        const firstName = customer.firstName?.toLowerCase() || '';
+        return email === 'walkin@pos.local' || firstName === 'walk-in';
+    }
+
+    /**
      * Handle customer actions (view, edit, delete)
      */
     onCustomerAction(event: { action: CustomerAction; customerId: string }): void {
         const { action, customerId } = event;
 
         switch (action) {
-            case 'view':
-                // Navigate to customer detail view (to be implemented)
-                console.log('View customer:', customerId);
-                break;
-
             case 'edit':
+                // Prevent editing walk-in customers
+                if (this.isWalkInCustomer(customerId)) {
+                    console.warn('Cannot edit walk-in customer:', customerId);
+                    // Could show a toast notification here
+                    return;
+                }
                 this.router.navigate(['/dashboard/customers/edit', customerId]);
                 break;
 

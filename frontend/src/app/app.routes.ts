@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, noAuthGuard } from './core/guards/auth.guard';
+import { creditGuard } from './core/guards/credit.guard';
 import { settingsGuard } from './core/guards/settings.guard';
 
 export const routes: Routes = [
@@ -66,6 +67,14 @@ export const routes: Routes = [
                 loadComponent: () =>
                     import('./dashboard/pages/customers/customers.component').then(
                         (m) => m.CustomersComponent
+                    )
+            },
+            {
+                path: 'credit',
+                canActivate: [creditGuard],
+                loadComponent: () =>
+                    import('./dashboard/pages/credit/credit.component').then(
+                        (m) => m.CreditComponent
                     )
             },
             {

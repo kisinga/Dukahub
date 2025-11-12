@@ -38,6 +38,10 @@ export class DashboardLayoutComponent implements OnInit {
             { label: 'Reports', icon: '📈', route: '/dashboard/reports' },
         ];
 
+        if (this.authService.hasCreditManagementPermission()) {
+            baseItems.splice(4, 0, { label: 'Credit', icon: '💳', route: '/dashboard/credit' });
+        }
+
         // Only add Settings if user has UpdateSettings permission
         if (this.authService.hasUpdateSettingsPermission()) {
             baseItems.push({ label: 'Settings', icon: '⚙️', route: '/dashboard/settings' });

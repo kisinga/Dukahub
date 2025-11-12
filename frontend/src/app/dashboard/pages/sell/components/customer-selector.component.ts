@@ -6,6 +6,10 @@ export interface Customer {
   name: string;
   phone?: string;
   email?: string;
+  isCreditApproved: boolean;
+  creditLimit: number;
+  outstandingAmount: number;
+  availableCredit: number;
 }
 
 /**
@@ -57,6 +61,16 @@ export interface Customer {
               <div class="flex-1 min-w-0">
                 <div class="font-semibold text-base truncate">{{ customer.name }}</div>
                 <div class="text-sm text-base-content/60">{{ customer.phone }}</div>
+                <div class="mt-2 grid grid-cols-2 gap-2 text-xs text-base-content/70">
+                  <div class="badge badge-outline badge-success justify-start gap-1">
+                    <span>Available</span>
+                    <span class="font-semibold">{{ customer.availableCredit | number:'1.0-0' }}</span>
+                  </div>
+                  <div class="badge badge-outline justify-start gap-1" [class.badge-error]="customer.outstandingAmount < 0">
+                    <span>Owing</span>
+                    <span class="font-semibold">{{ customer.outstandingAmount | number:'1.0-0' }}</span>
+                  </div>
+                </div>
               </div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -200,6 +214,30 @@ export interface Customer {
               <div class="text-sm text-base-content/60">{{ selectedCustomer()!.phone }}</div>
               @if (selectedCustomer()!.email) {
               <div class="text-sm text-base-content/60">{{ selectedCustomer()!.email }}</div>
+              }
+              <div class="mt-3 grid grid-cols-3 gap-2 text-xs">
+                <div class="bg-base-100/60 rounded-lg p-2 text-center">
+                  <div class="font-semibold text-base-content/70">Limit</div>
+                  <div class="font-bold text-base-content">{{ selectedCustomer()!.creditLimit | number:'1.0-0' }}</div>
+                </div>
+                <div class="bg-base-100/60 rounded-lg p-2 text-center">
+                  <div class="font-semibold text-base-content/70">Outstanding</div>
+                  <div class="font-bold text-base-content">{{ selectedCustomer()!.outstandingAmount | number:'1.0-0' }}</div>
+                </div>
+                <div class="bg-base-100 rounded-lg p-2 text-center">
+                  <div class="font-semibold text-base-content/70">Available</div>
+                  <div class="font-bold text-success">{{ selectedCustomer()!.availableCredit | number:'1.0-0' }}</div>
+                </div>
+              </div>
+              @if (!selectedCustomer()!.isCreditApproved) {
+              <div class="alert alert-warning mt-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-sm">Customer pending credit approval</span>
+              </div>
               }
             </div>
             <button

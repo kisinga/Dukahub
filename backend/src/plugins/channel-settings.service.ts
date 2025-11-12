@@ -14,6 +14,7 @@ import {
     TransactionalConnection
 } from '@vendure/core';
 import { OverridePricePermission } from './price-override.permission';
+import { ApproveCustomerCreditPermission, ManageCustomerCreditLimitPermission } from './credit/permissions';
 
 export interface ChannelSettings {
     cashierFlowEnabled: boolean;
@@ -159,6 +160,8 @@ export class ChannelSettingsService {
                     Permission.ReadSettings,
                     Permission.UpdateSettings,
                     OverridePricePermission.Permission,
+                    ApproveCustomerCreditPermission.Permission,
+                    ManageCustomerCreditLimitPermission.Permission,
                 ],
                 channelIds: [ctx.channelId!],
             };

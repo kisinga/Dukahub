@@ -20,12 +20,14 @@ import { ChannelSettingsPlugin } from './plugins/channel-settings.plugin';
 import { FractionalQuantityPlugin } from './plugins/fractional-quantity.plugin';
 import { MlModelPlugin } from './plugins/ml-model.plugin';
 import { NotificationPlugin } from './plugins/notification.plugin';
-import { cashPaymentHandler, mpesaPaymentHandler } from './plugins/payment-handlers';
+import { cashPaymentHandler, creditPaymentHandler, mpesaPaymentHandler } from './plugins/payment-handlers';
 import { PhoneAuthPlugin } from './plugins/phone-auth.plugin';
 import { OverridePricePermission } from './plugins/price-override.permission';
+import { ApproveCustomerCreditPermission, ManageCustomerCreditLimitPermission } from './plugins/credit/permissions';
 import { PriceOverridePlugin } from './plugins/price-override.plugin';
 import { SubscriptionTier } from './plugins/subscription.entity';
 import { SubscriptionPlugin } from './plugins/subscription.plugin';
+import { CreditPlugin } from './plugins/credit/credit.plugin';
 
 // Load environment variables from .env file for local development
 // Docker containers get env vars from docker-compose (these override .env)
@@ -108,7 +110,11 @@ export const config: VendureConfig = {
             sameSite: 'lax',
             secure: COOKIE_SECURE,
         },
-        customPermissions: [OverridePricePermission],
+        customPermissions: [
+            OverridePricePermission,
+            ApproveCustomerCreditPermission,
+            ManageCustomerCreditLimitPermission,
+        ],
         // OTP token auth strategy will be registered by PhoneAuthPlugin before bootstrap
         // It must be first in the array to be found by getAuthenticationStrategy (which uses find())
     },
@@ -129,6 +135,7 @@ export const config: VendureConfig = {
         paymentMethodHandlers: [
             cashPaymentHandler,
             mpesaPaymentHandler,
+            creditPaymentHandler,
         ],
     },
     // ML Model Management: Tag-based versioning + custom field activation
@@ -475,12 +482,76 @@ export const config: VendureConfig = {
                 ui: { tab: 'Supplier Info' },
             },
             {
+                name: 'isCreditApproved',
+                type: 'boolean',
+                label: [{ languageCode: LanguageCode.en, value: 'Credit Approved' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Indicates whether the customer is eligible for credit purchases',
+                }],
+                defaultValue: false,
+                public: false,
+                nullable: false,
+                ui: { tab: 'Financial' },
+            },
+            {
+                name: 'creditLimit',
+                type: 'float',
+                label: [{ languageCode: LanguageCode.en, value: 'Credit Limit' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Maximum credit balance allowed for this customer',
+                }],
+                defaultValue: 0,
+                public: false,
+                nullable: false,
+                ui: { tab: 'Financial' },
+            },
+            {
                 name: 'outstandingAmount',
                 type: 'float',
                 label: [{ languageCode: LanguageCode.en, value: 'Outstanding Amount' }],
                 description: [{ languageCode: LanguageCode.en, value: 'Amount owed to this supplier (positive) or amount customer owes (negative)' }],
                 defaultValue: 0,
                 public: true,
+                nullable: false,
+                ui: { tab: 'Financial' },
+            },
+            {
+                name: 'lastRepaymentDate',
+                type: 'datetime',
+                label: [{ languageCode: LanguageCode.en, value: 'Last Repayment Date' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Date of the last credit repayment made by this customer',
+                }],
+                public: false,
+                nullable: true,
+                ui: { tab: 'Financial' },
+            },
+            {
+                name: 'lastRepaymentAmount',
+                type: 'float',
+                label: [{ languageCode: LanguageCode.en, value: 'Last Repayment Amount' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Amount of the last credit repayment made by this customer',
+                }],
+                defaultValue: 0,
+                public: false,
+                nullable: false,
+                ui: { tab: 'Financial' },
+            },
+            {
+                name: 'creditDuration',
+                type: 'int',
+                label: [{ languageCode: LanguageCode.en, value: 'Credit Duration (days)' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Number of days credit is extended to this customer before repayment is due',
+                }],
+                defaultValue: 30,
+                public: false,
                 nullable: false,
                 ui: { tab: 'Financial' },
             },
@@ -579,6 +650,7 @@ export const config: VendureConfig = {
         ChannelSettingsPlugin,
         FractionalQuantityPlugin,
         NotificationPlugin,
+        CreditPlugin,
         SubscriptionPlugin,
         // PhoneAuthPlugin must be registered early so its strategy can be added to adminAuthenticationStrategy
         PhoneAuthPlugin,
