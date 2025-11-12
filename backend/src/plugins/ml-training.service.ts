@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import {
     AssetService,
     ChannelService,
@@ -7,6 +7,9 @@ import {
     TransactionalConnection,
 } from '@vendure/core';
 import { MlWebhookService } from './ml-webhook.service';
+import { ChannelEventRouterService } from './channel-events/channel-event-router.service';
+import { ActionCategory } from './channel-events/types/action-category.enum';
+import { ChannelEventType } from './channel-events/types/event-type.enum';
 
 export interface ProductManifestEntry {
     productId: string;
@@ -41,6 +44,7 @@ export class MlTrainingService {
         private assetService: AssetService,
         private connection: TransactionalConnection,
         private webhookService: MlWebhookService,
+        @Optional() private eventRouter?: ChannelEventRouterService, // Optional to avoid circular dependency
     ) { }
 
     /**
@@ -181,6 +185,37 @@ export class MlTrainingService {
         });
 
         console.log(`[ML Training] Updated channel ${channelId} status to ${status} (${progress}%)`);
+
+        // Emit event for channel events framework
+        if (this.eventRouter) {
+            let eventType: ChannelEventType | null = null;
+            if (status === 'training' && progress === 0) {
+                eventType = ChannelEventType.ML_TRAINING_STARTED;
+            } else if (status === 'training' && progress > 0 && progress < 100) {
+                eventType = ChannelEventType.ML_TRAINING_PROGRESS;
+            } else if (status === 'ready' || status === 'active') {
+                eventType = ChannelEventType.ML_TRAINING_COMPLETED;
+            } else if (status === 'failed') {
+                eventType = ChannelEventType.ML_TRAINING_FAILED;
+            }
+
+            if (eventType) {
+                await this.eventRouter.routeEvent({
+                    type: eventType,
+                    channelId,
+                    category: ActionCategory.SYSTEM_NOTIFICATIONS,
+                    context: ctx,
+                    data: {
+                        status,
+                        progress,
+                        error,
+                        channelId,
+                    },
+                }).catch(err => {
+                    console.warn(`Failed to route ML training event: ${err instanceof Error ? err.message : String(err)}`);
+                });
+            }
+        }
     }
 
     /**

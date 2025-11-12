@@ -63,6 +63,7 @@ export class PhoneAuthService {
         );
 
         // Step 2: Request OTP
+        // Note: No channel context during registration, so OTP won't be tracked
         const otpResult = await this.otpService.requestOTP(formattedPhone, 'registration');
 
         return {
@@ -95,7 +96,13 @@ export class PhoneAuthService {
             }
 
             // Account exists - proceed with sending OTP
-            return await this.otpService.requestOTP(formattedPhone, 'login');
+            // Pass context and channelId for tracking if available
+            return await this.otpService.requestOTP(
+                formattedPhone,
+                'login',
+                ctx,
+                ctx.channelId?.toString()
+            );
         } catch (error: any) {
             throw new Error(error?.message || 'Failed to request OTP');
         }

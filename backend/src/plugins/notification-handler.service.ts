@@ -12,12 +12,10 @@ export class NotificationHandlerService implements OnModuleInit {
     ) { }
 
     onModuleInit() {
-        // Subscribe to order state transitions
-        this.eventBus.ofType(OrderStateTransitionEvent).subscribe(async (event) => {
-            await this.handleOrderStateTransition(event);
-        });
-
-        // Subscribe to stock movements
+        // Note: Order state transitions are now handled by ChannelEventRouterService
+        // This service is kept for backward compatibility and ML training events
+        
+        // Subscribe to stock movements (if needed in future)
         this.eventBus.ofType(StockMovementEvent).subscribe(async (event) => {
             await this.handleStockMovement(event);
         });

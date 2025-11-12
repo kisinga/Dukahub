@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
     Customer,
     ID,
@@ -7,6 +7,7 @@ import {
     TransactionalConnection,
     UserInputError,
 } from '@vendure/core';
+import { ChannelCommunicationService } from '../channel-events/channel-communication.service';
 
 export interface CreditSummary {
     customerId: ID;
@@ -23,7 +24,10 @@ export interface CreditSummary {
 export class CreditService {
     private readonly logger = new Logger('CreditService');
 
-    constructor(private readonly connection: TransactionalConnection) { }
+    constructor(
+        private readonly connection: TransactionalConnection,
+        @Optional() private readonly communicationService?: ChannelCommunicationService, // Optional to avoid circular dependency
+    ) { }
 
     async getCreditSummary(ctx: RequestContext, customerId: ID): Promise<CreditSummary> {
         const customer = await this.getCustomerOrThrow(ctx, customerId);
@@ -115,15 +119,29 @@ export class CreditService {
         const customer = await this.getCustomerOrThrow(ctx, customerId);
         const customFields = customer.customFields as any;
         const currentOutstanding = customFields?.outstandingAmount ?? 0;
+        const newOutstanding = currentOutstanding - amount;
+        
         customer.customFields = {
             ...customFields,
-            outstandingAmount: currentOutstanding - amount,
+            outstandingAmount: newOutstanding,
         } as any;
 
         await this.connection.getRepository(ctx, Customer).save(customer);
         this.logger.log(
-            `Applied credit charge of ${amount} to customer ${customerId}. Outstanding: ${(customer.customFields as any).outstandingAmount}`
+            `Applied credit charge of ${amount} to customer ${customerId}. Outstanding: ${newOutstanding}`
         );
+
+        // Notify about balance change
+        if (this.communicationService) {
+            await this.communicationService.sendBalanceChangeNotification(
+                ctx,
+                String(customerId),
+                currentOutstanding,
+                newOutstanding
+            ).catch(error => {
+                this.logger.warn(`Failed to send balance change notification: ${error instanceof Error ? error.message : String(error)}`);
+            });
+        }
     }
 
     async releaseCreditCharge(ctx: RequestContext, customerId: ID, amount: number): Promise<void> {
@@ -134,19 +152,32 @@ export class CreditService {
         const customer = await this.getCustomerOrThrow(ctx, customerId);
         const customFields = customer.customFields as any;
         const currentOutstanding = customFields?.outstandingAmount ?? 0;
+        const newOutstanding = currentOutstanding + amount;
         const now = new Date();
         
         customer.customFields = {
             ...customFields,
-            outstandingAmount: currentOutstanding + amount,
+            outstandingAmount: newOutstanding,
             lastRepaymentDate: now,
             lastRepaymentAmount: amount,
         } as any;
 
         await this.connection.getRepository(ctx, Customer).save(customer);
         this.logger.log(
-            `Recorded repayment of ${amount} for customer ${customerId}. Outstanding: ${(customer.customFields as any).outstandingAmount}`
+            `Recorded repayment of ${amount} for customer ${customerId}. Outstanding: ${newOutstanding}`
         );
+
+        // Notify about balance change
+        if (this.communicationService) {
+            await this.communicationService.sendBalanceChangeNotification(
+                ctx,
+                String(customerId),
+                currentOutstanding,
+                newOutstanding
+            ).catch(error => {
+                this.logger.warn(`Failed to send balance change notification: ${error instanceof Error ? error.message : String(error)}`);
+            });
+        }
     }
 
     async markPaymentMetadata(

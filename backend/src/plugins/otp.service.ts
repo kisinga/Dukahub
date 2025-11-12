@@ -1,6 +1,8 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
+import { RequestContext } from '@vendure/core';
 import Redis from 'ioredis';
 import { formatPhoneNumber } from '../utils/phone.utils';
+import { ChannelSmsService } from './channel-events/channel-sms.service';
 import { SmsService } from './sms/sms.service';
 
 /**
@@ -22,7 +24,10 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
     private readonly RATE_LIMIT_COUNT = this.IS_PRODUCTION ? 10 : 30;
     private readonly RATE_LIMIT_WINDOW_SECONDS = this.IS_PRODUCTION ? 15 * 60 : 30; // 15 min prod, 30 sec dev
 
-    constructor(private readonly smsService: SmsService) { }
+    constructor(
+        private readonly smsService: SmsService,
+        @Optional() private readonly channelSmsService?: ChannelSmsService, // Optional to avoid circular dependency
+    ) { }
 
     async onModuleInit() {
         // Initialize Redis connection (non-blocking - don't wait for connection)
@@ -156,11 +161,19 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
 
     /**
      * Send SMS via configured SMS provider
-     * Uses SmsService abstraction layer for provider-agnostic SMS sending
+     * Uses ChannelSmsService if available (for tracking), otherwise falls back to SmsService
      */
-    private async sendSMS(phoneNumber: string, message: string): Promise<void> {
+    private async sendSMS(phoneNumber: string, message: string, ctx?: RequestContext, channelId?: string): Promise<void> {
         try {
-            const result = await this.smsService.sendSms(phoneNumber, message);
+            let result;
+
+            // Use ChannelSmsService if available and channel ID is provided (for tracking)
+            if (this.channelSmsService && ctx && channelId) {
+                result = await this.channelSmsService.sendOtpSms(ctx, phoneNumber, message, channelId);
+            } else {
+                // Fall back to regular SmsService
+                result = await this.smsService.sendSms(phoneNumber, message);
+            }
 
             if (!result.success) {
                 // Log error but don't throw - OTP is still generated, just SMS failed
@@ -182,7 +195,12 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
     /**
      * Request OTP for phone number
      */
-    async requestOTP(phoneNumber: string, purpose: 'registration' | 'login' = 'login'): Promise<{
+    async requestOTP(
+        phoneNumber: string,
+        purpose: 'registration' | 'login' = 'login',
+        ctx?: RequestContext,
+        channelId?: string
+    ): Promise<{
         success: boolean;
         message: string;
         expiresAt?: number;
@@ -211,7 +229,7 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
         await this.updateRateLimit(phoneNumber);
 
         const message = `Your Dukahub verification code is: ${otpCode}. Valid for 5 minutes.`;
-        await this.sendSMS(phoneNumber, message);
+        await this.sendSMS(phoneNumber, message, ctx, channelId);
 
         return {
             success: true,

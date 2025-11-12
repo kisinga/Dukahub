@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import {
     Administrator,
     AdministratorService,
@@ -21,6 +21,9 @@ import {
     UserService,
 } from '@vendure/core';
 import { formatPhoneNumber } from '../utils/phone.utils';
+import { ChannelEventRouterService } from './channel-events/channel-event-router.service';
+import { ActionCategory } from './channel-events/types/action-category.enum';
+import { ChannelEventType } from './channel-events/types/event-type.enum';
 
 /**
  * NOTE: This service's `provisionCustomer` method is designed to be called
@@ -69,6 +72,7 @@ export class RegistrationService {
         private readonly userService: UserService,
         private readonly connection: TransactionalConnection,
         private readonly passwordCipher: PasswordCipher,
+        @Optional() private readonly eventRouter?: ChannelEventRouterService, // Optional to avoid circular dependency
     ) { }
 
     /**
@@ -566,6 +570,42 @@ export class RegistrationService {
             }
 
             console.log('[RegistrationService] Administrator created:', finalAdmin.id, 'User ID:', (finalAdmin as any).user.id);
+
+            // Emit events for admin/user creation
+            if (this.eventRouter && role.channels && role.channels.length > 0) {
+                const channelId = role.channels[0].id.toString();
+                const ctx = RequestContext.empty();
+
+                // Emit admin created event
+                await this.eventRouter.routeEvent({
+                    type: ChannelEventType.ADMIN_CREATED,
+                    channelId,
+                    category: ActionCategory.SYSTEM_NOTIFICATIONS,
+                    context: ctx,
+                    data: {
+                        adminId: finalAdmin.id.toString(),
+                        userId: savedUser.id.toString(),
+                        firstName: registrationData.adminFirstName,
+                        lastName: registrationData.adminLastName,
+                    },
+                }).catch(err => {
+                    console.warn(`Failed to route admin created event: ${err instanceof Error ? err.message : String(err)}`);
+                });
+
+                // Emit user created event
+                await this.eventRouter.routeEvent({
+                    type: ChannelEventType.USER_CREATED,
+                    channelId,
+                    category: ActionCategory.SYSTEM_NOTIFICATIONS,
+                    context: ctx,
+                    data: {
+                        userId: savedUser.id.toString(),
+                        adminId: finalAdmin.id.toString(),
+                    },
+                }).catch(err => {
+                    console.warn(`Failed to route user created event: ${err instanceof Error ? err.message : String(err)}`);
+                });
+            }
 
             return finalAdmin;
         } catch (error: any) {
