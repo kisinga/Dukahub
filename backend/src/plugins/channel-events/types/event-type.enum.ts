@@ -21,6 +21,12 @@ export enum ChannelEventType {
     ML_TRAINING_COMPLETED = 'ml_training_completed',
     ML_TRAINING_FAILED = 'ml_training_failed',
 
+    // ML Extraction Events (System, Not Subscribable)
+    ML_EXTRACTION_QUEUED = 'ml_extraction_queued',
+    ML_EXTRACTION_STARTED = 'ml_extraction_started',
+    ML_EXTRACTION_COMPLETED = 'ml_extraction_completed',
+    ML_EXTRACTION_FAILED = 'ml_extraction_failed',
+
     // Payment Events (Customer-Facing, Subscribable)
     PAYMENT_CONFIRMED = 'payment_confirmed',
 

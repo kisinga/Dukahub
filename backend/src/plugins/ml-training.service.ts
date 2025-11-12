@@ -219,6 +219,23 @@ export class MlTrainingService {
     }
 
     /**
+     * Check if a channel has ML enabled
+     * Shared utility method to avoid duplication across services
+     */
+    async isMlEnabled(ctx: RequestContext, channelId: string): Promise<boolean> {
+        const channel = await this.channelService.findOne(ctx, channelId);
+        if (!channel) return false;
+
+        const customFields = channel.customFields as any;
+        return !!(
+            customFields.mlModelJsonId ||
+            customFields.mlTrainingStatus === 'training' ||
+            customFields.mlTrainingStatus === 'ready' ||
+            customFields.mlTrainingStatus === 'active'
+        );
+    }
+
+    /**
      * Schedule auto-extraction for a channel (debounced)
      */
     async scheduleAutoExtraction(ctx: RequestContext, channelId: string): Promise<void> {
@@ -226,15 +243,8 @@ export class MlTrainingService {
         // For now, we'll just trigger extraction immediately
         console.log(`[ML Training] Scheduling auto-extraction for channel ${channelId}`);
 
-        // Check if channel has ML enabled (has previous model or training in progress)
-        const channel = await this.channelService.findOne(ctx, channelId);
-        if (!channel) return;
-
-        const customFields = channel.customFields as any;
-        const hasMlEnabled = customFields.mlModelJsonId ||
-            customFields.mlTrainingStatus === 'training' ||
-            customFields.mlTrainingStatus === 'ready';
-
+        // Check if channel has ML enabled
+        const hasMlEnabled = await this.isMlEnabled(ctx, channelId);
         if (hasMlEnabled) {
             // Trigger extraction
             await this.extractPhotosForChannel(ctx, channelId);

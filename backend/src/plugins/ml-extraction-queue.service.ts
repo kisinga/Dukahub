@@ -1,5 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { RequestContext, TransactionalConnection } from '@vendure/core';
+import { ChannelEventRouterService } from './channel-events/channel-event-router.service';
+import { ActionCategory } from './channel-events/types/action-category.enum';
+import { ChannelEventType } from './channel-events/types/event-type.enum';
 
 export interface ScheduledExtraction {
     id: string;
@@ -19,7 +22,10 @@ export interface ScheduledExtraction {
  */
 @Injectable()
 export class MlExtractionQueueService {
-    constructor(private connection: TransactionalConnection) { }
+    constructor(
+        private connection: TransactionalConnection,
+        @Optional() private eventRouter?: ChannelEventRouterService, // Optional to avoid circular dependency
+    ) { }
 
     /**
      * Schedule a new extraction for a channel
@@ -35,6 +41,23 @@ export class MlExtractionQueueService {
 
         const extractionId = result.rows[0].id;
         console.log(`[ML Extraction Queue] Scheduled extraction ${extractionId} for channel ${channelId} at ${scheduledAt.toISOString()}`);
+
+        // Emit extraction queued event
+        if (this.eventRouter) {
+            await this.eventRouter.routeEvent({
+                type: ChannelEventType.ML_EXTRACTION_QUEUED,
+                channelId,
+                category: ActionCategory.SYSTEM_NOTIFICATIONS,
+                context: ctx,
+                data: {
+                    extractionId,
+                    channelId,
+                    scheduledAt: scheduledAt.toISOString(),
+                },
+            }).catch(err => {
+                console.warn(`Failed to route ML extraction queued event: ${err instanceof Error ? err.message : String(err)}`);
+            });
+        }
 
         return extractionId;
     }
@@ -114,6 +137,18 @@ export class MlExtractionQueueService {
      * Mark an extraction as processing
      */
     async markAsProcessing(ctx: RequestContext, extractionId: string): Promise<void> {
+        // Get channel ID from extraction record
+        const extractionResult = await this.connection.rawConnection.query(`
+            SELECT channel_id FROM ml_extraction_queue WHERE id = $1
+        `, [extractionId]);
+
+        if (extractionResult.rows.length === 0) {
+            console.warn(`[ML Extraction Queue] Extraction ${extractionId} not found when marking as processing`);
+            return;
+        }
+
+        const channelId = extractionResult.rows[0].channel_id;
+
         await this.connection.rawConnection.query(`
             UPDATE ml_extraction_queue 
             SET status = 'processing', updated_at = NOW()
@@ -121,12 +156,40 @@ export class MlExtractionQueueService {
         `, [extractionId]);
 
         console.log(`[ML Extraction Queue] Marked extraction ${extractionId} as processing`);
+
+        // Emit extraction started event
+        if (this.eventRouter) {
+            await this.eventRouter.routeEvent({
+                type: ChannelEventType.ML_EXTRACTION_STARTED,
+                channelId,
+                category: ActionCategory.SYSTEM_NOTIFICATIONS,
+                context: ctx,
+                data: {
+                    extractionId,
+                    channelId,
+                },
+            }).catch(err => {
+                console.warn(`Failed to route ML extraction started event: ${err instanceof Error ? err.message : String(err)}`);
+            });
+        }
     }
 
     /**
      * Mark an extraction as completed
      */
     async markAsCompleted(ctx: RequestContext, extractionId: string): Promise<void> {
+        // Get channel ID from extraction record
+        const extractionResult = await this.connection.rawConnection.query(`
+            SELECT channel_id FROM ml_extraction_queue WHERE id = $1
+        `, [extractionId]);
+
+        if (extractionResult.rows.length === 0) {
+            console.warn(`[ML Extraction Queue] Extraction ${extractionId} not found when marking as completed`);
+            return;
+        }
+
+        const channelId = extractionResult.rows[0].channel_id;
+
         await this.connection.rawConnection.query(`
             UPDATE ml_extraction_queue 
             SET status = 'completed', updated_at = NOW()
@@ -134,12 +197,40 @@ export class MlExtractionQueueService {
         `, [extractionId]);
 
         console.log(`[ML Extraction Queue] Marked extraction ${extractionId} as completed`);
+
+        // Emit extraction completed event
+        if (this.eventRouter) {
+            await this.eventRouter.routeEvent({
+                type: ChannelEventType.ML_EXTRACTION_COMPLETED,
+                channelId,
+                category: ActionCategory.SYSTEM_NOTIFICATIONS,
+                context: ctx,
+                data: {
+                    extractionId,
+                    channelId,
+                },
+            }).catch(err => {
+                console.warn(`Failed to route ML extraction completed event: ${err instanceof Error ? err.message : String(err)}`);
+            });
+        }
     }
 
     /**
      * Mark an extraction as failed
      */
     async markAsFailed(ctx: RequestContext, extractionId: string, error: string): Promise<void> {
+        // Get channel ID from extraction record
+        const extractionResult = await this.connection.rawConnection.query(`
+            SELECT channel_id FROM ml_extraction_queue WHERE id = $1
+        `, [extractionId]);
+
+        if (extractionResult.rows.length === 0) {
+            console.warn(`[ML Extraction Queue] Extraction ${extractionId} not found when marking as failed`);
+            return;
+        }
+
+        const channelId = extractionResult.rows[0].channel_id;
+
         await this.connection.rawConnection.query(`
             UPDATE ml_extraction_queue 
             SET status = 'failed', error = $2, updated_at = NOW()
@@ -147,6 +238,23 @@ export class MlExtractionQueueService {
         `, [extractionId, error]);
 
         console.log(`[ML Extraction Queue] Marked extraction ${extractionId} as failed: ${error}`);
+
+        // Emit extraction failed event
+        if (this.eventRouter) {
+            await this.eventRouter.routeEvent({
+                type: ChannelEventType.ML_EXTRACTION_FAILED,
+                channelId,
+                category: ActionCategory.SYSTEM_NOTIFICATIONS,
+                context: ctx,
+                data: {
+                    extractionId,
+                    channelId,
+                    error,
+                },
+            }).catch(err => {
+                console.warn(`Failed to route ML extraction failed event: ${err instanceof Error ? err.message : String(err)}`);
+            });
+        }
     }
 
     /**

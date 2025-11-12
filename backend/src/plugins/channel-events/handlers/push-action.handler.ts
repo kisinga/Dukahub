@@ -77,6 +77,10 @@ export class PushActionHandler implements IChannelActionHandler {
             'customer_repayment_deadline': 'Repayment Reminder',
             'ml_training_completed': 'ML Training Completed',
             'ml_training_failed': 'ML Training Failed',
+            'ml_extraction_queued': 'ML Extraction Queued',
+            'ml_extraction_started': 'ML Extraction Started',
+            'ml_extraction_completed': 'ML Extraction Completed',
+            'ml_extraction_failed': 'ML Extraction Failed',
         };
         return titleMap[event.type] || 'Notification';
     }
@@ -91,6 +95,10 @@ export class PushActionHandler implements IChannelActionHandler {
             'customer_repayment_deadline': (data) => `Reminder: Your repayment deadline is approaching. Outstanding: ${data.outstandingAmount || 'N/A'}`,
             'ml_training_completed': () => 'Machine learning model training has completed successfully',
             'ml_training_failed': (data) => `Training failed: ${data.error || 'Unknown error'}`,
+            'ml_extraction_queued': (data) => `Photo extraction has been queued for channel ${data.channelId || 'N/A'}`,
+            'ml_extraction_started': (data) => `Photo extraction has started for channel ${data.channelId || 'N/A'}`,
+            'ml_extraction_completed': (data) => `Photo extraction has completed successfully for channel ${data.channelId || 'N/A'}`,
+            'ml_extraction_failed': (data) => `Photo extraction failed: ${data.error || 'Unknown error'}`,
         };
 
         const messageFn = messageMap[event.type];

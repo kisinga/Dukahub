@@ -1,6 +1,7 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
 import { MlAutoExtractService } from './ml-auto-extract.service';
 import { MlExtractionQueueService } from './ml-extraction-queue.service';
+import { MlExtractionQueueSubscriber } from './ml-extraction-queue.subscriber';
 import { ML_MODEL_SCHEMA, MlModelResolver } from './ml-model-resolver';
 import { MlTrainingService } from './ml-training.service';
 import { MlWebhookService } from './ml-webhook.service';
@@ -19,7 +20,7 @@ import { MlWebhookService } from './ml-webhook.service';
  */
 @VendurePlugin({
     imports: [PluginCommonModule],
-    providers: [MlModelResolver, MlTrainingService, MlAutoExtractService, MlWebhookService, MlExtractionQueueService],
+    providers: [MlModelResolver, MlTrainingService, MlAutoExtractService, MlWebhookService, MlExtractionQueueService, MlExtractionQueueSubscriber],
     adminApiExtensions: {
         schema: ML_MODEL_SCHEMA,
         resolvers: [MlModelResolver],

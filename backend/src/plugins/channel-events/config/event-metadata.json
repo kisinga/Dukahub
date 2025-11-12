@@ -47,6 +47,30 @@
     "defaultEnabled": false,
     "category": "system_notifications"
   },
+  "ml_extraction_queued": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "ml_extraction_started": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "ml_extraction_completed": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "ml_extraction_failed": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
   "payment_confirmed": {
     "subscribable": true,
     "customerFacing": true,
@@ -102,4 +126,3 @@
     "category": "system_notifications"
   }
 }
-
