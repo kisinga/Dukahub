@@ -7,6 +7,7 @@ import {
     RequestContext,
 } from '@vendure/core';
 import gql from 'graphql-tag';
+import { PaystackService } from '../../services/payments/paystack.service';
 import { SubscriptionService } from '../../services/subscriptions/subscription.service';
 import { SubscriptionTier } from './subscription.entity';
 
@@ -90,6 +91,7 @@ export const SUBSCRIPTION_SCHEMA = gql`
 export class SubscriptionResolver {
     constructor(
         private subscriptionService: SubscriptionService,
+        private paystackService: PaystackService,
     ) { }
 
     @Query()
@@ -114,7 +116,7 @@ export class SubscriptionResolver {
         // Get channel with subscription details
         // This would require ChannelService injection - simplified for now
         const status = await this.subscriptionService.checkSubscriptionStatus(ctx, String(channelId));
-        
+
         // Return subscription details
         // In a full implementation, you'd fetch the tier and other details
         return {
@@ -186,15 +188,13 @@ export class SubscriptionResolver {
 
         try {
             // Verify transaction with Paystack
-            const { PaystackService } = await import('../../services/payments/paystack.service');
-            const paystackService = new PaystackService();
-            const verification = await paystackService.verifyTransaction(args.reference);
+            const verification = await this.paystackService.verifyTransaction(args.reference);
 
             if (verification.data.status === 'success') {
                 // Process successful payment
-                const customerCode = verification.data.customer?.customer_code || 
-                                   (verification.data.metadata as any)?.customerCode;
-                
+                const customerCode = verification.data.customer?.customer_code ||
+                    (verification.data.metadata as any)?.customerCode;
+
                 await this.subscriptionService.processSuccessfulPayment(ctx, String(channelId), {
                     reference: args.reference,
                     amount: verification.data.amount,
