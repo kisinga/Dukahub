@@ -1,27 +1,55 @@
 <app-navbar />
 
 <main>
-  <!-- Hero Section -->
-  <section id="hero" class="hero min-h-[80vh] bg-gradient-to-br from-base-100 to-base-200">
-    <div class="hero-content text-center max-w-4xl px-4">
-      <div class="fade-in-up">
-        <h1 class="text-4xl md:text-6xl font-bold mb-6">
-          Digitize Your Shop with AI & Barcodes — Sell Faster, Even Offline.
+  <!-- 1. Hero: Value Proposition -->
+  <section
+    id="hero"
+    class="min-h-[90vh] sm:min-h-[85vh] lg:min-h-[80vh] bg-gradient-to-br from-base-100 to-base-200 flex items-center"
+  >
+    <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-5xl mx-auto fade-in-up">
+        <!-- Social Proof Badge -->
+        <div class="mb-6 sm:mb-8 lg:mb-10">
+          <span
+            class="badge badge-primary badge-lg text-sm sm:text-base lg:text-lg px-4 sm:px-6 py-2 sm:py-3"
+          >
+            Join {{ socialProof.customerCount }}+ Successful Kenyan Businesses
+          </span>
+        </div>
+
+        <!-- Main Headline - Outcome-focused -->
+        <h1
+          class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 lg:mb-8 leading-tight text-base-content"
+        >
+          Stop Losing Money to Manual Errors
         </h1>
-        <p class="text-lg md:text-xl mb-8 text-base-content/80">
-          Dukahub makes inventory and sales simple for Kenyan SMEs. Point, scan, or snap a photo to
-          record sales in seconds.
+
+        <!-- Subheadline - Specific Value Promise -->
+        <p
+          class="text-xl sm:text-2xl lg:text-3xl xl:text-4xl mb-4 sm:mb-5 lg:mb-6 text-base-content/90 font-semibold leading-tight"
+        >
+          Save {{ socialProof.timeSaved }} daily. Prevent lost sales. Grow your business.
         </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <p
+          class="text-base sm:text-lg lg:text-xl xl:text-2xl mb-8 sm:mb-10 lg:mb-12 text-base-content/70 max-w-3xl mx-auto leading-relaxed"
+        >
+          The AI-powered system that makes inventory and sales simple for Kenyan shopkeepers. Sell
+          in 3 seconds. No barcode scanner needed. Works offline. Built for you.
+        </p>
+
+        <!-- Primary CTA - Prominent Above Fold -->
+        <div
+          class="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:gap-6 justify-center mb-8 sm:mb-10 lg:mb-12"
+        >
           <a
             routerLink="/signup"
             [queryParams]="{ plan: 'pro', trial: 'true' }"
-            class="btn btn-primary btn-lg"
+            class="btn btn-primary btn-lg text-lg sm:text-xl lg:text-2xl px-8 sm:px-10 lg:px-12 py-4 sm:py-5 lg:py-6 min-h-[3rem] sm:min-h-[3.5rem] lg:min-h-[4rem] shadow-xl hover:shadow-2xl transition-all font-semibold"
           >
-            Start Your 14-Day Free Pro Trial Now
+            Start Your Free 30-Day Trial
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
+              class="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 ml-2"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -34,10 +62,22 @@
               />
             </svg>
           </a>
-          <a href="#video-demo" class="btn btn-outline btn-lg">
+          <a
+            href="#how-it-works"
+            class="btn btn-outline btn-lg text-base sm:text-lg lg:text-xl px-6 sm:px-8 lg:px-10 py-4 sm:py-5 lg:py-6 min-h-[3rem] sm:min-h-[3.5rem] lg:min-h-[4rem]"
+          >
+            See How It Works
+          </a>
+        </div>
+
+        <!-- Trust Indicators -->
+        <div
+          class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 lg:gap-8 text-sm sm:text-base lg:text-lg"
+        >
+          <div class="flex items-center gap-2 sm:gap-3">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
+              class="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-success flex-shrink-0"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -46,237 +86,900 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
               />
+            </svg>
+            <span class="text-base-content/80">No Credit Card Required</span>
+          </div>
+          <div class="flex items-center gap-2 sm:gap-3">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-success flex-shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            Watch Demo
-          </a>
+            <span class="text-base-content/80">Set Up in Under an Hour</span>
+          </div>
+          <div
+            class="badge badge-warning badge-lg text-sm sm:text-base lg:text-lg px-4 sm:px-6 py-2 sm:py-3"
+          >
+            {{ socialProof.recentSignups }} businesses joined this month
+          </div>
         </div>
-        <p class="mt-6 text-sm text-base-content/60">
-          🔒 Secure, ✅ Simple, and Built for Kenyan SMEs.
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. The Problem → The Opportunity -->
+  <section id="problem-opportunity" class="section-padding bg-base-100">
+    <div class="container mx-auto max-w-6xl px-4">
+      <!-- Before State: Pain Points -->
+      <div class="text-center mb-12 sm:mb-16">
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-base-content">
+          Every Day You're Losing Money, Time, and Growth Opportunities
+        </h2>
+        <p class="text-base sm:text-lg text-base-content/80 max-w-3xl mx-auto leading-relaxed">
+          Record keeping is holding your business back. Here's what's costing you every single day:
         </p>
       </div>
-    </div>
-  </section>
 
-  <!-- About Section -->
-  <section id="about" class="section-padding bg-base-100">
-    <div class="container mx-auto max-w-4xl text-center">
-      <h2 class="text-3xl md:text-5xl font-bold mb-6">Stop Guessing, Start Knowing</h2>
-      <p class="text-lg text-base-content/80">
-        Tired of manual record-keeping, lost sales data, and stock uncertainty? Dukahub gives Kenyan
-        small businesses like yours a simple, affordable way to track every sale, manage inventory
-        accurately, and gain real-time insights – all from your phone.
-      </p>
-    </div>
-  </section>
-
-  <!-- Problem/Solution Section -->
-  <section id="problem-solution" class="section-padding bg-base-200">
-    <div class="container mx-auto max-w-6xl">
-      <div class="grid md:grid-cols-2 gap-8">
-        <div class="card bg-base-100 shadow-xl">
-          <figure class="px-10 pt-10">
-            <div
-              class="w-full h-48 bg-base-300 rounded-lg flex items-center justify-center text-6xl"
-            >
-              📝
-            </div>
-          </figure>
-          <div class="card-body items-center text-center">
-            <h3 class="card-title text-2xl">The Old Way: Paper Chaos</h3>
-            <p>
-              Hours spent writing, messy calculations, stock errors, and no clear view of
-              performance.
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-12 sm:mb-16">
+        <div
+          class="card bg-error/10 border-2 border-error/20 shadow-lg hover:shadow-xl transition-all"
+        >
+          <div class="card-body p-4 sm:p-6">
+            <div class="text-4xl sm:text-5xl mb-3 sm:mb-4">😰</div>
+            <h3 class="card-title text-lg sm:text-xl mb-2 sm:mb-3">Lost Sales & Unpaid Credit</h3>
+            <p class="text-sm sm:text-base text-base-content/80">
+              Customers walk away because you can't find items. Stock counts are wrong. You're
+              selling items you don't have, or not selling items you do have. Plus, you're
+              constantly chasing customers who owe you money, and forgetting to pay your own
+              suppliers.
             </p>
           </div>
         </div>
-        <div class="card bg-base-100 shadow-xl">
-          <figure class="px-10 pt-10">
-            <div
-              class="w-full h-48 bg-base-300 rounded-lg flex items-center justify-center text-6xl"
-            >
-              📱
-            </div>
-          </figure>
-          <div class="card-body items-center text-center">
-            <h3 class="card-title text-2xl">The Dukahub Way: Digital Clarity</h3>
-            <p>
-              Record sales in seconds, track inventory effortlessly, get instant reports, and manage
-              with confidence.
+        <div
+          class="card bg-error/10 border-2 border-error/20 shadow-lg hover:shadow-xl transition-all"
+        >
+          <div class="card-body p-4 sm:p-6">
+            <div class="text-4xl sm:text-5xl mb-3 sm:mb-4">⏰</div>
+            <h3 class="card-title text-lg sm:text-xl mb-2 sm:mb-3">Wasted Time Every Day</h3>
+            <p class="text-sm sm:text-base text-base-content/80">
+              Hours every day writing in books, calculating by hand, searching through papers. Plus,
+              constantly calling customers to remind them to pay, and trying to remember which
+              suppliers you owe. Time you could spend growing your business or with family.
+            </p>
+          </div>
+        </div>
+        <div
+          class="card bg-error/10 border-2 border-error/20 shadow-lg hover:shadow-xl transition-all"
+        >
+          <div class="card-body p-4 sm:p-6">
+            <div class="text-4xl sm:text-5xl mb-3 sm:mb-4">❓</div>
+            <h3 class="card-title text-lg sm:text-xl mb-2 sm:mb-3">Blind Business Decisions</h3>
+            <p class="text-sm sm:text-base text-base-content/80">
+              No idea what's selling well. Can't predict what to stock. Making business decisions
+              based on guesswork, not data. Missing opportunities to grow because you don't have the
+              information you need.
             </p>
           </div>
         </div>
       </div>
-    </div>
-  </section>
 
-  <!-- How It Works Section -->
-  <section id="how-it-works" class="section-padding bg-base-100">
-    <div class="container mx-auto max-w-6xl">
-      <h2 class="text-3xl md:text-5xl font-bold text-center mb-12">Get Started in Minutes</h2>
-      <div class="grid md:grid-cols-3 gap-8">
-        <div class="text-center">
-          <div
-            class="w-20 h-20 mx-auto mb-4 bg-primary text-primary-content rounded-full flex items-center justify-center text-3xl"
-          >
-            📷
-          </div>
-          <h3 class="text-xl font-bold mb-2">1. Add Products</h3>
-          <p>Scan barcodes or take 5 simple photos of each item/service.</p>
+      <!-- Transition: What If -->
+      <div class="text-center mb-12 sm:mb-16">
+        <div
+          class="inline-block bg-primary/10 border-2 border-primary/30 rounded-2xl p-6 sm:p-8 max-w-3xl"
+        >
+          <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-base-content">
+            What If You Could Turn This Around?
+          </h3>
+          <p class="text-base sm:text-lg text-base-content/80 mb-4 sm:mb-6">
+            Imagine knowing exactly what you have, what's selling, and what to order next. Imagine
+            never losing a sale to manual errors. Imagine having time to grow your business instead
+            of chasing paperwork.
+          </p>
         </div>
-        <div class="text-center">
-          <div
-            class="w-20 h-20 mx-auto mb-4 bg-secondary text-secondary-content rounded-full flex items-center justify-center text-3xl"
-          >
-            🤖
-          </div>
-          <h3 class="text-xl font-bold mb-2">2. AI Learns (Optional)</h3>
-          <p>Our system learns to recognize items from photos automatically.</p>
+      </div>
+
+      <!-- After State: Growth Opportunity -->
+      <div
+        class="bg-gradient-to-br from-success/10 to-primary/10 border-2 border-success/20 rounded-2xl p-6 sm:p-8 lg:p-12 mb-12 sm:mb-16"
+      >
+        <div class="text-center mb-8 sm:mb-10">
+          <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 text-base-content">
+            The Growth Opportunity
+          </h3>
+          <p class="text-base sm:text-lg text-base-content/80 max-w-2xl mx-auto">
+            When record keeping stops being a constraint, your business can grow. Here's what
+            becomes possible:
+          </p>
         </div>
-        <div class="text-center">
-          <div
-            class="w-20 h-20 mx-auto mb-4 bg-accent text-accent-content rounded-full flex items-center justify-center text-3xl"
-          >
-            💰
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <div class="card bg-base-100 shadow-xl">
+            <div class="card-body p-4 sm:p-6">
+              <div class="flex items-start gap-3 sm:gap-4">
+                <div class="text-3xl sm:text-4xl">📈</div>
+                <div>
+                  <h4 class="font-bold text-lg sm:text-xl mb-2">More Sales, Fewer Errors</h4>
+                  <p class="text-sm sm:text-base text-base-content/70">
+                    Never lose a customer because you can't find stock. Never sell something you
+                    don't have. Every sale is accurate, every time.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-          <h3 class="text-xl font-bold mb-2">3. Sell Easily</h3>
-          <p>Point your phone to scan or recognize items. Record sales quickly, even offline.</p>
+          <div class="card bg-base-100 shadow-xl">
+            <div class="card-body p-4 sm:p-6">
+              <div class="flex items-start gap-3 sm:gap-4">
+                <div class="text-3xl sm:text-4xl">💡</div>
+                <div>
+                  <h4 class="font-bold text-lg sm:text-xl mb-2">Data-Driven Decisions</h4>
+                  <p class="text-sm sm:text-base text-base-content/70">
+                    Know what's selling, what's not, and what to stock next. Make decisions based on
+                    real data, not guesswork.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card bg-base-100 shadow-xl">
+            <div class="card-body p-4 sm:p-6">
+              <div class="flex items-start gap-3 sm:gap-4">
+                <div class="text-3xl sm:text-4xl">⏱️</div>
+                <div>
+                  <h4 class="font-bold text-lg sm:text-xl mb-2">Time Freedom</h4>
+                  <p class="text-sm sm:text-base text-base-content/70">
+                    Save {{ socialProof.timeSaved }} every day. Spend that time growing your
+                    business, serving customers better, or with family.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card bg-base-100 shadow-xl">
+            <div class="card-body p-4 sm:p-6">
+              <div class="flex items-start gap-3 sm:gap-4">
+                <div class="text-3xl sm:text-4xl">💰</div>
+                <div>
+                  <h4 class="font-bold text-lg sm:text-xl mb-2">Better Cash Flow</h4>
+                  <p class="text-sm sm:text-base text-base-content/70">
+                    Automatic reminders mean faster payments from customers. Never forget to pay
+                    suppliers. Better relationships, better cash flow.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- CTA: See How It Works -->
+      <div class="text-center">
+        <a
+          href="#how-it-works"
+          class="btn btn-primary btn-lg text-base sm:text-lg px-8 sm:px-10 py-4 sm:py-5 min-h-[3rem] sm:min-h-[3.5rem]"
+        >
+          See How It Works
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 sm:h-6 sm:w-6 ml-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </a>
       </div>
     </div>
   </section>
 
-  <!-- Video Demo Section -->
-  <section id="video-demo" class="section-padding bg-base-200">
-    <div class="container mx-auto max-w-4xl text-center">
-      <h2 class="text-3xl md:text-5xl font-bold mb-6">See Dukahub in Action</h2>
-      <p class="text-lg mb-8 text-base-content/80">
-        Watch this short video to see how easy it is to manage your business.
-      </p>
-      <div class="aspect-video bg-base-300 rounded-lg flex items-center justify-center">
-        <div class="text-center">
-          <div class="text-6xl mb-4">▶️</div>
-          <p class="text-base-content/60">Video coming soon</p>
+  <!-- 3. How It Works: The 3-Step Transformation -->
+  <section id="how-it-works" class="section-padding bg-base-200">
+    <div class="container mx-auto max-w-6xl px-4">
+      <div class="text-center mb-12 sm:mb-16">
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-base-content">
+          From Chaos to Clarity in Minutes
+        </h2>
+        <p class="text-base sm:text-lg text-base-content/80 max-w-3xl mx-auto leading-relaxed mb-6">
+          Experience the relief of knowing exactly what you have, what's selling, and what you need.
+          Here's how simple it is:
+        </p>
+        <div class="inline-block bg-primary/10 border-2 border-primary/30 rounded-xl px-6 py-3">
+          <p class="text-lg sm:text-xl font-semibold text-primary">
+            <span class="text-2xl sm:text-3xl font-bold">3 seconds</span> per sale •
+            <span class="text-2xl sm:text-3xl font-bold">60x faster</span> than manual entry
+          </p>
         </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-12 sm:mb-16">
+        <!-- Step 1 -->
+        <div
+          class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all border-2 border-base-300"
+        >
+          <div class="card-body text-center p-6 sm:p-8">
+            <div class="relative mb-6">
+              <div
+                class="w-20 h-20 sm:w-24 sm:h-24 mx-auto bg-primary text-primary-content rounded-full flex items-center justify-center text-3xl sm:text-4xl shadow-lg"
+              >
+                📷
+              </div>
+              <div
+                class="absolute -top-2 -left-2 w-8 h-8 bg-primary text-primary-content rounded-full flex items-center justify-center font-bold text-sm sm:text-base shadow-md"
+              >
+                1
+              </div>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Add Products in Seconds</h3>
+            <p class="text-sm sm:text-base text-base-content/80 mb-4 sm:mb-6 leading-relaxed">
+              Point your phone at a barcode, or snap 5 quick photos. No typing. No complicated
+              forms. Our AI learns your products instantly.
+            </p>
+            <div class="badge badge-primary badge-lg text-xs sm:text-sm">
+              Takes 30 seconds per product
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div
+          class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all border-2 border-base-300"
+        >
+          <div class="card-body text-center p-6 sm:p-8">
+            <div class="relative mb-6">
+              <div
+                class="w-20 h-20 sm:w-24 sm:h-24 mx-auto bg-secondary text-secondary-content rounded-full flex items-center justify-center text-3xl sm:text-4xl shadow-lg"
+              >
+                🤖
+              </div>
+              <div
+                class="absolute -top-2 -left-2 w-8 h-8 bg-secondary text-secondary-content rounded-full flex items-center justify-center font-bold text-sm sm:text-base shadow-md"
+              >
+                2
+              </div>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">AI Recognizes Instantly</h3>
+            <p class="text-sm sm:text-base text-base-content/80 mb-4 sm:mb-6 leading-relaxed">
+              When you sell, just point your camera. The AI recognizes the product in 3 seconds. No
+              barcode scanner needed. Works even for items without barcodes.
+            </p>
+            <div class="badge badge-secondary badge-lg text-xs sm:text-sm font-semibold">
+              <span class="text-base sm:text-lg">3 seconds</span> per sale
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div
+          class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all border-2 border-primary relative"
+        >
+          <div class="badge badge-primary badge-lg absolute -top-3 right-4 z-10">Most Popular</div>
+          <div class="card-body text-center p-6 sm:p-8">
+            <div class="relative mb-6">
+              <div
+                class="w-20 h-20 sm:w-24 sm:h-24 mx-auto bg-accent text-accent-content rounded-full flex items-center justify-center text-3xl sm:text-4xl shadow-lg"
+              >
+                💰
+              </div>
+              <div
+                class="absolute -top-2 -left-2 w-8 h-8 bg-accent text-accent-content rounded-full flex items-center justify-center font-bold text-sm sm:text-base shadow-md"
+              >
+                3
+              </div>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">
+              Sell & Track Credit Automatically
+            </h3>
+            <p class="text-sm sm:text-base text-base-content/80 mb-4 sm:mb-6 leading-relaxed">
+              Record sales in 3 seconds. Works offline. Syncs automatically. Track customer and
+              supplier credit seamlessly. Automatic reminders keep everyone informed.
+            </p>
+            <div class="badge badge-accent badge-lg text-xs sm:text-sm font-semibold">
+              60x faster + Auto reminders
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outcome Callout -->
+      <div
+        class="bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-primary/30 rounded-2xl p-6 sm:p-8 text-center mb-12 sm:mb-16"
+      >
+        <h3 class="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-base-content">
+          The Result: Professional, Modern, Empowered
+        </h3>
+        <p class="text-base sm:text-lg text-base-content/80 max-w-2xl mx-auto mb-6">
+          In just minutes, you'll go from struggling with paper and chasing payments to running a
+          modern, efficient business. Feel the relief of having everything organized and automated.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4 text-sm sm:text-base">
+          <div class="flex items-center gap-2">
+            <svg class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            <span class="text-base-content/80">Real-time inventory</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <svg class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            <span class="text-base-content/80">100% accurate sales</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <svg class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            <span class="text-base-content/80">Automatic credit tracking</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA: Try It Free -->
+      <div class="text-center">
+        <a
+          routerLink="/signup"
+          [queryParams]="{ plan: 'pro', trial: 'true' }"
+          class="btn btn-primary btn-lg text-base sm:text-lg px-8 sm:px-10 py-4 sm:py-5 min-h-[3rem] sm:min-h-[3.5rem] shadow-xl hover:shadow-2xl transition-all"
+        >
+          Try It Free - Get Set Up in Under an Hour
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 sm:h-6 sm:w-6 ml-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 7l5 5m0 0l-5 5m5-5H6"
+            />
+          </svg>
+        </a>
       </div>
     </div>
   </section>
 
-  <!-- Who We Serve Section -->
-  <section id="who-we-serve" class="section-padding bg-base-100">
-    <div class="container mx-auto max-w-6xl">
-      <h2 class="text-3xl md:text-5xl font-bold text-center mb-12">
-        Made for Kenyan Businesses Like Yours
-      </h2>
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
-        <div class="text-center">
-          <div class="text-5xl mb-2">💊</div>
-          <p class="font-semibold">Pharmacies</p>
+  <!-- 4. Proof & Social Proof -->
+  <section id="proof" class="section-padding bg-base-100">
+    <div class="container mx-auto max-w-6xl px-4">
+      <div class="text-center mb-12 sm:mb-16">
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-base-content">
+          Join {{ socialProof.customerCount }}+ Successful Kenyan Businesses
+        </h2>
+        <p class="text-base sm:text-lg text-base-content/80 max-w-3xl mx-auto leading-relaxed">
+          Don't just take our word for it. See what real shopkeepers are saying and the results
+          they're getting:
+        </p>
+      </div>
+
+      <!-- Video Demo - Prominent Placement -->
+      <div class="mb-12 sm:mb-16">
+        <div class="max-w-4xl mx-auto">
+          <h3 class="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-6">
+            See Dukahub in Action
+          </h3>
+          <p class="text-base sm:text-lg text-center text-base-content/80 mb-6 sm:mb-8">
+            Watch this short video to see how easy it is to manage your business.
+          </p>
+          <div
+            class="aspect-video bg-base-200 rounded-xl flex items-center justify-center shadow-xl border-2 border-base-300"
+          >
+            <div class="text-center">
+              <div class="text-5xl sm:text-6xl mb-4">▶️</div>
+              <p class="text-base-content/60 text-sm sm:text-base">Video coming soon</p>
+            </div>
+          </div>
         </div>
-        <div class="text-center">
-          <div class="text-5xl mb-2">🌱</div>
-          <p class="font-semibold">Agrovets</p>
+      </div>
+
+      <!-- Testimonials -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-12 sm:mb-16">
+        @for (testimonial of testimonials; track $index) {
+        <div
+          class="card bg-base-200 shadow-xl hover:shadow-2xl transition-all border-2 border-base-300"
+        >
+          <div class="card-body p-4 sm:p-6">
+            <div class="flex items-center gap-1 mb-3 sm:mb-4">
+              @for (star of stars; track star) {
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 sm:h-5 sm:w-5 text-warning"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                />
+              </svg>
+              }
+            </div>
+            <p
+              class="text-base sm:text-lg mb-3 sm:mb-4 italic text-base-content/90 leading-relaxed"
+            >
+              "{{ testimonial.quote }}"
+            </p>
+            @if (testimonial.metric) {
+            <div class="badge badge-success badge-sm mb-3 sm:mb-4 text-xs sm:text-sm">
+              {{ testimonial.metric }}
+            </div>
+            }
+            <div class="divider my-2"></div>
+            <p class="font-semibold text-sm sm:text-base">{{ testimonial.author }}</p>
+            <p class="text-xs sm:text-sm text-base-content/60">{{ testimonial.title }}</p>
+          </div>
         </div>
-        <div class="text-center">
-          <div class="text-5xl mb-2">🛒</div>
-          <p class="font-semibold">Mini Marts</p>
+        }
+      </div>
+
+      <!-- Trust Metrics -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-12 sm:mb-16">
+        <div class="stat bg-base-200 rounded-xl shadow-lg border-2 border-base-300">
+          <div class="stat-value text-2xl sm:text-3xl text-primary">
+            {{ socialProof.customerCount }}+
+          </div>
+          <div class="stat-title text-xs sm:text-sm">Active Businesses</div>
         </div>
-        <div class="text-center">
-          <div class="text-5xl mb-2">✂️</div>
-          <p class="font-semibold">Salons/Tailors</p>
+        <div class="stat bg-base-200 rounded-xl shadow-lg border-2 border-base-300">
+          <div class="stat-value text-2xl sm:text-3xl text-success">
+            {{ socialProof.timeSaved }}
+          </div>
+          <div class="stat-title text-xs sm:text-sm">Saved Daily</div>
         </div>
-        <div class="text-center">
-          <div class="text-5xl mb-2">🥬</div>
-          <p class="font-semibold">Mama Mbogas</p>
+        <div class="stat bg-base-200 rounded-xl shadow-lg border-2 border-base-300">
+          <div class="stat-value text-2xl sm:text-3xl text-info">3 sec</div>
+          <div class="stat-title text-xs sm:text-sm">Per Sale</div>
         </div>
+        <div class="stat bg-base-200 rounded-xl shadow-lg border-2 border-base-300">
+          <div class="stat-value text-2xl sm:text-3xl text-warning">100%</div>
+          <div class="stat-title text-xs sm:text-sm">Offline Capable</div>
+        </div>
+      </div>
+
+      <!-- Business Types -->
+      <div class="mb-12 sm:mb-16">
+        <h3 class="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8">
+          Trusted by Traditional Shopkeepers Across Kenya
+        </h3>
+        <p
+          class="text-base sm:text-lg text-center text-base-content/80 max-w-3xl mx-auto mb-6 sm:mb-8"
+        >
+          Whether you run a pharmacy, agrovet, mini mart, salon, or mama mboga, Dukahub is designed
+          for you. Simple enough for traditional shopkeepers, powerful enough for growing
+          businesses.
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+          <div
+            class="card bg-base-200 text-center hover:shadow-lg transition-all border-2 border-base-300"
+          >
+            <div class="card-body p-3 sm:p-4">
+              <div class="text-4xl sm:text-5xl mb-2">💊</div>
+              <p class="font-semibold text-sm sm:text-base">Pharmacies</p>
+              <p class="text-xs text-base-content/60 mt-1">Track medications & expiry</p>
+            </div>
+          </div>
+          <div
+            class="card bg-base-200 text-center hover:shadow-lg transition-all border-2 border-base-300"
+          >
+            <div class="card-body p-3 sm:p-4">
+              <div class="text-4xl sm:text-5xl mb-2">🌱</div>
+              <p class="font-semibold text-sm sm:text-base">Agrovets</p>
+              <p class="text-xs text-base-content/60 mt-1">Manage farm supplies</p>
+            </div>
+          </div>
+          <div
+            class="card bg-base-200 text-center hover:shadow-lg transition-all border-2 border-base-300"
+          >
+            <div class="card-body p-3 sm:p-4">
+              <div class="text-4xl sm:text-5xl mb-2">🛒</div>
+              <p class="font-semibold text-sm sm:text-base">Mini Marts</p>
+              <p class="text-xs text-base-content/60 mt-1">Fast checkout & inventory</p>
+            </div>
+          </div>
+          <div
+            class="card bg-base-200 text-center hover:shadow-lg transition-all border-2 border-base-300"
+          >
+            <div class="card-body p-3 sm:p-4">
+              <div class="text-4xl sm:text-5xl mb-2">✂️</div>
+              <p class="font-semibold text-sm sm:text-base">Salons/Tailors</p>
+              <p class="text-xs text-base-content/60 mt-1">Service tracking made easy</p>
+            </div>
+          </div>
+          <div
+            class="card bg-base-200 text-center hover:shadow-lg transition-all border-2 border-base-300"
+          >
+            <div class="card-body p-3 sm:p-4">
+              <div class="text-4xl sm:text-5xl mb-2">🥬</div>
+              <p class="font-semibold text-sm sm:text-base">Mama Mbogas</p>
+              <p class="text-xs text-base-content/60 mt-1">Fresh produce management</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="text-center">
+        <a
+          routerLink="/signup"
+          [queryParams]="{ plan: 'pro', trial: 'true' }"
+          class="btn btn-primary btn-lg text-base sm:text-lg px-8 sm:px-10 py-4 sm:py-5 min-h-[3rem] sm:min-h-[3.5rem]"
+        >
+          Join {{ socialProof.customerCount }}+ Successful Businesses
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 sm:h-6 sm:w-6 ml-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 7l5 5m0 0l-5 5m5-5H6"
+            />
+          </svg>
+        </a>
       </div>
     </div>
   </section>
 
-  <!-- Features Section -->
+  <!-- Features Section - Speed & Outcomes Focus -->
   <section id="features" class="section-padding bg-base-200">
     <div class="container mx-auto max-w-6xl">
-      <h2 class="text-3xl md:text-5xl font-bold text-center mb-12">
-        Everything You Need to Manage Your Business
-      </h2>
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">
+          Everything You Need to Grow Your Business
+        </h2>
+        <p class="text-lg text-base-content/80 max-w-3xl mx-auto">
+          Features designed to save you time, prevent errors, and help you make better decisions.
+          Here's what you get:
+        </p>
+      </div>
+
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="card bg-base-100 shadow-lg">
+        <div
+          class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow border-l-4 border-primary"
+        >
           <div class="card-body">
-            <div class="text-3xl mb-2">📸</div>
-            <h3 class="card-title">AI & Barcode Sales</h3>
-            <p class="text-sm">
-              Fast sales entry using barcode scanning or AI image recognition. Adjust prices easily
-              at POS.
+            <div class="text-4xl mb-3">⚡</div>
+            <h3 class="card-title text-xl">Sell in 3 Seconds</h3>
+            <p class="text-sm mb-3">
+              AI camera recognition means no typing, no barcode scanner needed. Point, scan, sell.
+              <strong>60x faster than manual entry.</strong>
             </p>
+            <div class="badge badge-primary badge-sm">Speed Leader</div>
           </div>
         </div>
-        <div class="card bg-base-100 shadow-lg">
+        <div
+          class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow border-l-4 border-success"
+        >
           <div class="card-body">
-            <div class="text-3xl mb-2">📦</div>
-            <h3 class="card-title">Simple Inventory</h3>
-            <p class="text-sm">
-              Track stock accurately. Add products via barcode/photos. Handles bundled items (SKU
-              conversion).
+            <div class="text-4xl mb-3">📦</div>
+            <h3 class="card-title text-xl">Never Lose Track Again</h3>
+            <p class="text-sm mb-3">
+              Real-time inventory tracking. Know exactly what you have, what's selling, and what to
+              order.
+              <strong>Save {{ socialProof.timeSaved }} every day.</strong>
             </p>
+            <div class="badge badge-success badge-sm">Time Saver</div>
           </div>
         </div>
-        <div class="card bg-base-100 shadow-lg">
+        <div
+          class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow border-l-4 border-info"
+        >
           <div class="card-body">
-            <div class="text-3xl mb-2">📡</div>
-            <h3 class="card-title">Reliable Offline Mode</h3>
-            <p class="text-sm">
-              Continue selling even without internet. Data syncs automatically & safely when
-              connection returns.
+            <div class="text-4xl mb-3">📡</div>
+            <h3 class="card-title text-xl">Works Without Internet</h3>
+            <p class="text-sm mb-3">
+              Continue selling during power cuts or poor connectivity. Records up to 30 sales
+              offline, syncs automatically when back online. <strong>Never lose a sale.</strong>
             </p>
+            <div class="badge badge-info badge-sm">Reliability</div>
           </div>
         </div>
-        <div class="card bg-base-100 shadow-lg">
+        <div
+          class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow border-l-4 border-primary"
+        >
           <div class="card-body">
-            <div class="text-3xl mb-2">📊</div>
-            <h3 class="card-title">Actionable Insights</h3>
-            <p class="text-sm">
-              Understand your business better with reports on sales trends, top items, and seasonal
-              performance.
+            <div class="text-4xl mb-3">📊</div>
+            <h3 class="card-title text-xl">Make Smarter Decisions</h3>
+            <p class="text-sm mb-3">
+              See what's selling, what's not, and what to stock next. Reports show trends, top
+              items, and seasonal patterns. <strong>Stop guessing, start knowing.</strong>
             </p>
+            <div class="badge badge-primary badge-sm">Insights</div>
           </div>
         </div>
-        <div class="card bg-base-100 shadow-lg">
+        <div
+          class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow border-l-4 border-secondary"
+        >
           <div class="card-body">
-            <div class="text-3xl mb-2">✂️</div>
-            <h3 class="card-title">Service Business Ready</h3>
-            <p class="text-sm">
-              Use visual cards for services (salons, repairs). Track service sales and popularity
-              like products.
+            <div class="text-4xl mb-3">✂️</div>
+            <h3 class="card-title text-xl">Perfect for Services Too</h3>
+            <p class="text-sm mb-3">
+              Salons, tailors, repairs - create visual cards for services. Track service sales and
+              popularity just like products. <strong>One system for everything.</strong>
             </p>
+            <div class="badge badge-secondary badge-sm">Versatile</div>
           </div>
         </div>
-        <div class="card bg-base-100 shadow-lg">
+        <div
+          class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow border-l-4 border-accent"
+        >
           <div class="card-body">
-            <div class="text-3xl mb-2">🔔</div>
-            <h3 class="card-title">Smart Alerts (Pro)</h3>
-            <p class="text-sm">
-              Get notified for low stock and soon-to-expire products to reduce waste and lost sales.
+            <div class="text-4xl mb-3">💳</div>
+            <h3 class="card-title text-xl">Credit Management Made Simple</h3>
+            <p class="text-sm mb-3">
+              Track customer and supplier credit automatically. The system sends reminders to both
+              you and your customers about payments due. Never forget to collect or pay again.
+              <strong>Stop chasing, start collecting.</strong>
             </p>
+            <div class="badge badge-accent badge-sm">Core Feature</div>
           </div>
         </div>
+        <div
+          class="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow border-l-4 border-warning"
+        >
+          <div class="card-body">
+            <div class="text-4xl mb-3">🔔</div>
+            <h3 class="card-title text-xl">Smart Alerts (Pro)</h3>
+            <p class="text-sm mb-3">
+              Get notified for low stock and soon-to-expire products. Reduce waste, prevent
+              stockouts, and never miss a sale opportunity.
+              <strong>Proactive, not reactive.</strong>
+            </p>
+            <div class="badge badge-warning badge-sm">Pro Feature</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-12">
+        <a
+          routerLink="/signup"
+          [queryParams]="{ plan: 'pro', trial: 'true' }"
+          class="btn btn-primary btn-lg"
+        >
+          Get All Features Free for 30 Days
+        </a>
       </div>
     </div>
   </section>
 
-  <!-- Pricing Section -->
-  <section id="pricing" class="section-padding bg-base-100">
-    <div class="container mx-auto max-w-6xl">
-      <h2 class="text-3xl md:text-5xl font-bold text-center mb-6">Simple, Transparent Pricing</h2>
-      <p class="text-center text-lg mb-8 text-base-content/80">
-        Start free, upgrade as your business grows. No hidden fees.
-      </p>
+  <!-- 5. Value Demonstration: The Math -->
+  <section id="value-demo" class="section-padding bg-base-100">
+    <div class="container mx-auto max-w-6xl px-4">
+      <div class="text-center mb-12 sm:mb-16">
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-base-content">
+          The Math: Why Dukahub Pays for Itself
+        </h2>
+        <p class="text-base sm:text-lg text-base-content/80 max-w-3xl mx-auto leading-relaxed">
+          Let's make the ROI obvious. Here's what you get for what you pay:
+        </p>
+      </div>
+
+      <!-- Cost Breakdown -->
+      <div
+        class="bg-gradient-to-br from-primary/10 to-success/10 border-2 border-primary/30 rounded-2xl p-6 sm:p-8 lg:p-12 mb-12 sm:mb-16"
+      >
+        <div class="text-center mb-8 sm:mb-10">
+          <h3 class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Simple Cost Breakdown</h3>
+        </div>
+        <div
+          class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-center"
+        >
+          <div
+            class="stat bg-base-100 rounded-xl px-6 sm:px-8 py-4 sm:py-6 shadow-lg border-2 border-base-300"
+          >
+            <div class="stat-value text-2xl sm:text-3xl lg:text-4xl text-primary">KES 1,500</div>
+            <div class="stat-title text-xs sm:text-sm">per month</div>
+          </div>
+          <div class="text-2xl sm:text-3xl text-base-content/40">=</div>
+          <div
+            class="stat bg-base-100 rounded-xl px-6 sm:px-8 py-4 sm:py-6 shadow-lg border-2 border-base-300"
+          >
+            <div class="stat-value text-2xl sm:text-3xl lg:text-4xl text-success">KES 50</div>
+            <div class="stat-title text-xs sm:text-sm">per day</div>
+          </div>
+        </div>
+        <p class="text-center text-sm sm:text-base text-base-content/70 mt-6 sm:mt-8">
+          Less than the cost of a cup of coffee. Less than one lost sale.
+        </p>
+      </div>
+
+      <!-- Value Comparison -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-12 sm:mb-16">
+        <div class="card bg-error/10 border-2 border-error/20 shadow-xl">
+          <div class="card-body p-6 sm:p-8">
+            <div class="text-4xl sm:text-5xl mb-4 text-center">❌</div>
+            <h3 class="card-title text-xl sm:text-2xl mb-3 sm:mb-4 text-center">Without Dukahub</h3>
+            <ul class="space-y-2 sm:space-y-3 text-sm sm:text-base">
+              <li class="flex items-start gap-2">
+                <span class="text-error">✗</span>
+                <span class="text-base-content/80">Lose sales to manual errors</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-error">✗</span>
+                <span class="text-base-content/80"
+                  >Waste {{ socialProof.timeSaved }} daily on paperwork</span
+                >
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-error">✗</span>
+                <span class="text-base-content/80">Make blind decisions without data</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-error">✗</span>
+                <span class="text-base-content/80">Chase payments manually</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-error">✗</span>
+                <span class="text-base-content/80">Miss growth opportunities</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="card bg-success/10 border-2 border-success/20 shadow-xl">
+          <div class="card-body p-6 sm:p-8">
+            <div class="text-4xl sm:text-5xl mb-4 text-center">✅</div>
+            <h3 class="card-title text-xl sm:text-2xl mb-3 sm:mb-4 text-center">With Dukahub</h3>
+            <ul class="space-y-2 sm:space-y-3 text-sm sm:text-base">
+              <li class="flex items-start gap-2">
+                <span class="text-success">✓</span>
+                <span class="text-base-content/80">Prevent lost sales with 100% accuracy</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-success">✓</span>
+                <span class="text-base-content/80">Save {{ socialProof.timeSaved }} daily</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-success">✓</span>
+                <span class="text-base-content/80">Make data-driven decisions</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-success">✓</span>
+                <span class="text-base-content/80">Automatic payment reminders</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-success">✓</span>
+                <span class="text-base-content/80">Enable business growth</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROI Calculation -->
+      <div class="bg-base-200 rounded-2xl p-6 sm:p-8 lg:p-12 mb-12 sm:mb-16">
+        <div class="text-center mb-6 sm:mb-8">
+          <h3 class="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">The Value Proposition</h3>
+          <p class="text-base sm:text-lg text-base-content/80 max-w-2xl mx-auto">
+            Prevent just one lost sale per month and Dukahub pays for itself. Most businesses save
+            multiple hours daily and prevent countless errors.
+          </p>
+        </div>
+        <div
+          class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-center"
+        >
+          <div class="stat bg-base-100 rounded-xl px-4 sm:px-6 py-3 sm:py-4 shadow-lg">
+            <div class="stat-value text-xl sm:text-2xl lg:text-3xl text-primary">KES 1,500</div>
+            <div class="stat-title text-xs sm:text-sm">per month</div>
+          </div>
+          <div class="text-xl sm:text-2xl text-base-content/40">=</div>
+          <div class="stat bg-base-100 rounded-xl px-4 sm:px-6 py-3 sm:py-4 shadow-lg">
+            <div class="stat-value text-xl sm:text-2xl lg:text-3xl text-success">KES 50</div>
+            <div class="stat-title text-xs sm:text-sm">per day</div>
+          </div>
+          <div class="text-xl sm:text-2xl text-base-content/40">=</div>
+          <div class="stat bg-base-100 rounded-xl px-4 sm:px-6 py-3 sm:py-4 shadow-lg">
+            <div class="stat-value text-xl sm:text-2xl lg:text-3xl text-info">One</div>
+            <div class="stat-title text-xs sm:text-sm">lost sale prevented</div>
+          </div>
+        </div>
+        <p class="text-center text-sm sm:text-base text-base-content/60 mt-6 sm:mt-8">
+          Plus {{ socialProof.timeSaved }} saved daily = more time to grow your business or spend
+          with family.
+        </p>
+      </div>
+
+      <!-- Growth Potential -->
+      <div
+        class="text-center bg-gradient-to-r from-primary/10 to-accent/10 border-2 border-primary/30 rounded-2xl p-6 sm:p-8"
+      >
+        <h3 class="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Better Decisions = More Revenue</h3>
+        <p class="text-base sm:text-lg text-base-content/80 max-w-2xl mx-auto mb-4 sm:mb-6">
+          When you know what's selling, what's not, and what to stock next, you make better
+          decisions. Better decisions lead to more sales, less waste, and faster growth.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4 text-sm sm:text-base">
+          <div class="badge badge-primary badge-lg">More Sales</div>
+          <div class="badge badge-success badge-lg">Less Waste</div>
+          <div class="badge badge-info badge-lg">Faster Growth</div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="text-center mt-12 sm:mt-16">
+        <a
+          routerLink="/signup"
+          [queryParams]="{ plan: 'pro', trial: 'true' }"
+          class="btn btn-primary btn-lg text-base sm:text-lg px-8 sm:px-10 py-4 sm:py-5 min-h-[3rem] sm:min-h-[3.5rem] shadow-xl hover:shadow-2xl transition-all"
+        >
+          Start Your Free Trial
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 sm:h-6 sm:w-6 ml-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 7l5 5m0 0l-5 5m5-5H6"
+            />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Pricing: Risk Reversal -->
+  <section id="pricing" class="section-padding bg-base-200">
+    <div class="container mx-auto max-w-6xl px-4">
+      <div class="text-center mb-8 sm:mb-12">
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-base-content">
+          Simple, Transparent Pricing
+        </h2>
+        <p class="text-lg sm:text-xl mb-2 sm:mb-3 text-base-content/90 font-medium">
+          Start with a 30-day free Pro trial. No credit card required.
+        </p>
+        <p class="text-sm sm:text-base text-base-content/70 max-w-2xl mx-auto">
+          After your trial, upgrade to Pro to continue, or pause your account. Pro is our complete
+          solution - the trial lets you experience everything first.
+        </p>
+      </div>
+
+      <!-- Urgency: Scarcity Indicator -->
+      <div class="text-center mb-8 sm:mb-12">
+        <div class="badge badge-warning badge-lg text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
+          {{ socialProof.recentSignups }} businesses started their trial this month
+        </div>
+      </div>
 
       <!-- Pricing Toggle -->
       <div class="flex justify-center mb-12">
@@ -294,40 +997,78 @@
             (click)="isYearly.set(true)"
           >
             Yearly
-            <span class="badge badge-success badge-sm ml-1">Save 20%</span>
+            <span class="badge badge-success badge-sm ml-1">Save KES 3,600/year</span>
           </button>
         </div>
       </div>
 
-      <!-- Pricing Cards -->
-      <div class="grid md:grid-cols-3 gap-6">
+      <!-- Pricing Cards - 3 Tiers with Psychological Hooks -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto mb-12 sm:mb-16">
         @for (plan of pricingPlans; track plan.name) {
         <div
-          class="card bg-base-100 shadow-xl"
-          [class.border-2]="plan.popular"
+          class="card bg-base-100 shadow-xl relative transition-all hover:shadow-2xl border-2"
+          [class.border-4]="plan.popular"
           [class.border-primary]="plan.popular"
+          [class.border-base-300]="!plan.popular"
+          [class.scale-105]="plan.popular"
+          [class.shadow-2xl]="plan.popular"
+          [class.opacity-90]="plan.name === 'Pro Trial'"
+          [class.bg-base-200]="plan.name === 'Pro Trial'"
         >
           @if (plan.popular) {
-          <div class="badge badge-primary absolute top-4 right-4">Popular</div>
+          <div class="badge badge-primary badge-lg absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+            Most Popular
+          </div>
+          <div class="badge badge-success badge-sm absolute -top-3 right-4 z-10">Best Value</div>
+          } @if (plan.name === 'Pro Trial') {
+          <div class="badge badge-info badge-sm absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+            Try Before You Commit
+          </div>
+          } @if (plan.name === 'Enterprise') {
+          <div class="badge badge-secondary badge-sm absolute -top-3 right-4 z-10">
+            For Growing Teams
+          </div>
           }
           <div class="card-body">
-            <h3 class="card-title text-2xl">{{ plan.name }}</h3>
-            <div class="my-4">
-              <p class="text-3xl font-bold">
-                {{ isYearly() ? plan.yearlyPrice : plan.monthlyPrice }}
-              </p>
-              @if (plan.monthlyPrice !== 'Custom') {
-              <p class="text-sm text-base-content/60">{{ isYearly() ? '/year' : '/month' }}</p>
+            <h3 class="card-title text-2xl mb-2" [class.text-3xl]="plan.popular">
+              @if (plan.name === 'Pro') { Pro - KES 1,500/month } @else {
+              {{ plan.name }}
               }
+            </h3>
+            <div class="my-4" [class.my-6]="plan.popular">
+              @if (plan.monthlyPrice === 'Custom') {
+              <p class="text-3xl font-bold" [class.text-4xl]="plan.popular">Custom</p>
+              <p class="text-sm text-base-content/60 mt-2">Contact us for pricing</p>
+              } @else if (plan.name === 'Pro Trial') {
+              <div class="flex items-baseline gap-2">
+                <p class="text-3xl font-bold text-primary">Free</p>
+              </div>
+              <p class="text-sm text-base-content/60 mt-1">for 30 days</p>
+              <p class="text-xs text-base-content/50 mt-1">Then upgrade or pause</p>
+              } @else {
+              <div class="flex items-baseline gap-2">
+                <p class="text-3xl font-bold" [class.text-4xl]="plan.popular">
+                  {{ isYearly() ? plan.yearlyPrice : plan.monthlyPrice }}
+                </p>
+                <p class="text-base text-base-content/60" [class.text-lg]="plan.popular">
+                  {{ isYearly() ? '/year' : '/month' }}
+                </p>
+              </div>
+              @if (isYearly() && plan.popular) {
+              <p class="text-sm text-success mt-2 font-semibold">Save KES 3,600 per year</p>
+              } }
             </div>
-            <p class="text-sm mb-4">{{ plan.description }}</p>
-            <ul class="space-y-2 mb-6">
+            <p class="text-sm mb-4" [class.text-base]="plan.popular" [class.mb-6]="plan.popular">
+              {{ plan.description }}
+            </p>
+            <ul class="space-y-2 mb-6" [class.space-y-3]="plan.popular" [class.mb-8]="plan.popular">
               @for (feature of plan.features; track $index) {
-              <li class="flex items-start gap-2" [class.opacity-40]="!feature.included">
-                @if (feature.included) {
+              <li class="flex items-start gap-2" [class.gap-3]="plan.popular">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   class="h-5 w-5 text-success flex-shrink-0"
+                  [class.h-6]="plan.popular"
+                  [class.w-6]="plan.popular"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -339,106 +1080,217 @@
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
-                } @else {
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-5 w-5 flex-shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-                }
-                <span class="text-sm">{{ feature.text }}</span>
+                <span class="text-xs" [class.text-sm]="plan.popular">{{ feature.text }}</span>
               </li>
               }
             </ul>
             <div class="card-actions">
               <a
                 [routerLink]="plan.ctaLink"
-                class="btn w-full"
+                class="btn w-full min-h-[3rem] sm:min-h-[3.5rem] text-base sm:text-lg"
+                [class.btn-lg]="plan.popular"
                 [class.btn-primary]="plan.popular"
-                [class.btn-outline]="!plan.popular"
+                [class.btn-outline]="!plan.popular && plan.name !== 'Pro Trial'"
+                [class.btn-ghost]="plan.name === 'Pro Trial'"
               >
                 {{ plan.ctaText }}
               </a>
             </div>
+            @if (plan.popular) {
+            <p class="text-center text-xs text-base-content/60 mt-4">
+              Join {{ socialProof.customerCount }}+ serious businesses • Start with free trial •
+              Cancel anytime
+            </p>
+            } @if (plan.name === 'Pro Trial') {
+            <p class="text-center text-xs text-base-content/50 mt-2">
+              No risk • Full Pro access • Upgrade or pause after 30 days
+            </p>
+            } @if (plan.name === 'Enterprise') {
+            <p class="text-center text-xs text-base-content/60 mt-2">
+              Custom pricing • Dedicated support • Scale your business
+            </p>
+            }
           </div>
         </div>
         }
       </div>
 
-      <p class="text-center mt-8 text-sm text-base-content/60">
-        Pro plan includes a 14-day free trial. No credit card required.
-        <span class="font-semibold">Easy upgrade anytime.</span>
-      </p>
-    </div>
-  </section>
-
-  <!-- Testimonials Section -->
-  <section id="testimonials" class="section-padding bg-base-200">
-    <div class="container mx-auto max-w-6xl">
-      <h2 class="text-3xl md:text-5xl font-bold text-center mb-12">
-        Don't Just Take Our Word For It
-      </h2>
-      <div class="grid md:grid-cols-3 gap-6">
-        @for (testimonial of testimonials; track $index) {
-        <div class="card bg-base-100 shadow-lg">
-          <div class="card-body">
-            <p class="text-lg mb-4">"{{ testimonial.quote }}"</p>
-            <div class="divider my-2"></div>
-            <p class="font-semibold">{{ testimonial.author }}</p>
-            <p class="text-sm text-base-content/60">{{ testimonial.title }}</p>
+      <!-- Risk Reversal: Nothing to Lose -->
+      <div
+        class="bg-gradient-to-br from-success/10 to-primary/10 border-2 border-success/30 rounded-2xl p-6 sm:p-8 lg:p-12 text-center"
+      >
+        <h3 class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
+          Nothing to Lose, Everything to Gain
+        </h3>
+        <p class="text-base sm:text-lg text-base-content/80 max-w-2xl mx-auto mb-6 sm:mb-8">
+          The average shopkeeper saves {{ socialProof.timeSaved }} with Dukahub. That's time you can
+          spend growing your business or with family.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body p-4 sm:p-6">
+              <div class="text-3xl sm:text-4xl mb-2">✅</div>
+              <h4 class="font-bold text-lg sm:text-xl mb-2">30-Day Free Trial</h4>
+              <p class="text-sm sm:text-base text-base-content/70">
+                Try all Pro features free for 30 days. No credit card required.
+              </p>
+            </div>
+          </div>
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body p-4 sm:p-6">
+              <div class="text-3xl sm:text-4xl mb-2">🔄</div>
+              <h4 class="font-bold text-lg sm:text-xl mb-2">Easy Pause</h4>
+              <p class="text-sm sm:text-base text-base-content/70">
+                After trial, choose to upgrade to Pro or pause your account. No questions asked.
+              </p>
+            </div>
+          </div>
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body p-4 sm:p-6">
+              <div class="text-3xl sm:text-4xl mb-2">💳</div>
+              <h4 class="font-bold text-lg sm:text-xl mb-2">Cancel Anytime</h4>
+              <p class="text-sm sm:text-base text-base-content/70">
+                No long-term contracts. Cancel your Pro subscription anytime, keep your data.
+              </p>
+            </div>
           </div>
         </div>
-        }
+        <p class="text-base sm:text-lg font-semibold text-base-content/90">
+          You have nothing to lose and everything to gain. Start your free trial today.
+        </p>
       </div>
     </div>
   </section>
 
-  <!-- FAQ Section -->
+  <!-- 7. Objections & FAQ -->
   <section id="faq" class="section-padding bg-base-100">
-    <div class="container mx-auto max-w-3xl">
-      <h2 class="text-3xl md:text-5xl font-bold text-center mb-12">Frequently Asked Questions</h2>
-      <div class="space-y-2">
+    <div class="container mx-auto max-w-4xl px-4">
+      <div class="text-center mb-12 sm:mb-16">
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-base-content">
+          Frequently Asked Questions
+        </h2>
+        <p class="text-base sm:text-lg text-base-content/80 max-w-2xl mx-auto">
+          Address concerns quickly. Here are the most common questions:
+        </p>
+      </div>
+
+      <!-- Trust Signals -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-12 sm:mb-16">
+        <div class="card bg-base-200 shadow-lg border-2 border-base-300">
+          <div class="card-body text-center p-4 sm:p-6">
+            <div class="text-3xl sm:text-4xl mb-3">🔒</div>
+            <h3 class="card-title justify-center text-base sm:text-lg">Bank-Level Security</h3>
+            <p class="text-xs sm:text-sm text-base-content/70">
+              Industry-standard encryption protects your data. Your business information stays
+              private.
+            </p>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-lg border-2 border-base-300">
+          <div class="card-body text-center p-4 sm:p-6">
+            <div class="text-3xl sm:text-4xl mb-3">🇰🇪</div>
+            <h3 class="card-title justify-center text-base sm:text-lg">Made for Kenya</h3>
+            <p class="text-xs sm:text-sm text-base-content/70">
+              Built specifically for Kenyan SMEs. Works with M-Pesa, handles offline scenarios.
+            </p>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-lg border-2 border-base-300">
+          <div class="card-body text-center p-4 sm:p-6">
+            <div class="text-3xl sm:text-4xl mb-3">✅</div>
+            <h3 class="card-title justify-center text-base sm:text-lg">Data Protection</h3>
+            <p class="text-xs sm:text-sm text-base-content/70">
+              We follow data protection best practices. Your information is never shared.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ Items -->
+      <div class="space-y-2 sm:space-y-3 mb-12 sm:mb-16">
         @for (faq of faqItems(); track $index) {
-        <div class="collapse collapse-arrow bg-base-200">
+        <div class="collapse collapse-arrow bg-base-200 border-2 border-base-300 shadow-lg">
           <input type="checkbox" [checked]="faq.open" (change)="toggleFAQ($index)" />
-          <div class="collapse-title text-lg font-medium">{{ faq.question }}</div>
-          <div class="collapse-content">
-            <p>{{ faq.answer }}</p>
+          <div
+            class="collapse-title text-base sm:text-lg font-medium min-h-[3rem] sm:min-h-[3.5rem] flex items-center"
+          >
+            {{ faq.question }}
+          </div>
+          <div class="collapse-content p-4 sm:p-6">
+            <p class="text-sm sm:text-base text-base-content/80 leading-relaxed">
+              {{ faq.answer }}
+            </p>
           </div>
         </div>
         }
       </div>
+
+      <!-- Setup Time Emphasis -->
+      <div
+        class="bg-primary/10 border-2 border-primary/30 rounded-xl p-4 sm:p-6 text-center mb-12 sm:mb-16"
+      >
+        <h3 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">Set Up in Under an Hour</h3>
+        <p class="text-sm sm:text-base text-base-content/80 mb-4">
+          Most businesses are set up in under an hour. Download the app, sign up for your free Pro
+          trial, and start adding products by scanning barcodes or taking photos.
+        </p>
+      </div>
+
+      <!-- CTA -->
+      <div class="text-center">
+        <p class="text-base sm:text-lg text-base-content/80 mb-4 sm:mb-6">
+          Still have questions? Start your trial and see for yourself.
+        </p>
+        <a
+          routerLink="/signup"
+          [queryParams]="{ plan: 'pro', trial: 'true' }"
+          class="btn btn-primary btn-lg text-base sm:text-lg px-8 sm:px-10 py-4 sm:py-5 min-h-[3rem] sm:min-h-[3.5rem]"
+        >
+          Start Your Free Trial
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 sm:h-6 sm:w-6 ml-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 7l5 5m0 0l-5 5m5-5H6"
+            />
+          </svg>
+        </a>
+      </div>
     </div>
   </section>
 
-  <!-- Final CTA Section -->
+  <!-- 8. Final CTA: The Decision -->
   <section
     id="cta"
     class="section-padding bg-gradient-to-br from-primary to-secondary text-primary-content"
   >
-    <div class="container mx-auto max-w-4xl text-center">
-      <h2 class="text-3xl md:text-5xl font-bold mb-6">Ready to Simplify Your Business?</h2>
-      <p class="text-lg mb-8 opacity-90">
-        Stop losing track of sales and stock. Start making informed decisions with Dukahub.
+    <div class="container mx-auto max-w-4xl px-4 text-center">
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
+        The Future of Your Business Starts Here
+      </h2>
+      <p class="text-xl sm:text-2xl mb-3 sm:mb-4 opacity-95 font-semibold">
+        Join {{ socialProof.customerCount }}+ successful Kenyan businesses growing with Dukahub
+      </p>
+      <p class="text-base sm:text-lg mb-8 sm:mb-10 opacity-90 max-w-2xl mx-auto leading-relaxed">
+        Stop losing sales to manual errors. Start making confident decisions. Save
+        {{ socialProof.timeSaved }} daily. Get set up in under an hour.
       </p>
       <a
         routerLink="/signup"
         [queryParams]="{ plan: 'pro', trial: 'true' }"
-        class="btn btn-lg bg-base-100 text-base-content hover:bg-base-200"
+        class="btn btn-lg bg-base-100 text-base-content hover:bg-base-200 shadow-2xl text-lg sm:text-xl px-8 sm:px-12 py-5 sm:py-6 min-h-[3.5rem] sm:min-h-[4rem] mb-8 sm:mb-10 font-semibold"
       >
-        Start Your Free 14-Day Pro Trial Now
+        Start Your Free 30-Day Pro Trial Now
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5"
+          class="h-6 w-6 sm:h-7 sm:w-7 ml-2"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -451,9 +1303,88 @@
           />
         </svg>
       </a>
-      <p class="mt-6 text-sm opacity-75">No credit card required. Cancel anytime.</p>
+      <div
+        class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-sm sm:text-base"
+      >
+        <div class="flex items-center gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 sm:h-6 sm:w-6 opacity-90"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          <span class="opacity-90">No credit card required</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 sm:h-6 sm:w-6 opacity-90"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          <span class="opacity-90">Set up in under an hour</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 sm:h-6 sm:w-6 opacity-90"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          <span class="opacity-90">Cancel anytime</span>
+        </div>
+      </div>
     </div>
   </section>
+
+  <!-- Sticky CTA Button -->
+  <div class="sticky-cta hidden md:block">
+    <a
+      routerLink="/signup"
+      [queryParams]="{ plan: 'pro', trial: 'true' }"
+      class="btn btn-primary btn-lg shadow-2xl"
+    >
+      Start Free Trial
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M13 7l5 5m0 0l-5 5m5-5H6"
+        />
+      </svg>
+    </a>
+  </div>
 </main>
 
 <app-footer />

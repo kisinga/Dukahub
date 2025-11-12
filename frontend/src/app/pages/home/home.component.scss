@@ -4,3 +4,128 @@
   margin-left: auto;
   margin-right: auto;
 }
+
+// Conversion-focused enhancements
+.section-padding {
+  padding: 3rem 1rem;
+  
+  @media (min-width: 640px) {
+    padding: 4rem 1rem;
+  }
+  
+  @media (min-width: 1024px) {
+    padding: 5rem 1rem;
+  }
+}
+
+// Smooth fade-in animation
+.fade-in-up {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Hover effects for cards with smooth transitions
+.card {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    transform: translateY(-4px);
+  }
+  
+  // Active state for better touch feedback
+  &:active {
+    transform: translateY(-2px) scale(0.98);
+  }
+}
+
+// Button hover and active states
+.btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: translateY(0) scale(0.98);
+  }
+}
+
+// Sticky CTA button
+.sticky-cta {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: slideInUp 0.3s ease-out;
+  border-radius: 0.5rem;
+  
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Smooth scrolling for anchor links
+html {
+  scroll-behavior: smooth;
+}
+
+// Typography enhancements
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+// Mobile-first line heights
+p {
+  line-height: 1.6;
+  
+  @media (min-width: 640px) {
+    line-height: 1.7;
+  }
+}
+
+// Enhanced focus states for accessibility
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid oklch(var(--p));
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+// Subtle entrance animations for sections
+section {
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
