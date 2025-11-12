@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { EventBus, PaymentStateTransitionEvent } from '@vendure/core';
 
-import { CreditService } from './credit.service';
+import { CreditService } from '../../services/credit/credit.service';
 
 @Injectable()
 export class CreditPaymentSubscriber implements OnModuleInit {

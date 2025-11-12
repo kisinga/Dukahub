@@ -3,9 +3,9 @@ import { PluginCommonModule, VendurePlugin } from '@vendure/core';
 
 import { CREDIT_ADMIN_SCHEMA } from './credit.schema';
 import { CreditResolver } from './credit.resolver';
-import { CreditService } from './credit.service';
+import { CreditService } from '../../services/credit/credit.service';
 import { CreditPaymentSubscriber } from './credit-payment.subscriber';
-import { setPaymentHandlerCreditService } from '../payment-handlers';
+import { setPaymentHandlerCreditService } from '../../services/payments/payment-handlers';
 import {
     ApproveCustomerCreditPermission,
     ManageCustomerCreditLimitPermission

@@ -1,0 +1,128 @@
+{
+  "order_payment_settled": {
+    "subscribable": true,
+    "customerFacing": true,
+    "defaultEnabled": true,
+    "category": "system_notifications"
+  },
+  "order_fulfilled": {
+    "subscribable": true,
+    "customerFacing": true,
+    "defaultEnabled": true,
+    "category": "system_notifications"
+  },
+  "order_cancelled": {
+    "subscribable": true,
+    "customerFacing": true,
+    "defaultEnabled": true,
+    "category": "system_notifications"
+  },
+  "stock_low_alert": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "ml_training_started": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "ml_training_progress": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "ml_training_completed": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "ml_training_failed": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "ml_extraction_queued": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "ml_extraction_started": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "ml_extraction_completed": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "ml_extraction_failed": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "payment_confirmed": {
+    "subscribable": true,
+    "customerFacing": true,
+    "defaultEnabled": true,
+    "category": "system_notifications"
+  },
+  "customer_created": {
+    "subscribable": true,
+    "customerFacing": true,
+    "defaultEnabled": true,
+    "category": "customer_communication"
+  },
+  "customer_credit_approved": {
+    "subscribable": true,
+    "customerFacing": true,
+    "defaultEnabled": true,
+    "category": "customer_communication"
+  },
+  "customer_balance_changed": {
+    "subscribable": true,
+    "customerFacing": true,
+    "defaultEnabled": true,
+    "category": "customer_communication"
+  },
+  "customer_repayment_deadline": {
+    "subscribable": true,
+    "customerFacing": true,
+    "defaultEnabled": true,
+    "category": "customer_communication"
+  },
+  "admin_created": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "admin_updated": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "user_created": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  },
+  "user_updated": {
+    "subscribable": false,
+    "customerFacing": false,
+    "defaultEnabled": false,
+    "category": "system_notifications"
+  }
+}

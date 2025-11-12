@@ -1,0 +1,53 @@
+import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { NotificationService } from '../../services/notifications/notification.service';
+import { PushNotificationService } from '../../services/notifications/push-notification.service';
+import { SmsProviderFactory } from '../../infrastructure/sms/sms-provider.factory';
+import { SmsService } from '../../infrastructure/sms/sms.service';
+import { ChannelActionTrackingService } from '../../infrastructure/events/channel-action-tracking.service';
+import { ChannelCommunicationService } from '../../services/channels/channel-communication.service';
+import { ChannelEventRouterService } from '../../infrastructure/events/channel-event-router.service';
+import { ChannelSmsService } from '../../infrastructure/events/channel-sms.service';
+import { InAppActionHandler } from '../../infrastructure/events/handlers/in-app-action.handler';
+import { PushActionHandler } from '../../infrastructure/events/handlers/push-action.handler';
+import { SmsActionHandler } from '../../infrastructure/events/handlers/sms-action.handler';
+import { NotificationPreferenceService } from '../../infrastructure/events/notification-preference.service';
+
+/**
+ * Channel Events Plugin
+ * 
+ * Provides a centralized, event-driven framework for channel-specific actions.
+ * Handles SMS, email, push notifications, and in-app notifications with per-channel
+ * configuration and user subscription preferences.
+ */
+@VendurePlugin({
+    imports: [PluginCommonModule],
+    providers: [
+        // Core services
+        ChannelActionTrackingService,
+        ChannelEventRouterService,
+        SmsProviderFactory, // Required by SmsService
+        SmsService, // Required by ChannelSmsService
+        ChannelSmsService,
+        NotificationPreferenceService,
+
+        // Required services for action handlers
+        NotificationService, // Required by InAppActionHandler
+        PushNotificationService, // Required by PushActionHandler
+
+        // Action handlers
+        InAppActionHandler,
+        PushActionHandler,
+        SmsActionHandler,
+
+        // Communication services
+        ChannelCommunicationService,
+    ],
+    exports: [
+        ChannelEventRouterService,
+        ChannelActionTrackingService,
+        ChannelSmsService,
+        NotificationPreferenceService,
+    ],
+})
+export class ChannelEventsPlugin { }
+

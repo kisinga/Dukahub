@@ -1,0 +1,289 @@
+import { Injectable, Logger } from '@nestjs/common';
+import {
+    Customer,
+    CustomerService,
+    RequestContext,
+} from '@vendure/core';
+import { ChannelEventRouterService } from '../../infrastructure/events/channel-event-router.service';
+import { ActionCategory } from '../../infrastructure/events/types/action-category.enum';
+import { ChannelEvent } from '../../infrastructure/events/types/channel-event.interface';
+import { ChannelEventType } from '../../infrastructure/events/types/event-type.enum';
+
+/**
+ * Channel Communication Service
+ * 
+ * Business logic service for credit-related customer communications.
+ * Handles sending notifications for credit events (approval, balance changes, repayment deadlines).
+ */
+@Injectable()
+export class ChannelCommunicationService {
+    private readonly logger = new Logger('ChannelCommunicationService');
+
+    constructor(
+        private readonly customerService: CustomerService,
+        private readonly eventRouter: ChannelEventRouterService,
+    ) { }
+
+    /**
+     * Send account created notification
+     */
+    async sendAccountCreatedNotification(
+        ctx: RequestContext,
+        customerId: string
+    ): Promise<void> {
+        try {
+            const customer = await this.customerService.findOne(ctx, customerId);
+            if (!customer) {
+                this.logger.warn(`Customer ${customerId} not found for account created notification`);
+                return;
+            }
+
+            const channelId = ctx.channelId?.toString();
+            if (!channelId) {
+                this.logger.warn(`No channel ID in context for customer ${customerId}`);
+                return;
+            }
+
+            await this.eventRouter.routeEvent({
+                type: ChannelEventType.CUSTOMER_CREATED,
+                channelId,
+                category: ActionCategory.CUSTOMER_COMMUNICATION,
+                context: ctx,
+                data: {
+                    customerId,
+                    customerName: customer.firstName + ' ' + customer.lastName,
+                },
+                targetCustomerId: customerId,
+                targetUserId: customer.user?.id?.toString(),
+            });
+
+            this.logger.log(`Sent account created notification for customer ${customerId}`);
+        } catch (error) {
+            this.logger.error(
+                `Failed to send account created notification for customer ${customerId}: ${error instanceof Error ? error.message : String(error)}`,
+                error
+            );
+        }
+    }
+
+    /**
+     * Send account approved notification
+     */
+    async sendAccountApprovedNotification(
+        ctx: RequestContext,
+        customerId: string,
+        creditLimit?: number,
+        creditDuration?: number
+    ): Promise<void> {
+        try {
+            const customer = await this.customerService.findOne(ctx, customerId);
+            if (!customer) {
+                this.logger.warn(`Customer ${customerId} not found for approval notification`);
+                return;
+            }
+
+            const channelId = ctx.channelId?.toString();
+            if (!channelId) {
+                this.logger.warn(`No channel ID in context for customer ${customerId}`);
+                return;
+            }
+
+            const customFields = (customer.customFields as any) || {};
+            const finalCreditLimit = creditLimit ?? customFields.creditLimit ?? 0;
+
+            await this.eventRouter.routeEvent({
+                type: ChannelEventType.CUSTOMER_CREDIT_APPROVED,
+                channelId,
+                category: ActionCategory.CUSTOMER_COMMUNICATION,
+                context: ctx,
+                data: {
+                    customerId,
+                    creditLimit: finalCreditLimit,
+                    creditDuration: creditDuration ?? customFields.creditDuration ?? 30,
+                },
+                targetCustomerId: customerId,
+                targetUserId: customer.user?.id?.toString(),
+            });
+
+            this.logger.log(`Sent account approved notification for customer ${customerId}`);
+        } catch (error) {
+            this.logger.error(
+                `Failed to send account approved notification for customer ${customerId}: ${error instanceof Error ? error.message : String(error)}`,
+                error
+            );
+        }
+    }
+
+    /**
+     * Send starting balance notification
+     */
+    async sendStartingBalanceNotification(
+        ctx: RequestContext,
+        customerId: string
+    ): Promise<void> {
+        try {
+            const customer = await this.customerService.findOne(ctx, customerId);
+            if (!customer) {
+                return;
+            }
+
+            const customFields = (customer.customFields as any) || {};
+            const outstandingAmount = customFields.outstandingAmount ?? 0;
+
+            if (outstandingAmount === 0) {
+                return; // No balance to notify about
+            }
+
+            const channelId = ctx.channelId?.toString();
+            if (!channelId) {
+                return;
+            }
+
+            await this.eventRouter.routeEvent({
+                type: ChannelEventType.CUSTOMER_BALANCE_CHANGED,
+                channelId,
+                category: ActionCategory.CUSTOMER_COMMUNICATION,
+                context: ctx,
+                data: {
+                    customerId,
+                    outstandingAmount,
+                    isStartingBalance: true,
+                },
+                targetCustomerId: customerId,
+                targetUserId: customer.user?.id?.toString(),
+            });
+
+            this.logger.log(`Sent starting balance notification for customer ${customerId}`);
+        } catch (error) {
+            this.logger.error(
+                `Failed to send starting balance notification for customer ${customerId}: ${error instanceof Error ? error.message : String(error)}`,
+                error
+            );
+        }
+    }
+
+    /**
+     * Send balance change notification
+     */
+    async sendBalanceChangeNotification(
+        ctx: RequestContext,
+        customerId: string,
+        oldBalance: number,
+        newBalance: number
+    ): Promise<void> {
+        try {
+            // Only send if balance changed significantly (avoid spam)
+            if (Math.abs(newBalance - oldBalance) < 0.01) {
+                return;
+            }
+
+            const customer = await this.customerService.findOne(ctx, customerId);
+            if (!customer) {
+                return;
+            }
+
+            const channelId = ctx.channelId?.toString();
+            if (!channelId) {
+                return;
+            }
+
+            await this.eventRouter.routeEvent({
+                type: ChannelEventType.CUSTOMER_BALANCE_CHANGED,
+                channelId,
+                category: ActionCategory.CUSTOMER_COMMUNICATION,
+                context: ctx,
+                data: {
+                    customerId,
+                    outstandingAmount: newBalance,
+                    oldBalance,
+                    change: newBalance - oldBalance,
+                },
+                targetCustomerId: customerId,
+                targetUserId: customer.user?.id?.toString(),
+            });
+
+            this.logger.log(`Sent balance change notification for customer ${customerId}: ${oldBalance} -> ${newBalance}`);
+        } catch (error) {
+            this.logger.error(
+                `Failed to send balance change notification for customer ${customerId}: ${error instanceof Error ? error.message : String(error)}`,
+                error
+            );
+        }
+    }
+
+    /**
+     * Send repayment deadline notification
+     * 
+     * Checks both:
+     * - creditDuration days after last repayment date
+     * - When outstanding balance exceeds threshold (e.g., 80% of credit limit)
+     */
+    async sendRepaymentDeadlineNotification(
+        ctx: RequestContext,
+        customerId: string
+    ): Promise<void> {
+        try {
+            const customer = await this.customerService.findOne(ctx, customerId);
+            if (!customer) {
+                return;
+            }
+
+            const customFields = (customer.customFields as any) || {};
+            const outstandingAmount = Math.abs(customFields.outstandingAmount ?? 0);
+            const creditLimit = customFields.creditLimit ?? 0;
+            const creditDuration = customFields.creditDuration ?? 30;
+            const lastRepaymentDate = customFields.lastRepaymentDate
+                ? new Date(customFields.lastRepaymentDate)
+                : null;
+
+            // Check if balance exceeds threshold (80% of credit limit)
+            const threshold = creditLimit * 0.8;
+            const exceedsThreshold = outstandingAmount >= threshold;
+
+            // Check if deadline is approaching (within 3 days)
+            let deadlineApproaching = false;
+            if (lastRepaymentDate) {
+                const deadlineDate = new Date(lastRepaymentDate);
+                deadlineDate.setDate(deadlineDate.getDate() + creditDuration);
+                const daysUntilDeadline = Math.ceil(
+                    (deadlineDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                );
+                deadlineApproaching = daysUntilDeadline <= 3 && daysUntilDeadline >= 0;
+            }
+
+            // Send notification if either condition is met
+            if (exceedsThreshold || deadlineApproaching) {
+                const channelId = ctx.channelId?.toString();
+                if (!channelId) {
+                    return;
+                }
+
+                await this.eventRouter.routeEvent({
+                    type: ChannelEventType.CUSTOMER_REPAYMENT_DEADLINE,
+                    channelId,
+                    category: ActionCategory.CUSTOMER_COMMUNICATION,
+                    context: ctx,
+                    data: {
+                        customerId,
+                        outstandingAmount,
+                        creditLimit,
+                        creditDuration,
+                        lastRepaymentDate: lastRepaymentDate?.toISOString(),
+                        exceedsThreshold,
+                        deadlineApproaching,
+                    },
+                    targetCustomerId: customerId,
+                    targetUserId: customer.user?.id?.toString(),
+                });
+
+                this.logger.log(`Sent repayment deadline notification for customer ${customerId}`);
+            }
+        } catch (error) {
+            this.logger.error(
+                `Failed to send repayment deadline notification for customer ${customerId}: ${error instanceof Error ? error.message : String(error)}`,
+                error
+            );
+        }
+    }
+}
+

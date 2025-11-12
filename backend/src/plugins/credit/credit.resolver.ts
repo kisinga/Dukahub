@@ -1,11 +1,13 @@
+import { Optional } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Allow, Ctx, Permission, RequestContext } from '@vendure/core';
 
+import { ChannelCommunicationService } from '../../services/channels/channel-communication.service';
+import { CreditService, CreditSummary } from '../../services/credit/credit.service';
 import {
     ApproveCustomerCreditPermission,
     ManageCustomerCreditLimitPermission
 } from './permissions';
-import { CreditService, CreditSummary } from './credit.service';
 
 interface ApproveCustomerCreditInput {
     customerId: string;
@@ -27,7 +29,10 @@ interface UpdateCreditDurationInput {
 
 @Resolver('CreditSummary')
 export class CreditResolver {
-    constructor(private readonly creditService: CreditService) { }
+    constructor(
+        private readonly creditService: CreditService,
+        @Optional() private readonly communicationService?: ChannelCommunicationService, // Optional to avoid circular dependency
+    ) { }
 
     @Query()
     @Allow(Permission.ReadCustomer)
@@ -44,13 +49,28 @@ export class CreditResolver {
         @Ctx() ctx: RequestContext,
         @Args('input') input: ApproveCustomerCreditInput
     ): Promise<CreditSummary> {
-        return this.creditService.approveCustomerCredit(
+        const result = await this.creditService.approveCustomerCredit(
             ctx,
             input.customerId,
             input.approved,
             input.creditLimit,
             input.creditDuration
         );
+
+        // Send approval notification if approved
+        if (input.approved && this.communicationService) {
+            await this.communicationService.sendAccountApprovedNotification(
+                ctx,
+                input.customerId,
+                input.creditLimit,
+                input.creditDuration
+            ).catch(error => {
+                // Log but don't fail the mutation
+                console.warn(`Failed to send approval notification: ${error instanceof Error ? error.message : String(error)}`);
+            });
+        }
+
+        return result;
     }
 
     @Mutation()
