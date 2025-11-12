@@ -186,11 +186,11 @@ export class NotificationTestComponent {
       const channelId = this.currentChannelId();
 
       if (userId) {
-        params.userId = userId;
+        params['userId'] = userId;
       }
 
       if (channelId) {
-        params.channelId = channelId;
+        params['channelId'] = channelId;
       }
 
       await this.http.get(`/test-notifications/trigger`, {
@@ -219,11 +219,11 @@ export class NotificationTestComponent {
       const channelId = this.currentChannelId();
 
       if (userId) {
-        payload.userId = userId;
+        payload['userId'] = userId;
       }
 
       if (channelId) {
-        payload.channelId = channelId;
+        payload['channelId'] = channelId;
       }
 
       await this.http.post(`/test-notifications/trigger-all`, payload).toPromise();
