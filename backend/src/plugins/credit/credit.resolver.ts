@@ -2,8 +2,8 @@ import { Optional } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Allow, Ctx, Permission, RequestContext } from '@vendure/core';
 
-import { ChannelCommunicationService } from '../channel-events/channel-communication.service';
-import { CreditService, CreditSummary } from './credit.service';
+import { ChannelCommunicationService } from '../../services/channels/channel-communication.service';
+import { CreditService, CreditSummary } from '../../services/credit/credit.service';
 import {
     ApproveCustomerCreditPermission,
     ManageCustomerCreditLimitPermission

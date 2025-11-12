@@ -1,6 +1,6 @@
 import { bootstrap, runMigrations } from '@vendure/core';
 import { config } from './vendure-config';
-import { OtpTokenAuthStrategy } from './plugins/otp-token-auth.strategy';
+import { OtpTokenAuthStrategy } from './plugins/auth/otp-token-auth.strategy';
 
 // Run migrations first, then bootstrap the application
 runMigrations(config)

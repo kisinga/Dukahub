@@ -1,5 +1,5 @@
 import { RequestContext } from '@vendure/core';
-import { CreditService } from '../../src/plugins/credit/credit.service';
+import { CreditService } from '../../src/services/credit/credit.service';
 
 describe('CreditService', () => {
     const ctx = {} as RequestContext;
@@ -28,7 +28,7 @@ describe('CreditService', () => {
 
     it('computes available credit from summary', async () => {
         const { connection } = createConnection();
-        const service = new CreditService(connection);
+        const service = new CreditService(connection, undefined); // Optional communicationService
 
         const summary = await service.getCreditSummary(ctx, 'CUST_1');
 
@@ -43,7 +43,7 @@ describe('CreditService', () => {
 
     it('applies credit charge by reducing outstanding amount', async () => {
         const { connection, saveMock } = createConnection();
-        const service = new CreditService(connection);
+        const service = new CreditService(connection, undefined); // Optional communicationService
 
         await service.applyCreditCharge(ctx, 'CUST_1', 150);
 
@@ -58,7 +58,7 @@ describe('CreditService', () => {
 
     it('releases credit charge by increasing outstanding amount', async () => {
         const { connection, saveMock } = createConnection();
-        const service = new CreditService(connection);
+        const service = new CreditService(connection, undefined); // Optional communicationService
 
         await service.releaseCreditCharge(ctx, 'CUST_1', 150);
 

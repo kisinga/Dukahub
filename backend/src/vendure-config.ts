@@ -16,19 +16,19 @@ import { config as dotenvConfig } from 'dotenv';
 import { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
-import { ChannelSettingsPlugin } from './plugins/channel-settings.plugin';
-import { FractionalQuantityPlugin } from './plugins/fractional-quantity.plugin';
-import { MlModelPlugin } from './plugins/ml-model.plugin';
-import { NotificationPlugin } from './plugins/notification.plugin';
-import { cashPaymentHandler, creditPaymentHandler, mpesaPaymentHandler } from './plugins/payment-handlers';
-import { PhoneAuthPlugin } from './plugins/phone-auth.plugin';
-import { OverridePricePermission } from './plugins/price-override.permission';
+import { ChannelSettingsPlugin } from './plugins/channels/channel-settings.plugin';
+import { FractionalQuantityPlugin } from './plugins/inventory/fractional-quantity.plugin';
+import { MlModelPlugin } from './plugins/ml/ml-model.plugin';
+import { NotificationPlugin } from './plugins/notifications/notification.plugin';
+import { cashPaymentHandler, creditPaymentHandler, mpesaPaymentHandler } from './services/payments/payment-handlers';
+import { PhoneAuthPlugin } from './plugins/auth/phone-auth.plugin';
+import { OverridePricePermission } from './plugins/pricing/price-override.permission';
 import { ApproveCustomerCreditPermission, ManageCustomerCreditLimitPermission } from './plugins/credit/permissions';
-import { PriceOverridePlugin } from './plugins/price-override.plugin';
-import { SubscriptionTier } from './plugins/subscription.entity';
-import { SubscriptionPlugin } from './plugins/subscription.plugin';
+import { PriceOverridePlugin } from './plugins/pricing/price-override.plugin';
+import { SubscriptionTier } from './plugins/subscriptions/subscription.entity';
+import { SubscriptionPlugin } from './plugins/subscriptions/subscription.plugin';
 import { CreditPlugin } from './plugins/credit/credit.plugin';
-import { ChannelEventsPlugin } from './plugins/channel-events/channel-events.plugin';
+import { ChannelEventsPlugin } from './plugins/channels/channel-events.plugin';
 
 // Load environment variables from .env file for local development
 // Docker containers get env vars from docker-compose (these override .env)
