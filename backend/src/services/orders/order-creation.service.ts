@@ -10,6 +10,8 @@ import {
 } from '@vendure/core';
 import { CreditService } from '../credit/credit.service';
 import { PriceOverrideService } from './price-override.service';
+import { AuditService } from '../../infrastructure/audit/audit.service';
+import { OrderService } from '@vendure/core';
 
 export interface CartItemInput {
     variantId: string;
@@ -45,6 +47,8 @@ export class OrderCreationService {
         private readonly connection: TransactionalConnection,
         private readonly creditService: CreditService,
         private readonly priceOverrideService: PriceOverrideService,
+        private readonly auditService: AuditService,
+        private readonly orderService: OrderService,
     ) {}
 
     /**
@@ -86,6 +90,17 @@ export class OrderCreationService {
                 // 6. Call transitionOrderToState to ArrangingPayment
                 // 7. Call addManualPaymentToOrder
                 // 8. Handle fulfillment for cash sales
+                // 
+                // After order is created, add:
+                // - await this.updateOrderCustomFields(transactionCtx, order.id, {
+                //     createdByUserId: transactionCtx.activeUserId,
+                //     lastModifiedByUserId: transactionCtx.activeUserId
+                //   });
+                // - await this.auditService.log(transactionCtx, 'order.created', {
+                //     entityType: 'Order',
+                //     entityId: order.id.toString(),
+                //     data: { orderCode: order.code, total: order.total }
+                //   });
                 // 
                 // This requires access to the Admin API GraphQL client through RequestContext
                 // or using Vendure's internal services if they're available.
@@ -145,6 +160,26 @@ export class OrderCreationService {
         const savedCustomer = await customerRepo.save(newCustomer);
         this.logger.log(`Created walk-in customer: ${savedCustomer.id}`);
         return String(savedCustomer.id);
+    }
+
+    /**
+     * Update order custom fields for user tracking
+     */
+    private async updateOrderCustomFields(
+        ctx: RequestContext,
+        orderId: ID,
+        fields: { createdByUserId?: ID; lastModifiedByUserId?: ID }
+    ): Promise<void> {
+        try {
+            await this.orderService.update(ctx, {
+                id: orderId,
+                customFields: fields,
+            });
+        } catch (error) {
+            this.logger.warn(
+                `Failed to update order custom fields for order ${orderId}: ${error instanceof Error ? error.message : String(error)}`
+            );
+        }
     }
 }
 

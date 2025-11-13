@@ -8,6 +8,7 @@ import {
     DefaultSearchPlugin,
     LanguageCode,
     manualFulfillmentHandler,
+    User,
     VendureConfig
 } from '@vendure/core';
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
@@ -29,6 +30,7 @@ import { SubscriptionTier } from './plugins/subscriptions/subscription.entity';
 import { SubscriptionPlugin } from './plugins/subscriptions/subscription.plugin';
 import { CreditPlugin } from './plugins/credit/credit.plugin';
 import { ChannelEventsPlugin } from './plugins/channels/channel-events.plugin';
+import { AuditPlugin } from './plugins/audit/audit.plugin';
 
 // Load environment variables from .env file for local development
 // Docker containers get env vars from docker-compose (these override .env)
@@ -678,7 +680,47 @@ export const config: VendureConfig = {
                 ui: { tab: 'Events' },
             },
         ],
+        Order: [
+            {
+                name: 'createdByUserId',
+                type: 'relation',
+                entity: User,
+                label: [{ languageCode: LanguageCode.en, value: 'Created By User' }],
+                description: [{ languageCode: LanguageCode.en, value: 'User who created this order' }],
+                public: false,
+                nullable: true,
+            },
+            {
+                name: 'lastModifiedByUserId',
+                type: 'relation',
+                entity: User,
+                label: [{ languageCode: LanguageCode.en, value: 'Last Modified By User' }],
+                description: [{ languageCode: LanguageCode.en, value: 'User who last modified this order' }],
+                public: false,
+                nullable: true,
+            },
+        ],
+        Payment: [
+            {
+                name: 'addedByUserId',
+                type: 'relation',
+                entity: User,
+                label: [{ languageCode: LanguageCode.en, value: 'Added By User' }],
+                description: [{ languageCode: LanguageCode.en, value: 'User who added this payment' }],
+                public: false,
+                nullable: true,
+            },
+        ],
         Customer: [
+            {
+                name: 'creditApprovedByUserId',
+                type: 'relation',
+                entity: User,
+                label: [{ languageCode: LanguageCode.en, value: 'Credit Approved By User' }],
+                description: [{ languageCode: LanguageCode.en, value: 'User who approved credit for this customer' }],
+                public: false,
+                nullable: true,
+            },
             {
                 name: 'isSupplier',
                 type: 'boolean',
@@ -915,6 +957,7 @@ export const config: VendureConfig = {
         CreditPlugin,
         SubscriptionPlugin,
         ChannelEventsPlugin,
+        AuditPlugin,
         // PhoneAuthPlugin must be registered early so its strategy can be added to adminAuthenticationStrategy
         PhoneAuthPlugin,
         AssetServerPlugin.init({

@@ -36,6 +36,32 @@ services:
       start_period: 30s
 
   # ========================================
+  # Audit Log Database (TimescaleDB)
+  # ========================================
+  timescaledb_audit:
+    image: timescale/timescaledb:latest-pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${AUDIT_DB_NAME:-audit_logs}
+      POSTGRES_USER: ${AUDIT_DB_USER:-audit_user}
+      POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD:-audit_password}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - timescaledb_audit_data:/var/lib/postgresql/data
+    ports:
+      - "${AUDIT_DB_PORT:-5433}:5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${AUDIT_DB_USER:-audit_user} -d ${AUDIT_DB_NAME:-audit_logs}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ========================================
   # Redis Cache Service
   # ========================================
   redis:
@@ -75,6 +101,13 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-vendure}
       DB_SCHEMA: ${DB_SCHEMA:-public}
 
+      # Audit Log Database configuration (TimescaleDB)
+      AUDIT_DB_HOST: timescaledb_audit
+      AUDIT_DB_PORT: 5432
+      AUDIT_DB_NAME: ${AUDIT_DB_NAME:-audit_logs}
+      AUDIT_DB_USERNAME: ${AUDIT_DB_USER:-audit_user}
+      AUDIT_DB_PASSWORD: ${AUDIT_DB_PASSWORD:-audit_password}
+
       # Redis configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -110,7 +143,7 @@ services:
 
       # SMS Provider configuration
       SMS_PROVIDER: ${SMS_PROVIDER:-textsms}
-      
+
       # TextSMS Configuration (default provider)
       TEXTSMS_API_KEY: ${TEXTSMS_API_KEY:-}
       TEXTSMS_PARTNER_ID: ${TEXTSMS_PARTNER_ID:-}
@@ -133,6 +166,8 @@ services:
       - "${BACKEND_PORT:-3000}:3000"
     depends_on:
       postgres_db:
+        condition: service_healthy
+      timescaledb_audit:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -194,4 +229,7 @@ volumes:
     driver: local
 
   backend_uploads:
+    driver: local
+
+  timescaledb_audit_data:
     driver: local

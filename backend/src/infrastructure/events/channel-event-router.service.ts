@@ -19,6 +19,8 @@ import { ActionCategory } from './types/action-category.enum';
 import { ChannelActionType } from './types/action-type.enum';
 import { ActionConfig, ChannelEvent, ChannelEventConfig } from './types/channel-event.interface';
 import { ChannelEventType } from './types/event-type.enum';
+import { AuditService } from '../audit/audit.service';
+import { UserContextResolver } from '../audit/user-context.resolver';
 
 /**
  * Channel Event Router Service
@@ -41,6 +43,8 @@ export class ChannelEventRouterService implements OnModuleInit {
         private readonly inAppHandler: InAppActionHandler,
         private readonly pushHandler: PushActionHandler,
         private readonly smsHandler: SmsActionHandler,
+        private readonly auditService: AuditService,
+        private readonly userContextResolver: UserContextResolver,
     ) {
         // Register handlers
         this.handlers.set(ChannelActionType.IN_APP_NOTIFICATION, inAppHandler);
@@ -160,6 +164,31 @@ export class ChannelEventRouterService implements OnModuleInit {
      */
     async routeEvent(event: ChannelEvent): Promise<void> {
         try {
+            // Log to audit system before processing
+            // Extract user context from event data or context
+            // This captures both regular admins and superadmins
+            const userId = event.data?.userId || 
+                          event.targetUserId || 
+                          this.userContextResolver.getUserId(event.context) ||
+                          null;
+
+            // Check if the user is a superadmin (for audit tracking)
+            const isSuperAdmin = userId ? await this.userContextResolver.isSuperAdmin(event.context) : false;
+
+            await this.auditService.log(event.context, `channel_event.${event.type}`, {
+                entityType: event.data?.entityType || null,
+                entityId: event.data?.entityId || event.data?.orderId || event.data?.adminId || event.data?.userId || null,
+                userId: userId,
+                data: {
+                    ...event.data,
+                    targetUserId: event.targetUserId,
+                    targetCustomerId: event.targetCustomerId,
+                    isSuperAdmin, // Explicitly mark superadmin actions
+                },
+            }).catch(err => {
+                this.logger.warn(`Failed to log channel event to audit: ${err instanceof Error ? err.message : String(err)}`);
+            });
+
             // Load channel configuration
             const channelConfig = await this.getChannelConfig(event.channelId);
             if (!channelConfig) {

@@ -24,6 +24,7 @@ import { formatPhoneNumber } from '../../utils/phone.utils';
 import { ChannelEventRouterService } from '../../infrastructure/events/channel-event-router.service';
 import { ActionCategory } from '../../infrastructure/events/types/action-category.enum';
 import { ChannelEventType } from '../../infrastructure/events/types/event-type.enum';
+import { AuditService } from '../../infrastructure/audit/audit.service';
 
 /**
  * NOTE: This service's `provisionCustomer` method is designed to be called
@@ -77,6 +78,7 @@ export class RegistrationService {
         private readonly connection: TransactionalConnection,
         private readonly passwordCipher: PasswordCipher,
         @Optional() private readonly eventRouter?: ChannelEventRouterService, // Optional to avoid circular dependency
+        @Optional() private readonly auditService?: AuditService, // Optional to avoid circular dependency
     ) { }
 
     /**
@@ -578,40 +580,72 @@ export class RegistrationService {
 
             console.log('[RegistrationService] Administrator created:', finalAdmin.id, 'User ID:', (finalAdmin as any).user.id);
 
-            // Emit events for admin/user creation
-            if (this.eventRouter && role.channels && role.channels.length > 0) {
+            // Log audit events for admin/user creation
+            if (role.channels && role.channels.length > 0) {
                 const channelId = role.channels[0].id.toString();
-                const ctx = RequestContext.empty();
+                
+                // Log user creation
+                if (this.auditService) {
+                    await this.auditService.log(ctx, 'user.created', {
+                        entityType: 'User',
+                        entityId: savedUser.id.toString(),
+                        data: {
+                            identifier: savedUser.identifier,
+                            adminId: finalAdmin.id.toString(),
+                        },
+                    }).catch((err: unknown) => {
+                        console.warn(`Failed to log user created audit: ${err instanceof Error ? err.message : String(err)}`);
+                    });
 
-                // Emit admin created event
-                await this.eventRouter.routeEvent({
-                    type: ChannelEventType.ADMIN_CREATED,
-                    channelId,
-                    category: ActionCategory.SYSTEM_NOTIFICATIONS,
-                    context: ctx,
-                    data: {
-                        adminId: finalAdmin.id.toString(),
-                        userId: savedUser.id.toString(),
-                        firstName: registrationData.adminFirstName,
-                        lastName: registrationData.adminLastName,
-                    },
-                }).catch(err => {
-                    console.warn(`Failed to route admin created event: ${err instanceof Error ? err.message : String(err)}`);
-                });
+                    // Log admin creation
+                    await this.auditService.log(ctx, 'admin.created', {
+                        entityType: 'Administrator',
+                        entityId: finalAdmin.id.toString(),
+                        data: {
+                            userId: savedUser.id.toString(),
+                            firstName: registrationData.adminFirstName,
+                            lastName: registrationData.adminLastName,
+                            emailAddress: finalAdmin.emailAddress,
+                        },
+                    }).catch((err: unknown) => {
+                        console.warn(`Failed to log admin created audit: ${err instanceof Error ? err.message : String(err)}`);
+                    });
+                }
 
-                // Emit user created event
-                await this.eventRouter.routeEvent({
-                    type: ChannelEventType.USER_CREATED,
-                    channelId,
-                    category: ActionCategory.SYSTEM_NOTIFICATIONS,
-                    context: ctx,
-                    data: {
-                        userId: savedUser.id.toString(),
-                        adminId: finalAdmin.id.toString(),
-                    },
-                }).catch(err => {
-                    console.warn(`Failed to route user created event: ${err instanceof Error ? err.message : String(err)}`);
-                });
+                // Emit events for admin/user creation (existing channel events)
+                if (this.eventRouter) {
+                    const emptyCtx = RequestContext.empty();
+
+                    // Emit admin created event
+                    await this.eventRouter.routeEvent({
+                        type: ChannelEventType.ADMIN_CREATED,
+                        channelId,
+                        category: ActionCategory.SYSTEM_NOTIFICATIONS,
+                        context: emptyCtx,
+                        data: {
+                            adminId: finalAdmin.id.toString(),
+                            userId: savedUser.id.toString(),
+                            firstName: registrationData.adminFirstName,
+                            lastName: registrationData.adminLastName,
+                        },
+                    }).catch(err => {
+                        console.warn(`Failed to route admin created event: ${err instanceof Error ? err.message : String(err)}`);
+                    });
+
+                    // Emit user created event
+                    await this.eventRouter.routeEvent({
+                        type: ChannelEventType.USER_CREATED,
+                        channelId,
+                        category: ActionCategory.SYSTEM_NOTIFICATIONS,
+                        context: emptyCtx,
+                        data: {
+                            userId: savedUser.id.toString(),
+                            adminId: finalAdmin.id.toString(),
+                        },
+                    }).catch(err => {
+                        console.warn(`Failed to route user created event: ${err instanceof Error ? err.message : String(err)}`);
+                    });
+                }
             }
 
             return finalAdmin;

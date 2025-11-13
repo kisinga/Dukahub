@@ -29,6 +29,29 @@ services:
     networks:
       - dukahub_dev
 
+  # Audit Log Database (TimescaleDB) for development
+  timescaledb_audit:
+    image: timescale/timescaledb:latest-pg17
+    environment:
+      POSTGRES_DB: ${AUDIT_DB_NAME:-audit_logs}
+      POSTGRES_USER: ${AUDIT_DB_USER:-audit_user}
+      POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD:-audit_password}
+    ports:
+      - "5433:5432"
+    volumes:
+      - timescaledb_audit_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${AUDIT_DB_USER:-audit_user} -d ${AUDIT_DB_NAME:-audit_logs}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dukahub_dev
+
   redis:
     image: redis:7-alpine
     ports:
@@ -49,6 +72,8 @@ networks:
 
 volumes:
   postgres_dev_data:
+    driver: local
+  timescaledb_audit_dev_data:
     driver: local
   redis_dev_data:
     driver: local
