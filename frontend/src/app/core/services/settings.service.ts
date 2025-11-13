@@ -400,17 +400,19 @@ export class SettingsService {
                 console.log('Audit logs query result:', result);
                 const logs = result.data?.auditLogs ?? [];
                 console.log(`Received ${logs.length} audit logs from API`);
-                return logs.map((log: any) => ({
-                    id: log.id,
-                    timestamp: log.timestamp,
-                    channelId: log.channelId,
-                    eventType: log.eventType,
-                    entityType: log.entityType,
-                    entityId: log.entityId,
-                    userId: log.userId,
-                    data: log.data as Record<string, any>,
-                    source: log.source,
-                }));
+                return logs
+                    .filter((log): log is NonNullable<typeof log> => log != null)
+                    .map((log): AuditLog => ({
+                        id: log.id,
+                        timestamp: log.timestamp,
+                        channelId: log.channelId,
+                        eventType: log.eventType,
+                        entityType: log.entityType ?? null,
+                        entityId: log.entityId ?? null,
+                        userId: log.userId ?? null,
+                        data: log.data as Record<string, any>,
+                        source: log.source,
+                    }));
             }),
             catchError((error) => {
                 console.error('Error fetching audit logs:', error);
