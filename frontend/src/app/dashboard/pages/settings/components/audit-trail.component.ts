@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CompanyService } from '../../../../core/services/company.service';
 import { AuditLog, AuditLogOptions, SettingsService } from '../../../../core/services/settings.service';
-import { PaginationComponent } from '../../../customers/components/pagination.component';
+import { PaginationComponent } from '../../customers/components/pagination.component';
 
 /**
  * Audit Trail Component

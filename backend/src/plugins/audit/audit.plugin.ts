@@ -28,7 +28,11 @@ import { AuditResolver, auditSchema } from './audit.resolver';
         schema: auditSchema,
         resolvers: [AuditResolver],
     },
-    exports: [AuditService], // Export for use in other services
+    exports: [
+        AuditService, // Export for use in other services
+        AuditDbConnection, // Export so other plugins can use the same instance
+        UserContextResolver, // Export for consistency
+    ],
 })
 export class AuditPlugin {}
 

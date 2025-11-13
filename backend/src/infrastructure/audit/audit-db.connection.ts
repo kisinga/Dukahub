@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger, OnModuleDestroy, Scope } from '@nestjs/common';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { auditDbConfig } from './audit-db.config';
 import { AuditLog } from './audit-log.entity';
@@ -8,27 +8,62 @@ import { AuditLog } from './audit-log.entity';
  * 
  * Uses TimescaleDB for time-series optimized storage with automatic
  * retention policies for data older than 2 years.
+ * 
+ * Singleton to ensure only one database connection is created.
  */
-@Injectable()
+@Injectable({ scope: Scope.DEFAULT })
 export class AuditDbConnection implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(AuditDbConnection.name);
     private dataSource: DataSource | null = null;
+    private static instance: AuditDbConnection | null = null;
+    private static initializationPromise: Promise<void> | null = null;
+
+    constructor() {
+        // Singleton pattern: reuse existing instance if available
+        if (AuditDbConnection.instance) {
+            return AuditDbConnection.instance;
+        }
+        AuditDbConnection.instance = this;
+    }
 
     async onModuleInit(): Promise<void> {
-        try {
-            this.dataSource = new DataSource(auditDbConfig as DataSourceOptions);
-            await this.dataSource.initialize();
-            this.logger.log('Audit database connection established');
+        // Prevent multiple initializations
+        if (this.dataSource?.isInitialized) {
+            this.logger.debug('Audit database connection already initialized');
+            return;
+        }
 
-            // Initialize TimescaleDB hypertable and retention policy
-            await this.initializeTimescaleDB();
+        // If another instance is initializing, wait for it
+        if (AuditDbConnection.initializationPromise) {
+            this.logger.debug('Waiting for existing audit database initialization');
+            await AuditDbConnection.initializationPromise;
+            if (this.dataSource?.isInitialized) {
+                return;
+            }
+        }
+
+        try {
+            // Mark as initializing
+            AuditDbConnection.initializationPromise = this.initialize();
+            await AuditDbConnection.initializationPromise;
         } catch (error) {
+            AuditDbConnection.initializationPromise = null;
             this.logger.error(
                 `Failed to initialize audit database: ${error instanceof Error ? error.message : String(error)}`,
                 error instanceof Error ? error.stack : undefined
             );
             // Don't throw - allow app to continue without audit logging
         }
+    }
+
+    private async initialize(): Promise<void> {
+        this.dataSource = new DataSource(auditDbConfig as DataSourceOptions);
+        await this.dataSource.initialize();
+        this.logger.log('Audit database connection established');
+
+        // Initialize TimescaleDB hypertable and retention policy
+        await this.initializeTimescaleDB();
+        AuditDbConnection.initializationPromise = null;
     }
 
     async onModuleDestroy(): Promise<void> {
@@ -66,7 +101,7 @@ export class AuditDbConnection implements OnModuleInit, OnModuleDestroy {
         try {
             const queryRunner = this.dataSource.createQueryRunner();
 
-            // Check if table already exists
+            // Check if table exists
             const tableExists = await queryRunner.query(`
                 SELECT EXISTS (
                     SELECT 1 FROM information_schema.tables 
@@ -74,39 +109,79 @@ export class AuditDbConnection implements OnModuleInit, OnModuleDestroy {
                 )
             `);
 
-            if (!tableExists[0]?.exists) {
-                // Create audit_log table with composite primary key for TimescaleDB
+            if (tableExists[0]?.exists) {
+                // Check if table has UUID columns (old schema) that need migration
+                const columnInfo = await queryRunner.query(`
+                    SELECT column_name, data_type 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'audit_log' 
+                    AND column_name IN ('channelId', 'userId')
+                `);
+
+                const needsMigration = columnInfo.some(
+                    (col: any) => col.data_type === 'uuid'
+                );
+
+                if (needsMigration) {
+                    this.logger.log('Migrating audit_log table from UUID to integer columns...');
+                    
+                    // Drop hypertable if it exists
+                    try {
+                        await queryRunner.query(`
+                            SELECT drop_hypertable('audit_log', if_exists => true)
+                        `);
+                    } catch (e) {
+                        // Ignore errors if not a hypertable
+                    }
+
+                    // Drop old table
+                    await queryRunner.query(`DROP TABLE IF EXISTS audit_log CASCADE`);
+                    this.logger.log('Dropped old audit_log table with UUID columns');
+                }
+            }
+
+            // Create table with correct schema if it doesn't exist (or was just dropped)
+            const tableStillExists = await queryRunner.query(`
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_name = 'audit_log'
+                )
+            `);
+
+            if (!tableStillExists[0]?.exists) {
                 await queryRunner.query(`
-                    CREATE TABLE audit_log (
+                    CREATE TABLE IF NOT EXISTS audit_log (
                         id uuid NOT NULL DEFAULT gen_random_uuid(),
                         timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        "channelId" uuid NOT NULL,
+                        "channelId" integer NOT NULL,
                         "eventType" character varying NOT NULL,
                         "entityType" character varying,
                         "entityId" character varying,
-                        "userId" uuid,
+                        "userId" integer,
                         data jsonb NOT NULL DEFAULT '{}',
                         source character varying NOT NULL,
                         CONSTRAINT "PK_audit_log" PRIMARY KEY (id, timestamp)
                     )
                 `);
+
+                // Create indexes
+                await queryRunner.query(`
+                    CREATE INDEX IF NOT EXISTS "IDX_audit_log_channel_timestamp" 
+                    ON audit_log ("channelId", timestamp DESC)
+                `);
+
+                await queryRunner.query(`
+                    CREATE INDEX IF NOT EXISTS "IDX_audit_log_channel_entity" 
+                    ON audit_log ("channelId", "entityType", "entityId")
+                `);
+
+                await queryRunner.query(`
+                    CREATE INDEX IF NOT EXISTS "IDX_audit_log_channel_user" 
+                    ON audit_log ("channelId", "userId")
+                `);
+
+                this.logger.log('Created audit_log table with integer columns');
             }
-
-            // Create indexes
-            await queryRunner.query(`
-                CREATE INDEX IF NOT EXISTS "IDX_audit_log_channel_timestamp" 
-                ON audit_log ("channelId", timestamp DESC)
-            `);
-
-            await queryRunner.query(`
-                CREATE INDEX IF NOT EXISTS "IDX_audit_log_channel_entity" 
-                ON audit_log ("channelId", "entityType", "entityId")
-            `);
-
-            await queryRunner.query(`
-                CREATE INDEX IF NOT EXISTS "IDX_audit_log_channel_user" 
-                ON audit_log ("channelId", "userId")
-            `);
 
             // Enable TimescaleDB extension if not already enabled
             await queryRunner.query(`

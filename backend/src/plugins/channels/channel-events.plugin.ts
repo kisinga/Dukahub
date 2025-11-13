@@ -26,6 +26,7 @@ import { UserContextResolver } from '../../infrastructure/audit/user-context.res
     imports: [PluginCommonModule],
     providers: [
         // Audit dependencies (must be available for ChannelEventRouterService)
+        // AuditDbConnection uses singleton pattern to prevent duplicate initialization
         AuditDbConnection,
         UserContextResolver,
         AuditService,

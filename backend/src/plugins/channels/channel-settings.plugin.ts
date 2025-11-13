@@ -10,6 +10,7 @@ import { ChannelSettingsResolver, channelSettingsSchema } from './channel-settin
     imports: [PluginCommonModule],
     providers: [
         // Audit dependencies (must be available for ChannelSettingsService)
+        // AuditDbConnection uses singleton pattern to prevent duplicate initialization
         AuditDbConnection,
         UserContextResolver,
         AuditService,

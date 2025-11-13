@@ -1,6 +1,7 @@
 import { Args, Query, Resolver } from '@nestjs/graphql';
 import { Allow, Ctx, Permission, RequestContext } from '@vendure/core';
 import { gql } from 'graphql-tag';
+import { Logger } from '@nestjs/common';
 import { AuditService } from '../../infrastructure/audit/audit.service';
 import { AuditTrailFilters } from '../../infrastructure/audit/audit.types';
 import { AuditLog } from '../../infrastructure/audit/audit-log.entity';
@@ -36,10 +37,12 @@ export const auditSchema = gql`
 
 @Resolver()
 export class AuditResolver {
+    private readonly logger = new Logger(AuditResolver.name);
+    
     constructor(private readonly auditService: AuditService) {}
 
     @Query()
-    @Allow(Permission.ReadSettings) // Requires admin authentication
+    @Allow(Permission.ReadSettings, Permission.ReadOrder) // Allow both settings and order permissions
     async auditLogs(
         @Ctx() ctx: RequestContext,
         @Args('options') options?: {
@@ -53,6 +56,10 @@ export class AuditResolver {
             skip?: number;
         }
     ): Promise<AuditLog[]> {
+        const channelId = ctx.channelId || ctx.channel?.id;
+        this.logger.log(
+            `auditLogs query called with channelId: ${channelId}, options: ${JSON.stringify(options)}`
+        );
         // Build filters from options
         const filters: AuditTrailFilters & { limit?: number; skip?: number } = {};
         
@@ -94,7 +101,11 @@ export class AuditResolver {
         }
 
         // Get audit logs (automatically filtered by channel from RequestContext)
-        return await this.auditService.getAuditTrail(ctx, filters);
+        const logs = await this.auditService.getAuditTrail(ctx, filters);
+        this.logger.log(
+            `auditLogs query returning ${logs.length} logs for channelId: ${channelId}`
+        );
+        return logs;
     }
 }
 

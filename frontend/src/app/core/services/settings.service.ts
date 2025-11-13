@@ -1,5 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { Observable, from } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import type { GetAuditLogsQuery, GetAuditLogsQueryVariables } from '../graphql/generated/graphql';
 import { LanguageCode } from '../graphql/generated/graphql';
 import {
     CREATE_CHANNEL_PAYMENT_METHOD,
@@ -8,9 +11,6 @@ import {
     UPDATE_CHANNEL_PAYMENT_METHOD,
     UPDATE_CHANNEL_SETTINGS
 } from '../graphql/operations.graphql';
-import type { GetAuditLogsQuery, GetAuditLogsQueryVariables } from '../graphql/generated/graphql';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
 
@@ -375,28 +375,32 @@ export class SettingsService {
      */
     getAuditLogs(options: AuditLogOptions = {}): Observable<AuditLog[]> {
         const client = this.apolloService.getClient();
-        
+
         // Convert Date objects to ISO strings if needed
         const variables: GetAuditLogsQueryVariables = {
             options: {
                 ...options,
-                startDate: options.startDate instanceof Date 
-                    ? options.startDate.toISOString() 
+                startDate: options.startDate instanceof Date
+                    ? options.startDate.toISOString()
                     : options.startDate,
-                endDate: options.endDate instanceof Date 
-                    ? options.endDate.toISOString() 
+                endDate: options.endDate instanceof Date
+                    ? options.endDate.toISOString()
                     : options.endDate,
             }
         };
 
-        return client.query<GetAuditLogsQuery>({
+        const queryPromise = client.query<GetAuditLogsQuery>({
             query: GET_AUDIT_LOGS,
             variables,
             fetchPolicy: 'network-only',
-        }).pipe(
-            map(result => {
+        });
+
+        return from(queryPromise).pipe(
+            map((result) => {
+                console.log('Audit logs query result:', result);
                 const logs = result.data?.auditLogs ?? [];
-                return logs.map(log => ({
+                console.log(`Received ${logs.length} audit logs from API`);
+                return logs.map((log: any) => ({
                     id: log.id,
                     timestamp: log.timestamp,
                     channelId: log.channelId,
@@ -407,6 +411,15 @@ export class SettingsService {
                     data: log.data as Record<string, any>,
                     source: log.source,
                 }));
+            }),
+            catchError((error) => {
+                console.error('Error fetching audit logs:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    graphQLErrors: error.graphQLErrors,
+                    networkError: error.networkError,
+                });
+                throw error;
             })
         );
     }

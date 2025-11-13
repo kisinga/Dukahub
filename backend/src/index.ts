@@ -1,24 +1,26 @@
 import { bootstrap, runMigrations } from '@vendure/core';
-import { config } from './vendure-config';
 import { OtpTokenAuthStrategy } from './plugins/auth/otp-token-auth.strategy';
+import { config } from './vendure-config';
+// Initialize environment configuration early
+import './infrastructure/config/environment.config';
 
 // Run migrations first, then bootstrap the application
 runMigrations(config)
     .then(async () => {
         // Bootstrap the application
         const app = await bootstrap(config);
-        
+
         // Register OTP token auth strategy after bootstrap when DI container is ready
         // Strategy must be first to check tokens before native password auth
-        
+
         // Get the strategy instance from the app's DI container (this is the properly initialized one)
         const diStrategy = app.get(OtpTokenAuthStrategy);
-        
+
         // Initialize array if it doesn't exist
         if (!config.authOptions.adminAuthenticationStrategy) {
             config.authOptions.adminAuthenticationStrategy = [];
         }
-        
+
         // Find the manually created strategy instance (the one without proper DI)
         // Look for any OtpTokenAuthStrategy that doesn't have OtpService initialized
         const manualStrategyIndex = config.authOptions.adminAuthenticationStrategy.findIndex(
@@ -28,7 +30,7 @@ runMigrations(config)
                 return isOtpStrategy && !hasOtpService;
             }
         );
-        
+
         if (manualStrategyIndex !== -1) {
             // Replace the manually created instance with the DI instance
             config.authOptions.adminAuthenticationStrategy[manualStrategyIndex] = diStrategy;
@@ -40,7 +42,7 @@ runMigrations(config)
                 config.authOptions.adminAuthenticationStrategy.unshift(diStrategy);
             }
         }
-        
+
         return app;
     })
     .catch(err => {

@@ -20,20 +20,20 @@ export class AuditLog {
     @PrimaryColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     timestamp: Date;
 
-    @Column('uuid')
-    channelId: string; // Required, indexed
+    @Column('integer')
+    channelId: number; // Vendure channel ID (numeric), required, indexed
 
-    @Column()
+    @Column({ type: 'varchar' })
     eventType: string; // e.g., 'order.created', 'user.created'
 
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     entityType: string | null; // e.g., 'Order', 'User'
 
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     entityId: string | null;
 
-    @Column('uuid', { nullable: true })
-    userId: string | null; // Who performed the action
+    @Column('integer', { nullable: true })
+    userId: number | null; // Vendure user ID (numeric), who performed the action
 
     @Column('jsonb')
     data: Record<string, any>; // Flexible event data

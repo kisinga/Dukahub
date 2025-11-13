@@ -2,10 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
     RequestContext,
 } from '@vendure/core';
+import { AuditDbConnection } from './audit-db.connection';
 import { AuditLog } from './audit-log.entity';
 import { AuditLogOptions, AuditTrailFilters } from './audit.types';
 import { UserContextResolver } from './user-context.resolver';
-import { AuditDbConnection } from './audit-db.connection';
 
 /**
  * Audit Service
@@ -20,7 +20,7 @@ export class AuditService {
     constructor(
         private readonly auditDbConnection: AuditDbConnection,
         private readonly userContextResolver: UserContextResolver
-    ) {}
+    ) { }
 
     /**
      * Log a user action (primary method)
@@ -32,9 +32,11 @@ export class AuditService {
         options: AuditLogOptions = {}
     ): Promise<void> {
         try {
-            const channelId = ctx.channelId?.toString();
+            // Get channelId from RequestContext (numeric ID)
+            const channelId = ctx.channelId || ctx.channel?.id;
+
             if (!channelId) {
-                this.logger.warn(
+                this.logger.debug(
                     `Cannot log audit event ${eventType}: channelId not available in RequestContext`
                 );
                 return;
@@ -51,11 +53,11 @@ export class AuditService {
             const isSuperAdmin = userId ? await this.userContextResolver.isSuperAdmin(ctx) : false;
 
             const auditLog = new AuditLog();
-            auditLog.channelId = channelId; // Already validated above
+            auditLog.channelId = typeof channelId === 'string' ? parseInt(channelId, 10) : channelId;
             auditLog.eventType = eventType;
             auditLog.entityType = options.entityType ?? null;
             auditLog.entityId = options.entityId ?? null;
-            auditLog.userId = userId ?? null;
+            auditLog.userId = userId ? (typeof userId === 'string' ? parseInt(userId, 10) : userId) : null;
             auditLog.data = {
                 ...(options.data || {}),
                 isSuperAdmin, // Explicitly mark superadmin actions
@@ -66,6 +68,10 @@ export class AuditService {
             await this.auditDbConnection.getConnection()
                 .getRepository(AuditLog)
                 .save(auditLog);
+
+            this.logger.debug(
+                `Successfully logged audit event ${eventType} in channel ${channelId} by user ${userId || 'system'}`
+            );
         } catch (error) {
             // Non-blocking: don't fail the operation if audit logging fails
             this.logger.error(
@@ -86,11 +92,13 @@ export class AuditService {
         data?: Record<string, any>
     ): Promise<void> {
         try {
-            const channelId = ctx.channelId?.toString();
+            // Get channelId from RequestContext or data (numeric ID)
+            const channelId = ctx.channelId || ctx.channel?.id || data?.channelId;
+
             if (!channelId) {
                 // System events may not have channelId - skip logging if required
                 this.logger.debug(
-                    `Cannot log system event ${eventType}: channelId not available in RequestContext`
+                    `Cannot log system event ${eventType}: channelId not available`
                 );
                 return;
             }
@@ -108,18 +116,22 @@ export class AuditService {
             }
 
             const auditLog = new AuditLog();
-            auditLog.channelId = channelId; // Already validated above
+            auditLog.channelId = typeof channelId === 'string' ? parseInt(channelId, 10) : channelId;
             auditLog.eventType = eventType;
             auditLog.entityType = entityType;
             auditLog.entityId = entityId;
-            auditLog.userId = userId ?? null;
+            auditLog.userId = userId ? (typeof userId === 'string' ? parseInt(userId, 10) : userId) : null;
             auditLog.data = data || {};
             auditLog.source = 'system_event';
             auditLog.timestamp = new Date();
 
-            await this.auditDbConnection.getConnection()
+            const savedLog = await this.auditDbConnection.getConnection()
                 .getRepository(AuditLog)
                 .save(auditLog);
+
+            this.logger.log(
+                `Successfully logged system event ${eventType} for ${entityType}:${entityId} in channel ${channelId}, log ID: ${savedLog.id}`
+            );
         } catch (error) {
             // Non-blocking: don't fail the operation if audit logging fails
             this.logger.error(
@@ -138,9 +150,11 @@ export class AuditService {
         filters: AuditTrailFilters & { limit?: number; skip?: number } = {}
     ): Promise<AuditLog[]> {
         try {
-            const channelId = ctx.channelId?.toString();
+            // Get channelId from RequestContext (numeric ID)
+            const channelId = ctx.channelId || ctx.channel?.id;
+
             if (!channelId) {
-                this.logger.warn('Cannot query audit trail: channelId not available in RequestContext');
+                this.logger.debug('Cannot query audit trail: channelId not available in RequestContext');
                 return [];
             }
 
@@ -149,10 +163,17 @@ export class AuditService {
                 return [];
             }
 
+            // Ensure channelId is numeric for comparison
+            const numericChannelId = typeof channelId === 'string' ? parseInt(channelId, 10) : channelId;
+
+            this.logger.debug(
+                `Querying audit trail for channelId: ${numericChannelId} (type: ${typeof numericChannelId})`
+            );
+
             const queryBuilder = this.auditDbConnection.getConnection()
                 .getRepository(AuditLog)
                 .createQueryBuilder('audit')
-                .where('audit.channelId = :channelId', { channelId })
+                .where('audit.channelId = :channelId', { channelId: numericChannelId })
                 .orderBy('audit.timestamp', 'DESC');
 
             if (filters.entityType) {
@@ -188,7 +209,11 @@ export class AuditService {
                 queryBuilder.take(filters.limit);
             }
 
-            return await queryBuilder.getMany();
+            const results = await queryBuilder.getMany();
+            this.logger.debug(
+                `Found ${results.length} audit logs for channelId: ${numericChannelId}`
+            );
+            return results;
         } catch (error) {
             this.logger.error(
                 `Failed to query audit trail: ${error instanceof Error ? error.message : String(error)}`,
