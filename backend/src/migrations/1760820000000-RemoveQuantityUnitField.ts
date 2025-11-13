@@ -15,7 +15,7 @@ export class RemoveQuantityUnitField1760820000000 implements MigrationInterface 
         // Re-add quantityUnit column if needed for rollback
         await queryRunner.query(`
             ALTER TABLE "product_variant" 
-            ADD COLUMN "customFieldsQuantityunit" character varying(255)
+            ADD COLUMN IF NOT EXISTS "customFieldsQuantityunit" character varying(255)
         `);
     }
 }

@@ -128,29 +128,29 @@ class CleanAssetRelationshipsFinal1760710000000 {
 
     // Channel Asset relationships
     await queryRunner.query(
-      `ALTER TABLE "channel" ADD COLUMN "customFieldsMlmodeljsonassetid" integer`,
+      `ALTER TABLE "channel" ADD COLUMN IF NOT EXISTS "customFieldsMlmodeljsonassetid" integer`,
       undefined
     );
     await queryRunner.query(
-      `ALTER TABLE "channel" ADD COLUMN "customFieldsMlmodelbinassetid" integer`,
+      `ALTER TABLE "channel" ADD COLUMN IF NOT EXISTS "customFieldsMlmodelbinassetid" integer`,
       undefined
     );
     await queryRunner.query(
-      `ALTER TABLE "channel" ADD COLUMN "customFieldsMlmetadataassetid" integer`,
+      `ALTER TABLE "channel" ADD COLUMN IF NOT EXISTS "customFieldsMlmetadataassetid" integer`,
       undefined
     );
     await queryRunner.query(
-      `ALTER TABLE "channel" ADD COLUMN "customFieldsCompanylogoassetid" integer`,
+      `ALTER TABLE "channel" ADD COLUMN IF NOT EXISTS "customFieldsCompanylogoassetid" integer`,
       undefined
     );
 
     // PaymentMethod Asset relationship + non-relational field (prevents Vendure workaround)
     await queryRunner.query(
-      `ALTER TABLE "payment_method" ADD COLUMN "customFieldsImageassetid" integer`,
+      `ALTER TABLE "payment_method" ADD COLUMN IF NOT EXISTS "customFieldsImageassetid" integer`,
       undefined
     );
     await queryRunner.query(
-      `ALTER TABLE "payment_method" ADD COLUMN "customFieldsIsactive" boolean DEFAULT true`,
+      `ALTER TABLE "payment_method" ADD COLUMN IF NOT EXISTS "customFieldsIsactive" boolean DEFAULT true`,
       undefined
     );
 
