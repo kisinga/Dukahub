@@ -616,35 +616,35 @@ export class RegistrationService {
                 if (this.eventRouter) {
                     const emptyCtx = RequestContext.empty();
 
-                    // Emit admin created event
-                    await this.eventRouter.routeEvent({
-                        type: ChannelEventType.ADMIN_CREATED,
-                        channelId,
-                        category: ActionCategory.SYSTEM_NOTIFICATIONS,
+                // Emit admin created event
+                await this.eventRouter.routeEvent({
+                    type: ChannelEventType.ADMIN_CREATED,
+                    channelId,
+                    category: ActionCategory.SYSTEM_NOTIFICATIONS,
                         context: emptyCtx,
-                        data: {
-                            adminId: finalAdmin.id.toString(),
-                            userId: savedUser.id.toString(),
-                            firstName: registrationData.adminFirstName,
-                            lastName: registrationData.adminLastName,
-                        },
-                    }).catch(err => {
-                        console.warn(`Failed to route admin created event: ${err instanceof Error ? err.message : String(err)}`);
-                    });
+                    data: {
+                        adminId: finalAdmin.id.toString(),
+                        userId: savedUser.id.toString(),
+                        firstName: registrationData.adminFirstName,
+                        lastName: registrationData.adminLastName,
+                    },
+                }).catch(err => {
+                    console.warn(`Failed to route admin created event: ${err instanceof Error ? err.message : String(err)}`);
+                });
 
-                    // Emit user created event
-                    await this.eventRouter.routeEvent({
-                        type: ChannelEventType.USER_CREATED,
-                        channelId,
-                        category: ActionCategory.SYSTEM_NOTIFICATIONS,
+                // Emit user created event
+                await this.eventRouter.routeEvent({
+                    type: ChannelEventType.USER_CREATED,
+                    channelId,
+                    category: ActionCategory.SYSTEM_NOTIFICATIONS,
                         context: emptyCtx,
-                        data: {
-                            userId: savedUser.id.toString(),
-                            adminId: finalAdmin.id.toString(),
-                        },
-                    }).catch(err => {
-                        console.warn(`Failed to route user created event: ${err instanceof Error ? err.message : String(err)}`);
-                    });
+                    data: {
+                        userId: savedUser.id.toString(),
+                        adminId: finalAdmin.id.toString(),
+                    },
+                }).catch(err => {
+                    console.warn(`Failed to route user created event: ${err instanceof Error ? err.message : String(err)}`);
+                });
                 }
             }
 

@@ -11,7 +11,6 @@ import {
 import { CreditService } from '../credit/credit.service';
 import { PriceOverrideService } from './price-override.service';
 import { AuditService } from '../../infrastructure/audit/audit.service';
-import { OrderService } from '@vendure/core';
 
 export interface CartItemInput {
     variantId: string;
@@ -48,7 +47,6 @@ export class OrderCreationService {
         private readonly creditService: CreditService,
         private readonly priceOverrideService: PriceOverrideService,
         private readonly auditService: AuditService,
-        private readonly orderService: OrderService,
     ) {}
 
     /**
@@ -171,10 +169,16 @@ export class OrderCreationService {
         fields: { createdByUserId?: ID; lastModifiedByUserId?: ID }
     ): Promise<void> {
         try {
-            await this.orderService.update(ctx, {
-                id: orderId,
-                customFields: fields,
-            });
+            // Update order custom field via repository
+            const orderRepo = this.connection.getRepository(ctx, Order);
+            const order = await orderRepo.findOne({ where: { id: orderId }, select: ['id', 'customFields'] });
+            if (order) {
+                const customFields = (order.customFields as any) || {};
+                await orderRepo.update(
+                    { id: orderId },
+                    { customFields: { ...customFields, ...fields } }
+                );
+            }
         } catch (error) {
             this.logger.warn(
                 `Failed to update order custom fields for order ${orderId}: ${error instanceof Error ? error.message : String(error)}`
