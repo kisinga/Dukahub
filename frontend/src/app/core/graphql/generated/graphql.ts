@@ -309,6 +309,30 @@ export type AssignStockLocationsToChannelInput = {
   stockLocationIds: Array<Scalars['ID']['input']>;
 };
 
+export type AuditLog = {
+  __typename?: 'AuditLog';
+  channelId: Scalars['ID']['output'];
+  data: Scalars['JSON']['output'];
+  entityId?: Maybe<Scalars['String']['output']>;
+  entityType?: Maybe<Scalars['String']['output']>;
+  eventType: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  source: Scalars['String']['output'];
+  timestamp: Scalars['DateTime']['output'];
+  userId?: Maybe<Scalars['ID']['output']>;
+};
+
+export type AuditLogOptions = {
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  entityId?: InputMaybe<Scalars['String']['input']>;
+  entityType?: InputMaybe<Scalars['String']['input']>;
+  eventType?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+  userId?: InputMaybe<Scalars['ID']['input']>;
+};
+
 export type AuthenticationInput = {
   native?: InputMaybe<NativeAuthInput>;
 };
@@ -434,10 +458,35 @@ export type Channel = Node & {
 
 export type ChannelCustomFields = {
   __typename?: 'ChannelCustomFields';
+  actionCountAuthOtp?: Maybe<Scalars['Int']['output']>;
+  actionCountAuthTotal?: Maybe<Scalars['Int']['output']>;
+  actionCountCommBalanceChanged?: Maybe<Scalars['Int']['output']>;
+  actionCountCommCreditApproved?: Maybe<Scalars['Int']['output']>;
+  actionCountCommCustomerCreated?: Maybe<Scalars['Int']['output']>;
+  actionCountCommRepaymentDeadline?: Maybe<Scalars['Int']['output']>;
+  actionCountCommTotal?: Maybe<Scalars['Int']['output']>;
+  actionCountSysAdminCreated?: Maybe<Scalars['Int']['output']>;
+  actionCountSysAdminUpdated?: Maybe<Scalars['Int']['output']>;
+  actionCountSysMlTrainingCompleted?: Maybe<Scalars['Int']['output']>;
+  actionCountSysMlTrainingFailed?: Maybe<Scalars['Int']['output']>;
+  actionCountSysMlTrainingProgress?: Maybe<Scalars['Int']['output']>;
+  actionCountSysMlTrainingStarted?: Maybe<Scalars['Int']['output']>;
+  actionCountSysOrderCancelled?: Maybe<Scalars['Int']['output']>;
+  actionCountSysOrderFulfilled?: Maybe<Scalars['Int']['output']>;
+  actionCountSysOrderPaymentSettled?: Maybe<Scalars['Int']['output']>;
+  actionCountSysPaymentConfirmed?: Maybe<Scalars['Int']['output']>;
+  actionCountSysStockLowAlert?: Maybe<Scalars['Int']['output']>;
+  actionCountSysTotal?: Maybe<Scalars['Int']['output']>;
+  actionCountSysUserCreated?: Maybe<Scalars['Int']['output']>;
+  actionCountSysUserUpdated?: Maybe<Scalars['Int']['output']>;
+  actionCountTotal?: Maybe<Scalars['Int']['output']>;
+  actionTrackingLastResetDate?: Maybe<Scalars['DateTime']['output']>;
+  actionTrackingResetType?: Maybe<Scalars['String']['output']>;
   billingCycle?: Maybe<Scalars['String']['output']>;
   cashierFlowEnabled?: Maybe<Scalars['Boolean']['output']>;
   cashierOpen?: Maybe<Scalars['Boolean']['output']>;
   companyLogoAsset?: Maybe<Asset>;
+  eventConfig?: Maybe<Scalars['String']['output']>;
   lastPaymentAmount?: Maybe<Scalars['Int']['output']>;
   lastPaymentDate?: Maybe<Scalars['DateTime']['output']>;
   mlImageCount?: Maybe<Scalars['Int']['output']>;
@@ -473,6 +522,30 @@ export type ChannelDefaultLanguageError = ErrorResult & {
 export type ChannelFilterParameter = {
   _and?: InputMaybe<Array<ChannelFilterParameter>>;
   _or?: InputMaybe<Array<ChannelFilterParameter>>;
+  actionCountAuthOtp?: InputMaybe<NumberOperators>;
+  actionCountAuthTotal?: InputMaybe<NumberOperators>;
+  actionCountCommBalanceChanged?: InputMaybe<NumberOperators>;
+  actionCountCommCreditApproved?: InputMaybe<NumberOperators>;
+  actionCountCommCustomerCreated?: InputMaybe<NumberOperators>;
+  actionCountCommRepaymentDeadline?: InputMaybe<NumberOperators>;
+  actionCountCommTotal?: InputMaybe<NumberOperators>;
+  actionCountSysAdminCreated?: InputMaybe<NumberOperators>;
+  actionCountSysAdminUpdated?: InputMaybe<NumberOperators>;
+  actionCountSysMlTrainingCompleted?: InputMaybe<NumberOperators>;
+  actionCountSysMlTrainingFailed?: InputMaybe<NumberOperators>;
+  actionCountSysMlTrainingProgress?: InputMaybe<NumberOperators>;
+  actionCountSysMlTrainingStarted?: InputMaybe<NumberOperators>;
+  actionCountSysOrderCancelled?: InputMaybe<NumberOperators>;
+  actionCountSysOrderFulfilled?: InputMaybe<NumberOperators>;
+  actionCountSysOrderPaymentSettled?: InputMaybe<NumberOperators>;
+  actionCountSysPaymentConfirmed?: InputMaybe<NumberOperators>;
+  actionCountSysStockLowAlert?: InputMaybe<NumberOperators>;
+  actionCountSysTotal?: InputMaybe<NumberOperators>;
+  actionCountSysUserCreated?: InputMaybe<NumberOperators>;
+  actionCountSysUserUpdated?: InputMaybe<NumberOperators>;
+  actionCountTotal?: InputMaybe<NumberOperators>;
+  actionTrackingLastResetDate?: InputMaybe<DateOperators>;
+  actionTrackingResetType?: InputMaybe<StringOperators>;
   billingCycle?: InputMaybe<StringOperators>;
   cashierFlowEnabled?: InputMaybe<BooleanOperators>;
   cashierOpen?: InputMaybe<BooleanOperators>;
@@ -481,6 +554,7 @@ export type ChannelFilterParameter = {
   currencyCode?: InputMaybe<StringOperators>;
   defaultCurrencyCode?: InputMaybe<StringOperators>;
   defaultLanguageCode?: InputMaybe<StringOperators>;
+  eventConfig?: InputMaybe<StringOperators>;
   id?: InputMaybe<IdOperators>;
   lastPaymentAmount?: InputMaybe<NumberOperators>;
   lastPaymentDate?: InputMaybe<DateOperators>;
@@ -530,12 +604,37 @@ export type ChannelSettings = {
 };
 
 export type ChannelSortParameter = {
+  actionCountAuthOtp?: InputMaybe<SortOrder>;
+  actionCountAuthTotal?: InputMaybe<SortOrder>;
+  actionCountCommBalanceChanged?: InputMaybe<SortOrder>;
+  actionCountCommCreditApproved?: InputMaybe<SortOrder>;
+  actionCountCommCustomerCreated?: InputMaybe<SortOrder>;
+  actionCountCommRepaymentDeadline?: InputMaybe<SortOrder>;
+  actionCountCommTotal?: InputMaybe<SortOrder>;
+  actionCountSysAdminCreated?: InputMaybe<SortOrder>;
+  actionCountSysAdminUpdated?: InputMaybe<SortOrder>;
+  actionCountSysMlTrainingCompleted?: InputMaybe<SortOrder>;
+  actionCountSysMlTrainingFailed?: InputMaybe<SortOrder>;
+  actionCountSysMlTrainingProgress?: InputMaybe<SortOrder>;
+  actionCountSysMlTrainingStarted?: InputMaybe<SortOrder>;
+  actionCountSysOrderCancelled?: InputMaybe<SortOrder>;
+  actionCountSysOrderFulfilled?: InputMaybe<SortOrder>;
+  actionCountSysOrderPaymentSettled?: InputMaybe<SortOrder>;
+  actionCountSysPaymentConfirmed?: InputMaybe<SortOrder>;
+  actionCountSysStockLowAlert?: InputMaybe<SortOrder>;
+  actionCountSysTotal?: InputMaybe<SortOrder>;
+  actionCountSysUserCreated?: InputMaybe<SortOrder>;
+  actionCountSysUserUpdated?: InputMaybe<SortOrder>;
+  actionCountTotal?: InputMaybe<SortOrder>;
+  actionTrackingLastResetDate?: InputMaybe<SortOrder>;
+  actionTrackingResetType?: InputMaybe<SortOrder>;
   billingCycle?: InputMaybe<SortOrder>;
   cashierFlowEnabled?: InputMaybe<SortOrder>;
   cashierOpen?: InputMaybe<SortOrder>;
   code?: InputMaybe<SortOrder>;
   companyLogoAsset?: InputMaybe<SortOrder>;
   createdAt?: InputMaybe<SortOrder>;
+  eventConfig?: InputMaybe<SortOrder>;
   id?: InputMaybe<SortOrder>;
   lastPaymentAmount?: InputMaybe<SortOrder>;
   lastPaymentDate?: InputMaybe<SortOrder>;
@@ -866,10 +965,35 @@ export type CreateAssetInput = {
 export type CreateAssetResult = Asset | MimeTypeError;
 
 export type CreateChannelCustomFieldsInput = {
+  actionCountAuthOtp?: InputMaybe<Scalars['Int']['input']>;
+  actionCountAuthTotal?: InputMaybe<Scalars['Int']['input']>;
+  actionCountCommBalanceChanged?: InputMaybe<Scalars['Int']['input']>;
+  actionCountCommCreditApproved?: InputMaybe<Scalars['Int']['input']>;
+  actionCountCommCustomerCreated?: InputMaybe<Scalars['Int']['input']>;
+  actionCountCommRepaymentDeadline?: InputMaybe<Scalars['Int']['input']>;
+  actionCountCommTotal?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysAdminCreated?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysAdminUpdated?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysMlTrainingCompleted?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysMlTrainingFailed?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysMlTrainingProgress?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysMlTrainingStarted?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysOrderCancelled?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysOrderFulfilled?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysOrderPaymentSettled?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysPaymentConfirmed?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysStockLowAlert?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysTotal?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysUserCreated?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysUserUpdated?: InputMaybe<Scalars['Int']['input']>;
+  actionCountTotal?: InputMaybe<Scalars['Int']['input']>;
+  actionTrackingLastResetDate?: InputMaybe<Scalars['DateTime']['input']>;
+  actionTrackingResetType?: InputMaybe<Scalars['String']['input']>;
   billingCycle?: InputMaybe<Scalars['String']['input']>;
   cashierFlowEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   cashierOpen?: InputMaybe<Scalars['Boolean']['input']>;
   companyLogoAssetId?: InputMaybe<Scalars['ID']['input']>;
+  eventConfig?: InputMaybe<Scalars['String']['input']>;
   lastPaymentAmount?: InputMaybe<Scalars['Int']['input']>;
   lastPaymentDate?: InputMaybe<Scalars['DateTime']['input']>;
   mlImageCount?: InputMaybe<Scalars['Int']['input']>;
@@ -936,6 +1060,7 @@ export type CreateCountryInput = {
 
 export type CreateCustomerCustomFieldsInput = {
   contactPerson?: InputMaybe<Scalars['String']['input']>;
+  creditApprovedByUserIdId?: InputMaybe<Scalars['ID']['input']>;
   creditDuration?: InputMaybe<Scalars['Int']['input']>;
   creditLimit?: InputMaybe<Scalars['Float']['input']>;
   isCreditApproved?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1593,6 +1718,7 @@ export type CustomerOrdersArgs = {
 export type CustomerCustomFields = {
   __typename?: 'CustomerCustomFields';
   contactPerson?: Maybe<Scalars['String']['output']>;
+  creditApprovedByUserId?: Maybe<User>;
   creditDuration?: Maybe<Scalars['Int']['output']>;
   creditLimit?: Maybe<Scalars['Float']['output']>;
   isCreditApproved?: Maybe<Scalars['Boolean']['output']>;
@@ -1704,6 +1830,7 @@ export type CustomerListOptions = {
 export type CustomerSortParameter = {
   contactPerson?: InputMaybe<SortOrder>;
   createdAt?: InputMaybe<SortOrder>;
+  creditApprovedByUserId?: InputMaybe<SortOrder>;
   creditDuration?: InputMaybe<SortOrder>;
   creditLimit?: InputMaybe<SortOrder>;
   emailAddress?: InputMaybe<SortOrder>;
@@ -2982,6 +3109,7 @@ export type ModifyOrderInput = {
   addItems?: InputMaybe<Array<AddItemInput>>;
   adjustOrderLines?: InputMaybe<Array<OrderLineInput>>;
   couponCodes?: InputMaybe<Array<Scalars['String']['input']>>;
+  customFields?: InputMaybe<UpdateOrderCustomFieldsInput>;
   dryRun: Scalars['Boolean']['input'];
   note?: InputMaybe<Scalars['String']['input']>;
   options?: InputMaybe<ModifyOrderOptions>;
@@ -4522,7 +4650,7 @@ export type Order = Node & {
   couponCodes: Array<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   currencyCode: CurrencyCode;
-  customFields?: Maybe<Scalars['JSON']['output']>;
+  customFields?: Maybe<OrderCustomFields>;
   customer?: Maybe<Customer>;
   discounts: Array<Discount>;
   fulfillments?: Maybe<Array<Fulfillment>>;
@@ -4590,6 +4718,12 @@ export type OrderAddress = {
   province?: Maybe<Scalars['String']['output']>;
   streetLine1?: Maybe<Scalars['String']['output']>;
   streetLine2?: Maybe<Scalars['String']['output']>;
+};
+
+export type OrderCustomFields = {
+  __typename?: 'OrderCustomFields';
+  createdByUserId?: Maybe<User>;
+  lastModifiedByUserId?: Maybe<User>;
 };
 
 export type OrderFilterParameter = {
@@ -4779,8 +4913,10 @@ export type OrderSortParameter = {
   aggregateOrderId?: InputMaybe<SortOrder>;
   code?: InputMaybe<SortOrder>;
   createdAt?: InputMaybe<SortOrder>;
+  createdByUserId?: InputMaybe<SortOrder>;
   customerLastName?: InputMaybe<SortOrder>;
   id?: InputMaybe<SortOrder>;
+  lastModifiedByUserId?: InputMaybe<SortOrder>;
   orderPlacedAt?: InputMaybe<SortOrder>;
   shipping?: InputMaybe<SortOrder>;
   shippingWithTax?: InputMaybe<SortOrder>;
@@ -4835,7 +4971,7 @@ export type Payment = Node & {
   __typename?: 'Payment';
   amount: Scalars['Money']['output'];
   createdAt: Scalars['DateTime']['output'];
-  customFields?: Maybe<Scalars['JSON']['output']>;
+  customFields?: Maybe<PaymentCustomFields>;
   errorMessage?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   metadata?: Maybe<Scalars['JSON']['output']>;
@@ -4845,6 +4981,11 @@ export type Payment = Node & {
   state: Scalars['String']['output'];
   transactionId?: Maybe<Scalars['String']['output']>;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type PaymentCustomFields = {
+  __typename?: 'PaymentCustomFields';
+  addedByUserId?: Maybe<User>;
 };
 
 export type PaymentMethod = Node & {
@@ -5691,6 +5832,7 @@ export type Query = {
   asset?: Maybe<Asset>;
   /** Get a list of Assets */
   assets: AssetList;
+  auditLogs: Array<AuditLog>;
   channel?: Maybe<Channel>;
   channels: ChannelList;
   checkAuthorizationStatus: AuthorizationStatus;
@@ -5808,6 +5950,11 @@ export type QueryAssetArgs = {
 
 export type QueryAssetsArgs = {
   options?: InputMaybe<AssetListOptions>;
+};
+
+
+export type QueryAuditLogsArgs = {
+  options?: InputMaybe<AuditLogOptions>;
 };
 
 
@@ -7195,10 +7342,35 @@ export type UpdateAssetInput = {
 };
 
 export type UpdateChannelCustomFieldsInput = {
+  actionCountAuthOtp?: InputMaybe<Scalars['Int']['input']>;
+  actionCountAuthTotal?: InputMaybe<Scalars['Int']['input']>;
+  actionCountCommBalanceChanged?: InputMaybe<Scalars['Int']['input']>;
+  actionCountCommCreditApproved?: InputMaybe<Scalars['Int']['input']>;
+  actionCountCommCustomerCreated?: InputMaybe<Scalars['Int']['input']>;
+  actionCountCommRepaymentDeadline?: InputMaybe<Scalars['Int']['input']>;
+  actionCountCommTotal?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysAdminCreated?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysAdminUpdated?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysMlTrainingCompleted?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysMlTrainingFailed?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysMlTrainingProgress?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysMlTrainingStarted?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysOrderCancelled?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysOrderFulfilled?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysOrderPaymentSettled?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysPaymentConfirmed?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysStockLowAlert?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysTotal?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysUserCreated?: InputMaybe<Scalars['Int']['input']>;
+  actionCountSysUserUpdated?: InputMaybe<Scalars['Int']['input']>;
+  actionCountTotal?: InputMaybe<Scalars['Int']['input']>;
+  actionTrackingLastResetDate?: InputMaybe<Scalars['DateTime']['input']>;
+  actionTrackingResetType?: InputMaybe<Scalars['String']['input']>;
   billingCycle?: InputMaybe<Scalars['String']['input']>;
   cashierFlowEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   cashierOpen?: InputMaybe<Scalars['Boolean']['input']>;
   companyLogoAssetId?: InputMaybe<Scalars['ID']['input']>;
+  eventConfig?: InputMaybe<Scalars['String']['input']>;
   lastPaymentAmount?: InputMaybe<Scalars['Int']['input']>;
   lastPaymentDate?: InputMaybe<Scalars['DateTime']['input']>;
   mlImageCount?: InputMaybe<Scalars['Int']['input']>;
@@ -7286,6 +7458,7 @@ export type UpdateCustomerCreditLimitInput = {
 
 export type UpdateCustomerCustomFieldsInput = {
   contactPerson?: InputMaybe<Scalars['String']['input']>;
+  creditApprovedByUserIdId?: InputMaybe<Scalars['ID']['input']>;
   creditDuration?: InputMaybe<Scalars['Int']['input']>;
   creditLimit?: InputMaybe<Scalars['Float']['input']>;
   isCreditApproved?: InputMaybe<Scalars['Boolean']['input']>;
@@ -7358,8 +7531,13 @@ export type UpdateOrderAddressInput = {
   streetLine2?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type UpdateOrderCustomFieldsInput = {
+  createdByUserIdId?: InputMaybe<Scalars['ID']['input']>;
+  lastModifiedByUserIdId?: InputMaybe<Scalars['ID']['input']>;
+};
+
 export type UpdateOrderInput = {
-  customFields?: InputMaybe<Scalars['JSON']['input']>;
+  customFields?: InputMaybe<UpdateOrderCustomFieldsInput>;
   id: Scalars['ID']['input'];
 };
 
@@ -7560,6 +7738,7 @@ export type User = Node & {
 export type UserCustomFields = {
   __typename?: 'UserCustomFields';
   authorizationStatus?: Maybe<Scalars['String']['output']>;
+  notificationPreferences?: Maybe<Scalars['String']['output']>;
 };
 
 export type UserInfo = {
@@ -8206,6 +8385,13 @@ export type UpdateChannelPaymentMethodMutationVariables = Exact<{
 
 export type UpdateChannelPaymentMethodMutation = { __typename?: 'Mutation', updateChannelPaymentMethod: { __typename?: 'PaymentMethod', id: string, code: string, name: string, customFields?: { __typename?: 'PaymentMethodCustomFields', isActive?: boolean | null, imageAsset?: { __typename?: 'Asset', id: string, preview: string } | null } | null } };
 
+export type GetAuditLogsQueryVariables = Exact<{
+  options?: InputMaybe<AuditLogOptions>;
+}>;
+
+
+export type GetAuditLogsQuery = { __typename?: 'Query', auditLogs: Array<{ __typename?: 'AuditLog', id: string, timestamp: any, channelId: string, eventType: string, entityType?: string | null, entityId?: string | null, userId?: string | null, data: any, source: string }> };
+
 export type GetUserNotificationsQueryVariables = Exact<{
   options?: InputMaybe<NotificationListOptions>;
 }>;
@@ -8363,6 +8549,7 @@ export const InviteChannelAdministratorDocument = {"kind":"Document","definition
 export const GetAdministratorsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAdministrators"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"options"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AdministratorListOptions"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"administrators"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"Variable","name":{"kind":"Name","value":"options"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"identifier"}},{"kind":"Field","name":{"kind":"Name","value":"verified"}},{"kind":"Field","name":{"kind":"Name","value":"roles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"channels"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetAdministratorsQuery, GetAdministratorsQueryVariables>;
 export const CreateChannelPaymentMethodDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateChannelPaymentMethod"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreatePaymentMethodInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createChannelPaymentMethod"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<CreateChannelPaymentMethodMutation, CreateChannelPaymentMethodMutationVariables>;
 export const UpdateChannelPaymentMethodDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateChannelPaymentMethod"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdatePaymentMethodInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateChannelPaymentMethod"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"imageAsset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"preview"}}]}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateChannelPaymentMethodMutation, UpdateChannelPaymentMethodMutationVariables>;
+export const GetAuditLogsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAuditLogs"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"options"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AuditLogOptions"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"auditLogs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"Variable","name":{"kind":"Name","value":"options"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"timestamp"}},{"kind":"Field","name":{"kind":"Name","value":"channelId"}},{"kind":"Field","name":{"kind":"Name","value":"eventType"}},{"kind":"Field","name":{"kind":"Name","value":"entityType"}},{"kind":"Field","name":{"kind":"Name","value":"entityId"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"data"}},{"kind":"Field","name":{"kind":"Name","value":"source"}}]}}]}}]} as unknown as DocumentNode<GetAuditLogsQuery, GetAuditLogsQueryVariables>;
 export const GetUserNotificationsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetUserNotifications"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"options"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"NotificationListOptions"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getUserNotifications"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"Variable","name":{"kind":"Name","value":"options"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"channelId"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"data"}},{"kind":"Field","name":{"kind":"Name","value":"read"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalItems"}}]}}]}}]} as unknown as DocumentNode<GetUserNotificationsQuery, GetUserNotificationsQueryVariables>;
 export const GetUnreadCountDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetUnreadCount"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getUnreadCount"}}]}}]} as unknown as DocumentNode<GetUnreadCountQuery, GetUnreadCountQueryVariables>;
 export const MarkNotificationAsReadDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"MarkNotificationAsRead"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"markNotificationAsRead"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}]}}]} as unknown as DocumentNode<MarkNotificationAsReadMutation, MarkNotificationAsReadMutationVariables>;

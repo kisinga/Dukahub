@@ -3,10 +3,14 @@ import { environment } from '../../../environments/environment';
 import { LanguageCode } from '../graphql/generated/graphql';
 import {
     CREATE_CHANNEL_PAYMENT_METHOD,
+    GET_AUDIT_LOGS,
     INVITE_CHANNEL_ADMINISTRATOR,
     UPDATE_CHANNEL_PAYMENT_METHOD,
     UPDATE_CHANNEL_SETTINGS
 } from '../graphql/operations.graphql';
+import type { GetAuditLogsQuery, GetAuditLogsQueryVariables } from '../graphql/generated/graphql';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
 
@@ -87,6 +91,29 @@ export interface UpdatePaymentMethodInput {
     description?: string;
     imageAssetId?: string;
     isActive?: boolean;
+}
+
+export interface AuditLog {
+    id: string;
+    timestamp: string;
+    channelId: string;
+    eventType: string;
+    entityType: string | null;
+    entityId: string | null;
+    userId: string | null;
+    data: Record<string, any>;
+    source: string;
+}
+
+export interface AuditLogOptions {
+    entityType?: string;
+    entityId?: string;
+    userId?: string;
+    eventType?: string;
+    startDate?: Date | string;
+    endDate?: Date | string;
+    limit?: number;
+    skip?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -341,6 +368,47 @@ export class SettingsService {
         } finally {
             this.loading.set(false);
         }
+    }
+
+    /**
+     * Get audit logs with pagination and optional filters
+     */
+    getAuditLogs(options: AuditLogOptions = {}): Observable<AuditLog[]> {
+        const client = this.apolloService.getClient();
+        
+        // Convert Date objects to ISO strings if needed
+        const variables: GetAuditLogsQueryVariables = {
+            options: {
+                ...options,
+                startDate: options.startDate instanceof Date 
+                    ? options.startDate.toISOString() 
+                    : options.startDate,
+                endDate: options.endDate instanceof Date 
+                    ? options.endDate.toISOString() 
+                    : options.endDate,
+            }
+        };
+
+        return client.query<GetAuditLogsQuery>({
+            query: GET_AUDIT_LOGS,
+            variables,
+            fetchPolicy: 'network-only',
+        }).pipe(
+            map(result => {
+                const logs = result.data?.auditLogs ?? [];
+                return logs.map(log => ({
+                    id: log.id,
+                    timestamp: log.timestamp,
+                    channelId: log.channelId,
+                    eventType: log.eventType,
+                    entityType: log.entityType,
+                    entityId: log.entityId,
+                    userId: log.userId,
+                    data: log.data as Record<string, any>,
+                    source: log.source,
+                }));
+            })
+        );
     }
 
     /**

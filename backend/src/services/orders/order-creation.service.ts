@@ -1,16 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
-    Country,
     Customer,
     ID,
     Order,
     RequestContext,
     TransactionalConnection,
-    UserInputError,
+    UserInputError
 } from '@vendure/core';
+import { AuditService } from '../../infrastructure/audit/audit.service';
 import { CreditService } from '../credit/credit.service';
 import { PriceOverrideService } from './price-override.service';
-import { AuditService } from '../../infrastructure/audit/audit.service';
 
 export interface CartItemInput {
     variantId: string;
@@ -47,7 +46,7 @@ export class OrderCreationService {
         private readonly creditService: CreditService,
         private readonly priceOverrideService: PriceOverrideService,
         private readonly auditService: AuditService,
-    ) {}
+    ) { }
 
     /**
      * Create a complete order with items and payment
@@ -137,7 +136,7 @@ export class OrderCreationService {
      */
     private async getOrCreateWalkInCustomer(ctx: RequestContext): Promise<string> {
         const customerRepo = this.connection.getRepository(ctx, Customer);
-        
+
         // Try to find existing walk-in customer
         const walkInCustomer = await customerRepo.findOne({
             where: { emailAddress: 'walkin@pos.local' },
