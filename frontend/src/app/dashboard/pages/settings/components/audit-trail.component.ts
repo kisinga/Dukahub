@@ -2,7 +2,9 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CompanyService } from '../../../../core/services/company.service';
 import { AuditLog, AuditLogOptions, SettingsService } from '../../../../core/services/settings.service';
+import { ToastService } from '../../../../core/services/toast.service';
 import { PaginationComponent } from '../../customers/components/pagination.component';
+import { UserDetailsModalComponent } from './user-details-modal.component';
 
 /**
  * Audit Trail Component
@@ -12,7 +14,7 @@ import { PaginationComponent } from '../../customers/components/pagination.compo
  */
 @Component({
     selector: 'app-audit-trail',
-    imports: [CommonModule, PaginationComponent],
+    imports: [CommonModule, PaginationComponent, UserDetailsModalComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div class="card bg-base-100 shadow-lg">
@@ -81,19 +83,27 @@ import { PaginationComponent } from '../../customers/components/pagination.compo
                                         </td>
                                         <td>
                                             @if (log.entityType && log.entityId) {
-                                                <div class="text-xs">
-                                                    <div class="font-medium">{{ log.entityType }}</div>
-                                                    <div class="opacity-60 font-mono">{{ truncateId(log.entityId) }}</div>
-                                                </div>
+                                                <button 
+                                                    class="badge badge-sm badge-outline hover:badge-primary cursor-pointer transition-colors"
+                                                    (click)="navigateToEntity(log.entityType!, log.entityId!)"
+                                                    [title]="'View ' + log.entityType + ' ' + log.entityId">
+                                                    <span class="font-medium">{{ log.entityType }}</span>
+                                                    <span class="font-mono ml-1 opacity-70">{{ truncateId(log.entityId) }}</span>
+                                                </button>
                                             } @else {
                                                 <span class="opacity-40 text-xs">—</span>
                                             }
                                         </td>
                                         <td>
-                                            @if (log.userId) {
-                                                <span class="text-xs font-mono opacity-70">{{ truncateId(log.userId) }}</span>
+                                            @if (log.userId && log.userId !== 'null' && log.userId !== '') {
+                                                <button 
+                                                    class="badge badge-sm badge-info hover:badge-info/80 cursor-pointer transition-colors"
+                                                    (click)="showUserDetails(log.userId!, log.source)"
+                                                    [title]="'View user ' + log.userId">
+                                                    <span class="font-mono">{{ truncateId(log.userId) }}</span>
+                                                </button>
                                             } @else {
-                                                <span class="opacity-40 text-xs">System</span>
+                                                <span class="badge badge-sm badge-neutral opacity-60">System</span>
                                             }
                                         </td>
                                         <td>
@@ -165,18 +175,30 @@ import { PaginationComponent } from '../../customers/components/pagination.compo
                                     @if (log.entityType && log.entityId) {
                                         <div class="text-xs mb-2">
                                             <span class="opacity-60">Entity:</span>
-                                            <span class="font-medium ml-1">{{ log.entityType }}</span>
-                                            <span class="font-mono opacity-60 ml-1">{{ truncateId(log.entityId) }}</span>
+                                            <button 
+                                                class="badge badge-sm badge-outline hover:badge-primary cursor-pointer transition-colors ml-1"
+                                                (click)="navigateToEntity(log.entityType!, log.entityId!)"
+                                                [title]="'View ' + log.entityType + ' ' + log.entityId">
+                                                <span class="font-medium">{{ log.entityType }}</span>
+                                                <span class="font-mono ml-1 opacity-70">{{ truncateId(log.entityId) }}</span>
+                                            </button>
                                         </div>
                                     }
 
-                                    @if (log.userId) {
+                                    @if (log.userId && log.userId !== 'null' && log.userId !== '') {
                                         <div class="text-xs mb-2">
                                             <span class="opacity-60">User:</span>
-                                            <span class="font-mono ml-1">{{ truncateId(log.userId) }}</span>
+                                            <button 
+                                                class="badge badge-sm badge-info hover:badge-info/80 cursor-pointer transition-colors ml-1"
+                                                (click)="showUserDetails(log.userId!, log.source)"
+                                                [title]="'View user ' + log.userId">
+                                                <span class="font-mono">{{ truncateId(log.userId) }}</span>
+                                            </button>
                                         </div>
                                     } @else {
-                                        <div class="text-xs mb-2 opacity-40">System Event</div>
+                                        <div class="text-xs mb-2">
+                                            <span class="badge badge-sm badge-neutral opacity-60">System Event</span>
+                                        </div>
                                     }
 
                                     @if (expandedLogs().has(log.id)) {
@@ -210,17 +232,26 @@ import { PaginationComponent } from '../../customers/components/pagination.compo
                 }
             </div>
         </div>
+
+        <!-- User Details Modal -->
+        <app-user-details-modal 
+            [userId]="selectedUserId()"
+            [source]="selectedUserSource()"
+            (closed)="closeUserModal()" />
     `,
 })
 export class AuditTrailComponent {
     private readonly settingsService = inject(SettingsService);
     private readonly companyService = inject(CompanyService);
+    private readonly toastService = inject(ToastService);
 
     // State
     readonly auditLogs = signal<AuditLog[]>([]);
     readonly isLoading = signal(false);
     readonly error = signal<string | null>(null);
     readonly expandedLogs = signal<Set<string>>(new Set());
+    readonly selectedUserId = signal<string | null>(null);
+    readonly selectedUserSource = signal<'user_action' | 'system_event'>('system_event');
 
     // Pagination state
     readonly currentPage = signal(1);
@@ -385,6 +416,71 @@ export class AuditTrailComponent {
      */
     formatData(data: Record<string, any>): string {
         return JSON.stringify(data, null, 2);
+    }
+
+    /**
+     * Show user details modal
+     */
+    showUserDetails(userId: string, source: string): void {
+        this.selectedUserId.set(userId);
+        this.selectedUserSource.set(source as 'user_action' | 'system_event');
+        // Modal will open automatically via effect in UserDetailsModalComponent
+    }
+
+    /**
+     * Close user details modal
+     */
+    closeUserModal(): void {
+        this.selectedUserId.set(null);
+    }
+
+    /**
+     * Navigate to entity (Order, Payment, etc.)
+     * Shows toast for now, but structured for future navigation
+     */
+    navigateToEntity(entityType: string, entityId: string): void {
+        // Structure for future navigation
+        const navigationMap: Record<string, () => void> = {
+            'Order': () => {
+                this.toastService.show(
+                    'Order Details',
+                    `Order navigation coming soon. Order ID: ${entityId}`,
+                    'info',
+                    3000
+                );
+                // Future: this.router.navigate(['/dashboard/orders', entityId]);
+            },
+            'Payment': () => {
+                this.toastService.show(
+                    'Payment Details',
+                    `Payment navigation coming soon. Payment ID: ${entityId}`,
+                    'info',
+                    3000
+                );
+                // Future: this.router.navigate(['/dashboard/payments', entityId]);
+            },
+            'Customer': () => {
+                this.toastService.show(
+                    'Customer Details',
+                    `Customer navigation coming soon. Customer ID: ${entityId}`,
+                    'info',
+                    3000
+                );
+                // Future: this.router.navigate(['/dashboard/customers', entityId]);
+            },
+        };
+
+        const handler = navigationMap[entityType];
+        if (handler) {
+            handler();
+        } else {
+            this.toastService.show(
+                'Entity Details',
+                `${entityType} navigation coming soon. ID: ${entityId}`,
+                'info',
+                3000
+            );
+        }
     }
 }
 
