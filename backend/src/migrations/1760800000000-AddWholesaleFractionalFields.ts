@@ -7,12 +7,12 @@ export class AddWholesaleFractionalFields1760800000000 implements MigrationInter
         // Add custom fields to product_variant table
         await queryRunner.query(`
             ALTER TABLE "product_variant" 
-            ADD COLUMN "customFieldsWholesaleprice" integer
+            ADD COLUMN IF NOT EXISTS "customFieldsWholesaleprice" integer
         `);
 
         await queryRunner.query(`
             ALTER TABLE "product_variant" 
-            ADD COLUMN "customFieldsAllowfractionalquantity" boolean NOT NULL DEFAULT false
+            ADD COLUMN IF NOT EXISTS "customFieldsAllowfractionalquantity" boolean NOT NULL DEFAULT false
         `);
 
     }

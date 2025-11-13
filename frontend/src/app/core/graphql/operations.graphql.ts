@@ -1596,6 +1596,22 @@ export const UPDATE_CHANNEL_PAYMENT_METHOD = graphql(`
   }
 `);
 
+export const GET_AUDIT_LOGS = graphql(`
+  query GetAuditLogs($options: AuditLogOptions) {
+    auditLogs(options: $options) {
+      id
+      timestamp
+      channelId
+      eventType
+      entityType
+      entityId
+      userId
+      data
+      source
+    }
+  }
+`);
+
 
 // ============================================================================
 // NOTIFICATIONS

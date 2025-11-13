@@ -11,6 +11,9 @@ import { InAppActionHandler } from '../../infrastructure/events/handlers/in-app-
 import { PushActionHandler } from '../../infrastructure/events/handlers/push-action.handler';
 import { SmsActionHandler } from '../../infrastructure/events/handlers/sms-action.handler';
 import { NotificationPreferenceService } from '../../infrastructure/events/notification-preference.service';
+import { AuditService } from '../../infrastructure/audit/audit.service';
+import { AuditDbConnection } from '../../infrastructure/audit/audit-db.connection';
+import { UserContextResolver } from '../../infrastructure/audit/user-context.resolver';
 
 /**
  * Channel Events Plugin
@@ -22,6 +25,12 @@ import { NotificationPreferenceService } from '../../infrastructure/events/notif
 @VendurePlugin({
     imports: [PluginCommonModule],
     providers: [
+        // Audit dependencies (must be available for ChannelEventRouterService)
+        // AuditDbConnection uses singleton pattern to prevent duplicate initialization
+        AuditDbConnection,
+        UserContextResolver,
+        AuditService,
+        
         // Core services
         ChannelActionTrackingService,
         ChannelEventRouterService,

@@ -14,7 +14,7 @@ export class NotificationHandlerService implements OnModuleInit {
     onModuleInit() {
         // Note: Order state transitions are now handled by ChannelEventRouterService
         // This service is kept for backward compatibility and ML training events
-        
+
         // Subscribe to stock movements (if needed in future)
         this.eventBus.ofType(StockMovementEvent).subscribe(async (event) => {
             await this.handleStockMovement(event);
@@ -23,7 +23,8 @@ export class NotificationHandlerService implements OnModuleInit {
 
     private async handleOrderStateTransition(event: OrderStateTransitionEvent) {
         const { order, fromState, toState } = event;
-        const channelId = order.channels[0]?.id;
+        // Fix: Use proper optional chaining to safely access channels array
+        const channelId = order.channels?.[0]?.id;
 
         if (!channelId) {
             return;

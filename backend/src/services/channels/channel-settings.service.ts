@@ -13,8 +13,9 @@ import {
     RoleService,
     TransactionalConnection
 } from '@vendure/core';
-import { OverridePricePermission } from '../../plugins/pricing/price-override.permission';
+import { AuditService } from '../../infrastructure/audit/audit.service';
 import { ApproveCustomerCreditPermission, ManageCustomerCreditLimitPermission } from '../../plugins/credit/permissions';
+import { OverridePricePermission } from '../../plugins/pricing/price-override.permission';
 
 export interface ChannelSettings {
     cashierFlowEnabled: boolean;
@@ -43,7 +44,8 @@ export class ChannelSettingsService {
         private readonly paymentMethodService: PaymentMethodService,
         private readonly administratorService: AdministratorService,
         private readonly roleService: RoleService,
-        private readonly connection: TransactionalConnection
+        private readonly connection: TransactionalConnection,
+        private readonly auditService: AuditService
     ) { }
 
     async updateChannelSettings(ctx: RequestContext, input: UpdateChannelSettingsInput): Promise<ChannelSettings> {
@@ -122,14 +124,28 @@ export class ChannelSettingsService {
                 channelId,
                 fields: Object.keys(customFieldsUpdate),
             });
+
+            // Log audit event
+            await this.auditService.log(ctx, 'channel.settings.updated', {
+                entityType: 'Channel',
+                entityId: channelId.toString(),
+                data: {
+                    fields: Object.keys(customFieldsUpdate),
+                    changes: customFieldsUpdate,
+                },
+            }).catch(err => {
+                this.logger.warn(`Failed to log channel settings update audit: ${err instanceof Error ? err.message : String(err)}`);
+            });
+
+            const updatedChannel = await this.channelService.findOne(ctx, channelId);
+            if (!updatedChannel) {
+                throw new Error('Channel not found after update');
+            }
+
+            return this.mapChannelSettings(updatedChannel);
         }
 
-        const updatedChannel = await this.channelService.findOne(ctx, channelId);
-        if (!updatedChannel) {
-            throw new Error('Channel not found after update');
-        }
-
-        return this.mapChannelSettings(updatedChannel);
+        return this.mapChannelSettings(channel);
     }
 
     async inviteChannelAdministrator(
@@ -180,6 +196,20 @@ export class ChannelSettingsService {
 
         const administrator = await this.administratorService.create(ctx, createAdminInput);
 
+        // Log audit event
+        await this.auditService.log(ctx, 'admin.invited', {
+            entityType: 'Administrator',
+            entityId: administrator.id.toString(),
+            data: {
+                emailAddress: input.emailAddress,
+                firstName: input.firstName,
+                lastName: input.lastName,
+                roleId: channelAdminRole.id.toString(),
+            },
+        }).catch(err => {
+            this.logger.warn(`Failed to log admin invitation audit: ${err instanceof Error ? err.message : String(err)}`);
+        });
+
         // TODO: Send invitation email
         // await this.emailService.sendAdminInvitation(administrator, ctx.channel);
 
@@ -199,7 +229,21 @@ export class ChannelSettingsService {
             },
         };
 
-        return this.paymentMethodService.create(ctx, createInput);
+        const paymentMethod = await this.paymentMethodService.create(ctx, createInput);
+
+        // Log audit event
+        await this.auditService.log(ctx, 'channel.payment_method.created', {
+            entityType: 'PaymentMethod',
+            entityId: paymentMethod.id.toString(),
+            data: {
+                name: paymentMethod.name,
+                code: paymentMethod.code,
+            },
+        }).catch(err => {
+            this.logger.warn(`Failed to log payment method creation audit: ${err instanceof Error ? err.message : String(err)}`);
+        });
+
+        return paymentMethod;
     }
 
     async updateChannelPaymentMethod(
@@ -232,7 +276,24 @@ export class ChannelSettingsService {
             updateInput.customFields = customFields;
         }
 
-        return this.paymentMethodService.update(ctx, updateInput as any);
+        const paymentMethod = await this.paymentMethodService.update(ctx, updateInput as any);
+
+        // Log audit event
+        await this.auditService.log(ctx, 'channel.payment_method.updated', {
+            entityType: 'PaymentMethod',
+            entityId: input.id.toString(),
+            data: {
+                changes: {
+                    name: input.name,
+                    description: input.description,
+                    customFields,
+                },
+            },
+        }).catch(err => {
+            this.logger.warn(`Failed to log payment method update audit: ${err instanceof Error ? err.message : String(err)}`);
+        });
+
+        return paymentMethod;
     }
 
     private generateTemporaryPassword(): string {

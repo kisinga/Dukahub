@@ -8,6 +8,7 @@ import {
     UserInputError,
 } from '@vendure/core';
 import { ChannelCommunicationService } from '../channels/channel-communication.service';
+import { AuditService } from '../../infrastructure/audit/audit.service';
 
 export interface CreditSummary {
     customerId: ID;
@@ -27,6 +28,7 @@ export class CreditService {
     constructor(
         private readonly connection: TransactionalConnection,
         @Optional() private readonly communicationService?: ChannelCommunicationService, // Optional to avoid circular dependency
+        @Optional() private readonly auditService?: AuditService, // Optional to avoid circular dependency
     ) { }
 
     async getCreditSummary(ctx: RequestContext, customerId: ID): Promise<CreditSummary> {
@@ -51,10 +53,29 @@ export class CreditService {
             creditDuration: creditDuration ?? customFields?.creditDuration ?? 30,
         } as any;
 
+        // Update custom field for user tracking
+        customer.customFields = {
+            ...customer.customFields,
+            creditApprovedByUserId: ctx.activeUserId,
+        } as any;
+
         await this.connection.getRepository(ctx, Customer).save(customer);
         this.logger.log(
             `Updated credit approval for customer ${customerId}: approved=${approved} limit=${(customer.customFields as any).creditLimit} duration=${(customer.customFields as any).creditDuration}`
         );
+
+        // Log audit event
+        if (this.auditService) {
+            await this.auditService.log(ctx, 'customer.credit.approved', {
+                entityType: 'Customer',
+                entityId: customerId.toString(),
+                data: {
+                    approved,
+                    creditLimit: (customer.customFields as any).creditLimit,
+                    creditDuration: (customer.customFields as any).creditDuration,
+                },
+            });
+        }
 
         return this.mapToSummary(customer);
     }
@@ -85,6 +106,18 @@ export class CreditService {
         this.logger.log(
             `Updated credit limit for customer ${customerId} to ${creditLimit}${creditDuration !== undefined ? `, duration: ${creditDuration}` : ''}`
         );
+
+        // Log audit event
+        if (this.auditService) {
+            await this.auditService.log(ctx, 'customer.credit.limit_changed', {
+                entityType: 'Customer',
+                entityId: customerId.toString(),
+                data: {
+                    creditLimit,
+                    creditDuration,
+                },
+            });
+        }
 
         return this.mapToSummary(customer);
     }

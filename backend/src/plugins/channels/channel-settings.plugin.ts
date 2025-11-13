@@ -1,11 +1,23 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
 
-import { ChannelSettingsResolver, channelSettingsSchema } from './channel-settings.resolver';
+import { AuditDbConnection } from '../../infrastructure/audit/audit-db.connection';
+import { AuditService } from '../../infrastructure/audit/audit.service';
+import { UserContextResolver } from '../../infrastructure/audit/user-context.resolver';
 import { ChannelSettingsService } from '../../services/channels/channel-settings.service';
+import { ChannelSettingsResolver, channelSettingsSchema } from './channel-settings.resolver';
 
 @VendurePlugin({
     imports: [PluginCommonModule],
-    providers: [ChannelSettingsResolver, ChannelSettingsService],
+    providers: [
+        // Audit dependencies (must be available for ChannelSettingsService)
+        // AuditDbConnection uses singleton pattern to prevent duplicate initialization
+        AuditDbConnection,
+        UserContextResolver,
+        AuditService,
+        // Channel settings
+        ChannelSettingsResolver,
+        ChannelSettingsService,
+    ],
     adminApiExtensions: {
         resolvers: [ChannelSettingsResolver],
         schema: channelSettingsSchema,

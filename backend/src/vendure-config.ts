@@ -8,42 +8,35 @@ import {
     DefaultSearchPlugin,
     LanguageCode,
     manualFulfillmentHandler,
+    User,
     VendureConfig
 } from '@vendure/core';
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
-import { config as dotenvConfig } from 'dotenv';
 import { Request, Response } from 'express';
-import fs from 'fs';
 import path from 'path';
+import { env } from './infrastructure/config/environment.config';
+import { AuditPlugin } from './plugins/audit/audit.plugin';
+import { PhoneAuthPlugin } from './plugins/auth/phone-auth.plugin';
+import { ChannelEventsPlugin } from './plugins/channels/channel-events.plugin';
 import { ChannelSettingsPlugin } from './plugins/channels/channel-settings.plugin';
+import { EnvironmentPlugin } from './plugins/core/environment.plugin';
+import { CreditPlugin } from './plugins/credit/credit.plugin';
+import { ApproveCustomerCreditPermission, ManageCustomerCreditLimitPermission } from './plugins/credit/permissions';
 import { FractionalQuantityPlugin } from './plugins/inventory/fractional-quantity.plugin';
 import { MlModelPlugin } from './plugins/ml/ml-model.plugin';
 import { NotificationPlugin } from './plugins/notifications/notification.plugin';
-import { cashPaymentHandler, creditPaymentHandler, mpesaPaymentHandler } from './services/payments/payment-handlers';
-import { PhoneAuthPlugin } from './plugins/auth/phone-auth.plugin';
 import { OverridePricePermission } from './plugins/pricing/price-override.permission';
-import { ApproveCustomerCreditPermission, ManageCustomerCreditLimitPermission } from './plugins/credit/permissions';
 import { PriceOverridePlugin } from './plugins/pricing/price-override.plugin';
 import { SubscriptionTier } from './plugins/subscriptions/subscription.entity';
 import { SubscriptionPlugin } from './plugins/subscriptions/subscription.plugin';
-import { CreditPlugin } from './plugins/credit/credit.plugin';
-import { ChannelEventsPlugin } from './plugins/channels/channel-events.plugin';
+import { cashPaymentHandler, creditPaymentHandler, mpesaPaymentHandler } from './services/payments/payment-handlers';
 
-// Load environment variables from .env file for local development
-// Docker containers get env vars from docker-compose (these override .env)
-const envPaths = [
-    path.join(__dirname, '../../configs/.env'), // Local dev (ts-node from src/)
-    path.join(__dirname, '../configs/.env'),    // Compiled (dist/)
-];
-const envPath = envPaths.find(p => fs.existsSync(p));
-if (envPath) {
-    dotenvConfig({ path: envPath });
-}
-
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-const serverPort = +process.env.PORT || 3000;
-const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
+// Environment variables are now loaded centrally via EnvironmentConfig
+// See: infrastructure/config/environment.config.ts
+const IS_PRODUCTION = env.app.nodeEnv === 'production';
+const serverPort = env.app.port;
+const COOKIE_SECURE = env.app.cookieSecure;
 
 // Configure order process to disable shipping requirements for POS
 const customOrderProcess = configureDefaultOrderProcess({
@@ -59,7 +52,7 @@ export const config: VendureConfig = {
         trustProxy: IS_PRODUCTION ? 1 : false,
         cors: {
             origin: IS_PRODUCTION
-                ? process.env.FRONTEND_URL?.split(',') || true
+                ? env.app.frontendUrl?.split(',') || true
                 : ['http://localhost:4200', 'http://127.0.0.1:4200'],
             credentials: true,
         },
@@ -102,11 +95,11 @@ export const config: VendureConfig = {
     authOptions: {
         tokenMethod: ['bearer', 'cookie'],
         superadminCredentials: {
-            identifier: process.env.SUPERADMIN_USERNAME,
-            password: process.env.SUPERADMIN_PASSWORD,
+            identifier: env.superadmin.username,
+            password: env.superadmin.password,
         },
         cookieOptions: {
-            secret: process.env.COOKIE_SECRET,
+            secret: env.app.cookieSecret,
             httpOnly: true,
             sameSite: 'lax',
             secure: COOKIE_SECURE,
@@ -125,12 +118,12 @@ export const config: VendureConfig = {
         migrations: [path.join(__dirname, './migrations/*.+(js|ts)')],
         migrationsRun: true, // Auto-run pending migrations on startup
         logging: false,
-        database: process.env.DB_NAME,
-        schema: process.env.DB_SCHEMA,
-        host: process.env.DB_HOST,
-        port: +process.env.DB_PORT,
-        username: process.env.DB_USERNAME,
-        password: process.env.DB_PASSWORD,
+        database: env.db.name,
+        schema: process.env.DB_SCHEMA || 'public', // Keep DB_SCHEMA as process.env since it's rarely used
+        host: env.db.host,
+        port: env.db.port,
+        username: env.db.username,
+        password: env.db.password,
     },
     paymentOptions: {
         paymentMethodHandlers: [
@@ -678,7 +671,63 @@ export const config: VendureConfig = {
                 ui: { tab: 'Events' },
             },
         ],
+        Order: [
+            {
+                name: 'createdByUserId',
+                type: 'relation',
+                entity: User,
+                label: [{ languageCode: LanguageCode.en, value: 'Created By User' }],
+                description: [{ languageCode: LanguageCode.en, value: 'User who created this order' }],
+                public: false,
+                nullable: true,
+            },
+            {
+                name: 'lastModifiedByUserId',
+                type: 'relation',
+                entity: User,
+                label: [{ languageCode: LanguageCode.en, value: 'Last Modified By User' }],
+                description: [{ languageCode: LanguageCode.en, value: 'User who last modified this order' }],
+                public: false,
+                nullable: true,
+            },
+            {
+                name: 'auditCreatedAt',
+                type: 'datetime',
+                label: [{ languageCode: LanguageCode.en, value: 'Audit Created At' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Timestamp when audit tracking was enabled for this order' }],
+                public: false,
+                nullable: true,
+            },
+        ],
+        Payment: [
+            {
+                name: 'addedByUserId',
+                type: 'relation',
+                entity: User,
+                label: [{ languageCode: LanguageCode.en, value: 'Added By User' }],
+                description: [{ languageCode: LanguageCode.en, value: 'User who added this payment' }],
+                public: false,
+                nullable: true,
+            },
+            {
+                name: 'auditCreatedAt',
+                type: 'datetime',
+                label: [{ languageCode: LanguageCode.en, value: 'Audit Created At' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Timestamp when audit tracking was enabled for this payment' }],
+                public: false,
+                nullable: true,
+            },
+        ],
         Customer: [
+            {
+                name: 'creditApprovedByUserId',
+                type: 'relation',
+                entity: User,
+                label: [{ languageCode: LanguageCode.en, value: 'Credit Approved By User' }],
+                description: [{ languageCode: LanguageCode.en, value: 'User who approved credit for this customer' }],
+                public: false,
+                nullable: true,
+            },
             {
                 name: 'isSupplier',
                 type: 'boolean',
@@ -906,6 +955,7 @@ export const config: VendureConfig = {
         fulfillmentHandlers: [manualFulfillmentHandler],
     },
     plugins: [
+        EnvironmentPlugin, // Must be first to ensure env config is available
         GraphiqlPlugin.init(),
         MlModelPlugin,
         PriceOverridePlugin,
@@ -915,12 +965,13 @@ export const config: VendureConfig = {
         CreditPlugin,
         SubscriptionPlugin,
         ChannelEventsPlugin,
+        AuditPlugin,
         // PhoneAuthPlugin must be registered early so its strategy can be added to adminAuthenticationStrategy
         PhoneAuthPlugin,
         AssetServerPlugin.init({
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),
-            assetUrlPrefix: process.env.ASSET_URL_PREFIX || undefined,
+            assetUrlPrefix: env.app.assetUrlPrefix || undefined,
         }),
         DefaultSchedulerPlugin.init(),
         DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),

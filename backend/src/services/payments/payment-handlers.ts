@@ -14,6 +14,14 @@ export function setPaymentHandlerCreditService(creditService: any): void {
     creditServiceRef = creditService;
 }
 
+// Service locator for AuditService
+// This will be set by the audit plugin when it initializes
+let auditServiceRef: any | null = null;
+
+export function setPaymentHandlerAuditService(auditService: any): void {
+    auditServiceRef = auditService;
+}
+
 /**
  * Cash Payment Handler
  * 
@@ -29,15 +37,21 @@ export const cashPaymentHandler = new PaymentMethodHandler({
     args: {},
 
     createPayment: async (ctx, order, amount, args, metadata): Promise<CreatePaymentResult> => {
-        return {
+        const result = {
             amount: order.total,
             state: 'Settled' as const,
             transactionId: `CASH-${Date.now()}`,
             metadata: {
                 paymentType: 'cash',
+                userId: ctx.activeUserId?.toString(), // Store user ID in metadata for later tracking
                 ...(metadata || {})
             }
         };
+        
+        // Note: Payment custom fields will be updated by VendureEventAuditSubscriber
+        // when PaymentStateTransitionEvent fires, using userId from metadata
+        
+        return result;
     },
 
     settlePayment: async (): Promise<SettlePaymentResult> => {
@@ -68,16 +82,22 @@ export const mpesaPaymentHandler = new PaymentMethodHandler({
     createPayment: async (ctx, order, amount, args, metadata): Promise<CreatePaymentResult> => {
         // TODO: Future - Trigger STK Push, await callback
         // For now, mark as settled immediately
-        return {
+        const result = {
             amount: order.total,
             state: 'Settled' as const,
             transactionId: `MPESA-${Date.now()}`,
             metadata: {
                 paymentType: 'mpesa',
                 phoneNumber: metadata?.phoneNumber || null, // Capture for future API integration
+                userId: ctx.activeUserId?.toString(), // Store user ID in metadata for later tracking
                 ...(metadata || {})
             }
         };
+        
+        // Note: Payment custom fields will be updated by VendureEventAuditSubscriber
+        // when PaymentStateTransitionEvent fires, using userId from metadata
+        
+        return result;
     },
 
     settlePayment: async (): Promise<SettlePaymentResult> => {
@@ -123,17 +143,23 @@ export const creditPaymentHandler = new PaymentMethodHandler({
         // Apply credit charge
         await creditServiceRef.applyCreditCharge(ctx, customerId, order.total);
 
-        return {
+        const result: CreatePaymentResult = {
             amount: order.total,
-            state: 'Authorized',
+            state: 'Authorized' as const,
             transactionId: `CREDIT-${Date.now()}`,
             metadata: {
                 paymentType: 'credit',
                 customerId,
                 creditLimit: summary.creditLimit,
                 outstandingAmount: summary.outstandingAmount - order.total,
+                userId: ctx.activeUserId?.toString(), // Store user ID in metadata for later tracking
             },
         };
+        
+        // Note: Payment custom fields will be updated by VendureEventAuditSubscriber
+        // when PaymentStateTransitionEvent fires, using userId from metadata
+        
+        return result;
     },
     settlePayment: async (): Promise<SettlePaymentResult> => {
         // Credit payment is already authorized in createPayment

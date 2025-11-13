@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
-    Country,
     Customer,
     ID,
     Order,
     RequestContext,
     TransactionalConnection,
-    UserInputError,
+    UserInputError
 } from '@vendure/core';
+import { AuditService } from '../../infrastructure/audit/audit.service';
 import { CreditService } from '../credit/credit.service';
 import { PriceOverrideService } from './price-override.service';
 
@@ -45,7 +45,8 @@ export class OrderCreationService {
         private readonly connection: TransactionalConnection,
         private readonly creditService: CreditService,
         private readonly priceOverrideService: PriceOverrideService,
-    ) {}
+        private readonly auditService: AuditService,
+    ) { }
 
     /**
      * Create a complete order with items and payment
@@ -87,6 +88,17 @@ export class OrderCreationService {
                 // 7. Call addManualPaymentToOrder
                 // 8. Handle fulfillment for cash sales
                 // 
+                // After order is created, add:
+                // - await this.updateOrderCustomFields(transactionCtx, order.id, {
+                //     createdByUserId: transactionCtx.activeUserId,
+                //     lastModifiedByUserId: transactionCtx.activeUserId
+                //   });
+                // - await this.auditService.log(transactionCtx, 'order.created', {
+                //     entityType: 'Order',
+                //     entityId: order.id.toString(),
+                //     data: { orderCode: order.code, total: order.total }
+                //   });
+                // 
                 // This requires access to the Admin API GraphQL client through RequestContext
                 // or using Vendure's internal services if they're available.
 
@@ -124,7 +136,7 @@ export class OrderCreationService {
      */
     private async getOrCreateWalkInCustomer(ctx: RequestContext): Promise<string> {
         const customerRepo = this.connection.getRepository(ctx, Customer);
-        
+
         // Try to find existing walk-in customer
         const walkInCustomer = await customerRepo.findOne({
             where: { emailAddress: 'walkin@pos.local' },
@@ -145,6 +157,32 @@ export class OrderCreationService {
         const savedCustomer = await customerRepo.save(newCustomer);
         this.logger.log(`Created walk-in customer: ${savedCustomer.id}`);
         return String(savedCustomer.id);
+    }
+
+    /**
+     * Update order custom fields for user tracking
+     */
+    private async updateOrderCustomFields(
+        ctx: RequestContext,
+        orderId: ID,
+        fields: { createdByUserId?: ID; lastModifiedByUserId?: ID }
+    ): Promise<void> {
+        try {
+            // Update order custom field via repository
+            const orderRepo = this.connection.getRepository(ctx, Order);
+            const order = await orderRepo.findOne({ where: { id: orderId }, select: ['id', 'customFields'] });
+            if (order) {
+                const customFields = (order.customFields as any) || {};
+                await orderRepo.update(
+                    { id: orderId },
+                    { customFields: { ...customFields, ...fields } }
+                );
+            }
+        } catch (error) {
+            this.logger.warn(
+                `Failed to update order custom fields for order ${orderId}: ${error instanceof Error ? error.message : String(error)}`
+            );
+        }
     }
 }
 

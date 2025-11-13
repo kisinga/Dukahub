@@ -19,6 +19,8 @@ import { ActionCategory } from './types/action-category.enum';
 import { ChannelActionType } from './types/action-type.enum';
 import { ActionConfig, ChannelEvent, ChannelEventConfig } from './types/channel-event.interface';
 import { ChannelEventType } from './types/event-type.enum';
+import { AuditService } from '../audit/audit.service';
+import { UserContextResolver } from '../audit/user-context.resolver';
 
 /**
  * Channel Event Router Service
@@ -41,6 +43,8 @@ export class ChannelEventRouterService implements OnModuleInit {
         private readonly inAppHandler: InAppActionHandler,
         private readonly pushHandler: PushActionHandler,
         private readonly smsHandler: SmsActionHandler,
+        private readonly auditService: AuditService,
+        private readonly userContextResolver: UserContextResolver,
     ) {
         // Register handlers
         this.handlers.set(ChannelActionType.IN_APP_NOTIFICATION, inAppHandler);
@@ -50,12 +54,30 @@ export class ChannelEventRouterService implements OnModuleInit {
 
     onModuleInit(): void {
         // Subscribe to Vendure events
+        // CRITICAL: Wrap async callbacks in try-catch to prevent unhandled promise rejections
+        // that can crash the server process
         this.eventBus.ofType(OrderStateTransitionEvent).subscribe(async (event) => {
-            await this.handleOrderStateTransition(event);
+            try {
+                await this.handleOrderStateTransition(event);
+            } catch (error) {
+                this.logger.error(
+                    `Unhandled error in OrderStateTransitionEvent subscription: ${error instanceof Error ? error.message : String(error)}`,
+                    error instanceof Error ? error.stack : undefined
+                );
+                // Don't rethrow - prevent server crash
+            }
         });
 
         this.eventBus.ofType(StockMovementEvent).subscribe(async (event) => {
-            await this.handleStockMovement(event);
+            try {
+                await this.handleStockMovement(event);
+            } catch (error) {
+                this.logger.error(
+                    `Unhandled error in StockMovementEvent subscription: ${error instanceof Error ? error.message : String(error)}`,
+                    error instanceof Error ? error.stack : undefined
+                );
+                // Don't rethrow - prevent server crash
+            }
         });
 
         // Load event metadata
@@ -66,44 +88,65 @@ export class ChannelEventRouterService implements OnModuleInit {
      * Handle order state transition events
      */
     private async handleOrderStateTransition(event: OrderStateTransitionEvent): Promise<void> {
-        const { order, toState } = event;
-        const channelId = order.channels[0]?.id?.toString();
+        try {
+            const { order, toState } = event;
 
-        if (!channelId) {
-            return;
-        }
+            // Validate order exists
+            if (!order) {
+                this.logger.warn('OrderStateTransitionEvent received with no order data');
+                return;
+            }
 
-        let eventType: ChannelEventType | null = null;
-        const toStateStr = String(toState);
+            // Safely access channels array with proper optional chaining
+            const channelId = order.channels?.[0]?.id?.toString();
 
-        switch (toStateStr) {
-            case 'PaymentSettled':
-                eventType = ChannelEventType.ORDER_PAYMENT_SETTLED;
-                break;
-            case 'Fulfilled':
-                eventType = ChannelEventType.ORDER_FULFILLED;
-                break;
-            case 'Cancelled':
-                eventType = ChannelEventType.ORDER_CANCELLED;
-                break;
-            default:
-                return; // Don't handle other states
-        }
+            if (!channelId) {
+                this.logger.debug(
+                    `Skipping order state transition event: order ${order.id?.toString() || order.code || 'unknown'} has no channels loaded`
+                );
+                return;
+            }
 
-        if (eventType) {
-            await this.routeEvent({
-                type: eventType,
-                channelId,
-                category: ActionCategory.SYSTEM_NOTIFICATIONS,
-                context: event.ctx,
-                data: {
-                    orderId: order.id.toString(),
-                    orderCode: order.code,
-                    toState: toStateStr,
-                },
-                targetCustomerId: order.customer?.id?.toString(),
-                targetUserId: order.customer?.user?.id?.toString(),
-            });
+            let eventType: ChannelEventType | null = null;
+            const toStateStr = String(toState);
+
+            switch (toStateStr) {
+                case 'PaymentSettled':
+                    eventType = ChannelEventType.ORDER_PAYMENT_SETTLED;
+                    break;
+                case 'Fulfilled':
+                    eventType = ChannelEventType.ORDER_FULFILLED;
+                    break;
+                case 'Cancelled':
+                    eventType = ChannelEventType.ORDER_CANCELLED;
+                    break;
+                default:
+                    return; // Don't handle other states
+            }
+
+            if (eventType) {
+                await this.routeEvent({
+                    type: eventType,
+                    channelId,
+                    category: ActionCategory.SYSTEM_NOTIFICATIONS,
+                    context: event.ctx,
+                    data: {
+                        orderId: order.id?.toString() || 'unknown',
+                        orderCode: order.code || 'unknown',
+                        toState: toStateStr,
+                    },
+                    targetCustomerId: order.customer?.id?.toString(),
+                    targetUserId: order.customer?.user?.id?.toString(),
+                });
+            }
+        } catch (error) {
+            // This catch is a safety net - the subscription wrapper should catch most errors
+            // but we log here for additional context
+            this.logger.error(
+                `Error in handleOrderStateTransition for order ${event.order?.id?.toString() || event.order?.code || 'unknown'}: ${error instanceof Error ? error.message : String(error)}`,
+                error instanceof Error ? error.stack : undefined
+            );
+            // Don't rethrow - let the subscription wrapper handle it
         }
     }
 
@@ -121,6 +164,31 @@ export class ChannelEventRouterService implements OnModuleInit {
      */
     async routeEvent(event: ChannelEvent): Promise<void> {
         try {
+            // Log to audit system before processing
+            // Extract user context from event data or context
+            // This captures both regular admins and superadmins
+            const userId = event.data?.userId || 
+                          event.targetUserId || 
+                          this.userContextResolver.getUserId(event.context) ||
+                          null;
+
+            // Check if the user is a superadmin (for audit tracking)
+            const isSuperAdmin = userId ? await this.userContextResolver.isSuperAdmin(event.context) : false;
+
+            await this.auditService.log(event.context, `channel_event.${event.type}`, {
+                entityType: event.data?.entityType || null,
+                entityId: event.data?.entityId || event.data?.orderId || event.data?.adminId || event.data?.userId || null,
+                userId: userId,
+                data: {
+                    ...event.data,
+                    targetUserId: event.targetUserId,
+                    targetCustomerId: event.targetCustomerId,
+                    isSuperAdmin, // Explicitly mark superadmin actions
+                },
+            }).catch(err => {
+                this.logger.warn(`Failed to log channel event to audit: ${err instanceof Error ? err.message : String(err)}`);
+            });
+
             // Load channel configuration
             const channelConfig = await this.getChannelConfig(event.channelId);
             if (!channelConfig) {
