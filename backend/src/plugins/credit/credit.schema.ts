@@ -30,6 +30,22 @@ export const CREDIT_ADMIN_SCHEMA = gql`
         creditDuration: Int!
     }
 
+    input CartItemInput {
+        variantId: ID!
+        quantity: Float!
+        customLinePrice: Int
+        priceOverrideReason: String
+    }
+
+    input CreateOrderInput {
+        cartItems: [CartItemInput!]!
+        paymentMethodCode: String!
+        customerId: ID
+        metadata: JSON
+        isCreditSale: Boolean
+        isCashierFlow: Boolean
+    }
+
     extend type Query {
         creditSummary(customerId: ID!): CreditSummary!
     }
@@ -38,6 +54,7 @@ export const CREDIT_ADMIN_SCHEMA = gql`
         approveCustomerCredit(input: ApproveCustomerCreditInput!): CreditSummary!
         updateCustomerCreditLimit(input: UpdateCustomerCreditLimitInput!): CreditSummary!
         updateCreditDuration(input: UpdateCreditDurationInput!): CreditSummary!
+        createOrder(input: CreateOrderInput!): Order!
     }
 `;
 

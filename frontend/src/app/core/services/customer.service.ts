@@ -6,6 +6,7 @@ import {
     DELETE_CUSTOMER,
     DELETE_CUSTOMER_ADDRESS,
     GET_CREDIT_SUMMARY,
+    VALIDATE_CREDIT,
     GET_CUSTOMER,
     GET_CUSTOMERS,
     UPDATE_CREDIT_DURATION,
@@ -63,6 +64,7 @@ interface CustomerRecord {
     lastName: string;
     emailAddress?: string | null;
     phoneNumber?: string | null;
+    outstandingAmount?: number | null; // Computed field on Customer, not in customFields
     customFields?: {
         isSupplier?: boolean | null;
         supplierType?: string | null;
@@ -70,7 +72,6 @@ interface CustomerRecord {
         taxId?: string | null;
         paymentTerms?: string | null;
         notes?: string | null;
-        outstandingAmount?: number | null;
         isCreditApproved?: boolean | null;
         creditLimit?: number | null;
         lastRepaymentDate?: string | null;
@@ -477,29 +478,74 @@ export class CustomerService {
 
     /**
      * Validate credit availability for a given order total.
+     * Uses backend validation for single source of truth.
      */
     async validateCustomerCredit(
         customerId: string,
         orderTotal: number,
         base?: Partial<CreditCustomerSummary>
     ): Promise<{ summary: CreditCustomerSummary; error?: string }> {
-        const summary = await this.getCreditSummary(customerId, base);
+        const client = this.apolloService.getClient();
 
-        if (!summary.isCreditApproved) {
-            return {
-                summary,
-                error: 'Customer is not approved for credit purchases yet.',
-            };
+        try {
+            // Call backend validation (single source of truth)
+            const validationResult = await client.query<{
+                validateCredit: {
+                    isValid: boolean;
+                    error?: string | null;
+                    availableCredit: number;
+                    estimatedOrderTotal: number;
+                    wouldExceedLimit: boolean;
+                };
+            }>({
+                query: VALIDATE_CREDIT,
+                variables: {
+                    input: {
+                        customerId,
+                        estimatedOrderTotal: orderTotal,
+                    },
+                },
+                fetchPolicy: 'network-only', // Always get fresh data
+            });
+
+            const validation = validationResult.data?.validateCredit;
+            if (!validation) {
+                throw new Error('Validation unavailable');
+            }
+
+            // Get updated credit summary (with latest outstanding amount)
+            const summary = await this.getCreditSummary(customerId, base);
+
+            if (!validation.isValid && validation.error) {
+                return {
+                    summary,
+                    error: validation.error,
+                };
+            }
+
+            return { summary };
+        } catch (error) {
+            console.warn('⚠️ Backend validation failed, falling back to frontend check.', error);
+            
+            // Fallback to frontend validation if backend fails
+            const summary = await this.getCreditSummary(customerId, base);
+
+            if (!summary.isCreditApproved) {
+                return {
+                    summary,
+                    error: 'Customer is not approved for credit purchases yet.',
+                };
+            }
+
+            if (summary.availableCredit < orderTotal) {
+                return {
+                    summary,
+                    error: `Insufficient credit. Available balance: ${summary.availableCredit.toFixed(2)}`,
+                };
+            }
+
+            return { summary };
         }
-
-        if (summary.availableCredit < orderTotal) {
-            return {
-                summary,
-                error: `Insufficient credit. Available balance: ${summary.availableCredit.toFixed(2)}`,
-            };
-        }
-
-        return { summary };
     }
 
     /**
@@ -717,7 +763,8 @@ export class CustomerService {
 
     private mapToCreditSummary(customer: CustomerRecord): CreditCustomerSummary {
         const creditLimit = Number(customer.customFields?.creditLimit ?? 0);
-        const outstandingAmount = Number(customer.customFields?.outstandingAmount ?? 0);
+        // outstandingAmount is now a computed field on Customer, not in customFields
+        const outstandingAmount = Number(customer.outstandingAmount ?? 0);
         const availableCredit = Math.max(creditLimit - Math.abs(outstandingAmount), 0);
         const lastRepaymentDate = customer.customFields?.lastRepaymentDate ?? null;
         const lastRepaymentAmount = Number(customer.customFields?.lastRepaymentAmount ?? 0);

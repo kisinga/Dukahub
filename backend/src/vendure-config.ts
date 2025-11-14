@@ -809,16 +809,8 @@ export const config: VendureConfig = {
                 nullable: false,
                 ui: { tab: 'Financial' },
             },
-            {
-                name: 'outstandingAmount',
-                type: 'float',
-                label: [{ languageCode: LanguageCode.en, value: 'Outstanding Amount' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Amount owed to this supplier (positive) or amount customer owes (negative)' }],
-                defaultValue: 0,
-                public: true,
-                nullable: false,
-                ui: { tab: 'Financial' },
-            },
+            // outstandingAmount removed - now calculated dynamically from orders and payments
+            // See CreditService.calculateOutstandingAmount() for implementation
             {
                 name: 'lastRepaymentDate',
                 type: 'datetime',

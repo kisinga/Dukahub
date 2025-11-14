@@ -673,6 +673,41 @@ export const CREATE_DRAFT_ORDER = graphql(`
   }
 `);
 
+export const CREATE_ORDER = graphql(`
+  mutation CreateOrder($input: CreateOrderInput!) {
+    createOrder(input: $input) {
+      id
+      code
+      state
+      total
+      totalWithTax
+      customer {
+        id
+        firstName
+        lastName
+        emailAddress
+      }
+      lines {
+        id
+        quantity
+        linePrice
+        linePriceWithTax
+        productVariant {
+          id
+          name
+        }
+      }
+      payments {
+        id
+        state
+        amount
+        method
+        metadata
+      }
+    }
+  }
+`);
+
 export const ADD_ITEM_TO_DRAFT_ORDER = graphql(`
   mutation AddItemToDraftOrder($orderId: ID!, $input: AddItemToDraftOrderInput!) {
     addItemToDraftOrder(orderId: $orderId, input: $input) {
@@ -1252,6 +1287,7 @@ export const GET_CUSTOMERS = graphql(`
         phoneNumber
         createdAt
         updatedAt
+        outstandingAmount
         customFields {
           isSupplier
           supplierType
@@ -1261,7 +1297,6 @@ export const GET_CUSTOMERS = graphql(`
           notes
           isCreditApproved
           creditLimit
-          outstandingAmount
           lastRepaymentDate
           lastRepaymentAmount
           creditDuration
@@ -1313,6 +1348,7 @@ export const GET_CUSTOMER = graphql(`
       phoneNumber
       createdAt
       updatedAt
+      outstandingAmount
       customFields {
         isSupplier
         supplierType
@@ -1320,7 +1356,11 @@ export const GET_CUSTOMER = graphql(`
         taxId
         paymentTerms
         notes
-        outstandingAmount
+        isCreditApproved
+        creditLimit
+        lastRepaymentDate
+        lastRepaymentAmount
+        creditDuration
       }
       addresses {
         id
@@ -1363,7 +1403,6 @@ export const CREATE_CUSTOMER = graphql(`
           notes
           isCreditApproved
           creditLimit
-          outstandingAmount
         }
       }
       ... on EmailAddressConflictError {
@@ -1393,7 +1432,6 @@ export const UPDATE_CUSTOMER = graphql(`
           notes
           isCreditApproved
           creditLimit
-          outstandingAmount
         }
       }
       ... on EmailAddressConflictError {
@@ -1476,6 +1514,18 @@ export const GET_CREDIT_SUMMARY = graphql(`
   }
 `);
 
+export const VALIDATE_CREDIT = graphql(`
+  query ValidateCredit($input: ValidateCreditInput!) {
+    validateCredit(input: $input) {
+      isValid
+      error
+      availableCredit
+      estimatedOrderTotal
+      wouldExceedLimit
+    }
+  }
+`);
+
 export const APPROVE_CUSTOMER_CREDIT = graphql(`
   mutation ApproveCustomerCredit($input: ApproveCustomerCreditInput!) {
     approveCustomerCredit(input: $input) {
@@ -1517,6 +1567,39 @@ export const UPDATE_CREDIT_DURATION = graphql(`
       lastRepaymentDate
       lastRepaymentAmount
       creditDuration
+    }
+  }
+`);
+
+export const GET_UNPAID_ORDERS_FOR_CUSTOMER = graphql(`
+  query GetUnpaidOrdersForCustomer($customerId: ID!) {
+    unpaidOrdersForCustomer(customerId: $customerId) {
+      id
+      code
+      state
+      total
+      totalWithTax
+      createdAt
+      payments {
+        id
+        state
+        amount
+        method
+      }
+    }
+  }
+`);
+
+export const ALLOCATE_BULK_PAYMENT = graphql(`
+  mutation AllocateBulkPayment($input: PaymentAllocationInput!) {
+    allocateBulkPayment(input: $input) {
+      ordersPaid {
+        orderId
+        orderCode
+        amountPaid
+      }
+      remainingBalance
+      totalAllocated
     }
   }
 `);
@@ -1577,7 +1660,6 @@ export const GET_SUPPLIERS = graphql(`
           notes
           isCreditApproved
           creditLimit
-          outstandingAmount
         }
         addresses {
           id
@@ -1616,7 +1698,6 @@ export const GET_SUPPLIER = graphql(`
         notes
         isCreditApproved
         creditLimit
-        outstandingAmount
         lastRepaymentDate
         lastRepaymentAmount
         creditDuration
@@ -1657,7 +1738,6 @@ export const CREATE_SUPPLIER = graphql(`
           notes
           isCreditApproved
           creditLimit
-          outstandingAmount
         }
       }
       ... on EmailAddressConflictError {
@@ -1685,7 +1765,6 @@ export const UPDATE_SUPPLIER = graphql(`
           taxId
           paymentTerms
           notes
-          outstandingAmount
         }
       }
       ... on EmailAddressConflictError {

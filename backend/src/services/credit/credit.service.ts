@@ -2,13 +2,16 @@ import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
     Customer,
     ID,
+    Order,
+    OrderService,
     Payment,
     RequestContext,
     TransactionalConnection,
     UserInputError,
 } from '@vendure/core';
-import { ChannelCommunicationService } from '../channels/channel-communication.service';
+import { In } from 'typeorm';
 import { AuditService } from '../../infrastructure/audit/audit.service';
+import { ChannelCommunicationService } from '../channels/channel-communication.service';
 
 export interface CreditSummary {
     customerId: ID;
@@ -27,13 +30,16 @@ export class CreditService {
 
     constructor(
         private readonly connection: TransactionalConnection,
+        private readonly orderService: OrderService,
         @Optional() private readonly communicationService?: ChannelCommunicationService, // Optional to avoid circular dependency
         @Optional() private readonly auditService?: AuditService, // Optional to avoid circular dependency
     ) { }
 
     async getCreditSummary(ctx: RequestContext, customerId: ID): Promise<CreditSummary> {
         const customer = await this.getCustomerOrThrow(ctx, customerId);
-        return this.mapToSummary(customer);
+        // Calculate outstanding amount dynamically from orders
+        const outstandingAmount = await this.calculateOutstandingAmount(ctx, customerId);
+        return this.mapToSummary(customer, outstandingAmount);
     }
 
     async approveCustomerCredit(
@@ -77,7 +83,8 @@ export class CreditService {
             });
         }
 
-        return this.mapToSummary(customer);
+        const outstandingAmount = await this.calculateOutstandingAmount(ctx, customerId);
+        return this.mapToSummary(customer, outstandingAmount);
     }
 
     async updateCustomerCreditLimit(
@@ -119,9 +126,10 @@ export class CreditService {
             });
         }
 
-        return this.mapToSummary(customer);
+        const outstandingAmount = await this.calculateOutstandingAmount(ctx, customerId);
+        return this.mapToSummary(customer, outstandingAmount);
     }
-    
+
     async updateCreditDuration(
         ctx: RequestContext,
         customerId: ID,
@@ -141,72 +149,85 @@ export class CreditService {
         await this.connection.getRepository(ctx, Customer).save(customer);
         this.logger.log(`Updated credit duration for customer ${customerId} to ${creditDuration} days`);
 
-        return this.mapToSummary(customer);
+        const outstandingAmount = await this.calculateOutstandingAmount(ctx, customerId);
+        return this.mapToSummary(customer, outstandingAmount);
     }
 
+    /**
+     * Calculate outstanding amount dynamically from orders and payments
+     * This replaces the stored outstandingAmount field
+     */
+    private async calculateOutstandingAmount(ctx: RequestContext, customerId: ID): Promise<number> {
+        // Query all orders for customer in states that indicate unpaid orders
+        const orderRepo = this.connection.getRepository(ctx, Order);
+        const orders = await orderRepo.find({
+            where: {
+                customer: { id: customerId },
+                state: In(['ArrangingPayment', 'Fulfilled', 'PartiallyFulfilled']),
+            },
+            relations: ['payments'],
+        });
+
+        // Calculate outstanding amount: sum of order totals minus settled payments
+        // Note: order.total and payment.amount are in smallest currency unit (cents)
+        const outstandingAmountInCents = orders.reduce((sum, order) => {
+            const settledPayments = (order.payments || [])
+                .filter(p => p.state === 'Settled')
+                .reduce((total, p) => total + p.amount, 0);
+            return sum + (order.total - settledPayments);
+        }, 0);
+
+        // Convert from cents to base currency units (divide by 100)
+        // This matches the unit used for creditLimit (base currency units)
+        return outstandingAmountInCents / 100;
+    }
+
+    /**
+     * @deprecated Use calculateOutstandingAmount instead. Outstanding balance is now calculated dynamically.
+     * This method is kept for backward compatibility but does nothing.
+     */
     async applyCreditCharge(ctx: RequestContext, customerId: ID, amount: number): Promise<void> {
-        if (amount <= 0) {
-            return;
-        }
-
-        const customer = await this.getCustomerOrThrow(ctx, customerId);
-        const customFields = customer.customFields as any;
-        const currentOutstanding = customFields?.outstandingAmount ?? 0;
-        const newOutstanding = currentOutstanding - amount;
-        
-        customer.customFields = {
-            ...customFields,
-            outstandingAmount: newOutstanding,
-        } as any;
-
-        await this.connection.getRepository(ctx, Customer).save(customer);
-        this.logger.log(
-            `Applied credit charge of ${amount} to customer ${customerId}. Outstanding: ${newOutstanding}`
+        // No-op: Outstanding balance is now calculated dynamically from orders
+        this.logger.debug(
+            `applyCreditCharge called for customer ${customerId} with amount ${amount}. This is a no-op as outstanding balance is calculated dynamically.`
         );
-
-        // Notify about balance change
-        if (this.communicationService) {
-            await this.communicationService.sendBalanceChangeNotification(
-                ctx,
-                String(customerId),
-                currentOutstanding,
-                newOutstanding
-            ).catch(error => {
-                this.logger.warn(`Failed to send balance change notification: ${error instanceof Error ? error.message : String(error)}`);
-            });
-        }
     }
 
+    /**
+     * @deprecated Use calculateOutstandingAmount instead. Outstanding balance is now calculated dynamically.
+     * This method is kept for backward compatibility but updates lastRepaymentDate and lastRepaymentAmount.
+     */
     async releaseCreditCharge(ctx: RequestContext, customerId: ID, amount: number): Promise<void> {
         if (amount <= 0) {
             return;
         }
 
+        // Update last repayment tracking fields (these are still stored)
         const customer = await this.getCustomerOrThrow(ctx, customerId);
         const customFields = customer.customFields as any;
-        const currentOutstanding = customFields?.outstandingAmount ?? 0;
-        const newOutstanding = currentOutstanding + amount;
         const now = new Date();
-        
+
         customer.customFields = {
             ...customFields,
-            outstandingAmount: newOutstanding,
             lastRepaymentDate: now,
             lastRepaymentAmount: amount,
         } as any;
 
         await this.connection.getRepository(ctx, Customer).save(customer);
         this.logger.log(
-            `Recorded repayment of ${amount} for customer ${customerId}. Outstanding: ${newOutstanding}`
+            `Recorded repayment tracking for customer ${customerId}. Amount: ${amount}, Date: ${now}`
         );
 
-        // Notify about balance change
+        // Notify about balance change (outstanding balance is calculated dynamically)
         if (this.communicationService) {
+            const currentOutstanding = await this.calculateOutstandingAmount(ctx, customerId);
+            // Note: We can't calculate the previous outstanding without the old stored value,
+            // so we'll just notify with the current value
             await this.communicationService.sendBalanceChangeNotification(
                 ctx,
                 String(customerId),
-                currentOutstanding,
-                newOutstanding
+                currentOutstanding + amount, // Estimate previous balance
+                currentOutstanding
             ).catch(error => {
                 this.logger.warn(`Failed to send balance change notification: ${error instanceof Error ? error.message : String(error)}`);
             });
@@ -236,12 +257,12 @@ export class CreditService {
         return customer;
     }
 
-    private mapToSummary(customer: Customer): CreditSummary {
+    private mapToSummary(customer: Customer, outstandingAmount: number): CreditSummary {
         // Type assertion for custom fields - they are defined in vendure-config.ts
         const customFields = customer.customFields as any;
         const isCreditApproved = Boolean(customFields?.isCreditApproved);
         const creditLimit = Number(customFields?.creditLimit ?? 0);
-        const outstandingAmount = Number(customFields?.outstandingAmount ?? 0);
+        // outstandingAmount is now passed as parameter (calculated dynamically)
         const availableCredit = Math.max(creditLimit - Math.abs(outstandingAmount), 0);
         const lastRepaymentDate = customFields?.lastRepaymentDate ? new Date(customFields.lastRepaymentDate) : null;
         const lastRepaymentAmount = Number(customFields?.lastRepaymentAmount ?? 0);
@@ -251,7 +272,7 @@ export class CreditService {
             customerId: customer.id,
             isCreditApproved,
             creditLimit,
-            outstandingAmount,
+            outstandingAmount, // Now calculated dynamically
             availableCredit,
             lastRepaymentDate,
             lastRepaymentAmount,
