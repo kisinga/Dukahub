@@ -11,19 +11,19 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
     imports: [CommonModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-        <div class="flex flex-col sm:flex-row gap-3">
+        <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <div class="flex-1">
                 <input
                     type="text"
-                    placeholder="Search by order code, customer name, transaction ID..."
-                    class="input input-bordered w-full"
+                    placeholder="Search payments..."
+                    class="input input-bordered w-full input-sm sm:input-md"
                     [value]="searchQuery()"
                     (input)="onSearchChange($event)"
                 />
             </div>
             <div class="flex gap-2">
                 <select
-                    class="select select-bordered"
+                    class="select select-bordered select-sm sm:select-md flex-1 sm:flex-none sm:w-auto"
                     [value]="stateFilter()"
                     (change)="onStateFilterChange($event)"
                 >

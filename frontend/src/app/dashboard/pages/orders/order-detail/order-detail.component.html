@@ -1,228 +1,231 @@
+@if (modalMode()) {
+<!-- Modal Wrapper -->
+<dialog [id]="modalId" class="modal modal-bottom sm:modal-middle">
+  <div class="modal-box max-w-4xl max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-bold text-lg">Order Details</h3>
+      <button class="btn btn-ghost btn-sm btn-circle" (click)="close()" aria-label="Close">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </div>
+    <!-- Order Content -->
+    <ng-container [ngTemplateOutlet]="orderContent"></ng-container>
+    <div class="modal-action mt-6">
+      <button class="btn btn-primary" (click)="close()">Close</button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button (click)="close()">close</button>
+  </form>
+</dialog>
+}
+
 <div class="space-y-6" [class.print-mode]="isPrintMode()">
-  <!-- Header (hidden in print mode) -->
+  <!-- Header (hidden in print mode and modal mode) -->
+  @if (showHeader() && !modalMode()) {
   <div class="no-print">
     <div class="flex items-center justify-between mb-6">
       <div>
-        <button (click)="goBack()" class="btn btn-ghost btn-sm mb-2">
-          ← Back to Orders
-        </button>
+        <button (click)="goBack()" class="btn btn-ghost btn-sm mb-2">← Back to Orders</button>
         <h1 class="text-3xl font-bold">Order {{ order()?.code || '' }}</h1>
       </div>
+      @if (showPrintControls()) {
       <div class="flex gap-2">
         @if (canPrint()) {
-          <select
-            class="select select-bordered"
-            [value]="selectedTemplate()"
-            (change)="selectedTemplate.set($any($event.target).value)"
-          >
-            @for (template of templates; track template.id) {
-              <option [value]="template.id">{{ template.name }}</option>
-            }
-          </select>
-          <button
-            class="btn btn-primary"
-            (click)="handlePrint()"
-            [disabled]="!order()"
-          >
-            🖨️ Print
-          </button>
+        <select
+          class="select select-bordered"
+          [value]="selectedTemplate()"
+          (change)="selectedTemplate.set($any($event.target).value)"
+        >
+          @for (template of templates; track template.id) {
+          <option [value]="template.id">{{ template.name }}</option>
+          }
+        </select>
+        <button class="btn btn-primary" (click)="handlePrint()" [disabled]="!order()">
+          🖨️ Print
+        </button>
         }
       </div>
+      }
     </div>
   </div>
+  }
 
   <!-- Error Alert -->
   @if (error()) {
-    <div role="alert" class="alert alert-error shadow-lg no-print">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-6 w-6 shrink-0"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-      <span class="flex-1">{{ error() }}</span>
-      <button (click)="clearError()" class="btn btn-sm">Dismiss</button>
-    </div>
+  <div role="alert" class="alert alert-error shadow-lg" [class.no-print]="!modalMode()">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-6 w-6 shrink-0"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    <span class="flex-1">{{ error() }}</span>
+    <button (click)="clearError()" class="btn btn-sm">Dismiss</button>
+  </div>
   }
 
   <!-- Loading State -->
   @if (isLoading() && !order()) {
-    <div class="card bg-base-100 shadow">
-      <div class="card-body">
-        <div class="flex flex-col items-center justify-center py-16">
-          <span class="loading loading-spinner loading-lg text-primary"></span>
-          <p class="text-sm text-base-content/60 mt-4">Loading order...</p>
-        </div>
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <div class="flex flex-col items-center justify-center py-16">
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+        <p class="text-sm text-base-content/60 mt-4">Loading order...</p>
       </div>
     </div>
+  </div>
   }
 
   <!-- Order Details -->
   @if (order()) {
-    <div class="card bg-base-100 shadow">
-      <div class="card-body">
-        <!-- Order Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b">
-          <div>
-            <div class="flex items-center gap-3 mb-2">
-              <h2 class="text-2xl font-bold">Order {{ order()!.code }}</h2>
-              <app-order-state-badge [state]="order()!.state" />
-            </div>
-            <p class="text-sm text-base-content/60">
-              Placed: {{ formatDate(order()!.orderPlacedAt || order()!.createdAt) }}
-            </p>
-          </div>
-        </div>
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <!-- Order Header -->
+      <app-order-detail-header
+        [orderCode]="order()!.code"
+        [orderState]="order()!.state"
+        [orderDate]="order()!.orderPlacedAt || order()!.createdAt"
+      />
 
-        <!-- Customer Information -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <h3 class="font-semibold mb-2">Customer</h3>
-            <p class="text-base-content/80">{{ customerName() }}</p>
-            @if (order()!.customer?.emailAddress && !isWalkInCustomer()) {
-              <p class="text-sm text-base-content/60">{{ order()!.customer!.emailAddress }}</p>
-            }
-            @if (order()!.customer?.phoneNumber && !isWalkInCustomer()) {
-              <p class="text-sm text-base-content/60">{{ order()!.customer!.phoneNumber }}</p>
-            }
-          </div>
-          <div>
-            <h3 class="font-semibold mb-2">Billing Address</h3>
-            @if (order()!.billingAddress) {
-              <div class="text-sm text-base-content/80">
-                <p>{{ order()!.billingAddress!.fullName || customerName() }}</p>
-                <p>{{ order()!.billingAddress!.streetLine1 }}</p>
-                @if (order()!.billingAddress!.streetLine2) {
-                  <p>{{ order()!.billingAddress!.streetLine2 }}</p>
-                }
-                <p>
-                  {{ order()!.billingAddress!.city || '' }}
-                  {{ order()!.billingAddress!.postalCode || '' }}
-                </p>
-                <p>{{ order()!.billingAddress!.country }}</p>
-              </div>
-            } @else {
-              <p class="text-base-content/60">No billing address</p>
-            }
-          </div>
-        </div>
-
-        <!-- Shipping Address (hidden for now but in DOM) -->
-        @if (hasShipping() && order()!.shippingAddress) {
-          <div class="mb-6 hidden-print">
-            <h3 class="font-semibold mb-2">Shipping Address</h3>
-            <div class="text-sm text-base-content/80">
-              <p>{{ order()!.shippingAddress!.fullName || customerName() }}</p>
-              <p>{{ order()!.shippingAddress!.streetLine1 }}</p>
-              @if (order()!.shippingAddress!.streetLine2) {
-                <p>{{ order()!.shippingAddress!.streetLine2 }}</p>
-              }
-              <p>
-                {{ order()!.shippingAddress!.city || '' }}
-                {{ order()!.shippingAddress!.postalCode || '' }}
-              </p>
-              <p>{{ order()!.shippingAddress!.country }}</p>
-            </div>
-          </div>
-        }
-
-        <!-- Order Items -->
-        <div class="mb-6">
-          <h3 class="font-semibold mb-4">Items</h3>
-          <div class="overflow-x-auto">
-            <table class="table table-zebra">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th class="text-right">Quantity</th>
-                  <th class="text-right">Unit Price</th>
-                  <th class="text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (line of order()!.lines; track line.id) {
-                  <tr>
-                    <td>
-                      <div class="font-medium">{{ line.productVariant.name }}</div>
-                      <div class="text-sm text-base-content/60">SKU: {{ line.productVariant.sku }}</div>
-                    </td>
-                    <td class="text-right">{{ line.quantity }}</td>
-                    <td class="text-right">
-                      {{ formatCurrency(line.linePriceWithTax / line.quantity) }}
-                    </td>
-                    <td class="text-right font-medium">
-                      {{ formatCurrency(line.linePriceWithTax) }}
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Totals -->
-        <div class="flex justify-end mb-6">
-          <div class="w-full md:w-80">
-            <div class="space-y-2">
-              <div class="flex justify-between">
-                <span>Subtotal:</span>
-                <span>{{ formatCurrency(subtotal()) }}</span>
-              </div>
-              @if (tax() > 0) {
-                <div class="flex justify-between">
-                  <span>Tax:</span>
-                  <span>{{ formatCurrency(tax()) }}</span>
-                </div>
-              }
-              <div class="flex justify-between pt-2 border-t font-bold text-lg">
-                <span>Total:</span>
-                <span>{{ formatCurrency(total()) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Payment Information -->
-        <div class="mb-6">
-          <h3 class="font-semibold mb-2">Payment</h3>
-          <p><strong>Method:</strong> {{ paymentMethod() }}</p>
-          @if (order()!.payments && order()!.payments.length > 0) {
-            <p class="text-sm text-base-content/60">
-              Status: {{ order()!.payments[0].state }}
-            </p>
-            <p class="text-sm text-base-content/60">
-              Date: {{ formatDate(order()!.payments[0].createdAt) }}
-            </p>
-          }
-        </div>
-
-        <!-- Fulfillment Information (hidden for now but in DOM) -->
-        @if (hasFulfillment() && order()!.fulfillments) {
-          <div class="mb-6 hidden-print">
-            <h3 class="font-semibold mb-2">Fulfillment</h3>
-            @for (fulfillment of order()!.fulfillments; track fulfillment.id) {
-              <div class="mb-2">
-                <p><strong>Method:</strong> {{ fulfillment.method }}</p>
-                @if (fulfillment.trackingCode) {
-                  <p><strong>Tracking:</strong> {{ fulfillment.trackingCode }}</p>
-                }
-                <p class="text-sm text-base-content/60">
-                  Status: {{ fulfillment.state }}
-                </p>
-              </div>
-            }
-          </div>
-        }
+      <!-- Customer Information -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <app-order-customer-info [customer]="order()!.customer" />
+        <app-order-address
+          [address]="order()!.billingAddress"
+          [label]="'Billing Address'"
+          [fallbackName]="customerName()"
+        />
       </div>
+
+      <!-- Shipping Address -->
+      @if (hasShipping() && order()!.shippingAddress) {
+      <div class="mb-6 hidden-print">
+        <app-order-address
+          [address]="order()!.shippingAddress"
+          [label]="'Shipping Address'"
+          [fallbackName]="customerName()"
+        />
+      </div>
+      }
+
+      <!-- Order Items -->
+      <app-order-items-table [lines]="order()!.lines" />
+
+      <!-- Totals -->
+      <app-order-totals [subtotal]="subtotal()" [tax]="tax()" [total]="total()" />
+
+      <!-- Payment Information -->
+      <app-order-payment-info [payments]="order()!.payments" />
+
+      <!-- Fulfillment Information -->
+      <app-order-fulfillment-info [fulfillments]="order()!.fulfillments" />
     </div>
+  </div>
   }
 </div>
 
+<!-- Order Content Template (for modal mode) -->
+<ng-template #orderContent>
+  <!-- Error Alert (for modal mode) -->
+  @if (error()) {
+  <div role="alert" class="alert alert-error mb-4">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-6 w-6 shrink-0"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    <span class="flex-1">{{ error() }}</span>
+    <button (click)="clearError()" class="btn btn-sm">Dismiss</button>
+  </div>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading() && !order()) {
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <div class="flex flex-col items-center justify-center py-16">
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+        <p class="text-sm text-base-content/60 mt-4">Loading order...</p>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Order Details -->
+  @if (order()) {
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <!-- Order Header -->
+      <app-order-detail-header
+        [orderCode]="order()!.code"
+        [orderState]="order()!.state"
+        [orderDate]="order()!.orderPlacedAt || order()!.createdAt"
+      />
+
+      <!-- Customer Information -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <app-order-customer-info [customer]="order()!.customer" />
+        <app-order-address
+          [address]="order()!.billingAddress"
+          [label]="'Billing Address'"
+          [fallbackName]="customerName()"
+        />
+      </div>
+
+      <!-- Shipping Address -->
+      @if (hasShipping() && order()!.shippingAddress) {
+      <div class="mb-6 hidden-print">
+        <app-order-address
+          [address]="order()!.shippingAddress"
+          [label]="'Shipping Address'"
+          [fallbackName]="customerName()"
+        />
+      </div>
+      }
+
+      <!-- Order Items -->
+      <app-order-items-table [lines]="order()!.lines" />
+
+      <!-- Totals -->
+      <app-order-totals [subtotal]="subtotal()" [tax]="tax()" [total]="total()" />
+
+      <!-- Payment Information -->
+      <app-order-payment-info [payments]="order()!.payments" />
+
+      <!-- Fulfillment Information -->
+      <app-order-fulfillment-info [fulfillments]="order()!.fulfillments" />
+    </div>
+  </div>
+  }
+</ng-template>

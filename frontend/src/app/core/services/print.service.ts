@@ -47,6 +47,7 @@ export class PrintService {
 
     /**
      * Print an order using the specified template
+     * Platform-agnostic: uses hidden iframe instead of opening new tab
      * @param order - Order data to print
      * @param templateId - Template ID to use (default: 'receipt-52mm')
      */
@@ -64,64 +65,103 @@ export class PrintService {
         const html = template.render(order, companyLogo);
         const styles = template.getStyles();
 
-        // Create a new window for printing
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-            console.error('Failed to open print window');
-            return;
+        // Create or reuse hidden iframe for printing
+        let printFrame = document.getElementById('print-frame') as HTMLIFrameElement;
+        if (!printFrame) {
+            printFrame = document.createElement('iframe');
+            printFrame.id = 'print-frame';
+            printFrame.style.position = 'absolute';
+            printFrame.style.width = '0';
+            printFrame.style.height = '0';
+            printFrame.style.border = 'none';
+            printFrame.style.left = '-9999px';
+            document.body.appendChild(printFrame);
         }
 
-        // Write the HTML and styles
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Print Order ${order.code}</title>
-                <style>
-                    * {
-                        margin: 0;
-                        padding: 0;
-                        box-sizing: border-box;
-                    }
-                    body {
-                        font-family: Arial, sans-serif;
-                    }
-                    ${styles}
-                    @media print {
-                        body {
+        // Wait for iframe to be ready
+        return new Promise<void>((resolve, reject) => {
+            const iframeDoc = printFrame.contentDocument || printFrame.contentWindow?.document;
+            if (!iframeDoc) {
+                reject(new Error('Failed to access iframe document'));
+                return;
+            }
+
+            // Write the HTML and styles
+            iframeDoc.open();
+            iframeDoc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Print Order ${order.code}</title>
+                    <meta charset="utf-8">
+                    <style>
+                        * {
                             margin: 0;
                             padding: 0;
+                            box-sizing: border-box;
                         }
-                        .no-print {
-                            display: none !important;
+                        body {
+                            font-family: Arial, sans-serif;
                         }
-                        .print-only {
-                            display: block !important;
+                        ${styles}
+                        @media print {
+                            body {
+                                margin: 0;
+                                padding: 0;
+                            }
+                            .no-print {
+                                display: none !important;
+                            }
+                            .print-only {
+                                display: block !important;
+                            }
                         }
-                    }
-                    @media screen {
-                        .print-template {
-                            margin: 20px auto;
-                            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                        @media screen {
+                            .print-template {
+                                margin: 20px auto;
+                                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                            }
                         }
-                    }
-                </style>
-            </head>
-            <body>
-                ${html}
-            </body>
-            </html>
-        `);
+                    </style>
+                </head>
+                <body>
+                    ${html}
+                </body>
+                </html>
+            `);
+            iframeDoc.close();
 
-        printWindow.document.close();
+            // Wait for content to load, then print
+            const printWindow = printFrame.contentWindow;
+            if (!printWindow) {
+                reject(new Error('Failed to access iframe window'));
+                return;
+            }
 
-        // Wait for content to load, then print
-        printWindow.onload = () => {
+            printWindow.onload = () => {
+                setTimeout(() => {
+                    try {
+                        printWindow.focus();
+                        printWindow.print();
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                }, 250);
+            };
+
+            // Fallback: if onload doesn't fire, try printing after a delay
             setTimeout(() => {
-                printWindow.print();
-                // Close window after printing (optional)
-                // printWindow.close();
-            }, 250);
-        };
+                try {
+                    if (printWindow.document.readyState === 'complete') {
+                        printWindow.focus();
+                        printWindow.print();
+                        resolve();
+                    }
+                } catch (error) {
+                    // Ignore errors in fallback
+                }
+            }, 500);
+        });
     }
 }

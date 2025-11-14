@@ -19,26 +19,26 @@ export interface OrderStats {
     imports: [CommonModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            <div class="stat bg-base-100 shadow rounded-lg">
-                <div class="stat-title">Total Orders</div>
-                <div class="stat-value text-primary">{{ stats().totalOrders }}</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
+            <div class="stat bg-base-100 shadow-sm rounded-lg py-3 sm:py-4 px-3 sm:px-4">
+                <div class="stat-title text-xs sm:text-sm">Total Orders</div>
+                <div class="stat-value text-lg sm:text-2xl lg:text-3xl text-primary">{{ stats().totalOrders }}</div>
             </div>
-            <div class="stat bg-base-100 shadow rounded-lg">
-                <div class="stat-title">Draft</div>
-                <div class="stat-value text-neutral">{{ stats().draftOrders }}</div>
+            <div class="stat bg-base-100 shadow-sm rounded-lg py-3 sm:py-4 px-3 sm:px-4">
+                <div class="stat-title text-xs sm:text-sm">Draft</div>
+                <div class="stat-value text-lg sm:text-2xl lg:text-3xl text-neutral">{{ stats().draftOrders }}</div>
             </div>
-            <div class="stat bg-base-100 shadow rounded-lg">
-                <div class="stat-title">Unpaid</div>
-                <div class="stat-value text-warning">{{ stats().unpaidOrders }}</div>
+            <div class="stat bg-base-100 shadow-sm rounded-lg py-3 sm:py-4 px-3 sm:px-4">
+                <div class="stat-title text-xs sm:text-sm">Unpaid</div>
+                <div class="stat-value text-lg sm:text-2xl lg:text-3xl text-warning">{{ stats().unpaidOrders }}</div>
             </div>
-            <div class="stat bg-base-100 shadow rounded-lg">
-                <div class="stat-title">Paid</div>
-                <div class="stat-value text-success">{{ stats().paidOrders }}</div>
+            <div class="stat bg-base-100 shadow-sm rounded-lg py-3 sm:py-4 px-3 sm:px-4">
+                <div class="stat-title text-xs sm:text-sm">Paid</div>
+                <div class="stat-value text-lg sm:text-2xl lg:text-3xl text-success">{{ stats().paidOrders }}</div>
             </div>
-            <div class="stat bg-base-100 shadow rounded-lg">
-                <div class="stat-title">Today</div>
-                <div class="stat-value text-info">{{ stats().todayOrders }}</div>
+            <div class="stat bg-base-100 shadow-sm rounded-lg py-3 sm:py-4 px-3 sm:px-4 col-span-2 sm:col-span-1">
+                <div class="stat-title text-xs sm:text-sm">Today</div>
+                <div class="stat-value text-lg sm:text-2xl lg:text-3xl text-info">{{ stats().todayOrders }}</div>
             </div>
         </div>
     `,

@@ -1,22 +1,42 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnInit, output, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { CurrencyService } from '../../../../core/services/currency.service';
 import { OrdersService } from '../../../../core/services/orders.service';
 import { PrintService } from '../../../../core/services/print.service';
-import { OrderStateBadgeComponent } from '../components/order-state-badge.component';
+import { OrderDetailHeaderComponent } from './components/order-detail-header.component';
+import { OrderCustomerInfoComponent } from './components/order-customer-info.component';
+import { OrderAddressComponent } from './components/order-address.component';
+import { OrderItemsTableComponent } from './components/order-items-table.component';
+import { OrderTotalsComponent } from './components/order-totals.component';
+import { OrderPaymentInfoComponent } from './components/order-payment-info.component';
+import { OrderFulfillmentInfoComponent } from './components/order-fulfillment-info.component';
 
 /**
- * Order Detail Component
+ * Order Detail Component (Container)
  * 
- * Dual-purpose: view mode and print mode
- * - View mode: Shows order details with print button
- * - Print mode: Shows order details optimized for printing
+ * Orchestrates data fetching and composes presentational components.
+ * Works in multiple contexts:
+ * - Full-page mode: Standalone page with navigation
+ * - Modal mode: Embedded in modal dialog
+ * - Print mode: Optimized for printing
+ * 
+ * Usage:
+ * - As page: <app-order-detail></app-order-detail> (uses route params)
+ * - As modal: <app-order-detail [orderId]="id" [modalMode]="true" (closed)="handleClose()"></app-order-detail>
  */
 @Component({
     selector: 'app-order-detail',
-    imports: [CommonModule, OrderStateBadgeComponent],
+    imports: [
+        CommonModule,
+        OrderDetailHeaderComponent,
+        OrderCustomerInfoComponent,
+        OrderAddressComponent,
+        OrderItemsTableComponent,
+        OrderTotalsComponent,
+        OrderPaymentInfoComponent,
+        OrderFulfillmentInfoComponent,
+    ],
     templateUrl: './order-detail.component.html',
     styleUrl: './order-detail.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,9 +44,17 @@ import { OrderStateBadgeComponent } from '../components/order-state-badge.compon
 export class OrderDetailComponent implements OnInit {
     private readonly ordersService = inject(OrdersService);
     private readonly printService = inject(PrintService);
-    private readonly currencyService = inject(CurrencyService);
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
+
+    // Inputs for composable usage
+    readonly orderId = input<string | null>(null);
+    readonly modalMode = input<boolean>(false);
+    readonly showHeader = input<boolean>(true);
+    readonly showPrintControls = input<boolean>(true);
+
+    // Outputs
+    readonly closed = output<void>();
 
     // State
     readonly order = this.ordersService.currentOrder;
@@ -34,31 +62,16 @@ export class OrderDetailComponent implements OnInit {
     readonly error = this.ordersService.error;
     readonly selectedTemplate = signal<string>('receipt-52mm');
     readonly isPrintMode = signal(false);
+    readonly modalId = 'order-detail-modal';
 
     // Available templates
     readonly templates = this.printService.getAvailableTemplates();
 
-    // Computed values
+    // Computed values for child components
     readonly canPrint = computed(() => {
         const order = this.order();
         if (!order) return false;
         return order.state !== 'Draft';
-    });
-
-    readonly customerName = computed(() => {
-        const order = this.order();
-        if (!order?.customer) return 'Walk-in Customer';
-        const firstName = order.customer.firstName || '';
-        const lastName = order.customer.lastName || '';
-        return `${firstName} ${lastName}`.trim() || 'Walk-in Customer';
-    });
-
-    readonly isWalkInCustomer = computed(() => {
-        const order = this.order();
-        if (!order?.customer) return true;
-        const email = order.customer.emailAddress?.toLowerCase() || '';
-        const firstName = order.customer.firstName?.toLowerCase() || '';
-        return email === 'walkin@pos.local' || firstName === 'walk-in';
     });
 
     readonly subtotal = computed(() => {
@@ -79,18 +92,26 @@ export class OrderDetailComponent implements OnInit {
         return order.totalWithTax;
     });
 
-    readonly paymentMethod = computed(() => {
+    readonly customerName = computed(() => {
         const order = this.order();
-        return order?.payments?.[0]?.method || 'N/A';
+        if (!order?.customer) return 'Walk-in Customer';
+        const firstName = order.customer.firstName || '';
+        const lastName = order.customer.lastName || '';
+        return `${firstName} ${lastName}`.trim() || 'Walk-in Customer';
     });
 
-    readonly hasFulfillment = computed(() => {
+    readonly isWalkInCustomer = computed(() => {
         const order = this.order();
-        return order?.fulfillments && order.fulfillments.length > 0;
+        if (!order?.customer) return true;
+        const email = order.customer.emailAddress?.toLowerCase() || '';
+        const firstName = order.customer.firstName?.toLowerCase() || '';
+        return email === 'walkin@pos.local' || firstName === 'walk-in';
     });
 
     readonly hasShipping = computed(() => {
-        return this.hasFulfillment() && !this.isWalkInCustomer();
+        const order = this.order();
+        if (!order?.fulfillments || order.fulfillments.length === 0) return false;
+        return !this.isWalkInCustomer();
     });
 
     // Convert route query params to signal
@@ -98,47 +119,57 @@ export class OrderDetailComponent implements OnInit {
     private readonly routeParams = toSignal(this.route.paramMap);
 
     constructor() {
-        // Check for print mode from query params
+        // Watch for orderId input changes (modal mode)
         effect(() => {
+            const inputOrderId = this.orderId();
+            if (inputOrderId) {
+                this.ordersService.fetchOrderById(inputOrderId);
+            }
+        });
+
+        // Check for print mode from query params (page mode only)
+        effect(() => {
+            if (this.modalMode()) return;
             const params = this.queryParams();
             const printParam = (params as Record<string, any>)['print'];
             this.isPrintMode.set(printParam === 'true' || printParam === true);
         });
 
-        // Auto-print if in print mode
+        // Auto-print if in print mode (page mode only)
         effect(() => {
+            if (this.modalMode()) return;
             const order = this.order();
             const isPrint = this.isPrintMode();
             if (order && isPrint) {
-                // Small delay to ensure DOM is ready
                 setTimeout(() => {
                     this.handlePrint();
                 }, 500);
             }
         });
+
+        // Handle modal open/close (modal mode only)
+        effect(() => {
+            if (!this.modalMode()) return;
+            const inputOrderId = this.orderId();
+            const modal = document.getElementById(this.modalId) as HTMLDialogElement;
+            if (!modal) return;
+            
+            if (inputOrderId) {
+                modal.showModal();
+            } else {
+                modal.close();
+            }
+        });
     }
 
     ngOnInit(): void {
-        const orderId = this.routeParams()?.get('id');
-        if (orderId) {
-            this.ordersService.fetchOrderById(orderId);
+        // In page mode, get orderId from route
+        if (!this.modalMode()) {
+            const routeOrderId = this.routeParams()?.get('id');
+            if (routeOrderId) {
+                this.ordersService.fetchOrderById(routeOrderId);
+            }
         }
-    }
-
-    formatCurrency(amount: number): string {
-        return this.currencyService.format(amount, false);
-    }
-
-    formatDate(dateString: string | null | undefined): string {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-KE', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
     }
 
     async handlePrint(): Promise<void> {
@@ -150,7 +181,21 @@ export class OrderDetailComponent implements OnInit {
     }
 
     goBack(): void {
-        this.router.navigate(['/dashboard/orders']);
+        if (this.modalMode()) {
+            this.close();
+        } else {
+            this.router.navigate(['/dashboard/orders']);
+        }
+    }
+
+    close(): void {
+        if (this.modalMode()) {
+            const modal = document.getElementById(this.modalId) as HTMLDialogElement;
+            if (modal) {
+                modal.close();
+            }
+            this.closed.emit();
+        }
     }
 
     clearError(): void {

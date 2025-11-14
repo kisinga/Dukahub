@@ -19,26 +19,26 @@ export interface PaymentStats {
     imports: [CommonModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            <div class="stat bg-base-100 shadow rounded-lg">
-                <div class="stat-title">Total Payments</div>
-                <div class="stat-value text-primary">{{ stats().totalPayments }}</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
+            <div class="stat bg-base-100 shadow-sm rounded-lg py-3 sm:py-4 px-3 sm:px-4">
+                <div class="stat-title text-xs sm:text-sm">Total Payments</div>
+                <div class="stat-value text-lg sm:text-2xl lg:text-3xl text-primary">{{ stats().totalPayments }}</div>
             </div>
-            <div class="stat bg-base-100 shadow rounded-lg">
-                <div class="stat-title">Settled</div>
-                <div class="stat-value text-success">{{ stats().settledPayments }}</div>
+            <div class="stat bg-base-100 shadow-sm rounded-lg py-3 sm:py-4 px-3 sm:px-4">
+                <div class="stat-title text-xs sm:text-sm">Settled</div>
+                <div class="stat-value text-lg sm:text-2xl lg:text-3xl text-success">{{ stats().settledPayments }}</div>
             </div>
-            <div class="stat bg-base-100 shadow rounded-lg">
-                <div class="stat-title">Authorized</div>
-                <div class="stat-value text-info">{{ stats().authorizedPayments }}</div>
+            <div class="stat bg-base-100 shadow-sm rounded-lg py-3 sm:py-4 px-3 sm:px-4">
+                <div class="stat-title text-xs sm:text-sm">Authorized</div>
+                <div class="stat-value text-lg sm:text-2xl lg:text-3xl text-info">{{ stats().authorizedPayments }}</div>
             </div>
-            <div class="stat bg-base-100 shadow rounded-lg">
-                <div class="stat-title">Declined</div>
-                <div class="stat-value text-error">{{ stats().declinedPayments }}</div>
+            <div class="stat bg-base-100 shadow-sm rounded-lg py-3 sm:py-4 px-3 sm:px-4">
+                <div class="stat-title text-xs sm:text-sm">Declined</div>
+                <div class="stat-value text-lg sm:text-2xl lg:text-3xl text-error">{{ stats().declinedPayments }}</div>
             </div>
-            <div class="stat bg-base-100 shadow rounded-lg">
-                <div class="stat-title">Today</div>
-                <div class="stat-value text-warning">{{ stats().todayPayments }}</div>
+            <div class="stat bg-base-100 shadow-sm rounded-lg py-3 sm:py-4 px-3 sm:px-4 col-span-2 sm:col-span-1">
+                <div class="stat-title text-xs sm:text-sm">Today</div>
+                <div class="stat-value text-lg sm:text-2xl lg:text-3xl text-warning">{{ stats().todayPayments }}</div>
             </div>
         </div>
     `,

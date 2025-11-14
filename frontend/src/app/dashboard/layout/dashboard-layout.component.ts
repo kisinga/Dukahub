@@ -33,6 +33,8 @@ export class DashboardLayoutComponent implements OnInit {
         const baseItems: NavItem[] = [
             { label: 'Overview', icon: '📊', route: '/dashboard' },
             { label: 'Sell', icon: '💰', route: '/dashboard/sell' },
+            { label: 'Orders', icon: '📝', route: '/dashboard/orders' },
+            { label: 'Payments', icon: '💳', route: '/dashboard/payments' },
             { label: 'Products', icon: '📦', route: '/dashboard/products' },
             { label: 'Customers', icon: '👥', route: '/dashboard/customers' },
             { label: 'Suppliers', icon: '🏢', route: '/dashboard/suppliers' },

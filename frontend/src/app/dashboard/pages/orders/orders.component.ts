@@ -64,12 +64,29 @@ export class OrdersComponent implements OnInit {
         // Apply search query
         if (query) {
             filtered = filtered.filter(order => {
-                const code = order.code?.toLowerCase() || '';
-                const customerName = order.customer
-                    ? `${order.customer.firstName} ${order.customer.lastName}`.toLowerCase()
-                    : '';
-                const customerEmail = order.customer?.emailAddress?.toLowerCase() || '';
-                return code.includes(query) || customerName.includes(query) || customerEmail.includes(query);
+                // Search by order code
+                const code = order.code?.toLowerCase().trim() || '';
+                if (code.includes(query)) return true;
+
+                // Search by customer information
+                const customer = order.customer;
+                if (customer) {
+                    // Search by full name (first + last)
+                    const firstName = (customer.firstName || '').toLowerCase().trim();
+                    const lastName = (customer.lastName || '').toLowerCase().trim();
+                    const fullName = `${firstName} ${lastName}`.trim();
+                    
+                    if (fullName.includes(query)) return true;
+                    
+                    // Search by first name or last name separately
+                    if (firstName.includes(query) || lastName.includes(query)) return true;
+                    
+                    // Search by email
+                    const email = (customer.emailAddress || '').toLowerCase().trim();
+                    if (email.includes(query)) return true;
+                }
+
+                return false;
             });
         }
 

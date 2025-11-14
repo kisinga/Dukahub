@@ -1755,6 +1755,36 @@ export const GET_ADMINISTRATORS = graphql(`
   }
 `);
 
+export const GET_ADMINISTRATOR_BY_ID = graphql(`
+  query GetAdministratorById($id: ID!) {
+    administrator(id: $id) {
+      id
+      firstName
+      lastName
+      emailAddress
+      createdAt
+      updatedAt
+      user {
+        id
+        identifier
+        verified
+        lastLogin
+        roles {
+          id
+          code
+          description
+          permissions
+          channels {
+            id
+            code
+            token
+          }
+        }
+      }
+    }
+  }
+`);
+
 export const CREATE_CHANNEL_PAYMENT_METHOD = graphql(`
   mutation CreateChannelPaymentMethod($input: CreatePaymentMethodInput!) {
     createChannelPaymentMethod(input: $input) {

@@ -1,9 +1,9 @@
-<div class="space-y-5 lg:space-y-6">
+<div class="space-y-4 sm:space-y-5 lg:space-y-6">
   <!-- Header -->
-  <div class="flex items-start justify-between gap-4">
+  <div class="flex items-start justify-between gap-3 sm:gap-4">
     <div class="flex-1 min-w-0">
-      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">Orders</h1>
-      <p class="text-base sm:text-lg text-base-content/60 mt-2 leading-relaxed">
+      <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">Orders</h1>
+      <p class="text-sm sm:text-base text-base-content/60 mt-1 sm:mt-2 leading-relaxed">
         View and manage all orders
       </p>
     </div>
@@ -11,14 +11,14 @@
     <div class="flex gap-2 shrink-0">
       <button
         (click)="refreshOrders()"
-        class="btn btn-ghost btn-square btn-lg lg:btn-md"
+        class="btn btn-ghost btn-square btn-md sm:btn-lg"
         [class.loading]="isLoading()"
         title="Refresh orders"
       >
         @if (!isLoading()) {
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 lg:h-5 lg:w-5"
+          class="h-5 w-5 sm:h-6 sm:w-6"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -122,16 +122,16 @@
   <!-- Orders List -->
   @else {
   <!-- List Controls -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
-    <div class="text-sm text-base-content/60">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 px-1">
+    <div class="text-xs sm:text-sm text-base-content/60">
       Showing {{ (currentPage() - 1) * itemsPerPage() + 1 }} to {{ endItem() }} of
       {{ filteredOrders().length }} orders
     </div>
 
     <div class="flex items-center gap-2">
-      <span class="text-sm text-base-content/60">Per page:</span>
+      <span class="text-xs sm:text-sm text-base-content/60 hidden sm:inline">Per page:</span>
       <select
-        class="select select-sm select-bordered"
+        class="select select-xs sm:select-sm select-bordered"
         [value]="itemsPerPage()"
         (change)="changeItemsPerPage(+$any($event.target).value)"
       >
@@ -143,7 +143,7 @@
   </div>
 
   <!-- Mobile: Card View -->
-  <div class="lg:hidden space-y-4">
+  <div class="lg:hidden space-y-3">
     @for (order of paginatedOrders(); track trackByOrderId($index, order)) {
     <app-order-card [order]="order" (action)="onOrderAction($event)" />
     }
