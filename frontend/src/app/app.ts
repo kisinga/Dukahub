@@ -1,7 +1,8 @@
-import { AfterViewInit, Component, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, inject, signal, effect } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastComponent } from './core/layout/toast/toast.component';
 import { ToastService } from './core/services/toast.service';
+import { NetworkService } from './core/services/network.service';
 
 @Component({
   selector: 'app-root',
@@ -12,6 +13,21 @@ import { ToastService } from './core/services/toast.service';
 export class App implements AfterViewInit {
   protected readonly title = signal('dukahub-frontend');
   protected readonly toastService = inject(ToastService);
+  private readonly networkService = inject(NetworkService);
+
+  constructor() {
+    // Apply grayscale filter when offline
+    effect(() => {
+      const isOffline = !this.networkService.isOnline();
+      const htmlElement = document.documentElement;
+      
+      if (isOffline) {
+        htmlElement.classList.add('offline-mode');
+      } else {
+        htmlElement.classList.remove('offline-mode');
+      }
+    });
+  }
 
   ngAfterViewInit(): void {
     // Remove loading spinner once Angular has rendered
