@@ -1,5 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import {
+    ALLOCATE_BULK_PAYMENT,
     APPROVE_CUSTOMER_CREDIT,
     CREATE_CUSTOMER,
     CREATE_CUSTOMER_ADDRESS,
@@ -365,6 +366,38 @@ export class CustomerService {
             this.totalItemsSignal.set(0);
         } finally {
             this.isLoadingSignal.set(false);
+        }
+    }
+
+    /**
+     * Search for customers (including suppliers)
+     */
+    async searchCustomers(term: string, take = 50): Promise<any[]> {
+        const trimmed = term.trim();
+        if (trimmed.length === 0) {
+            return [];
+        }
+
+        try {
+            const client = this.apolloService.getClient();
+            const result = await client.query<any>({
+                query: GET_CUSTOMERS,
+                variables: {
+                    options: {
+                        take,
+                        skip: 0,
+                        filter: {
+                            firstName: { contains: trimmed },
+                        },
+                    },
+                },
+                fetchPolicy: 'network-only',
+            });
+
+            return result.data?.customers?.items || [];
+        } catch (error) {
+            console.error('Failed to search customers:', error);
+            return [];
         }
     }
 
@@ -801,5 +834,81 @@ export class CustomerService {
             firstName,
             lastName: rest.join(' ') || 'POS',
         };
+    }
+
+    /**
+     * Record a bulk payment for a credit-approved customer
+     * @param customerId - Customer ID
+     * @param paymentAmount - Payment amount
+     * @param referenceNumber - Payment reference number (optional)
+     * @param orderIds - Optional array of specific order IDs to pay, if not provided pays all outstanding orders
+     * @returns Payment allocation result or null if failed
+     */
+    async recordBulkPayment(
+        customerId: string,
+        paymentAmount: number,
+        referenceNumber?: string,
+        orderIds?: string[]
+    ): Promise<{
+        ordersPaid: Array<{ orderId: string; orderCode: string; amountPaid: number }>;
+        remainingBalance: number;
+        totalAllocated: number;
+    } | null> {
+        this.errorSignal.set(null);
+
+        try {
+            const client = this.apolloService.getClient();
+
+            const input: any = {
+                customerId,
+                paymentAmount,
+            };
+
+            if (orderIds && orderIds.length > 0) {
+                input.orderIds = orderIds;
+            }
+
+            const result = await client.mutate<{
+                allocateBulkPayment: {
+                    ordersPaid: Array<{ orderId: string; orderCode: string; amountPaid: number }>;
+                    remainingBalance: number;
+                    totalAllocated: number;
+                };
+            }>({
+                mutation: ALLOCATE_BULK_PAYMENT,
+                variables: { input },
+            });
+
+            if (result.error) {
+                console.error('❌ GraphQL error:', result.error);
+                const errorMessage = result.error.message || 'Unknown error';
+                this.errorSignal.set(`Failed to record payment: ${errorMessage}`);
+                return null;
+            }
+
+            const paymentResult = result.data?.allocateBulkPayment;
+            if (!paymentResult) {
+                this.errorSignal.set('Failed to record payment: No data returned.');
+                return null;
+            }
+
+            console.log('✅ Bulk payment recorded:', {
+                customerId,
+                paymentAmount,
+                referenceNumber,
+                ordersPaid: paymentResult.ordersPaid.length,
+                totalAllocated: paymentResult.totalAllocated,
+                remainingBalance: paymentResult.remainingBalance,
+            });
+
+            // TODO: Store reference number in payment metadata if backend supports it
+            // For now, the reference number is tracked but not stored
+
+            return paymentResult;
+        } catch (error: any) {
+            console.error('❌ Bulk payment error:', error);
+            this.errorSignal.set(error.message || 'Failed to record payment');
+            return null;
+        }
     }
 }

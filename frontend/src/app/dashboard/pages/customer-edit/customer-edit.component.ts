@@ -79,12 +79,13 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
 
             <!-- Credit Settings -->
             @if (hasCreditPermission()) {
-            <div class="card bg-base-100 shadow-sm border border-base-300">
-              <div class="card-body">
-                <h2 class="card-title text-lg">💳 Credit Management</h2>
-                <p class="text-sm opacity-70">Manage customer credit approval, limits, and duration</p>
-                
-                <div class="divider"></div>
+            <div class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm">
+              <input type="checkbox" />
+              <div class="collapse-title text-lg font-semibold px-4 py-3">
+                💳 Credit Management
+              </div>
+              <div class="collapse-content px-4 pb-4">
+                <p class="text-sm text-base-content/70 mb-4">Manage customer credit approval, limits, and duration</p>
                 
                 @if (isLoadingCredit()) {
                 <div class="flex justify-center py-4">
@@ -93,10 +94,10 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
                 } @else if (creditSummary()) {
                 <div class="space-y-4">
                   <!-- Credit Approval Status -->
-                  <div class="flex items-center justify-between p-4 bg-base-200 rounded-lg">
-                    <div>
-                      <div class="font-semibold">Credit Approval</div>
-                      <div class="text-sm opacity-70">Allow customer to make credit purchases</div>
+                  <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                    <div class="flex-1 pr-3">
+                      <div class="font-semibold text-sm">Credit Approval</div>
+                      <div class="text-xs text-base-content/70 mt-0.5">Allow customer to make credit purchases</div>
                     </div>
                     <input 
                       type="checkbox" 
@@ -109,42 +110,49 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
 
                   <!-- Credit Limit -->
                   <div class="space-y-2">
-                    <label class="label">
-                      <span class="label-text font-semibold">Credit Limit</span>
-                      <span class="label-text-alt">{{ currencyService.format((creditSummary()?.creditLimit ?? 0) * 100) }}</span>
+                    <label class="label py-1">
+                      <span class="label-text font-semibold text-sm">Credit Limit</span>
+                      @if (!isEditingCreditLimit()) {
+                        <span class="label-text-alt text-xs">{{ currencyService.format((creditSummary()?.creditLimit ?? 0) * 100) }}</span>
+                      }
                     </label>
                     @if (isEditingCreditLimit()) {
-                    <div class="flex gap-2">
+                    <div class="space-y-2">
                       <input
                         type="number"
                         min="0"
                         step="0.01"
-                        class="input input-bordered flex-1"
+                        class="input input-bordered w-full"
                         [value]="editCreditLimitValue()"
                         (input)="editCreditLimitValue.set(($any($event.target).valueAsNumber ?? 0))"
+                        [disabled]="isUpdatingCredit()"
                       />
-                      <button 
-                        class="btn btn-primary btn-sm"
-                        (click)="saveCreditLimit()"
-                        [disabled]="isUpdatingCredit()"
-                      >
-                        @if (isUpdatingCredit()) {
-                        <span class="loading loading-spinner loading-xs"></span>
-                        } Save
-                      </button>
-                      <button 
-                        class="btn btn-ghost btn-sm"
-                        (click)="stopEditingCreditLimit()"
-                        [disabled]="isUpdatingCredit()"
-                      >
-                        Cancel
-                      </button>
+                      <div class="flex gap-2">
+                        <button 
+                          class="btn btn-primary btn-sm flex-1"
+                          (click)="saveCreditLimit()"
+                          [disabled]="isUpdatingCredit()"
+                        >
+                          @if (isUpdatingCredit()) {
+                            <span class="loading loading-spinner loading-xs"></span>
+                          } @else {
+                            Save
+                          }
+                        </button>
+                        <button 
+                          class="btn btn-ghost btn-sm flex-1"
+                          (click)="stopEditingCreditLimit()"
+                          [disabled]="isUpdatingCredit()"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
                     } @else {
-                    <div class="flex items-center gap-2">
-                      <span class="text-lg">{{ currencyService.format((creditSummary()?.creditLimit ?? 0) * 100) }}</span>
+                    <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                      <span class="text-base font-semibold">{{ currencyService.format((creditSummary()?.creditLimit ?? 0) * 100) }}</span>
                       <button 
-                        class="btn btn-link btn-sm"
+                        class="btn btn-sm btn-ghost"
                         (click)="startEditingCreditLimit()"
                         [disabled]="!creditSummary()?.isCreditApproved"
                       >
@@ -156,41 +164,48 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
 
                   <!-- Credit Duration -->
                   <div class="space-y-2">
-                    <label class="label">
-                      <span class="label-text font-semibold">Credit Duration (days)</span>
-                      <span class="label-text-alt">{{ creditSummary()?.creditDuration ?? 30 }} days</span>
+                    <label class="label py-1">
+                      <span class="label-text font-semibold text-sm">Credit Duration</span>
+                      @if (!isEditingCreditDuration()) {
+                        <span class="label-text-alt text-xs">{{ creditSummary()?.creditDuration ?? 30 }} days</span>
+                      }
                     </label>
                     @if (isEditingCreditDuration()) {
-                    <div class="flex gap-2">
+                    <div class="space-y-2">
                       <input
                         type="number"
                         min="1"
-                        class="input input-bordered flex-1"
+                        class="input input-bordered w-full"
                         [value]="editCreditDurationValue()"
                         (input)="editCreditDurationValue.set(($any($event.target).valueAsNumber ?? 1))"
+                        [disabled]="isUpdatingCredit()"
                       />
-                      <button 
-                        class="btn btn-primary btn-sm"
-                        (click)="saveCreditDuration()"
-                        [disabled]="isUpdatingCredit()"
-                      >
-                        @if (isUpdatingCredit()) {
-                        <span class="loading loading-spinner loading-xs"></span>
-                        } Save
-                      </button>
-                      <button 
-                        class="btn btn-ghost btn-sm"
-                        (click)="stopEditingCreditDuration()"
-                        [disabled]="isUpdatingCredit()"
-                      >
-                        Cancel
-                      </button>
+                      <div class="flex gap-2">
+                        <button 
+                          class="btn btn-primary btn-sm flex-1"
+                          (click)="saveCreditDuration()"
+                          [disabled]="isUpdatingCredit()"
+                        >
+                          @if (isUpdatingCredit()) {
+                            <span class="loading loading-spinner loading-xs"></span>
+                          } @else {
+                            Save
+                          }
+                        </button>
+                        <button 
+                          class="btn btn-ghost btn-sm flex-1"
+                          (click)="stopEditingCreditDuration()"
+                          [disabled]="isUpdatingCredit()"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
                     } @else {
-                    <div class="flex items-center gap-2">
-                      <span class="text-lg">{{ creditSummary()?.creditDuration ?? 30 }} days</span>
+                    <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                      <span class="text-base font-semibold">{{ creditSummary()?.creditDuration ?? 30 }} days</span>
                       <button 
-                        class="btn btn-link btn-sm"
+                        class="btn btn-sm btn-ghost"
                         (click)="startEditingCreditDuration()"
                         [disabled]="!creditSummary()?.isCreditApproved"
                       >
@@ -201,16 +216,17 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
                   </div>
 
                   <!-- Credit Summary -->
-                  <div class="grid grid-cols-2 gap-4 pt-4 border-t border-base-300">
-                    <div class="stat bg-base-200 rounded-lg p-4">
+                  <div class="divider my-4"></div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="stat bg-base-200 rounded-lg p-3">
                       <div class="stat-title text-xs">Outstanding</div>
-                      <div class="stat-value text-lg text-warning">
+                      <div class="stat-value text-base text-warning">
                         {{ currencyService.format((creditSummary()?.outstandingAmount ?? 0) * 100) }}
                       </div>
                     </div>
-                    <div class="stat bg-base-200 rounded-lg p-4">
+                    <div class="stat bg-base-200 rounded-lg p-3">
                       <div class="stat-title text-xs">Available</div>
-                      <div class="stat-value text-lg text-success">
+                      <div class="stat-value text-base text-success">
                         {{ currencyService.format((creditSummary()?.availableCredit ?? 0) * 100) }}
                       </div>
                     </div>
@@ -218,7 +234,7 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
 
                   <!-- Last Repayment Info -->
                   @if (creditSummary()?.lastRepaymentDate) {
-                  <div class="alert alert-info">
+                  <div class="alert alert-info mt-4">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>

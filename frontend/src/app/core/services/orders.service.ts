@@ -29,6 +29,8 @@ export class OrdersService {
     private readonly isLoadingSignal = signal(false);
     private readonly errorSignal = signal<string | null>(null);
     private readonly totalItemsSignal = signal(0);
+    private readonly allOrdersForStatsSignal = signal<any[]>([]);
+    private readonly isLoadingStatsSignal = signal(false);
 
     // Public readonly signals
     readonly orders = this.ordersSignal.asReadonly();
@@ -36,6 +38,8 @@ export class OrdersService {
     readonly isLoading = this.isLoadingSignal.asReadonly();
     readonly error = this.errorSignal.asReadonly();
     readonly totalItems = this.totalItemsSignal.asReadonly();
+    readonly allOrdersForStats = this.allOrdersForStatsSignal.asReadonly();
+    readonly isLoadingStats = this.isLoadingStatsSignal.asReadonly();
 
     /**
      * Fetch orders with optional filtering and pagination
@@ -123,6 +127,46 @@ export class OrdersService {
      */
     clearCurrentOrder(): void {
         this.currentOrderSignal.set(null);
+    }
+
+    /**
+     * Fetch all orders for statistics calculation
+     * This fetches a large number of orders to ensure accurate stats
+     * Uses the totalItems count to determine how many orders to fetch
+     */
+    async fetchAllOrdersForStats(): Promise<void> {
+        this.isLoadingStatsSignal.set(true);
+
+        try {
+            const client = this.apolloService.getClient();
+            const totalItems = this.totalItemsSignal();
+            
+            // If we don't have totalItems yet, fetch a large number (10000)
+            // Otherwise, fetch min(totalItems, 10000) to ensure we get all orders
+            // if there are fewer than 10000, or at least the first 10000 if there are more
+            const take = totalItems > 0 ? Math.min(totalItems, 10000) : 10000;
+            
+            const result = await client.query<GetOrdersQuery, GetOrdersQueryVariables>({
+                query: GET_ORDERS,
+                variables: {
+                    options: {
+                        take,
+                        skip: 0,
+                        sort: { createdAt: 'DESC' as any }
+                    }
+                },
+                fetchPolicy: 'network-only', // Always fetch fresh data for accurate stats
+            });
+
+            const items = result.data?.orders?.items || [];
+            this.allOrdersForStatsSignal.set(items);
+        } catch (error: any) {
+            console.error('❌ Failed to fetch orders for stats:', error);
+            // Don't set error signal here as it's a background operation
+            this.allOrdersForStatsSignal.set([]);
+        } finally {
+            this.isLoadingStatsSignal.set(false);
+        }
     }
 }
 

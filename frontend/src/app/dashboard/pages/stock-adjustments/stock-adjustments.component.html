@@ -1,0 +1,213 @@
+<div class="container-app py-6 space-y-6">
+  <h1 class="text-3xl font-bold">🔧 Stock Adjustments</h1>
+
+  <!-- Permission Check -->
+  @if (!hasPermission()) {
+  <div class="alert alert-error">
+    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>You do not have permission to make stock adjustments. Please contact an administrator.</span>
+  </div>
+  } @else {
+  <!-- Success Message -->
+  @if (showSuccessMessage()) {
+  <div class="alert alert-success">
+    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>Stock adjustment recorded successfully!</span>
+  </div>
+  }
+
+  <!-- Error Message -->
+  @if (error(); as errorMsg) {
+  <div class="alert alert-error">
+    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>{{ errorMsg }}</span>
+  </div>
+  }
+
+  @if (adjustmentDraft(); as draft) {
+  <div class="card bg-base-100 shadow-lg">
+    <div class="card-body space-y-6">
+      <!-- Reason -->
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">📋 Reason *</span>
+        </label>
+        <select
+          class="select select-bordered"
+          [value]="draft.reason"
+          (change)="stockAdjustmentServiceRef.updateDraftField('reason', $any($event.target).value)"
+        >
+          <option value="">Select reason...</option>
+          @for (reason of adjustmentReasons; track reason.value) {
+          <option [value]="reason.value">{{ reason.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">📝 Notes</span>
+        </label>
+        <textarea
+          class="textarea textarea-bordered"
+          placeholder="Additional notes (optional)"
+          [value]="draft.notes"
+          (input)="stockAdjustmentServiceRef.updateDraftField('notes', $any($event.target).value)"
+        ></textarea>
+      </div>
+
+      <!-- Line Items -->
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-semibold">📦 Items *</span>
+        </label>
+
+        <!-- Add New Item -->
+        <div class="card bg-base-200 p-4 space-y-3 mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div class="md:col-span-2">
+              <input
+                type="text"
+                class="input input-bordered w-full"
+                placeholder="Search product..."
+                [value]="productSearchTerm()"
+                (input)="handleProductSearch($any($event.target).value)"
+              />
+              @if (productSearchResults().length > 0) {
+              <div class="relative">
+                <div class="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  @for (variant of productSearchResults(); track variant.id) {
+                  <button
+                    type="button"
+                    class="w-full text-left px-4 py-2 hover:bg-base-200"
+                    (click)="handleProductSelect(variant)"
+                  >
+                    <div class="font-medium">{{ variant.name || variant.sku }}</div>
+                    <div class="text-sm opacity-60">SKU: {{ variant.sku }}</div>
+                  </button>
+                  }
+                </div>
+              </div>
+              }
+            </div>
+            <div>
+              <input
+                type="number"
+                class="input input-bordered w-full"
+                placeholder="Quantity Change"
+                step="0.01"
+                [value]="newLineItem().quantityChange || 0"
+                (input)="updateNewLineItem('quantityChange', parseFloat($any($event.target).value))"
+              />
+              <div class="text-xs opacity-60 mt-1">Use + for increase, - for decrease</div>
+            </div>
+            <div>
+              <select
+                class="select select-bordered w-full"
+                [value]="newLineItem().stockLocationId || ''"
+                (change)="updateNewLineItem('stockLocationId', $any($event.target).value)"
+              >
+                <option value="">Select location...</option>
+                @for (location of stockLocations(); track location.id) {
+                <option [value]="location.id">{{ location.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="!newLineItem().variantId || !newLineItem().stockLocationId || (newLineItem().quantityChange || 0) === 0"
+            (click)="handleAddLineItem()"
+          >
+            ➕ Add Item
+          </button>
+        </div>
+
+        <!-- Line Items List -->
+        @if (draft.lines.length > 0) {
+        <div class="overflow-x-auto">
+          <table class="table table-zebra">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Quantity Change</th>
+                <th>Location</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (line of draft.lines; track $index) {
+              <tr>
+                <td>{{ line.variant?.name || line.variantId }}</td>
+                <td>
+                  <input
+                    type="number"
+                    class="input input-xs w-24"
+                    step="0.01"
+                    [value]="line.quantityChange"
+                    (change)="handleUpdateLineItem($index, 'quantityChange', parseFloat($any($event.target).value))"
+                  />
+                  <span class="ml-2" [class.text-success]="line.quantityChange > 0" [class.text-error]="line.quantityChange < 0">
+                    {{ formatQuantityChange(line.quantityChange) }}
+                  </span>
+                </td>
+                <td>
+                  <select
+                    class="select select-xs"
+                    [value]="line.stockLocationId"
+                    (change)="handleUpdateLineItem($index, 'stockLocationId', $any($event.target).value)"
+                  >
+                    @for (location of stockLocations(); track location.id) {
+                    <option [value]="location.id">{{ location.name }}</option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-xs btn-error"
+                    (click)="handleRemoveLineItem($index)"
+                  >
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        } @else {
+        <div class="text-center py-8 text-base-content/60">
+          <div class="text-4xl mb-2">📦</div>
+          <p>No items added yet</p>
+        </div>
+        }
+      </div>
+
+      <!-- Submit Button -->
+      <div class="card-actions justify-end">
+        <button
+          class="btn btn-primary"
+          [disabled]="!draft.reason || draft.lines.length === 0 || isLoading()"
+          (click)="handleSubmitAdjustment()"
+        >
+          @if (isLoading()) {
+          <span class="loading loading-spinner loading-xs"></span>
+          }
+          💾 Record Adjustment
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+  }
+</div>
+

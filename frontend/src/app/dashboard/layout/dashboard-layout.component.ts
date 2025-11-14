@@ -38,12 +38,18 @@ export class DashboardLayoutComponent implements OnInit {
             { label: 'Products', icon: '📦', route: '/dashboard/products' },
             { label: 'Customers', icon: '👥', route: '/dashboard/customers' },
             { label: 'Suppliers', icon: '🏢', route: '/dashboard/suppliers' },
+            { label: 'Purchases', icon: '🛒', route: '/dashboard/purchases' },
             { label: 'Inventory', icon: '📋', route: '/dashboard/inventory' },
             { label: 'Reports', icon: '📈', route: '/dashboard/reports' },
         ];
 
         if (this.authService.hasCreditManagementPermission()) {
             baseItems.splice(4, 0, { label: 'Credit', icon: '💳', route: '/dashboard/credit' });
+        }
+
+        // Only add Stock Adjustments if user has ManageStockAdjustmentsPermission
+        if (this.authService.hasManageStockAdjustmentsPermission()) {
+            baseItems.push({ label: 'Stock Adjustments', icon: '🔧', route: '/dashboard/stock-adjustments' });
         }
 
         // Only add Settings if user has UpdateSettings permission

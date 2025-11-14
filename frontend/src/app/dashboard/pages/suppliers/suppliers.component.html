@@ -58,25 +58,31 @@
       <!-- Content -->
       <div class="bg-base-100 rounded-lg border border-base-300">
         <!-- Desktop Table View -->
-        <div class="hidden lg:block overflow-x-auto">
-          <table class="table table-zebra">
+        <div class="hidden lg:block">
+          <table class="table table-pin-rows">
+            <colgroup>
+              <col style="width: 20%;" />
+              <col style="width: 25%;" />
+              <col style="width: 20%;" />
+              <col style="width: 15%;" />
+              <col style="width: 10%;" />
+              <col style="width: 10%;" />
+            </colgroup>
             <thead>
               <tr>
-                <th>Supplier</th>
+                <th>Name</th>
                 <th>Contact</th>
-                <th>Code</th>
                 <th>Type</th>
-                <th>Addresses</th>
                 <th>Status</th>
-                <th>Created</th>
-                <th class="text-right">Actions</th>
+                <th>Addresses</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               @for (supplier of paginatedSuppliers(); track trackBySupplierId($index, supplier)) {
-                <app-supplier-table-row 
+                <tr app-supplier-table-row 
                   [supplier]="supplier"
-                  (action)="onSupplierAction($event)" />
+                  (action)="onSupplierAction($event)"></tr>
               }
             </tbody>
           </table>
@@ -145,3 +151,12 @@
   [data]="deleteModalData()"
   (confirmed)="onDeleteConfirmed()"
   (cancelled)="onDeleteCancelled()" />
+
+<!-- Supplier View Modal -->
+@if (supplierToView()) {
+  <app-supplier-view-modal
+    #viewModal
+    [supplier]="supplierToView()!"
+    (editRequested)="onEditRequested($event)"
+    (deleteRequested)="onDeleteRequested($event)" />
+}

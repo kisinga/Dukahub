@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard, noAuthGuard } from './core/guards/auth.guard';
 import { creditGuard } from './core/guards/credit.guard';
 import { settingsGuard } from './core/guards/settings.guard';
+import { stockAdjustmentGuard } from './core/guards/stock-adjustment.guard';
 
 export const routes: Routes = [
     // Marketing pages (include their own navbar/footer)
@@ -145,6 +146,21 @@ export const routes: Routes = [
                 loadComponent: () =>
                     import('./dashboard/pages/inventory/inventory.component').then(
                         (m) => m.InventoryComponent
+                    )
+            },
+            {
+                path: 'purchases',
+                loadComponent: () =>
+                    import('./dashboard/pages/purchases/purchases.component').then(
+                        (m) => m.PurchasesComponent
+                    )
+            },
+            {
+                path: 'stock-adjustments',
+                canActivate: [stockAdjustmentGuard],
+                loadComponent: () =>
+                    import('./dashboard/pages/stock-adjustments/stock-adjustments.component').then(
+                        (m) => m.StockAdjustmentsComponent
                     )
             },
             {

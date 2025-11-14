@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnInit, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, effect, inject, input, OnInit, output, viewChild } from '@angular/core';
 import { UsersService } from '../../../../core/services/users.service';
 
 /**
@@ -13,7 +13,7 @@ import { UsersService } from '../../../../core/services/users.service';
     imports: [CommonModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-        <dialog [id]="modalId" class="modal modal-bottom sm:modal-middle">
+        <dialog #modal class="modal modal-bottom sm:modal-middle">
             <div class="modal-box max-w-md">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="font-bold text-lg">👤 User Details</h3>
@@ -181,8 +181,10 @@ export class UserDetailsModalComponent implements OnInit {
 
     readonly userId = input<string | null>(null);
     readonly source = input<'user_action' | 'system_event'>('system_event');
-    readonly modalId = 'user-details-modal';
     readonly closed = output<void>();
+
+    // Modal reference using proper Angular viewChild pattern
+    readonly modalRef = viewChild<ElementRef<HTMLDialogElement>>('modal');
 
     readonly currentUserId = computed(() => this.userId());
     readonly currentSource = computed(() => this.source());
@@ -221,7 +223,7 @@ export class UserDetailsModalComponent implements OnInit {
         // Watch for userId changes and open/close modal
         effect(() => {
             const id = this.userId();
-            const modal = document.getElementById(this.modalId) as HTMLDialogElement;
+            const modal = this.modalRef()?.nativeElement;
             if (!modal) return;
             
             if (id) {
@@ -240,17 +242,13 @@ export class UserDetailsModalComponent implements OnInit {
     }
 
     open(): void {
-        const modal = document.getElementById(this.modalId) as HTMLDialogElement;
-        if (modal) {
-            modal.showModal();
-        }
+        const modal = this.modalRef()?.nativeElement;
+        modal?.showModal();
     }
 
     close(): void {
-        const modal = document.getElementById(this.modalId) as HTMLDialogElement;
-        if (modal) {
-            modal.close();
-        }
+        const modal = this.modalRef()?.nativeElement;
+        modal?.close();
         this.closed.emit();
     }
 

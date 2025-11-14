@@ -1,90 +1,57 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { CurrencyService } from '../../../../core/services/currency.service';
+import { EntityAvatarComponent } from '../../../components/shared/entity-avatar.component';
+import { StatusBadgeComponent } from '../../../components/shared/status-badge.component';
 
-export type CustomerAction = 'edit' | 'delete' | 'viewOrders';
+export type CustomerAction = 'edit' | 'delete' | 'viewOrders' | 'recordPayment' | 'view';
 
 @Component({
   selector: 'app-customer-card',
-  imports: [CommonModule],
+  imports: [
+    EntityAvatarComponent,
+    StatusBadgeComponent
+  ],
   templateUrl: './customer-card.component.html',
   styleUrl: './customer-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CustomerCardComponent {
-  @Input({ required: true }) customer!: any;
-  @Output() action = new EventEmitter<{ action: CustomerAction; customerId: string }>();
+  customer = input.required<any>();
+  action = output<{ action: CustomerAction; customerId: string }>();
   
   readonly currencyService = inject(CurrencyService);
 
   onAction(action: CustomerAction): void {
-    this.action.emit({ action, customerId: this.customer.id });
+    this.action.emit({ action, customerId: this.customer().id });
   }
 
   getFullName(): string {
-    return `${this.customer.firstName || ''} ${this.customer.lastName || ''}`.trim();
-  }
-
-  getInitials(): string {
-    const first = this.customer.firstName?.charAt(0) || '';
-    const last = this.customer.lastName?.charAt(0) || '';
-    return (first + last).toUpperCase();
+    const c = this.customer();
+    return `${c.firstName || ''} ${c.lastName || ''}`.trim();
   }
 
   isVerified(): boolean {
-    return this.customer.user?.verified || false;
+    return this.customer().user?.verified || false;
   }
 
   isWalkInCustomer(): boolean {
-    if (!this.customer) return false;
-    const email = this.customer.emailAddress?.toLowerCase() || '';
-    const firstName = this.customer.firstName?.toLowerCase() || '';
+    const c = this.customer();
+    if (!c) return false;
+    const email = c.emailAddress?.toLowerCase() || '';
+    const firstName = c.firstName?.toLowerCase() || '';
     return email === 'walkin@pos.local' || firstName === 'walk-in';
   }
 
-  // Credit information methods
   isCreditApproved(): boolean {
-    return Boolean(this.customer.customFields?.isCreditApproved);
-  }
-
-  getCreditLimit(): number {
-    return Number(this.customer.customFields?.creditLimit ?? 0);
+    return Boolean(this.customer().customFields?.isCreditApproved);
   }
 
   getOutstandingAmount(): number {
-    return Number(this.customer.customFields?.outstandingAmount ?? 0);
+    return Number(this.customer().outstandingAmount ?? 0);
   }
 
   getOutstandingAmountAbs(): number {
     return Math.abs(this.getOutstandingAmount());
-  }
-
-  getAvailableCredit(): number {
-    const creditLimit = this.getCreditLimit();
-    const outstanding = this.getOutstandingAmountAbs();
-    return Math.max(creditLimit - outstanding, 0);
-  }
-
-  getLastRepaymentDate(): string | null {
-    return this.customer.customFields?.lastRepaymentDate ?? null;
-  }
-
-  getLastRepaymentAmount(): number {
-    return Number(this.customer.customFields?.lastRepaymentAmount ?? 0);
-  }
-
-  getCreditDuration(): number {
-    return Number(this.customer.customFields?.creditDuration ?? 0);
-  }
-
-  formatDate(dateString: string | null | undefined): string {
-    if (!dateString) return '—';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-    } catch {
-      return '—';
-    }
   }
 
   formatCurrency(amount: number): string {

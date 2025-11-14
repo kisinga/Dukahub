@@ -8,6 +8,7 @@ import { SupplierAction, SupplierCardComponent } from './components/supplier-car
 import { SupplierSearchBarComponent } from './components/supplier-search-bar.component';
 import { SupplierStats, SupplierStatsComponent } from './components/supplier-stats.component';
 import { SupplierTableRowComponent } from './components/supplier-table-row.component';
+import { SupplierViewModalComponent } from './components/supplier-view-modal.component';
 
 /**
  * Suppliers list page - similar to products and customers pages
@@ -27,7 +28,8 @@ import { SupplierTableRowComponent } from './components/supplier-table-row.compo
         SupplierSearchBarComponent,
         SupplierTableRowComponent,
         PaginationComponent,
-        DeleteConfirmationModalComponent
+        DeleteConfirmationModalComponent,
+        SupplierViewModalComponent
     ],
     templateUrl: './suppliers.component.html',
     styleUrl: './suppliers.component.scss',
@@ -39,6 +41,7 @@ export class SuppliersComponent implements OnInit {
 
     // View references
     readonly deleteModal = viewChild<DeleteConfirmationModalComponent>('deleteModal');
+    readonly viewModal = viewChild<SupplierViewModalComponent>('viewModal');
 
     // State from service
     readonly suppliers = this.supplierService.suppliers;
@@ -53,6 +56,7 @@ export class SuppliersComponent implements OnInit {
     readonly pageOptions = [10, 25, 50, 100];
     readonly deleteModalData = signal<DeleteConfirmationData>({ supplierName: '', addressCount: 0 });
     readonly supplierToDelete = signal<string | null>(null);
+    readonly supplierToView = signal<any | null>(null);
 
     // Computed: filtered suppliers
     readonly filteredSuppliers = computed(() => {
@@ -133,8 +137,7 @@ export class SuppliersComponent implements OnInit {
 
         switch (action) {
             case 'view':
-                // Navigate to supplier detail view (to be implemented)
-                console.log('View supplier:', supplierId);
+                this.openViewModal(supplierId);
                 break;
 
             case 'edit':
@@ -232,6 +235,36 @@ export class SuppliersComponent implements OnInit {
      */
     trackBySupplierId(index: number, supplier: any): string {
         return supplier.id;
+    }
+
+    /**
+     * Open view modal for supplier
+     */
+    openViewModal(supplierId: string): void {
+        const supplier = this.suppliers().find(s => s.id === supplierId);
+        if (supplier) {
+            this.supplierToView.set(supplier);
+            setTimeout(() => {
+                const modal = this.viewModal();
+                if (modal) {
+                    modal.show();
+                }
+            }, 0);
+        }
+    }
+
+    /**
+     * Handle edit requested from view modal
+     */
+    onEditRequested(supplierId: string): void {
+        this.router.navigate(['/dashboard/suppliers/edit', supplierId]);
+    }
+
+    /**
+     * Handle delete requested from view modal
+     */
+    onDeleteRequested(supplierId: string): void {
+        this.confirmDeleteSupplier(supplierId);
     }
 
     /**

@@ -42,6 +42,8 @@ export class OrdersComponent implements OnInit {
     readonly isLoading = this.ordersService.isLoading;
     readonly error = this.ordersService.error;
     readonly totalItems = this.ordersService.totalItems;
+    readonly allOrdersForStats = this.ordersService.allOrdersForStats;
+    readonly isLoadingStats = this.ordersService.isLoadingStats;
 
     // Query parameters
     private readonly queryParams = toSignal(this.route.queryParams, { initialValue: {} });
@@ -125,16 +127,20 @@ export class OrdersComponent implements OnInit {
 
     // Computed: statistics
     readonly stats = computed((): OrderStats => {
-        const orders = this.orders();
-        const totalOrders = orders.length;
-        const draftOrders = orders.filter(o => o.state === 'Draft').length;
-        const unpaidOrders = orders.filter(o => o.state === 'ArrangingPayment').length;
-        const paidOrders = orders.filter(o => o.state === 'PaymentSettled' || o.state === 'Fulfilled').length;
+        // Use all orders for stats to get accurate counts
+        const allOrders = this.allOrdersForStats();
+        // Use totalItems for total orders count (most accurate)
+        const totalOrders = this.totalItems();
+        
+        // Calculate stats from all fetched orders
+        const draftOrders = allOrders.filter(o => o.state === 'Draft').length;
+        const unpaidOrders = allOrders.filter(o => o.state === 'ArrangingPayment').length;
+        const paidOrders = allOrders.filter(o => o.state === 'PaymentSettled' || o.state === 'Fulfilled').length;
 
         // Today's orders
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const todayOrders = orders.filter(o => {
+        const todayOrders = allOrders.filter(o => {
             const orderDate = new Date(o.orderPlacedAt || o.createdAt);
             orderDate.setHours(0, 0, 0, 0);
             return orderDate.getTime() === today.getTime();
@@ -178,7 +184,7 @@ export class OrdersComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.loadOrders();
+        this.loadOrdersAndStats();
     }
 
     async loadOrders(): Promise<void> {
@@ -189,8 +195,22 @@ export class OrdersComponent implements OnInit {
         });
     }
 
-    async refreshOrders(): Promise<void> {
+    async loadOrdersForStats(): Promise<void> {
+        // Fetch all orders for accurate stats calculation
+        // This should be called after loadOrders to ensure totalItems is available
+        await this.ordersService.fetchAllOrdersForStats();
+    }
+
+    async loadOrdersAndStats(): Promise<void> {
+        // Load main orders first to get totalItems
         await this.loadOrders();
+        // Then load all orders for stats calculation
+        await this.loadOrdersForStats();
+    }
+
+    async refreshOrders(): Promise<void> {
+        // Refresh in sequence to ensure totalItems is available for stats
+        await this.loadOrdersAndStats();
     }
 
     /**

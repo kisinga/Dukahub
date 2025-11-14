@@ -2,27 +2,33 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
 import { gql } from 'graphql-tag';
 
-import { CreditResolver } from './credit.resolver';
-import { CustomerFieldResolver } from './customer.resolver';
 import { CreditService } from '../../services/credit/credit.service';
-import { CreditPaymentSubscriber } from './credit-payment.subscriber';
-import { OrderCreationService } from '../../services/orders/order-creation.service';
-import { PriceOverrideService } from '../../services/orders/price-override.service';
+import { SupplierCreditService } from '../../services/credit/supplier-credit.service';
 import { OrderAddressService } from '../../services/orders/order-address.service';
+import { OrderCreationService } from '../../services/orders/order-creation.service';
 import { OrderCreditValidatorService } from '../../services/orders/order-credit-validator.service';
 import { OrderFulfillmentService } from '../../services/orders/order-fulfillment.service';
 import { OrderItemService } from '../../services/orders/order-item.service';
 import { OrderPaymentService } from '../../services/orders/order-payment.service';
 import { OrderStateService } from '../../services/orders/order-state.service';
+import { PriceOverrideService } from '../../services/orders/price-override.service';
 import { PaymentAllocationService } from '../../services/payments/payment-allocation.service';
-import { PaymentAllocationResolver } from './payment-allocation.resolver';
 import { setPaymentHandlerCreditService } from '../../services/payments/payment-handlers';
+import { SupplierPaymentAllocationService } from '../../services/payments/supplier-payment-allocation.service';
+import { PurchaseCreditValidatorService } from '../../services/stock/purchase-credit-validator.service';
+import { CreditPaymentSubscriber } from './credit-payment.subscriber';
+import { CreditResolver } from './credit.resolver';
+import { CustomerFieldResolver } from './customer.resolver';
+import { PaymentAllocationResolver } from './payment-allocation.resolver';
 import {
     ApproveCustomerCreditPermission,
     ManageCustomerCreditLimitPermission
 } from './permissions';
+import { ManageSupplierCreditPurchasesPermission } from './supplier-credit.permissions';
+import { SupplierCreditResolver } from './supplier-credit.resolver';
+import { SupplierPaymentAllocationResolver } from './supplier-payment-allocation.resolver';
 
-// Merge both schemas into a single DocumentNode
+// Merge all schemas into a single DocumentNode
 const COMBINED_SCHEMA = gql`
     type CreditSummary {
         customerId: ID!
@@ -73,6 +79,7 @@ const COMBINED_SCHEMA = gql`
         ordersPaid: [OrderPayment!]!
         remainingBalance: Float!
         totalAllocated: Float!
+        excessPayment: Float!
     }
 
     type OrderPayment {
@@ -117,12 +124,72 @@ const COMBINED_SCHEMA = gql`
         createOrder(input: CreateOrderInput!): Order!
         allocateBulkPayment(input: PaymentAllocationInput!): PaymentAllocationResult!
     }
+
+    type SupplierCreditSummary {
+        supplierId: ID!
+        isSupplierCreditApproved: Boolean!
+        supplierCreditLimit: Float!
+        outstandingAmount: Float!
+        availableCredit: Float!
+        lastRepaymentDate: DateTime
+        lastRepaymentAmount: Float!
+        supplierCreditDuration: Int!
+    }
+
+    input ApproveSupplierCreditInput {
+        supplierId: ID!
+        approved: Boolean!
+        supplierCreditLimit: Float
+        supplierCreditDuration: Int
+    }
+
+    input UpdateSupplierCreditLimitInput {
+        supplierId: ID!
+        supplierCreditLimit: Float!
+        supplierCreditDuration: Int
+    }
+
+    input UpdateSupplierCreditDurationInput {
+        supplierId: ID!
+        supplierCreditDuration: Int!
+    }
+
+    type SupplierPaymentAllocationResult {
+        purchasesPaid: [SupplierPurchasePayment!]!
+        remainingBalance: Float!
+        totalAllocated: Float!
+        excessPayment: Float!
+    }
+
+    type SupplierPurchasePayment {
+        purchaseId: ID!
+        purchaseReference: String!
+        amountPaid: Float!
+    }
+
+    input SupplierPaymentAllocationInput {
+        supplierId: ID!
+        paymentAmount: Float!
+        purchaseIds: [ID!]
+    }
+
+    extend type Query {
+        supplierCreditSummary(supplierId: ID!): SupplierCreditSummary!
+        unpaidPurchasesForSupplier(supplierId: ID!): [StockPurchase!]!
+    }
+
+    extend type Mutation {
+        approveSupplierCredit(input: ApproveSupplierCreditInput!): SupplierCreditSummary!
+        updateSupplierCreditLimit(input: UpdateSupplierCreditLimitInput!): SupplierCreditSummary!
+        updateSupplierCreditDuration(input: UpdateSupplierCreditDurationInput!): SupplierCreditSummary!
+        allocateBulkSupplierPayment(input: SupplierPaymentAllocationInput!): SupplierPaymentAllocationResult!
+    }
 `;
 
 // Service to initialize payment handler service reference
 @Injectable()
 class PaymentHandlerInitializer implements OnModuleInit {
-    constructor(private creditService: CreditService) {}
+    constructor(private creditService: CreditService) { }
 
     onModuleInit() {
         // Set the credit service reference for payment handlers
@@ -148,6 +215,11 @@ class PaymentHandlerInitializer implements OnModuleInit {
         OrderStateService,
         PaymentAllocationService,
         PaymentAllocationResolver,
+        SupplierCreditService,
+        PurchaseCreditValidatorService,
+        SupplierPaymentAllocationService,
+        SupplierCreditResolver,
+        SupplierPaymentAllocationResolver,
     ],
     configuration: (config) => {
         // Register custom permissions
@@ -155,12 +227,19 @@ class PaymentHandlerInitializer implements OnModuleInit {
             ...(config.authOptions.customPermissions || []),
             ApproveCustomerCreditPermission,
             ManageCustomerCreditLimitPermission,
+            ManageSupplierCreditPurchasesPermission,
         ];
         return config;
     },
     adminApiExtensions: {
         schema: COMBINED_SCHEMA,
-        resolvers: [CreditResolver, CustomerFieldResolver, PaymentAllocationResolver],
+        resolvers: [
+            CreditResolver,
+            CustomerFieldResolver,
+            PaymentAllocationResolver,
+            SupplierCreditResolver,
+            SupplierPaymentAllocationResolver,
+        ],
     },
 })
 export class CreditPlugin { }

@@ -35,25 +35,6 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
         </div>
       </div>
 
-      <!-- Progress Indicator -->
-      <div class="px-4 py-2 bg-base-200">
-        <div class="flex items-center justify-center space-x-2 text-sm">
-          <div class="flex items-center">
-            <div [class]="'w-6 h-6 rounded-full flex items-center justify-center text-xs ' + (step() >= 1 ? 'bg-primary text-primary-content' : 'bg-base-300')">
-              1
-            </div>
-            <span class="ml-1">Basic Info</span>
-          </div>
-          <div class="w-8 h-px bg-base-300"></div>
-          <div class="flex items-center">
-            <div [class]="'w-6 h-6 rounded-full flex items-center justify-center text-xs ' + (step() >= 2 ? 'bg-primary text-primary-content' : 'bg-base-300')">
-              2
-            </div>
-            <span class="ml-1">Supplier Details</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Form Content -->
       <div class="p-4">
         @if (error()) {
@@ -71,115 +52,105 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
             <span class="loading loading-spinner loading-lg"></span>
           </div>
         } @else if (supplierData()) {
-          <!-- Step 1: Basic Person Info -->
-          @if (step() === 1) {
-            <div class="mb-6">
-              <h2 class="text-lg font-semibold mb-4">Basic Information</h2>
-              <p class="text-sm text-base-content/70 mb-4">
-                Update the basic contact information for this supplier.
-              </p>
-            </div>
-            
-            <app-person-edit-form
-              [initialData]="supplierData()"
-              [submitButtonText]="'Next: Supplier Details'"
-              [isLoading]="false"
-              (formSubmit)="onBasicInfoUpdate($event)"
-            ></app-person-edit-form>
-          }
-
-          <!-- Step 2: Supplier Details -->
-          @if (step() === 2) {
-            <div class="mb-6">
-              <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold">Supplier Details</h2>
-                <button 
-                  (click)="goToStep(1)" 
-                  class="btn btn-ghost btn-sm"
-                >
-                  Edit Basic Info
-                </button>
-              </div>
-              <p class="text-sm text-base-content/70 mb-4">
-                Update supplier-specific information.
-              </p>
+          <div class="space-y-6">
+            <!-- Basic Information Section -->
+            <div>
+              <h2 class="text-lg font-semibold mb-3 px-1">Basic Information</h2>
+              <app-person-edit-form
+                [initialData]="supplierData()"
+                [submitButtonText]="''"
+                [isLoading]="false"
+                (formSubmit)="onBasicInfoUpdate($event)"
+              ></app-person-edit-form>
             </div>
 
-            <form [formGroup]="supplierForm" (ngSubmit)="onSupplierDetailsUpdate()" class="space-y-4 max-w-md mx-auto">
-              <!-- Supplier Type -->
-              <div class="input-wrapper">
-                <label class="text-sm font-semibold label-text mb-1 block">
-                  🏭 Supplier Type
-                </label>
-                <select formControlName="supplierType" class="select select-bordered w-full">
-                  <option value="">Select type (optional)</option>
-                  <option value="Manufacturer">Manufacturer</option>
-                  <option value="Distributor">Distributor</option>
-                  <option value="Wholesaler">Wholesaler</option>
-                  <option value="Retailer">Retailer</option>
-                  <option value="Service Provider">Service Provider</option>
-                  <option value="Other">Other</option>
-                </select>
+            <!-- Supplier Details Section -->
+            <div class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm">
+              <input type="checkbox" checked />
+              <div class="collapse-title text-lg font-semibold px-4 py-3">
+                🏭 Supplier Details
               </div>
+              <div class="collapse-content px-4 pb-4">
+                <p class="text-sm text-base-content/70 mb-4">Update supplier-specific information</p>
+                
+                <form [formGroup]="supplierForm" class="space-y-4">
+                  <!-- Supplier Type -->
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-semibold text-sm">🏭 Supplier Type</span>
+                    </label>
+                    <select formControlName="supplierType" class="select select-bordered w-full">
+                      <option value="">Select type (optional)</option>
+                      <option value="Manufacturer">Manufacturer</option>
+                      <option value="Distributor">Distributor</option>
+                      <option value="Wholesaler">Wholesaler</option>
+                      <option value="Retailer">Retailer</option>
+                      <option value="Service Provider">Service Provider</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
 
-              <!-- Contact Person -->
-              <div class="input-wrapper">
-                <label class="text-sm font-semibold label-text mb-1 block">
-                  👥 Contact Person
-                </label>
-                <input
-                  type="text"
-                  formControlName="contactPerson"
-                  placeholder="Primary contact person (optional)"
-                  class="input input-bordered w-full"
-                />
-              </div>
+                  <!-- Contact Person -->
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-semibold text-sm">👥 Contact Person</span>
+                    </label>
+                    <input
+                      type="text"
+                      formControlName="contactPerson"
+                      placeholder="Primary contact person (optional)"
+                      class="input input-bordered w-full"
+                    />
+                  </div>
 
-              <!-- Payment Terms -->
-              <div class="input-wrapper">
-                <label class="text-sm font-semibold label-text mb-1 block">
-                  💳 Payment Terms
-                </label>
-                <select formControlName="paymentTerms" class="select select-bordered w-full">
-                  <option value="">Select payment terms (optional)</option>
-                  <option value="Net 15">Net 15</option>
-                  <option value="Net 30">Net 30</option>
-                  <option value="Net 60">Net 60</option>
-                  <option value="COD">Cash on Delivery</option>
-                  <option value="Prepaid">Prepaid</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+                  <!-- Payment Terms -->
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-semibold text-sm">💳 Payment Terms</span>
+                    </label>
+                    <select formControlName="paymentTerms" class="select select-bordered w-full">
+                      <option value="">Select payment terms (optional)</option>
+                      <option value="Net 15">Net 15</option>
+                      <option value="Net 30">Net 30</option>
+                      <option value="Net 60">Net 60</option>
+                      <option value="COD">Cash on Delivery</option>
+                      <option value="Prepaid">Prepaid</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
 
-              <!-- Notes -->
-              <div class="input-wrapper">
-                <label class="text-sm font-semibold label-text mb-1 block">
-                  📝 Notes
-                </label>
-                <textarea
-                  formControlName="notes"
-                  placeholder="Additional notes about this supplier (optional)"
-                  class="textarea textarea-bordered w-full h-20 resize-none"
-                ></textarea>
+                  <!-- Notes -->
+                  <div class="form-control">
+                    <label class="label">
+                      <span class="label-text font-semibold text-sm">📝 Notes</span>
+                    </label>
+                    <textarea
+                      formControlName="notes"
+                      placeholder="Additional notes about this supplier (optional)"
+                      class="textarea textarea-bordered w-full h-24 resize-none"
+                    ></textarea>
+                  </div>
+                </form>
               </div>
+            </div>
 
-              <!-- Submit Button -->
-              <div class="pt-4">
-                <button
-                  type="submit"
-                  [disabled]="supplierService.isCreating()"
-                  class="btn btn-primary w-full"
-                >
-                  @if (supplierService.isCreating()) {
-                    <span class="loading loading-spinner loading-sm"></span>
-                    Updating Supplier...
-                  } @else {
-                    Update Supplier
-                  }
-                </button>
-              </div>
-            </form>
-          }
+            <!-- Submit Button -->
+            <div class="sticky bottom-0 bg-base-100 pt-4 pb-2 border-t border-base-300 -mx-4 px-4">
+              <button
+                type="button"
+                [disabled]="supplierService.isCreating()"
+                (click)="onSupplierDetailsUpdate()"
+                class="btn btn-primary w-full"
+              >
+                @if (supplierService.isCreating()) {
+                  <span class="loading loading-spinner loading-sm"></span>
+                  Updating Supplier...
+                } @else {
+                  Update Supplier
+                }
+              </button>
+            </div>
+          </div>
         }
       </div>
     </div>
@@ -193,7 +164,6 @@ export class SupplierEditComponent {
   readonly supplierService = inject(SupplierService);
 
   // State
-  readonly step = signal<number>(1);
   readonly error = signal<string | null>(null);
   readonly isLoading = signal<boolean>(true);
   readonly supplierData = signal<any>(null);
@@ -251,15 +221,15 @@ export class SupplierEditComponent {
   }
 
   /**
-   * Handle basic info update (Step 1)
+   * Handle basic info update
    */
   onBasicInfoUpdate(basicInfo: any): void {
     this.basicFormData.set(basicInfo);
-    this.goToStep(2);
+    // Auto-save is handled by the submit button now
   }
 
   /**
-   * Handle supplier details update (Step 2)
+   * Handle supplier details update
    */
   async onSupplierDetailsUpdate(): Promise<void> {
     this.error.set(null);
@@ -303,14 +273,6 @@ export class SupplierEditComponent {
   }
 
   /**
-   * Navigate between steps
-   */
-  goToStep(stepNumber: number): void {
-    this.step.set(stepNumber);
-    this.clearError();
-  }
-
-  /**
    * Clear error state
    */
   clearError(): void {
@@ -322,10 +284,6 @@ export class SupplierEditComponent {
    * Navigate back
    */
   goBack(): void {
-    if (this.step() === 2) {
-      this.goToStep(1);
-    } else {
-      this.router.navigate(['/dashboard/suppliers']);
-    }
+    this.router.navigate(['/dashboard/suppliers']);
   }
 }
