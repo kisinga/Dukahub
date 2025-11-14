@@ -2052,3 +2052,103 @@ export const CANCEL_SUBSCRIPTION = graphql(`
     cancelSubscription(channelId: $channelId)
   }
 `);
+
+// ============================================================================
+// STOCK MANAGEMENT
+// ============================================================================
+
+export const RECORD_PURCHASE = graphql(`
+  mutation RecordPurchase($input: RecordPurchaseInput!) {
+    recordPurchase(input: $input) {
+      id
+      supplierId
+      purchaseDate
+      referenceNumber
+      totalCost
+      paymentStatus
+      notes
+      lines {
+        id
+        variantId
+        quantity
+        unitCost
+        totalCost
+        stockLocationId
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+export const RECORD_STOCK_ADJUSTMENT = graphql(`
+  mutation RecordStockAdjustment($input: RecordStockAdjustmentInput!) {
+    recordStockAdjustment(input: $input) {
+      id
+      reason
+      notes
+      adjustedByUserId
+      lines {
+        id
+        variantId
+        quantityChange
+        previousStock
+        newStock
+        stockLocationId
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+export const GET_PURCHASES = graphql(`
+  query GetPurchases($options: PurchaseListOptions) {
+    purchases(options: $options) {
+      items {
+        id
+        supplierId
+        purchaseDate
+        referenceNumber
+        totalCost
+        paymentStatus
+        notes
+        lines {
+          id
+          variantId
+          quantity
+          unitCost
+          totalCost
+          stockLocationId
+        }
+        createdAt
+        updatedAt
+      }
+      totalItems
+    }
+  }
+`);
+
+export const GET_STOCK_ADJUSTMENTS = graphql(`
+  query GetStockAdjustments($options: StockAdjustmentListOptions) {
+    stockAdjustments(options: $options) {
+      items {
+        id
+        reason
+        notes
+        adjustedByUserId
+        lines {
+          id
+          variantId
+          quantityChange
+          previousStock
+          newStock
+          stockLocationId
+        }
+        createdAt
+        updatedAt
+      }
+      totalItems
+    }
+  }
+`);

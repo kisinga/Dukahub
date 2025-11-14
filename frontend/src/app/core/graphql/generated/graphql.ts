@@ -2551,6 +2551,37 @@ export type InvalidFulfillmentHandlerError = ErrorResult & {
   message: Scalars['String']['output'];
 };
 
+export type InventoryStockAdjustment = {
+  __typename?: 'InventoryStockAdjustment';
+  adjustedBy?: Maybe<User>;
+  adjustedByUserId?: Maybe<Scalars['ID']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  lines: Array<InventoryStockAdjustmentLine>;
+  notes?: Maybe<Scalars['String']['output']>;
+  reason: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type InventoryStockAdjustmentLine = {
+  __typename?: 'InventoryStockAdjustmentLine';
+  adjustmentId: Scalars['ID']['output'];
+  id: Scalars['ID']['output'];
+  newStock: Scalars['Float']['output'];
+  previousStock: Scalars['Float']['output'];
+  quantityChange: Scalars['Float']['output'];
+  stockLocation?: Maybe<StockLocation>;
+  stockLocationId: Scalars['ID']['output'];
+  variant?: Maybe<ProductVariant>;
+  variantId: Scalars['ID']['output'];
+};
+
+export type InventoryStockAdjustmentList = {
+  __typename?: 'InventoryStockAdjustmentList';
+  items: Array<InventoryStockAdjustment>;
+  totalItems: Scalars['Int']['output'];
+};
+
 export type InviteAdministratorInput = {
   emailAddress: Scalars['String']['input'];
   firstName: Scalars['String']['input'];
@@ -3409,6 +3440,8 @@ export type Mutation = {
   modifyOrder: ModifyOrderResult;
   /** Move a Collection to a different parent or index */
   moveCollection: Collection;
+  recordPurchase: StockPurchase;
+  recordStockAdjustment: InventoryStockAdjustment;
   refundOrder: RefundOrderResult;
   reindex: Job;
   /** Removes Collections from the specified Channel */
@@ -4146,6 +4179,16 @@ export type MutationModifyOrderArgs = {
 
 export type MutationMoveCollectionArgs = {
   input: MoveCollectionInput;
+};
+
+
+export type MutationRecordPurchaseArgs = {
+  input: RecordPurchaseInput;
+};
+
+
+export type MutationRecordStockAdjustmentArgs = {
+  input: RecordStockAdjustmentInput;
 };
 
 
@@ -5302,6 +5345,8 @@ export enum Permission {
   DeleteZone = 'DeleteZone',
   /** Allows setting and adjusting customer credit limits. */
   ManageCustomerCreditLimit = 'ManageCustomerCreditLimit',
+  /** Allows recording stock adjustments for inventory corrections. */
+  ManageStockAdjustments = 'ManageStockAdjustments',
   /** Allows overriding order line prices during order creation */
   OverridePrice = 'OverridePrice',
   /** Owner means the user owns this entity, e.g. a Customer's own Order */
@@ -5877,6 +5922,31 @@ export type ProvinceTranslationInput = {
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type PurchaseFilterInput = {
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+  supplierId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+export type PurchaseLineInput = {
+  quantity: Scalars['Float']['input'];
+  stockLocationId: Scalars['ID']['input'];
+  unitCost: Scalars['Int']['input'];
+  variantId: Scalars['ID']['input'];
+};
+
+export type PurchaseListOptions = {
+  filter?: InputMaybe<PurchaseFilterInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<PurchaseSortInput>;
+  take?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type PurchaseSortInput = {
+  createdAt?: InputMaybe<SortOrder>;
+  purchaseDate?: InputMaybe<SortOrder>;
+};
+
 export type PushSubscriptionInput = {
   endpoint: Scalars['String']['input'];
   keys: Scalars['JSON']['input'];
@@ -5975,6 +6045,7 @@ export type Query = {
   promotions: PromotionList;
   province?: Maybe<Province>;
   provinces: ProvinceList;
+  purchases: StockPurchaseList;
   role?: Maybe<Role>;
   roles: RoleList;
   scheduledTasks: Array<ScheduledTask>;
@@ -5985,6 +6056,7 @@ export type Query = {
   shippingEligibilityCheckers: Array<ConfigurableOperationDefinition>;
   shippingMethod?: Maybe<ShippingMethod>;
   shippingMethods: ShippingMethodList;
+  stockAdjustments: InventoryStockAdjustmentList;
   stockLocation?: Maybe<StockLocation>;
   stockLocations: StockLocationList;
   tag: Tag;
@@ -6256,6 +6328,11 @@ export type QueryProvincesArgs = {
 };
 
 
+export type QueryPurchasesArgs = {
+  options?: InputMaybe<PurchaseListOptions>;
+};
+
+
 export type QueryRoleArgs = {
   id: Scalars['ID']['input'];
 };
@@ -6288,6 +6365,11 @@ export type QueryShippingMethodArgs = {
 
 export type QueryShippingMethodsArgs = {
   options?: InputMaybe<ShippingMethodListOptions>;
+};
+
+
+export type QueryStockAdjustmentsArgs = {
+  options?: InputMaybe<StockAdjustmentListOptions>;
 };
 
 
@@ -6358,6 +6440,21 @@ export type QueryZoneArgs = {
 
 export type QueryZonesArgs = {
   options?: InputMaybe<ZoneListOptions>;
+};
+
+export type RecordPurchaseInput = {
+  lines: Array<PurchaseLineInput>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  paymentStatus: Scalars['String']['input'];
+  purchaseDate: Scalars['DateTime']['input'];
+  referenceNumber?: InputMaybe<Scalars['String']['input']>;
+  supplierId: Scalars['ID']['input'];
+};
+
+export type RecordStockAdjustmentInput = {
+  lines: Array<StockAdjustmentLineInput>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  reason: Scalars['String']['input'];
 };
 
 export type Refund = Node & {
@@ -6931,6 +7028,29 @@ export type StockAdjustment = Node & StockMovement & {
   updatedAt: Scalars['DateTime']['output'];
 };
 
+export type StockAdjustmentFilterInput = {
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  reason?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type StockAdjustmentLineInput = {
+  quantityChange: Scalars['Float']['input'];
+  stockLocationId: Scalars['ID']['input'];
+  variantId: Scalars['ID']['input'];
+};
+
+export type StockAdjustmentListOptions = {
+  filter?: InputMaybe<StockAdjustmentFilterInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<StockAdjustmentSortInput>;
+  take?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type StockAdjustmentSortInput = {
+  createdAt?: InputMaybe<SortOrder>;
+};
+
 export type StockLevel = Node & {
   __typename?: 'StockLevel';
   createdAt: Scalars['DateTime']['output'];
@@ -7026,6 +7146,40 @@ export enum StockMovementType {
   RETURN = 'RETURN',
   SALE = 'SALE'
 }
+
+export type StockPurchase = {
+  __typename?: 'StockPurchase';
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  lines: Array<StockPurchaseLine>;
+  notes?: Maybe<Scalars['String']['output']>;
+  paymentStatus: Scalars['String']['output'];
+  purchaseDate: Scalars['DateTime']['output'];
+  referenceNumber?: Maybe<Scalars['String']['output']>;
+  supplier?: Maybe<Customer>;
+  supplierId: Scalars['ID']['output'];
+  totalCost: Scalars['Int']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type StockPurchaseLine = {
+  __typename?: 'StockPurchaseLine';
+  id: Scalars['ID']['output'];
+  purchaseId: Scalars['ID']['output'];
+  quantity: Scalars['Float']['output'];
+  stockLocation?: Maybe<StockLocation>;
+  stockLocationId: Scalars['ID']['output'];
+  totalCost: Scalars['Int']['output'];
+  unitCost: Scalars['Int']['output'];
+  variant?: Maybe<ProductVariant>;
+  variantId: Scalars['ID']['output'];
+};
+
+export type StockPurchaseList = {
+  __typename?: 'StockPurchaseList';
+  items: Array<StockPurchase>;
+  totalItems: Scalars['Int']['output'];
+};
 
 export type StringCustomFieldConfig = CustomField & {
   __typename?: 'StringCustomFieldConfig';
@@ -8620,6 +8774,34 @@ export type CancelSubscriptionMutationVariables = Exact<{
 
 export type CancelSubscriptionMutation = { __typename?: 'Mutation', cancelSubscription: boolean };
 
+export type RecordPurchaseMutationVariables = Exact<{
+  input: RecordPurchaseInput;
+}>;
+
+
+export type RecordPurchaseMutation = { __typename?: 'Mutation', recordPurchase: { __typename?: 'StockPurchase', id: string, supplierId: string, purchaseDate: any, referenceNumber?: string | null, totalCost: number, paymentStatus: string, notes?: string | null, createdAt: any, updatedAt: any, lines: Array<{ __typename?: 'StockPurchaseLine', id: string, variantId: string, quantity: number, unitCost: number, totalCost: number, stockLocationId: string }> } };
+
+export type RecordStockAdjustmentMutationVariables = Exact<{
+  input: RecordStockAdjustmentInput;
+}>;
+
+
+export type RecordStockAdjustmentMutation = { __typename?: 'Mutation', recordStockAdjustment: { __typename?: 'InventoryStockAdjustment', id: string, reason: string, notes?: string | null, adjustedByUserId?: string | null, createdAt: any, updatedAt: any, lines: Array<{ __typename?: 'InventoryStockAdjustmentLine', id: string, variantId: string, quantityChange: number, previousStock: number, newStock: number, stockLocationId: string }> } };
+
+export type GetPurchasesQueryVariables = Exact<{
+  options?: InputMaybe<PurchaseListOptions>;
+}>;
+
+
+export type GetPurchasesQuery = { __typename?: 'Query', purchases: { __typename?: 'StockPurchaseList', totalItems: number, items: Array<{ __typename?: 'StockPurchase', id: string, supplierId: string, purchaseDate: any, referenceNumber?: string | null, totalCost: number, paymentStatus: string, notes?: string | null, createdAt: any, updatedAt: any, lines: Array<{ __typename?: 'StockPurchaseLine', id: string, variantId: string, quantity: number, unitCost: number, totalCost: number, stockLocationId: string }> }> } };
+
+export type GetStockAdjustmentsQueryVariables = Exact<{
+  options?: InputMaybe<StockAdjustmentListOptions>;
+}>;
+
+
+export type GetStockAdjustmentsQuery = { __typename?: 'Query', stockAdjustments: { __typename?: 'InventoryStockAdjustmentList', totalItems: number, items: Array<{ __typename?: 'InventoryStockAdjustment', id: string, reason: string, notes?: string | null, adjustedByUserId?: string | null, createdAt: any, updatedAt: any, lines: Array<{ __typename?: 'InventoryStockAdjustmentLine', id: string, variantId: string, quantityChange: number, previousStock: number, newStock: number, stockLocationId: string }> }> } };
+
 
 export const UpdateOrderLineQuantityDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateOrderLineQuantity"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderLineId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"quantity"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateOrderLineQuantity"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderLineId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderLineId"}}},{"kind":"Argument","name":{"kind":"Name","value":"quantity"},"value":{"kind":"Variable","name":{"kind":"Name","value":"quantity"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Order"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"lines"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"productVariant"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allowFractionalQuantity"}}]}}]}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ErrorResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateOrderLineQuantityMutation, UpdateOrderLineQuantityMutationVariables>;
 export const GetActiveAdministratorDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetActiveAdministrator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activeAdministrator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"identifier"}},{"kind":"Field","name":{"kind":"Name","value":"roles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetActiveAdministratorQuery, GetActiveAdministratorQueryVariables>;
@@ -8718,3 +8900,7 @@ export const CheckSubscriptionStatusDocument = {"kind":"Document","definitions":
 export const InitiateSubscriptionPurchaseDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"InitiateSubscriptionPurchase"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"channelId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"tierId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"billingCycle"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"phoneNumber"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"email"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"initiateSubscriptionPurchase"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"channelId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"channelId"}}},{"kind":"Argument","name":{"kind":"Name","value":"tierId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"tierId"}}},{"kind":"Argument","name":{"kind":"Name","value":"billingCycle"},"value":{"kind":"Variable","name":{"kind":"Name","value":"billingCycle"}}},{"kind":"Argument","name":{"kind":"Name","value":"phoneNumber"},"value":{"kind":"Variable","name":{"kind":"Name","value":"phoneNumber"}}},{"kind":"Argument","name":{"kind":"Name","value":"email"},"value":{"kind":"Variable","name":{"kind":"Name","value":"email"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"reference"}},{"kind":"Field","name":{"kind":"Name","value":"authorizationUrl"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]} as unknown as DocumentNode<InitiateSubscriptionPurchaseMutation, InitiateSubscriptionPurchaseMutationVariables>;
 export const VerifySubscriptionPaymentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"VerifySubscriptionPayment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"channelId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"reference"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"verifySubscriptionPayment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"channelId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"channelId"}}},{"kind":"Argument","name":{"kind":"Name","value":"reference"},"value":{"kind":"Variable","name":{"kind":"Name","value":"reference"}}}]}]}}]} as unknown as DocumentNode<VerifySubscriptionPaymentMutation, VerifySubscriptionPaymentMutationVariables>;
 export const CancelSubscriptionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CancelSubscription"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"channelId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cancelSubscription"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"channelId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"channelId"}}}]}]}}]} as unknown as DocumentNode<CancelSubscriptionMutation, CancelSubscriptionMutationVariables>;
+export const RecordPurchaseDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RecordPurchase"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RecordPurchaseInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"recordPurchase"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"supplierId"}},{"kind":"Field","name":{"kind":"Name","value":"purchaseDate"}},{"kind":"Field","name":{"kind":"Name","value":"referenceNumber"}},{"kind":"Field","name":{"kind":"Name","value":"totalCost"}},{"kind":"Field","name":{"kind":"Name","value":"paymentStatus"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"lines"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"variantId"}},{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"unitCost"}},{"kind":"Field","name":{"kind":"Name","value":"totalCost"}},{"kind":"Field","name":{"kind":"Name","value":"stockLocationId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<RecordPurchaseMutation, RecordPurchaseMutationVariables>;
+export const RecordStockAdjustmentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RecordStockAdjustment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RecordStockAdjustmentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"recordStockAdjustment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"adjustedByUserId"}},{"kind":"Field","name":{"kind":"Name","value":"lines"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"variantId"}},{"kind":"Field","name":{"kind":"Name","value":"quantityChange"}},{"kind":"Field","name":{"kind":"Name","value":"previousStock"}},{"kind":"Field","name":{"kind":"Name","value":"newStock"}},{"kind":"Field","name":{"kind":"Name","value":"stockLocationId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<RecordStockAdjustmentMutation, RecordStockAdjustmentMutationVariables>;
+export const GetPurchasesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetPurchases"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"options"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"PurchaseListOptions"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"purchases"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"Variable","name":{"kind":"Name","value":"options"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"supplierId"}},{"kind":"Field","name":{"kind":"Name","value":"purchaseDate"}},{"kind":"Field","name":{"kind":"Name","value":"referenceNumber"}},{"kind":"Field","name":{"kind":"Name","value":"totalCost"}},{"kind":"Field","name":{"kind":"Name","value":"paymentStatus"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"lines"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"variantId"}},{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"unitCost"}},{"kind":"Field","name":{"kind":"Name","value":"totalCost"}},{"kind":"Field","name":{"kind":"Name","value":"stockLocationId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalItems"}}]}}]}}]} as unknown as DocumentNode<GetPurchasesQuery, GetPurchasesQueryVariables>;
+export const GetStockAdjustmentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetStockAdjustments"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"options"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"StockAdjustmentListOptions"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"stockAdjustments"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"Variable","name":{"kind":"Name","value":"options"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"adjustedByUserId"}},{"kind":"Field","name":{"kind":"Name","value":"lines"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"variantId"}},{"kind":"Field","name":{"kind":"Name","value":"quantityChange"}},{"kind":"Field","name":{"kind":"Name","value":"previousStock"}},{"kind":"Field","name":{"kind":"Name","value":"newStock"}},{"kind":"Field","name":{"kind":"Name","value":"stockLocationId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalItems"}}]}}]}}]} as unknown as DocumentNode<GetStockAdjustmentsQuery, GetStockAdjustmentsQueryVariables>;

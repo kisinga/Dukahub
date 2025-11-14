@@ -24,6 +24,8 @@ import { EnvironmentPlugin } from './plugins/core/environment.plugin';
 import { CreditPlugin } from './plugins/credit/credit.plugin';
 import { ApproveCustomerCreditPermission, ManageCustomerCreditLimitPermission } from './plugins/credit/permissions';
 import { FractionalQuantityPlugin } from './plugins/inventory/fractional-quantity.plugin';
+import { StockPlugin } from './plugins/stock/stock.plugin';
+import { ManageStockAdjustmentsPermission } from './plugins/stock/permissions';
 import { MlModelPlugin } from './plugins/ml/ml-model.plugin';
 import { NotificationPlugin } from './plugins/notifications/notification.plugin';
 import { OverridePricePermission } from './plugins/pricing/price-override.permission';
@@ -108,6 +110,7 @@ export const config: VendureConfig = {
             OverridePricePermission,
             ApproveCustomerCreditPermission,
             ManageCustomerCreditLimitPermission,
+            ManageStockAdjustmentsPermission,
         ],
         // OTP token auth strategy will be registered by PhoneAuthPlugin before bootstrap
         // It must be first in the array to be found by getAuthenticationStrategy (which uses find())
@@ -956,6 +959,7 @@ export const config: VendureConfig = {
         NotificationPlugin,
         CreditPlugin,
         SubscriptionPlugin,
+        StockPlugin,
         ChannelEventsPlugin,
         AuditPlugin,
         // PhoneAuthPlugin must be registered early so its strategy can be added to adminAuthenticationStrategy

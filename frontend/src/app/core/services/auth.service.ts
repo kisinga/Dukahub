@@ -113,6 +113,17 @@ export class AuthService {
     return hasPermission;
   });
 
+  readonly hasManageStockAdjustmentsPermission = computed(() => {
+    const user = this.userSignal();
+    if (!user?.user?.roles) return false;
+
+    const hasPermission = user.user.roles.some(role =>
+      role.permissions.includes('ManageStockAdjustments' as any)
+    );
+
+    return hasPermission;
+  });
+
   constructor() {
     // Register session expiration handler with Apollo service
     this.apolloService.onSessionExpired(() => {

@@ -369,6 +369,38 @@ export class CustomerService {
     }
 
     /**
+     * Search for customers (including suppliers)
+     */
+    async searchCustomers(term: string, take = 50): Promise<any[]> {
+        const trimmed = term.trim();
+        if (trimmed.length === 0) {
+            return [];
+        }
+
+        try {
+            const client = this.apolloService.getClient();
+            const result = await client.query<any>({
+                query: GET_CUSTOMERS,
+                variables: {
+                    options: {
+                        take,
+                        skip: 0,
+                        filter: {
+                            firstName: { contains: trimmed },
+                        },
+                    },
+                },
+                fetchPolicy: 'network-only',
+            });
+
+            return result.data?.customers?.items || [];
+        } catch (error) {
+            console.error('Failed to search customers:', error);
+            return [];
+        }
+    }
+
+    /**
      * Search for customers eligible for credit sales.
      */
     async searchCreditCustomers(term: string, take = 50): Promise<CreditCustomerSummary[]> {
