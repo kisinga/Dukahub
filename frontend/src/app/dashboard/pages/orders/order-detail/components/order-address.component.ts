@@ -13,21 +13,19 @@ import type { OrderAddressInput } from '../order-detail.types';
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div>
-            <h3 class="font-semibold mb-2">{{ label() }}</h3>
+            <h3 class="font-semibold mb-2 text-sm text-base-content/70">{{ label() }}</h3>
             @if (address()) {
-                <div class="text-sm text-base-content/80">
-                    <p>{{ displayName() }}</p>
+                <div class="text-sm text-base-content/80 space-y-1">
+                    <p class="font-medium">{{ displayName() }}</p>
                     <p>{{ address()!.streetLine1 }}</p>
                     @if (address()!.streetLine2) {
                         <p>{{ address()!.streetLine2 }}</p>
                     }
-                    <p>
-                        {{ cityAndPostal() }}
-                    </p>
+                    <p>{{ cityAndPostal() }}</p>
                     <p>{{ address()!.country }}</p>
                 </div>
             } @else {
-                <p class="text-base-content/60">No {{ label().toLowerCase() }}</p>
+                <p class="text-sm text-base-content/60">No {{ label().toLowerCase() }}</p>
             }
         </div>
     `,

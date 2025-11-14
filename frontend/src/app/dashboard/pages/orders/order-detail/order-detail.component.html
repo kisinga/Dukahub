@@ -1,6 +1,6 @@
 @if (modalMode()) {
 <!-- Modal Wrapper -->
-<dialog [id]="modalId" class="modal modal-bottom sm:modal-middle">
+<dialog #modalDialog [id]="modalId()" class="modal modal-bottom sm:modal-middle">
   <div class="modal-box max-w-4xl max-h-[90vh] overflow-y-auto">
     <div class="flex items-center justify-between mb-4">
       <h3 class="font-bold text-lg">Order Details</h3>
@@ -33,7 +33,7 @@
 </dialog>
 }
 
-<div class="space-y-6" [class.print-mode]="isPrintMode()">
+<div class="space-y-4 sm:space-y-6" [class.print-mode]="isPrintMode()">
   <!-- Header (hidden in print mode and modal mode) -->
   @if (showHeader() && !modalMode()) {
   <div class="no-print">
@@ -100,51 +100,165 @@
 
   <!-- Order Details -->
   @if (order()) {
-  <div class="card bg-base-100 shadow">
-    <div class="card-body">
-      <!-- Order Header -->
-      <app-order-detail-header
-        [orderCode]="order()!.code"
-        [orderState]="order()!.state"
-        [orderDate]="order()!.orderPlacedAt || order()!.createdAt"
-      />
-
-      <!-- Customer Information -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <app-order-customer-info [customer]="order()!.customer" />
-        <app-order-address
-          [address]="order()!.billingAddress"
-          [label]="'Billing Address'"
-          [fallbackName]="customerName()"
-        />
-      </div>
-
-      <!-- Shipping Address -->
-      @if (hasShipping() && order()!.shippingAddress) {
-      <div class="mb-6 hidden-print">
-        <app-order-address
-          [address]="order()!.shippingAddress"
-          [label]="'Shipping Address'"
-          [fallbackName]="customerName()"
-        />
-      </div>
-      }
-
-      <!-- Order Items -->
-      <app-order-items-table [lines]="order()!.lines" />
-
-      <!-- Totals -->
-      <app-order-totals [subtotal]="subtotal()" [tax]="tax()" [total]="total()" />
-
-      <!-- Payment Information -->
-      <app-order-payment-info [payments]="order()!.payments" />
-
-      <!-- Fulfillment Information -->
-      <app-order-fulfillment-info [fulfillments]="order()!.fulfillments" />
-    </div>
-  </div>
+  <ng-container [ngTemplateOutlet]="orderDetailsContent"></ng-container>
   }
 </div>
+
+<!-- Order Details Content Template (shared) -->
+<ng-template #orderDetailsContent>
+  <div class="space-y-4 sm:space-y-6">
+    <!-- Order Header -->
+    <div class="card bg-base-100 shadow-sm border border-base-300/60">
+      <div class="card-body p-4 sm:p-6">
+        <app-order-detail-header
+          [orderCode]="order()!.code"
+          [orderState]="order()!.state"
+          [orderDate]="order()!.orderPlacedAt || order()!.createdAt"
+        />
+      </div>
+    </div>
+
+    <!-- Mobile: Expansion Panels -->
+    <div class="lg:hidden space-y-3">
+      <!-- Customer & Billing Address Expansion Panel -->
+      <div
+        class="collapse collapse-arrow bg-base-100 border border-base-300/60 shadow-sm rounded-lg"
+      >
+        <input type="checkbox" />
+        <div class="collapse-title text-base font-semibold px-4 py-3">
+          <div class="flex items-center justify-between">
+            <span>{{ customerName() }}</span>
+            <span class="text-xs font-normal text-base-content/50">Customer</span>
+          </div>
+        </div>
+        <div class="collapse-content px-4 pb-4">
+          <div class="space-y-4 pt-2">
+            <!-- Customer Info -->
+            <app-order-customer-info [customer]="order()!.customer" />
+
+            <!-- Billing Address -->
+            <div class="pt-3 border-t border-base-300/50">
+              <app-order-address
+                [address]="order()!.billingAddress"
+                [label]="'Billing Address'"
+                [fallbackName]="customerName()"
+              />
+            </div>
+
+            <!-- Shipping Address (if exists) -->
+            @if (hasShipping() && order()!.shippingAddress) {
+            <div class="pt-3 border-t border-base-300/50">
+              <app-order-address
+                [address]="order()!.shippingAddress"
+                [label]="'Shipping Address'"
+                [fallbackName]="customerName()"
+              />
+            </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Information Expansion Panel -->
+      <div
+        class="collapse collapse-arrow bg-base-100 border border-base-300/60 shadow-sm rounded-lg"
+      >
+        <input type="checkbox" />
+        <div class="collapse-title text-base font-semibold px-4 py-3">Payment Information</div>
+        <div class="collapse-content px-4 pb-4">
+          <app-order-payment-info [payments]="order()!.payments" />
+        </div>
+      </div>
+
+      <!-- Fulfillment Information Expansion Panel -->
+      @if (order()!.fulfillments && order()!.fulfillments.length > 0) {
+      <div
+        class="collapse collapse-arrow bg-base-100 border border-base-300/60 shadow-sm rounded-lg"
+      >
+        <input type="checkbox" />
+        <div class="collapse-title text-base font-semibold px-4 py-3">Fulfillment</div>
+        <div class="collapse-content px-4 pb-4">
+          <app-order-fulfillment-info [fulfillments]="order()!.fulfillments" />
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- Desktop: Side-by-side Layout -->
+    <div class="hidden lg:grid lg:grid-cols-3 gap-4">
+      <!-- Left Column: Customer & Addresses -->
+      <div class="space-y-4">
+        <div class="card bg-base-100 shadow-sm border border-base-300/60">
+          <div class="card-body p-4">
+            <app-order-customer-info [customer]="order()!.customer" />
+            <div class="divider my-3"></div>
+            <app-order-address
+              [address]="order()!.billingAddress"
+              [label]="'Billing Address'"
+              [fallbackName]="customerName()"
+            />
+            @if (hasShipping() && order()!.shippingAddress) {
+            <div class="divider my-3"></div>
+            <app-order-address
+              [address]="order()!.shippingAddress"
+              [label]="'Shipping Address'"
+              [fallbackName]="customerName()"
+            />
+            }
+          </div>
+        </div>
+
+        <div class="card bg-base-100 shadow-sm border border-base-300/60">
+          <div class="card-body p-4">
+            <app-order-payment-info [payments]="order()!.payments" />
+          </div>
+        </div>
+
+        @if (order()!.fulfillments && order()!.fulfillments.length > 0) {
+        <div class="card bg-base-100 shadow-sm border border-base-300/60">
+          <div class="card-body p-4">
+            <app-order-fulfillment-info [fulfillments]="order()!.fulfillments" />
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- Right Column: Items & Totals (2 columns) -->
+      <div class="lg:col-span-2 space-y-4">
+        <!-- Order Items - Prominent -->
+        <div class="card bg-base-100 shadow-sm border border-base-300/60">
+          <div class="card-body p-4 sm:p-6">
+            <app-order-items-table [lines]="order()!.lines" />
+          </div>
+        </div>
+
+        <!-- Totals -->
+        <div class="card bg-base-100 shadow-sm border border-base-300/60">
+          <div class="card-body p-4 sm:p-6">
+            <app-order-totals [subtotal]="subtotal()" [tax]="tax()" [total]="total()" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile: Items & Totals (Full Width) -->
+    <div class="lg:hidden space-y-4">
+      <!-- Order Items - Prominent -->
+      <div class="card bg-base-100 shadow-sm border border-base-300/60">
+        <div class="card-body p-4">
+          <app-order-items-table [lines]="order()!.lines" />
+        </div>
+      </div>
+
+      <!-- Totals -->
+      <div class="card bg-base-100 shadow-sm border border-base-300/60">
+        <div class="card-body p-4">
+          <app-order-totals [subtotal]="subtotal()" [tax]="tax()" [total]="total()" />
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-template>
 
 <!-- Order Content Template (for modal mode) -->
 <ng-template #orderContent>
@@ -182,50 +296,8 @@
   </div>
   }
 
-  <!-- Order Details -->
+  <!-- Order Details (uses shared template) -->
   @if (order()) {
-  <div class="card bg-base-100 shadow">
-    <div class="card-body">
-      <!-- Order Header -->
-      <app-order-detail-header
-        [orderCode]="order()!.code"
-        [orderState]="order()!.state"
-        [orderDate]="order()!.orderPlacedAt || order()!.createdAt"
-      />
-
-      <!-- Customer Information -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <app-order-customer-info [customer]="order()!.customer" />
-        <app-order-address
-          [address]="order()!.billingAddress"
-          [label]="'Billing Address'"
-          [fallbackName]="customerName()"
-        />
-      </div>
-
-      <!-- Shipping Address -->
-      @if (hasShipping() && order()!.shippingAddress) {
-      <div class="mb-6 hidden-print">
-        <app-order-address
-          [address]="order()!.shippingAddress"
-          [label]="'Shipping Address'"
-          [fallbackName]="customerName()"
-        />
-      </div>
-      }
-
-      <!-- Order Items -->
-      <app-order-items-table [lines]="order()!.lines" />
-
-      <!-- Totals -->
-      <app-order-totals [subtotal]="subtotal()" [tax]="tax()" [total]="total()" />
-
-      <!-- Payment Information -->
-      <app-order-payment-info [payments]="order()!.payments" />
-
-      <!-- Fulfillment Information -->
-      <app-order-fulfillment-info [fulfillments]="order()!.fulfillments" />
-    </div>
-  </div>
+  <ng-container [ngTemplateOutlet]="orderDetailsContent"></ng-container>
   }
 </ng-template>

@@ -13,13 +13,13 @@ import type { OrderDetailHeaderInput } from '../order-detail.types';
     imports: [CommonModule, OrderStateBadgeComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b">
-            <div>
-                <div class="flex items-center gap-3 mb-2">
-                    <h2 class="text-2xl font-bold">Order {{ orderCode() }}</h2>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 pb-4 border-b border-base-300/50">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+                    <h2 class="text-xl sm:text-2xl font-bold text-base-content">Order {{ orderCode() }}</h2>
                     <app-order-state-badge [state]="orderState()" />
                 </div>
-                <p class="text-sm text-base-content/60">
+                <p class="text-xs sm:text-sm text-base-content/60">
                     Placed: {{ formattedDate() }}
                 </p>
             </div>

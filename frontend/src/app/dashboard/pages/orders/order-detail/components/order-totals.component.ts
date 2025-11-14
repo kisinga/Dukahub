@@ -13,22 +13,22 @@ import type { OrderTotalsInput } from '../order-detail.types';
     imports: [CommonModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-        <div class="flex justify-end mb-6">
-            <div class="w-full md:w-80">
-                <div class="space-y-2">
-                    <div class="flex justify-between">
-                        <span>Subtotal:</span>
-                        <span>{{ formatCurrency(subtotal()) }}</span>
+        <div class="flex justify-end">
+            <div class="w-full sm:w-80">
+                <div class="space-y-2.5">
+                    <div class="flex justify-between text-sm sm:text-base">
+                        <span class="text-base-content/70">Subtotal:</span>
+                        <span class="font-medium">{{ formatCurrency(subtotal()) }}</span>
                     </div>
                     @if (hasTax()) {
-                        <div class="flex justify-between">
-                            <span>Tax:</span>
-                            <span>{{ formatCurrency(tax()) }}</span>
+                        <div class="flex justify-between text-sm sm:text-base">
+                            <span class="text-base-content/70">Tax:</span>
+                            <span class="font-medium">{{ formatCurrency(tax()) }}</span>
                         </div>
                     }
-                    <div class="flex justify-between pt-2 border-t font-bold text-lg">
-                        <span>Total:</span>
-                        <span>{{ formatCurrency(total()) }}</span>
+                    <div class="flex justify-between pt-3 border-t border-base-300/50 font-bold text-lg sm:text-xl">
+                        <span class="text-base-content">Total:</span>
+                        <span class="text-primary">{{ formatCurrency(total()) }}</span>
                     </div>
                 </div>
             </div>

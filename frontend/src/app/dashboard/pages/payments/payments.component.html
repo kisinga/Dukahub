@@ -188,5 +188,16 @@
     (itemsPerPageChange)="changeItemsPerPage($event)"
   />
   }
+
+  <!-- Order Modal (rendered outside table to avoid breaking table structure) -->
+  @if (selectedOrderId()) {
+    <app-order-detail
+      [orderId]="selectedOrderId()!"
+      [modalMode]="true"
+      [showHeader]="false"
+      [showPrintControls]="false"
+      (closed)="onOrderModalClosed()"
+    />
+  }
 </div>
 

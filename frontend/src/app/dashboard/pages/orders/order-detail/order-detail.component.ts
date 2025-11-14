@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnInit, output, signal } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, input, OnInit, output, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { OrdersService } from '../../../../core/services/orders.service';
@@ -41,7 +41,7 @@ import { OrderFulfillmentInfoComponent } from './components/order-fulfillment-in
     styleUrl: './order-detail.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OrderDetailComponent implements OnInit {
+export class OrderDetailComponent implements OnInit, AfterViewInit {
     private readonly ordersService = inject(OrdersService);
     private readonly printService = inject(PrintService);
     private readonly route = inject(ActivatedRoute);
@@ -62,7 +62,8 @@ export class OrderDetailComponent implements OnInit {
     readonly error = this.ordersService.error;
     readonly selectedTemplate = signal<string>('receipt-52mm');
     readonly isPrintMode = signal(false);
-    readonly modalId = 'order-detail-modal';
+    readonly modalId = signal<string>(`order-detail-modal-${Math.random().toString(36).substring(2, 9)}`);
+    private readonly modalElement = viewChild<ElementRef<HTMLDialogElement>>('modalDialog');
 
     // Available templates
     readonly templates = this.printService.getAvailableTemplates();
@@ -151,12 +152,16 @@ export class OrderDetailComponent implements OnInit {
         effect(() => {
             if (!this.modalMode()) return;
             const inputOrderId = this.orderId();
-            const modal = document.getElementById(this.modalId) as HTMLDialogElement;
-            if (!modal) return;
+            const modal = this.modalElement()?.nativeElement;
             
-            if (inputOrderId) {
-                modal.showModal();
-            } else {
+            if (inputOrderId && modal) {
+                // Use setTimeout to ensure modal is rendered
+                setTimeout(() => {
+                    if (modal && !modal.open) {
+                        modal.showModal();
+                    }
+                }, 0);
+            } else if (!inputOrderId && modal) {
                 modal.close();
             }
         });
@@ -188,9 +193,23 @@ export class OrderDetailComponent implements OnInit {
         }
     }
 
+    ngAfterViewInit(): void {
+        // Ensure modal opens if orderId is already set
+        if (this.modalMode() && this.orderId()) {
+            const modal = this.modalElement()?.nativeElement;
+            if (modal) {
+                setTimeout(() => {
+                    if (modal && !modal.open) {
+                        modal.showModal();
+                    }
+                }, 0);
+            }
+        }
+    }
+
     close(): void {
         if (this.modalMode()) {
-            const modal = document.getElementById(this.modalId) as HTMLDialogElement;
+            const modal = this.modalElement()?.nativeElement;
             if (modal) {
                 modal.close();
             }

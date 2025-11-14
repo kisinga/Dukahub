@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { Router } from '@angular/router';
 import { PaymentsService, PaymentWithOrder } from '../../../core/services/payments.service';
 import { PaginationComponent } from '../customers/components/pagination.component';
+import { OrderDetailComponent } from '../orders/order-detail/order-detail.component';
 import { PaymentAction, PaymentCardComponent } from './components/payment-card.component';
 import { PaymentSearchBarComponent } from './components/payment-search-bar.component';
 import { PaymentStats, PaymentStatsComponent } from './components/payment-stats.component';
@@ -25,6 +26,7 @@ import { PaymentTableRowComponent } from './components/payment-table-row.compone
         PaymentSearchBarComponent,
         PaymentTableRowComponent,
         PaginationComponent,
+        OrderDetailComponent,
     ],
     templateUrl: './payments.component.html',
     styleUrl: './payments.component.scss',
@@ -46,6 +48,7 @@ export class PaymentsComponent implements OnInit {
     readonly currentPage = signal(1);
     readonly itemsPerPage = signal(10);
     readonly pageOptions = [10, 25, 50, 100];
+    readonly selectedOrderId = signal<string | null>(null);
 
     // Computed: filtered payments
     readonly filteredPayments = computed(() => {
@@ -141,16 +144,28 @@ export class PaymentsComponent implements OnInit {
     }
 
     /**
-     * Handle payment actions (view)
+     * Handle payment actions (view, viewOrder)
      */
-    onPaymentAction(event: { action: PaymentAction; paymentId: string }): void {
-        const { action, paymentId } = event;
+    onPaymentAction(event: { action: PaymentAction; paymentId: string; orderId?: string }): void {
+        const { action, paymentId, orderId } = event;
 
         switch (action) {
             case 'view':
                 this.router.navigate(['/dashboard/payments', paymentId]);
                 break;
+            case 'viewOrder':
+                if (orderId) {
+                    this.selectedOrderId.set(orderId);
+                }
+                break;
         }
+    }
+
+    /**
+     * Close order modal
+     */
+    onOrderModalClosed(): void {
+        this.selectedOrderId.set(null);
     }
 
     /**

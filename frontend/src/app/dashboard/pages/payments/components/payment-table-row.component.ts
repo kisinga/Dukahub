@@ -1,8 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { CurrencyService } from '../../../../core/services/currency.service';
 import { PaymentWithOrder } from '../../../../core/services/payments.service';
-import { OrderDetailComponent } from '../../orders/order-detail/order-detail.component';
 import { PaymentStateBadgeComponent } from './payment-state-badge.component';
 
 export type PaymentAction = 'view' | 'viewOrder';
@@ -12,7 +11,7 @@ export type PaymentAction = 'view' | 'viewOrder';
  */
 @Component({
     selector: 'tr[app-payment-table-row]',
-    imports: [CommonModule, PaymentStateBadgeComponent, OrderDetailComponent],
+    imports: [CommonModule, PaymentStateBadgeComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <td>
@@ -54,24 +53,12 @@ export type PaymentAction = 'view' | 'viewOrder';
                 </button>
             </div>
         </td>
-        
-        <!-- Order Modal -->
-        @if (selectedOrderId()) {
-            <app-order-detail
-                [orderId]="selectedOrderId()!"
-                [modalMode]="true"
-                [showHeader]="false"
-                [showPrintControls]="false"
-                (closed)="onOrderModalClosed()"
-            />
-        }
     `,
 })
 export class PaymentTableRowComponent {
     private readonly currencyService = inject(CurrencyService);
     readonly payment = input.required<PaymentWithOrder>();
     readonly action = output<{ action: PaymentAction; paymentId: string; orderId?: string }>();
-    readonly selectedOrderId = signal<string | null>(null);
 
     getCustomerName(): string {
         const customer = this.payment().order.customer;
@@ -101,14 +88,14 @@ export class PaymentTableRowComponent {
 
     onAction(actionType: PaymentAction): void {
         if (actionType === 'viewOrder') {
-            this.selectedOrderId.set(this.payment().order.id);
+            this.action.emit({ 
+                action: actionType, 
+                paymentId: this.payment().id,
+                orderId: this.payment().order.id
+            });
         } else {
             this.action.emit({ action: actionType, paymentId: this.payment().id });
         }
-    }
-
-    onOrderModalClosed(): void {
-        this.selectedOrderId.set(null);
     }
 }
 
