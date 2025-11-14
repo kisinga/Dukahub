@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { CompanyService } from '../../../../core/services/company.service';
 import { AuditLog, AuditLogOptions, SettingsService } from '../../../../core/services/settings.service';
 import { ToastService } from '../../../../core/services/toast.service';
@@ -244,6 +245,7 @@ export class AuditTrailComponent {
     private readonly settingsService = inject(SettingsService);
     private readonly companyService = inject(CompanyService);
     private readonly toastService = inject(ToastService);
+    private readonly router = inject(Router);
 
     // State
     readonly auditLogs = signal<AuditLog[]>([]);
@@ -436,37 +438,27 @@ export class AuditTrailComponent {
 
     /**
      * Navigate to entity (Order, Payment, etc.)
-     * Shows toast for now, but structured for future navigation
+     * Uses router navigation to avoid nested modals
      */
     navigateToEntity(entityType: string, entityId: string): void {
-        // Structure for future navigation
         const navigationMap: Record<string, () => void> = {
             'Order': () => {
-                this.toastService.show(
-                    'Order Details',
-                    `Order navigation coming soon. Order ID: ${entityId}`,
-                    'info',
-                    3000
-                );
-                // Future: this.router.navigate(['/dashboard/orders', entityId]);
+                // Navigate to order detail page
+                this.router.navigate(['/dashboard/orders', entityId]);
             },
             'Payment': () => {
+                // For payments, navigate to the parent order if available
+                // For now, show toast - can be enhanced later
                 this.toastService.show(
                     'Payment Details',
                     `Payment navigation coming soon. Payment ID: ${entityId}`,
                     'info',
                     3000
                 );
-                // Future: this.router.navigate(['/dashboard/payments', entityId]);
             },
             'Customer': () => {
-                this.toastService.show(
-                    'Customer Details',
-                    `Customer navigation coming soon. Customer ID: ${entityId}`,
-                    'info',
-                    3000
-                );
-                // Future: this.router.navigate(['/dashboard/customers', entityId]);
+                // Navigate to customer detail page
+                this.router.navigate(['/dashboard/customers/edit', entityId]);
             },
         };
 

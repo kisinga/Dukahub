@@ -1,17 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { CompanyService } from './company.service';
-import {
-    PrintTemplate,
-    Receipt52mmTemplate,
-    A4Template,
-    OrderData
-} from './print-templates';
+import { PrintTemplate, OrderData, Receipt52mmTemplate, A4Template } from './print-templates';
 
 /**
  * Print Service
  * 
- * Handles printing orders with different templates.
- * Composable and extensible - new templates can be easily added.
+ * Handles printing of orders using different templates.
+ * Composable and extensible - new templates can be registered.
  */
 @Injectable({
     providedIn: 'root',
@@ -20,7 +15,7 @@ export class PrintService {
     private readonly companyService = inject(CompanyService);
 
     // Available templates
-    private readonly templates: Map<string, PrintTemplate> = new Map([
+    private readonly templates = new Map<string, PrintTemplate>([
         ['receipt-52mm', new Receipt52mmTemplate()],
         ['a4', new A4Template()],
     ]);
@@ -51,9 +46,9 @@ export class PrintService {
     }
 
     /**
-     * Print an order with the specified template
+     * Print an order using the specified template
      * @param order - Order data to print
-     * @param templateId - Template ID (default: 'receipt-52mm')
+     * @param templateId - Template ID to use (default: 'receipt-52mm')
      */
     async printOrder(order: OrderData, templateId: string = 'receipt-52mm'): Promise<void> {
         const template = this.getTemplate(templateId);
@@ -65,22 +60,22 @@ export class PrintService {
         // Get company logo if available
         const companyLogo = this.companyService.companyLogoAsset()?.preview || null;
 
-        // Render the order HTML
+        // Render the order
         const html = template.render(order, companyLogo);
+        const styles = template.getStyles();
 
         // Create a new window for printing
         const printWindow = window.open('', '_blank');
         if (!printWindow) {
-            console.error('Failed to open print window. Please allow popups.');
+            console.error('Failed to open print window');
             return;
         }
 
-        // Write the HTML content
+        // Write the HTML and styles
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
             <head>
-                <meta charset="UTF-8">
                 <title>Print Order ${order.code}</title>
                 <style>
                     * {
@@ -90,13 +85,26 @@ export class PrintService {
                     }
                     body {
                         font-family: Arial, sans-serif;
-                        color: #000;
-                        background: #fff;
                     }
-                    .hidden-print {
-                        display: none;
+                    ${styles}
+                    @media print {
+                        body {
+                            margin: 0;
+                            padding: 0;
+                        }
+                        .no-print {
+                            display: none !important;
+                        }
+                        .print-only {
+                            display: block !important;
+                        }
                     }
-                    ${template.getStyles()}
+                    @media screen {
+                        .print-template {
+                            margin: 20px auto;
+                            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                        }
+                    }
                 </style>
             </head>
             <body>
@@ -116,34 +124,4 @@ export class PrintService {
             }, 250);
         };
     }
-
-    /**
-     * Print order in current window (for print view route)
-     * This method prepares the page for printing without opening a new window
-     */
-    preparePrintView(order: OrderData, templateId: string = 'receipt-52mm'): string {
-        const template = this.getTemplate(templateId);
-        if (!template) {
-            console.error(`Template ${templateId} not found`);
-            return '';
-        }
-
-        // Get company logo if available
-        const companyLogo = this.companyService.companyLogoAsset()?.preview || null;
-
-        // Render the order HTML
-        return template.render(order, companyLogo);
-    }
-
-    /**
-     * Get print styles for a template
-     */
-    getPrintStyles(templateId: string = 'receipt-52mm'): string {
-        const template = this.getTemplate(templateId);
-        if (!template) {
-            return '';
-        }
-        return template.getStyles();
-    }
 }
-

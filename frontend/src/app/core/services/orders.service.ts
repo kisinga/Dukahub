@@ -3,32 +3,11 @@ import type {
     GetOrdersQuery,
     GetOrdersQueryVariables,
     GetOrderFullQuery,
-    GetOrderFullQueryVariables
+    GetOrderFullQueryVariables,
+    OrderListOptions
 } from '../graphql/generated/graphql';
 import { GET_ORDERS, GET_ORDER_FULL } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
-
-/**
- * Order list options for filtering and pagination
- */
-export interface OrderListOptions {
-    take?: number;
-    skip?: number;
-    filter?: {
-        state?: string;
-        orderPlacedAt?: {
-            after?: string;
-            before?: string;
-        };
-        customerLastName?: {
-            contains?: string;
-        };
-    };
-    sort?: {
-        createdAt?: 'ASC' | 'DESC';
-        orderPlacedAt?: 'ASC' | 'DESC';
-    };
-}
 
 /**
  * Service for order management operations
@@ -71,10 +50,10 @@ export class OrdersService {
             const result = await client.query<GetOrdersQuery, GetOrdersQueryVariables>({
                 query: GET_ORDERS,
                 variables: {
-                    options: options || {
+                    options: (options as OrderListOptions) || {
                         take: 50,
                         skip: 0,
-                        sort: { createdAt: 'DESC' }
+                        sort: { createdAt: 'DESC' as any }
                     }
                 },
                 fetchPolicy: 'network-only',

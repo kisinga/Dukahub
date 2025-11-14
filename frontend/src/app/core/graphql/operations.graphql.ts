@@ -1087,10 +1087,7 @@ export const GET_ORDER_FULL = graphql(`
         city
         postalCode
         province
-        country {
-          code
-          name
-        }
+        country
         phoneNumber
       }
       shippingAddress {
@@ -1100,17 +1097,8 @@ export const GET_ORDER_FULL = graphql(`
         city
         postalCode
         province
-        country {
-          code
-          name
-        }
+        country
         phoneNumber
-      }
-      adjustments {
-        adjustmentSource
-        type
-        description
-        amount
       }
     }
   }

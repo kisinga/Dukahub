@@ -92,6 +92,20 @@ export const routes: Routes = [
                     )
             },
             {
+                path: 'orders',
+                loadComponent: () =>
+                    import('./dashboard/pages/orders/orders.component').then(
+                        (m) => m.OrdersComponent
+                    )
+            },
+            {
+                path: 'orders/:id',
+                loadComponent: () =>
+                    import('./dashboard/pages/orders/order-detail/order-detail.component').then(
+                        (m) => m.OrderDetailComponent
+                    )
+            },
+            {
                 path: 'suppliers',
                 loadComponent: () =>
                     import('./dashboard/pages/suppliers/suppliers.component').then(

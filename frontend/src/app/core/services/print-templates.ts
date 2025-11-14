@@ -55,10 +55,7 @@ export interface OrderData {
         city?: string | null;
         postalCode?: string | null;
         province?: string | null;
-        country: {
-            code: string;
-            name: string;
-        };
+        country: string;
         phoneNumber?: string | null;
     } | null;
     shippingAddress?: {
@@ -68,18 +65,9 @@ export interface OrderData {
         city?: string | null;
         postalCode?: string | null;
         province?: string | null;
-        country: {
-            code: string;
-            name: string;
-        };
+        country: string;
         phoneNumber?: string | null;
     } | null;
-    adjustments?: Array<{
-        adjustmentSource: string;
-        type: string;
-        description: string;
-        amount: number;
-    }>;
 }
 
 /**
@@ -358,7 +346,7 @@ export class A4Template extends PrintTemplate {
                             <p>${order.billingAddress.streetLine1}</p>
                             ${order.billingAddress.streetLine2 ? `<p>${order.billingAddress.streetLine2}</p>` : ''}
                             <p>${order.billingAddress.city || ''} ${order.billingAddress.postalCode || ''}</p>
-                            <p>${order.billingAddress.country.name}</p>
+                            <p>${order.billingAddress.country}</p>
                         ` : ''}
                     </div>
                     ${hasShipping ? `
@@ -369,7 +357,7 @@ export class A4Template extends PrintTemplate {
                             <p>${order.shippingAddress.streetLine1}</p>
                             ${order.shippingAddress.streetLine2 ? `<p>${order.shippingAddress.streetLine2}</p>` : ''}
                             <p>${order.shippingAddress.city || ''} ${order.shippingAddress.postalCode || ''}</p>
-                            <p>${order.shippingAddress.country.name}</p>
+                            <p>${order.shippingAddress.country}</p>
                         ` : ''}
                     </div>
                     ` : ''}
