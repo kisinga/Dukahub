@@ -447,14 +447,8 @@ export class AuditTrailComponent {
                 this.router.navigate(['/dashboard/orders', entityId]);
             },
             'Payment': () => {
-                // For payments, navigate to the parent order if available
-                // For now, show toast - can be enhanced later
-                this.toastService.show(
-                    'Payment Details',
-                    `Payment navigation coming soon. Payment ID: ${entityId}`,
-                    'info',
-                    3000
-                );
+                // Navigate to payment detail page
+                this.router.navigate(['/dashboard/payments', entityId]);
             },
             'Customer': () => {
                 // Navigate to customer detail page

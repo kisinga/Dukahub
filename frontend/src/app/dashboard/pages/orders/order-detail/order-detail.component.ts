@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CurrencyService } from '../../../../core/services/currency.service';
 import { OrdersService } from '../../../../core/services/orders.service';
 import { PrintService } from '../../../../core/services/print.service';
@@ -92,20 +93,17 @@ export class OrderDetailComponent implements OnInit {
         return this.hasFulfillment() && !this.isWalkInCustomer();
     });
 
+    // Convert route query params to signal
+    private readonly queryParams = toSignal(this.route.queryParams, { initialValue: {} });
+    private readonly routeParams = toSignal(this.route.paramMap);
+
     constructor() {
         // Check for print mode from query params
         effect(() => {
-            const route = this.route.snapshot;
-            const printParam = route.queryParams['print'];
+            const params = this.queryParams();
+            const printParam = (params as Record<string, any>)['print'];
             this.isPrintMode.set(printParam === 'true' || printParam === true);
         });
-    }
-
-    ngOnInit(): void {
-        const orderId = this.route.snapshot.paramMap.get('id');
-        if (orderId) {
-            this.ordersService.fetchOrderById(orderId);
-        }
 
         // Auto-print if in print mode
         effect(() => {
@@ -118,6 +116,13 @@ export class OrderDetailComponent implements OnInit {
                 }, 500);
             }
         });
+    }
+
+    ngOnInit(): void {
+        const orderId = this.routeParams()?.get('id');
+        if (orderId) {
+            this.ordersService.fetchOrderById(orderId);
+        }
     }
 
     formatCurrency(amount: number): string {

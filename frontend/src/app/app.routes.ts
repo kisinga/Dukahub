@@ -106,6 +106,20 @@ export const routes: Routes = [
                     )
             },
             {
+                path: 'payments',
+                loadComponent: () =>
+                    import('./dashboard/pages/payments/payments.component').then(
+                        (m) => m.PaymentsComponent
+                    )
+            },
+            {
+                path: 'payments/:id',
+                loadComponent: () =>
+                    import('./dashboard/pages/payments/payment-detail/payment-detail.component').then(
+                        (m) => m.PaymentDetailComponent
+                    )
+            },
+            {
                 path: 'suppliers',
                 loadComponent: () =>
                     import('./dashboard/pages/suppliers/suppliers.component').then(

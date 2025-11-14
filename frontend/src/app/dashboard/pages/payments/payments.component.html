@@ -1,0 +1,192 @@
+<div class="space-y-5 lg:space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between gap-4">
+    <div class="flex-1 min-w-0">
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">Payments</h1>
+      <p class="text-base sm:text-lg text-base-content/60 mt-2 leading-relaxed">
+        View and manage all payments
+      </p>
+    </div>
+
+    <div class="flex gap-2 shrink-0">
+      <button
+        (click)="refreshPayments()"
+        class="btn btn-ghost btn-square btn-lg lg:btn-md"
+        [class.loading]="isLoading()"
+        title="Refresh payments"
+      >
+        @if (!isLoading()) {
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6 lg:h-5 lg:w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
+        </svg>
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <app-payment-stats [stats]="stats()" />
+
+  <!-- Search & Filter Bar -->
+  <app-payment-search-bar
+    [(searchQuery)]="searchQuery"
+    [(stateFilter)]="stateFilter"
+  />
+
+  <!-- Error Alert -->
+  @if (error()) {
+  <div role="alert" class="alert alert-error shadow-lg">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-6 w-6 shrink-0"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    <span class="flex-1">{{ error() }}</span>
+    <button (click)="clearError()" class="btn btn-sm">Dismiss</button>
+  </div>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <div class="flex flex-col items-center justify-center py-16">
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+        <p class="text-sm text-base-content/60 mt-4">Loading payments...</p>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Empty State -->
+  @else if (filteredPayments().length === 0 && !error()) {
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <div class="text-center py-12 lg:py-20 px-4">
+        <div
+          class="w-20 h-20 lg:w-24 lg:h-24 mx-auto mb-4 rounded-full bg-base-200 flex items-center justify-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-10 w-10 lg:h-12 lg:w-12 text-base-content/30"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+            />
+          </svg>
+        </div>
+        <h3 class="text-lg lg:text-xl font-semibold">No payments found</h3>
+        @if (searchQuery() || stateFilter()) {
+        <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+          No payments match your filters. Try adjusting your search criteria.
+        </p>
+        <button
+          (click)="searchQuery.set(''); stateFilter.set('')"
+          class="btn btn-outline btn-sm lg:btn-md mt-6"
+        >
+          Clear Filters
+        </button>
+        } @else {
+        <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+          No payments have been recorded yet
+        </p>
+        }
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Payments List -->
+  @else {
+  <!-- List Controls -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
+    <div class="text-sm text-base-content/60">
+      Showing {{ (currentPage() - 1) * itemsPerPage() + 1 }} to {{ endItem() }} of
+      {{ filteredPayments().length }} payments
+    </div>
+
+    <div class="flex items-center gap-2">
+      <span class="text-sm text-base-content/60">Per page:</span>
+      <select
+        class="select select-sm select-bordered"
+        [value]="itemsPerPage()"
+        (change)="changeItemsPerPage(+$any($event.target).value)"
+      >
+        @for (option of pageOptions; track option) {
+        <option [value]="option">{{ option }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Mobile: Card View -->
+  <div class="lg:hidden space-y-4">
+    @for (payment of paginatedPayments(); track trackByPaymentId($index, payment)) {
+    <app-payment-card [payment]="payment" (action)="onPaymentAction($event)" />
+    }
+  </div>
+
+  <!-- Desktop: Table View -->
+  <div class="card bg-base-100 shadow hidden lg:block">
+    <div class="overflow-x-auto">
+      <table class="table table-zebra">
+        <thead>
+          <tr>
+            <th>Order Code</th>
+            <th>Customer</th>
+            <th>Method</th>
+            <th class="text-right">Amount</th>
+            <th>Status</th>
+            <th>Transaction ID</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (payment of paginatedPayments(); track trackByPaymentId($index, payment)) {
+          <tr app-payment-table-row [payment]="payment" (action)="onPaymentAction($event)"></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <app-pagination
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [totalItems]="filteredPayments().length"
+    [itemsPerPage]="itemsPerPage()"
+    [pageOptions]="pageOptions"
+    [endItem]="endItem()"
+    (pageChange)="goToPage($event)"
+    (itemsPerPageChange)="changeItemsPerPage($event)"
+  />
+  }
+</div>
+

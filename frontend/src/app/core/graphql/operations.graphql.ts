@@ -1034,6 +1034,79 @@ export const GET_ORDERS = graphql(`
   }
 `);
 
+export const GET_PAYMENTS = graphql(`
+  query GetPayments($options: OrderListOptions) {
+    orders(options: $options) {
+      items {
+        id
+        code
+        state
+        createdAt
+        orderPlacedAt
+        payments {
+          id
+          state
+          amount
+          method
+          transactionId
+          createdAt
+          updatedAt
+          errorMessage
+          metadata
+        }
+        customer {
+          id
+          firstName
+          lastName
+          emailAddress
+        }
+      }
+      totalItems
+    }
+  }
+`);
+
+export const GET_PAYMENT_FULL = graphql(`
+  query GetPaymentFull($orderId: ID!) {
+    order(id: $orderId) {
+      id
+      code
+      state
+      createdAt
+      orderPlacedAt
+      total
+      totalWithTax
+      currencyCode
+      customer {
+        id
+        firstName
+        lastName
+        emailAddress
+        phoneNumber
+      }
+      payments {
+        id
+        state
+        amount
+        method
+        transactionId
+        createdAt
+        updatedAt
+        errorMessage
+        metadata
+        nextStates
+        refunds {
+          id
+          total
+          state
+          reason
+          createdAt
+        }
+      }
+    }
+  }
+`);
+
 export const GET_ORDER_FULL = graphql(`
   query GetOrderFull($id: ID!) {
     order(id: $id) {
