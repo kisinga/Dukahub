@@ -1,7 +1,7 @@
 <!-- Supplier Table Row (Desktop) -->
-<tr class="hover">
+<tr class="hover border-b border-base-200">
   <!-- Supplier Info -->
-  <td>
+  <td class="py-4">
     <div class="flex items-center gap-3">
       <!-- Avatar -->
       <div class="avatar placeholder">
@@ -12,46 +12,46 @@
 
       <!-- Name and Contact -->
       <div class="flex-1 min-w-0">
-        <div class="font-semibold truncate">{{ getFullName() }}</div>
+        <div class="font-semibold text-base truncate">{{ getFullName() }}</div>
         <div class="text-sm text-base-content/70 truncate">{{ getContactInfo() }}</div>
       </div>
     </div>
   </td>
 
   <!-- Contact Details -->
-  <td>
-    <div class="text-sm">
+  <td class="py-4">
+    <div class="text-sm space-y-0.5">
       <div class="truncate">{{ supplier.emailAddress }}</div>
       @if (supplier.phoneNumber) {
-      <div class="text-base-content/60">{{ supplier.phoneNumber }}</div>
+      <div class="text-base-content/60 truncate">{{ supplier.phoneNumber }}</div>
       }
     </div>
   </td>
 
   <!-- Supplier Code -->
-  <td>
+  <td class="py-4">
     <div class="text-center">
       <div class="text-sm font-semibold text-primary">{{ getSupplierCode() }}</div>
     </div>
   </td>
 
   <!-- Supplier Type -->
-  <td>
+  <td class="py-4">
     <div class="text-center">
-      <div class="text-sm">{{ getSupplierType() }}</div>
+      <div class="text-sm font-medium">{{ getSupplierType() }}</div>
     </div>
   </td>
 
   <!-- Addresses -->
-  <td>
+  <td class="py-4">
     <div class="text-center">
-      <div class="text-lg font-semibold text-primary">{{ getAddressCount() }}</div>
-      <div class="text-xs text-base-content/60">addresses</div>
+      <div class="text-base font-bold text-primary">{{ getAddressCount() }}</div>
+      <div class="text-xs text-base-content/60 mt-0.5">addresses</div>
     </div>
   </td>
 
   <!-- Status -->
-  <td>
+  <td class="py-4">
     @if (isVerified()) {
     <div class="badge badge-success badge-sm gap-1">
       <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -69,14 +69,14 @@
   </td>
 
   <!-- Created Date -->
-  <td>
-    <div class="text-sm">{{ getCreatedDate() }}</div>
+  <td class="py-4">
+    <div class="text-sm font-medium">{{ getCreatedDate() }}</div>
   </td>
 
   <!-- Actions -->
-  <td class="text-right">
+  <td class="text-right py-4">
     <div class="dropdown dropdown-end">
-      <div tabindex="0" role="button" class="btn btn-ghost btn-sm">
+      <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"

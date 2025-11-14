@@ -146,3 +146,15 @@
   [data]="deleteModalData()"
   (confirmed)="onDeleteConfirmed()"
   (cancelled)="onDeleteCancelled()" />
+
+<!-- Bulk Payment Modal -->
+@if (customerForPayment()) {
+  <app-bulk-payment-modal
+    #bulkPaymentModal
+    [customerId]="customerForPayment()!.id"
+    [customerName]="customerForPayment()!.name"
+    [outstandingAmount]="customerForPayment()!.outstandingAmount"
+    [availableCredit]="customerForPayment()!.availableCredit"
+    (paymentRecorded)="onPaymentRecorded()"
+    (cancelled)="onPaymentCancelled()" />
+}

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { CurrencyService } from '../../../../core/services/currency.service';
 
-export type CustomerAction = 'edit' | 'delete' | 'viewOrders';
+export type CustomerAction = 'edit' | 'delete' | 'viewOrders' | 'recordPayment';
 
 @Component({
   selector: 'app-customer-card',
@@ -52,7 +52,8 @@ export class CustomerCardComponent {
   }
 
   getOutstandingAmount(): number {
-    return Number(this.customer.customFields?.outstandingAmount ?? 0);
+    // outstandingAmount is now a computed field on Customer, not in customFields
+    return Number(this.customer.outstandingAmount ?? 0);
   }
 
   getOutstandingAmountAbs(): number {

@@ -1,0 +1,145 @@
+<!-- Bulk Payment Modal -->
+<dialog #modal class="modal" (click)="onBackdropClick($event)">
+  <div class="modal-box max-w-md w-full mx-4" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-4 pb-3 border-b border-base-300">
+      <h3 class="text-lg font-bold text-base-content">Record Payment</h3>
+      <form method="dialog">
+        <button class="btn btn-sm btn-circle btn-ghost" type="submit">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- Customer Info -->
+    <div class="mb-4 p-3 bg-base-200 rounded-lg">
+      <div class="text-sm font-semibold text-base-content mb-1">{{ customerName() }}</div>
+      <div class="text-xs text-base-content/70">{{ getOutstandingDisplay() }}</div>
+    </div>
+
+    <!-- Success Message -->
+    @if (successResult()) {
+      <div class="alert alert-success mb-4">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+        </svg>
+        <div class="flex-1">
+          <div class="font-semibold">Payment recorded successfully!</div>
+          <div class="text-xs mt-1">
+            Total allocated: {{ formatCurrency(successResult()!.totalAllocated) }}
+            @if (successResult()!.ordersPaid.length > 0) {
+              <br>{{ successResult()!.ordersPaid.length }} order(s) paid
+            }
+            @if (successResult()!.remainingBalance > 0) {
+              <br>Remaining balance: {{ formatCurrency(successResult()!.remainingBalance) }}
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Error Message -->
+    @if (error()) {
+      <div class="alert alert-error mb-4">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+        </svg>
+        <span class="text-sm">{{ error() }}</span>
+      </div>
+    }
+
+    <!-- Form -->
+    @if (!successResult()) {
+      <form (ngSubmit)="onSubmit()" class="space-y-4">
+        <!-- Payment Amount -->
+        <div class="form-control">
+          <label class="label" for="paymentAmount">
+            <span class="label-text font-semibold">Payment Amount</span>
+            <span class="label-text-alt text-error">Required</span>
+          </label>
+          <div class="relative">
+            <input
+              id="paymentAmount"
+              type="number"
+              step="0.01"
+              min="0.01"
+              placeholder="0.00"
+              [value]="paymentAmount() ?? ''"
+              (input)="paymentAmount.set(+$any($event.target).value || null)"
+              class="input input-bordered w-full text-lg font-semibold"
+              [class.input-error]="error() && (!paymentAmount() || paymentAmount()! <= 0)"
+              [disabled]="isSubmitting()"
+              autofocus
+            />
+          </div>
+          @if (outstandingAmount() < 0) {
+            <label class="label">
+              <span class="label-text-alt text-base-content/60">
+                Outstanding: {{ formatCurrency(Math.abs(outstandingAmount())) }}
+              </span>
+            </label>
+          }
+        </div>
+
+        <!-- Reference Number -->
+        <div class="form-control">
+          <label class="label" for="referenceNumber">
+            <span class="label-text font-semibold">Reference Number</span>
+            <span class="label-text-alt text-error">Required</span>
+          </label>
+          <input
+            id="referenceNumber"
+            type="text"
+            placeholder="Enter reference number"
+            [(ngModel)]="refNumber"
+            name="referenceNumber"
+            class="input input-bordered w-full"
+            [class.input-error]="error() && (!referenceNumber() || referenceNumber().trim().length === 0)"
+            [disabled]="isSubmitting()"
+            required
+          />
+        </div>
+
+        <!-- Actions -->
+        <div class="modal-action pt-4">
+          <button
+            type="button"
+            class="btn btn-ghost flex-1"
+            (click)="onCancel()"
+            [disabled]="isSubmitting()">
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary flex-1"
+            [class.loading]="isSubmitting()"
+            [disabled]="isSubmitting()">
+            @if (!isSubmitting()) {
+              Record Payment
+            } @else {
+              Processing...
+            }
+          </button>
+        </div>
+      </form>
+    } @else {
+      <!-- Success State Actions -->
+      <div class="modal-action pt-4">
+        <button
+          type="button"
+          class="btn btn-primary w-full"
+          (click)="onCancel()">
+          Close
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- Backdrop -->
+  <form method="dialog" class="modal-backdrop">
+    <button type="submit">close</button>
+  </form>
+</dialog>
+

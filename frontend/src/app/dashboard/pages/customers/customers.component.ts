@@ -8,6 +8,7 @@ import { CustomerStats, CustomerStatsComponent } from './components/customer-sta
 import { CustomerTableRowComponent } from './components/customer-table-row.component';
 import { DeleteConfirmationData, DeleteConfirmationModalComponent } from './components/delete-confirmation-modal.component';
 import { PaginationComponent } from './components/pagination.component';
+import { BulkPaymentModalComponent } from './components/bulk-payment-modal.component';
 
 /**
  * Customers list page - similar to products page
@@ -27,7 +28,8 @@ import { PaginationComponent } from './components/pagination.component';
         CustomerSearchBarComponent,
         CustomerTableRowComponent,
         PaginationComponent,
-        DeleteConfirmationModalComponent
+        DeleteConfirmationModalComponent,
+        BulkPaymentModalComponent
     ],
     templateUrl: './customers.component.html',
     styleUrl: './customers.component.scss',
@@ -39,6 +41,7 @@ export class CustomersComponent implements OnInit {
 
     // View references
     readonly deleteModal = viewChild<DeleteConfirmationModalComponent>('deleteModal');
+    readonly bulkPaymentModal = viewChild<BulkPaymentModalComponent>('bulkPaymentModal');
 
     // State from service
     readonly customers = this.customerService.customers;
@@ -53,6 +56,7 @@ export class CustomersComponent implements OnInit {
     readonly pageOptions = [10, 25, 50, 100];
     readonly deleteModalData = signal<DeleteConfirmationData>({ customerName: '', addressCount: 0 });
     readonly customerToDelete = signal<string | null>(null);
+    readonly customerForPayment = signal<{ id: string; name: string; outstandingAmount: number; availableCredit: number } | null>(null);
 
     // Computed: filtered customers
     readonly filteredCustomers = computed(() => {
@@ -158,6 +162,10 @@ export class CustomersComponent implements OnInit {
             case 'delete':
                 this.confirmDeleteCustomer(customerId);
                 break;
+
+            case 'recordPayment':
+                this.openBulkPaymentModal(customerId);
+                break;
         }
     }
 
@@ -246,6 +254,49 @@ export class CustomersComponent implements OnInit {
      */
     trackByCustomerId(index: number, customer: any): string {
         return customer.id;
+    }
+
+    /**
+     * Open bulk payment modal for a customer
+     */
+    openBulkPaymentModal(customerId: string): void {
+        const customer = this.customers().find(c => c.id === customerId);
+        if (!customer) return;
+
+        const outstandingAmount = Number(customer.outstandingAmount ?? 0);
+        const creditLimit = Number(customer.customFields?.creditLimit ?? 0);
+        const availableCredit = Math.max(creditLimit - Math.abs(outstandingAmount), 0);
+
+        this.customerForPayment.set({
+            id: customerId,
+            name: `${customer.firstName || ''} ${customer.lastName || ''}`.trim(),
+            outstandingAmount,
+            availableCredit
+        });
+
+        // Wait for the modal component to be rendered before showing it
+        setTimeout(() => {
+            const modal = this.bulkPaymentModal();
+            if (modal) {
+                modal.show();
+            }
+        }, 0);
+    }
+
+    /**
+     * Handle payment recorded
+     */
+    async onPaymentRecorded(): Promise<void> {
+        // Refresh customer list to show updated balances
+        await this.refreshCustomers();
+        this.customerForPayment.set(null);
+    }
+
+    /**
+     * Handle payment cancelled
+     */
+    onPaymentCancelled(): void {
+        this.customerForPayment.set(null);
     }
 
     /**

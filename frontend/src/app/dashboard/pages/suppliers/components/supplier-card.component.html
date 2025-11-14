@@ -1,6 +1,6 @@
 <!-- Supplier Card (Mobile) -->
-<div class="card bg-base-100 border border-base-300 mb-4">
-  <div class="card-body p-4">
+<div class="card bg-base-100 border border-base-300 mb-4 shadow-sm">
+  <div class="card-body p-5">
     <!-- Header -->
     <div class="flex items-start justify-between mb-3">
       <div class="flex items-center gap-3">
@@ -37,31 +37,31 @@
     </div>
 
     <!-- Supplier Details -->
-    <div class="grid grid-cols-2 gap-4 mb-4">
-      <div class="text-center">
-        <div class="text-lg font-semibold text-primary">{{ getSupplierCode() }}</div>
-        <div class="text-xs text-base-content/60">Code</div>
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="p-3 bg-base-200 rounded-lg border border-base-300 text-center">
+        <div class="text-base font-bold text-primary">{{ getSupplierCode() }}</div>
+        <div class="text-xs font-medium text-base-content/60 mt-1">Code</div>
       </div>
-      <div class="text-center">
-        <div class="text-lg font-semibold text-info">{{ getSupplierType() }}</div>
-        <div class="text-xs text-base-content/60">Type</div>
+      <div class="p-3 bg-base-200 rounded-lg border border-base-300 text-center">
+        <div class="text-base font-bold text-info">{{ getSupplierType() }}</div>
+        <div class="text-xs font-medium text-base-content/60 mt-1">Type</div>
       </div>
     </div>
 
     <!-- Details -->
-    <div class="grid grid-cols-2 gap-4 mb-4">
-      <div class="text-center">
-        <div class="text-lg font-semibold text-primary">{{ getAddressCount() }}</div>
-        <div class="text-xs text-base-content/60">Addresses</div>
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="p-3 bg-base-200 rounded-lg border border-base-300 text-center">
+        <div class="text-base font-bold text-primary">{{ getAddressCount() }}</div>
+        <div class="text-xs font-medium text-base-content/60 mt-1">Addresses</div>
       </div>
-      <div class="text-center">
-        <div class="text-lg font-semibold text-info">{{ getCreatedDate() }}</div>
-        <div class="text-xs text-base-content/60">Created</div>
+      <div class="p-3 bg-base-200 rounded-lg border border-base-300 text-center">
+        <div class="text-base font-bold text-base-content">{{ getCreatedDate() }}</div>
+        <div class="text-xs font-medium text-base-content/60 mt-1">Created</div>
       </div>
     </div>
 
     <!-- Actions -->
-    <div class="flex gap-2">
+    <div class="flex gap-2 mt-1">
       <button class="btn btn-sm btn-outline flex-1" (click)="onAction('view')">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path

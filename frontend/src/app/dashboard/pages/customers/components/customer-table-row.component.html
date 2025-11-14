@@ -1,7 +1,7 @@
 <!-- Customer Table Row (Desktop) -->
-<tr class="hover">
+<tr class="hover border-b border-base-200">
   <!-- Customer Info -->
-  <td>
+  <td class="py-4">
     <div class="flex items-center gap-3">
       <!-- Avatar -->
       <div class="avatar placeholder">
@@ -12,8 +12,8 @@
       
       <!-- Name and Contact -->
       <div class="flex-1 min-w-0">
-        <div class="font-semibold truncate">{{ getFullName() }}</div>
-        <div class="text-sm text-base-content/70 truncate">
+        <div class="font-semibold text-base truncate">{{ getFullName() }}</div>
+        <div class="text-sm text-base-content/70 space-y-0.5">
           @if (customer.emailAddress) {
             <div class="truncate">{{ customer.emailAddress }}</div>
           }
@@ -26,7 +26,7 @@
   </td>
 
   <!-- Verification Status -->
-  <td>
+  <td class="py-4">
     @if (isVerified()) {
       <div class="badge badge-success badge-sm gap-1">
         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -40,7 +40,7 @@
   </td>
 
   <!-- Credit Status -->
-  <td>
+  <td class="py-4">
     @if (isCreditApproved()) {
       <div class="badge badge-success badge-sm">Approved</div>
     } @else {
@@ -49,65 +49,65 @@
   </td>
 
   <!-- Credit Limit -->
-  <td class="text-right text-sm">
+  <td class="text-right py-4">
     @if (getCreditLimit() > 0) {
-      <div class="font-semibold">{{ formatCurrency(getCreditLimit()) }}</div>
+      <div class="font-semibold text-sm">{{ formatCurrency(getCreditLimit()) }}</div>
     } @else {
-      <span class="text-base-content/50">—</span>
+      <span class="text-sm text-base-content/50">—</span>
     }
   </td>
 
   <!-- Outstanding Amount -->
-  <td class="text-right text-sm">
+  <td class="text-right py-4">
     @if (getOutstandingAmount() !== 0) {
-      <div [class.text-warning]="getOutstandingAmount() < 0" [class.text-success]="getOutstandingAmount() > 0">
+      <div class="font-semibold text-sm" [class.text-warning]="getOutstandingAmount() < 0" [class.text-success]="getOutstandingAmount() > 0">
         {{ formatCurrency(getOutstandingAmountAbs()) }}
       </div>
-      <div class="text-xs text-base-content/60">
+      <div class="text-xs text-base-content/60 mt-0.5">
         {{ getOutstandingAmount() < 0 ? 'Owed' : 'Credit' }}
       </div>
     } @else {
-      <span class="text-base-content/50">—</span>
+      <span class="text-sm text-base-content/50">—</span>
     }
   </td>
 
   <!-- Available Credit -->
-  <td class="text-right text-sm">
+  <td class="text-right py-4">
     @if (isCreditApproved() && getCreditLimit() > 0) {
-      <div [class.text-success]="getAvailableCredit() > 0" [class.text-error]="getAvailableCredit() === 0">
+      <div class="font-bold text-sm" [class.text-success]="getAvailableCredit() > 0" [class.text-error]="getAvailableCredit() === 0">
         {{ formatCurrency(getAvailableCredit()) }}
       </div>
     } @else {
-      <span class="text-base-content/50">—</span>
+      <span class="text-sm text-base-content/50">—</span>
     }
   </td>
 
   <!-- Repayment Period -->
-  <td class="text-sm text-center">
+  <td class="text-center py-4">
     @if (getCreditDuration() > 0) {
-      <div class="font-semibold">{{ getCreditDuration() }}</div>
-      <div class="text-xs text-base-content/60">days</div>
+      <div class="font-semibold text-sm">{{ getCreditDuration() }}</div>
+      <div class="text-xs text-base-content/60 mt-0.5">days</div>
     } @else {
-      <span class="text-base-content/50">—</span>
+      <span class="text-sm text-base-content/50">—</span>
     }
   </td>
 
   <!-- Last Repayment -->
-  <td class="text-sm">
+  <td class="py-4">
     @if (getLastRepaymentDate()) {
-      <div class="text-xs">{{ formatDate(getLastRepaymentDate()) }}</div>
+      <div class="text-xs font-medium">{{ formatDate(getLastRepaymentDate()) }}</div>
       @if (getLastRepaymentAmount() > 0) {
-        <div class="text-xs text-base-content/60">{{ formatCurrency(getLastRepaymentAmount()) }}</div>
+        <div class="text-xs text-base-content/60 mt-0.5">{{ formatCurrency(getLastRepaymentAmount()) }}</div>
       }
     } @else {
-      <span class="text-base-content/50">—</span>
+      <span class="text-sm text-base-content/50">—</span>
     }
   </td>
 
   <!-- Actions -->
-  <td class="text-right">
+  <td class="text-right py-4">
     <div class="dropdown dropdown-end">
-      <div tabindex="0" role="button" class="btn btn-ghost btn-sm">
+      <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
         </svg>
@@ -121,6 +121,16 @@
             View Orders
           </button>
         </li>
+        @if (isCreditApproved()) {
+        <li>
+          <button (click)="onAction('recordPayment')" class="flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            Record Payment
+          </button>
+        </li>
+        }
         @if (!isWalkInCustomer()) {
         <li>
           <button (click)="onAction('edit')" class="flex items-center gap-2">
