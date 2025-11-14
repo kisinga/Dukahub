@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { OrdersService } from '../../../core/services/orders.service';
 import { PaginationComponent } from '../customers/components/pagination.component';
 import { OrderAction, OrderCardComponent } from './components/order-card.component';
@@ -34,6 +35,7 @@ import { OrderTableRowComponent } from './components/order-table-row.component';
 export class OrdersComponent implements OnInit {
     private readonly ordersService = inject(OrdersService);
     private readonly router = inject(Router);
+    private readonly route = inject(ActivatedRoute);
 
     // State from service
     readonly orders = this.ordersService.orders;
@@ -41,9 +43,13 @@ export class OrdersComponent implements OnInit {
     readonly error = this.ordersService.error;
     readonly totalItems = this.ordersService.totalItems;
 
+    // Query parameters
+    private readonly queryParams = toSignal(this.route.queryParams, { initialValue: {} });
+
     // Local UI state
     readonly searchQuery = signal('');
     readonly stateFilter = signal('');
+    readonly customerIdFilter = signal<string | null>(null);
     readonly currentPage = signal(1);
     readonly itemsPerPage = signal(10);
     readonly pageOptions = [10, 25, 50, 100];
@@ -52,9 +58,15 @@ export class OrdersComponent implements OnInit {
     readonly filteredOrders = computed(() => {
         const query = this.searchQuery().toLowerCase().trim();
         const stateFilter = this.stateFilter();
+        const customerIdFilter = this.customerIdFilter();
         const allOrders = this.orders();
 
         let filtered = allOrders;
+
+        // Apply customer ID filter (from query param)
+        if (customerIdFilter) {
+            filtered = filtered.filter(order => order.customer?.id === customerIdFilter);
+        }
 
         // Apply state filter
         if (stateFilter) {
@@ -135,6 +147,35 @@ export class OrdersComponent implements OnInit {
     readonly endItem = computed(() => {
         return Math.min(this.currentPage() * this.itemsPerPage(), this.filteredOrders().length);
     });
+
+    constructor() {
+        // Effect to handle customerId query parameter
+        effect(() => {
+            const params = this.queryParams();
+            const customerId = 'customerId' in params ? (params['customerId'] as string) : undefined;
+            const orders = this.orders(); // Watch orders to update search query when orders load
+            
+            if (customerId) {
+                this.customerIdFilter.set(customerId);
+                
+                // After orders are loaded, set search query to customer name for visual feedback
+                if (orders.length > 0) {
+                    const orderWithCustomer = orders.find(o => o.customer?.id === customerId);
+                    if (orderWithCustomer?.customer) {
+                        const customer = orderWithCustomer.customer;
+                        const fullName = `${customer.firstName || ''} ${customer.lastName || ''}`.trim();
+                        if (fullName) {
+                            this.searchQuery.set(fullName);
+                        } else if (customer.emailAddress) {
+                            this.searchQuery.set(customer.emailAddress);
+                        }
+                    }
+                }
+            } else {
+                this.customerIdFilter.set(null);
+            }
+        });
+    }
 
     ngOnInit(): void {
         this.loadOrders();

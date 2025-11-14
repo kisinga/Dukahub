@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { CurrencyService } from '../../../../core/services/currency.service';
 
-export type CustomerAction = 'edit' | 'delete';
+export type CustomerAction = 'edit' | 'delete' | 'viewOrders';
 
 @Component({
   selector: 'app-customer-card',
