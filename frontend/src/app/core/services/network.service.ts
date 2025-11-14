@@ -1,4 +1,4 @@
-import { Injectable, signal, effect, inject, computed } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { ToastService } from './toast.service';
 
 /**

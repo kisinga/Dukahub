@@ -1,11 +1,11 @@
 import { provideHttpClient } from '@angular/common/http';
-import { APP_INITIALIZER, ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection, isDevMode } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, isDevMode, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 
 import { routes } from './app.routes';
-import { NotificationService } from './core/services/notification.service';
 import { NetworkService } from './core/services/network.service';
+import { NotificationService } from './core/services/notification.service';
 
 export function initializeNotifications(notificationService: NotificationService) {
   return () => {

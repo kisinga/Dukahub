@@ -3,8 +3,8 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AppInitService } from '../../core/services/app-init.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
-import { NotificationService } from '../../core/services/notification.service';
 import { NetworkService } from '../../core/services/network.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { StockLocationService } from '../../core/services/stock-location.service';
 
 interface NavItem {

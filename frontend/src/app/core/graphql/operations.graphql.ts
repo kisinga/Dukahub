@@ -991,6 +991,131 @@ export const GET_ORDER = graphql(`
   }
 `);
 
+export const GET_ORDERS = graphql(`
+  query GetOrders($options: OrderListOptions) {
+    orders(options: $options) {
+      items {
+        id
+        code
+        state
+        createdAt
+        updatedAt
+        orderPlacedAt
+        total
+        totalWithTax
+        currencyCode
+        customer {
+          id
+          firstName
+          lastName
+          emailAddress
+        }
+        lines {
+          id
+          quantity
+          linePrice
+          linePriceWithTax
+          productVariant {
+            id
+            name
+            sku
+          }
+        }
+        payments {
+          id
+          state
+          amount
+          method
+          createdAt
+        }
+      }
+      totalItems
+    }
+  }
+`);
+
+export const GET_ORDER_FULL = graphql(`
+  query GetOrderFull($id: ID!) {
+    order(id: $id) {
+      id
+      code
+      state
+      createdAt
+      updatedAt
+      orderPlacedAt
+      total
+      totalWithTax
+      currencyCode
+      customer {
+        id
+        firstName
+        lastName
+        emailAddress
+        phoneNumber
+      }
+      lines {
+        id
+        quantity
+        linePrice
+        linePriceWithTax
+        productVariant {
+          id
+          name
+          sku
+        }
+      }
+      payments {
+        id
+        state
+        amount
+        method
+        createdAt
+        metadata
+      }
+      fulfillments {
+        id
+        state
+        method
+        trackingCode
+        createdAt
+        updatedAt
+      }
+      billingAddress {
+        fullName
+        streetLine1
+        streetLine2
+        city
+        postalCode
+        province
+        country {
+          code
+          name
+        }
+        phoneNumber
+      }
+      shippingAddress {
+        fullName
+        streetLine1
+        streetLine2
+        city
+        postalCode
+        province
+        country {
+          code
+          name
+        }
+        phoneNumber
+      }
+      adjustments {
+        adjustmentSource
+        type
+        description
+        amount
+      }
+    }
+  }
+`);
+
 // ============================================================================
 // ML MODEL & TRAINING
 // ============================================================================
