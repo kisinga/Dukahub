@@ -1,0 +1,181 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <button (click)="goBack()" class="btn btn-ghost btn-sm mb-2">
+        ← Back to Payments
+      </button>
+      <h1 class="text-3xl font-bold">Payment Details</h1>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  @if (error()) {
+    <div role="alert" class="alert alert-error shadow-lg">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-6 w-6 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span class="flex-1">{{ error() }}</span>
+      <button (click)="clearError()" class="btn btn-sm">Dismiss</button>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading() && !payment()) {
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <div class="flex flex-col items-center justify-center py-16">
+          <span class="loading loading-spinner loading-lg text-primary"></span>
+          <p class="text-sm text-base-content/60 mt-4">Loading payment...</p>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Payment Details -->
+  @if (payment() && order()) {
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <!-- Payment Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b">
+          <div>
+            <div class="flex items-center gap-3 mb-2">
+              <h2 class="text-2xl font-bold">Payment {{ payment()!.id.substring(0, 8) }}</h2>
+              <app-payment-state-badge [state]="payment()!.state" />
+            </div>
+            <p class="text-sm text-base-content/60">
+              Created: {{ formatDate(payment()!.createdAt) }}
+            </p>
+            @if (payment()!.updatedAt !== payment()!.createdAt) {
+              <p class="text-sm text-base-content/60">
+                Updated: {{ formatDate(payment()!.updatedAt) }}
+              </p>
+            }
+          </div>
+        </div>
+
+        <!-- Order Information -->
+        <div class="mb-6">
+          <h3 class="font-semibold mb-2">Order Information</h3>
+          <div class="flex items-center gap-2">
+            <span class="text-base-content/80">Order:</span>
+            <button
+              class="btn btn-link btn-sm p-0 h-auto min-h-0"
+              (click)="goToOrder()"
+            >
+              {{ order()!.code }}
+            </button>
+          </div>
+          <p class="text-sm text-base-content/60 mt-1">
+            Order Status: {{ order()!.state }}
+          </p>
+        </div>
+
+        <!-- Customer Information -->
+        <div class="mb-6">
+          <h3 class="font-semibold mb-2">Customer</h3>
+          <p class="text-base-content/80">{{ customerName() }}</p>
+          @if (order()!.customer?.emailAddress && !isWalkInCustomer()) {
+            <p class="text-sm text-base-content/60">{{ order()!.customer!.emailAddress }}</p>
+          }
+          @if (order()!.customer?.phoneNumber && !isWalkInCustomer()) {
+            <p class="text-sm text-base-content/60">{{ order()!.customer!.phoneNumber }}</p>
+          }
+        </div>
+
+        <!-- Payment Information -->
+        <div class="mb-6">
+          <h3 class="font-semibold mb-4">Payment Information</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-base-content/60">Amount:</span>
+              <span class="font-bold text-lg">{{ formatCurrency(payment()!.amount) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-base-content/60">Method:</span>
+              <span>{{ payment()!.method }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-base-content/60">Status:</span>
+              <app-payment-state-badge [state]="payment()!.state" />
+            </div>
+            @if (payment()!.transactionId) {
+              <div class="flex justify-between">
+                <span class="text-base-content/60">Transaction ID:</span>
+                <span class="font-mono text-sm">{{ payment()!.transactionId }}</span>
+              </div>
+            }
+            @if (payment()!.errorMessage) {
+              <div class="alert alert-error">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-6 w-6 shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span>Error: {{ payment()!.errorMessage }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Metadata -->
+        @if (payment()!.metadata) {
+          <div class="mb-6">
+            <h3 class="font-semibold mb-2">Metadata</h3>
+            <pre class="text-xs overflow-x-auto font-mono bg-base-200 p-3 rounded">{{ formatMetadata(payment()!.metadata) }}</pre>
+          </div>
+        }
+
+        <!-- Refunds -->
+        @if (hasRefunds()) {
+          <div class="mb-6">
+            <h3 class="font-semibold mb-4">Refunds</h3>
+            <div class="overflow-x-auto">
+              <table class="table table-zebra">
+                <thead>
+                  <tr>
+                    <th>Total</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (refund of refunds(); track refund.id) {
+                    <tr>
+                      <td>{{ formatCurrency(refund.total) }}</td>
+                      <td>{{ refund.reason || '—' }}</td>
+                      <td>{{ refund.state }}</td>
+                      <td>{{ formatDate(refund.createdAt) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+

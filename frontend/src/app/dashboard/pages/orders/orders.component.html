@@ -1,0 +1,187 @@
+<div class="space-y-4 sm:space-y-5 lg:space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between gap-3 sm:gap-4">
+    <div class="flex-1 min-w-0">
+      <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">Orders</h1>
+      <p class="text-sm sm:text-base text-base-content/60 mt-1 sm:mt-2 leading-relaxed">
+        View and manage all orders
+      </p>
+    </div>
+
+    <div class="flex gap-2 shrink-0">
+      <button
+        (click)="refreshOrders()"
+        class="btn btn-ghost btn-square btn-md sm:btn-lg"
+        [class.loading]="isLoading()"
+        title="Refresh orders"
+      >
+        @if (!isLoading()) {
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 sm:h-6 sm:w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
+        </svg>
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <app-order-stats [stats]="stats()" />
+
+  <!-- Search & Filter Bar -->
+  <app-order-search-bar [(searchQuery)]="searchQuery" [(stateFilter)]="stateFilter" />
+
+  <!-- Error Alert -->
+  @if (error()) {
+  <div role="alert" class="alert alert-error shadow-lg">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-6 w-6 shrink-0"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    <span class="flex-1">{{ error() }}</span>
+    <button (click)="clearError()" class="btn btn-sm">Dismiss</button>
+  </div>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <div class="flex flex-col items-center justify-center py-16">
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+        <p class="text-sm text-base-content/60 mt-4">Loading orders...</p>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Empty State -->
+  @else if (filteredOrders().length === 0 && !error()) {
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <div class="text-center py-12 lg:py-20 px-4">
+        <div
+          class="w-20 h-20 lg:w-24 lg:h-24 mx-auto mb-4 rounded-full bg-base-200 flex items-center justify-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-10 w-10 lg:h-12 lg:w-12 text-base-content/30"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+        </div>
+        <h3 class="text-lg lg:text-xl font-semibold">No orders found</h3>
+        @if (searchQuery() || stateFilter()) {
+        <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+          No orders match your filters. Try adjusting your search criteria.
+        </p>
+        <button
+          (click)="searchQuery.set(''); stateFilter.set('')"
+          class="btn btn-outline btn-sm lg:btn-md mt-6"
+        >
+          Clear Filters
+        </button>
+        } @else {
+        <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+          No orders have been created yet
+        </p>
+        }
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Orders List -->
+  @else {
+  <!-- List Controls -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 px-1">
+    <div class="text-xs sm:text-sm text-base-content/60">
+      Showing {{ (currentPage() - 1) * itemsPerPage() + 1 }} to {{ endItem() }} of
+      {{ filteredOrders().length }} orders
+    </div>
+
+    <div class="flex items-center gap-2">
+      <span class="text-xs sm:text-sm text-base-content/60 hidden sm:inline">Per page:</span>
+      <select
+        class="select select-xs sm:select-sm select-bordered"
+        [value]="itemsPerPage()"
+        (change)="changeItemsPerPage(+$any($event.target).value)"
+      >
+        @for (option of pageOptions; track option) {
+        <option [value]="option">{{ option }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Mobile: Card View -->
+  <div class="lg:hidden space-y-3">
+    @for (order of paginatedOrders(); track trackByOrderId($index, order)) {
+    <app-order-card [order]="order" (action)="onOrderAction($event)" />
+    }
+  </div>
+
+  <!-- Desktop: Table View -->
+  <div class="card bg-base-100 shadow hidden lg:block">
+    <div class="overflow-x-auto">
+      <table class="table table-zebra">
+        <thead>
+          <tr>
+            <th>Order Code</th>
+            <th>Customer</th>
+            <th class="text-center">Items</th>
+            <th class="text-right">Total</th>
+            <th>Status</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (order of paginatedOrders(); track trackByOrderId($index, order)) {
+          <tr app-order-table-row [order]="order" (action)="onOrderAction($event)"></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <app-pagination
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [totalItems]="filteredOrders().length"
+    [itemsPerPage]="itemsPerPage()"
+    [pageOptions]="pageOptions"
+    [endItem]="endItem()"
+    (pageChange)="goToPage($event)"
+    (itemsPerPageChange)="changeItemsPerPage($event)"
+  />
+  }
+</div>

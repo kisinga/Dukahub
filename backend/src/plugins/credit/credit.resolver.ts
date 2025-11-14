@@ -1,9 +1,11 @@
 import { Optional } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { Allow, Ctx, Permission, RequestContext } from '@vendure/core';
+import { Args, Mutation, Parent, Query, Resolver } from '@nestjs/graphql';
+import { Allow, Ctx, Customer, Permission, RequestContext, Order } from '@vendure/core';
 
 import { ChannelCommunicationService } from '../../services/channels/channel-communication.service';
 import { CreditService, CreditSummary } from '../../services/credit/credit.service';
+import { OrderCreationService, CreateOrderInput } from '../../services/orders/order-creation.service';
+import { OrderCreditValidatorService } from '../../services/orders/order-credit-validator.service';
 import {
     ApproveCustomerCreditPermission,
     ManageCustomerCreditLimitPermission
@@ -27,10 +29,25 @@ interface UpdateCreditDurationInput {
     creditDuration: number;
 }
 
+interface ValidateCreditInput {
+    customerId: string;
+    estimatedOrderTotal: number;
+}
+
+interface CreditValidationResult {
+    isValid: boolean;
+    error?: string;
+    availableCredit: number;
+    estimatedOrderTotal: number;
+    wouldExceedLimit: boolean;
+}
+
 @Resolver('CreditSummary')
 export class CreditResolver {
     constructor(
         private readonly creditService: CreditService,
+        private readonly orderCreationService: OrderCreationService,
+        private readonly orderCreditValidator: OrderCreditValidatorService,
         @Optional() private readonly communicationService?: ChannelCommunicationService, // Optional to avoid circular dependency
     ) { }
 
@@ -41,6 +58,58 @@ export class CreditResolver {
         @Args('customerId') customerId: string
     ): Promise<CreditSummary> {
         return this.creditService.getCreditSummary(ctx, customerId);
+    }
+
+    @Query()
+    @Allow(Permission.ReadCustomer)
+    async validateCredit(
+        @Ctx() ctx: RequestContext,
+        @Args('input') input: ValidateCreditInput
+    ): Promise<CreditValidationResult> {
+        try {
+            // Get credit summary
+            const summary = await this.creditService.getCreditSummary(ctx, input.customerId);
+            
+            // Check approval
+            if (!summary.isCreditApproved) {
+                return {
+                    isValid: false,
+                    error: 'Customer is not approved for credit sales.',
+                    availableCredit: summary.availableCredit,
+                    estimatedOrderTotal: input.estimatedOrderTotal,
+                    wouldExceedLimit: false,
+                };
+            }
+
+            // Check credit limit
+            const availableCredit = summary.creditLimit - summary.outstandingAmount;
+            const wouldExceedLimit = input.estimatedOrderTotal > availableCredit;
+
+            if (wouldExceedLimit) {
+                return {
+                    isValid: false,
+                    error: `Credit limit would be exceeded. Available: ${availableCredit}, Required: ${input.estimatedOrderTotal}`,
+                    availableCredit,
+                    estimatedOrderTotal: input.estimatedOrderTotal,
+                    wouldExceedLimit: true,
+                };
+            }
+
+            return {
+                isValid: true,
+                availableCredit,
+                estimatedOrderTotal: input.estimatedOrderTotal,
+                wouldExceedLimit: false,
+            };
+        } catch (error) {
+            return {
+                isValid: false,
+                error: error instanceof Error ? error.message : 'Failed to validate credit',
+                availableCredit: 0,
+                estimatedOrderTotal: input.estimatedOrderTotal,
+                wouldExceedLimit: false,
+            };
+        }
     }
 
     @Mutation()
@@ -98,6 +167,15 @@ export class CreditResolver {
             input.customerId,
             input.creditDuration
         );
+    }
+
+    @Mutation()
+    @Allow(Permission.CreateOrder)
+    async createOrder(
+        @Ctx() ctx: RequestContext,
+        @Args('input') input: CreateOrderInput
+    ): Promise<Order> {
+        return this.orderCreationService.createOrder(ctx, input);
     }
 }
 

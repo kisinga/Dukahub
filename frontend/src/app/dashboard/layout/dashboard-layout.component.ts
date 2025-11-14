@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AppInitService } from '../../core/services/app-init.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
+import { NetworkService } from '../../core/services/network.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { StockLocationService } from '../../core/services/stock-location.service';
 
@@ -25,12 +26,15 @@ export class DashboardLayoutComponent implements OnInit {
     private readonly stockLocationService = inject(StockLocationService);
     private readonly appInitService = inject(AppInitService);
     private readonly notificationService = inject(NotificationService);
+    private readonly networkService = inject(NetworkService);
     private lastCompanyId: string | null = null;
 
     protected readonly navItems = computed(() => {
         const baseItems: NavItem[] = [
             { label: 'Overview', icon: '📊', route: '/dashboard' },
             { label: 'Sell', icon: '💰', route: '/dashboard/sell' },
+            { label: 'Orders', icon: '📝', route: '/dashboard/orders' },
+            { label: 'Payments', icon: '💳', route: '/dashboard/payments' },
             { label: 'Products', icon: '📦', route: '/dashboard/products' },
             { label: 'Customers', icon: '👥', route: '/dashboard/customers' },
             { label: 'Suppliers', icon: '🏢', route: '/dashboard/suppliers' },
@@ -67,6 +71,9 @@ export class DashboardLayoutComponent implements OnInit {
 
     // Use notification service
     protected readonly unreadCount = this.notificationService.unreadCount;
+
+    // Network status
+    protected readonly isOnline = this.networkService.isOnline;
 
     protected readonly userAvatar = computed(() =>
         this.user()?.emailAddress ? 'default_avatar.png' : 'default_avatar.png'

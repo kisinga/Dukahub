@@ -204,3 +204,64 @@ textarea:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  // Hide navigation, buttons, and non-printable elements
+  .no-print,
+  nav,
+  header,
+  footer,
+  .btn,
+  button:not(.print-only),
+  .navbar,
+  .sidebar,
+  .pagination,
+  .no-print * {
+    display: none !important;
+  }
+
+  // Show print-only elements
+  .print-only {
+    display: block !important;
+  }
+
+  // Ensure full width for print
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+
+  // Remove shadows and borders for cleaner print
+  .card,
+  .shadow,
+  .shadow-lg {
+    box-shadow: none !important;
+    border: 1px solid #ddd;
+  }
+
+  // Ensure proper page breaks
+  .page-break {
+    page-break-before: always;
+  }
+
+  .no-page-break {
+    page-break-inside: avoid;
+  }
+
+  // Optimize colors for print
+  * {
+    color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  // Hide shipping/fulfillment sections marked as hidden-print
+  .hidden-print {
+    display: none !important;
+  }
+}

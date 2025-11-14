@@ -673,6 +673,41 @@ export const CREATE_DRAFT_ORDER = graphql(`
   }
 `);
 
+export const CREATE_ORDER = graphql(`
+  mutation CreateOrder($input: CreateOrderInput!) {
+    createOrder(input: $input) {
+      id
+      code
+      state
+      total
+      totalWithTax
+      customer {
+        id
+        firstName
+        lastName
+        emailAddress
+      }
+      lines {
+        id
+        quantity
+        linePrice
+        linePriceWithTax
+        productVariant {
+          id
+          name
+        }
+      }
+      payments {
+        id
+        state
+        amount
+        method
+        metadata
+      }
+    }
+  }
+`);
+
 export const ADD_ITEM_TO_DRAFT_ORDER = graphql(`
   mutation AddItemToDraftOrder($orderId: ID!, $input: AddItemToDraftOrderInput!) {
     addItemToDraftOrder(orderId: $orderId, input: $input) {
@@ -991,6 +1026,192 @@ export const GET_ORDER = graphql(`
   }
 `);
 
+export const GET_ORDERS = graphql(`
+  query GetOrders($options: OrderListOptions) {
+    orders(options: $options) {
+      items {
+        id
+        code
+        state
+        createdAt
+        updatedAt
+        orderPlacedAt
+        total
+        totalWithTax
+        currencyCode
+        customer {
+          id
+          firstName
+          lastName
+          emailAddress
+        }
+        lines {
+          id
+          quantity
+          linePrice
+          linePriceWithTax
+          productVariant {
+            id
+            name
+            sku
+          }
+        }
+        payments {
+          id
+          state
+          amount
+          method
+          createdAt
+        }
+      }
+      totalItems
+    }
+  }
+`);
+
+export const GET_PAYMENTS = graphql(`
+  query GetPayments($options: OrderListOptions) {
+    orders(options: $options) {
+      items {
+        id
+        code
+        state
+        createdAt
+        orderPlacedAt
+        payments {
+          id
+          state
+          amount
+          method
+          transactionId
+          createdAt
+          updatedAt
+          errorMessage
+          metadata
+        }
+        customer {
+          id
+          firstName
+          lastName
+          emailAddress
+        }
+      }
+      totalItems
+    }
+  }
+`);
+
+export const GET_PAYMENT_FULL = graphql(`
+  query GetPaymentFull($orderId: ID!) {
+    order(id: $orderId) {
+      id
+      code
+      state
+      createdAt
+      orderPlacedAt
+      total
+      totalWithTax
+      currencyCode
+      customer {
+        id
+        firstName
+        lastName
+        emailAddress
+        phoneNumber
+      }
+      payments {
+        id
+        state
+        amount
+        method
+        transactionId
+        createdAt
+        updatedAt
+        errorMessage
+        metadata
+        nextStates
+        refunds {
+          id
+          total
+          state
+          reason
+          createdAt
+        }
+      }
+    }
+  }
+`);
+
+export const GET_ORDER_FULL = graphql(`
+  query GetOrderFull($id: ID!) {
+    order(id: $id) {
+      id
+      code
+      state
+      createdAt
+      updatedAt
+      orderPlacedAt
+      total
+      totalWithTax
+      currencyCode
+      customer {
+        id
+        firstName
+        lastName
+        emailAddress
+        phoneNumber
+      }
+      lines {
+        id
+        quantity
+        linePrice
+        linePriceWithTax
+        productVariant {
+          id
+          name
+          sku
+        }
+      }
+      payments {
+        id
+        state
+        amount
+        method
+        createdAt
+        metadata
+      }
+      fulfillments {
+        id
+        state
+        method
+        trackingCode
+        createdAt
+        updatedAt
+      }
+      billingAddress {
+        fullName
+        streetLine1
+        streetLine2
+        city
+        postalCode
+        province
+        country
+        phoneNumber
+      }
+      shippingAddress {
+        fullName
+        streetLine1
+        streetLine2
+        city
+        postalCode
+        province
+        country
+        phoneNumber
+      }
+    }
+  }
+`);
+
 // ============================================================================
 // ML MODEL & TRAINING
 // ============================================================================
@@ -1066,6 +1287,7 @@ export const GET_CUSTOMERS = graphql(`
         phoneNumber
         createdAt
         updatedAt
+        outstandingAmount
         customFields {
           isSupplier
           supplierType
@@ -1075,7 +1297,6 @@ export const GET_CUSTOMERS = graphql(`
           notes
           isCreditApproved
           creditLimit
-          outstandingAmount
           lastRepaymentDate
           lastRepaymentAmount
           creditDuration
@@ -1127,6 +1348,7 @@ export const GET_CUSTOMER = graphql(`
       phoneNumber
       createdAt
       updatedAt
+      outstandingAmount
       customFields {
         isSupplier
         supplierType
@@ -1134,7 +1356,11 @@ export const GET_CUSTOMER = graphql(`
         taxId
         paymentTerms
         notes
-        outstandingAmount
+        isCreditApproved
+        creditLimit
+        lastRepaymentDate
+        lastRepaymentAmount
+        creditDuration
       }
       addresses {
         id
@@ -1177,7 +1403,6 @@ export const CREATE_CUSTOMER = graphql(`
           notes
           isCreditApproved
           creditLimit
-          outstandingAmount
         }
       }
       ... on EmailAddressConflictError {
@@ -1207,7 +1432,6 @@ export const UPDATE_CUSTOMER = graphql(`
           notes
           isCreditApproved
           creditLimit
-          outstandingAmount
         }
       }
       ... on EmailAddressConflictError {
@@ -1290,6 +1514,18 @@ export const GET_CREDIT_SUMMARY = graphql(`
   }
 `);
 
+export const VALIDATE_CREDIT = graphql(`
+  query ValidateCredit($input: ValidateCreditInput!) {
+    validateCredit(input: $input) {
+      isValid
+      error
+      availableCredit
+      estimatedOrderTotal
+      wouldExceedLimit
+    }
+  }
+`);
+
 export const APPROVE_CUSTOMER_CREDIT = graphql(`
   mutation ApproveCustomerCredit($input: ApproveCustomerCreditInput!) {
     approveCustomerCredit(input: $input) {
@@ -1331,6 +1567,39 @@ export const UPDATE_CREDIT_DURATION = graphql(`
       lastRepaymentDate
       lastRepaymentAmount
       creditDuration
+    }
+  }
+`);
+
+export const GET_UNPAID_ORDERS_FOR_CUSTOMER = graphql(`
+  query GetUnpaidOrdersForCustomer($customerId: ID!) {
+    unpaidOrdersForCustomer(customerId: $customerId) {
+      id
+      code
+      state
+      total
+      totalWithTax
+      createdAt
+      payments {
+        id
+        state
+        amount
+        method
+      }
+    }
+  }
+`);
+
+export const ALLOCATE_BULK_PAYMENT = graphql(`
+  mutation AllocateBulkPayment($input: PaymentAllocationInput!) {
+    allocateBulkPayment(input: $input) {
+      ordersPaid {
+        orderId
+        orderCode
+        amountPaid
+      }
+      remainingBalance
+      totalAllocated
     }
   }
 `);
@@ -1391,7 +1660,6 @@ export const GET_SUPPLIERS = graphql(`
           notes
           isCreditApproved
           creditLimit
-          outstandingAmount
         }
         addresses {
           id
@@ -1430,7 +1698,6 @@ export const GET_SUPPLIER = graphql(`
         notes
         isCreditApproved
         creditLimit
-        outstandingAmount
         lastRepaymentDate
         lastRepaymentAmount
         creditDuration
@@ -1471,7 +1738,6 @@ export const CREATE_SUPPLIER = graphql(`
           notes
           isCreditApproved
           creditLimit
-          outstandingAmount
         }
       }
       ... on EmailAddressConflictError {
@@ -1499,7 +1765,6 @@ export const UPDATE_SUPPLIER = graphql(`
           taxId
           paymentTerms
           notes
-          outstandingAmount
         }
       }
       ... on EmailAddressConflictError {
@@ -1562,6 +1827,36 @@ export const GET_ADMINISTRATORS = graphql(`
             channels {
               id
             }
+          }
+        }
+      }
+    }
+  }
+`);
+
+export const GET_ADMINISTRATOR_BY_ID = graphql(`
+  query GetAdministratorById($id: ID!) {
+    administrator(id: $id) {
+      id
+      firstName
+      lastName
+      emailAddress
+      createdAt
+      updatedAt
+      user {
+        id
+        identifier
+        verified
+        lastLogin
+        roles {
+          id
+          code
+          description
+          permissions
+          channels {
+            id
+            code
+            token
           }
         }
       }

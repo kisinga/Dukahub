@@ -141,6 +141,10 @@ export class CustomersComponent implements OnInit {
         const { action, customerId } = event;
 
         switch (action) {
+            case 'viewOrders':
+                this.router.navigate(['/dashboard/orders'], { queryParams: { customerId } });
+                break;
+
             case 'edit':
                 // Prevent editing walk-in customers
                 if (this.isWalkInCustomer(customerId)) {

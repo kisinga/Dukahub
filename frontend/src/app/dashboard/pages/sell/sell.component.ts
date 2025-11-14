@@ -486,6 +486,16 @@ export class SellComponent implements OnInit {
 
       console.log('✅ Credit sale created:', order.code);
 
+      // Refresh credit summary to show updated outstanding amount
+      try {
+        const updatedSummary = await this.customerService.getCreditSummary(validatedCustomer.id);
+        this.selectedCustomer.set(updatedSummary);
+        console.log('✅ Credit summary refreshed:', updatedSummary);
+      } catch (error) {
+        console.warn('⚠️ Failed to refresh credit summary:', error);
+        // Continue even if refresh fails - order is still created
+      }
+
       // Clear cart using CartService for persistence
       this.cartService.clearCart();
       this.cartItems.set([]);
@@ -494,7 +504,8 @@ export class SellComponent implements OnInit {
         `Credit sale created for ${customerName} - Order ${order.code}`,
         'success'
       );
-      this.selectedCustomer.set(null);
+      
+      // Don't clear selected customer - keep it visible so user can see updated credit amounts
     } catch (error) {
       console.error('Credit sale failed:', error);
       this.checkoutError.set('Failed to create credit sale. Please try again.');

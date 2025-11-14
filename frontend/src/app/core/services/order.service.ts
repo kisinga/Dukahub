@@ -5,6 +5,7 @@ import {
     ADD_ITEM_TO_DRAFT_ORDER,
     ADD_MANUAL_PAYMENT_TO_ORDER,
     CREATE_DRAFT_ORDER,
+    CREATE_ORDER,
     GET_ORDER_DETAILS,
     GET_PAYMENT_METHODS,
     SET_ORDER_LINE_CUSTOM_PRICE,
@@ -61,13 +62,15 @@ export class OrderService {
     private orderSetupService = inject(OrderSetupService);
 
     /**
-     * Create a complete order with items and payment using Vendure's proper APIs
+     * Create a complete order with items and payment using server-side order creation service
      * 
-     * Process (Admin API flow):
-     * 1. Create draft order
-     * 2. Add items sequentially
-     * 3. Use addPaymentToOrder with payment method code
-     * 4. Use settleOrderPayment to complete the payment
+     * This method now delegates to the backend OrderCreationService which handles:
+     * - Order creation in a transaction
+     * - Address management (from customer for credit sales)
+     * - Payment handling (skip for credit sales, add & settle for cash sales)
+     * - Fulfillment (immediate for credit sales)
+     * - Audit logging
+     * - User tracking
      * 
      * @param input Order creation data
      * @returns Created order with all details
@@ -86,124 +89,44 @@ export class OrderService {
                 throw new Error(`Backend connection failed: ${error}`);
             }
 
-            // 1. Create draft order
-            const orderResult = await client.mutate({
-                mutation: CREATE_DRAFT_ORDER
+            // Call backend order creation mutation
+            const result = await client.mutate({
+                mutation: CREATE_ORDER,
+                variables: {
+                    input: {
+                        cartItems: input.cartItems.map(item => ({
+                            variantId: String(item.variantId),
+                            quantity: item.quantity,
+                            customLinePrice: item.customLinePrice,
+                            priceOverrideReason: item.priceOverrideReason,
+                        })),
+                        paymentMethodCode: input.paymentMethodCode,
+                        customerId: input.customerId,
+                        metadata: input.metadata,
+                        isCreditSale: input.isCreditSale,
+                        isCashierFlow: input.isCashierFlow,
+                    }
+                }
             });
 
-            // Check for GraphQL errors first
-            if (orderResult.error) {
-                console.error('GraphQL error creating draft order:', orderResult.error);
-                throw new Error(`GraphQL error creating draft order: ${orderResult.error.message}`);
+            // Check for GraphQL errors
+            if (result.error) {
+                console.error('GraphQL error creating order:', result.error);
+                throw new Error(`GraphQL error creating order: ${result.error.message}`);
             }
 
-            if (!orderResult.data?.createDraftOrder) {
-                console.error('No draft order data returned:', {
-                    data: orderResult.data,
-                    errors: orderResult.error
+            if (!result.data?.createOrder) {
+                console.error('No order data returned:', {
+                    data: result.data,
+                    errors: result.error
                 });
-                throw new Error('Failed to create draft order - no data returned');
+                throw new Error('Failed to create order - no data returned');
             }
 
-            const order = orderResult.data.createDraftOrder;
+            const order = result.data.createOrder;
+            console.log(`✅ Order created successfully: ${order.code}`);
+            return order as Order;
 
-            // 2. Add items sequentially
-            for (const item of input.cartItems) {
-
-                const itemResult = await client.mutate({
-                    mutation: ADD_ITEM_TO_DRAFT_ORDER,
-                    variables: {
-                        orderId: order.id,
-                        input: {
-                            productVariantId: String(item.variantId),
-                            quantity: item.quantity
-                        }
-                    }
-                });
-
-                // Check for GraphQL errors first
-                if (itemResult.error) {
-                    console.error('GraphQL error:', itemResult.error);
-                    throw new Error(`GraphQL error adding item ${item.variantId}: ${itemResult.error.message}`);
-                }
-
-                const itemData = itemResult.data?.addItemToDraftOrder;
-                if (!itemData || itemData.__typename !== 'Order') {
-                    const error = itemData as any;
-                    console.error('Item addition failed:', {
-                        variantId: item.variantId,
-                        quantity: item.quantity,
-                        orderId: order.id,
-                        error: error,
-                        result: itemResult
-                    });
-                    throw new Error(`Failed to add item ${item.variantId} to order: ${error?.message || error?.errorCode || 'Unknown error'}`);
-                }
-
-                // If custom line price is set, apply it to the order line
-                if (item.customLinePrice && item.customLinePrice > 0) {
-                    console.log('💰 Applying custom line price to order line:', {
-                        variantId: item.variantId,
-                        customLinePrice: item.customLinePrice,
-                        reason: item.priceOverrideReason
-                    });
-
-                    // Find the order line that was just added
-                    const orderLines = itemData.lines;
-                    const addedLine = orderLines.find((line: any) =>
-                        line.productVariant.id === item.variantId
-                    );
-
-                    if (addedLine) {
-                        await this.setOrderLineCustomPrice(
-                            addedLine.id,
-                            item.customLinePrice,
-                            item.priceOverrideReason
-                        );
-                        console.log('✅ Custom line price applied to order line:', addedLine.id);
-                    } else {
-                        console.warn('⚠️ Could not find order line for custom line price application');
-                    }
-                }
-            }
-
-            // 3. Set up complete order with all required details for state transitions
-            const orderWithSetup = await this.orderSetupService.setupCompleteOrder(order.id, input.customerId);
-
-            // 4. Transition to ArrangingPayment state (now that all requirements are met)
-            const orderInPaymentState = await this.transitionOrderState(orderWithSetup.id, 'ArrangingPayment');
-
-            // 5. Add payment to the order
-            const orderWithPayment = await this.completeOrderPayment(
-                orderInPaymentState.id,
-                input.paymentMethodCode,
-                input.metadata
-            );
-
-            // 6. Check final state and handle flow types
-            let finalOrder: Order;
-
-            // Check if payment addition already completed the order
-            if (orderWithPayment.state === 'PaymentSettled') {
-                // 7. Fulfill the order (items handed to customer)
-                finalOrder = await this.fulfillOrder(orderWithPayment.id);
-            } else if (input.isCashierFlow) {
-                // Cashier flow: stay in ArrangingPayment state (not fulfilled yet)
-                finalOrder = orderWithPayment; // Already in ArrangingPayment
-            } else if (input.isCreditSale) {
-                // Credit sale: stay in ArrangingPayment state (payment authorized but not settled)
-                finalOrder = orderWithPayment; // Already in ArrangingPayment
-            } else {
-                // Regular cash sale: try to complete if not already done
-                if (orderWithPayment.state === 'ArrangingPayment') {
-                    const settledOrder = await this.transitionOrderState(orderWithPayment.id, 'PaymentSettled');
-                    // 7. Fulfill the order (items handed to customer)
-                    finalOrder = await this.fulfillOrder(settledOrder.id);
-                } else {
-                    finalOrder = orderWithPayment;
-                }
-            }
-            return finalOrder;
         } catch (error) {
             console.error('❌ Order creation failed:', error);
             throw error;

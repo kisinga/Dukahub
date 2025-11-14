@@ -140,8 +140,8 @@ export const creditPaymentHandler = new PaymentMethodHandler({
             throw new UserInputError('Customer credit limit exceeded.');
         }
 
-        // Apply credit charge
-        await creditServiceRef.applyCreditCharge(ctx, customerId, order.total);
+        // Note: Outstanding balance is now calculated dynamically from orders
+        // No need to call applyCreditCharge - balance will be calculated on-the-fly
 
         const result: CreatePaymentResult = {
             amount: order.total,
@@ -151,7 +151,7 @@ export const creditPaymentHandler = new PaymentMethodHandler({
                 paymentType: 'credit',
                 customerId,
                 creditLimit: summary.creditLimit,
-                outstandingAmount: summary.outstandingAmount - order.total,
+                outstandingAmount: summary.outstandingAmount, // Current outstanding (will be recalculated dynamically)
                 userId: ctx.activeUserId?.toString(), // Store user ID in metadata for later tracking
             },
         };

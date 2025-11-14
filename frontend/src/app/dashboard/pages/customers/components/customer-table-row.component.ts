@@ -51,7 +51,8 @@ export class CustomerTableRowComponent {
   }
 
   getOutstandingAmount(): number {
-    return Number(this.customer.customFields?.outstandingAmount ?? 0);
+    // outstandingAmount is now a computed field on Customer, not in customFields
+    return Number(this.customer.outstandingAmount ?? 0);
   }
 
   getOutstandingAmountAbs(): number {

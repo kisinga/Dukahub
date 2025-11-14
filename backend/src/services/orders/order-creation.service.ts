@@ -1,21 +1,26 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
     Customer,
     ID,
     Order,
+    OrderService,
     RequestContext,
     TransactionalConnection,
     UserInputError
 } from '@vendure/core';
 import { AuditService } from '../../infrastructure/audit/audit.service';
-import { CreditService } from '../credit/credit.service';
-import { PriceOverrideService } from './price-override.service';
+import { OrderAddressService } from './order-address.service';
+import { OrderCreditValidatorService } from './order-credit-validator.service';
+import { OrderFulfillmentService } from './order-fulfillment.service';
+import { OrderItemService } from './order-item.service';
+import { OrderPaymentService } from './order-payment.service';
+import { OrderStateService } from './order-state.service';
 
 export interface CartItemInput {
     variantId: string;
     quantity: number;
     customLinePrice?: number; // Line price in cents
-    priceOverrideReason?: string; // Reason code
+    priceOverrideReason?: string;
 }
 
 export interface CreateOrderInput {
@@ -30,12 +35,8 @@ export interface CreateOrderInput {
 /**
  * Order Creation Service
  * 
- * This service handles order creation in the backend with transaction support.
- * It wraps Vendure's Admin API operations in a transaction for atomicity.
- * 
- * Note: This service uses a GraphQL client approach to call Admin API mutations
- * since Vendure's internal services may not expose all the methods we need.
- * The actual implementation will call Admin API resolvers through the RequestContext.
+ * Orchestrates order creation by composing focused services.
+ * Each step is handled by a dedicated service for clarity and testability.
  */
 @Injectable()
 export class OrderCreationService {
@@ -43,146 +44,252 @@ export class OrderCreationService {
 
     constructor(
         private readonly connection: TransactionalConnection,
-        private readonly creditService: CreditService,
-        private readonly priceOverrideService: PriceOverrideService,
-        private readonly auditService: AuditService,
+        private readonly orderService: OrderService,
+        private readonly orderCreditValidator: OrderCreditValidatorService,
+        private readonly orderItemService: OrderItemService,
+        private readonly orderAddressService: OrderAddressService,
+        private readonly orderStateService: OrderStateService,
+        private readonly orderPaymentService: OrderPaymentService,
+        private readonly orderFulfillmentService: OrderFulfillmentService,
+        @Optional() private readonly auditService?: AuditService,
     ) { }
 
     /**
-     * Create a complete order with items and payment
-     * All operations are wrapped in a transaction
-     * 
-     * This method will be implemented to call Admin API mutations
-     * through the GraphQL API client available in the RequestContext.
-     * For now, it's a placeholder that validates inputs and returns an error
-     * indicating that the implementation needs to call Admin API mutations.
+     * Create a complete order with items, addresses, payment, and fulfillment
+     * All operations are wrapped in a transaction for atomicity
      */
     async createOrder(ctx: RequestContext, input: CreateOrderInput): Promise<Order> {
         return this.connection.withTransaction(ctx, async (transactionCtx) => {
             try {
-                // 1. Validate credit sale if applicable
+                // 1. Validate inputs
+                this.validateInput(input);
+
+                // 2. Validate credit approval (basic check)
+                const customerId = await this.ensureCustomer(transactionCtx, input.customerId);
                 if (input.isCreditSale) {
-                    if (!input.customerId) {
-                        throw new UserInputError('Customer ID is required for credit sales.');
-                    }
-                    await this.validateCreditSale(transactionCtx, input.customerId, input.cartItems);
+                    await this.orderCreditValidator.validateCreditApproval(transactionCtx, customerId);
                 }
 
-                // 2. Validate input
-                if (!input.cartItems || input.cartItems.length === 0) {
-                    throw new UserInputError('Order must have at least one item.');
+                // 3. Create draft order
+                const draftOrder = await this.orderService.createDraft(transactionCtx);
+                this.logger.log(`Created draft order: ${draftOrder.code}`);
+
+                // 4. Add items with custom pricing
+                await this.orderItemService.addItems(transactionCtx, draftOrder.id, input.cartItems);
+
+                // 5. Set customer
+                await this.setCustomer(transactionCtx, draftOrder.id, customerId);
+
+                // 6. Set addresses (from customer if credit sale, default otherwise)
+                await this.orderAddressService.setAddresses(
+                    transactionCtx,
+                    draftOrder.id,
+                    input.isCreditSale ? customerId : undefined
+                );
+
+                // 7. Refresh order to recalculate totals after custom pricing and addresses
+                let order = await this.orderStateService.refreshOrder(transactionCtx, draftOrder.id);
+
+                // 8. Transition to ArrangingPayment (triggers tax recalculation)
+                order = await this.orderStateService.transitionToState(
+                    transactionCtx,
+                    draftOrder.id,
+                    'ArrangingPayment'
+                );
+
+                // 9. Validate credit limit with actual order total (after taxes, shipping, etc.)
+                // This is the final validation - order total is now known
+                if (input.isCreditSale) {
+                    await this.orderCreditValidator.validateCreditLimitWithOrder(
+                        transactionCtx,
+                        customerId,
+                        order
+                    );
                 }
 
-                if (!input.paymentMethodCode) {
-                    throw new UserInputError('Payment method code is required.');
+                // 10. Handle payment and fulfillment based on order type
+                if (input.isCreditSale) {
+                    await this.handleCreditSale(transactionCtx, order, customerId);
+                } else {
+                    await this.handleCashSale(transactionCtx, order, input);
                 }
 
-                // TODO: Implement order creation by calling Admin API mutations
-                // The actual implementation should:
-                // 1. Call createDraftOrder mutation
-                // 2. Call addItemToDraftOrder for each item
-                // 3. Apply custom prices if needed
-                // 4. Call setCustomerForDraftOrder
-                // 5. Call setDraftOrderBillingAddress and setDraftOrderShippingAddress
-                // 6. Call transitionOrderToState to ArrangingPayment
-                // 7. Call addManualPaymentToOrder
-                // 8. Handle fulfillment for cash sales
-                // 
-                // After order is created, add:
-                // - await this.updateOrderCustomFields(transactionCtx, order.id, {
-                //     createdByUserId: transactionCtx.activeUserId,
-                //     lastModifiedByUserId: transactionCtx.activeUserId
-                //   });
-                // - await this.auditService.log(transactionCtx, 'order.created', {
-                //     entityType: 'Order',
-                //     entityId: order.id.toString(),
-                //     data: { orderCode: order.code, total: order.total }
-                //   });
-                // 
-                // This requires access to the Admin API GraphQL client through RequestContext
-                // or using Vendure's internal services if they're available.
+                // 11. Get final order state
+                order = await this.orderStateService.refreshOrder(transactionCtx, order.id);
 
-                throw new UserInputError('Order creation not yet implemented. Use Admin API mutations directly.');
+                // 12. Update tracking fields
+                await this.updateTrackingFields(transactionCtx, order.id);
 
+                // 13. Log audit events
+                await this.logAuditEvents(transactionCtx, order, input, customerId);
+
+                this.logger.log(`Order created successfully: ${order.code}`);
+                return order;
             } catch (error) {
-                this.logger.error(`Failed to create order: ${error instanceof Error ? error.message : String(error)}`);
+                this.logger.error(
+                    `Failed to create order: ${error instanceof Error ? error.message : String(error)}`
+                );
                 throw error;
             }
         });
     }
 
     /**
-     * Validate credit sale requirements
+     * Validate input parameters
      */
-    private async validateCreditSale(
-        ctx: RequestContext,
-        customerId: string,
-        cartItems: CartItemInput[]
-    ): Promise<void> {
-        // Get credit summary - this will be validated by payment handler
-        // But we can do a preliminary check here
-        const creditSummary = await this.creditService.getCreditSummary(ctx, customerId);
-
-        if (!creditSummary.isCreditApproved) {
-            throw new UserInputError('Customer is not approved for credit purchases.');
+    private validateInput(input: CreateOrderInput): void {
+        if (!input.cartItems || input.cartItems.length === 0) {
+            throw new UserInputError('Order must have at least one item.');
         }
 
-        // Note: Full credit validation (including amount) happens in payment handler
-        // This is just a preliminary check
+        if (!input.paymentMethodCode) {
+            throw new UserInputError('Payment method code is required.');
+        }
+
+        if (input.isCreditSale && !input.customerId) {
+            throw new UserInputError('Customer ID is required for credit sales.');
+        }
+    }
+
+
+    /**
+     * Ensure customer exists, create walk-in if needed
+     */
+    private async ensureCustomer(ctx: RequestContext, customerId?: string): Promise<string> {
+        if (customerId) {
+            return customerId;
+        }
+
+        return this.getOrCreateWalkInCustomer(ctx);
     }
 
     /**
-     * Get or create walk-in customer for cash sales
+     * Set customer on order
+     */
+    private async setCustomer(ctx: RequestContext, orderId: ID, customerId: string): Promise<void> {
+        const orderRepo = this.connection.getRepository(ctx, Order);
+        await orderRepo.update(
+            { id: orderId },
+            { customer: { id: customerId } as Customer }
+        );
+    }
+
+    /**
+     * Handle credit sale: fulfill immediately without payment
+     */
+    private async handleCreditSale(
+        ctx: RequestContext,
+        order: Order,
+        customerId: string
+    ): Promise<void> {
+        await this.orderFulfillmentService.fulfillOrder(ctx, order.id);
+
+        if (this.auditService) {
+            await this.auditService.log(ctx, 'credit.sale.created', {
+                entityType: 'Order',
+                entityId: order.id.toString(),
+                data: {
+                    customerId,
+                    orderTotal: order.total,
+                    orderCode: order.code,
+                    isCreditSale: true,
+                },
+            });
+        }
+    }
+
+    /**
+     * Handle cash sale: add payment and fulfill
+     */
+    private async handleCashSale(
+        ctx: RequestContext,
+        order: Order,
+        input: CreateOrderInput
+    ): Promise<void> {
+        await this.orderPaymentService.addPayment(
+            ctx,
+            order.id,
+            input.paymentMethodCode,
+            input.metadata
+        );
+
+        await this.orderFulfillmentService.fulfillOrder(ctx, order.id);
+    }
+
+    /**
+     * Get or create walk-in customer
      */
     private async getOrCreateWalkInCustomer(ctx: RequestContext): Promise<string> {
         const customerRepo = this.connection.getRepository(ctx, Customer);
-
-        // Try to find existing walk-in customer
-        const walkInCustomer = await customerRepo.findOne({
+        let walkInCustomer = await customerRepo.findOne({
             where: { emailAddress: 'walkin@pos.local' },
         });
 
-        if (walkInCustomer) {
-            return String(walkInCustomer.id);
+        if (!walkInCustomer) {
+            walkInCustomer = customerRepo.create({
+                firstName: 'Walk-in',
+                lastName: 'Customer',
+                emailAddress: 'walkin@pos.local',
+                phoneNumber: '0000000000',
+            });
+            walkInCustomer = await customerRepo.save(walkInCustomer);
+            this.logger.log(`Created walk-in customer: ${walkInCustomer.id}`);
         }
 
-        // Create walk-in customer if it doesn't exist
-        const newCustomer = customerRepo.create({
-            firstName: 'Walk-in',
-            lastName: 'Customer',
-            emailAddress: 'walkin@pos.local',
-            phoneNumber: '+1234567890',
-        });
-
-        const savedCustomer = await customerRepo.save(newCustomer);
-        this.logger.log(`Created walk-in customer: ${savedCustomer.id}`);
-        return String(savedCustomer.id);
+        return String(walkInCustomer.id);
     }
 
     /**
-     * Update order custom fields for user tracking
+     * Update order custom fields for tracking
      */
-    private async updateOrderCustomFields(
+    private async updateTrackingFields(
         ctx: RequestContext,
-        orderId: ID,
-        fields: { createdByUserId?: ID; lastModifiedByUserId?: ID }
+        orderId: ID
     ): Promise<void> {
         try {
-            // Update order custom field via repository
             const orderRepo = this.connection.getRepository(ctx, Order);
-            const order = await orderRepo.findOne({ where: { id: orderId }, select: ['id', 'customFields'] });
-            if (order) {
-                const customFields = (order.customFields as any) || {};
+            const userId = ctx.activeUserId;
+
+            if (userId) {
                 await orderRepo.update(
                     { id: orderId },
-                    { customFields: { ...customFields, ...fields } }
+                    {
+                        customFields: {
+                            createdByUserId: userId,
+                            lastModifiedByUserId: userId,
+                        } as any,
+                    }
                 );
             }
         } catch (error) {
             this.logger.warn(
-                `Failed to update order custom fields for order ${orderId}: ${error instanceof Error ? error.message : String(error)}`
+                `Failed to update tracking fields: ${error instanceof Error ? error.message : String(error)}`
             );
         }
     }
-}
 
+    /**
+     * Log audit events
+     */
+    private async logAuditEvents(
+        ctx: RequestContext,
+        order: Order,
+        input: CreateOrderInput,
+        customerId: string
+    ): Promise<void> {
+        if (!this.auditService) {
+            return;
+        }
+
+        await this.auditService.log(ctx, 'order.created', {
+            entityType: 'Order',
+            entityId: order.id.toString(),
+            data: {
+                orderCode: order.code,
+                total: order.total,
+                isCreditSale: input.isCreditSale || false,
+                customerId,
+            },
+        });
+    }
+}
