@@ -1,141 +1,41 @@
-<!-- Supplier Table Row (Desktop) -->
-<tr class="hover border-b border-base-200">
-  <!-- Supplier Info -->
-  <td class="py-4">
-    <div class="flex items-center gap-3">
-      <!-- Avatar -->
-      <div class="avatar placeholder">
-        <div class="bg-primary text-primary-content rounded-full w-10">
-          <span class="text-xs font-semibold">{{ getInitials() }}</span>
-        </div>
-      </div>
-
-      <!-- Name and Contact -->
-      <div class="flex-1 min-w-0">
-        <div class="font-semibold text-base truncate">{{ getFullName() }}</div>
-        <div class="text-sm text-base-content/70 truncate">{{ getContactInfo() }}</div>
-      </div>
-    </div>
-  </td>
-
-  <!-- Contact Details -->
-  <td class="py-4">
-    <div class="text-sm space-y-0.5">
-      <div class="truncate">{{ supplier.emailAddress }}</div>
-      @if (supplier.phoneNumber) {
-      <div class="text-base-content/60 truncate">{{ supplier.phoneNumber }}</div>
-      }
-    </div>
-  </td>
-
-  <!-- Supplier Code -->
-  <td class="py-4">
-    <div class="text-center">
-      <div class="text-sm font-semibold text-primary">{{ getSupplierCode() }}</div>
-    </div>
-  </td>
-
-  <!-- Supplier Type -->
-  <td class="py-4">
-    <div class="text-center">
-      <div class="text-sm font-medium">{{ getSupplierType() }}</div>
-    </div>
-  </td>
-
-  <!-- Addresses -->
-  <td class="py-4">
-    <div class="text-center">
-      <div class="text-base font-bold text-primary">{{ getAddressCount() }}</div>
-      <div class="text-xs text-base-content/60 mt-0.5">addresses</div>
-    </div>
-  </td>
-
-  <!-- Status -->
-  <td class="py-4">
-    @if (isVerified()) {
-    <div class="badge badge-success badge-sm gap-1">
-      <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-        <path
-          fill-rule="evenodd"
-          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-          clip-rule="evenodd"
-        ></path>
-      </svg>
-      Verified
-    </div>
-    } @else {
-    <div class="badge badge-neutral badge-sm">Unverified</div>
+<td>
+  <div class="flex items-center gap-3">
+    <app-entity-avatar 
+      [firstName]="supplier().firstName" 
+      [lastName]="supplier().lastName" 
+      size="sm"
+    />
+    <span class="font-medium">{{ getFullName() }}</span>
+  </div>
+</td>
+<td>{{ supplier().emailAddress || supplier().phoneNumber || '—' }}</td>
+<td>
+  <div class="flex items-center gap-2">
+    @if (getSupplierCode() !== 'N/A') {
+      <span class="badge badge-sm badge-outline">{{ getSupplierCode() }}</span>
     }
-  </td>
-
-  <!-- Created Date -->
-  <td class="py-4">
-    <div class="text-sm font-medium">{{ getCreatedDate() }}</div>
-  </td>
-
-  <!-- Actions -->
-  <td class="text-right py-4">
-    <div class="dropdown dropdown-end">
-      <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-          ></path>
-        </svg>
-      </div>
-      <ul
-        tabindex="0"
-        class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-300"
-      >
-        <li>
-          <button (click)="onAction('view')" class="flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              ></path>
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-              ></path>
-            </svg>
-            View Details
-          </button>
-        </li>
-        <li>
-          <button (click)="onAction('edit')" class="flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-              ></path>
-            </svg>
-            Edit Supplier
-          </button>
-        </li>
-        <li>
-          <button (click)="onAction('delete')" class="flex items-center gap-2 text-error">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              ></path>
-            </svg>
-            Delete Supplier
-          </button>
-        </li>
-      </ul>
-    </div>
-  </td>
-</tr>
+    <span class="text-sm">{{ getSupplierType() }}</span>
+  </div>
+</td>
+<td>
+  @if (isVerified()) {
+    <app-status-badge type="success" label="Verified" size="xs" />
+  } @else {
+    <span class="text-sm text-base-content/50">—</span>
+  }
+</td>
+<td>{{ getAddressCount() }}</td>
+<td (click)="$event.stopPropagation()">
+  <details class="dropdown dropdown-end">
+    <summary class="btn btn-ghost btn-sm btn-square">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+      </svg>
+    </summary>
+    <ul class="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-48 border border-base-300">
+      <li><a (click)="onAction('view')">View</a></li>
+      <li><a (click)="onAction('edit')">Edit</a></li>
+      <li><a (click)="onAction('delete')" class="text-error">Delete</a></li>
+    </ul>
+  </details>
+</td>

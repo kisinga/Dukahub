@@ -852,6 +852,70 @@ export const config: VendureConfig = {
                 nullable: false,
                 ui: { tab: 'Financial' },
             },
+            {
+                name: 'isSupplierCreditApproved',
+                type: 'boolean',
+                label: [{ languageCode: LanguageCode.en, value: 'Supplier Credit Approved' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Indicates whether the supplier is eligible for credit purchases',
+                }],
+                defaultValue: false,
+                public: false,
+                nullable: false,
+                ui: { tab: 'Financial' },
+            },
+            {
+                name: 'supplierCreditLimit',
+                type: 'float',
+                label: [{ languageCode: LanguageCode.en, value: 'Supplier Credit Limit' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Maximum credit balance allowed for this supplier',
+                }],
+                defaultValue: 0,
+                public: false,
+                nullable: false,
+                ui: { tab: 'Financial' },
+            },
+            {
+                name: 'supplierCreditDuration',
+                type: 'int',
+                label: [{ languageCode: LanguageCode.en, value: 'Supplier Credit Duration (days)' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Number of days credit is extended to this supplier before repayment is due',
+                }],
+                defaultValue: 30,
+                public: false,
+                nullable: false,
+                ui: { tab: 'Financial' },
+            },
+            {
+                name: 'supplierLastRepaymentDate',
+                type: 'datetime',
+                label: [{ languageCode: LanguageCode.en, value: 'Supplier Last Repayment Date' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Date of the last credit repayment made to this supplier',
+                }],
+                public: false,
+                nullable: true,
+                ui: { tab: 'Financial' },
+            },
+            {
+                name: 'supplierLastRepaymentAmount',
+                type: 'float',
+                label: [{ languageCode: LanguageCode.en, value: 'Supplier Last Repayment Amount' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Amount of the last credit repayment made to this supplier',
+                }],
+                defaultValue: 0,
+                public: false,
+                nullable: false,
+                ui: { tab: 'Financial' },
+            },
         ],
         PaymentMethod: [
             {
@@ -957,9 +1021,9 @@ export const config: VendureConfig = {
         ChannelSettingsPlugin,
         FractionalQuantityPlugin,
         NotificationPlugin,
+        StockPlugin, // Load before CreditPlugin so StockPurchase type is available
         CreditPlugin,
         SubscriptionPlugin,
-        StockPlugin,
         ChannelEventsPlugin,
         AuditPlugin,
         // PhoneAuthPlugin must be registered early so its strategy can be added to adminAuthenticationStrategy

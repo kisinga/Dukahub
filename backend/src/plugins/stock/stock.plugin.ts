@@ -8,6 +8,8 @@ import { PurchaseService } from '../../services/stock/purchase.service';
 import { StockAdjustmentService } from '../../services/stock/stock-adjustment.service';
 import { StockQueryService } from '../../services/stock/stock-query.service';
 import { StockValidationService } from '../../services/stock/stock-validation.service';
+import { PurchaseCreditValidatorService } from '../../services/stock/purchase-credit-validator.service';
+import { SupplierCreditService } from '../../services/credit/supplier-credit.service';
 import { StockPurchase, StockPurchaseLine } from '../../services/stock/entities/purchase.entity';
 import { InventoryStockAdjustment, InventoryStockAdjustmentLine } from '../../services/stock/entities/stock-adjustment.entity';
 
@@ -18,6 +20,8 @@ import { InventoryStockAdjustment, InventoryStockAdjustmentLine } from '../../se
         StockMovementService,
         PurchaseService,
         StockAdjustmentService,
+        SupplierCreditService, // Required by PurchaseCreditValidatorService
+        PurchaseCreditValidatorService,
         StockManagementService,
         StockQueryService,
         StockResolver,

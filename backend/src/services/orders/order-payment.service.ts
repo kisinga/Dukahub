@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
     ID,
-    PaymentService,
+    OrderService,
     RequestContext,
     UserInputError
 } from '@vendure/core';
@@ -17,7 +17,7 @@ export class OrderPaymentService {
     private readonly logger = new Logger('OrderPaymentService');
 
     constructor(
-        private readonly paymentService: PaymentService,
+        private readonly orderService: OrderService,
     ) { }
 
     /**
@@ -29,10 +29,10 @@ export class OrderPaymentService {
         paymentMethodCode: string,
         metadata?: Record<string, any>
     ): Promise<void> {
-        const paymentResult = await (this.paymentService as any).addManualPaymentToOrder(
+        const paymentResult = await this.orderService.addManualPaymentToOrder(
             ctx,
-            orderId,
             {
+                orderId,
                 method: paymentMethodCode,
                 metadata: metadata || {},
             }

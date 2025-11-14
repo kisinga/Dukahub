@@ -11,6 +11,7 @@ import { PurchaseService, RecordPurchaseInput } from './purchase.service';
 import { StockAdjustmentService, RecordStockAdjustmentInput } from './stock-adjustment.service';
 import { StockMovementService } from './stock-movement.service';
 import { StockValidationService } from './stock-validation.service';
+import { PurchaseCreditValidatorService } from './purchase-credit-validator.service';
 
 /**
  * Stock Management Service
@@ -28,6 +29,7 @@ export class StockManagementService {
         private readonly stockAdjustmentService: StockAdjustmentService,
         private readonly stockMovementService: StockMovementService,
         private readonly validationService: StockValidationService,
+        @Optional() private readonly purchaseCreditValidator?: PurchaseCreditValidatorService,
         @Optional() private readonly auditService?: AuditService,
     ) { }
 
@@ -44,10 +46,37 @@ export class StockManagementService {
                 // 1. Validate input
                 this.validationService.validatePurchaseInput(input);
 
-                // 2. Create purchase record
+                // 2. Validate supplier credit if this is a credit purchase
+                if (input.isCreditPurchase) {
+                    if (!this.purchaseCreditValidator) {
+                        throw new Error('PurchaseCreditValidatorService is required for credit purchases but was not provided.');
+                    }
+                    // Validate supplier credit approval
+                    await this.purchaseCreditValidator.validateSupplierCreditApproval(
+                        transactionCtx,
+                        String(input.supplierId)
+                    );
+                }
+
+                // 3. Create purchase record (calculate total first for validation)
+                const totalCost = input.lines.reduce(
+                    (sum, line) => sum + line.quantity * line.unitCost,
+                    0
+                );
+
+                // 4. Validate credit limit with actual purchase total (if credit purchase)
+                if (input.isCreditPurchase && this.purchaseCreditValidator) {
+                    await this.purchaseCreditValidator.validateSupplierCreditLimitWithPurchase(
+                        transactionCtx,
+                        String(input.supplierId),
+                        totalCost
+                    );
+                }
+
+                // 5. Create purchase record
                 const purchase = await this.purchaseService.createPurchaseRecord(transactionCtx, input);
 
-                // 3. Update stock levels for each line
+                // 6. Update stock levels for each line
                 const stockMovements = [];
                 for (const line of input.lines) {
                     const movement = await this.stockMovementService.adjustStockLevel(
@@ -60,7 +89,7 @@ export class StockManagementService {
                     stockMovements.push(movement);
                 }
 
-                // 4. Log audit event
+                // 7. Log audit event
                 await this.logPurchaseAudit(transactionCtx, purchase, stockMovements);
 
                 this.logger.log(`Purchase recorded successfully: ${purchase.id}`);

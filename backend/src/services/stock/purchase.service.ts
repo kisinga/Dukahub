@@ -24,6 +24,7 @@ export interface RecordPurchaseInput {
     paymentStatus: string;
     notes?: string | null;
     lines: PurchaseLineInput[];
+    isCreditPurchase?: boolean;
 }
 
 /**
@@ -58,6 +59,12 @@ export class PurchaseService {
             throw new UserInputError(`Supplier ${input.supplierId} not found`);
         }
 
+        // Validate supplier is marked as supplier
+        const customFields = supplier.customFields as any;
+        if (!customFields?.isSupplier) {
+            throw new UserInputError(`Customer ${input.supplierId} is not marked as a supplier.`);
+        }
+
         // Calculate total cost
         const totalCost = input.lines.reduce(
             (sum, line) => sum + line.quantity * line.unitCost,
@@ -76,6 +83,7 @@ export class PurchaseService {
         purchase.totalCost = totalCost;
         purchase.paymentStatus = input.paymentStatus;
         purchase.notes = input.notes || null;
+        purchase.isCreditPurchase = input.isCreditPurchase ?? false;
 
         const savedPurchase = await purchaseRepo.save(purchase);
 

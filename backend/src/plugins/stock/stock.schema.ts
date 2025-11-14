@@ -10,6 +10,7 @@ export const STOCK_ADMIN_SCHEMA = gql`
         totalCost: Int!
         paymentStatus: String!
         notes: String
+        isCreditPurchase: Boolean!
         lines: [StockPurchaseLine!]!
         createdAt: DateTime!
         updatedAt: DateTime!
@@ -67,6 +68,7 @@ export const STOCK_ADMIN_SCHEMA = gql`
         paymentStatus: String!
         notes: String
         lines: [PurchaseLineInput!]!
+        isCreditPurchase: Boolean
     }
 
     input PurchaseLineInput {

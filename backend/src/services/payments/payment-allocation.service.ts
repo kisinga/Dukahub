@@ -10,10 +10,15 @@ import {
 } from '@vendure/core';
 import { In } from 'typeorm';
 import { AuditService } from '../../infrastructure/audit/audit.service';
+import {
+    PaymentAllocationItem,
+    calculatePaymentAllocation,
+    calculateRemainingBalance,
+} from './payment-allocation-base.types';
 
 export interface PaymentAllocationInput {
     customerId: string;
-    paymentAmount: number;
+    paymentAmount: number; // In base currency units (will be converted to cents)
     orderIds?: string[]; // Optional - if not provided, auto-select oldest
 }
 
@@ -21,10 +26,11 @@ export interface PaymentAllocationResult {
     ordersPaid: Array<{
         orderId: string;
         orderCode: string;
-        amountPaid: number;
+        amountPaid: number; // In base currency units
     }>;
-    remainingBalance: number;
-    totalAllocated: number;
+    remainingBalance: number; // In base currency units
+    totalAllocated: number; // In base currency units
+    excessPayment: number; // In base currency units - amount paid beyond what's owed
 }
 
 @Injectable()
@@ -87,33 +93,46 @@ export class PaymentAllocationService {
                     throw new UserInputError('No unpaid orders found for this customer.');
                 }
 
-                // 3. Allocate payment across orders (oldest first)
-                const ordersPaid: Array<{ orderId: string; orderCode: string; amountPaid: number }> = [];
-                let remainingPayment = input.paymentAmount;
+                // 3. Convert payment amount from base currency to cents for internal calculations
+                const paymentAmountInCents = Math.round(input.paymentAmount * 100);
 
-                for (const order of unpaidOrders) {
-                    if (remainingPayment <= 0) {
-                        break;
-                    }
-
-                    // Calculate how much is still owed on this order
+                // 4. Convert orders to PaymentAllocationItem format
+                const allocationItems: PaymentAllocationItem[] = unpaidOrders.map(order => {
                     const settledPayments = (order.payments || [])
                         .filter(p => p.state === 'Settled')
                         .reduce((sum, p) => sum + p.amount, 0);
-                    const amountOwed = order.total - settledPayments;
+                    return {
+                        id: order.id.toString(),
+                        code: order.code,
+                        totalAmount: order.total,
+                        paidAmount: settledPayments,
+                        createdAt: order.createdAt,
+                    };
+                });
 
-                    if (amountOwed <= 0) {
-                        continue; // Order is already fully paid
+                // 5. Calculate allocation using shared utility
+                const calculation = calculatePaymentAllocation({
+                    itemsToPay: allocationItems,
+                    paymentAmount: paymentAmountInCents,
+                    selectedItemIds: input.orderIds,
+                });
+
+                // 6. Apply allocations to orders
+                const ordersPaid: Array<{ orderId: string; orderCode: string; amountPaid: number }> = [];
+
+                for (const allocation of calculation.allocations) {
+                    const order = unpaidOrders.find(o => o.id.toString() === allocation.itemId);
+                    if (!order) {
+                        continue;
                     }
 
-                    // Allocate payment to this order (up to what's owed)
-                    const amountToAllocate = Math.min(remainingPayment, amountOwed);
+                    const amountToAllocate = allocation.amountToAllocate;
 
-                    // Add payment to order using addManualPaymentToOrder
-                    const paymentResult = await (this.paymentService as any).addManualPaymentToOrder(
+                    // Add payment to order using OrderService.addManualPaymentToOrder
+                    const paymentResult = await this.orderService.addManualPaymentToOrder(
                         transactionCtx,
-                        order.id,
                         {
+                            orderId: order.id,
                             method: 'credit-payment',
                             metadata: {
                                 paymentType: 'credit',
@@ -148,22 +167,30 @@ export class PaymentAllocationService {
                     ordersPaid.push({
                         orderId: order.id.toString(),
                         orderCode: order.code,
-                        amountPaid: amountToAllocate,
+                        amountPaid: amountToAllocate / 100, // Convert back to base currency
                     });
-
-                    remainingPayment -= amountToAllocate;
                 }
 
-                // 4. Calculate remaining balance
+                // 7. Calculate remaining balance
                 const remainingUnpaidOrders = await this.getUnpaidOrdersForCustomer(transactionCtx, input.customerId);
-                const remainingBalance = remainingUnpaidOrders.reduce((sum, order) => {
+                const remainingItems: PaymentAllocationItem[] = remainingUnpaidOrders.map(order => {
                     const settledPayments = (order.payments || [])
                         .filter(p => p.state === 'Settled')
-                        .reduce((total, p) => total + p.amount, 0);
-                    return sum + (order.total - settledPayments);
-                }, 0);
+                        .reduce((sum, p) => sum + p.amount, 0);
+                    return {
+                        id: order.id.toString(),
+                        code: order.code,
+                        totalAmount: order.total,
+                        paidAmount: settledPayments,
+                        createdAt: order.createdAt,
+                    };
+                });
+                const remainingBalanceInCents = calculateRemainingBalance(remainingItems);
 
-                const totalAllocated = input.paymentAmount - remainingPayment;
+                // 8. Convert to base currency units
+                const totalAllocated = calculation.totalAllocated / 100;
+                const excessPayment = calculation.excessPayment / 100;
+                const remainingBalance = remainingBalanceInCents / 100;
 
                 // 5. Log audit event
                 if (this.auditService) {
@@ -174,6 +201,7 @@ export class PaymentAllocationService {
                             paymentAmount: input.paymentAmount,
                             totalAllocated,
                             remainingBalance,
+                            excessPayment,
                             ordersPaid: ordersPaid.map(o => ({
                                 orderId: o.orderId,
                                 orderCode: o.orderCode,
@@ -185,13 +213,15 @@ export class PaymentAllocationService {
                 }
 
                 this.logger.log(
-                    `Payment allocated: ${totalAllocated} across ${ordersPaid.length} orders for customer ${input.customerId}. Remaining balance: ${remainingBalance}`
+                    `Payment allocated: ${totalAllocated} across ${ordersPaid.length} orders for customer ${input.customerId}. ` +
+                    `Remaining balance: ${remainingBalance}, Excess payment: ${excessPayment}`
                 );
 
                 return {
                     ordersPaid,
                     remainingBalance,
                     totalAllocated,
+                    excessPayment,
                 };
             } catch (error) {
                 this.logger.error(

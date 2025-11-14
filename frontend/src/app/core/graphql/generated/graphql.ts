@@ -188,6 +188,13 @@ export type ApproveCustomerCreditInput = {
   customerId: Scalars['ID']['input'];
 };
 
+export type ApproveSupplierCreditInput = {
+  approved: Scalars['Boolean']['input'];
+  supplierCreditDuration?: InputMaybe<Scalars['Int']['input']>;
+  supplierCreditLimit?: InputMaybe<Scalars['Float']['input']>;
+  supplierId: Scalars['ID']['input'];
+};
+
 export type Asset = Node & {
   __typename?: 'Asset';
   createdAt: Scalars['DateTime']['output'];
@@ -1072,10 +1079,15 @@ export type CreateCustomerCustomFieldsInput = {
   creditLimit?: InputMaybe<Scalars['Float']['input']>;
   isCreditApproved?: InputMaybe<Scalars['Boolean']['input']>;
   isSupplier?: InputMaybe<Scalars['Boolean']['input']>;
+  isSupplierCreditApproved?: InputMaybe<Scalars['Boolean']['input']>;
   lastRepaymentAmount?: InputMaybe<Scalars['Float']['input']>;
   lastRepaymentDate?: InputMaybe<Scalars['DateTime']['input']>;
   notes?: InputMaybe<Scalars['String']['input']>;
   paymentTerms?: InputMaybe<Scalars['String']['input']>;
+  supplierCreditDuration?: InputMaybe<Scalars['Int']['input']>;
+  supplierCreditLimit?: InputMaybe<Scalars['Float']['input']>;
+  supplierLastRepaymentAmount?: InputMaybe<Scalars['Float']['input']>;
+  supplierLastRepaymentDate?: InputMaybe<Scalars['DateTime']['input']>;
   supplierType?: InputMaybe<Scalars['String']['input']>;
   taxId?: InputMaybe<Scalars['String']['input']>;
 };
@@ -1755,10 +1767,15 @@ export type CustomerCustomFields = {
   creditLimit?: Maybe<Scalars['Float']['output']>;
   isCreditApproved?: Maybe<Scalars['Boolean']['output']>;
   isSupplier?: Maybe<Scalars['Boolean']['output']>;
+  isSupplierCreditApproved?: Maybe<Scalars['Boolean']['output']>;
   lastRepaymentAmount?: Maybe<Scalars['Float']['output']>;
   lastRepaymentDate?: Maybe<Scalars['DateTime']['output']>;
   notes?: Maybe<Scalars['String']['output']>;
   paymentTerms?: Maybe<Scalars['String']['output']>;
+  supplierCreditDuration?: Maybe<Scalars['Int']['output']>;
+  supplierCreditLimit?: Maybe<Scalars['Float']['output']>;
+  supplierLastRepaymentAmount?: Maybe<Scalars['Float']['output']>;
+  supplierLastRepaymentDate?: Maybe<Scalars['DateTime']['output']>;
   supplierType?: Maybe<Scalars['String']['output']>;
   taxId?: Maybe<Scalars['String']['output']>;
 };
@@ -1775,6 +1792,7 @@ export type CustomerFilterParameter = {
   id?: InputMaybe<IdOperators>;
   isCreditApproved?: InputMaybe<BooleanOperators>;
   isSupplier?: InputMaybe<BooleanOperators>;
+  isSupplierCreditApproved?: InputMaybe<BooleanOperators>;
   lastName?: InputMaybe<StringOperators>;
   lastRepaymentAmount?: InputMaybe<NumberOperators>;
   lastRepaymentDate?: InputMaybe<DateOperators>;
@@ -1783,6 +1801,10 @@ export type CustomerFilterParameter = {
   paymentTerms?: InputMaybe<StringOperators>;
   phoneNumber?: InputMaybe<StringOperators>;
   postalCode?: InputMaybe<StringOperators>;
+  supplierCreditDuration?: InputMaybe<NumberOperators>;
+  supplierCreditLimit?: InputMaybe<NumberOperators>;
+  supplierLastRepaymentAmount?: InputMaybe<NumberOperators>;
+  supplierLastRepaymentDate?: InputMaybe<DateOperators>;
   supplierType?: InputMaybe<StringOperators>;
   taxId?: InputMaybe<StringOperators>;
   title?: InputMaybe<StringOperators>;
@@ -1869,6 +1891,7 @@ export type CustomerSortParameter = {
   id?: InputMaybe<SortOrder>;
   isCreditApproved?: InputMaybe<SortOrder>;
   isSupplier?: InputMaybe<SortOrder>;
+  isSupplierCreditApproved?: InputMaybe<SortOrder>;
   lastName?: InputMaybe<SortOrder>;
   lastRepaymentAmount?: InputMaybe<SortOrder>;
   lastRepaymentDate?: InputMaybe<SortOrder>;
@@ -1876,6 +1899,10 @@ export type CustomerSortParameter = {
   outstandingAmount?: InputMaybe<SortOrder>;
   paymentTerms?: InputMaybe<SortOrder>;
   phoneNumber?: InputMaybe<SortOrder>;
+  supplierCreditDuration?: InputMaybe<SortOrder>;
+  supplierCreditLimit?: InputMaybe<SortOrder>;
+  supplierLastRepaymentAmount?: InputMaybe<SortOrder>;
+  supplierLastRepaymentDate?: InputMaybe<SortOrder>;
   supplierType?: InputMaybe<SortOrder>;
   taxId?: InputMaybe<SortOrder>;
   title?: InputMaybe<SortOrder>;
@@ -3235,9 +3262,11 @@ export type Mutation = {
   /** Adjusts a draft OrderLine. If custom fields are defined on the OrderLine entity, a third argument 'customFields' of type `OrderLineCustomFieldsInput` will be available. */
   adjustDraftOrderLine: UpdateOrderItemsResult;
   allocateBulkPayment: PaymentAllocationResult;
+  allocateBulkSupplierPayment: SupplierPaymentAllocationResult;
   /** Applies the given coupon code to the draft Order */
   applyCouponCodeToDraftOrder: ApplyCouponCodeResult;
   approveCustomerCredit: CreditSummary;
+  approveSupplierCredit: SupplierCreditSummary;
   /** Assign assets to channel */
   assignAssetsToChannel: Array<Asset>;
   /** Assigns Collections to the specified Channel */
@@ -3568,6 +3597,8 @@ export type Mutation = {
   /** Update an existing ShippingMethod */
   updateShippingMethod: ShippingMethod;
   updateStockLocation: StockLocation;
+  updateSupplierCreditDuration: SupplierCreditSummary;
+  updateSupplierCreditLimit: SupplierCreditSummary;
   /** Update an existing Tag */
   updateTag: Tag;
   /** Update an existing TaxCategory */
@@ -3640,6 +3671,11 @@ export type MutationAllocateBulkPaymentArgs = {
 };
 
 
+export type MutationAllocateBulkSupplierPaymentArgs = {
+  input: SupplierPaymentAllocationInput;
+};
+
+
 export type MutationApplyCouponCodeToDraftOrderArgs = {
   couponCode: Scalars['String']['input'];
   orderId: Scalars['ID']['input'];
@@ -3648,6 +3684,11 @@ export type MutationApplyCouponCodeToDraftOrderArgs = {
 
 export type MutationApproveCustomerCreditArgs = {
   input: ApproveCustomerCreditInput;
+};
+
+
+export type MutationApproveSupplierCreditArgs = {
+  input: ApproveSupplierCreditInput;
 };
 
 
@@ -4566,6 +4607,16 @@ export type MutationUpdateStockLocationArgs = {
 };
 
 
+export type MutationUpdateSupplierCreditDurationArgs = {
+  input: UpdateSupplierCreditDurationInput;
+};
+
+
+export type MutationUpdateSupplierCreditLimitArgs = {
+  input: UpdateSupplierCreditLimitInput;
+};
+
+
 export type MutationUpdateTagArgs = {
   input: UpdateTagInput;
 };
@@ -5087,6 +5138,7 @@ export type PaymentAllocationInput = {
 
 export type PaymentAllocationResult = {
   __typename?: 'PaymentAllocationResult';
+  excessPayment: Scalars['Float']['output'];
   ordersPaid: Array<OrderPayment>;
   remainingBalance: Scalars['Float']['output'];
   totalAllocated: Scalars['Float']['output'];
@@ -5347,6 +5399,8 @@ export enum Permission {
   ManageCustomerCreditLimit = 'ManageCustomerCreditLimit',
   /** Allows recording stock adjustments for inventory corrections. */
   ManageStockAdjustments = 'ManageStockAdjustments',
+  /** Allows managing supplier credit purchases, including approval, limit management, and bulk payments. */
+  ManageSupplierCreditPurchases = 'ManageSupplierCreditPurchases',
   /** Allows overriding order line prices during order creation */
   OverridePrice = 'OverridePrice',
   /** Owner means the user owns this entity, e.g. a Customer's own Order */
@@ -6059,6 +6113,7 @@ export type Query = {
   stockAdjustments: InventoryStockAdjustmentList;
   stockLocation?: Maybe<StockLocation>;
   stockLocations: StockLocationList;
+  supplierCreditSummary: SupplierCreditSummary;
   tag: Tag;
   tags: TagList;
   taxCategories: TaxCategoryList;
@@ -6068,6 +6123,7 @@ export type Query = {
   testEligibleShippingMethods: Array<ShippingMethodQuote>;
   testShippingMethod: TestShippingMethodResult;
   unpaidOrdersForCustomer: Array<Order>;
+  unpaidPurchasesForSupplier: Array<StockPurchase>;
   validateCredit: CreditValidationResult;
   zone?: Maybe<Zone>;
   zones: ZoneList;
@@ -6383,6 +6439,11 @@ export type QueryStockLocationsArgs = {
 };
 
 
+export type QuerySupplierCreditSummaryArgs = {
+  supplierId: Scalars['ID']['input'];
+};
+
+
 export type QueryTagArgs = {
   id: Scalars['ID']['input'];
 };
@@ -6428,6 +6489,11 @@ export type QueryUnpaidOrdersForCustomerArgs = {
 };
 
 
+export type QueryUnpaidPurchasesForSupplierArgs = {
+  supplierId: Scalars['ID']['input'];
+};
+
+
 export type QueryValidateCreditArgs = {
   input: ValidateCreditInput;
 };
@@ -6443,6 +6509,7 @@ export type QueryZonesArgs = {
 };
 
 export type RecordPurchaseInput = {
+  isCreditPurchase?: InputMaybe<Scalars['Boolean']['input']>;
   lines: Array<PurchaseLineInput>;
   notes?: InputMaybe<Scalars['String']['input']>;
   paymentStatus: Scalars['String']['input'];
@@ -7151,6 +7218,7 @@ export type StockPurchase = {
   __typename?: 'StockPurchase';
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
+  isCreditPurchase: Scalars['Boolean']['output'];
   lines: Array<StockPurchaseLine>;
   notes?: Maybe<Scalars['String']['output']>;
   paymentStatus: Scalars['String']['output'];
@@ -7292,6 +7360,39 @@ export type SubscriptionTier = {
 export type Success = {
   __typename?: 'Success';
   success: Scalars['Boolean']['output'];
+};
+
+export type SupplierCreditSummary = {
+  __typename?: 'SupplierCreditSummary';
+  availableCredit: Scalars['Float']['output'];
+  isSupplierCreditApproved: Scalars['Boolean']['output'];
+  lastRepaymentAmount: Scalars['Float']['output'];
+  lastRepaymentDate?: Maybe<Scalars['DateTime']['output']>;
+  outstandingAmount: Scalars['Float']['output'];
+  supplierCreditDuration: Scalars['Int']['output'];
+  supplierCreditLimit: Scalars['Float']['output'];
+  supplierId: Scalars['ID']['output'];
+};
+
+export type SupplierPaymentAllocationInput = {
+  paymentAmount: Scalars['Float']['input'];
+  purchaseIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  supplierId: Scalars['ID']['input'];
+};
+
+export type SupplierPaymentAllocationResult = {
+  __typename?: 'SupplierPaymentAllocationResult';
+  excessPayment: Scalars['Float']['output'];
+  purchasesPaid: Array<SupplierPurchasePayment>;
+  remainingBalance: Scalars['Float']['output'];
+  totalAllocated: Scalars['Float']['output'];
+};
+
+export type SupplierPurchasePayment = {
+  __typename?: 'SupplierPurchasePayment';
+  amountPaid: Scalars['Float']['output'];
+  purchaseId: Scalars['ID']['output'];
+  purchaseReference: Scalars['String']['output'];
 };
 
 export type Surcharge = Node & {
@@ -7696,10 +7797,15 @@ export type UpdateCustomerCustomFieldsInput = {
   creditLimit?: InputMaybe<Scalars['Float']['input']>;
   isCreditApproved?: InputMaybe<Scalars['Boolean']['input']>;
   isSupplier?: InputMaybe<Scalars['Boolean']['input']>;
+  isSupplierCreditApproved?: InputMaybe<Scalars['Boolean']['input']>;
   lastRepaymentAmount?: InputMaybe<Scalars['Float']['input']>;
   lastRepaymentDate?: InputMaybe<Scalars['DateTime']['input']>;
   notes?: InputMaybe<Scalars['String']['input']>;
   paymentTerms?: InputMaybe<Scalars['String']['input']>;
+  supplierCreditDuration?: InputMaybe<Scalars['Int']['input']>;
+  supplierCreditLimit?: InputMaybe<Scalars['Float']['input']>;
+  supplierLastRepaymentAmount?: InputMaybe<Scalars['Float']['input']>;
+  supplierLastRepaymentDate?: InputMaybe<Scalars['DateTime']['input']>;
   supplierType?: InputMaybe<Scalars['String']['input']>;
   taxId?: InputMaybe<Scalars['String']['input']>;
 };
@@ -7924,6 +8030,17 @@ export type UpdateStockLocationInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateSupplierCreditDurationInput = {
+  supplierCreditDuration: Scalars['Int']['input'];
+  supplierId: Scalars['ID']['input'];
+};
+
+export type UpdateSupplierCreditLimitInput = {
+  supplierCreditDuration?: InputMaybe<Scalars['Int']['input']>;
+  supplierCreditLimit: Scalars['Float']['input'];
+  supplierId: Scalars['ID']['input'];
 };
 
 export type UpdateTagInput = {

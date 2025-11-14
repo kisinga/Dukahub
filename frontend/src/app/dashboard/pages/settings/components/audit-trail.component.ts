@@ -5,6 +5,7 @@ import { CompanyService } from '../../../../core/services/company.service';
 import { AuditLog, AuditLogOptions, SettingsService } from '../../../../core/services/settings.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { PaginationComponent } from '../../customers/components/pagination.component';
+import { AuditTrailFilterComponent } from './audit-trail-filter.component';
 import { UserDetailsModalComponent } from './user-details-modal.component';
 
 /**
@@ -15,7 +16,7 @@ import { UserDetailsModalComponent } from './user-details-modal.component';
  */
 @Component({
     selector: 'app-audit-trail',
-    imports: [CommonModule, PaginationComponent, UserDetailsModalComponent],
+    imports: [CommonModule, PaginationComponent, AuditTrailFilterComponent, UserDetailsModalComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div class="card bg-base-100 shadow-lg">
@@ -51,6 +52,40 @@ import { UserDetailsModalComponent } from './user-details-modal.component';
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span>{{ error() }}</span>
+                    </div>
+                }
+
+                <!-- Filter Bar -->
+                @if (!isLoading() || auditLogs().length > 0) {
+                    <div class="mb-4">
+                        <app-audit-trail-filter
+                            [(searchQuery)]="searchQuery"
+                            [(eventTypeFilter)]="eventTypeFilter"
+                            [(entityTypeFilter)]="entityTypeFilter"
+                            [(sourceFilter)]="sourceFilter"
+                            [eventTypes]="availableEventTypes()"
+                            [entityTypes]="availableEntityTypes()" />
+                    </div>
+                }
+
+                <!-- Empty State (No Filters) -->
+                @if (!isLoading() && auditLogs().length === 0 && !error() && !hasActiveFilters()) {
+                    <div class="text-center py-12 text-base-content/60">
+                        <h4 class="font-semibold mb-2">No audit logs found</h4>
+                        <p class="text-sm opacity-70">No audit logs have been recorded yet</p>
+                    </div>
+                }
+
+                <!-- Empty State (With Filters) -->
+                @if (!isLoading() && filteredLogs().length === 0 && auditLogs().length > 0 && hasActiveFilters()) {
+                    <div class="alert alert-info">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div class="flex-1">
+                            <span>No audit logs match your filters.</span>
+                            <button class="btn btn-sm btn-ghost ml-2" (click)="clearFilters()">Clear Filters</button>
+                        </div>
                     </div>
                 }
 
@@ -136,7 +171,11 @@ import { UserDetailsModalComponent } from './user-details-modal.component';
                                 } @empty {
                                     <tr>
                                         <td colspan="6" class="text-center py-8 text-base-content/60">
-                                            No audit logs found
+                                            @if (hasActiveFilters()) {
+                                                No audit logs match your filters
+                                            } @else {
+                                                No audit logs found
+                                            }
                                         </td>
                                     </tr>
                                 }
@@ -211,14 +250,24 @@ import { UserDetailsModalComponent } from './user-details-modal.component';
                             </div>
                         } @empty {
                             <div class="text-center py-8 text-base-content/60">
-                                No audit logs found
+                                @if (hasActiveFilters()) {
+                                    No audit logs match your filters
+                                } @else {
+                                    No audit logs found
+                                }
                             </div>
                         }
                     </div>
 
                     <!-- Pagination -->
-                    @if (totalPages() > 1 && auditLogs().length > 0) {
+                    @if (totalPages() > 1 && filteredLogs().length > 0) {
                         <div class="mt-4">
+                            <div class="text-xs text-base-content/60 mb-2">
+                                Showing {{ (currentPage() - 1) * itemsPerPage() + 1 }} to {{ endItem() }} of {{ totalItems() }} audit logs
+                                @if (hasActiveFilters()) {
+                                    <span class="opacity-70">(filtered from {{ auditLogs().length }} total)</span>
+                                }
+                            </div>
                             <app-pagination
                                 [currentPage]="currentPage()"
                                 [totalPages]="totalPages()"
@@ -255,14 +304,100 @@ export class AuditTrailComponent {
     readonly selectedUserId = signal<string | null>(null);
     readonly selectedUserSource = signal<'user_action' | 'system_event'>('system_event');
 
+    // Filter state
+    readonly searchQuery = signal('');
+    readonly eventTypeFilter = signal('');
+    readonly entityTypeFilter = signal('');
+    readonly sourceFilter = signal('');
+
     // Pagination state
     readonly currentPage = signal(1);
     readonly itemsPerPage = signal(20);
     readonly pageOptions = [10, 20, 50, 100];
 
-    // Computed values
-    readonly paginatedLogs = computed(() => {
+    // Computed: Extract unique event types and entity types for filter dropdowns
+    readonly availableEventTypes = computed(() => {
         const logs = this.auditLogs();
+        const eventTypes = new Set<string>();
+        logs.forEach(log => {
+            if (log.eventType) {
+                eventTypes.add(log.eventType);
+            }
+        });
+        return Array.from(eventTypes).sort();
+    });
+
+    readonly availableEntityTypes = computed(() => {
+        const logs = this.auditLogs();
+        const entityTypes = new Set<string>();
+        logs.forEach(log => {
+            if (log.entityType) {
+                entityTypes.add(log.entityType);
+            }
+        });
+        return Array.from(entityTypes).sort();
+    });
+
+    // Computed: Filtered logs
+    readonly filteredLogs = computed(() => {
+        const logs = this.auditLogs();
+        const searchQuery = this.searchQuery().toLowerCase().trim();
+        const eventTypeFilter = this.eventTypeFilter();
+        const entityTypeFilter = this.entityTypeFilter();
+        const sourceFilter = this.sourceFilter();
+
+        let filtered = logs;
+
+        // Apply event type filter
+        if (eventTypeFilter) {
+            filtered = filtered.filter(log => log.eventType === eventTypeFilter);
+        }
+
+        // Apply entity type filter
+        if (entityTypeFilter) {
+            filtered = filtered.filter(log => log.entityType === entityTypeFilter);
+        }
+
+        // Apply source filter
+        if (sourceFilter) {
+            filtered = filtered.filter(log => log.source === sourceFilter);
+        }
+
+        // Apply search query (searches across eventType, entityType, userId)
+        if (searchQuery) {
+            filtered = filtered.filter(log => {
+                // Search in event type
+                const eventType = (log.eventType || '').toLowerCase();
+                if (eventType.includes(searchQuery)) return true;
+
+                // Search in entity type
+                const entityType = (log.entityType || '').toLowerCase();
+                if (entityType.includes(searchQuery)) return true;
+
+                // Search in user ID
+                const userId = (log.userId || '').toLowerCase();
+                if (userId.includes(searchQuery)) return true;
+
+                return false;
+            });
+        }
+
+        return filtered;
+    });
+
+    // Computed: Check if any filters are active
+    readonly hasActiveFilters = computed(() => {
+        return !!(
+            this.searchQuery().trim() ||
+            this.eventTypeFilter() ||
+            this.entityTypeFilter() ||
+            this.sourceFilter()
+        );
+    });
+
+    // Computed: Paginated logs from filtered logs
+    readonly paginatedLogs = computed(() => {
+        const logs = this.filteredLogs();
         const page = this.currentPage();
         const perPage = this.itemsPerPage();
         const start = (page - 1) * perPage;
@@ -272,15 +407,15 @@ export class AuditTrailComponent {
     });
 
     readonly totalPages = computed(() => {
-        const logs = this.auditLogs();
+        const logs = this.filteredLogs();
         const perPage = this.itemsPerPage();
         return Math.ceil(logs.length / perPage) || 1;
     });
 
-    readonly totalItems = computed(() => this.auditLogs().length);
+    readonly totalItems = computed(() => this.filteredLogs().length);
 
     readonly endItem = computed(() => {
-        return Math.min(this.currentPage() * this.itemsPerPage(), this.auditLogs().length);
+        return Math.min(this.currentPage() * this.itemsPerPage(), this.filteredLogs().length);
     });
 
     constructor() {
@@ -290,6 +425,17 @@ export class AuditTrailComponent {
             if (channel) {
                 this.loadAuditLogs();
             }
+        });
+
+        // Reset to page 1 when filters change
+        effect(() => {
+            // Watch filter signals
+            this.searchQuery();
+            this.eventTypeFilter();
+            this.entityTypeFilter();
+            this.sourceFilter();
+            // Reset to first page when filters change
+            this.currentPage.set(1);
         });
     }
 
@@ -434,6 +580,17 @@ export class AuditTrailComponent {
      */
     closeUserModal(): void {
         this.selectedUserId.set(null);
+    }
+
+    /**
+     * Clear all filters
+     */
+    clearFilters(): void {
+        this.searchQuery.set('');
+        this.eventTypeFilter.set('');
+        this.entityTypeFilter.set('');
+        this.sourceFilter.set('');
+        this.currentPage.set(1);
     }
 
     /**

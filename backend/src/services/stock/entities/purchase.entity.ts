@@ -27,6 +27,9 @@ export class StockPurchase {
     @Column({ type: 'text', nullable: true })
     notes: string | null;
 
+    @Column({ type: 'boolean', default: false })
+    isCreditPurchase: boolean;
+
     @OneToMany(() => StockPurchaseLine, line => line.purchase, { cascade: true })
     lines: StockPurchaseLine[];
 

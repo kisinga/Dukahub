@@ -93,10 +93,11 @@
             id="referenceNumber"
             type="text"
             placeholder="Enter reference number"
-            [(ngModel)]="refNumber"
+            [value]="refNumber"
+            (input)="refNumber = $any($event.target).value"
             name="referenceNumber"
             class="input input-bordered w-full"
-            [class.input-error]="error() && (!referenceNumber() || referenceNumber().trim().length === 0)"
+            [class.input-error]="error() && (!refNumber || refNumber.trim().length === 0)"
             [disabled]="isSubmitting()"
             required
           />

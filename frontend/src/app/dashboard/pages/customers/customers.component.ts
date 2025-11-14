@@ -2,13 +2,14 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { CustomerService } from '../../../core/services/customer.service';
+import { BulkPaymentModalComponent } from './components/bulk-payment-modal.component';
 import { CustomerAction, CustomerCardComponent } from './components/customer-card.component';
 import { CustomerSearchBarComponent } from './components/customer-search-bar.component';
 import { CustomerStats, CustomerStatsComponent } from './components/customer-stats.component';
 import { CustomerTableRowComponent } from './components/customer-table-row.component';
+import { CustomerViewModalComponent } from './components/customer-view-modal.component';
 import { DeleteConfirmationData, DeleteConfirmationModalComponent } from './components/delete-confirmation-modal.component';
 import { PaginationComponent } from './components/pagination.component';
-import { BulkPaymentModalComponent } from './components/bulk-payment-modal.component';
 
 /**
  * Customers list page - similar to products page
@@ -29,7 +30,8 @@ import { BulkPaymentModalComponent } from './components/bulk-payment-modal.compo
         CustomerTableRowComponent,
         PaginationComponent,
         DeleteConfirmationModalComponent,
-        BulkPaymentModalComponent
+        BulkPaymentModalComponent,
+        CustomerViewModalComponent
     ],
     templateUrl: './customers.component.html',
     styleUrl: './customers.component.scss',
@@ -42,6 +44,7 @@ export class CustomersComponent implements OnInit {
     // View references
     readonly deleteModal = viewChild<DeleteConfirmationModalComponent>('deleteModal');
     readonly bulkPaymentModal = viewChild<BulkPaymentModalComponent>('bulkPaymentModal');
+    readonly viewModal = viewChild<CustomerViewModalComponent>('viewModal');
 
     // State from service
     readonly customers = this.customerService.customers;
@@ -57,6 +60,7 @@ export class CustomersComponent implements OnInit {
     readonly deleteModalData = signal<DeleteConfirmationData>({ customerName: '', addressCount: 0 });
     readonly customerToDelete = signal<string | null>(null);
     readonly customerForPayment = signal<{ id: string; name: string; outstandingAmount: number; availableCredit: number } | null>(null);
+    readonly customerToView = signal<any | null>(null);
 
     // Computed: filtered customers
     readonly filteredCustomers = computed(() => {
@@ -145,6 +149,10 @@ export class CustomersComponent implements OnInit {
         const { action, customerId } = event;
 
         switch (action) {
+            case 'view':
+                this.openViewModal(customerId);
+                break;
+
             case 'viewOrders':
                 this.router.navigate(['/dashboard/orders'], { queryParams: { customerId } });
                 break;
@@ -297,6 +305,47 @@ export class CustomersComponent implements OnInit {
      */
     onPaymentCancelled(): void {
         this.customerForPayment.set(null);
+    }
+
+    /**
+     * Open view modal for customer
+     */
+    openViewModal(customerId: string): void {
+        const customer = this.customers().find(c => c.id === customerId);
+        if (customer) {
+            this.customerToView.set(customer);
+            setTimeout(() => {
+                const modal = this.viewModal();
+                if (modal) {
+                    modal.show();
+                }
+            }, 0);
+        }
+    }
+
+    /**
+     * Handle edit requested from view modal
+     */
+    onEditRequested(customerId: string): void {
+        if (this.isWalkInCustomer(customerId)) {
+            console.warn('Cannot edit walk-in customer:', customerId);
+            return;
+        }
+        this.router.navigate(['/dashboard/customers/edit', customerId]);
+    }
+
+    /**
+     * Handle record payment requested from view modal
+     */
+    onRecordPaymentRequested(customerId: string): void {
+        this.openBulkPaymentModal(customerId);
+    }
+
+    /**
+     * Handle view orders requested from view modal
+     */
+    onViewOrdersRequested(customerId: string): void {
+        this.router.navigate(['/dashboard/orders'], { queryParams: { customerId } });
     }
 
     /**

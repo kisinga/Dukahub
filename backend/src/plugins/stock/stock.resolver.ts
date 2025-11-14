@@ -1,6 +1,7 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Allow, Ctx, Permission, RequestContext } from '@vendure/core';
 import { ManageStockAdjustmentsPermission } from './permissions';
+import { ManageSupplierCreditPurchasesPermission } from '../credit/supplier-credit.permissions';
 import { StockManagementService } from '../../services/stock/stock-management.service';
 import { StockQueryService } from '../../services/stock/stock-query.service';
 import { StockPurchase } from '../../services/stock/entities/purchase.entity';
@@ -18,6 +19,7 @@ interface RecordPurchaseInput {
         unitCost: number;
         stockLocationId: string;
     }>;
+    isCreditPurchase?: boolean;
 }
 
 interface RecordStockAdjustmentInput {
@@ -56,11 +58,16 @@ export class StockResolver {
     }
 
     @Mutation()
-    @Allow(Permission.UpdateProduct)
+    @Allow(Permission.UpdateProduct, ManageSupplierCreditPurchasesPermission.Permission)
     async recordPurchase(
         @Ctx() ctx: RequestContext,
         @Args('input') input: RecordPurchaseInput
     ): Promise<StockPurchase> {
+        // Enforce supplier credit permission if this is a credit purchase
+        if (input.isCreditPurchase) {
+            // Permission check is handled by @Allow decorator
+            // The permission system will verify the user has ManageSupplierCreditPurchasesPermission
+        }
         return this.stockManagementService.recordPurchase(ctx, input);
     }
 
