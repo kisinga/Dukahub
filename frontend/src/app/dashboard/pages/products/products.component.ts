@@ -144,8 +144,8 @@ export class ProductsComponent implements OnInit {
         if (product?.variants && product.variants.length > 0) {
           // Use first variant for prepopulation
           const variantId = product.variants[0].id;
-          this.router.navigate(['/dashboard/purchases'], { 
-            queryParams: { variantId } 
+          this.router.navigate(['/dashboard/purchases'], {
+            queryParams: { variantId }
           });
         }
         break;

@@ -2,11 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
     ID,
     RequestContext,
-    TransactionalConnection,
-    UserInputError,
+    TransactionalConnection
 } from '@vendure/core';
-import { InventoryStockAdjustment } from './entities/stock-adjustment.entity';
-import { InventoryStockAdjustmentLine } from './entities/stock-adjustment.entity';
+import { InventoryStockAdjustment, InventoryStockAdjustmentLine } from './entities/stock-adjustment.entity';
 import { StockValidationService } from './stock-validation.service';
 
 export interface StockAdjustmentLineInput {
@@ -47,7 +45,7 @@ export class StockAdjustmentService {
         // Create adjustment
         const adjustmentRepo = this.connection.getRepository(ctx, InventoryStockAdjustment);
         const adjustmentLineRepo = this.connection.getRepository(ctx, InventoryStockAdjustmentLine);
-        
+
         // Create adjustment entity
         const adjustment = new InventoryStockAdjustment();
         adjustment.reason = input.reason;

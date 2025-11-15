@@ -156,6 +156,13 @@ export const routes: Routes = [
                     )
             },
             {
+                path: 'purchases/create',
+                loadComponent: () =>
+                    import('./dashboard/pages/purchase-create/purchase-create.component').then(
+                        (m) => m.PurchaseCreateComponent
+                    )
+            },
+            {
                 path: 'stock-adjustments',
                 canActivate: [stockAdjustmentGuard],
                 loadComponent: () =>

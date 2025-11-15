@@ -6,8 +6,7 @@ import {
     TransactionalConnection,
     UserInputError,
 } from '@vendure/core';
-import { StockPurchase } from './entities/purchase.entity';
-import { StockPurchaseLine } from './entities/purchase.entity';
+import { StockPurchase, StockPurchaseLine } from './entities/purchase.entity';
 import { StockValidationService } from './stock-validation.service';
 
 export interface PurchaseLineInput {
@@ -74,7 +73,7 @@ export class PurchaseService {
         // Create purchase
         const purchaseRepo = this.connection.getRepository(ctx, StockPurchase);
         const purchaseLineRepo = this.connection.getRepository(ctx, StockPurchaseLine);
-        
+
         // Create purchase entity
         const purchase = new StockPurchase();
         // Convert Vendure ID (string) to integer for database

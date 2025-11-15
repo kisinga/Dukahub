@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { DraftBaseService } from './draft-base.service';
 import { PurchaseDraft, PurchaseLineItem } from '../purchase.service.types';
+import { DraftBaseService } from './draft-base.service';
 
 /**
  * Purchase Draft Service

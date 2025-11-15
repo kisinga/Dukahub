@@ -2,18 +2,16 @@ import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
     RequestContext,
     TransactionalConnection,
-    UserInputError,
-    ID,
+    UserInputError
 } from '@vendure/core';
 import { In } from 'typeorm';
 import { AuditService } from '../../infrastructure/audit/audit.service';
-import { StockPurchase } from '../stock/entities/purchase.entity';
 import { SupplierCreditService } from '../credit/supplier-credit.service';
+import { StockPurchase } from '../stock/entities/purchase.entity';
 import {
     PaymentAllocationItem,
-    PaymentAllocationResult,
     calculatePaymentAllocation,
-    calculateRemainingBalance,
+    calculateRemainingBalance
 } from './payment-allocation-base.types';
 
 export interface SupplierPaymentAllocationInput {
@@ -41,14 +39,14 @@ export class SupplierPaymentAllocationService {
         private readonly connection: TransactionalConnection,
         private readonly supplierCreditService: SupplierCreditService,
         @Optional() private readonly auditService?: AuditService,
-    ) {}
+    ) { }
 
     /**
      * Get unpaid credit purchases for a supplier (oldest first)
      */
     async getUnpaidPurchasesForSupplier(ctx: RequestContext, supplierId: string): Promise<StockPurchase[]> {
         const purchaseRepo = this.connection.getRepository(ctx, StockPurchase);
-        
+
         // Convert Vendure ID (string) to integer for database query
         const purchases = await purchaseRepo.find({
             where: {

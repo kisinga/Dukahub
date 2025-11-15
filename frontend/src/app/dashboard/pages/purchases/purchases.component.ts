@@ -33,7 +33,7 @@ import { PurchaseAction, PurchaseTableRowComponent } from './components/purchase
 })
 export class PurchasesComponent implements OnInit {
     private readonly purchaseService = inject(PurchaseService);
-    private readonly router = inject(Router);
+    readonly router = inject(Router);
 
     // State from service
     readonly purchases = this.purchaseService.purchases;
@@ -46,7 +46,6 @@ export class PurchasesComponent implements OnInit {
     readonly currentPage = signal(1);
     readonly itemsPerPage = signal(10);
     readonly pageOptions = [10, 25, 50, 100];
-    readonly isCreatingPurchase = signal(false);
 
     // Computed: filtered purchases
     readonly filteredPurchases = computed(() => {
@@ -178,24 +177,6 @@ export class PurchasesComponent implements OnInit {
      */
     trackByPurchaseId(index: number, purchase: any): string {
         return purchase.id;
-    }
-
-    /**
-     * Show create purchase form
-     */
-    showCreateForm(): void {
-        this.isCreatingPurchase.set(true);
-        // Initialize draft when showing form
-        this.purchaseService.initializeDraft();
-    }
-
-    /**
-     * Hide create purchase form and return to list
-     */
-    hideCreateForm(): void {
-        this.isCreatingPurchase.set(false);
-        // Refresh purchases list after creating
-        this.loadPurchases();
     }
 
     /**

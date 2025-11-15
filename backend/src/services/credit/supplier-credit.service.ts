@@ -47,7 +47,7 @@ export class SupplierCreditService {
         creditDuration?: number
     ): Promise<SupplierCreditSummary> {
         const supplier = await this.getSupplierOrThrow(ctx, supplierId);
-        
+
         // Verify supplier is marked as supplier
         const customFields = supplier.customFields as any;
         if (!customFields?.isSupplier) {
@@ -180,7 +180,7 @@ export class SupplierCreditService {
         // - 'partial': need to track actual paid amount (this would require a payments table)
         // For now, we'll treat 'partial' as having some payment but not fully paid
         // This is a simplification - ideally we'd have a payments table for purchases
-        
+
         // TODO: In the future, add a purchase_payment table similar to order payments
         // For now, we'll use a simple calculation based on paymentStatus
         const outstandingAmountInCents = purchases.reduce((sum, purchase) => {
