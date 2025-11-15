@@ -618,6 +618,12 @@ export const GET_ORDERS_FOR_PERIOD = graphql(`
         totalWithTax
         orderPlacedAt
         state
+        payments {
+          id
+          amount
+          method
+          state
+        }
       }
     }
   }
@@ -645,12 +651,22 @@ export const GET_RECENT_ORDERS = graphql(`
         state
         createdAt
         currencyCode
+        customer {
+          firstName
+          lastName
+        }
         lines {
           id
-          productVariant {
-            name
-          }
           quantity
+          productVariant {
+            id
+            name
+            sku
+            product {
+              id
+              name
+            }
+          }
         }
       }
     }

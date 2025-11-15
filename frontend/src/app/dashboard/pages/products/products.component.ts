@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
 import { DeleteConfirmationData, DeleteConfirmationModalComponent } from './components/delete-confirmation-modal.component';
 import { PaginationComponent } from './components/pagination.component';
@@ -37,6 +37,7 @@ import { ProductTableRowComponent } from './components/product-table-row.compone
 export class ProductsComponent implements OnInit {
   private readonly productService = inject(ProductService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   // View references
   readonly deleteModal = viewChild<DeleteConfirmationModalComponent>('deleteModal');
@@ -49,6 +50,7 @@ export class ProductsComponent implements OnInit {
 
   // Local UI state
   readonly searchQuery = signal('');
+  readonly showLowStockOnly = signal(false);
   readonly currentPage = signal(1);
   readonly itemsPerPage = signal(10);
   readonly pageOptions = [10, 25, 50, 100];
@@ -58,8 +60,17 @@ export class ProductsComponent implements OnInit {
   // Computed: filtered products
   readonly filteredProducts = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
-    const allProducts = this.products();
+    const lowStockOnly = this.showLowStockOnly();
+    let allProducts = this.products();
 
+    // Apply low stock filter first
+    if (lowStockOnly) {
+      allProducts = allProducts.filter(product =>
+        product.variants?.some((v: any) => (v.stockOnHand || 0) < 10)
+      );
+    }
+
+    // Apply search query filter
     if (!query) return allProducts;
 
     return allProducts.filter(product =>
@@ -108,6 +119,15 @@ export class ProductsComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    // Check for query params (e.g., ?lowStock=true)
+    this.route.queryParams.subscribe(params => {
+      const lowStockParam = params['lowStock'] === 'true';
+      if (lowStockParam !== this.showLowStockOnly()) {
+        this.showLowStockOnly.set(lowStockParam);
+        this.currentPage.set(1); // Reset to first page when filter changes
+      }
+    });
+
     this.loadProducts();
   }
 
@@ -227,6 +247,22 @@ export class ProductsComponent implements OnInit {
   changeItemsPerPage(items: number): void {
     this.itemsPerPage.set(items);
     this.currentPage.set(1); // Reset to first page
+  }
+
+  /**
+   * Toggle low stock filter and sync with query params
+   */
+  toggleLowStockFilter(enabled: boolean): void {
+    this.showLowStockOnly.set(enabled);
+    this.currentPage.set(1); // Reset to first page when filter changes
+
+    // Update query params without navigation
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: enabled ? { lowStock: 'true' } : {},
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
   }
 
   /**

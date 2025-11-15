@@ -142,13 +142,6 @@ export const routes: Routes = [
                     )
             },
             {
-                path: 'inventory',
-                loadComponent: () =>
-                    import('./dashboard/pages/inventory/inventory.component').then(
-                        (m) => m.InventoryComponent
-                    )
-            },
-            {
                 path: 'purchases',
                 loadComponent: () =>
                     import('./dashboard/pages/purchases/purchases.component').then(

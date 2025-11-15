@@ -88,7 +88,24 @@
   <app-product-stats [stats]="stats()" />
 
   <!-- Search & Filter Bar -->
-  <app-product-search-bar [(searchQuery)]="searchQuery" />
+  <div class="flex flex-col sm:flex-row gap-3">
+    <div class="flex-1">
+      <app-product-search-bar [(searchQuery)]="searchQuery" />
+    </div>
+    <div class="flex items-center gap-2">
+      <label class="label cursor-pointer gap-3 px-4 py-2 rounded-lg border border-base-300 bg-base-100 hover:bg-base-200 transition-colors"
+             [class.border-warning]="showLowStockOnly()"
+             [class.bg-warning/10]="showLowStockOnly()">
+        <span class="label-text font-medium text-sm">Low Stock Only</span>
+        <input
+          type="checkbox"
+          class="toggle toggle-warning toggle-sm"
+          [checked]="showLowStockOnly()"
+          (change)="toggleLowStockFilter($any($event.target).checked)"
+        />
+      </label>
+    </div>
+  </div>
 
   <!-- Error Alert -->
   @if (error()) {
@@ -148,13 +165,28 @@
           </svg>
         </div>
         <h3 class="text-lg lg:text-xl font-semibold">No products found</h3>
-        @if (searchQuery()) {
+        @if (searchQuery() || showLowStockOnly()) {
         <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+          @if (searchQuery() && showLowStockOnly()) {
+          No products match "{{ searchQuery() }}" with low stock filter. Try adjusting your filters.
+          } @else if (searchQuery()) {
           No products match "{{ searchQuery() }}". Try a different search term.
+          } @else {
+          No products found with low stock. All products are above the threshold.
+          }
         </p>
-        <button (click)="searchQuery.set('')" class="btn btn-outline btn-sm lg:btn-md mt-6">
-          Clear Search
-        </button>
+        <div class="flex gap-2 justify-center mt-6">
+          @if (searchQuery()) {
+          <button (click)="searchQuery.set('')" class="btn btn-outline btn-sm lg:btn-md">
+            Clear Search
+          </button>
+          }
+          @if (showLowStockOnly()) {
+          <button (click)="toggleLowStockFilter(false)" class="btn btn-outline btn-sm lg:btn-md">
+            Clear Low Stock Filter
+          </button>
+          }
+        </div>
         } @else {
         <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
           Start building your inventory by adding your first product

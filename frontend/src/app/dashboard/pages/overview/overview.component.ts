@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
 import { CompanyService } from '../../../core/services/company.service';
 import { DashboardService, PeriodStats } from '../../../core/services/dashboard.service';
 import { StockLocationService } from '../../../core/services/stock-location.service';
+import { CurrencyService } from '../../../core/services/currency.service';
 
 interface CategoryStat {
     period: string;
@@ -46,7 +48,7 @@ interface RecentActivity {
  */
 @Component({
     selector: 'app-overview',
-    imports: [CommonModule],
+    imports: [CommonModule, RouterModule],
     templateUrl: './overview.component.html',
     styleUrl: './overview.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -55,6 +57,8 @@ export class OverviewComponent implements OnInit {
     private readonly dashboardService = inject(DashboardService);
     private readonly companyService = inject(CompanyService);
     private readonly stockLocationService = inject(StockLocationService);
+    private readonly currencyService = inject(CurrencyService);
+    private readonly router = inject(Router);
 
     protected readonly expandedCategory = signal<string | null>(null);
     protected readonly showRecentActivity = signal(false);
@@ -63,6 +67,7 @@ export class OverviewComponent implements OnInit {
     // Reactive data from service
     protected readonly isLoading = this.dashboardService.isLoading;
     protected readonly error = this.dashboardService.error;
+    protected readonly lowStockCount = this.dashboardService.lowStockCount;
 
     // Computed categories from real data
     protected readonly categories = computed(() => {
@@ -116,7 +121,7 @@ export class OverviewComponent implements OnInit {
     protected readonly quickActions = [
         { label: 'New Sale', icon: '💰', action: 'sell' },
         { label: 'Add Product', icon: '📦', action: 'add-product' },
-        { label: 'Inventory', icon: '📊', action: 'inventory' },
+        { label: 'Products', icon: '📦', action: 'products' },
         { label: 'Reports', icon: '📈', action: 'reports' }
     ];
 
@@ -186,12 +191,12 @@ export class OverviewComponent implements OnInit {
 
     /**
      * Format currency for display
+     * Note: PeriodStats values are in currency units (not cents), so we convert to cents for CurrencyService
      */
     private formatCurrency(amount: number): string {
-        return `KES ${amount.toLocaleString('en-KE', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        })}`;
+        // Convert currency units to cents for CurrencyService
+        const amountInCents = Math.round(amount * 100);
+        return this.currencyService.format(amountInCents);
     }
 
     /**
@@ -221,8 +226,23 @@ export class OverviewComponent implements OnInit {
     }
 
     handleQuickAction(action: string): void {
-        console.log('Quick action:', action);
-        // Handle navigation or action
+        const routes: Record<string, string> = {
+            'sell': '/dashboard/sell',
+            'add-product': '/dashboard/products',
+            'products': '/dashboard/products',
+            'reports': '/dashboard/reports',
+        };
+
+        const route = routes[action];
+        if (route) {
+            this.router.navigate([route]);
+        }
+    }
+
+    navigateToInventory(): void {
+        this.router.navigate(['/dashboard/products'], {
+            queryParams: { lowStock: 'true' }
+        });
     }
 
     /**

@@ -1,7 +1,10 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { GET_ORDERS_FOR_PERIOD, GET_PRODUCT_STATS, GET_RECENT_ORDERS } from '../graphql/operations.graphql';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { GET_PRODUCT_STATS, GET_PRODUCTS, GET_RECENT_ORDERS } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
+import { CurrencyService } from './currency.service';
+import { PurchaseMetricsService } from './dashboard/purchase-metrics.service';
+import { SalesMetricsService } from './dashboard/sales-metrics.service';
 
 /**
  * Dashboard statistics aggregated from Vendure data
@@ -47,23 +50,21 @@ export interface RecentActivity {
 }
 
 /**
- * Service for fetching and aggregating dashboard statistics from Vendure
+ * Dashboard Service - Main Orchestrator
  * 
  * ARCHITECTURE:
- * - Fetches raw data from Vendure GraphQL API
- * - Transforms and aggregates data into dashboard-friendly format
- * - Provides reactive signals for components to consume
+ * - Orchestrates data fetching from specialized metric services
+ * - Manages state and signals for reactive UI updates
+ * - Delegates domain-specific logic to focused services
  * - Automatically scoped to active company via CompanyService
  * 
- * DATA SOURCES:
- * - Vendure metricSummary for sales metrics (OrderTotal, OrderCount, AverageOrderValue)
- * - Orders query for recent activity and detailed breakdowns
- * - Products query for inventory statistics
+ * COMPOSITION:
+ * - SalesMetricsService: Sales data and payment clustering
+ * - PurchaseMetricsService: Purchase data aggregation
+ * - Product stats: Fetched directly (simple query)
+ * - Recent activity: Transformed from orders
  * 
- * LIMITATIONS:
- * - Vendure doesn't track Purchases/Expenses natively, so these default to 0
- * - Payment method breakdown requires custom implementation
- * - Profit margin calculation needs cost data (not in basic Vendure schema)
+ * Single Responsibility: State management and orchestration only
  */
 @Injectable({
     providedIn: 'root',
@@ -71,16 +72,21 @@ export interface RecentActivity {
 export class DashboardService {
     private readonly apolloService = inject(ApolloService);
     private readonly companyService = inject(CompanyService);
+    private readonly currencyService = inject(CurrencyService);
+    private readonly salesMetricsService = inject(SalesMetricsService);
+    private readonly purchaseMetricsService = inject(PurchaseMetricsService);
 
     // State signals
     private readonly statsSignal = signal<DashboardStats | null>(null);
     private readonly recentActivitySignal = signal<RecentActivity[]>([]);
+    private readonly lowStockCountSignal = signal<number>(0);
     private readonly isLoadingSignal = signal(false);
     private readonly errorSignal = signal<string | null>(null);
 
     // Public readonly signals
     readonly stats = this.statsSignal.asReadonly();
     readonly recentActivity = this.recentActivitySignal.asReadonly();
+    readonly lowStockCount = this.lowStockCountSignal.asReadonly();
     readonly isLoading = this.isLoadingSignal.asReadonly();
     readonly error = this.errorSignal.asReadonly();
 
@@ -105,25 +111,28 @@ export class DashboardService {
 
         try {
             // Fetch data in parallel for performance
-            const [metrics, products, recentOrders] = await Promise.all([
-                this.fetchSalesMetrics(),
+            const [salesMetrics, products, recentOrders, purchaseMetrics, lowStockCount] = await Promise.all([
+                this.salesMetricsService.fetchSalesMetrics(),
                 this.fetchProductStats(),
                 this.fetchRecentOrders(),
+                this.purchaseMetricsService.fetchPurchaseMetrics(),
+                this.fetchLowStockCount(),
             ]);
 
-            // Transform into dashboard stats
+            // Aggregate into dashboard stats
             const stats: DashboardStats = {
-                sales: this.transformSalesMetrics(metrics),
-                purchases: this.getDefaultPurchaseStats(), // Not tracked in Vendure
+                sales: salesMetrics.periodStats,
+                purchases: purchaseMetrics,
                 expenses: this.getDefaultExpenseStats(), // Not tracked in Vendure
                 productCount: products.productCount,
                 activeUsers: 1, // Placeholder - would need custom tracking
-                averageSale: metrics.averageOrderValue,
+                averageSale: salesMetrics.averageOrderValue,
                 profitMargin: 0, // Placeholder - needs cost data
             };
 
             this.statsSignal.set(stats);
             this.recentActivitySignal.set(this.transformRecentOrders(recentOrders));
+            this.lowStockCountSignal.set(lowStockCount);
         } catch (error) {
             console.error('Failed to fetch dashboard data:', error);
             this.errorSignal.set('Failed to load dashboard data. Please try again.');
@@ -132,87 +141,6 @@ export class DashboardService {
         }
     }
 
-    /**
-     * Fetch sales metrics from Vendure
-     * Uses metricSummary API for aggregated data
-     * 
-     * Data is automatically scoped to active channel
-     */
-    private async fetchSalesMetrics(): Promise<{
-        orderTotal: number;
-        orderCount: number;
-        averageOrderValue: number;
-    }> {
-        const client = this.apolloService.getClient();
-
-        try {
-            // For now, use a simple approach: fetch orders and calculate manually
-            // This gives us more flexibility than metricSummary
-            const now = new Date();
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-            // Fetch orders for the month (includes all periods)
-            const result = await client.query<{
-                orders: {
-                    items: Array<{
-                        id: string;
-                        total: number;
-                        totalWithTax: number;
-                        orderPlacedAt: string;
-                        state: string;
-                    }>;
-                };
-            }>({
-                query: GET_ORDERS_FOR_PERIOD,
-                variables: {
-                    startDate: startOfMonth.toISOString()
-                }
-            });
-
-            const orders = result.data?.orders?.items || [];
-
-            // Calculate totals
-            const completedOrders = orders.filter(o =>
-                o.state !== 'Cancelled' && o.state !== 'Draft'
-            );
-
-            const orderTotal = completedOrders.reduce((sum, order) =>
-                sum + (order.totalWithTax || order.total), 0
-            );
-
-            const orderCount = completedOrders.length;
-            const averageOrderValue = orderCount > 0 ? orderTotal / orderCount : 0;
-
-            return { orderTotal, orderCount, averageOrderValue };
-        } catch (error) {
-            console.error('Failed to fetch sales metrics:', error);
-            return { orderTotal: 0, orderCount: 0, averageOrderValue: 0 };
-        }
-    }
-
-    /**
-     * Transform sales metrics into period breakdown
-     */
-    private transformSalesMetrics(metrics: {
-        orderTotal: number;
-        orderCount: number;
-        averageOrderValue: number;
-    }): PeriodStats {
-        // In a real implementation, we'd calculate these from actual order data
-        // For now, distribute the total across periods proportionally
-        const total = metrics.orderTotal;
-
-        return {
-            today: total * 0.15, // ~15% of month
-            week: total * 0.4, // ~40% of month
-            month: total,
-            accounts: [
-                { label: 'Cash Sales', value: total * 0.65, icon: '💵' },
-                { label: 'M-Pesa', value: total * 0.25, icon: '📱' },
-                { label: 'Credit', value: total * 0.1, icon: '🏦' },
-            ],
-        };
-    }
 
     /**
      * Fetch product statistics from Vendure
@@ -260,10 +188,22 @@ export class DashboardService {
                         state: string;
                         createdAt: string;
                         currencyCode: string;
+                        customer?: {
+                            firstName?: string;
+                            lastName?: string;
+                        };
                         lines: Array<{
                             id: string;
-                            productVariant: { name: string };
                             quantity: number;
+                            productVariant: {
+                                id: string;
+                                name: string;
+                                sku: string;
+                                product: {
+                                    id: string;
+                                    name: string;
+                                };
+                            };
                         }>;
                     }>;
                 };
@@ -280,40 +220,78 @@ export class DashboardService {
 
     /**
      * Transform Vendure orders into recent activity items
+     * For sales, we reference the ORDER CODE, not product details
      */
     private transformRecentOrders(orders: any[]): RecentActivity[] {
         return orders.map((order) => {
             const timeDiff = this.getTimeDifference(new Date(order.createdAt));
-            const productNames = order.lines
-                .slice(0, 2)
-                .map((line: any) => line.productVariant?.name)
-                .filter(Boolean)
-                .join(', ');
 
+            // For sales, show ORDER CODE as the main identifier
+            // Optionally include customer name if available
+            let description = `Order ${order.code}`;
+            if (order.customer) {
+                const customerName = [order.customer.firstName, order.customer.lastName]
+                    .filter(Boolean)
+                    .join(' ')
+                    .trim();
+                if (customerName) {
+                    description = `Order ${order.code} • ${customerName}`;
+                }
+            }
+
+            // Vendure stores prices in cents, CurrencyService handles conversion
+            const amountCents = order.totalWithTax || order.total;
             return {
-                id: order.code,
+                id: order.id, // Use order ID for uniqueness
                 type: 'Sale' as const,
-                description: productNames || 'Sale',
-                amount: this.formatCurrency(order.totalWithTax || order.total, order.currencyCode),
+                description: description,
+                amount: this.currencyService.format(amountCents),
                 time: timeDiff,
             };
         });
     }
 
+
     /**
-     * Get default purchase stats (Vendure doesn't track purchases)
+     * Fetch low stock count
+     * Products with any variant having stockOnHand < 10
      */
-    private getDefaultPurchaseStats(): PeriodStats {
-        return {
-            today: 0,
-            week: 0,
-            month: 0,
-            accounts: [
-                { label: 'Inventory', value: 0, icon: '📦' },
-                { label: 'Supplies', value: 0, icon: '🛠️' },
-                { label: 'Utilities', value: 0, icon: '💡' },
-            ],
-        };
+    private async fetchLowStockCount(): Promise<number> {
+        const client = this.apolloService.getClient();
+        const LOW_STOCK_THRESHOLD = 10;
+
+        try {
+            // Fetch all products with their variants and stock levels
+            const result = await client.query<{
+                products: {
+                    items: Array<{
+                        id: string;
+                        variants: Array<{
+                            stockOnHand: number;
+                        }>;
+                    }>;
+                };
+            }>({
+                query: GET_PRODUCTS,
+                variables: {
+                    options: {
+                        take: 1000, // Get all products for accurate count
+                    }
+                }
+            });
+
+            const products = result.data?.products?.items || [];
+
+            // Count products with at least one variant below threshold
+            const lowStockProducts = products.filter(product =>
+                product.variants?.some(variant => (variant.stockOnHand || 0) < LOW_STOCK_THRESHOLD)
+            );
+
+            return lowStockProducts.length;
+        } catch (error) {
+            console.error('Failed to fetch low stock count:', error);
+            return 0;
+        }
     }
 
     /**
@@ -333,14 +311,15 @@ export class DashboardService {
     }
 
     /**
-     * Format currency value
+     * Format currency value (deprecated - use CurrencyService instead)
+     * Kept for backward compatibility but uses CurrencyService internally
      */
     private formatCurrency(amount: number, currencyCode: string = 'KES'): string {
+        // Amount is in cents, CurrencyService handles conversion
+        const formatted = this.currencyService.format(amount);
+        // Add + prefix for positive amounts
         const prefix = amount >= 0 ? '+' : '';
-        return `${prefix}${currencyCode} ${Math.abs(amount).toLocaleString('en-KE', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        })}`;
+        return formatted.startsWith('-') ? formatted : `${prefix}${formatted}`;
     }
 
     /**
@@ -373,6 +352,7 @@ export class DashboardService {
     clearData(): void {
         this.statsSignal.set(null);
         this.recentActivitySignal.set([]);
+        this.lowStockCountSignal.set(0);
         this.errorSignal.set(null);
     }
 }
