@@ -139,10 +139,15 @@ export class ProductsComponent implements OnInit {
         break;
 
       case 'purchase':
-        // Navigate to purchase flow with supplier (to be implemented)
-        console.log('Purchase product:', productId);
-        // TODO: Navigate to supplier purchase flow
-        // this.router.navigate(['/dashboard/purchases/create'], { queryParams: { productId } });
+        // Navigate to purchases page with prepopulated variant
+        const product = this.products().find(p => p.id === productId);
+        if (product?.variants && product.variants.length > 0) {
+          // Use first variant for prepopulation
+          const variantId = product.variants[0].id;
+          this.router.navigate(['/dashboard/purchases'], { 
+            queryParams: { variantId } 
+          });
+        }
         break;
 
       case 'delete':

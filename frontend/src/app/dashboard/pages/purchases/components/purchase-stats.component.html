@@ -1,0 +1,130 @@
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+  <!-- Total Purchases -->
+  <div class="card bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+    <div class="card-body p-5 lg:p-6">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex-1">
+          <p class="text-sm font-medium text-base-content/70 mb-2">Total Purchases</p>
+          <p class="text-4xl lg:text-5xl font-bold text-primary tracking-tight">
+            {{ stats().totalPurchases }}
+          </p>
+        </div>
+        <div
+          class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-primary/10 flex items-center justify-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 lg:h-7 lg:w-7 text-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Value -->
+  <div class="card bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20">
+    <div class="card-body p-5 lg:p-6">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex-1">
+          <p class="text-sm font-medium text-base-content/70 mb-2">Total Value</p>
+          <p class="text-2xl lg:text-3xl font-bold text-secondary tracking-tight">
+            {{ formatCurrency(stats().totalValue) }}
+          </p>
+        </div>
+        <div
+          class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-secondary/10 flex items-center justify-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 lg:h-7 lg:w-7 text-secondary"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- This Month -->
+  <div class="card bg-gradient-to-br from-success/10 to-success/5 border border-success/20">
+    <div class="card-body p-5 lg:p-6">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex-1">
+          <p class="text-sm font-medium text-base-content/70 mb-2">This Month</p>
+          <p class="text-4xl lg:text-5xl font-bold text-success tracking-tight">
+            {{ stats().thisMonth }}
+          </p>
+        </div>
+        <div
+          class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-success/10 flex items-center justify-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 lg:h-7 lg:w-7 text-success"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Payments -->
+  <div class="card bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20">
+    <div class="card-body p-5 lg:p-6">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex-1">
+          <p class="text-sm font-medium text-base-content/70 mb-2">Pending Payments</p>
+          <p class="text-4xl lg:text-5xl font-bold text-warning tracking-tight">
+            {{ stats().pendingPayments }}
+          </p>
+        </div>
+        <div
+          class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-warning/10 flex items-center justify-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 lg:h-7 lg:w-7 text-warning"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

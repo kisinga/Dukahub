@@ -28,3 +28,4 @@ export interface RecordStockAdjustmentInput {
     lines: StockAdjustmentLineInput[];
 }
 
+

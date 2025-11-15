@@ -1,5 +1,5 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { ProductVariant, StockLocation, User } from '@vendure/core';
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 /**
  * Inventory Stock Adjustment Entity
@@ -17,8 +17,8 @@ export class InventoryStockAdjustment {
     @Column({ type: 'text', nullable: true })
     notes: string | null;
 
-    @Column({ type: 'varchar', nullable: true })
-    adjustedByUserId: string | null;
+    @Column({ type: 'integer', nullable: true })
+    adjustedByUserId: number | null;
 
     @ManyToOne(() => User, { nullable: true })
     adjustedBy: User | null;
@@ -48,8 +48,8 @@ export class InventoryStockAdjustmentLine {
     @ManyToOne(() => InventoryStockAdjustment, adjustment => adjustment.lines, { onDelete: 'CASCADE' })
     adjustment: InventoryStockAdjustment;
 
-    @Column()
-    variantId: string;
+    @Column({ type: 'integer' })
+    variantId: number;
 
     @ManyToOne(() => ProductVariant)
     variant: ProductVariant;
@@ -63,8 +63,8 @@ export class InventoryStockAdjustmentLine {
     @Column({ type: 'float' })
     newStock: number;
 
-    @Column()
-    stockLocationId: string;
+    @Column({ type: 'integer' })
+    stockLocationId: number;
 
     @ManyToOne(() => StockLocation)
     stockLocation: StockLocation;

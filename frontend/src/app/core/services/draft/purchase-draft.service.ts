@@ -33,6 +33,24 @@ export class PurchaseDraftService extends DraftBaseService<PurchaseDraft> {
     }
 
     /**
+     * Prepopulate draft with items
+     * Useful when navigating from products table to purchases page
+     */
+    prepopulateItems(items: PurchaseLineItem[]): void {
+        const draft = this.draft();
+        if (!draft) {
+            this.createNewDraft();
+            return;
+        }
+
+        this.draftSignal.set({
+            ...draft,
+            lines: [...draft.lines, ...items],
+        });
+        this.persist();
+    }
+
+    /**
      * Transform cached data (parse Date from string)
      */
     protected override transformCachedData(cached: PurchaseDraft): PurchaseDraft {

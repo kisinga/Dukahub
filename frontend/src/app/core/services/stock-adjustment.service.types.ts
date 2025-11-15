@@ -19,3 +19,4 @@ export interface StockAdjustmentDraft {
     lines: StockAdjustmentLineItem[];
 }
 
+

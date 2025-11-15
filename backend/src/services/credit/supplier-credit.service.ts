@@ -162,9 +162,10 @@ export class SupplierCreditService {
     async calculateSupplierOutstandingAmount(ctx: RequestContext, supplierId: ID): Promise<number> {
         // Query all credit purchases for supplier in states that indicate unpaid purchases
         const purchaseRepo = this.connection.getRepository(ctx, StockPurchase);
+        // Convert Vendure ID (string) to integer for database query
         const purchases = await purchaseRepo.find({
             where: {
-                supplierId: String(supplierId),
+                supplierId: parseInt(String(supplierId), 10),
                 isCreditPurchase: true,
                 paymentStatus: In(['pending', 'partial']),
             },
@@ -286,4 +287,5 @@ export class SupplierCreditService {
         };
     }
 }
+
 

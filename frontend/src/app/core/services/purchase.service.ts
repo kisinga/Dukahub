@@ -1,8 +1,11 @@
-import { Injectable, computed, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { PurchaseDraftService } from './draft/purchase-draft.service';
 import { PurchaseValidationService } from './purchase/purchase-validation.service';
 import { PurchaseApiService } from './purchase/purchase-api.service';
-import { PurchaseDraft, PurchaseLineItem } from './purchase.service.types';
+import { PurchaseDraft, PurchaseLineItem, PurchasePrepopulationData } from './purchase.service.types';
+import { PartialPaymentService } from './payments/partial-payment.service';
+import { ApolloService } from './apollo.service';
+import { GET_PURCHASES } from '../graphql/operations.graphql';
 
 /**
  * Purchase Service
@@ -23,12 +26,25 @@ export class PurchaseService {
     private readonly draftService = inject(PurchaseDraftService);
     private readonly validationService = inject(PurchaseValidationService);
     private readonly apiService = inject(PurchaseApiService);
+    private readonly partialPaymentService = inject(PartialPaymentService);
+    private readonly apolloService = inject(ApolloService);
 
     // Expose draft service signals
     readonly purchaseDraft = this.draftService.draft;
     readonly isLoading = this.draftService.isLoading;
     readonly error = this.draftService.error;
     readonly hasDraft = this.draftService.hasDraft;
+
+    // List view signals
+    private readonly purchasesSignal = signal<any[]>([]);
+    private readonly isLoadingListSignal = signal(false);
+    private readonly errorListSignal = signal<string | null>(null);
+    private readonly totalItemsSignal = signal(0);
+
+    readonly purchases = this.purchasesSignal.asReadonly();
+    readonly isLoadingList = this.isLoadingListSignal.asReadonly();
+    readonly errorList = this.errorListSignal.asReadonly();
+    readonly totalItems = this.totalItemsSignal.asReadonly();
 
     // Computed signals
     readonly totalCost = computed(() => {
@@ -43,9 +59,24 @@ export class PurchaseService {
 
     /**
      * Initialize purchase draft (load from cache or create new)
+     * @param prepopulationData - Optional items to prepopulate the draft with
      */
-    initializeDraft(): void {
+    async initializeDraft(prepopulationData?: PurchasePrepopulationData[]): Promise<void> {
         this.draftService.initialize();
+        
+        // Prepopulate items if provided
+        if (prepopulationData && prepopulationData.length > 0) {
+            // Note: This requires product lookup, so items will be added asynchronously
+            // The component should handle this after draft is initialized
+        }
+    }
+
+    /**
+     * Prepopulate draft with line items
+     * @param items - Line items to add to the draft
+     */
+    prepopulateItems(items: PurchaseLineItem[]): void {
+        this.draftService.prepopulateItems(items);
     }
 
     /**
@@ -131,5 +162,48 @@ export class PurchaseService {
      */
     clearError(): void {
         this.draftService.clearError();
+    }
+
+    /**
+     * Fetch purchases list
+     */
+    async fetchPurchases(options?: any): Promise<void> {
+        this.isLoadingListSignal.set(true);
+        this.errorListSignal.set(null);
+
+        try {
+            const client = this.apolloService.getClient();
+
+            const result = await client.query<any>({
+                query: GET_PURCHASES,
+                variables: {
+                    options: options || {
+                        take: 100,
+                        skip: 0,
+                    },
+                },
+                fetchPolicy: 'network-only',
+            });
+
+            const items = result.data?.purchases?.items || [];
+            const totalItems = result.data?.purchases?.totalItems || 0;
+
+            this.purchasesSignal.set(items);
+            this.totalItemsSignal.set(totalItems);
+        } catch (error: any) {
+            console.error('❌ Failed to fetch purchases:', error);
+            this.errorListSignal.set(error.message || 'Failed to fetch purchases');
+            this.purchasesSignal.set([]);
+            this.totalItemsSignal.set(0);
+        } finally {
+            this.isLoadingListSignal.set(false);
+        }
+    }
+
+    /**
+     * Clear list error state
+     */
+    clearListError(): void {
+        this.errorListSignal.set(null);
     }
 }

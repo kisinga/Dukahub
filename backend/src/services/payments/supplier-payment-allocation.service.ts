@@ -49,9 +49,10 @@ export class SupplierPaymentAllocationService {
     async getUnpaidPurchasesForSupplier(ctx: RequestContext, supplierId: string): Promise<StockPurchase[]> {
         const purchaseRepo = this.connection.getRepository(ctx, StockPurchase);
         
+        // Convert Vendure ID (string) to integer for database query
         const purchases = await purchaseRepo.find({
             where: {
-                supplierId: supplierId,
+                supplierId: parseInt(String(supplierId), 10),
                 isCreditPurchase: true,
                 paymentStatus: In(['pending', 'partial']),
             },
@@ -230,4 +231,5 @@ export class SupplierPaymentAllocationService {
         });
     }
 }
+
 

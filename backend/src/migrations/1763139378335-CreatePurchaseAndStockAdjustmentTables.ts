@@ -40,7 +40,7 @@ export class CreatePurchaseAndStockAdjustmentTables1763139378335 implements Migr
                 "id" uuid NOT NULL DEFAULT gen_random_uuid(),
                 "reason" character varying NOT NULL,
                 "notes" text,
-                "adjustedByUserId" uuid,
+                "adjustedByUserId" varchar,
                 "createdAt" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 "updatedAt" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 CONSTRAINT "PK_inventory_stock_adjustment" PRIMARY KEY ("id")
