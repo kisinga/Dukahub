@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { PaymentsService, PaymentWithOrder } from '../../../core/services/payments.service';
+import { calculatePaymentStats } from '../../../core/services/stats/payment-stats.util';
 import { PaginationComponent } from '../customers/components/pagination.component';
 import { OrderDetailComponent } from '../orders/order-detail/order-detail.component';
 import { PaymentAction, PaymentCardComponent } from './components/payment-card.component';
@@ -102,24 +103,9 @@ export class PaymentsComponent implements OnInit {
         return Math.ceil(filtered.length / perPage) || 1;
     });
 
-    // Computed: statistics
+    // Computed: statistics - using utility for single source of truth
     readonly stats = computed((): PaymentStats => {
-        const payments = this.payments();
-        const totalPayments = payments.length;
-        const settledPayments = payments.filter(p => p.state === 'Settled').length;
-        const authorizedPayments = payments.filter(p => p.state === 'Authorized').length;
-        const declinedPayments = payments.filter(p => p.state === 'Declined' || p.state === 'Cancelled').length;
-        
-        // Today's payments
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayPayments = payments.filter(p => {
-            const paymentDate = new Date(p.createdAt);
-            paymentDate.setHours(0, 0, 0, 0);
-            return paymentDate.getTime() === today.getTime();
-        }).length;
-
-        return { totalPayments, settledPayments, authorizedPayments, declinedPayments, todayPayments };
+        return calculatePaymentStats(this.payments());
     });
 
     // Computed: end item for pagination display

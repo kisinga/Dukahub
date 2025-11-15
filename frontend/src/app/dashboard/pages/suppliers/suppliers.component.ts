@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { SupplierService } from '../../../core/services/supplier.service';
+import { calculateSupplierStats } from '../../../core/services/stats/supplier-stats.util';
 import { DeleteConfirmationData, DeleteConfirmationModalComponent } from './components/delete-confirmation-modal.component';
 import { PaginationComponent } from './components/pagination.component';
 import { SupplierAction, SupplierCardComponent } from './components/supplier-card.component';
@@ -93,20 +94,9 @@ export class SuppliersComponent implements OnInit {
         return Math.ceil(filtered.length / perPage) || 1;
     });
 
-    // Computed: statistics
+    // Computed: statistics - using utility for single source of truth
     readonly stats = computed((): SupplierStats => {
-        const suppliers = this.suppliers();
-        const totalSuppliers = suppliers.length;
-        const verifiedSuppliers = suppliers.filter(s => s.user?.verified).length;
-        const suppliersWithAddresses = suppliers.filter(s => s.addresses?.length > 0).length;
-        const recentSuppliers = suppliers.filter(s => {
-            const createdAt = new Date(s.createdAt);
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            return createdAt >= thirtyDaysAgo;
-        }).length;
-
-        return { totalSuppliers, verifiedSuppliers, suppliersWithAddresses, recentSuppliers };
+        return calculateSupplierStats(this.suppliers());
     });
 
     // Computed: end item for pagination display

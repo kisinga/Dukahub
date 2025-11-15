@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { GET_PURCHASES } from '../../graphql/operations.graphql';
 import { ApolloService } from '../apollo.service';
-import { AccountBreakdown, PeriodStats } from '../dashboard.service';
-import { calculatePeriods, filterByPeriod } from './period-calculator.util';
+import { PeriodStats } from '../dashboard.service';
+import { calculatePeriods } from './period-calculator.util';
+import { calculatePurchasePeriodStats } from '../stats/purchase-stats.util';
 
 /**
  * Purchase Metrics Service
@@ -24,7 +25,10 @@ export class PurchaseMetricsService {
         const periods = calculatePeriods();
 
         try {
-            // Fetch all purchases for the month
+            // Fetch purchases for period calculations
+            // Note: We fetch without date filter to ensure we get all purchases,
+            // then the utility function filters by period client-side
+            // This avoids timezone issues with ISO date strings in GraphQL filters
             const result = await client.query<{
                 purchases: {
                     items: Array<{
@@ -42,41 +46,16 @@ export class PurchaseMetricsService {
                 query: GET_PURCHASES,
                 variables: {
                     options: {
-                        filter: {
-                            purchaseDate: { after: periods.startOfMonth.toISOString() }
-                        },
-                        take: 1000
+                        take: 1000, // Fetch enough purchases for accurate period calculations
+                        sort: { purchaseDate: 'DESC' as any }
                     }
                 }
             });
 
             const purchases = result.data?.purchases?.items || [];
 
-            // Filter by period
-            const todayPurchases = filterByPeriod(purchases, periods.startOfToday);
-            const weekPurchases = filterByPeriod(purchases, periods.startOfWeek);
-
-            // Calculate totals in cents, then convert to currency units
-            const todayTotalCents = todayPurchases.reduce((sum, p) => sum + (p.totalCost || 0), 0);
-            const weekTotalCents = weekPurchases.reduce((sum, p) => sum + (p.totalCost || 0), 0);
-            const monthTotalCents = purchases.reduce((sum, p) => sum + (p.totalCost || 0), 0);
-
-            const today = todayTotalCents / 100;
-            const week = weekTotalCents / 100;
-            const month = monthTotalCents / 100;
-
-            // For breakdown, since only inventory records exist, show all as inventory
-            // But always show at least one account entry for consistency
-            const accounts: AccountBreakdown[] = month > 0
-                ? [{ label: 'Inventory', value: month, icon: '📦' }]
-                : []; // Empty if no purchases
-
-            return {
-                today,
-                week,
-                month,
-                accounts,
-            };
+            // Use utility function for calculation - ensures consistency with page components
+            return calculatePurchasePeriodStats(purchases, periods);
         } catch (error) {
             console.error('Failed to fetch purchase metrics:', error);
             return {

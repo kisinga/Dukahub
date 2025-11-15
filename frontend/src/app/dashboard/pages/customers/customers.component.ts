@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { CustomerService } from '../../../core/services/customer.service';
+import { calculateCustomerStats } from '../../../core/services/stats/customer-stats.util';
 import { BulkPaymentModalComponent } from './components/bulk-payment-modal.component';
 import { CustomerAction, CustomerCardComponent } from './components/customer-card.component';
 import { CustomerSearchBarComponent } from './components/customer-search-bar.component';
@@ -95,20 +96,9 @@ export class CustomersComponent implements OnInit {
         return Math.ceil(filtered.length / perPage) || 1;
     });
 
-    // Computed: statistics
+    // Computed: statistics - using utility for single source of truth
     readonly stats = computed((): CustomerStats => {
-        const customers = this.customers();
-        const totalCustomers = customers.length;
-        const verifiedCustomers = customers.filter(c => c.user?.verified).length;
-        const creditApprovedCustomers = customers.filter(c => c.customFields?.isCreditApproved).length;
-        const recentCustomers = customers.filter(c => {
-            const createdAt = new Date(c.createdAt);
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            return createdAt >= thirtyDaysAgo;
-        }).length;
-
-        return { totalCustomers, verifiedCustomers, creditApprovedCustomers, recentCustomers };
+        return calculateCustomerStats(this.customers());
     });
 
     // Computed: end item for pagination display

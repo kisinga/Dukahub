@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
+import { calculateProductStats } from '../../../core/services/stats/product-stats.util';
 import { DeleteConfirmationData, DeleteConfirmationModalComponent } from './components/delete-confirmation-modal.component';
 import { PaginationComponent } from './components/pagination.component';
 import { ProductAction, ProductCardComponent } from './components/product-card.component';
@@ -98,19 +99,9 @@ export class ProductsComponent implements OnInit {
     return Math.ceil(filtered.length / perPage) || 1;
   });
 
-  // Computed: statistics
+  // Computed: statistics - using utility for single source of truth
   readonly stats = computed((): ProductStats => {
-    const prods = this.products();
-    const totalProducts = prods.length;
-    const totalVariants = prods.reduce((sum, p) => sum + (p.variants?.length || 0), 0);
-    const totalStock = prods.reduce((sum, p) =>
-      sum + (p.variants?.reduce((vSum: number, v: any) => vSum + (v.stockOnHand || 0), 0) || 0), 0
-    );
-    const lowStock = prods.filter(p =>
-      p.variants?.some((v: any) => v.stockOnHand < 10)
-    ).length;
-
-    return { totalProducts, totalVariants, totalStock, lowStock };
+    return calculateProductStats(this.products());
   });
 
   // Computed: end item for pagination display

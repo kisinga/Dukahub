@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { PurchaseService } from '../../../core/services/purchase.service';
+import { calculatePurchaseStats } from '../../../core/services/stats/purchase-stats.util';
 import { PaginationComponent } from '../products/components/pagination.component';
 import { PurchaseCardComponent } from './components/purchase-card.component';
 import { PurchaseSearchBarComponent } from './components/purchase-search-bar.component';
@@ -85,23 +86,9 @@ export class PurchasesComponent implements OnInit {
         return Math.ceil(filtered.length / perPage) || 1;
     });
 
-    // Computed: statistics
+    // Computed: statistics - using utility for single source of truth
     readonly stats = computed((): PurchaseStats => {
-        const allPurchases = this.purchases();
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-        const totalPurchases = allPurchases.length;
-        const totalValue = allPurchases.reduce((sum, p) => sum + (p.totalCost || 0), 0);
-        const thisMonth = allPurchases.filter(p => {
-            const purchaseDate = new Date(p.purchaseDate);
-            return purchaseDate >= startOfMonth;
-        }).length;
-        const pendingPayments = allPurchases.filter(
-            p => p.paymentStatus?.toLowerCase() === 'pending' || p.paymentStatus?.toLowerCase() === 'partial'
-        ).length;
-
-        return { totalPurchases, totalValue, thisMonth, pendingPayments };
+        return calculatePurchaseStats(this.purchases());
     });
 
     // Computed: end item for pagination display
