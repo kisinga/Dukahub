@@ -1,295 +1,246 @@
-<div class="container-app py-6 space-y-6">
-  <h1 class="text-3xl font-bold">📦 Record Purchase</h1>
-
-  <!-- Success Message -->
-  @if (showSuccessMessage()) {
-  <div class="alert alert-success">
-    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+<!-- FAB for Create Purchase - Mobile Only -->
+<div class="fixed bottom-24 right-4 z-40 lg:hidden">
+  <button
+    (click)="router.navigate(['/dashboard/purchases/create'])"
+    class="btn btn-lg btn-circle btn-primary shadow-xl"
+    aria-label="Create new purchase"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-6 w-6"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+      />
     </svg>
-    <span>Purchase recorded successfully!</span>
-  </div>
-  }
+  </button>
+</div>
 
-  <!-- Error Message -->
-  @if (error(); as errorMsg) {
-  <div class="alert alert-error">
-    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    <span>{{ errorMsg }}</span>
-  </div>
-  }
+<div class="space-y-5 lg:space-y-6">
+  <!-- Header -->
+  <div class="flex items-start justify-between gap-4">
+    <div class="flex-1 min-w-0">
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">Purchases</h1>
+      <p class="text-base sm:text-lg text-base-content/60 mt-2 leading-relaxed">
+        Manage your purchase records
+      </p>
+    </div>
 
-  @if (purchaseDraft(); as draft) {
-  <div class="card bg-base-100 shadow-lg">
-    <div class="card-body space-y-6">
-      <!-- Supplier Selection -->
-      <div class="form-control">
-        <label class="label">
-          <span class="label-text font-semibold">🏢 Supplier *</span>
-        </label>
-        <div class="relative">
-          <input
-            type="text"
-            class="input input-bordered w-full"
-            placeholder="Search for supplier..."
-            [value]="supplierSearchTerm()"
-            (input)="handleSupplierSearch($any($event.target).value)"
+    <div class="flex gap-2 shrink-0">
+      <button
+        (click)="refreshPurchases()"
+        class="btn btn-ghost btn-square btn-lg lg:btn-md"
+        [class.loading]="isLoading()"
+        title="Refresh purchases"
+      >
+        @if (!isLoading()) {
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6 lg:h-5 lg:w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
           />
-          @if (supplierSearchResults().length > 0) {
-          <div class="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-            @for (supplier of supplierSearchResults(); track supplier.id) {
-            <button
-              type="button"
-              class="w-full text-left px-4 py-2 hover:bg-base-200"
-              (click)="handleSupplierSelect(supplier)"
-            >
-              <div class="font-medium">{{ supplier.name }}</div>
-              @if (supplier.phoneNumber) {
-              <div class="text-sm opacity-60">{{ supplier.phoneNumber }}</div>
-              }
-            </button>
-            }
-          </div>
-          }
-        </div>
-        @if (draft.supplierId) {
-        <div class="text-sm text-success mt-2">✓ Supplier selected</div>
+        </svg>
         }
-      </div>
-
-      <!-- Purchase Date -->
-      <div class="form-control">
-        <label class="label">
-          <span class="label-text font-semibold">📅 Purchase Date *</span>
-        </label>
-        <input
-          type="date"
-          class="input input-bordered"
-          [value]="draft.purchaseDate | date:'yyyy-MM-dd'"
-                (change)="handleDateChange($any($event.target).value)"
-        />
-      </div>
-
-      <!-- Reference Number -->
-      <div class="form-control">
-        <label class="label">
-          <span class="label-text font-semibold">📄 Reference Number</span>
-        </label>
-        <input
-          type="text"
-          class="input input-bordered"
-          placeholder="Invoice/PO number (optional)"
-          [value]="draft.referenceNumber"
-          (input)="purchaseServiceRef.updateDraftField('referenceNumber', $any($event.target).value)"
-        />
-      </div>
-
-      <!-- Payment Status -->
-      <div class="form-control">
-        <label class="label">
-          <span class="label-text font-semibold">💳 Payment Status *</span>
-        </label>
-        <select
-          class="select select-bordered"
-          [value]="draft.paymentStatus"
-          (change)="purchaseServiceRef.updateDraftField('paymentStatus', $any($event.target).value)"
+      </button>
+      <button
+        (click)="router.navigate(['/dashboard/purchases/create'])"
+        class="btn btn-primary gap-2 hidden lg:flex"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
         >
-          <option value="pending">Pending</option>
-          <option value="paid">Paid</option>
-          <option value="partial">Partial</option>
-        </select>
-      </div>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+          />
+        </svg>
+        Create Purchase
+      </button>
+    </div>
+  </div>
 
-      <!-- Notes -->
-      <div class="form-control">
-        <label class="label">
-          <span class="label-text font-semibold">📝 Notes</span>
-        </label>
-        <textarea
-          class="textarea textarea-bordered"
-          placeholder="Additional notes (optional)"
-          [value]="draft.notes"
-          (input)="purchaseServiceRef.updateDraftField('notes', $any($event.target).value)"
-        ></textarea>
-      </div>
+  <!-- Statistics Cards -->
+  <app-purchase-stats [stats]="stats()" />
 
-      <!-- Line Items -->
-      <div class="form-control">
-        <label class="label">
-          <span class="label-text font-semibold">📦 Items *</span>
-        </label>
+  <!-- Search & Filter Bar -->
+  <app-purchase-search-bar [(searchQuery)]="searchQuery" />
 
-        <!-- Add New Item -->
-        <div class="card bg-base-200 p-4 space-y-3 mb-4">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div class="md:col-span-2">
-              <input
-                type="text"
-                class="input input-bordered w-full"
-                placeholder="Search product..."
-                [value]="productSearchTerm()"
-                (input)="handleProductSearch($any($event.target).value)"
-              />
-              @if (productSearchResults().length > 0) {
-              <div class="relative">
-                <div class="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  @for (variant of productSearchResults(); track variant.id) {
-                  <button
-                    type="button"
-                    class="w-full text-left px-4 py-2 hover:bg-base-200"
-                    (click)="handleProductSelect(variant)"
-                  >
-                    <div class="font-medium">{{ variant.name || variant.sku }}</div>
-                    <div class="text-sm opacity-60">SKU: {{ variant.sku }}</div>
-                  </button>
-                  }
-                </div>
-              </div>
-              }
-            </div>
-            <div>
-              <input
-                type="number"
-                class="input input-bordered w-full"
-                placeholder="Quantity"
-                min="0"
-                step="0.01"
-                [value]="newLineItem().quantity || 1"
-                (input)="updateNewLineItem('quantity', parseFloat($any($event.target).value))"
-              />
-            </div>
-            <div>
-              <input
-                type="number"
-                class="input input-bordered w-full"
-                placeholder="Unit Cost"
-                min="0"
-                step="0.01"
-                [value]="newLineItem().unitCost || 0"
-                (input)="updateNewLineItem('unitCost', parseFloat($any($event.target).value))"
-              />
-            </div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <select
-                class="select select-bordered w-full"
-                [value]="newLineItem().stockLocationId || ''"
-                (change)="updateNewLineItem('stockLocationId', $any($event.target).value)"
-              >
-                <option value="">Select location...</option>
-                @for (location of stockLocations(); track location.id) {
-                <option [value]="location.id">{{ location.name }}</option>
-                }
-              </select>
-            </div>
-            <button
-              type="button"
-              class="btn btn-primary"
-              [disabled]="!newLineItem().variantId || !newLineItem().stockLocationId || (newLineItem().quantity || 0) <= 0"
-              (click)="handleAddLineItem()"
-            >
-              ➕ Add Item
-            </button>
-          </div>
-        </div>
+  <!-- Error Alert -->
+  @if (error()) {
+  <div role="alert" class="alert alert-error shadow-lg">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-6 w-6 shrink-0"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    <span class="flex-1">{{ error() }}</span>
+    <button (click)="clearError()" class="btn btn-sm">Dismiss</button>
+  </div>
+  }
 
-        <!-- Line Items List -->
-        @if (draft.lines.length > 0) {
-        <div class="overflow-x-auto">
-          <table class="table table-zebra">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Quantity</th>
-                <th>Unit Cost</th>
-                <th>Total</th>
-                <th>Location</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (line of draft.lines; track $index) {
-              <tr>
-                <td>{{ line.variant?.name || line.variantId }}</td>
-                <td>
-                  <input
-                    type="number"
-                    class="input input-xs w-20"
-                    min="0"
-                    step="0.01"
-                    [value]="line.quantity"
-                    (change)="handleUpdateLineItem($index, 'quantity', parseFloat($any($event.target).value))"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    class="input input-xs w-24"
-                    min="0"
-                    step="0.01"
-                    [value]="line.unitCost"
-                    (change)="handleUpdateLineItem($index, 'unitCost', parseFloat($any($event.target).value))"
-                  />
-                </td>
-                <td>{{ formatCurrency(line.quantity * line.unitCost) }}</td>
-                <td>
-                  <select
-                    class="select select-xs"
-                    [value]="line.stockLocationId"
-                    (change)="handleUpdateLineItem($index, 'stockLocationId', $any($event.target).value)"
-                  >
-                    @for (location of stockLocations(); track location.id) {
-                    <option [value]="location.id">{{ location.name }}</option>
-                    }
-                  </select>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    class="btn btn-xs btn-error"
-                    (click)="handleRemoveLineItem($index)"
-                  >
-                    🗑️
-                  </button>
-                </td>
-              </tr>
-              }
-            </tbody>
-            <tfoot>
-              <tr>
-                <th colspan="3">Total</th>
-                <th>{{ formatCurrency(totalCost()) }}</th>
-                <th colspan="2"></th>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        } @else {
-        <div class="text-center py-8 text-base-content/60">
-          <div class="text-4xl mb-2">📦</div>
-          <p>No items added yet</p>
-        </div>
-        }
-      </div>
-
-      <!-- Submit Button -->
-      <div class="card-actions justify-end">
-        <button
-          class="btn btn-primary"
-          [disabled]="!draft.supplierId || draft.lines.length === 0 || isLoading()"
-          (click)="handleSubmitPurchase()"
-        >
-          @if (isLoading()) {
-          <span class="loading loading-spinner loading-xs"></span>
-          }
-          💾 Record Purchase
-        </button>
+  <!-- Loading State -->
+  @if (isLoading()) {
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <div class="flex flex-col items-center justify-center py-16">
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+        <p class="text-sm text-base-content/60 mt-4">Loading purchases...</p>
       </div>
     </div>
   </div>
   }
-</div>
 
+  <!-- Empty State -->
+  @else if (filteredPurchases().length === 0 && !error()) {
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <div class="text-center py-12 lg:py-20 px-4">
+        <div
+          class="w-20 h-20 lg:w-24 lg:h-24 mx-auto mb-4 rounded-full bg-base-200 flex items-center justify-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-10 w-10 lg:h-12 lg:w-12 text-base-content/30"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+            />
+          </svg>
+        </div>
+        <h3 class="text-lg lg:text-xl font-semibold">No purchases found</h3>
+        @if (searchQuery()) {
+        <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+          No purchases match "{{ searchQuery() }}". Try a different search term.
+        </p>
+        <button (click)="searchQuery.set('')" class="btn btn-outline btn-sm lg:btn-md mt-6">
+          Clear Search
+        </button>
+        } @else {
+        <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+          Start by recording your first purchase
+        </p>
+        <button
+          (click)="router.navigate(['/dashboard/purchases/create'])"
+          class="btn btn-primary btn-sm lg:btn-md mt-6"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
+          </svg>
+          Create First Purchase
+        </button>
+        }
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Purchases List -->
+  @else {
+  <!-- List Controls -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
+    <div class="text-sm text-base-content/60">
+      Showing {{ (currentPage() - 1) * itemsPerPage() + 1 }} to {{ endItem() }} of
+      {{ filteredPurchases().length }} purchases
+    </div>
+
+    <div class="flex items-center gap-2">
+      <span class="text-sm text-base-content/60">Per page:</span>
+      <select
+        class="select select-sm select-bordered"
+        [value]="itemsPerPage()"
+        (change)="changeItemsPerPage(+$any($event.target).value)"
+      >
+        @for (option of pageOptions; track option) {
+        <option [value]="option">{{ option }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Mobile: Card View -->
+  <div class="lg:hidden space-y-4">
+    @for (purchase of paginatedPurchases(); track trackByPurchaseId($index, purchase)) {
+    <app-purchase-card [purchase]="purchase" (action)="onPurchaseAction($event)" />
+    }
+  </div>
+
+  <!-- Desktop: Table View -->
+  <div class="card bg-base-100 shadow hidden lg:block">
+    <div class="overflow-x-auto">
+      <table class="table table-zebra">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Supplier</th>
+            <th>Reference</th>
+            <th>Total Cost</th>
+            <th>Payment Status</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (purchase of paginatedPurchases(); track trackByPurchaseId($index, purchase)) {
+          <tr app-purchase-table-row [purchase]="purchase" (action)="onPurchaseAction($event)"></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <app-pagination
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [totalItems]="filteredPurchases().length"
+    [itemsPerPage]="itemsPerPage()"
+    [itemLabel]="'purchases'"
+    (pageChange)="goToPage($event)"
+  />
+  }
+</div>

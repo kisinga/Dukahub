@@ -6,8 +6,7 @@ import {
     TransactionalConnection,
     UserInputError,
 } from '@vendure/core';
-import { StockPurchase } from './entities/purchase.entity';
-import { StockPurchaseLine } from './entities/purchase.entity';
+import { StockPurchase, StockPurchaseLine } from './entities/purchase.entity';
 import { StockValidationService } from './stock-validation.service';
 
 export interface PurchaseLineInput {
@@ -74,10 +73,11 @@ export class PurchaseService {
         // Create purchase
         const purchaseRepo = this.connection.getRepository(ctx, StockPurchase);
         const purchaseLineRepo = this.connection.getRepository(ctx, StockPurchaseLine);
-        
+
         // Create purchase entity
         const purchase = new StockPurchase();
-        purchase.supplierId = String(input.supplierId);
+        // Convert Vendure ID (string) to integer for database
+        purchase.supplierId = parseInt(String(input.supplierId), 10);
         purchase.purchaseDate = input.purchaseDate;
         purchase.referenceNumber = input.referenceNumber || null;
         purchase.totalCost = totalCost;
@@ -91,11 +91,12 @@ export class PurchaseService {
         const purchaseLines = input.lines.map(line => {
             const purchaseLine = new StockPurchaseLine();
             purchaseLine.purchaseId = savedPurchase.id;
-            purchaseLine.variantId = String(line.variantId);
+            // Convert Vendure IDs (strings) to integers for database
+            purchaseLine.variantId = parseInt(String(line.variantId), 10);
             purchaseLine.quantity = line.quantity;
             purchaseLine.unitCost = line.unitCost;
             purchaseLine.totalCost = line.quantity * line.unitCost;
-            purchaseLine.stockLocationId = String(line.stockLocationId);
+            purchaseLine.stockLocationId = parseInt(String(line.stockLocationId), 10);
             return purchaseLine;
         });
 

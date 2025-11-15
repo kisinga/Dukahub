@@ -18,7 +18,7 @@ import {
 } from '../../../../core/services/barcode-scanner.service';
 import { CameraService } from '../../../../core/services/camera.service';
 import { MlModelService, ModelPrediction } from '../../../../core/services/ml-model.service';
-import { ProductSearchResult, ProductSearchService } from '../../../../core/services/product-search.service';
+import { ProductSearchResult, ProductSearchService } from '../../../../core/services/product/product-search.service';
 
 type ScannerStatus =
   | 'idle'

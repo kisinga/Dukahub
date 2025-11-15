@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
+import { calculateProductStats } from '../../../core/services/stats/product-stats.util';
 import { DeleteConfirmationData, DeleteConfirmationModalComponent } from './components/delete-confirmation-modal.component';
 import { PaginationComponent } from './components/pagination.component';
 import { ProductAction, ProductCardComponent } from './components/product-card.component';
@@ -37,6 +38,7 @@ import { ProductTableRowComponent } from './components/product-table-row.compone
 export class ProductsComponent implements OnInit {
   private readonly productService = inject(ProductService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   // View references
   readonly deleteModal = viewChild<DeleteConfirmationModalComponent>('deleteModal');
@@ -49,6 +51,7 @@ export class ProductsComponent implements OnInit {
 
   // Local UI state
   readonly searchQuery = signal('');
+  readonly showLowStockOnly = signal(false);
   readonly currentPage = signal(1);
   readonly itemsPerPage = signal(10);
   readonly pageOptions = [10, 25, 50, 100];
@@ -58,8 +61,17 @@ export class ProductsComponent implements OnInit {
   // Computed: filtered products
   readonly filteredProducts = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
-    const allProducts = this.products();
+    const lowStockOnly = this.showLowStockOnly();
+    let allProducts = this.products();
 
+    // Apply low stock filter first
+    if (lowStockOnly) {
+      allProducts = allProducts.filter(product =>
+        product.variants?.some((v: any) => (v.stockOnHand || 0) < 10)
+      );
+    }
+
+    // Apply search query filter
     if (!query) return allProducts;
 
     return allProducts.filter(product =>
@@ -87,19 +99,9 @@ export class ProductsComponent implements OnInit {
     return Math.ceil(filtered.length / perPage) || 1;
   });
 
-  // Computed: statistics
+  // Computed: statistics - using utility for single source of truth
   readonly stats = computed((): ProductStats => {
-    const prods = this.products();
-    const totalProducts = prods.length;
-    const totalVariants = prods.reduce((sum, p) => sum + (p.variants?.length || 0), 0);
-    const totalStock = prods.reduce((sum, p) =>
-      sum + (p.variants?.reduce((vSum: number, v: any) => vSum + (v.stockOnHand || 0), 0) || 0), 0
-    );
-    const lowStock = prods.filter(p =>
-      p.variants?.some((v: any) => v.stockOnHand < 10)
-    ).length;
-
-    return { totalProducts, totalVariants, totalStock, lowStock };
+    return calculateProductStats(this.products());
   });
 
   // Computed: end item for pagination display
@@ -108,6 +110,15 @@ export class ProductsComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    // Check for query params (e.g., ?lowStock=true)
+    this.route.queryParams.subscribe(params => {
+      const lowStockParam = params['lowStock'] === 'true';
+      if (lowStockParam !== this.showLowStockOnly()) {
+        this.showLowStockOnly.set(lowStockParam);
+        this.currentPage.set(1); // Reset to first page when filter changes
+      }
+    });
+
     this.loadProducts();
   }
 
@@ -139,10 +150,15 @@ export class ProductsComponent implements OnInit {
         break;
 
       case 'purchase':
-        // Navigate to purchase flow with supplier (to be implemented)
-        console.log('Purchase product:', productId);
-        // TODO: Navigate to supplier purchase flow
-        // this.router.navigate(['/dashboard/purchases/create'], { queryParams: { productId } });
+        // Navigate to purchases page with prepopulated variant
+        const product = this.products().find(p => p.id === productId);
+        if (product?.variants && product.variants.length > 0) {
+          // Use first variant for prepopulation
+          const variantId = product.variants[0].id;
+          this.router.navigate(['/dashboard/purchases'], {
+            queryParams: { variantId }
+          });
+        }
         break;
 
       case 'delete':
@@ -222,6 +238,22 @@ export class ProductsComponent implements OnInit {
   changeItemsPerPage(items: number): void {
     this.itemsPerPage.set(items);
     this.currentPage.set(1); // Reset to first page
+  }
+
+  /**
+   * Toggle low stock filter and sync with query params
+   */
+  toggleLowStockFilter(enabled: boolean): void {
+    this.showLowStockOnly.set(enabled);
+    this.currentPage.set(1); // Reset to first page when filter changes
+
+    // Update query params without navigation
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: enabled ? { lowStock: 'true' } : {},
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
   }
 
   /**

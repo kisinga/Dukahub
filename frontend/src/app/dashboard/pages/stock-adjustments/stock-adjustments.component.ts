@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
-import { ProductSearchService, ProductVariant } from '../../../core/services/product-search.service';
+import { ProductSearchService, ProductVariant } from '../../../core/services/product/product-search.service';
 import { StockAdjustmentService } from '../../../core/services/stock-adjustment.service';
 import { StockAdjustmentLineItem } from '../../../core/services/stock-adjustment.service.types';
 import { StockLocationService } from '../../../core/services/stock-location.service';

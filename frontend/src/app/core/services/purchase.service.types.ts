@@ -1,4 +1,4 @@
-import { ProductVariant } from './product-search.service';
+import { ProductVariant } from './product/product-search.service';
 
 /**
  * Purchase line item interface
@@ -18,8 +18,17 @@ export interface PurchaseDraft {
     supplierId: string | null;
     purchaseDate: Date;
     referenceNumber: string;
-    paymentStatus: 'paid' | 'pending' | 'partial';
+    paymentStatus: 'paid' | 'pending' | 'partial'; // NOTE: This is a placeholder. Actual payment transactions are the source of truth.
     notes: string;
     lines: PurchaseLineItem[];
 }
+
+/**
+ * Prepopulation data for purchase draft
+ */
+export interface PurchasePrepopulationData {
+    variantId: string;
+    quantity?: number; // Optional, defaults to 1
+}
+
 

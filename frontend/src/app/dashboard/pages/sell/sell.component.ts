@@ -5,7 +5,7 @@ import { CartService } from '../../../core/services/cart.service';
 import { CustomerService } from '../../../core/services/customer.service';
 import { CompanyService } from '../../../core/services/company.service';
 import { OrderService } from '../../../core/services/order.service';
-import { ProductSearchResult, ProductSearchService, ProductVariant } from '../../../core/services/product-search.service';
+import { ProductSearchResult, ProductSearchService, ProductVariant } from '../../../core/services/product/product-search.service';
 import { StockLocationService } from '../../../core/services/stock-location.service';
 import { CartComponent, CartItem } from './components/cart.component';
 import { CheckoutFabComponent } from './components/checkout-fab.component';

@@ -5,3 +5,4 @@ export const ManageStockAdjustmentsPermission = new PermissionDefinition({
     description: 'Allows recording stock adjustments for inventory corrections.',
 });
 
+

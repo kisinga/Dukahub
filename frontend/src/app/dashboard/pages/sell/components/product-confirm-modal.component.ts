@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { CurrencyService } from '../../../../core/services/currency.service';
-import { ProductSearchResult, ProductVariant } from '../../../../core/services/product-search.service';
+import { ProductSearchResult, ProductVariant } from '../../../../core/services/product/product-search.service';
 
 /**
  * Modal for confirming product and selecting variant/quantity

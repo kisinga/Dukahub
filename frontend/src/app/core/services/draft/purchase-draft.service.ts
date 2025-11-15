@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { DraftBaseService } from './draft-base.service';
 import { PurchaseDraft, PurchaseLineItem } from '../purchase.service.types';
+import { DraftBaseService } from './draft-base.service';
 
 /**
  * Purchase Draft Service
@@ -29,6 +29,24 @@ export class PurchaseDraftService extends DraftBaseService<PurchaseDraft> {
             lines: [],
         };
         this.draftSignal.set(draft);
+        this.persist();
+    }
+
+    /**
+     * Prepopulate draft with items
+     * Useful when navigating from products table to purchases page
+     */
+    prepopulateItems(items: PurchaseLineItem[]): void {
+        const draft = this.draft();
+        if (!draft) {
+            this.createNewDraft();
+            return;
+        }
+
+        this.draftSignal.set({
+            ...draft,
+            lines: [...draft.lines, ...items],
+        });
         this.persist();
     }
 

@@ -57,8 +57,9 @@ export class StockQueryService {
 
         // Apply filters
         if (options.filter?.supplierId) {
+            // Convert Vendure ID (string) to integer for database query
             queryBuilder.andWhere('purchase.supplierId = :supplierId', {
-                supplierId: options.filter.supplierId,
+                supplierId: parseInt(String(options.filter.supplierId), 10),
             });
         }
 

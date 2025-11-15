@@ -142,17 +142,17 @@ export const routes: Routes = [
                     )
             },
             {
-                path: 'inventory',
-                loadComponent: () =>
-                    import('./dashboard/pages/inventory/inventory.component').then(
-                        (m) => m.InventoryComponent
-                    )
-            },
-            {
                 path: 'purchases',
                 loadComponent: () =>
                     import('./dashboard/pages/purchases/purchases.component').then(
                         (m) => m.PurchasesComponent
+                    )
+            },
+            {
+                path: 'purchases/create',
+                loadComponent: () =>
+                    import('./dashboard/pages/purchase-create/purchase-create.component').then(
+                        (m) => m.PurchaseCreateComponent
                     )
             },
             {

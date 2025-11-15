@@ -1,22 +1,10 @@
-import { inject, Injectable, signal } from '@angular/core';
-import {
-    ALLOCATE_BULK_PAYMENT,
-    APPROVE_CUSTOMER_CREDIT,
-    CREATE_CUSTOMER,
-    CREATE_CUSTOMER_ADDRESS,
-    DELETE_CUSTOMER,
-    DELETE_CUSTOMER_ADDRESS,
-    GET_CREDIT_SUMMARY,
-    VALIDATE_CREDIT,
-    GET_CUSTOMER,
-    GET_CUSTOMERS,
-    UPDATE_CREDIT_DURATION,
-    UPDATE_CUSTOMER,
-    UPDATE_CUSTOMER_ADDRESS,
-    UPDATE_CUSTOMER_CREDIT_LIMIT
-} from '../graphql/operations.graphql';
-import { formatPhoneNumber } from '../utils/phone.utils';
-import { ApolloService } from './apollo.service';
+import { inject, Injectable } from '@angular/core';
+import { CustomerAddressService } from './customer/customer-address.service';
+import { CustomerApiService } from './customer/customer-api.service';
+import { CustomerCreditService } from './customer/customer-credit.service';
+import { CustomerPaymentService } from './customer/customer-payment.service';
+import { CustomerSearchService } from './customer/customer-search.service';
+import { CustomerStateService } from './customer/customer-state.service';
 
 /**
  * Customer creation input
@@ -59,7 +47,7 @@ export interface CreditCustomerSummary {
     creditDuration: number;
 }
 
-interface CustomerRecord {
+export interface CustomerRecord {
     id: string;
     firstName: string;
     lastName: string;
@@ -88,25 +76,26 @@ interface CustomerRecord {
  * - Uses Vendure's Customer entity for customer management
  * - Supports address management for each customer
  * - All operations are channel-aware via ApolloService
+ * - Composed of specialized sub-services for better maintainability
  */
 @Injectable({
     providedIn: 'root',
 })
 export class CustomerService {
-    private readonly apolloService = inject(ApolloService);
+    // Inject all sub-services
+    private readonly apiService = inject(CustomerApiService);
+    private readonly addressService = inject(CustomerAddressService);
+    private readonly creditService = inject(CustomerCreditService);
+    private readonly paymentService = inject(CustomerPaymentService);
+    private readonly searchService = inject(CustomerSearchService);
+    private readonly stateService = inject(CustomerStateService);
 
-    // State for operation in progress
-    private readonly isCreatingSignal = signal(false);
-    private readonly errorSignal = signal<string | null>(null);
-    private readonly isLoadingSignal = signal(false);
-    private readonly customersSignal = signal<any[]>([]);
-    private readonly totalItemsSignal = signal(0);
-
-    readonly isCreating = this.isCreatingSignal.asReadonly();
-    readonly error = this.errorSignal.asReadonly();
-    readonly isLoading = this.isLoadingSignal.asReadonly();
-    readonly customers = this.customersSignal.asReadonly();
-    readonly totalItems = this.totalItemsSignal.asReadonly();
+    // Expose state signals from state service
+    readonly isCreating = this.stateService.isCreating;
+    readonly error = this.stateService.error;
+    readonly isLoading = this.stateService.isLoading;
+    readonly customers = this.stateService.customers;
+    readonly totalItems = this.stateService.totalItems;
 
     /**
      * Create a new customer
@@ -114,59 +103,14 @@ export class CustomerService {
      * @returns Created customer ID or null if failed
      */
     async createCustomer(input: CustomerInput): Promise<string | null> {
-        this.isCreatingSignal.set(true);
-        this.errorSignal.set(null);
-
-        try {
-            const client = this.apolloService.getClient();
-
-            // Normalize phone number to 07XXXXXXXX format
-            const normalizedInput = {
-                ...input,
-                phoneNumber: input.phoneNumber ? formatPhoneNumber(input.phoneNumber) : undefined,
-            };
-
-            const result = await client.mutate<any>({
-                mutation: CREATE_CUSTOMER,
-                variables: { input: normalizedInput },
-            });
-
-            const customer = result.data?.createCustomer;
-            if (customer?.id) {
-                console.log('✅ Customer created:', customer.id);
-                return customer.id;
-            } else if (customer?.errorCode) {
-                this.errorSignal.set(customer.message || 'Failed to create customer');
-                return null;
-            } else {
-                this.errorSignal.set('Failed to create customer');
-                return null;
-            }
-        } catch (error: any) {
-            console.error('❌ Customer creation failed:', error);
-            this.errorSignal.set(error.message || 'Failed to create customer');
-            return null;
-        } finally {
-            this.isCreatingSignal.set(false);
-        }
+        return this.apiService.createCustomer(input);
     }
 
     /**
      * Get customer details by ID
      */
     async getCustomerById(id: string): Promise<any | null> {
-        try {
-            const client = this.apolloService.getClient();
-            const result = await client.query<any>({
-                query: GET_CUSTOMER,
-                variables: { id },
-                fetchPolicy: 'network-only',
-            });
-            return result.data?.customer || null;
-        } catch (error) {
-            console.error('Failed to fetch customer:', error);
-            return null;
-        }
+        return this.apiService.getCustomerById(id);
     }
 
     /**
@@ -176,36 +120,7 @@ export class CustomerService {
      * @returns true if successful, false otherwise
      */
     async updateCustomer(id: string, input: Partial<CustomerInput>): Promise<boolean> {
-        try {
-            const client = this.apolloService.getClient();
-
-            // Normalize phone number to 07XXXXXXXX format if provided
-            const normalizedInput = {
-                ...input,
-                phoneNumber: input.phoneNumber ? formatPhoneNumber(input.phoneNumber) : input.phoneNumber,
-            };
-
-            const result = await client.mutate<any>({
-                mutation: UPDATE_CUSTOMER,
-                variables: { input: { id, ...normalizedInput } },
-            });
-
-            const customer = result.data?.updateCustomer;
-            if (customer?.id) {
-                console.log('✅ Customer updated:', customer.id);
-                return true;
-            } else if (customer?.errorCode) {
-                this.errorSignal.set(customer.message || 'Failed to update customer');
-                return false;
-            } else {
-                this.errorSignal.set('Failed to update customer');
-                return false;
-            }
-        } catch (error: any) {
-            console.error('❌ Customer update failed:', error);
-            this.errorSignal.set(error.message || 'Failed to update customer');
-            return false;
-        }
+        return this.apiService.updateCustomer(id, input);
     }
 
     /**
@@ -214,30 +129,7 @@ export class CustomerService {
      * @returns true if successful, false otherwise
      */
     async deleteCustomer(customerId: string): Promise<boolean> {
-        try {
-            console.log('🗑️ Deleting customer:', customerId);
-            const client = this.apolloService.getClient();
-
-            const result = await client.mutate<any>({
-                mutation: DELETE_CUSTOMER,
-                variables: { id: customerId },
-            });
-
-            const deleteResult = result.data?.deleteCustomer;
-
-            if (deleteResult?.result === 'DELETED') {
-                console.log('✅ Customer deleted successfully');
-                return true;
-            } else {
-                console.error('❌ Delete failed:', deleteResult?.message);
-                this.errorSignal.set(deleteResult?.message || 'Failed to delete customer');
-                return false;
-            }
-        } catch (error: any) {
-            console.error('❌ Delete customer error:', error);
-            this.errorSignal.set(error.message || 'Failed to delete customer');
-            return false;
-        }
+        return this.apiService.deleteCustomer(customerId);
     }
 
     /**
@@ -247,26 +139,7 @@ export class CustomerService {
      * @returns Created address ID or null if failed
      */
     async createCustomerAddress(customerId: string, input: CustomerAddressInput): Promise<string | null> {
-        try {
-            const client = this.apolloService.getClient();
-
-            const result = await client.mutate<any>({
-                mutation: CREATE_CUSTOMER_ADDRESS,
-                variables: { customerId, input },
-            });
-
-            const address = result.data?.createCustomerAddress;
-            if (address?.id) {
-                console.log('✅ Customer address created:', address.id);
-                return address.id;
-            } else {
-                console.error('❌ Failed to create customer address');
-                return null;
-            }
-        } catch (error: any) {
-            console.error('❌ Customer address creation failed:', error);
-            return null;
-        }
+        return this.addressService.createAddress(customerId, input);
     }
 
     /**
@@ -276,26 +149,7 @@ export class CustomerService {
      * @returns true if successful, false otherwise
      */
     async updateCustomerAddress(addressId: string, input: Partial<CustomerAddressInput>): Promise<boolean> {
-        try {
-            const client = this.apolloService.getClient();
-
-            const result = await client.mutate<any>({
-                mutation: UPDATE_CUSTOMER_ADDRESS,
-                variables: { input: { id: addressId, ...input } },
-            });
-
-            const address = result.data?.updateCustomerAddress;
-            if (address?.id) {
-                console.log('✅ Customer address updated:', address.id);
-                return true;
-            } else {
-                console.error('❌ Failed to update customer address');
-                return false;
-            }
-        } catch (error: any) {
-            console.error('❌ Customer address update failed:', error);
-            return false;
-        }
+        return this.addressService.updateAddress(addressId, input);
     }
 
     /**
@@ -304,27 +158,7 @@ export class CustomerService {
      * @returns true if successful, false otherwise
      */
     async deleteCustomerAddress(addressId: string): Promise<boolean> {
-        try {
-            const client = this.apolloService.getClient();
-
-            const result = await client.mutate<any>({
-                mutation: DELETE_CUSTOMER_ADDRESS,
-                variables: { id: addressId },
-            });
-
-            const deleteResult = result.data?.deleteCustomerAddress;
-
-            if (deleteResult?.success) {
-                console.log('✅ Customer address deleted successfully');
-                return true;
-            } else {
-                console.error('❌ Failed to delete customer address');
-                return false;
-            }
-        } catch (error: any) {
-            console.error('❌ Delete customer address error:', error);
-            return false;
-        }
+        return this.addressService.deleteAddress(addressId);
     }
 
     /**
@@ -332,112 +166,21 @@ export class CustomerService {
      * @param options - Optional pagination and filter options
      */
     async fetchCustomers(options?: any): Promise<void> {
-        this.isLoadingSignal.set(true);
-        this.errorSignal.set(null);
-
-        try {
-            const client = this.apolloService.getClient();
-
-            const result = await client.query<any>({
-                query: GET_CUSTOMERS,
-                variables: {
-                    options: options || {
-                        take: 100, // Fetch more to account for filtering
-                        skip: 0
-                    }
-                },
-                fetchPolicy: 'network-only',
-            });
-
-            const allItems = result.data?.customers?.items || [];
-            const allTotal = result.data?.customers?.totalItems || 0;
-
-            // Filter out suppliers (customers with isSupplier = true) on frontend
-            const customersOnly = allItems.filter((customer: any) =>
-                !customer.customFields?.isSupplier
-            );
-
-            this.customersSignal.set(customersOnly);
-            this.totalItemsSignal.set(customersOnly.length);
-        } catch (error: any) {
-            console.error('❌ Failed to fetch customers:', error);
-            this.errorSignal.set(error.message || 'Failed to fetch customers');
-            this.customersSignal.set([]);
-            this.totalItemsSignal.set(0);
-        } finally {
-            this.isLoadingSignal.set(false);
-        }
+        return this.searchService.fetchCustomers(options);
     }
 
     /**
      * Search for customers (including suppliers)
      */
     async searchCustomers(term: string, take = 50): Promise<any[]> {
-        const trimmed = term.trim();
-        if (trimmed.length === 0) {
-            return [];
-        }
-
-        try {
-            const client = this.apolloService.getClient();
-            const result = await client.query<any>({
-                query: GET_CUSTOMERS,
-                variables: {
-                    options: {
-                        take,
-                        skip: 0,
-                        filter: {
-                            firstName: { contains: trimmed },
-                        },
-                    },
-                },
-                fetchPolicy: 'network-only',
-            });
-
-            return result.data?.customers?.items || [];
-        } catch (error) {
-            console.error('Failed to search customers:', error);
-            return [];
-        }
+        return this.searchService.searchCustomers(term, take);
     }
 
     /**
      * Search for customers eligible for credit sales.
      */
     async searchCreditCustomers(term: string, take = 50): Promise<CreditCustomerSummary[]> {
-        const normalizedTerm = term.trim().toLowerCase();
-        if (normalizedTerm.length === 0) {
-            return [];
-        }
-
-        const client = this.apolloService.getClient();
-        const result = await client.query<{ customers: { items: CustomerRecord[] } }>({
-            query: GET_CUSTOMERS,
-            variables: {
-                options: {
-                    take,
-                    skip: 0,
-                    filter: {
-                        firstName: { contains: term },
-                    },
-                },
-            },
-            fetchPolicy: 'network-only',
-        });
-
-        const items = result.data?.customers?.items ?? [];
-        return items
-            .filter((customer) => Boolean(customer.customFields?.isCreditApproved))
-            .map((customer) => this.mapToCreditSummary(customer))
-            .filter((customer) => {
-                const phone = customer.phone?.toLowerCase() ?? '';
-                return (
-                    customer.name.toLowerCase().includes(normalizedTerm) ||
-                    phone.includes(normalizedTerm)
-                );
-            })
-            .sort((a, b) => b.availableCredit - a.availableCredit)
-            .slice(0, 20);
+        return this.creditService.searchCreditCustomers(term, take);
     }
 
     /**
@@ -447,66 +190,7 @@ export class CustomerService {
         customerId: string,
         base?: Partial<CreditCustomerSummary>
     ): Promise<CreditCustomerSummary> {
-        const client = this.apolloService.getClient();
-
-        try {
-            const result = await client.query<{
-                creditSummary: {
-                    customerId: string;
-                    isCreditApproved: boolean;
-                    creditLimit: number;
-                    outstandingAmount: number;
-                    availableCredit: number;
-                    lastRepaymentDate?: string | null;
-                    lastRepaymentAmount: number;
-                    creditDuration: number;
-                };
-            }>({
-                query: GET_CREDIT_SUMMARY,
-                variables: { customerId },
-                fetchPolicy: 'network-only',
-            });
-
-            const summary = result.data?.creditSummary;
-            if (!summary) {
-                throw new Error('Credit summary unavailable');
-            }
-
-            return {
-                id: summary.customerId,
-                name: base?.name ?? '',
-                phone: base?.phone,
-                email: base?.email,
-                isCreditApproved: summary.isCreditApproved,
-                creditLimit: summary.creditLimit,
-                outstandingAmount: summary.outstandingAmount,
-                availableCredit: summary.availableCredit,
-                lastRepaymentDate: summary.lastRepaymentDate,
-                lastRepaymentAmount: summary.lastRepaymentAmount,
-                creditDuration: summary.creditDuration,
-            };
-        } catch (error) {
-            console.warn('⚠️ Failed to load credit summary from API, falling back to cached data.', error);
-            if (!base) {
-                throw error;
-            }
-            return {
-                id: customerId,
-                name: base.name ?? '',
-                phone: base.phone,
-                email: base.email,
-                isCreditApproved: base.isCreditApproved ?? false,
-                creditLimit: base.creditLimit ?? 0,
-                outstandingAmount: base.outstandingAmount ?? 0,
-                availableCredit: Math.max(
-                    (base.creditLimit ?? 0) - Math.abs(base.outstandingAmount ?? 0),
-                    0
-                ),
-                lastRepaymentDate: base.lastRepaymentDate,
-                lastRepaymentAmount: base.lastRepaymentAmount ?? 0,
-                creditDuration: base.creditDuration ?? 30,
-            };
-        }
+        return this.creditService.getCreditSummary(customerId, base);
     }
 
     /**
@@ -518,100 +202,18 @@ export class CustomerService {
         orderTotal: number,
         base?: Partial<CreditCustomerSummary>
     ): Promise<{ summary: CreditCustomerSummary; error?: string }> {
-        const client = this.apolloService.getClient();
-
-        try {
-            // Call backend validation (single source of truth)
-            const validationResult = await client.query<{
-                validateCredit: {
-                    isValid: boolean;
-                    error?: string | null;
-                    availableCredit: number;
-                    estimatedOrderTotal: number;
-                    wouldExceedLimit: boolean;
-                };
-            }>({
-                query: VALIDATE_CREDIT,
-                variables: {
-                    input: {
-                        customerId,
-                        estimatedOrderTotal: orderTotal,
-                    },
-                },
-                fetchPolicy: 'network-only', // Always get fresh data
-            });
-
-            const validation = validationResult.data?.validateCredit;
-            if (!validation) {
-                throw new Error('Validation unavailable');
-            }
-
-            // Get updated credit summary (with latest outstanding amount)
-            const summary = await this.getCreditSummary(customerId, base);
-
-            if (!validation.isValid && validation.error) {
-                return {
-                    summary,
-                    error: validation.error,
-                };
-            }
-
-            return { summary };
-        } catch (error) {
-            console.warn('⚠️ Backend validation failed, falling back to frontend check.', error);
-            
-            // Fallback to frontend validation if backend fails
-            const summary = await this.getCreditSummary(customerId, base);
-
-            if (!summary.isCreditApproved) {
-                return {
-                    summary,
-                    error: 'Customer is not approved for credit purchases yet.',
-                };
-            }
-
-            if (summary.availableCredit < orderTotal) {
-                return {
-                    summary,
-                    error: `Insufficient credit. Available balance: ${summary.availableCredit.toFixed(2)}`,
-                };
-            }
-
-            return { summary };
-        }
+        return this.creditService.validateCustomerCredit(customerId, orderTotal, base);
     }
 
     /**
      * Quickly create a customer record for checkout flows.
      */
     async quickCreateCustomer(input: { name: string; phone: string; email?: string }): Promise<string | null> {
-        const { firstName, lastName } = this.splitName(input.name);
-        return this.createCustomer({
-            firstName,
-            lastName,
-            emailAddress: input.email || '',
-            phoneNumber: input.phone,
-        });
+        return this.searchService.quickCreateCustomer(input);
     }
 
     async listCreditCustomers(take = 200): Promise<CreditCustomerSummary[]> {
-        const client = this.apolloService.getClient();
-        const result = await client.query<{ customers: { items: CustomerRecord[] } }>({
-            query: GET_CUSTOMERS,
-            variables: {
-                options: {
-                    take,
-                    skip: 0,
-                    sort: {
-                        createdAt: 'DESC',
-                    },
-                },
-            },
-            fetchPolicy: 'network-only',
-        });
-
-        const items = result.data?.customers?.items ?? [];
-        return items.map((customer) => this.mapToCreditSummary(customer));
+        return this.creditService.listCreditCustomers(take);
     }
 
     async approveCustomerCredit(
@@ -621,62 +223,7 @@ export class CustomerService {
         base?: Partial<CreditCustomerSummary>,
         creditDuration?: number
     ): Promise<CreditCustomerSummary> {
-        const client = this.apolloService.getClient();
-        try {
-            const result = await client.mutate<{
-                approveCustomerCredit: {
-                    customerId: string;
-                    isCreditApproved: boolean;
-                    creditLimit: number;
-                    outstandingAmount: number;
-                    availableCredit: number;
-                    lastRepaymentDate?: string | null;
-                    lastRepaymentAmount: number;
-                    creditDuration: number;
-                };
-            }>({
-                mutation: APPROVE_CUSTOMER_CREDIT,
-                variables: {
-                    input: {
-                        customerId,
-                        approved,
-                        creditLimit,
-                        creditDuration,
-                    },
-                },
-            });
-
-            if (result.error) {
-                console.error('❌ GraphQL error:', result.error);
-                const errorMessage = result.error.message || 'Unknown error';
-                throw new Error(`Failed to update customer credit approval: ${errorMessage}`);
-            }
-
-            const summary = result.data?.approveCustomerCredit;
-            if (!summary) {
-                throw new Error('Failed to update customer credit approval: No data returned.');
-            }
-
-            return {
-                id: summary.customerId,
-                name: base?.name ?? '',
-                phone: base?.phone,
-                email: base?.email,
-                isCreditApproved: summary.isCreditApproved,
-                creditLimit: summary.creditLimit,
-                outstandingAmount: summary.outstandingAmount,
-                availableCredit: summary.availableCredit,
-                lastRepaymentDate: summary.lastRepaymentDate,
-                lastRepaymentAmount: summary.lastRepaymentAmount,
-                creditDuration: summary.creditDuration,
-            };
-        } catch (error: any) {
-            console.error('Error in approveCustomerCredit:', error);
-            if (error instanceof Error) {
-                throw error;
-            }
-            throw new Error(`Failed to update customer credit approval: ${error?.message || 'Unknown error'}`);
-        }
+        return this.creditService.approveCustomerCredit(customerId, approved, creditLimit, base, creditDuration);
     }
 
     async updateCustomerCreditLimit(
@@ -685,53 +232,7 @@ export class CustomerService {
         base?: Partial<CreditCustomerSummary>,
         creditDuration?: number
     ): Promise<CreditCustomerSummary> {
-        const client = this.apolloService.getClient();
-        const result = await client.mutate<{
-            updateCustomerCreditLimit: {
-                customerId: string;
-                isCreditApproved: boolean;
-                creditLimit: number;
-                outstandingAmount: number;
-                availableCredit: number;
-                lastRepaymentDate?: string | null;
-                lastRepaymentAmount: number;
-                creditDuration: number;
-            };
-        }>({
-            mutation: UPDATE_CUSTOMER_CREDIT_LIMIT,
-            variables: {
-                input: {
-                    customerId,
-                    creditLimit,
-                    creditDuration,
-                },
-            },
-        });
-
-        if (result.error) {
-            console.error('❌ GraphQL error:', result.error);
-            const errorMessage = result.error.message || 'Unknown error';
-            throw new Error(`Failed to update customer credit limit: ${errorMessage}`);
-        }
-
-        const summary = result.data?.updateCustomerCreditLimit;
-        if (!summary) {
-            throw new Error('Failed to update customer credit limit: No data returned.');
-        }
-
-        return {
-            id: summary.customerId,
-            name: base?.name ?? '',
-            phone: base?.phone,
-            email: base?.email,
-            isCreditApproved: summary.isCreditApproved,
-            creditLimit: summary.creditLimit,
-            outstandingAmount: summary.outstandingAmount,
-            availableCredit: summary.availableCredit,
-            lastRepaymentDate: summary.lastRepaymentDate,
-            lastRepaymentAmount: summary.lastRepaymentAmount,
-            creditDuration: summary.creditDuration,
-        };
+        return this.creditService.updateCustomerCreditLimit(customerId, creditLimit, base, creditDuration);
     }
 
     async updateCreditDuration(
@@ -739,101 +240,14 @@ export class CustomerService {
         creditDuration: number,
         base?: Partial<CreditCustomerSummary>
     ): Promise<CreditCustomerSummary> {
-        const client = this.apolloService.getClient();
-        const result = await client.mutate<{
-            updateCreditDuration: {
-                customerId: string;
-                isCreditApproved: boolean;
-                creditLimit: number;
-                outstandingAmount: number;
-                availableCredit: number;
-                lastRepaymentDate?: string | null;
-                lastRepaymentAmount: number;
-                creditDuration: number;
-            };
-        }>({
-            mutation: UPDATE_CREDIT_DURATION,
-            variables: {
-                input: {
-                    customerId,
-                    creditDuration,
-                },
-            },
-        });
-
-        if (result.error) {
-            console.error('❌ GraphQL error:', result.error);
-            const errorMessage = result.error.message || 'Unknown error';
-            throw new Error(`Failed to update customer credit duration: ${errorMessage}`);
-        }
-
-        const summary = result.data?.updateCreditDuration;
-        if (!summary) {
-            throw new Error('Failed to update customer credit duration: No data returned.');
-        }
-
-        return {
-            id: summary.customerId,
-            name: base?.name ?? '',
-            phone: base?.phone,
-            email: base?.email,
-            isCreditApproved: summary.isCreditApproved,
-            creditLimit: summary.creditLimit,
-            outstandingAmount: summary.outstandingAmount,
-            availableCredit: summary.availableCredit,
-            lastRepaymentDate: summary.lastRepaymentDate,
-            lastRepaymentAmount: summary.lastRepaymentAmount,
-            creditDuration: summary.creditDuration,
-        };
+        return this.creditService.updateCreditDuration(customerId, creditDuration, base);
     }
 
     /**
      * Clear error state
      */
     clearError(): void {
-        this.errorSignal.set(null);
-    }
-
-    private mapToCreditSummary(customer: CustomerRecord): CreditCustomerSummary {
-        const creditLimit = Number(customer.customFields?.creditLimit ?? 0);
-        // outstandingAmount is now a computed field on Customer, not in customFields
-        const outstandingAmount = Number(customer.outstandingAmount ?? 0);
-        const availableCredit = Math.max(creditLimit - Math.abs(outstandingAmount), 0);
-        const lastRepaymentDate = customer.customFields?.lastRepaymentDate ?? null;
-        const lastRepaymentAmount = Number(customer.customFields?.lastRepaymentAmount ?? 0);
-        const creditDuration = Number(customer.customFields?.creditDuration ?? 30);
-
-        return {
-            id: customer.id,
-            name: this.buildDisplayName(customer),
-            phone: customer.phoneNumber ?? undefined,
-            email: customer.emailAddress ?? undefined,
-            isCreditApproved: Boolean(customer.customFields?.isCreditApproved),
-            creditLimit,
-            outstandingAmount,
-            availableCredit,
-            lastRepaymentDate,
-            lastRepaymentAmount,
-            creditDuration,
-        };
-    }
-
-    private buildDisplayName(customer: CustomerRecord): string {
-        const parts = [customer.firstName, customer.lastName].filter(Boolean);
-        return parts.join(' ').trim();
-    }
-
-    private splitName(name: string): { firstName: string; lastName: string } {
-        const trimmed = name.trim();
-        if (!trimmed.includes(' ')) {
-            return { firstName: trimmed, lastName: 'POS' };
-        }
-
-        const [firstName, ...rest] = trimmed.split(' ');
-        return {
-            firstName,
-            lastName: rest.join(' ') || 'POS',
-        };
+        this.stateService.clearError();
     }
 
     /**
@@ -854,61 +268,6 @@ export class CustomerService {
         remainingBalance: number;
         totalAllocated: number;
     } | null> {
-        this.errorSignal.set(null);
-
-        try {
-            const client = this.apolloService.getClient();
-
-            const input: any = {
-                customerId,
-                paymentAmount,
-            };
-
-            if (orderIds && orderIds.length > 0) {
-                input.orderIds = orderIds;
-            }
-
-            const result = await client.mutate<{
-                allocateBulkPayment: {
-                    ordersPaid: Array<{ orderId: string; orderCode: string; amountPaid: number }>;
-                    remainingBalance: number;
-                    totalAllocated: number;
-                };
-            }>({
-                mutation: ALLOCATE_BULK_PAYMENT,
-                variables: { input },
-            });
-
-            if (result.error) {
-                console.error('❌ GraphQL error:', result.error);
-                const errorMessage = result.error.message || 'Unknown error';
-                this.errorSignal.set(`Failed to record payment: ${errorMessage}`);
-                return null;
-            }
-
-            const paymentResult = result.data?.allocateBulkPayment;
-            if (!paymentResult) {
-                this.errorSignal.set('Failed to record payment: No data returned.');
-                return null;
-            }
-
-            console.log('✅ Bulk payment recorded:', {
-                customerId,
-                paymentAmount,
-                referenceNumber,
-                ordersPaid: paymentResult.ordersPaid.length,
-                totalAllocated: paymentResult.totalAllocated,
-                remainingBalance: paymentResult.remainingBalance,
-            });
-
-            // TODO: Store reference number in payment metadata if backend supports it
-            // For now, the reference number is tracked but not stored
-
-            return paymentResult;
-        } catch (error: any) {
-            console.error('❌ Bulk payment error:', error);
-            this.errorSignal.set(error.message || 'Failed to record payment');
-            return null;
-        }
+        return this.paymentService.recordBulkPayment(customerId, paymentAmount, referenceNumber, orderIds);
     }
 }

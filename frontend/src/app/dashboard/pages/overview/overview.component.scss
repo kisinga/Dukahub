@@ -65,6 +65,8 @@
 
   &.stat-card-sales {
     border-color: oklch(var(--su) / 0.3);
+    position: relative;
+    z-index: 2; // Ensure sales card appears above ribbon
 
     .stat-icon {
       color: oklch(var(--su));
@@ -215,6 +217,96 @@
 // Tablet/Desktop full layout
 .stat-card-full {
   padding: 1rem;
+}
+
+// ============================================
+// STATS CONTAINER & RIBBON - Mobile Only
+// ============================================
+
+.stats-container {
+  position: relative;
+}
+
+// Mobile Ribbon - Smooth connection from Sales Card to Expanded Section
+.sales-ribbon {
+  position: absolute;
+  // Position to align with middle column (sales card)
+  // Grid: 3 columns with gap-2 (0.5rem on mobile)
+  // Sales card is in column 2 (middle)
+  left: calc((100% / 3) + 0.25rem); // Start from left edge of sales card + half gap
+  width: calc((100% / 3) - 0.5rem); // Width of sales card minus full gap
+  top: 120px; // Start from bottom of stat card (min-height from stat-card-compact)
+  height: 1rem; // Height of gap between cards
+  background: linear-gradient(
+    to bottom,
+    oklch(var(--su) / 0.15),
+    oklch(var(--su) / 0.1),
+    oklch(var(--su) / 0.05)
+  );
+  border-left: 2px solid oklch(var(--su) / 0.4);
+  border-right: 2px solid oklch(var(--su) / 0.4);
+  border-radius: 0 0 0.75rem 0.75rem;
+  pointer-events: none;
+  z-index: 1;
+  animation: ribbonAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top center;
+  
+  // Extend ribbon down to expanded card with fade
+  &::after {
+    content: '';
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    top: 100%;
+    height: 0.75rem;
+    background: linear-gradient(
+      to bottom,
+      oklch(var(--su) / 0.08),
+      oklch(var(--su) / 0.03),
+      transparent
+    );
+    border-left: 2px solid oklch(var(--su) / 0.25);
+    border-right: 2px solid oklch(var(--su) / 0.25);
+  }
+}
+
+@keyframes ribbonAppear {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+// Expanded Details Card - Compact & Focused
+.expanded-details-card {
+  position: relative;
+  z-index: 2; // Ensure it appears above the ribbon
+  margin-top: 0.5rem;
+
+  // Desktop: Subtle connection without ribbon
+  @media (min-width: 640px) {
+    margin-top: 0.75rem;
+    
+    // Add subtle top border accent when sales is expanded
+    &.border-success {
+      border-top-width: 3px;
+      box-shadow: 0 -2px 8px oklch(var(--su) / 0.1);
+    }
+    
+    &.border-primary {
+      border-top-width: 3px;
+      box-shadow: 0 -2px 8px oklch(var(--p) / 0.1);
+    }
+    
+    &.border-error {
+      border-top-width: 3px;
+      box-shadow: 0 -2px 8px oklch(var(--er) / 0.1);
+    }
+  }
 }
 
 // Smooth card animations with subtle depth

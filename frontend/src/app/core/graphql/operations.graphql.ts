@@ -618,6 +618,12 @@ export const GET_ORDERS_FOR_PERIOD = graphql(`
         totalWithTax
         orderPlacedAt
         state
+        payments {
+          id
+          amount
+          method
+          state
+        }
       }
     }
   }
@@ -645,12 +651,22 @@ export const GET_RECENT_ORDERS = graphql(`
         state
         createdAt
         currencyCode
+        customer {
+          firstName
+          lastName
+        }
         lines {
           id
-          productVariant {
-            name
-          }
           quantity
+          productVariant {
+            id
+            name
+            sku
+            product {
+              id
+              name
+            }
+          }
         }
       }
     }
@@ -2081,6 +2097,49 @@ export const RECORD_PURCHASE = graphql(`
   }
 `);
 
+export const GET_PURCHASES = graphql(`
+  query GetPurchases($options: PurchaseListOptions) {
+    purchases(options: $options) {
+      items {
+        id
+        supplierId
+        supplier {
+          id
+          firstName
+          lastName
+          emailAddress
+        }
+        purchaseDate
+        referenceNumber
+        totalCost
+        paymentStatus
+        isCreditPurchase
+        notes
+        lines {
+          id
+          variantId
+          variant {
+            id
+            name
+            sku
+          }
+          quantity
+          unitCost
+          totalCost
+          stockLocationId
+          stockLocation {
+            id
+            name
+          }
+        }
+        createdAt
+        updatedAt
+      }
+      totalItems
+    }
+  }
+`);
+
 export const RECORD_STOCK_ADJUSTMENT = graphql(`
   mutation RecordStockAdjustment($input: RecordStockAdjustmentInput!) {
     recordStockAdjustment(input: $input) {
@@ -2098,33 +2157,6 @@ export const RECORD_STOCK_ADJUSTMENT = graphql(`
       }
       createdAt
       updatedAt
-    }
-  }
-`);
-
-export const GET_PURCHASES = graphql(`
-  query GetPurchases($options: PurchaseListOptions) {
-    purchases(options: $options) {
-      items {
-        id
-        supplierId
-        purchaseDate
-        referenceNumber
-        totalCost
-        paymentStatus
-        notes
-        lines {
-          id
-          variantId
-          quantity
-          unitCost
-          totalCost
-          stockLocationId
-        }
-        createdAt
-        updatedAt
-      }
-      totalItems
     }
   }
 `);

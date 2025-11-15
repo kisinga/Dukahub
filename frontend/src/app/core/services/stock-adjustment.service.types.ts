@@ -1,4 +1,4 @@
-import { ProductVariant } from './product-search.service';
+import { ProductVariant } from './product/product-search.service';
 
 /**
  * Stock adjustment line item interface
@@ -18,4 +18,5 @@ export interface StockAdjustmentDraft {
     notes: string;
     lines: StockAdjustmentLineItem[];
 }
+
 

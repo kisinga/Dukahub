@@ -39,7 +39,6 @@ export class DashboardLayoutComponent implements OnInit {
             { label: 'Customers', icon: '👥', route: '/dashboard/customers' },
             { label: 'Suppliers', icon: '🏢', route: '/dashboard/suppliers' },
             { label: 'Purchases', icon: '🛒', route: '/dashboard/purchases' },
-            { label: 'Inventory', icon: '📋', route: '/dashboard/inventory' },
             { label: 'Reports', icon: '📈', route: '/dashboard/reports' },
         ];
 

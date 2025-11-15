@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, inject, input, Output, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SupplierService } from '../../../core/services/supplier.service';
@@ -259,6 +259,12 @@ export class SupplierCreateComponent {
     private readonly fb = inject(FormBuilder);
     readonly supplierService = inject(SupplierService);
 
+    // Inputs for composability
+    readonly mode = input<'page' | 'modal'>('page');
+
+    // Output for modal usage
+    @Output() supplierCreated = new EventEmitter<string>();
+
     // State
     readonly step = signal<number>(1);
     readonly error = signal<string | null>(null);
@@ -322,8 +328,13 @@ export class SupplierCreateComponent {
             const supplierId = await this.supplierService.createSupplier(supplierInput);
 
             if (supplierId) {
-                // Navigate back to suppliers list
-                this.router.navigate(['/dashboard/suppliers']);
+                // Emit event for modal usage
+                this.supplierCreated.emit(supplierId);
+
+                // Navigate only in page mode
+                if (this.mode() === 'page') {
+                    this.router.navigate(['/dashboard/suppliers']);
+                }
             } else {
                 this.error.set(this.supplierService.error() || 'Failed to create supplier');
             }
@@ -386,7 +397,10 @@ export class SupplierCreateComponent {
         if (this.step() === 2) {
             this.goToStep(1);
         } else {
-            this.router.navigate(['/dashboard/suppliers']);
+            // Only navigate in page mode
+            if (this.mode() === 'page') {
+                this.router.navigate(['/dashboard/suppliers']);
+            }
         }
     }
 

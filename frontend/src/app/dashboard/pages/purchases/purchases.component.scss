@@ -1,2 +1,27 @@
 // Purchase component styles
 
+// Mobile-first responsive design
+@media (max-width: 768px) {
+  // Ensure minimum touch target size (44px)
+  .btn,
+  .input,
+  .select,
+  .textarea {
+    min-height: 44px;
+  }
+
+  // Larger text on mobile for better readability
+  .input,
+  .select,
+  .textarea {
+    font-size: 16px; // Prevents zoom on iOS
+  }
+}
+
+// Desktop enhancements
+@media (min-width: 768px) {
+  .container-app {
+    max-width: 1024px;
+    margin: 0 auto;
+  }
+}

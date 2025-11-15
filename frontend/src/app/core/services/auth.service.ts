@@ -1,136 +1,62 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { ReplaySubject, firstValueFrom } from 'rxjs';
-import type {
-  RequestLoginOtpMutation,
-  RequestLoginOtpMutationVariables,
-  RequestRegistrationOtpMutation,
-  RequestRegistrationOtpMutationVariables,
-  VerifyLoginOtpMutation,
-  VerifyLoginOtpMutationVariables,
-  VerifyRegistrationOtpMutation,
-  VerifyRegistrationOtpMutationVariables
-} from '../graphql/generated/graphql';
-import { Permission } from '../graphql/generated/graphql';
-import {
-  GET_ACTIVE_ADMIN,
-  LOGIN,
-  LOGOUT,
-  REQUEST_LOGIN_OTP,
-  REQUEST_REGISTRATION_OTP,
-  VERIFY_LOGIN_OTP,
-  VERIFY_REGISTRATION_OTP
-} from '../graphql/operations.graphql';
-import type {
-  ActiveAdministrator,
-  GetActiveAdministratorQuery,
-  LoginMutation,
-  LoginMutationVariables,
-  LogoutMutation
-} from '../models/user.model';
-import { formatPhoneNumber } from '../utils/phone.utils';
+import type { LoginMutation, LoginMutationVariables } from '../models/user.model';
 import { ApolloService } from './apollo.service';
-import { CompanyService } from './company.service';
+import { AuthLoginService } from './auth/auth-login.service';
+import { AuthOtpService } from './auth/auth-otp.service';
+import { AuthPermissionsService } from './auth/auth-permissions.service';
+import { AuthSessionService } from './auth/auth-session.service';
 
 /**
  * Global authentication service for admin users
  * Manages administrator authentication state, login/logout operations, and session management
  * 
  * Note: Uses admin-api endpoint for authentication
+ * 
+ * ARCHITECTURE:
+ * - Composed of specialized sub-services for better maintainability
+ * - Maintains backward compatibility with existing public API
  */
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
   private readonly apolloService = inject(ApolloService);
-  private readonly companyService = inject(CompanyService);
   private readonly router = inject(Router);
 
-  // Authentication state signals
-  private readonly userSignal = signal<ActiveAdministrator | null>(null);
+  // Inject all sub-services
+  private readonly sessionService = inject(AuthSessionService);
+  private readonly otpService = inject(AuthOtpService);
+  private readonly loginService = inject(AuthLoginService);
+  private readonly permissionsService = inject(AuthPermissionsService);
+
+  // Loading state signal
   private readonly isLoadingSignal = signal<boolean>(false);
 
-  // ReplaySubject for initialization - emits once and caches for late subscribers
-  private readonly initialized$ = new ReplaySubject<boolean>(1);
-
-  // Public computed signals
-  readonly user = this.userSignal.asReadonly();
+  // Public computed signals - delegate to sub-services
+  readonly user = this.sessionService.user;
   readonly isLoading = this.isLoadingSignal.asReadonly();
-  readonly isAuthenticated = computed(() => this.userSignal() !== null);
+  readonly isAuthenticated = computed(() => this.sessionService.user() !== null);
   readonly fullName = computed(() => {
-    const user = this.userSignal();
+    const user = this.sessionService.user();
     if (!user) return 'Loading...';
     return `${user.firstName} ${user.lastName}`.trim() || user.emailAddress;
   });
 
-  readonly hasUpdateSettingsPermission = computed(() => {
-    const user = this.userSignal();
-    if (!user?.user?.roles) return false;
-
-    // Check if user has UpdateSettings permission in ANY role
-    const hasPermission = user.user.roles.some(role =>
-      role.permissions.includes(Permission.UpdateSettings)
-    );
-
-    console.log('🔐 Permission check:', {
-      user: user?.firstName,
-      roles: user?.user?.roles?.map(r => ({ code: r.code, permissions: r.permissions })),
-      hasPermission
-    });
-
-    return hasPermission;
-  });
-
-  readonly hasOverridePricePermission = computed(() => {
-    const user = this.userSignal();
-    if (!user?.user?.roles) return false;
-
-    // Check if user has OverridePrice permission in ANY role
-    const hasPermission = user.user.roles.some(role =>
-      role.permissions.includes(Permission.OverridePrice)
-    );
-
-    console.log('🔐 OverridePrice permission check:', {
-      user: user?.firstName,
-      roles: user?.user?.roles?.map(r => ({ code: r.code, permissions: r.permissions })),
-      hasPermission
-    });
-
-    return hasPermission;
-  });
-
-  readonly hasCreditManagementPermission = computed(() => {
-    const user = this.userSignal();
-    if (!user?.user?.roles) return false;
-
-    const hasPermission = user.user.roles.some(role =>
-      role.permissions.some(permission => {
-        const value = String(permission);
-        return value === 'ApproveCustomerCredit' || value === 'ManageCustomerCreditLimit';
-      })
-    );
-
-    return hasPermission;
-  });
-
-  readonly hasManageStockAdjustmentsPermission = computed(() => {
-    const user = this.userSignal();
-    if (!user?.user?.roles) return false;
-
-    const hasPermission = user.user.roles.some(role =>
-      role.permissions.includes('ManageStockAdjustments' as any)
-    );
-
-    return hasPermission;
-  });
+  // Permission signals - delegate to permissions service
+  readonly hasUpdateSettingsPermission = this.permissionsService.hasUpdateSettingsPermission;
+  readonly hasOverridePricePermission = this.permissionsService.hasOverridePricePermission;
+  readonly hasCreditManagementPermission = this.permissionsService.hasCreditManagementPermission;
+  readonly hasManageStockAdjustmentsPermission = this.permissionsService.hasManageStockAdjustmentsPermission;
 
   constructor() {
     // Register session expiration handler with Apollo service
     this.apolloService.onSessionExpired(() => {
-      this.handleSessionExpired();
+      this.sessionService.handleSessionExpired();
     });
 
-    this.initializeAuth();
+    // Initialize authentication
+    this.sessionService.initializeAuth();
   }
 
   /**
@@ -138,101 +64,7 @@ export class AuthService {
    * Uses ReplaySubject to handle multiple subscribers gracefully
    */
   async waitForInitialization(): Promise<void> {
-    await firstValueFrom(this.initialized$);
-  }
-
-  /**
-   * Initialize authentication by checking for existing session
-   * Admin-api uses cookie-based sessions, not JWT tokens
-   */
-  private async initializeAuth(): Promise<void> {
-    try {
-      await this.fetchActiveAdministrator();
-    } finally {
-      this.initialized$.next(true);
-      this.initialized$.complete();
-    }
-  }
-
-
-  /**
-   * Fetch the currently authenticated administrator
-   * Also fetches user channels on initialization to restore state
-   */
-  private async fetchActiveAdministrator(): Promise<void> {
-    try {
-      const client = this.apolloService.getClient();
-
-      // Add timeout to prevent hanging indefinitely
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Query timeout')), 5000); // 5 second timeout (reduced for faster failure)
-      });
-
-      const queryPromise = client.query<GetActiveAdministratorQuery>({
-        query: GET_ACTIVE_ADMIN,
-        fetchPolicy: 'network-only',
-        context: { skipChannelToken: true },
-        errorPolicy: 'all', // Return partial results even on error
-      });
-
-      const result = await Promise.race([queryPromise, timeoutPromise]);
-      const { data } = result;
-
-      if (data?.activeAdministrator) {
-        // Use the generated type directly - it's the source of truth
-        this.userSignal.set(data.activeAdministrator);
-        console.log('✅ Active admin fetched, now restoring session...');
-
-        // CRITICAL: Restore session BEFORE fetching channels
-        // This prevents fetchUserChannels from resetting to first company
-        this.companyService.initializeFromStorage();
-
-        // Fetch user channels asynchronously (non-blocking) to restore channel state
-        // This ensures channels are available even on hard refresh, but doesn't block initialization
-        this.companyService.fetchUserChannels().catch(error => {
-          console.warn('Failed to fetch user channels (non-critical):', error);
-          // Don't fail initialization if channel fetch fails
-        });
-      } else {
-        // No administrator data means not authenticated
-        this.userSignal.set(null);
-      }
-    } catch (error: any) {
-      console.error('Failed to fetch active administrator:', error);
-
-      // Always set user to null on error to prevent hanging
-      // This ensures the auth guard can make a decision
-      this.userSignal.set(null);
-
-      // Don't throw - initialization must complete so guards can proceed
-      // This allows the app to load even if backend is unavailable
-    }
-  }
-
-  /**
-   * Check if an error is authentication-related
-   */
-  private isAuthError(error: unknown): boolean {
-    if (!error || typeof error !== 'object') return false;
-
-    // Check GraphQL errors
-    if ('graphQLErrors' in error && Array.isArray((error as any).graphQLErrors)) {
-      const graphQLErrors = (error as any).graphQLErrors;
-      return graphQLErrors.some((err: any) =>
-        err.extensions?.code === 'FORBIDDEN' ||
-        err.extensions?.code === 'UNAUTHORIZED' ||
-        err.message?.includes('not authorized') ||
-        err.message?.includes('not authenticated')
-      );
-    }
-
-    // Check network errors
-    if ('networkError' in error) {
-      const networkError = (error as any).networkError;
-      return networkError?.statusCode === 401 || networkError?.statusCode === 403;
-    }
-
-    return false;
+    return this.sessionService.waitForInitialization();
   }
 
   /**
@@ -242,67 +74,7 @@ export class AuthService {
   async loginWithOTP(phoneNumber: string, otp: string): Promise<void> {
     this.isLoadingSignal.set(true);
     try {
-      const client = this.apolloService.getClient();
-
-      // Verify OTP and get session token
-      const verifyResult = await client.mutate<VerifyLoginOtpMutation, VerifyLoginOtpMutationVariables>({
-        mutation: VERIFY_LOGIN_OTP,
-        variables: { phoneNumber, otp: otp.trim() },
-        context: { skipChannelToken: true },
-      });
-
-      const verifyData = verifyResult.data?.verifyLoginOTP;
-      if (!verifyData) {
-        throw new Error('No response from server. Please try again.');
-      }
-
-      if (!verifyData.success || !verifyData.token) {
-        throw new Error(verifyData.message || 'OTP verification failed');
-      }
-
-      // Use token to complete login
-      // Ensure phone number is normalized for login (must match format used during OTP verification)
-      const normalizedPhone = formatPhoneNumber(phoneNumber);
-      console.log('[AUTH SERVICE] Attempting login with:', {
-        username: normalizedPhone,
-        originalPhone: phoneNumber,
-        tokenPrefix: verifyData.token?.substring(0, 20),
-        tokenLength: verifyData.token?.length,
-      });
-
-      const loginResult = await client.mutate<LoginMutation, LoginMutationVariables>({
-        mutation: LOGIN,
-        variables: {
-          username: normalizedPhone,
-          password: verifyData.token,
-          rememberMe: false,
-        },
-        context: { skipChannelToken: true },
-      });
-
-      const loginData = loginResult.data?.login;
-      if (!loginData || 'errorCode' in loginData) {
-        throw new Error(loginData?.message || 'Login failed');
-      }
-
-      await this.fetchActiveAdministrator();
-
-    } catch (error: any) {
-      console.error('Login error:', error);
-      console.error('Error details:', {
-        message: error?.message,
-        graphQLErrors: error?.graphQLErrors,
-        networkError: error?.networkError,
-      });
-
-      // Extract error message from various sources
-      const errorMessage =
-        error?.graphQLErrors?.[0]?.message ||
-        error?.networkError?.message ||
-        error?.message ||
-        'Login failed. Please try again.';
-
-      throw new Error(errorMessage);
+      await this.loginService.loginWithOTP(phoneNumber, otp);
     } finally {
       this.isLoadingSignal.set(false);
     }
@@ -312,31 +84,7 @@ export class AuthService {
    * Request login OTP
    */
   async requestLoginOTP(phoneNumber: string): Promise<{ success: boolean; message: string; expiresAt?: number }> {
-    try {
-      const client = this.apolloService.getClient();
-      const result = await client.mutate<RequestLoginOtpMutation, RequestLoginOtpMutationVariables>({
-        mutation: REQUEST_LOGIN_OTP,
-        variables: { phoneNumber },
-        context: { skipChannelToken: true },
-      });
-
-      const data = result.data?.requestLoginOTP;
-      if (!data || !data.success) {
-        throw new Error(data?.message || 'Failed to request OTP');
-      }
-
-      return {
-        success: data.success,
-        message: data.message,
-        expiresAt: data.expiresAt ?? undefined,
-      };
-    } catch (error: any) {
-      const errorMessage =
-        error?.graphQLErrors?.[0]?.message ||
-        error?.message ||
-        'Failed to request OTP';
-      throw new Error(errorMessage);
-    }
+    return this.otpService.requestLoginOTP(phoneNumber);
   }
 
   /**
@@ -347,30 +95,7 @@ export class AuthService {
     phoneNumber: string,
     registrationData: any
   ): Promise<{ success: boolean; message: string; sessionId?: string; expiresAt?: number }> {
-    try {
-      const client = this.apolloService.getClient();
-      const result = await client.mutate<RequestRegistrationOtpMutation, RequestRegistrationOtpMutationVariables>({
-        mutation: REQUEST_REGISTRATION_OTP,
-        variables: { phoneNumber, registrationData },
-        context: { skipChannelToken: true },
-      });
-
-      const data = result.data?.requestRegistrationOTP;
-      if (!data || !data.success) {
-        throw new Error(data?.message || 'Failed to request OTP');
-      }
-
-      return {
-        success: data.success,
-        message: data.message,
-        sessionId: data.sessionId ?? undefined,
-        expiresAt: data.expiresAt ?? undefined,
-      };
-    } catch (error: any) {
-      console.error('Failed to request registration OTP:', error);
-      const errorMessage = error?.message || error?.graphQLErrors?.[0]?.message || 'Failed to request OTP';
-      throw new Error(errorMessage);
-    }
+    return this.otpService.requestRegistrationOTP(phoneNumber, registrationData);
   }
 
   /**
@@ -383,101 +108,7 @@ export class AuthService {
     otp: string,
     sessionId: string
   ): Promise<{ success: boolean; userId?: string; message: string }> {
-    try {
-      const client = this.apolloService.getClient();
-
-      // Normalize phone number to ensure consistency with backend
-      const normalizedPhone = formatPhoneNumber(phoneNumber);
-
-      // Validate sessionId
-      if (!sessionId || !sessionId.trim()) {
-        throw new Error('Session expired. Please start registration again.');
-      }
-
-      const result = await client.mutate<VerifyRegistrationOtpMutation, VerifyRegistrationOtpMutationVariables>({
-        mutation: VERIFY_REGISTRATION_OTP,
-        variables: {
-          phoneNumber: normalizedPhone,
-          otp: otp.trim(),
-          sessionId: sessionId.trim(),
-        },
-        context: { skipChannelToken: true },
-      });
-
-      const data = result.data?.verifyRegistrationOTP;
-      if (!data) {
-        throw new Error('Registration failed - no response from server. Please try again.');
-      }
-
-      // Check if backend returned an error (even if mutation succeeded)
-      if (!data.success) {
-        // Extract specific error messages
-        const errorMsg = data.message || 'Registration failed';
-
-        // Provide user-friendly messages for common errors
-        if (errorMsg.toLowerCase().includes('already exists') || errorMsg.toLowerCase().includes('duplicate')) {
-          throw new Error('An account with this phone number already exists. Please login instead.');
-        }
-
-        if (errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('expired')) {
-          throw new Error('Registration session expired. Please start registration again.');
-        }
-
-        if (errorMsg.toLowerCase().includes('otp') || errorMsg.toLowerCase().includes('invalid')) {
-          throw new Error('Invalid or expired OTP code. Please request a new OTP.');
-        }
-
-        if (errorMsg.toLowerCase().includes('channel') || errorMsg.toLowerCase().includes('company code')) {
-          throw new Error('Company code is already taken. Please choose a different company name.');
-        }
-
-        throw new Error(errorMsg);
-      }
-
-      // Success - entities created on backend
-      // Note: User must login separately (tokens can't be assigned during signup)
-      return {
-        success: data.success,
-        userId: data.userId ?? undefined,
-        message: data.message || 'Registration successful. Your account is pending admin approval. Please login to continue.',
-      };
-    } catch (error: any) {
-      console.error('Verify registration OTP error:', error);
-
-      // Handle GraphQL errors
-      if (error?.graphQLErrors && error.graphQLErrors.length > 0) {
-        const graphQLError = error.graphQLErrors[0];
-        const errorMessage = graphQLError.message || 'Registration failed';
-
-        // Provide user-friendly messages for common GraphQL errors
-        if (errorMessage.toLowerCase().includes('already exists') || errorMessage.toLowerCase().includes('duplicate')) {
-          throw new Error('An account with this phone number already exists. Please login instead.');
-        }
-
-        if (errorMessage.toLowerCase().includes('not found') || errorMessage.toLowerCase().includes('expired')) {
-          throw new Error('Registration session expired. Please start registration again.');
-        }
-
-        if (errorMessage.toLowerCase().includes('otp') || errorMessage.toLowerCase().includes('invalid')) {
-          throw new Error('Invalid or expired OTP code. Please request a new OTP.');
-        }
-
-        throw new Error(errorMessage);
-      }
-
-      // Handle network errors
-      if (error?.networkError) {
-        const networkError = error.networkError;
-        if (networkError.statusCode === 0 || networkError.message?.includes('Failed to fetch')) {
-          throw new Error('Unable to connect to server. Please check your internet connection and try again.');
-        }
-        throw new Error('Network error occurred. Please try again.');
-      }
-
-      // Handle other errors
-      const errorMessage = error?.message || 'Registration failed. Please try again.';
-      throw new Error(errorMessage);
-    }
+    return this.otpService.verifyRegistrationOTP(phoneNumber, otp, sessionId);
   }
 
   /**
@@ -516,31 +147,7 @@ export class AuthService {
   async login(credentials: LoginMutationVariables): Promise<LoginMutation['login']> {
     this.isLoadingSignal.set(true);
     try {
-      const client = this.apolloService.getClient();
-      const result = await client.mutate<LoginMutation, LoginMutationVariables>({
-        mutation: LOGIN,
-        variables: credentials,
-        context: { skipChannelToken: true },
-      });
-      const { data } = result;
-
-      const loginResult = data?.login;
-
-      // Successful login
-      if (loginResult?.__typename === 'CurrentUser') {
-        // Set companies/channels from login response
-        if (loginResult.channels && loginResult.channels.length > 0) {
-          this.companyService.setCompaniesFromChannels(loginResult.channels);
-        }
-
-        // Fetch full administrator details
-        await this.fetchActiveAdministrator();
-      }
-
-      return loginResult!;
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+      return await this.loginService.login(credentials);
     } finally {
       this.isLoadingSignal.set(false);
     }
@@ -553,51 +160,18 @@ export class AuthService {
     this.isLoadingSignal.set(true);
 
     try {
-      const client = this.apolloService.getClient();
-      await client.mutate<LogoutMutation>({
-        mutation: LOGOUT,
-        context: { skipChannelToken: true },
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
+      await this.loginService.logout();
     } finally {
-      this.clearSession();
+      this.sessionService.clearSession();
       this.router.navigate(['/login']);
       this.isLoadingSignal.set(false);
     }
   }
 
   /**
-   * Note: Admin registration is not supported.
-   * Administrators must be created by a super admin through the admin UI.
-   */
-
-  /**
-   * Clear local session data
-   */
-  private clearSession(): void {
-    this.userSignal.set(null);
-    this.companyService.clearActiveCompany();
-    this.apolloService.clearAuthToken();
-    this.apolloService.clearCache();
-  }
-
-  /**
-   * Handle session expiration
-   * Called by Apollo service when authentication error is detected
-   */
-  private handleSessionExpired(): void {
-    console.warn('Session expired - clearing user state');
-    this.userSignal.set(null);
-    // Note: Apollo service handles redirect and cache clearing
-  }
-
-  /**
    * Check if user has a specific role (extend as needed)
    */
   hasRole(role: string): boolean {
-    // Implement role checking logic based on your user model
-    return false;
+    return this.permissionsService.hasRole(role);
   }
 }
-

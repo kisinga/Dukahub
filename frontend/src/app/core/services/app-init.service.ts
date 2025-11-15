@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { CompanyService } from './company.service';
 import { MlModelService } from './ml-model.service';
-import { ProductCacheService } from './product-cache.service';
+import { ProductCacheService } from './product/product-cache.service';
 import { StockLocationService } from './stock-location.service';
 
 /**

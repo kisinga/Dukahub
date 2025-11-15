@@ -1,13 +1,13 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Customer, ProductVariant, StockLocation } from '@vendure/core';
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('stock_purchase')
 export class StockPurchase {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column()
-    supplierId: string;
+    @Column({ type: 'integer' })
+    supplierId: number;
 
     @ManyToOne(() => Customer)
     supplier: Customer;
@@ -55,8 +55,8 @@ export class StockPurchaseLine {
     @ManyToOne(() => StockPurchase, purchase => purchase.lines, { onDelete: 'CASCADE' })
     purchase: StockPurchase;
 
-    @Column()
-    variantId: string;
+    @Column({ type: 'integer' })
+    variantId: number;
 
     @ManyToOne(() => ProductVariant)
     variant: ProductVariant;
@@ -70,8 +70,8 @@ export class StockPurchaseLine {
     @Column({ type: 'bigint' })
     totalCost: number; // In smallest currency unit (cents)
 
-    @Column()
-    stockLocationId: string;
+    @Column({ type: 'integer' })
+    stockLocationId: number;
 
     @ManyToOne(() => StockLocation)
     stockLocation: StockLocation;

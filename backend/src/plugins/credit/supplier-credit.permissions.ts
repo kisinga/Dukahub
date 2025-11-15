@@ -5,3 +5,4 @@ export const ManageSupplierCreditPurchasesPermission = new PermissionDefinition(
     description: 'Allows managing supplier credit purchases, including approval, limit management, and bulk payments.',
 });
 
+

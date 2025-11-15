@@ -47,7 +47,7 @@ export class SupplierCreditService {
         creditDuration?: number
     ): Promise<SupplierCreditSummary> {
         const supplier = await this.getSupplierOrThrow(ctx, supplierId);
-        
+
         // Verify supplier is marked as supplier
         const customFields = supplier.customFields as any;
         if (!customFields?.isSupplier) {
@@ -162,9 +162,10 @@ export class SupplierCreditService {
     async calculateSupplierOutstandingAmount(ctx: RequestContext, supplierId: ID): Promise<number> {
         // Query all credit purchases for supplier in states that indicate unpaid purchases
         const purchaseRepo = this.connection.getRepository(ctx, StockPurchase);
+        // Convert Vendure ID (string) to integer for database query
         const purchases = await purchaseRepo.find({
             where: {
-                supplierId: String(supplierId),
+                supplierId: parseInt(String(supplierId), 10),
                 isCreditPurchase: true,
                 paymentStatus: In(['pending', 'partial']),
             },
@@ -179,7 +180,7 @@ export class SupplierCreditService {
         // - 'partial': need to track actual paid amount (this would require a payments table)
         // For now, we'll treat 'partial' as having some payment but not fully paid
         // This is a simplification - ideally we'd have a payments table for purchases
-        
+
         // TODO: In the future, add a purchase_payment table similar to order payments
         // For now, we'll use a simple calculation based on paymentStatus
         const outstandingAmountInCents = purchases.reduce((sum, purchase) => {
@@ -286,4 +287,5 @@ export class SupplierCreditService {
         };
     }
 }
+
 

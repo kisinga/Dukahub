@@ -3,7 +3,7 @@ import { ApolloService } from './apollo.service';
 import { AuthService } from './auth.service';
 import { CACHE_CONFIGS, CacheService } from './cache.service';
 import { CompanyService } from './company.service';
-import { ProductVariant } from './product-search.service';
+import { ProductVariant } from './product/product-search.service';
 
 /**
  * Cart item interface - aligned with cart component
