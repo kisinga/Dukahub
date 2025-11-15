@@ -19,8 +19,27 @@ COPY . .
 # Build for production with optimizations
 RUN npm run build -- --configuration production
 
-# Debug: List the build output to see what was created
-RUN ls -la /app/dist/
+# Validate build output (verified via docker build inspection)
+# Angular CLI outputs to: /app/dist/dukahub/browser
+RUN echo "🔍 Validating build output..." && \
+    BUILD_DIR="/app/dist/dukahub/browser" && \
+    if [ ! -d "$BUILD_DIR" ]; then \
+      echo "❌ ERROR: Build directory not found at $BUILD_DIR" && \
+      echo "Available directories in /app/dist:" && \
+      find /app/dist -type d -maxdepth 2 2>/dev/null && \
+      exit 1; \
+    fi && \
+    if [ ! -f "$BUILD_DIR/index.html" ]; then \
+      echo "❌ ERROR: index.html not found in $BUILD_DIR" && \
+      echo "Files in build directory:" && \
+      ls -la "$BUILD_DIR" | head -20 && \
+      exit 1; \
+    fi && \
+    echo "✅ Build output validated:" && \
+    echo "  - Directory: $BUILD_DIR" && \
+    echo "  - JS files: $(find "$BUILD_DIR" -name "*.js" -type f | wc -l)" && \
+    echo "  - CSS files: $(find "$BUILD_DIR" -name "*.css" -type f | wc -l)" && \
+    echo "  - Total files: $(find "$BUILD_DIR" -type f | wc -l)"
 
 # Stage 2: Production nginx server
 FROM nginx:1.27-alpine
@@ -31,15 +50,23 @@ RUN apk add --no-cache curl
 # Remove default nginx config and content
 RUN rm -rf /etc/nginx/conf.d/default.conf /usr/share/nginx/html/*
 
-# Copy build output from builder (Angular 18 default path is dist/dukahub/browser)
+# Copy build output from builder stage (path verified via docker build inspection)
+# Angular CLI outputs to: /app/dist/dukahub/browser
 COPY --from=builder /app/dist/dukahub/browser /usr/share/nginx/html
 
-# Fallback: older CLI versions may emit dist/dukahub-frontend instead
-RUN if [ ! -f /usr/share/nginx/html/index.html ] && [ -d /app/dist/dukahub-frontend ]; then \
-      echo "Primary dist path missing, copying from dist/dukahub-frontend fallback..."; \
-      rm -rf /usr/share/nginx/html/*; \
-      cp -r /app/dist/dukahub-frontend/browser/* /usr/share/nginx/html/; \
-    fi
+# Verify copied files
+RUN echo "✅ Verifying copied build output..." && \
+    if [ ! -f /usr/share/nginx/html/index.html ]; then \
+      echo "❌ ERROR: index.html not found after copy" && \
+      echo "Contents of /usr/share/nginx/html:" && \
+      ls -la /usr/share/nginx/html/ && \
+      exit 1; \
+    fi && \
+    echo "✅ Build output copied successfully:" && \
+    echo "  - Total files: $(find /usr/share/nginx/html -type f | wc -l)" && \
+    echo "  - JS files: $(find /usr/share/nginx/html -name "*.js" | wc -l)" && \
+    echo "  - CSS files: $(find /usr/share/nginx/html -name "*.css" | wc -l)" && \
+    echo "  - HTML files: $(find /usr/share/nginx/html -name "*.html" | wc -l)"
 
 # Copy nginx configuration as template (will be processed at runtime)
 COPY nginx.conf /etc/nginx/conf.d/default.conf.template
