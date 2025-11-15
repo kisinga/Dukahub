@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { PREFETCH_PRODUCTS } from '../graphql/operations.graphql';
-import { ApolloService } from './apollo.service';
+import { PREFETCH_PRODUCTS } from '../../graphql/operations.graphql';
+import { ApolloService } from '../apollo.service';
 import { ProductSearchResult } from './product-search.service';
 
 /**

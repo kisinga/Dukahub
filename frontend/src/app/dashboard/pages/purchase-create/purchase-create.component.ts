@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { ProductSearchService, ProductVariant } from '../../../core/services/product-search.service';
+import { ProductSearchService, ProductVariant } from '../../../core/services/product/product-search.service';
 import { PurchaseService } from '../../../core/services/purchase.service';
 import { PurchaseDraft, PurchaseLineItem } from '../../../core/services/purchase.service.types';
 import { StockLocationService } from '../../../core/services/stock-location.service';

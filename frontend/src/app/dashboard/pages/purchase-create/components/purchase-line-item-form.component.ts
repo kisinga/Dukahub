@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
-import { ProductVariant } from '../../../../core/services/product-search.service';
+import { ProductVariant } from '../../../../core/services/product/product-search.service';
 import { StockLocation } from '../../../../core/services/stock-location.service';
 import { PurchaseLineItem } from '../../../../core/services/purchase.service.types';
 

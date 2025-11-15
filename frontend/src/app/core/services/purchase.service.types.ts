@@ -1,4 +1,4 @@
-import { ProductVariant } from './product-search.service';
+import { ProductVariant } from './product/product-search.service';
 
 /**
  * Purchase line item interface

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ProductSearchResult } from '../../../../core/services/product-search.service';
+import { ProductSearchResult } from '../../../../core/services/product/product-search.service';
 
 /**
  * Unified search interface with integrated camera toggle

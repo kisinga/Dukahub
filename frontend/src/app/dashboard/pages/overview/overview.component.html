@@ -293,34 +293,50 @@
         </div>
       </div>
     </button>
-    }
-    }
+    } }
   </div>
 
   <!-- Expanded Details - Enhanced Card with Better Visibility -->
   @if (expandedCategory(); as expanded) { @for (category of categories(); track category.type) { @if
   (category.type === expanded) {
-  <div class="card bg-base-100 shadow-xl border-2 animate-in"
-       [class.border-primary]="category.type === 'purchases'"
-       [class.border-success]="category.type === 'sales'"
-       [class.border-error]="category.type === 'expenses'">
+  <div
+    class="card bg-base-100 shadow-xl border-2 animate-in"
+    [class.border-primary]="category.type === 'purchases'"
+    [class.border-success]="category.type === 'sales'"
+    [class.border-error]="category.type === 'expenses'"
+  >
     <div class="card-body p-4 sm:p-6">
       <!-- Header with Better Visual Hierarchy - Compact Mobile -->
       <div class="flex items-center justify-between gap-3 mb-4 sm:mb-6">
         <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-          <div class="badge badge-lg gap-2 px-2 sm:px-3 py-1.5 sm:py-2 flex-shrink-0"
-               [class.badge-primary]="category.type === 'purchases'"
-               [class.badge-success]="category.type === 'sales'"
-               [class.badge-error]="category.type === 'expenses'">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <div
+            class="badge badge-lg gap-2 px-2 sm:px-3 py-1.5 sm:py-2 flex-shrink-0"
+            [class.badge-primary]="category.type === 'purchases'"
+            [class.badge-success]="category.type === 'sales'"
+            [class.badge-error]="category.type === 'expenses'"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-3 w-3 sm:h-4 sm:w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
             </svg>
             <span class="text-xs sm:text-sm font-bold hidden xs:inline">Breakdown</span>
           </div>
-          <h3 class="text-sm sm:text-base lg:text-lg font-bold truncate"
-              [class.text-primary]="category.type === 'purchases'"
-              [class.text-success]="category.type === 'sales'"
-              [class.text-error]="category.type === 'expenses'">
+          <h3
+            class="text-sm sm:text-base lg:text-lg font-bold truncate"
+            [class.text-primary]="category.type === 'purchases'"
+            [class.text-success]="category.type === 'sales'"
+            [class.text-error]="category.type === 'expenses'"
+          >
             {{ category.name }}
           </h3>
         </div>
@@ -355,7 +371,9 @@
           <div class="card-body p-3 sm:p-4 items-center text-center gap-2">
             <div class="text-3xl sm:text-4xl">{{ account.icon }}</div>
             <div class="space-y-1">
-              <div class="text-xs sm:text-sm font-semibold opacity-80 leading-tight">{{ account.label }}</div>
+              <div class="text-xs sm:text-sm font-semibold opacity-80 leading-tight">
+                {{ account.label }}
+              </div>
               <div class="text-base sm:text-lg font-bold tabular-nums">
                 {{ account.value.replace('KES ', '') }}
               </div>
@@ -510,7 +528,8 @@
     <div class="flex-1">
       <p class="font-bold">Low Stock Alert</p>
       <p class="text-sm opacity-90">
-        {{ lowStockCount() }} {{ lowStockCount() === 1 ? 'item is' : 'items are' }} running low in inventory
+        {{ lowStockCount() }} {{ lowStockCount() === 1 ? 'item is' : 'items are' }} running low in
+        inventory
       </p>
     </div>
     <button class="btn btn-sm btn-warning" (click)="navigateToInventory()">View Items</button>
