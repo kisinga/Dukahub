@@ -4,6 +4,11 @@ import { Account } from './account.entity';
 
 @Entity('ledger_journal_line')
 @Index(['entryId'])
+@Index('IDX_journal_line_account_channel_date', ['accountId', 'channelId'])
+// Define GIN indexes as regular indexes so TypeORM recognizes them
+// Migration 1766000500000-EnsureGinIndexes will convert them to GIN indexes
+@Index('IDX_journal_line_meta_customer', ['meta'], { where: `"meta"->>'customerId' IS NOT NULL` })
+@Index('IDX_journal_line_meta_supplier', ['meta'], { where: `"meta"->>'supplierId' IS NOT NULL` })
 export class JournalLine {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

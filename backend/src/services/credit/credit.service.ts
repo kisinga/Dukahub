@@ -12,6 +12,7 @@ import {
 import { In } from 'typeorm';
 import { AuditService } from '../../infrastructure/audit/audit.service';
 import { ChannelCommunicationService } from '../channels/channel-communication.service';
+import { FinancialService } from '../financial/financial.service';
 
 export interface CreditSummary {
     customerId: ID;
@@ -33,12 +34,15 @@ export class CreditService {
         private readonly orderService: OrderService,
         @Optional() private readonly communicationService?: ChannelCommunicationService, // Optional to avoid circular dependency
         @Optional() private readonly auditService?: AuditService, // Optional to avoid circular dependency
+        @Optional() private readonly financialService?: FinancialService, // Optional for migration period
     ) { }
 
     async getCreditSummary(ctx: RequestContext, customerId: ID): Promise<CreditSummary> {
         const customer = await this.getCustomerOrThrow(ctx, customerId);
-        // Calculate outstanding amount dynamically from orders
-        const outstandingAmount = await this.calculateOutstandingAmount(ctx, customerId);
+        // Get outstanding amount from ledger (single source of truth)
+        const outstandingAmount = this.financialService
+            ? await this.financialService.getCustomerBalance(ctx, customerId.toString())
+            : await this.calculateOutstandingAmount(ctx, customerId); // Fallback during migration
         return this.mapToSummary(customer, outstandingAmount);
     }
 
@@ -83,7 +87,9 @@ export class CreditService {
             });
         }
 
-        const outstandingAmount = await this.calculateOutstandingAmount(ctx, customerId);
+        const outstandingAmount = this.financialService
+            ? await this.financialService.getCustomerBalance(ctx, customerId.toString())
+            : await this.calculateOutstandingAmount(ctx, customerId); // Fallback during migration
         return this.mapToSummary(customer, outstandingAmount);
     }
 
@@ -126,7 +132,9 @@ export class CreditService {
             });
         }
 
-        const outstandingAmount = await this.calculateOutstandingAmount(ctx, customerId);
+        const outstandingAmount = this.financialService
+            ? await this.financialService.getCustomerBalance(ctx, customerId.toString())
+            : await this.calculateOutstandingAmount(ctx, customerId); // Fallback during migration
         return this.mapToSummary(customer, outstandingAmount);
     }
 
@@ -149,12 +157,15 @@ export class CreditService {
         await this.connection.getRepository(ctx, Customer).save(customer);
         this.logger.log(`Updated credit duration for customer ${customerId} to ${creditDuration} days`);
 
-        const outstandingAmount = await this.calculateOutstandingAmount(ctx, customerId);
+        const outstandingAmount = this.financialService
+            ? await this.financialService.getCustomerBalance(ctx, customerId.toString())
+            : await this.calculateOutstandingAmount(ctx, customerId); // Fallback during migration
         return this.mapToSummary(customer, outstandingAmount);
     }
 
     /**
      * Calculate outstanding amount dynamically from orders and payments
+     * @deprecated Use FinancialService.getCustomerBalance() instead. This method is kept for migration fallback.
      * This replaces the stored outstandingAmount field
      */
     private async calculateOutstandingAmount(ctx: RequestContext, customerId: ID): Promise<number> {
@@ -220,7 +231,9 @@ export class CreditService {
 
         // Notify about balance change (outstanding balance is calculated dynamically)
         if (this.communicationService) {
-            const currentOutstanding = await this.calculateOutstandingAmount(ctx, customerId);
+            const currentOutstanding = this.financialService
+                ? await this.financialService.getCustomerBalance(ctx, customerId.toString())
+                : await this.calculateOutstandingAmount(ctx, customerId); // Fallback during migration
             // Note: We can't calculate the previous outstanding without the old stored value,
             // so we'll just notify with the current value
             await this.communicationService.sendBalanceChangeNotification(

@@ -1,11 +1,23 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { EventBus, PaymentState, PaymentStateTransitionEvent, RequestContext } from '@vendure/core';
-import { PostingService } from '../../ledger/posting.service';
+import { FinancialService } from '../financial/financial.service';
 
+/**
+ * PaymentEventsAdapter - Safety Net
+ * 
+ * This adapter serves as a safety net to catch any payments that weren't posted
+ * synchronously in the transaction. In normal operation, FinancialService.recordPayment()
+ * should be called synchronously, making this adapter unnecessary.
+ * 
+ * This is kept for backward compatibility and as a failsafe.
+ */
 @Injectable()
 export class PaymentEventsAdapter implements OnModuleInit {
   private readonly logger = new Logger('PaymentEventsAdapter');
-  constructor(private readonly eventBus: EventBus, private readonly postingService: PostingService) {}
+  constructor(
+    private readonly eventBus: EventBus,
+    @Optional() private readonly financialService?: FinancialService
+  ) {}
 
   onModuleInit(): any {
     this.eventBus.ofType(PaymentStateTransitionEvent).subscribe(async (event) => {
@@ -14,43 +26,27 @@ export class PaymentEventsAdapter implements OnModuleInit {
         const payment = event.payment;
         const order = event.order;
         const toState = event.toState as PaymentState;
-        if (toState === 'Settled') {
-          await this.postingService.post('Payment', String(payment.id), {
-            channelId: ctx.channelId as any,
-            entryDate: new Date().toISOString().slice(0, 10),
-            memo: `Payment settled for order ${order.code}`,
-            lines: [
-              {
-                accountCode: this.mapMethodToAccount(payment.method),
-                debit: payment.amount,
-                meta: { orderId: order.id, method: payment.method },
-              },
-              {
-                accountCode: 'SALES',
-                credit: payment.amount,
-                meta: { orderId: order.id, method: payment.method },
-              },
-            ],
-          });
+        
+        if (toState === 'Settled' && this.financialService) {
+          // Safety net: Post payment if not already posted synchronously
+          // This should rarely be needed if FinancialService.recordPayment() is called in transactions
+          try {
+            await this.financialService.recordPayment(ctx, payment, order);
+            this.logger.debug(`Posted payment ${payment.id} via event adapter (safety net)`);
+          } catch (error) {
+            // If posting fails due to idempotency (already posted), that's fine
+            if (error instanceof Error && error.message.includes('already exists')) {
+              this.logger.debug(`Payment ${payment.id} already posted synchronously`);
+            } else {
+              throw error;
+            }
+          }
         }
         // Refunds are represented by Refund entities in Vendure; handle via a dedicated adapter later.
       } catch (e) {
         this.logger.error(`Posting for payment event failed: ${(e as Error).message}`);
       }
     });
-  }
-
-  private mapMethodToAccount(methodCode: string): string {
-    switch (methodCode) {
-      case 'cash-payment':
-        return 'CASH_ON_HAND';
-      case 'mpesa-payment':
-        return 'CLEARING_MPESA';
-      case 'credit-payment':
-        return 'CLEARING_CREDIT';
-      default:
-        return 'CLEARING_GENERIC';
-    }
   }
 }
 

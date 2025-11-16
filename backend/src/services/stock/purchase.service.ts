@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
     Customer,
     ID,
@@ -6,6 +6,7 @@ import {
     TransactionalConnection,
     UserInputError,
 } from '@vendure/core';
+import { FinancialService } from '../financial/financial.service';
 import { StockPurchase, StockPurchaseLine } from './entities/purchase.entity';
 import { StockValidationService } from './stock-validation.service';
 
@@ -39,6 +40,7 @@ export class PurchaseService {
     constructor(
         private readonly connection: TransactionalConnection,
         private readonly validationService: StockValidationService,
+        @Optional() private readonly financialService?: FinancialService, // Optional for migration period
     ) { }
 
     /**
@@ -86,6 +88,17 @@ export class PurchaseService {
         purchase.isCreditPurchase = input.isCreditPurchase ?? false;
 
         const savedPurchase = await purchaseRepo.save(purchase);
+
+        // Post credit purchase to ledger (single source of truth)
+        if (savedPurchase.isCreditPurchase && this.financialService) {
+            await this.financialService.recordPurchase(
+                ctx,
+                savedPurchase.id,
+                savedPurchase.referenceNumber || savedPurchase.id,
+                input.supplierId.toString(),
+                totalCost
+            );
+        }
 
         // Create purchase lines
         const purchaseLines = input.lines.map(line => {

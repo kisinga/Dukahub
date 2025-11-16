@@ -3,6 +3,7 @@ import { JournalLine } from './journal-line.entity';
 
 @Entity('ledger_journal_entry')
 @Unique('uq_journal_entry_source', ['channelId', 'sourceType', 'sourceId'])
+@Index('IDX_journal_entry_channel_date', ['channelId', 'entryDate'])
 export class JournalEntry {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

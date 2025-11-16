@@ -24,14 +24,14 @@ import { EnvironmentPlugin } from './plugins/core/environment.plugin';
 import { CreditPlugin } from './plugins/credit/credit.plugin';
 import { ApproveCustomerCreditPermission, ManageCustomerCreditLimitPermission } from './plugins/credit/permissions';
 import { FractionalQuantityPlugin } from './plugins/inventory/fractional-quantity.plugin';
-import { StockPlugin } from './plugins/stock/stock.plugin';
-import { ManageStockAdjustmentsPermission } from './plugins/stock/permissions';
+import { LedgerPlugin } from './plugins/ledger/ledger.plugin';
 import { MlModelPlugin } from './plugins/ml/ml-model.plugin';
 import { NotificationPlugin } from './plugins/notifications/notification.plugin';
 import { OverridePricePermission } from './plugins/pricing/price-override.permission';
 import { PriceOverridePlugin } from './plugins/pricing/price-override.plugin';
+import { ManageStockAdjustmentsPermission } from './plugins/stock/permissions';
+import { StockPlugin } from './plugins/stock/stock.plugin';
 import { SubscriptionTier } from './plugins/subscriptions/subscription.entity';
-import { LedgerPlugin } from './plugins/ledger/ledger.plugin';
 import { SubscriptionPlugin } from './plugins/subscriptions/subscription.plugin';
 import { cashPaymentHandler, creditPaymentHandler, mpesaPaymentHandler } from './services/payments/payment-handlers';
 
@@ -1022,12 +1022,12 @@ export const config: VendureConfig = {
         ChannelSettingsPlugin,
         FractionalQuantityPlugin,
         NotificationPlugin,
+        LedgerPlugin, // Load before CreditPlugin - provides PostingService
         StockPlugin, // Load before CreditPlugin so StockPurchase type is available
-        CreditPlugin,
+        CreditPlugin, // Depends on LedgerPlugin
         SubscriptionPlugin,
         ChannelEventsPlugin,
         AuditPlugin,
-        LedgerPlugin,
         // PhoneAuthPlugin must be registered early so its strategy can be added to adminAuthenticationStrategy
         PhoneAuthPlugin,
         AssetServerPlugin.init({

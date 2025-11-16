@@ -10,7 +10,7 @@ import {
 } from '@vendure/core';
 import { In } from 'typeorm';
 import { AuditService } from '../../infrastructure/audit/audit.service';
-import { PostingService } from '../../ledger/posting.service';
+import { FinancialService } from '../financial/financial.service';
 import {
     PaymentAllocationItem,
     calculatePaymentAllocation,
@@ -43,7 +43,7 @@ export class PaymentAllocationService {
         private readonly orderService: OrderService,
         private readonly paymentService: PaymentService,
         @Optional() private readonly auditService?: AuditService,
-        @Optional() private readonly postingService?: PostingService,
+        @Optional() private readonly financialService?: FinancialService, // Optional for migration period
     ) {}
 
     /**
@@ -158,25 +158,15 @@ export class PaymentAllocationService {
                         );
                         if (payment) {
                             await this.paymentService.settlePayment(transactionCtx, payment.id);
-                            if (this.postingService) {
-                                // Basic posting: debit clearing/cash for credit-payment, credit sales
-                                await this.postingService.post('Payment', String(payment.id), {
-                                    channelId: transactionCtx.channelId as any,
-                                    entryDate: new Date().toISOString().slice(0, 10),
-                                    memo: `Payment allocation for order ${order.code}`,
-                                    lines: [
-                                        {
-                                            accountCode: 'CLEARING_CREDIT',
-                                            debit: amountToAllocate,
-                                            meta: { orderId: order.id, method: 'credit-payment' },
-                                        },
-                                        {
-                                            accountCode: 'SALES',
-                                            credit: amountToAllocate,
-                                            meta: { orderId: order.id, method: 'credit-payment' },
-                                        },
-                                    ],
-                                });
+                            // Post to ledger via FinancialService (single source of truth)
+                            if (this.financialService) {
+                                await this.financialService.recordPaymentAllocation(
+                                    transactionCtx,
+                                    payment.id.toString(),
+                                    updatedOrder,
+                                    'credit-payment',
+                                    amountToAllocate
+                                );
                             }
                         }
                     }
