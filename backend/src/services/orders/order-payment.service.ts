@@ -2,6 +2,7 @@ import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
     ID,
     OrderService,
+    Payment,
     PaymentService,
     RequestContext,
     UserInputError
@@ -49,38 +50,77 @@ export class OrderPaymentService {
             );
         }
 
-        // Get the order with payments to find the newly added payment
-        const order = await this.orderService.findOne(ctx, orderId);
-        if (!order || !order.payments || order.payments.length === 0) {
+        // Use the order from the result if available, otherwise fetch it
+        // The result should contain the order with payments
+        let order = paymentResult && 'id' in paymentResult ? paymentResult : null;
+        if (!order) {
+            order = (await this.orderService.findOne(ctx, orderId, ['payments'])) || null;
+        }
+
+        if (!order) {
+            this.logger.error(`Order ${orderId} not found after adding payment`);
+            return;
+        }
+
+        if (!order.payments || order.payments.length === 0) {
+            this.logger.warn(`Order ${orderId} has no payments after adding payment`);
             return;
         }
 
         // Find the payment that was just added
+        // For cash/mpesa, it's already settled when created
+        // For credit, it needs to be settled
         const newPayment = order.payments.find(
             p => p.method === paymentMethodCode
         );
 
         if (!newPayment) {
+            this.logger.warn(`Payment with method ${paymentMethodCode} not found in order ${orderId}`);
             return;
         }
 
         // Settle the payment if not already settled (cash/mpesa are already settled)
+        let settledPayment = newPayment;
         if (newPayment.state !== 'Settled') {
             const settleResult = await this.paymentService.settlePayment(ctx, newPayment.id);
-            if (!settleResult) {
+            if (!settleResult || 'errorCode' in settleResult) {
+                const errorMsg = settleResult && 'errorCode' in settleResult
+                    ? settleResult.message || settleResult.errorCode
+                    : 'Unknown error';
+                this.logger.error(`Failed to settle payment ${newPayment.id} for order ${orderId}: ${errorMsg}`);
                 return;
             }
+            // Payment is now settled - use the settled payment from the result
+            settledPayment = settleResult as Payment;
         }
 
         // Post to ledger (single source of truth) - must be in same transaction
-        if (this.financialService) {
-            const updatedOrder = await this.orderService.findOne(ctx, orderId);
-            if (updatedOrder) {
-                const settledPayment = updatedOrder.payments?.find(p => p.id === newPayment.id);
-                if (settledPayment && settledPayment.state === 'Settled') {
-                    await this.financialService.recordPayment(ctx, settledPayment, updatedOrder);
-                }
-            }
+        if (!this.financialService) {
+            this.logger.warn(
+                `FinancialService not available - ledger posting skipped for payment ${settledPayment.id} on order ${order.code}`
+            );
+            return;
+        }
+
+        // Verify payment is settled before posting
+        if (settledPayment.state !== 'Settled') {
+            this.logger.error(
+                `Payment ${settledPayment.id} is not in Settled state (current: ${settledPayment.state}) - skipping ledger posting`
+            );
+            return;
+        }
+
+        try {
+            await this.financialService.recordPayment(ctx, settledPayment, order);
+            this.logger.log(
+                `Posted payment ${settledPayment.id} to ledger for order ${order.code} (amount: ${settledPayment.amount})`
+            );
+        } catch (error) {
+            this.logger.error(
+                `Failed to post payment ${settledPayment.id} to ledger: ${error instanceof Error ? error.message : String(error)}`,
+                error instanceof Error ? error.stack : undefined
+            );
+            throw error; // Re-throw to ensure transaction rollback on failure
         }
     }
 }

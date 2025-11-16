@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { JournalLine } from '../../ledger/journal-line.entity';
 import { Account } from '../../ledger/account.entity';
+import { JournalLine } from '../../ledger/journal-line.entity';
 
 export interface BalanceQuery {
   channelId: number;
@@ -26,7 +26,7 @@ export class LedgerQueryService {
   private balanceCache = new Map<string, { balance: number; timestamp: number }>();
   private readonly CACHE_TTL = 60000; // 1 minute
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(private readonly dataSource: DataSource) { }
 
   /**
    * Get account balance from ledger
@@ -37,7 +37,7 @@ export class LedgerQueryService {
   async getAccountBalance(query: BalanceQuery): Promise<AccountBalance> {
     const cacheKey = this.getCacheKey(query);
     const cached = this.balanceCache.get(cacheKey);
-    
+
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
       return {
         accountCode: query.accountCode,
@@ -166,7 +166,11 @@ export class LedgerQueryService {
       endDate,
     });
     // Sales is income (credit normal), so negative balance = total sales
-    return Math.abs(balance.balance);
+    const total = Math.abs(balance.balance);
+    this.logger.debug(
+      `getSalesTotal: channelId=${channelId}, startDate=${startDate}, endDate=${endDate}, balance=${balance.balance}, total=${total}`
+    );
+    return total;
   }
 
   /**
@@ -281,8 +285,8 @@ export class LedgerQueryService {
       .andWhere(
         `EXISTS (
           SELECT 1 FROM ledger_journal_line salesLine
-          WHERE salesLine.entry_id = entry.id
-          AND salesLine.account_id = :salesAccountId
+          WHERE salesLine."entryId" = entry.id
+          AND salesLine."accountId" = :salesAccountId
           AND CAST(salesLine.credit AS BIGINT) > 0
         )`,
         { salesAccountId: salesAccount.id }
@@ -299,8 +303,8 @@ export class LedgerQueryService {
       .andWhere(
         `EXISTS (
           SELECT 1 FROM ledger_journal_line salesLine
-          WHERE salesLine.entry_id = entry.id
-          AND salesLine.account_id = :salesAccountId
+          WHERE salesLine."entryId" = entry.id
+          AND salesLine."accountId" = :salesAccountId
           AND CAST(salesLine.credit AS BIGINT) > 0
         )`,
         { salesAccountId: salesAccount.id }
@@ -345,11 +349,11 @@ export class LedgerQueryService {
     startOfMonth: string;
   } {
     const startOfMonth = new Date(fromDate.getFullYear(), fromDate.getMonth(), 1);
-    
+
     const startOfWeek = new Date(fromDate);
     startOfWeek.setDate(fromDate.getDate() - fromDate.getDay()); // Start of week (Sunday)
     startOfWeek.setHours(0, 0, 0, 0);
-    
+
     const startOfToday = new Date(fromDate);
     startOfToday.setHours(0, 0, 0, 0);
 

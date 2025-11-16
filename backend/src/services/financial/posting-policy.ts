@@ -57,8 +57,10 @@ export interface RefundPostingContext {
 
 /**
  * Maps payment method codes to clearing account codes
+ * Handles various payment method codes, including custom ones
  */
 function mapPaymentMethodToAccount(methodCode: string): string {
+  // Handle exact matches first
   switch (methodCode) {
     case 'cash-payment':
       return 'CASH_ON_HAND';
@@ -67,6 +69,15 @@ function mapPaymentMethodToAccount(methodCode: string): string {
     case 'credit-payment':
       return 'CLEARING_CREDIT';
     default:
+      // Handle variants: any method containing "mpesa" maps to CLEARING_MPESA
+      if (methodCode.toLowerCase().includes('mpesa')) {
+        return 'CLEARING_MPESA';
+      }
+      // Handle variants: any method containing "cash" maps to CASH_ON_HAND
+      if (methodCode.toLowerCase().includes('cash')) {
+        return 'CASH_ON_HAND';
+      }
+      // Default to generic clearing account
       return 'CLEARING_GENERIC';
   }
 }

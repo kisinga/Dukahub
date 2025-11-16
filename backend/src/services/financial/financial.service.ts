@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RequestContext, Payment, Order, ID } from '@vendure/core';
+import { Order, Payment, RequestContext } from '@vendure/core';
 import { LedgerPostingService } from './ledger-posting.service';
 import { LedgerQueryService } from './ledger-query.service';
 import {
   PaymentPostingContext,
-  SalePostingContext,
   PurchasePostingContext,
-  SupplierPaymentPostingContext,
   RefundPostingContext,
+  SalePostingContext,
+  SupplierPaymentPostingContext,
 } from './posting-policy';
 
 /**
@@ -24,7 +24,7 @@ export class FinancialService {
   constructor(
     private readonly postingService: LedgerPostingService,
     private readonly queryService: LedgerQueryService,
-  ) {}
+  ) { }
 
   // ==================== READ OPERATIONS ====================
 
@@ -154,7 +154,9 @@ export class FinancialService {
   ): Promise<void> {
     // Only post if payment is settled
     if (payment.state !== 'Settled') {
-      this.logger.warn(`Payment ${payment.id} is not settled, skipping ledger posting`);
+      this.logger.warn(
+        `Payment ${payment.id} is not settled (state: ${payment.state}), skipping ledger posting for order ${order.code}`
+      );
       return;
     }
 
@@ -166,16 +168,36 @@ export class FinancialService {
       customerId: order.customer?.id?.toString(),
     };
 
-    await this.postingService.postPayment(
-      ctx,
-      payment.id.toString(),
-      context
-    );
+    try {
+      this.logger.log(
+        `Posting payment ${payment.id} to ledger: order ${order.code}, amount ${payment.amount}, method ${payment.method}`
+      );
 
-    // Invalidate cache for affected accounts
-    this.queryService.invalidateCache(ctx.channelId as number, 'SALES');
-    const clearingAccount = this.mapMethodToAccount(payment.method);
-    this.queryService.invalidateCache(ctx.channelId as number, clearingAccount);
+      await this.postingService.postPayment(
+        ctx,
+        payment.id.toString(),
+        context
+      );
+
+      this.logger.log(
+        `Successfully posted payment ${payment.id} to ledger for order ${order.code}`
+      );
+
+      // Invalidate cache for affected accounts
+      // Clear SALES cache (most important for dashboard)
+      this.queryService.invalidateCache(ctx.channelId as number, 'SALES');
+      const clearingAccount = this.mapMethodToAccount(payment.method);
+      this.queryService.invalidateCache(ctx.channelId as number, clearingAccount);
+      this.logger.debug(
+        `Invalidated cache for SALES and ${clearingAccount} accounts (channel: ${ctx.channelId})`
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to post payment ${payment.id} to ledger for order ${order.code}: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error; // Re-throw to ensure transaction rollback
+    }
   }
 
   /**
@@ -336,8 +358,10 @@ export class FinancialService {
 
   /**
    * Map payment method to account code
+   * Handles various payment method codes, including custom ones
    */
   private mapMethodToAccount(methodCode: string): string {
+    // Handle exact matches first
     switch (methodCode) {
       case 'cash-payment':
         return 'CASH_ON_HAND';
@@ -346,6 +370,15 @@ export class FinancialService {
       case 'credit-payment':
         return 'CLEARING_CREDIT';
       default:
+        // Handle variants: any method containing "mpesa" maps to CLEARING_MPESA
+        if (methodCode.toLowerCase().includes('mpesa')) {
+          return 'CLEARING_MPESA';
+        }
+        // Handle variants: any method containing "cash" maps to CASH_ON_HAND
+        if (methodCode.toLowerCase().includes('cash')) {
+          return 'CASH_ON_HAND';
+        }
+        // Default to generic clearing account
         return 'CLEARING_GENERIC';
     }
   }
