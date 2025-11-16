@@ -5,6 +5,9 @@
  * This abstracts accounting terminology from business logic.
  */
 
+import { ACCOUNT_CODES } from '../../ledger/account-codes.constants';
+import { mapPaymentMethodToAccount } from './payment-method-mapping.config';
+
 export interface JournalEntryTemplate {
   lines: Array<{
     accountCode: string;
@@ -56,33 +59,6 @@ export interface RefundPostingContext {
 }
 
 /**
- * Maps payment method codes to clearing account codes
- * Handles various payment method codes, including custom ones
- */
-function mapPaymentMethodToAccount(methodCode: string): string {
-  // Handle exact matches first
-  switch (methodCode) {
-    case 'cash-payment':
-      return 'CASH_ON_HAND';
-    case 'mpesa-payment':
-      return 'CLEARING_MPESA';
-    case 'credit-payment':
-      return 'CLEARING_CREDIT';
-    default:
-      // Handle variants: any method containing "mpesa" maps to CLEARING_MPESA
-      if (methodCode.toLowerCase().includes('mpesa')) {
-        return 'CLEARING_MPESA';
-      }
-      // Handle variants: any method containing "cash" maps to CASH_ON_HAND
-      if (methodCode.toLowerCase().includes('cash')) {
-        return 'CASH_ON_HAND';
-      }
-      // Default to generic clearing account
-      return 'CLEARING_GENERIC';
-  }
-}
-
-/**
  * Generate journal entry template for customer payment settlement
  * 
  * Debits: Cash/Clearing account (asset increase)
@@ -104,7 +80,7 @@ export function createPaymentEntry(context: PaymentPostingContext): JournalEntry
         },
       },
       {
-        accountCode: 'SALES',
+        accountCode: ACCOUNT_CODES.SALES,
         credit: context.amount,
         meta: {
           orderId: context.orderId,
@@ -131,7 +107,7 @@ export function createCreditSaleEntry(context: SalePostingContext): JournalEntry
   return {
     lines: [
       {
-        accountCode: 'ACCOUNTS_RECEIVABLE',
+        accountCode: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
         debit: context.amount,
         meta: {
           orderId: context.orderId,
@@ -175,7 +151,7 @@ export function createPaymentAllocationEntry(context: PaymentPostingContext): Jo
         },
       },
       {
-        accountCode: 'ACCOUNTS_RECEIVABLE',
+        accountCode: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
         credit: context.amount,
         meta: {
           orderId: context.orderId,
@@ -202,7 +178,7 @@ export function createSupplierPurchaseEntry(context: PurchasePostingContext): Jo
   return {
     lines: [
       {
-        accountCode: 'PURCHASES',
+        accountCode: ACCOUNT_CODES.PURCHASES,
         debit: context.amount,
         meta: {
           purchaseId: context.purchaseId,
@@ -211,7 +187,7 @@ export function createSupplierPurchaseEntry(context: PurchasePostingContext): Jo
         },
       },
       {
-        accountCode: 'ACCOUNTS_PAYABLE',
+        accountCode: ACCOUNT_CODES.ACCOUNTS_PAYABLE,
         credit: context.amount,
         meta: {
           purchaseId: context.purchaseId,
@@ -236,7 +212,7 @@ export function createSupplierPaymentEntry(context: SupplierPaymentPostingContex
   return {
     lines: [
       {
-        accountCode: 'ACCOUNTS_PAYABLE',
+        accountCode: ACCOUNT_CODES.ACCOUNTS_PAYABLE,
         debit: context.amount,
         meta: {
           purchaseId: context.purchaseId,
@@ -272,7 +248,7 @@ export function createRefundEntry(context: RefundPostingContext): JournalEntryTe
   return {
     lines: [
       {
-        accountCode: 'SALES_RETURNS',
+        accountCode: ACCOUNT_CODES.SALES_RETURNS,
         debit: context.amount,
         meta: {
           orderId: context.orderId,

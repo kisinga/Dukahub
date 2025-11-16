@@ -5,6 +5,7 @@ import {
     SettlePaymentResult,
     UserInputError
 } from '@vendure/core';
+import { PAYMENT_METHOD_CODES } from './payment-method-codes.constants';
 
 // Service locator for CreditService
 // This will be set by the plugin when it initializes
@@ -29,7 +30,7 @@ export function setPaymentHandlerAuditService(auditService: any): void {
  * No external API integration required.
  */
 export const cashPaymentHandler = new PaymentMethodHandler({
-    code: 'cash-payment',
+    code: PAYMENT_METHOD_CODES.CASH,
     description: [{
         languageCode: LanguageCode.en,
         value: 'Cash Payment - Immediate settlement'
@@ -72,7 +73,7 @@ export const cashPaymentHandler = new PaymentMethodHandler({
  * - Update payment state based on API response
  */
 export const mpesaPaymentHandler = new PaymentMethodHandler({
-    code: 'mpesa-payment',
+    code: PAYMENT_METHOD_CODES.MPESA,
     description: [{
         languageCode: LanguageCode.en,
         value: 'M-Pesa Payment - Mobile money (stub for future API integration)'
@@ -110,7 +111,7 @@ export const mpesaPaymentHandler = new PaymentMethodHandler({
  * Credit Payment Handler
  */
 export const creditPaymentHandler = new PaymentMethodHandler({
-    code: 'credit-payment',
+    code: PAYMENT_METHOD_CODES.CREDIT,
     description: [{
         languageCode: LanguageCode.en,
         value: 'Customer credit payment',

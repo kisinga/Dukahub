@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { ACCOUNT_CODES } from '../../ledger/account-codes.constants';
 import { Account } from '../../ledger/account.entity';
 
 /**
@@ -23,24 +24,24 @@ export class ChartOfAccountsService {
 
         const requiredAccounts = [
             // Assets
-            { code: 'CASH_ON_HAND', name: 'Cash on Hand', type: 'asset' as const },
-            { code: 'BANK_MAIN', name: 'Bank - Main', type: 'asset' as const },
-            { code: 'CLEARING_MPESA', name: 'Clearing - M-Pesa', type: 'asset' as const },
-            { code: 'CLEARING_CREDIT', name: 'Clearing - Customer Credit', type: 'asset' as const },
-            { code: 'CLEARING_GENERIC', name: 'Clearing - Generic', type: 'asset' as const },
+            { code: ACCOUNT_CODES.CASH_ON_HAND, name: 'Cash on Hand', type: 'asset' as const },
+            { code: ACCOUNT_CODES.BANK_MAIN, name: 'Bank - Main', type: 'asset' as const },
+            { code: ACCOUNT_CODES.CLEARING_MPESA, name: 'Clearing - M-Pesa', type: 'asset' as const },
+            { code: ACCOUNT_CODES.CLEARING_CREDIT, name: 'Clearing - Customer Credit', type: 'asset' as const },
+            { code: ACCOUNT_CODES.CLEARING_GENERIC, name: 'Clearing - Generic', type: 'asset' as const },
             // Income
-            { code: 'SALES', name: 'Sales Revenue', type: 'income' as const },
-            { code: 'SALES_RETURNS', name: 'Sales Returns', type: 'income' as const },
+            { code: ACCOUNT_CODES.SALES, name: 'Sales Revenue', type: 'income' as const },
+            { code: ACCOUNT_CODES.SALES_RETURNS, name: 'Sales Returns', type: 'income' as const },
             // Assets (continued - AR is an asset)
-            { code: 'ACCOUNTS_RECEIVABLE', name: 'Accounts Receivable', type: 'asset' as const },
+            { code: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE, name: 'Accounts Receivable', type: 'asset' as const },
             // Liabilities
-            { code: 'ACCOUNTS_PAYABLE', name: 'Accounts Payable', type: 'liability' as const },
-            { code: 'TAX_PAYABLE', name: 'Taxes Payable', type: 'liability' as const },
+            { code: ACCOUNT_CODES.ACCOUNTS_PAYABLE, name: 'Accounts Payable', type: 'liability' as const },
+            { code: ACCOUNT_CODES.TAX_PAYABLE, name: 'Taxes Payable', type: 'liability' as const },
             // Expenses
-            { code: 'PURCHASES', name: 'Inventory Purchases', type: 'expense' as const },
-            { code: 'EXPENSES', name: 'General Expenses', type: 'expense' as const },
-            { code: 'PROCESSOR_FEES', name: 'Payment Processor Fees', type: 'expense' as const },
-            { code: 'CASH_SHORT_OVER', name: 'Cash Short/Over', type: 'expense' as const },
+            { code: ACCOUNT_CODES.PURCHASES, name: 'Inventory Purchases', type: 'expense' as const },
+            { code: ACCOUNT_CODES.EXPENSES, name: 'General Expenses', type: 'expense' as const },
+            { code: ACCOUNT_CODES.PROCESSOR_FEES, name: 'Payment Processor Fees', type: 'expense' as const },
+            { code: ACCOUNT_CODES.CASH_SHORT_OVER, name: 'Cash Short/Over', type: 'expense' as const },
         ];
 
         for (const account of requiredAccounts) {
@@ -72,11 +73,22 @@ export class ChartOfAccountsService {
      */
     async verifyChannelAccounts(channelId: number): Promise<void> {
         const accountRepo = this.dataSource.getRepository(Account);
+        // Use constants from single source of truth
         const requiredCodes = [
-            'CASH_ON_HAND', 'BANK_MAIN', 'CLEARING_MPESA', 'CLEARING_CREDIT', 'CLEARING_GENERIC',
-            'SALES', 'SALES_RETURNS',
-            'ACCOUNTS_RECEIVABLE', 'ACCOUNTS_PAYABLE', 'TAX_PAYABLE',
-            'PURCHASES', 'EXPENSES', 'PROCESSOR_FEES', 'CASH_SHORT_OVER',
+            ACCOUNT_CODES.CASH_ON_HAND,
+            ACCOUNT_CODES.BANK_MAIN,
+            ACCOUNT_CODES.CLEARING_MPESA,
+            ACCOUNT_CODES.CLEARING_CREDIT,
+            ACCOUNT_CODES.CLEARING_GENERIC,
+            ACCOUNT_CODES.SALES,
+            ACCOUNT_CODES.SALES_RETURNS,
+            ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
+            ACCOUNT_CODES.ACCOUNTS_PAYABLE,
+            ACCOUNT_CODES.TAX_PAYABLE,
+            ACCOUNT_CODES.PURCHASES,
+            ACCOUNT_CODES.EXPENSES,
+            ACCOUNT_CODES.PROCESSOR_FEES,
+            ACCOUNT_CODES.CASH_SHORT_OVER,
         ];
 
         const existing = await accountRepo.find({

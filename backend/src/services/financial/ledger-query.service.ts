@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { ACCOUNT_CODES } from '../../ledger/account-codes.constants';
 import { Account } from '../../ledger/account.entity';
 import { JournalLine } from '../../ledger/journal-line.entity';
 
@@ -124,7 +125,7 @@ export class LedgerQueryService {
   async getCustomerBalance(channelId: number, customerId: string): Promise<number> {
     const balance = await this.getAccountBalance({
       channelId,
-      accountCode: 'ACCOUNTS_RECEIVABLE',
+      accountCode: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
       customerId,
     });
     // AR is an asset account
@@ -141,7 +142,7 @@ export class LedgerQueryService {
   async getSupplierBalance(channelId: number, supplierId: string): Promise<number> {
     const balance = await this.getAccountBalance({
       channelId,
-      accountCode: 'ACCOUNTS_PAYABLE',
+      accountCode: ACCOUNT_CODES.ACCOUNTS_PAYABLE,
       supplierId,
     });
     // AP is a liability account
@@ -161,7 +162,7 @@ export class LedgerQueryService {
   ): Promise<number> {
     const balance = await this.getAccountBalance({
       channelId,
-      accountCode: 'SALES',
+      accountCode: ACCOUNT_CODES.SALES,
       startDate,
       endDate,
     });
@@ -183,7 +184,7 @@ export class LedgerQueryService {
   ): Promise<number> {
     const balance = await this.getAccountBalance({
       channelId,
-      accountCode: 'PURCHASES',
+      accountCode: ACCOUNT_CODES.PURCHASES,
       startDate,
       endDate,
     });
@@ -201,7 +202,7 @@ export class LedgerQueryService {
   ): Promise<number> {
     const balance = await this.getAccountBalance({
       channelId,
-      accountCode: 'EXPENSES',
+      accountCode: ACCOUNT_CODES.EXPENSES,
       startDate,
       endDate,
     });
@@ -229,7 +230,7 @@ export class LedgerQueryService {
       .findOne({
         where: {
           channelId,
-          code: 'SALES',
+          code: ACCOUNT_CODES.SALES,
         },
       });
 
@@ -243,7 +244,7 @@ export class LedgerQueryService {
       .findOne({
         where: {
           channelId,
-          code: 'CASH_ON_HAND',
+          code: ACCOUNT_CODES.CASH_ON_HAND,
         },
       });
 
@@ -252,7 +253,7 @@ export class LedgerQueryService {
       .findOne({
         where: {
           channelId,
-          code: 'CLEARING_MPESA',
+          code: ACCOUNT_CODES.CLEARING_MPESA,
         },
       });
 
@@ -262,7 +263,7 @@ export class LedgerQueryService {
       .findOne({
         where: {
           channelId,
-          code: 'ACCOUNTS_RECEIVABLE',
+          code: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
         },
       });
 

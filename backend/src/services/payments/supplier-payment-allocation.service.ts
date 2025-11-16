@@ -8,6 +8,7 @@ import { In } from 'typeorm';
 import { AuditService } from '../../infrastructure/audit/audit.service';
 import { SupplierCreditService } from '../credit/supplier-credit.service';
 import { FinancialService } from '../financial/financial.service';
+import { PAYMENT_METHOD_CODES } from './payment-method-codes.constants';
 import { StockPurchase } from '../stock/entities/purchase.entity';
 import {
     PaymentAllocationItem,
@@ -161,7 +162,7 @@ export class SupplierPaymentAllocationService {
                             purchase.referenceNumber || purchase.id,
                             input.supplierId,
                             allocation.amountToAllocate,
-                            'cash-payment' // Default to cash, can be made configurable
+                            PAYMENT_METHOD_CODES.CASH // Default to cash, can be made configurable
                         );
                     }
 

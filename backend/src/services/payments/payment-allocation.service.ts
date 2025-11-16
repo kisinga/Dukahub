@@ -11,6 +11,7 @@ import {
 import { In } from 'typeorm';
 import { AuditService } from '../../infrastructure/audit/audit.service';
 import { FinancialService } from '../financial/financial.service';
+import { PAYMENT_METHOD_CODES } from './payment-method-codes.constants';
 import {
     PaymentAllocationItem,
     calculatePaymentAllocation,
@@ -135,7 +136,7 @@ export class PaymentAllocationService {
                         transactionCtx,
                         {
                             orderId: order.id,
-                            method: 'credit-payment',
+                            method: PAYMENT_METHOD_CODES.CREDIT,
                             metadata: {
                                 paymentType: 'credit',
                                 customerId: input.customerId,
@@ -164,7 +165,7 @@ export class PaymentAllocationService {
                                     transactionCtx,
                                     payment.id.toString(),
                                     updatedOrder,
-                                    'credit-payment',
+                                    PAYMENT_METHOD_CODES.CREDIT,
                                     amountToAllocate
                                 );
                             }

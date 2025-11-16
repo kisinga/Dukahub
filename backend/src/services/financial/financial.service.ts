@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Order, Payment, RequestContext } from '@vendure/core';
+import { ACCOUNT_CODES, type AccountCode } from '../../ledger/account-codes.constants';
 import { LedgerPostingService } from './ledger-posting.service';
 import { LedgerQueryService } from './ledger-query.service';
+import { mapPaymentMethodToAccount } from './payment-method-mapping.config';
 import {
   PaymentPostingContext,
   PurchasePostingContext,
@@ -185,7 +187,7 @@ export class FinancialService {
 
       // Invalidate cache for affected accounts
       // Clear SALES cache (most important for dashboard)
-      this.queryService.invalidateCache(ctx.channelId as number, 'SALES');
+      this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.SALES);
       const clearingAccount = this.mapMethodToAccount(payment.method);
       this.queryService.invalidateCache(ctx.channelId as number, clearingAccount);
       this.logger.debug(
@@ -227,8 +229,8 @@ export class FinancialService {
     );
 
     // Invalidate cache
-    this.queryService.invalidateCache(ctx.channelId as number, 'ACCOUNTS_RECEIVABLE');
-    this.queryService.invalidateCache(ctx.channelId as number, 'SALES');
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.ACCOUNTS_RECEIVABLE);
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.SALES);
   }
 
   /**
@@ -257,7 +259,7 @@ export class FinancialService {
     );
 
     // Invalidate cache
-    this.queryService.invalidateCache(ctx.channelId as number, 'ACCOUNTS_RECEIVABLE');
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.ACCOUNTS_RECEIVABLE);
     const clearingAccount = this.mapMethodToAccount(paymentMethod);
     this.queryService.invalidateCache(ctx.channelId as number, clearingAccount);
   }
@@ -288,8 +290,8 @@ export class FinancialService {
     );
 
     // Invalidate cache
-    this.queryService.invalidateCache(ctx.channelId as number, 'PURCHASES');
-    this.queryService.invalidateCache(ctx.channelId as number, 'ACCOUNTS_PAYABLE');
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.PURCHASES);
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.ACCOUNTS_PAYABLE);
   }
 
   /**
@@ -320,7 +322,7 @@ export class FinancialService {
     );
 
     // Invalidate cache
-    this.queryService.invalidateCache(ctx.channelId as number, 'ACCOUNTS_PAYABLE');
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.ACCOUNTS_PAYABLE);
     const cashAccount = this.mapMethodToAccount(paymentMethod);
     this.queryService.invalidateCache(ctx.channelId as number, cashAccount);
   }
@@ -351,36 +353,17 @@ export class FinancialService {
     );
 
     // Invalidate cache
-    this.queryService.invalidateCache(ctx.channelId as number, 'SALES_RETURNS');
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.SALES_RETURNS);
     const clearingAccount = this.mapMethodToAccount(originalPayment.method);
     this.queryService.invalidateCache(ctx.channelId as number, clearingAccount);
   }
 
   /**
    * Map payment method to account code
-   * Handles various payment method codes, including custom ones
+   * Delegates to centralized configuration-based mapping
    */
-  private mapMethodToAccount(methodCode: string): string {
-    // Handle exact matches first
-    switch (methodCode) {
-      case 'cash-payment':
-        return 'CASH_ON_HAND';
-      case 'mpesa-payment':
-        return 'CLEARING_MPESA';
-      case 'credit-payment':
-        return 'CLEARING_CREDIT';
-      default:
-        // Handle variants: any method containing "mpesa" maps to CLEARING_MPESA
-        if (methodCode.toLowerCase().includes('mpesa')) {
-          return 'CLEARING_MPESA';
-        }
-        // Handle variants: any method containing "cash" maps to CASH_ON_HAND
-        if (methodCode.toLowerCase().includes('cash')) {
-          return 'CASH_ON_HAND';
-        }
-        // Default to generic clearing account
-        return 'CLEARING_GENERIC';
-    }
+  private mapMethodToAccount(methodCode: string): AccountCode {
+    return mapPaymentMethodToAccount(methodCode);
   }
 }
 
