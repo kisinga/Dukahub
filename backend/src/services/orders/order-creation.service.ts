@@ -9,6 +9,7 @@ import {
     UserInputError
 } from '@vendure/core';
 import { AuditService } from '../../infrastructure/audit/audit.service';
+import { FinancialService } from '../financial/financial.service';
 import { OrderAddressService } from './order-address.service';
 import { OrderCreditValidatorService } from './order-credit-validator.service';
 import { OrderFulfillmentService } from './order-fulfillment.service';
@@ -52,6 +53,7 @@ export class OrderCreationService {
         private readonly orderPaymentService: OrderPaymentService,
         private readonly orderFulfillmentService: OrderFulfillmentService,
         @Optional() private readonly auditService?: AuditService,
+        @Optional() private readonly financialService?: FinancialService, // Optional for migration period
     ) { }
 
     /**
@@ -183,6 +185,11 @@ export class OrderCreationService {
         customerId: string
     ): Promise<void> {
         await this.orderFulfillmentService.fulfillOrder(ctx, order.id);
+
+        // Post credit sale to ledger (single source of truth)
+        if (this.financialService) {
+            await this.financialService.recordSale(ctx, order);
+        }
 
         if (this.auditService) {
             await this.auditService.log(ctx, 'credit.sale.created', {

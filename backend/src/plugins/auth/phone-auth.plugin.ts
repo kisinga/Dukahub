@@ -7,6 +7,16 @@ import { RegistrationStorageService } from '../../infrastructure/storage/registr
 import { RegistrationService } from '../../services/auth/registration.service';
 import { SmsProviderFactory } from '../../infrastructure/sms/sms-provider.factory';
 import { SmsService } from '../../infrastructure/sms/sms.service';
+// Registration Provisioning Services
+import { AccessProvisionerService } from '../../services/auth/provisioning/access-provisioner.service';
+import { ChannelAssignmentService } from '../../services/auth/provisioning/channel-assignment.service';
+import { ChannelProvisionerService } from '../../services/auth/provisioning/channel-provisioner.service';
+import { PaymentProvisionerService } from '../../services/auth/provisioning/payment-provisioner.service';
+import { RegistrationAuditorService } from '../../services/auth/provisioning/registration-auditor.service';
+import { RegistrationErrorService } from '../../services/auth/provisioning/registration-error.service';
+import { RegistrationValidatorService } from '../../services/auth/provisioning/registration-validator.service';
+import { RoleProvisionerService } from '../../services/auth/provisioning/role-provisioner.service';
+import { StoreProvisionerService } from '../../services/auth/provisioning/store-provisioner.service';
 
 @VendurePlugin({
     imports: [PluginCommonModule],
@@ -17,6 +27,16 @@ import { SmsService } from '../../infrastructure/sms/sms.service';
         // Registration Infrastructure
         RegistrationService,
         RegistrationStorageService,
+        // Registration Provisioning Services (composable)
+        RegistrationValidatorService,
+        RegistrationErrorService,
+        RegistrationAuditorService,
+        ChannelAssignmentService,
+        ChannelProvisionerService,
+        StoreProvisionerService,
+        PaymentProvisionerService,
+        RoleProvisionerService,
+        AccessProvisionerService,
         // Phone Auth Infrastructure
         PhoneAuthResolver,
         PhoneAuthService,

@@ -59,10 +59,11 @@ Before starting, collect:
 - [ ] **Step 1:** Create Channel
 - [ ] **Step 2:** Create Stock Location
 - [ ] **Step 3:** Create Payment Methods
-- [ ] **Step 4:** Create Admin Role
-- [ ] **Step 5:** Create Admin User
-- [ ] **Step 6:** Verify Setup
-- [ ] **Step 7:** Customer Handoff
+- [ ] **Step 4:** Initialize Chart of Accounts (Ledger)
+- [ ] **Step 5:** Create Admin Role
+- [ ] **Step 6:** Create Admin User
+- [ ] **Step 7:** Verify Setup
+- [ ] **Step 8:** Customer Handoff
 
 ---
 
@@ -126,7 +127,99 @@ Before starting, collect:
 
 **Why this matters:** No payment methods = no checkout options in POS.
 
-### Step 4: Create Admin Role
+### Step 4: Initialize Chart of Accounts (Ledger)
+
+**Purpose:** Required for all financial transactions. The ledger is the single source of truth for all financial data.
+
+**IMPORTANT:** This step must be completed before any financial operations (sales, purchases, payments) can occur.
+
+#### 4a. Automated Setup (Recommended)
+
+If your system has automatic CoA initialization, it should run when a channel is created. Verify accounts exist:
+
+1. Connect to the database
+2. Run verification query:
+   ```sql
+   SELECT code, name, type 
+   FROM ledger_account 
+   WHERE "channelId" = {channelId}
+   ORDER BY type, code;
+   ```
+3. Ensure all required accounts exist (see list below)
+
+#### 4b. Manual Setup (If Not Automated)
+
+If accounts are not automatically created, you must manually insert them:
+
+```sql
+-- Replace {channelId} with the actual channel ID from Step 1
+
+-- Assets
+INSERT INTO ledger_account ("channelId", code, name, type, "isActive") VALUES
+  ({channelId}, 'CASH_ON_HAND', 'Cash on Hand', 'asset', true),
+  ({channelId}, 'BANK_MAIN', 'Bank - Main', 'asset', true),
+  ({channelId}, 'CLEARING_MPESA', 'Clearing - M-Pesa', 'asset', true),
+  ({channelId}, 'CLEARING_CREDIT', 'Clearing - Customer Credit', 'asset', true),
+  ({channelId}, 'CLEARING_GENERIC', 'Clearing - Generic', 'asset', true)
+ON CONFLICT ("channelId", code) DO NOTHING;
+
+-- Income
+INSERT INTO ledger_account ("channelId", code, name, type, "isActive") VALUES
+  ({channelId}, 'SALES', 'Sales Revenue', 'income', true),
+  ({channelId}, 'SALES_RETURNS', 'Sales Returns', 'income', true)
+ON CONFLICT ("channelId", code) DO NOTHING;
+
+-- Assets (continued - AR is an asset)
+INSERT INTO ledger_account ("channelId", code, name, type, "isActive") VALUES
+  ({channelId}, 'ACCOUNTS_RECEIVABLE', 'Accounts Receivable', 'asset', true)
+ON CONFLICT ("channelId", code) DO NOTHING;
+
+-- Liabilities
+INSERT INTO ledger_account ("channelId", code, name, type, "isActive") VALUES
+  ({channelId}, 'ACCOUNTS_PAYABLE', 'Accounts Payable', 'liability', true),
+  ({channelId}, 'TAX_PAYABLE', 'Taxes Payable', 'liability', true)
+ON CONFLICT ("channelId", code) DO NOTHING;
+
+-- Expenses
+INSERT INTO ledger_account ("channelId", code, name, type, "isActive") VALUES
+  ({channelId}, 'PURCHASES', 'Inventory Purchases', 'expense', true),
+  ({channelId}, 'EXPENSES', 'General Expenses', 'expense', true),
+  ({channelId}, 'PROCESSOR_FEES', 'Payment Processor Fees', 'expense', true),
+  ({channelId}, 'CASH_SHORT_OVER', 'Cash Short/Over', 'expense', true)
+ON CONFLICT ("channelId", code) DO NOTHING;
+```
+
+#### Required Accounts Checklist
+
+Verify these accounts exist for the channel:
+
+**Assets:**
+- [ ] `CASH_ON_HAND` - Cash on Hand
+- [ ] `BANK_MAIN` - Bank - Main
+- [ ] `CLEARING_MPESA` - Clearing - M-Pesa
+- [ ] `CLEARING_CREDIT` - Clearing - Customer Credit
+- [ ] `CLEARING_GENERIC` - Clearing - Generic
+
+**Income:**
+- [ ] `SALES` - Sales Revenue
+- [ ] `SALES_RETURNS` - Sales Returns
+
+**Assets (continued):**
+- [ ] `ACCOUNTS_RECEIVABLE` - Customer credit balances (asset - money owed to us)
+
+**Liabilities:**
+- [ ] `ACCOUNTS_PAYABLE` - Supplier credit balances (liability - money we owe)
+- [ ] `TAX_PAYABLE` - Taxes Payable
+
+**Expenses:**
+- [ ] `PURCHASES` - Inventory purchases
+- [ ] `EXPENSES` - General expenses
+- [ ] `PROCESSOR_FEES` - Payment Processor Fees
+- [ ] `CASH_SHORT_OVER` - Cash Short/Over
+
+**Why this matters:** Without these accounts, financial operations will fail with "Missing accounts" errors. The ledger is the single source of truth for all financial data, and all transactions must post to these accounts.
+
+### Step 5: Create Admin Role
 
 **Purpose:** Defines permissions for the customer's admin user
 
@@ -150,7 +243,7 @@ Before starting, collect:
 
 **Why this matters:** Missing permissions cause 403 errors in the frontend.
 
-### Step 5: Create Admin User
+### Step 6: Create Admin User
 
 **Purpose:** Creates the customer's login credentials
 
@@ -161,7 +254,7 @@ Before starting, collect:
    - **First name:** `{Admin First Name}`
    - **Last name:** `{Admin Last Name}`
    - **Password:** Generate strong password (save securely)
-4. **Assign Role:** Select the role from Step 4
+4. **Assign Role:** Select the role from Step 5
 5. Click **Save**
 6. **IMPORTANT:** Send credentials to customer securely
 
@@ -178,6 +271,7 @@ Before handing off to the customer, verify:
 - [ ] **Channel exists and is active**
 - [ ] **Stock location created and assigned to channel**
 - [ ] **Payment methods (Cash + M-Pesa) created and assigned to channel**
+- [ ] **Chart of Accounts initialized with all required accounts (14 accounts)**
 - [ ] **Admin role created with all required permissions**
 - [ ] **Admin user created and assigned to role**
 - [ ] **Walk-in customer exists** (`walkin@pos.local`)
@@ -270,6 +364,27 @@ Send the following to the customer:
 1. Go to Settings → Payment Methods
 2. Edit each payment method
 3. Ensure the customer's channel is selected
+
+#### Financial Operations Fail with "Missing accounts" Error
+
+**Cause:** Chart of Accounts not initialized for channel  
+**Solution:**
+
+1. Verify channel ID from Step 1
+2. Run the SQL verification query from Step 4a
+3. If accounts are missing, run the manual setup SQL from Step 4b
+4. Verify all 14 required accounts exist
+5. Retry the financial operation
+
+#### Customer Balance or Supplier Balance Shows Zero/Incorrect
+
+**Cause:** Ledger accounts not properly initialized or transactions not posting  
+**Solution:**
+
+1. Verify ACCOUNTS_RECEIVABLE and ACCOUNTS_PAYABLE accounts exist
+2. Check that financial transactions are posting to ledger
+3. Verify period locks are not blocking entries
+4. Review ledger_journal_entry table for posted transactions
 
 #### Admin Sees All Companies
 

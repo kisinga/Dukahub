@@ -10,6 +10,7 @@ import {
 } from '@vendure/core';
 import { In } from 'typeorm';
 import { AuditService } from '../../infrastructure/audit/audit.service';
+import { FinancialService } from '../financial/financial.service';
 import {
     PaymentAllocationItem,
     calculatePaymentAllocation,
@@ -42,6 +43,7 @@ export class PaymentAllocationService {
         private readonly orderService: OrderService,
         private readonly paymentService: PaymentService,
         @Optional() private readonly auditService?: AuditService,
+        @Optional() private readonly financialService?: FinancialService, // Optional for migration period
     ) {}
 
     /**
@@ -156,6 +158,16 @@ export class PaymentAllocationService {
                         );
                         if (payment) {
                             await this.paymentService.settlePayment(transactionCtx, payment.id);
+                            // Post to ledger via FinancialService (single source of truth)
+                            if (this.financialService) {
+                                await this.financialService.recordPaymentAllocation(
+                                    transactionCtx,
+                                    payment.id.toString(),
+                                    updatedOrder,
+                                    'credit-payment',
+                                    amountToAllocate
+                                );
+                            }
                         }
                     }
 

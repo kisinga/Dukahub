@@ -1,9 +1,14 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { LedgerPlugin } from '../ledger/ledger.plugin';
 import { gql } from 'graphql-tag';
 
 import { CreditService } from '../../services/credit/credit.service';
 import { SupplierCreditService } from '../../services/credit/supplier-credit.service';
+import { ChartOfAccountsService } from '../../services/financial/chart-of-accounts.service';
+import { FinancialService } from '../../services/financial/financial.service';
+import { LedgerPostingService } from '../../services/financial/ledger-posting.service';
+import { LedgerQueryService } from '../../services/financial/ledger-query.service';
 import { OrderAddressService } from '../../services/orders/order-address.service';
 import { OrderCreationService } from '../../services/orders/order-creation.service';
 import { OrderCreditValidatorService } from '../../services/orders/order-credit-validator.service';
@@ -13,6 +18,7 @@ import { OrderPaymentService } from '../../services/orders/order-payment.service
 import { OrderStateService } from '../../services/orders/order-state.service';
 import { PriceOverrideService } from '../../services/orders/price-override.service';
 import { PaymentAllocationService } from '../../services/payments/payment-allocation.service';
+import { PaymentEventsAdapter } from '../../services/payments/payment-events.adapter';
 import { setPaymentHandlerCreditService } from '../../services/payments/payment-handlers';
 import { SupplierPaymentAllocationService } from '../../services/payments/supplier-payment-allocation.service';
 import { PurchaseCreditValidatorService } from '../../services/stock/purchase-credit-validator.service';
@@ -198,13 +204,17 @@ class PaymentHandlerInitializer implements OnModuleInit {
 }
 
 @VendurePlugin({
-    imports: [PluginCommonModule],
+    imports: [PluginCommonModule, LedgerPlugin],
     providers: [
+        // Financial services (ledger infrastructure)
+        LedgerQueryService,
+        LedgerPostingService,
+        FinancialService,
+        ChartOfAccountsService,
+        // Credit services
         CreditService,
-        CreditResolver,
-        CustomerFieldResolver,
-        CreditPaymentSubscriber,
-        PaymentHandlerInitializer,
+        SupplierCreditService,
+        // Order services
         OrderCreationService,
         PriceOverrideService,
         OrderAddressService,
@@ -213,13 +223,25 @@ class PaymentHandlerInitializer implements OnModuleInit {
         OrderItemService,
         OrderPaymentService,
         OrderStateService,
+        // Payment services
         PaymentAllocationService,
-        PaymentAllocationResolver,
-        SupplierCreditService,
-        PurchaseCreditValidatorService,
         SupplierPaymentAllocationService,
+        // Stock services
+        PurchaseCreditValidatorService,
+        // Resolvers and subscribers
+        CreditResolver,
+        CustomerFieldResolver,
+        CreditPaymentSubscriber,
+        PaymentHandlerInitializer,
+        PaymentAllocationResolver,
         SupplierCreditResolver,
         SupplierPaymentAllocationResolver,
+        PaymentEventsAdapter, // Moved from LedgerPlugin - needs FinancialService
+    ],
+    exports: [
+        // Export FinancialService for use by other plugins
+        FinancialService,
+        ChartOfAccountsService,
     ],
     configuration: (config) => {
         // Register custom permissions

@@ -10,6 +10,7 @@ import { In } from 'typeorm';
 import { AuditService } from '../../infrastructure/audit/audit.service';
 import { ChannelCommunicationService } from '../channels/channel-communication.service';
 import { StockPurchase } from '../stock/entities/purchase.entity';
+import { FinancialService } from '../financial/financial.service';
 
 export interface SupplierCreditSummary {
     supplierId: ID;
@@ -30,12 +31,15 @@ export class SupplierCreditService {
         private readonly connection: TransactionalConnection,
         @Optional() private readonly communicationService?: ChannelCommunicationService,
         @Optional() private readonly auditService?: AuditService,
+        @Optional() private readonly financialService?: FinancialService, // Optional for migration period
     ) { }
 
     async getSupplierCreditSummary(ctx: RequestContext, supplierId: ID): Promise<SupplierCreditSummary> {
         const supplier = await this.getSupplierOrThrow(ctx, supplierId);
-        // Calculate outstanding amount dynamically from purchases
-        const outstandingAmount = await this.calculateSupplierOutstandingAmount(ctx, supplierId);
+        // Get outstanding amount from ledger (single source of truth)
+        const outstandingAmount = this.financialService
+            ? await this.financialService.getSupplierBalance(ctx, supplierId.toString())
+            : await this.calculateSupplierOutstandingAmount(ctx, supplierId); // Fallback during migration
         return this.mapToSummary(supplier, outstandingAmount);
     }
 
@@ -85,7 +89,9 @@ export class SupplierCreditService {
             });
         }
 
-        const outstandingAmount = await this.calculateSupplierOutstandingAmount(ctx, supplierId);
+        const outstandingAmount = this.financialService
+            ? await this.financialService.getSupplierBalance(ctx, supplierId.toString())
+            : await this.calculateSupplierOutstandingAmount(ctx, supplierId); // Fallback during migration
         return this.mapToSummary(supplier, outstandingAmount);
     }
 
@@ -128,7 +134,9 @@ export class SupplierCreditService {
             });
         }
 
-        const outstandingAmount = await this.calculateSupplierOutstandingAmount(ctx, supplierId);
+        const outstandingAmount = this.financialService
+            ? await this.financialService.getSupplierBalance(ctx, supplierId.toString())
+            : await this.calculateSupplierOutstandingAmount(ctx, supplierId); // Fallback during migration
         return this.mapToSummary(supplier, outstandingAmount);
     }
 
@@ -151,12 +159,15 @@ export class SupplierCreditService {
         await this.connection.getRepository(ctx, Customer).save(supplier);
         this.logger.log(`Updated supplier credit duration for supplier ${supplierId} to ${creditDuration} days`);
 
-        const outstandingAmount = await this.calculateSupplierOutstandingAmount(ctx, supplierId);
+        const outstandingAmount = this.financialService
+            ? await this.financialService.getSupplierBalance(ctx, supplierId.toString())
+            : await this.calculateSupplierOutstandingAmount(ctx, supplierId); // Fallback during migration
         return this.mapToSummary(supplier, outstandingAmount);
     }
 
     /**
      * Calculate outstanding amount dynamically from credit purchases and payments
+     * @deprecated Use FinancialService.getSupplierBalance() instead. This method is kept for migration fallback.
      * This replaces any stored outstandingAmount field
      */
     async calculateSupplierOutstandingAmount(ctx: RequestContext, supplierId: ID): Promise<number> {
@@ -233,7 +244,9 @@ export class SupplierCreditService {
 
         // Notify about balance change (outstanding balance is calculated dynamically)
         if (this.communicationService) {
-            const currentOutstanding = await this.calculateSupplierOutstandingAmount(ctx, supplierId);
+            const currentOutstanding = this.financialService
+                ? await this.financialService.getSupplierBalance(ctx, supplierId.toString())
+                : await this.calculateSupplierOutstandingAmount(ctx, supplierId); // Fallback during migration
             await this.communicationService.sendBalanceChangeNotification(
                 ctx,
                 String(supplierId),

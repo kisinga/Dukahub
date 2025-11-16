@@ -48,9 +48,9 @@ export class AuditDbConnection implements OnModuleInit, OnModuleDestroy {
             await AuditDbConnection.initializationPromise;
         } catch (error) {
             AuditDbConnection.initializationPromise = null;
-            this.logger.error(
-                `Failed to initialize audit database: ${error instanceof Error ? error.message : String(error)}`,
-                error instanceof Error ? error.stack : undefined
+            // Downgrade to warn to avoid noisy error logs in dev if audit DB is unavailable
+            this.logger.warn(
+                `Audit DB unavailable, continuing without audit logging: ${error instanceof Error ? error.message : String(error)}`
             );
             // Don't throw - allow app to continue without audit logging
         }

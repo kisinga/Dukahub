@@ -261,6 +261,8 @@ export class CustomersComponent implements OnInit {
         const customer = this.customers().find(c => c.id === customerId);
         if (!customer) return;
 
+        // Use snapshot data for initial display
+        // The bulk payment modal will fetch fresh data via getCreditSummary() for validation
         const outstandingAmount = Number(customer.outstandingAmount ?? 0);
         const creditLimit = Number(customer.customFields?.creditLimit ?? 0);
         const availableCredit = Math.max(creditLimit - Math.abs(outstandingAmount), 0);
