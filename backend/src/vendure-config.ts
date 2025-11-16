@@ -31,6 +31,7 @@ import { NotificationPlugin } from './plugins/notifications/notification.plugin'
 import { OverridePricePermission } from './plugins/pricing/price-override.permission';
 import { PriceOverridePlugin } from './plugins/pricing/price-override.plugin';
 import { SubscriptionTier } from './plugins/subscriptions/subscription.entity';
+import { LedgerPlugin } from './plugins/ledger/ledger.plugin';
 import { SubscriptionPlugin } from './plugins/subscriptions/subscription.plugin';
 import { cashPaymentHandler, creditPaymentHandler, mpesaPaymentHandler } from './services/payments/payment-handlers';
 
@@ -1026,6 +1027,7 @@ export const config: VendureConfig = {
         SubscriptionPlugin,
         ChannelEventsPlugin,
         AuditPlugin,
+        LedgerPlugin,
         // PhoneAuthPlugin must be registered early so its strategy can be added to adminAuthenticationStrategy
         PhoneAuthPlugin,
         AssetServerPlugin.init({
