@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ChannelService, ID, Permission, RequestContext, Role, RoleService, TransactionalConnection } from '@vendure/core';
 import { RegistrationInput } from '../registration.service';
 import { RegistrationAuditorService } from './registration-auditor.service';
@@ -32,34 +32,20 @@ export class RoleProvisionerService {
         Permission.ReadCustomer,
         Permission.UpdateCustomer,
         Permission.DeleteCustomer,
-        // Order permissions
+        // Order permissions (covers payments and fulfillments)
         Permission.CreateOrder,
         Permission.ReadOrder,
         Permission.UpdateOrder,
         Permission.DeleteOrder,
-        // Product permissions
+        // Product permissions (covers products and variants)
         Permission.CreateProduct,
         Permission.ReadProduct,
         Permission.UpdateProduct,
         Permission.DeleteProduct,
-        // ProductVariant permissions
-        Permission.CreateProductVariant,
-        Permission.ReadProductVariant,
-        Permission.UpdateProductVariant,
-        Permission.DeleteProductVariant,
         // StockLocation permissions
         Permission.CreateStockLocation,
         Permission.ReadStockLocation,
         Permission.UpdateStockLocation,
-        // Payment permissions
-        Permission.CreatePayment,
-        Permission.ReadPayment,
-        Permission.UpdatePayment,
-        Permission.SettlePayment,
-        // Fulfillment permissions
-        Permission.CreateFulfillment,
-        Permission.ReadFulfillment,
-        Permission.UpdateFulfillment,
         // Settings permissions
         Permission.ReadSettings,
         Permission.UpdateSettings,
@@ -91,7 +77,7 @@ export class RoleProvisionerService {
 
             // Try RoleService.create() first, fall back to repository if needed
             let role = await this.createRoleViaService(ctx, roleCode, registrationData, channelId, channel);
-            
+
             if (!role) {
                 role = await this.createRoleViaRepository(ctx, roleCode, registrationData, channelId, channel);
             }
@@ -131,18 +117,19 @@ export class RoleProvisionerService {
         channel: any
     ): Promise<Role | null> {
         try {
-            const privilegedCtx = RequestContext.empty();
-            privilegedCtx.channelId = channelId;
-
-            const roleResult = await this.roleService.create(privilegedCtx, {
+            // Use existing context which should have proper channel setup
+            // The channelIds parameter in create() is sufficient for channel assignment
+            const roleResult = await this.roleService.create(ctx, {
                 code: roleCode,
                 description: `Full admin access for ${registrationData.companyName}`,
                 channelIds: [channelId],
                 permissions: RoleProvisionerService.ALL_ADMIN_PERMISSIONS,
             });
 
-            if ('errorCode' in roleResult) {
-                throw new Error(roleResult.message || 'RoleService.create() failed');
+            // Check if result is an error (Vendure returns error objects with errorCode)
+            if (roleResult && typeof roleResult === 'object' && 'errorCode' in roleResult) {
+                const errorMessage = (roleResult as any).message || 'RoleService.create() failed';
+                throw new Error(errorMessage);
             }
 
             console.log('[RoleProvisioner] Role created via RoleService:', roleResult.id, 'Code:', roleResult.code);

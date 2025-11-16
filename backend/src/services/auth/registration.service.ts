@@ -163,5 +163,5 @@ export class RegistrationService {
             throw this.errorService.wrapError(error, 'PROVISIONING_FAILED');
         }
     }
-
+}
 
