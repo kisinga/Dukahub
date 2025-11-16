@@ -143,6 +143,41 @@ Dukahub implements a unified customer and supplier management system using Vendu
 
 **See [Customer & Supplier Implementation Guide](./docs/technical/CUSTOMER_SUPPLIER_IMPLEMENTATION.md) for complete technical details**
 
+## Financial Ledger System
+
+Dukahub uses a **double-entry ledger** as the single source of truth for all financial transactions. This ensures data integrity, auditability, and accurate financial reporting.
+
+### Core Principles
+
+1. **Ledger as Single Source of Truth**: All financial data (balances, outstanding amounts) comes from the ledger
+2. **Double-Entry Accounting**: Every transaction creates balanced journal entries (debits = credits)
+3. **Channel-Specific**: Each Vendure channel has its own Chart of Accounts and journal entries
+4. **Atomic Transactions**: Domain changes and ledger postings occur in the same database transaction
+
+### Architecture
+
+The system uses a layered architecture:
+
+- **FinancialService** (Facade): Clean API hiding accounting terminology
+- **LedgerQueryService**: Aggregates balances from journal lines with caching
+- **LedgerPostingService**: Maps domain events to journal entries
+- **PostingService**: Core service creating balanced journal entries
+
+### Key Features
+
+- **Idempotency**: Same transaction (sourceType + sourceId) = same journal entry
+- **Period Locks**: Historical periods can be locked for reconciliation
+- **Balance Caching**: Performance optimization with cache invalidation
+- **Chart of Accounts**: Required accounts initialized per channel
+
+### Integration
+
+- **Backend**: All financial operations go through `FinancialService`
+- **Frontend**: No local calculations - always query backend for financial data
+- **GraphQL**: All queries include ledger-based `outstandingAmount` fields
+
+**See [Ledger Architecture Documentation](./docs/LEDGER_ARCHITECTURE.md) for complete technical details**
+
 ## Cashier Flow - Location-Based Two-Step Payment
 
 Dukahub implements a location-specific cashier flow that enables a two-step sales process:

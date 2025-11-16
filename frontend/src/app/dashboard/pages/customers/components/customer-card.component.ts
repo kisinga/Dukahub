@@ -46,6 +46,11 @@ export class CustomerCardComponent {
     return Boolean(this.customer().customFields?.isCreditApproved);
   }
 
+  /**
+   * Outstanding amount from ledger (AR account balance)
+   * This is a snapshot from the customer list query - may be stale
+   * For real-time data, use CustomerCreditService.getCreditSummary()
+   */
   getOutstandingAmount(): number {
     return Number(this.customer().outstandingAmount ?? 0);
   }

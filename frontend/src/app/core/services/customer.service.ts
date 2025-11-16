@@ -32,6 +32,12 @@ export interface CustomerAddressInput {
 
 /**
  * Credit customer summary interface
+ * 
+ * ARCHITECTURE: Ledger as Single Source of Truth
+ * - outstandingAmount: Computed from Accounts Receivable (AR) ledger account
+ * - availableCredit: Calculated by backend from ledger (creditLimit - outstandingAmount)
+ * - All financial data comes from the ledger via backend FinancialService
+ * - No local calculations should be performed - backend is authoritative
  */
 export interface CreditCustomerSummary {
     id: string;
@@ -40,8 +46,8 @@ export interface CreditCustomerSummary {
     email?: string;
     isCreditApproved: boolean;
     creditLimit: number;
-    outstandingAmount: number;
-    availableCredit: number;
+    outstandingAmount: number; // From ledger (AR account balance)
+    availableCredit: number; // Calculated by backend from ledger
     lastRepaymentDate?: string | null;
     lastRepaymentAmount: number;
     creditDuration: number;
@@ -53,7 +59,11 @@ export interface CustomerRecord {
     lastName: string;
     emailAddress?: string | null;
     phoneNumber?: string | null;
-    outstandingAmount?: number | null; // Computed field on Customer, not in customFields
+    /**
+     * Outstanding amount computed from ledger (Accounts Receivable account)
+     * This is a snapshot - for real-time data, use getCreditSummary() which queries ledger directly
+     */
+    outstandingAmount?: number | null; // Computed from ledger by backend
     customFields?: {
         isSupplier?: boolean | null;
         supplierType?: string | null;

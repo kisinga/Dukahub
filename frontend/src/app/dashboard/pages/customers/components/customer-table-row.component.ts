@@ -57,10 +57,21 @@ export class CustomerTableRowComponent {
     return Number(this.customer().customFields?.creditLimit ?? 0);
   }
 
+  /**
+   * Outstanding amount from ledger (AR account balance)
+   * This is a snapshot from the customer list query - may be stale
+   * For real-time data, use CustomerCreditService.getCreditSummary()
+   */
   getOutstandingAmount(): number {
     return Number(this.customer().outstandingAmount ?? 0);
   }
 
+  /**
+   * Available credit calculated locally for display purposes only
+   * NOTE: This is calculated from snapshot data and may be stale
+   * For accurate validation, always use CustomerCreditService.getCreditSummary()
+   * which queries the ledger directly
+   */
   getAvailableCredit(): number {
     const creditLimit = this.getCreditLimit();
     const outstanding = Math.abs(this.getOutstandingAmount());

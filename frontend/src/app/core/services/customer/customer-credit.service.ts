@@ -15,6 +15,12 @@ import { CreditCustomerSummary, CustomerRecord } from '../customer.service';
  * 
  * Handles all credit-related operations for customers.
  * Includes credit approval, limits, validation, and summary operations.
+ * 
+ * ARCHITECTURE: Ledger as Single Source of Truth
+ * - All financial data (balances, outstanding amounts) comes from the ledger
+ * - Backend FinancialService provides ledger-based calculations
+ * - No local calculations or fallbacks - backend is authoritative
+ * - Outstanding amounts are computed from Accounts Receivable (AR) ledger account
  */
 @Injectable({
     providedIn: 'root',
@@ -100,33 +106,20 @@ export class CustomerCreditService {
                 email: base?.email,
                 isCreditApproved: summary.isCreditApproved,
                 creditLimit: summary.creditLimit,
-                outstandingAmount: summary.outstandingAmount,
-                availableCredit: summary.availableCredit,
+                outstandingAmount: summary.outstandingAmount, // From ledger (AR account)
+                availableCredit: summary.availableCredit, // Calculated by backend from ledger
                 lastRepaymentDate: summary.lastRepaymentDate,
                 lastRepaymentAmount: summary.lastRepaymentAmount,
                 creditDuration: summary.creditDuration,
             };
         } catch (error) {
-            console.warn('⚠️ Failed to load credit summary from API, falling back to cached data.', error);
-            if (!base) {
-                throw error;
-            }
-            return {
-                id: customerId,
-                name: base.name ?? '',
-                phone: base.phone,
-                email: base.email,
-                isCreditApproved: base.isCreditApproved ?? false,
-                creditLimit: base.creditLimit ?? 0,
-                outstandingAmount: base.outstandingAmount ?? 0,
-                availableCredit: Math.max(
-                    (base.creditLimit ?? 0) - Math.abs(base.outstandingAmount ?? 0),
-                    0
-                ),
-                lastRepaymentDate: base.lastRepaymentDate,
-                lastRepaymentAmount: base.lastRepaymentAmount ?? 0,
-                creditDuration: base.creditDuration ?? 30,
-            };
+            // No fallback - ledger is the single source of truth
+            // If backend fails, we cannot provide accurate financial data
+            console.error('❌ Failed to load credit summary from ledger:', error);
+            throw new Error(
+                'Unable to retrieve credit information. The financial system is unavailable. ' +
+                'Please try again or contact support if the problem persists.'
+            );
         }
     }
 
@@ -179,26 +172,13 @@ export class CustomerCreditService {
 
             return { summary };
         } catch (error) {
-            console.warn('⚠️ Backend validation failed, falling back to frontend check.', error);
-            
-            // Fallback to frontend validation if backend fails
-            const summary = await this.getCreditSummary(customerId, base);
-
-            if (!summary.isCreditApproved) {
-                return {
-                    summary,
-                    error: 'Customer is not approved for credit purchases yet.',
-                };
-            }
-
-            if (summary.availableCredit < orderTotal) {
-                return {
-                    summary,
-                    error: `Insufficient credit. Available balance: ${summary.availableCredit.toFixed(2)}`,
-                };
-            }
-
-            return { summary };
+            // No fallback - backend validation uses ledger data
+            // If backend fails, we cannot validate credit accurately
+            console.error('❌ Backend credit validation failed:', error);
+            throw new Error(
+                'Unable to validate credit. The financial system is unavailable. ' +
+                'Please try again or contact support if the problem persists.'
+            );
         }
     }
 
@@ -397,8 +377,11 @@ export class CustomerCreditService {
 
     private mapToCreditSummary(customer: CustomerRecord): CreditCustomerSummary {
         const creditLimit = Number(customer.customFields?.creditLimit ?? 0);
-        // outstandingAmount is now a computed field on Customer, not in customFields
+        // outstandingAmount is computed from ledger (AR account) by backend
+        // This is a snapshot - for accurate data, use getCreditSummary() which queries ledger
         const outstandingAmount = Number(customer.outstandingAmount ?? 0);
+        // Calculate available credit locally for display purposes only
+        // For validation, always use getCreditSummary() which queries ledger
         const availableCredit = Math.max(creditLimit - Math.abs(outstandingAmount), 0);
         const lastRepaymentDate = customer.customFields?.lastRepaymentDate ?? null;
         const lastRepaymentAmount = Number(customer.customFields?.lastRepaymentAmount ?? 0);
@@ -411,8 +394,8 @@ export class CustomerCreditService {
             email: customer.emailAddress ?? undefined,
             isCreditApproved: Boolean(customer.customFields?.isCreditApproved),
             creditLimit,
-            outstandingAmount,
-            availableCredit,
+            outstandingAmount, // From ledger (may be stale in list views)
+            availableCredit, // Calculated locally for display (use getCreditSummary for accuracy)
             lastRepaymentDate,
             lastRepaymentAmount,
             creditDuration,
