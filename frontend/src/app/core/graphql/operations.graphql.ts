@@ -629,6 +629,43 @@ export const GET_ORDERS_FOR_PERIOD = graphql(`
   }
 `);
 
+export const GET_DASHBOARD_STATS = graphql(`
+  query GetDashboardStats($startDate: DateTime, $endDate: DateTime) {
+    dashboardStats(startDate: $startDate, endDate: $endDate) {
+      sales {
+        today
+        week
+        month
+        accounts {
+          label
+          value
+          icon
+        }
+      }
+      purchases {
+        today
+        week
+        month
+        accounts {
+          label
+          value
+          icon
+        }
+      }
+      expenses {
+        today
+        week
+        month
+        accounts {
+          label
+          value
+          icon
+        }
+      }
+    }
+  }
+`);
+
 export const GET_PRODUCT_STATS = graphql(`
   query GetProductStats {
     products(options: { take: 1 }) {
