@@ -146,11 +146,14 @@ export class PhoneAuthService {
             throw new Error('Registration data not found or expired. Please start registration again.');
         }
 
-        // Step 4: Check if user already exists
+        // Step 4: Check if user already exists (duplicate registration prevention)
+        // NOTE: If the transaction fails after user creation but before all provisioning completes,
+        // we may have a User without a channel. This will block re-registration and must be repaired by ops.
         const existingUser = await this.userService.getUserByEmailAddress(ctx, formattedPhone);
         if (existingUser) {
-            throw new Error('An account with this phone number already exists. Please login instead.');
+            throw new Error('REGISTRATION_DUPLICATE_USER: An account with this phone number already exists. Please login instead.');
         }
+        // Note: Channel code uniqueness is validated in provisionCustomer() to avoid redundant checks
 
         // Step 5: Create entities in transaction
         // This creates: Channel, Stock Location, Payment Methods, Role, and Administrator
@@ -215,10 +218,34 @@ export class PhoneAuthService {
             };
         }
 
-        // Get authorization status for communication purposes (not blocking)
+        // Get authorization status - this is now BLOCKING
         const authorizationStatus = (user.customFields as any)?.authorizationStatus || AuthorizationStatus.PENDING;
 
-        // OTP verified - create session token for login
+        // Enforce authorization status: only APPROVED users can login
+        if (authorizationStatus !== AuthorizationStatus.APPROVED) {
+            if (authorizationStatus === AuthorizationStatus.PENDING) {
+                return {
+                    success: false,
+                    message: 'Account pending approval. You\'ll be able to log in after an admin approves your account.',
+                    authorizationStatus,
+                };
+            } else if (authorizationStatus === AuthorizationStatus.REJECTED) {
+                return {
+                    success: false,
+                    message: 'Account rejected. Please contact support if you believe this is an error.',
+                    authorizationStatus,
+                };
+            } else {
+                // Fallback for unknown status
+                return {
+                    success: false,
+                    message: 'Account not approved. Please contact support.',
+                    authorizationStatus,
+                };
+            }
+        }
+
+        // Authorization status is APPROVED - create session token for login
         const sessionToken = `otp_session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
         if (!this.otpService.redis) {
