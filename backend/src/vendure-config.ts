@@ -247,6 +247,19 @@ export const config: VendureConfig = {
                 ui: { tab: 'Settings' },
             },
             {
+                name: 'isApproved',
+                type: 'boolean',
+                label: [{ languageCode: LanguageCode.en, value: 'Channel Approved' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Whether this channel has been approved by an administrator'
+                }],
+                defaultValue: false,
+                public: true,
+                nullable: false,
+                ui: { tab: 'Settings' },
+            },
+            {
                 name: 'mlTrainingStatus',
                 type: 'string',
                 label: [{ languageCode: LanguageCode.en, value: 'ML Training Status' }],

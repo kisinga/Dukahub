@@ -26,7 +26,7 @@ describe('CreditService', () => {
         }));
 
         const saveMock = jest.fn();
-        
+
         // Mock for Order repository queries (used by calculateOutstandingAmount)
         const findOrdersMock = jest.fn().mockResolvedValue(orders);
 

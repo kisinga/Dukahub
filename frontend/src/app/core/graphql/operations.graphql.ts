@@ -2221,3 +2221,67 @@ export const GET_STOCK_ADJUSTMENTS = graphql(`
     }
   }
 `);
+
+// ============================================================================
+// LEDGER & ACCOUNTING
+// ============================================================================
+
+export const GET_LEDGER_ACCOUNTS = graphql(`
+  query GetLedgerAccounts {
+    ledgerAccounts {
+      items {
+        id
+        code
+        name
+        type
+        isActive
+        balance
+      }
+    }
+  }
+`);
+
+export const GET_JOURNAL_ENTRIES = graphql(`
+  query GetJournalEntries($options: JournalEntriesOptions) {
+    journalEntries(options: $options) {
+      items {
+        id
+        entryDate
+        postedAt
+        sourceType
+        sourceId
+        memo
+        lines {
+          id
+          accountCode
+          accountName
+          debit
+          credit
+          meta
+        }
+      }
+      totalItems
+    }
+  }
+`);
+
+export const GET_JOURNAL_ENTRY = graphql(`
+  query GetJournalEntry($id: ID!) {
+    journalEntry(id: $id) {
+      id
+      entryDate
+      postedAt
+      sourceType
+      sourceId
+      memo
+      lines {
+        id
+        accountCode
+        accountName
+        debit
+        credit
+        meta
+      }
+    }
+  }
+`);

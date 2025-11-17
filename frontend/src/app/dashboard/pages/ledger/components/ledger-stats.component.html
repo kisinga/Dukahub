@@ -1,0 +1,29 @@
+<div class="stats stats-vertical lg:stats-horizontal shadow w-full bg-base-100">
+  <div class="stat">
+    <div class="stat-title">Total Debits</div>
+    <div class="stat-value text-success">{{ formatCurrency()(stats().totalDebits) }}</div>
+    <div class="stat-desc">All debit transactions</div>
+  </div>
+  <div class="stat">
+    <div class="stat-title">Total Credits</div>
+    <div class="stat-value text-error">{{ formatCurrency()(stats().totalCredits) }}</div>
+    <div class="stat-desc">All credit transactions</div>
+  </div>
+  <div class="stat">
+    <div class="stat-title">Net Balance</div>
+    <div
+      class="stat-value"
+      [class.text-success]="stats().netBalance >= 0"
+      [class.text-error]="stats().netBalance < 0"
+    >
+      {{ formatCurrency()(stats().netBalance) }}
+    </div>
+    <div class="stat-desc">Debits - Credits</div>
+  </div>
+  <div class="stat">
+    <div class="stat-title">Transactions</div>
+    <div class="stat-value">{{ stats().transactionCount }}</div>
+    <div class="stat-desc">{{ stats().dateRange }}</div>
+  </div>
+</div>
+

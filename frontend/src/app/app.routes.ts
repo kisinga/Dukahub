@@ -173,6 +173,11 @@ export const routes: Routes = [
                 canActivate: [settingsGuard],
                 loadComponent: () =>
                     import('./dashboard/pages/settings/settings.component').then((m) => m.SettingsComponent)
+            },
+            {
+                path: 'ledger',
+                loadComponent: () =>
+                    import('./dashboard/pages/ledger/ledger.component').then((m) => m.LedgerComponent)
             }
         ]
     },
