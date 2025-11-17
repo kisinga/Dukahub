@@ -1,5 +1,6 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
 import { gql } from 'graphql-tag';
+import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
 import { FractionalQuantityResolver } from './fractional-quantity.resolver';
 
 @VendurePlugin({
@@ -13,5 +14,6 @@ import { FractionalQuantityResolver } from './fractional-quantity.resolver';
         `,
         resolvers: [FractionalQuantityResolver],
     },
+    compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
 export class FractionalQuantityPlugin { }

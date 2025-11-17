@@ -1,4 +1,5 @@
 import { NativeAuthenticationStrategy, PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
 import { OtpTokenAuthStrategy } from './otp-token-auth.strategy';
 import { OtpService } from '../../services/auth/otp.service';
 import { PhoneAuthResolver, phoneAuthSchema } from './phone-auth.resolver';
@@ -75,6 +76,7 @@ import { StoreProvisionerService } from '../../services/auth/provisioning/store-
         resolvers: [PhoneAuthResolver],
         schema: phoneAuthSchema,
     },
+    compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
 export class PhoneAuthPlugin { }
 

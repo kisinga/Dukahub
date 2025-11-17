@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
 import { LedgerPlugin } from '../ledger/ledger.plugin';
 import { gql } from 'graphql-tag';
 
@@ -263,6 +264,7 @@ class PaymentHandlerInitializer implements OnModuleInit {
             SupplierPaymentAllocationResolver,
         ],
     },
+    compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
 export class CreditPlugin { }
 

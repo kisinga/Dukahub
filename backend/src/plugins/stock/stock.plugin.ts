@@ -1,4 +1,5 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
 import { STOCK_ADMIN_SCHEMA } from './stock.schema';
 import { StockResolver } from './stock.resolver';
 import { ManageStockAdjustmentsPermission } from './permissions';
@@ -44,6 +45,7 @@ import { InventoryStockAdjustment, InventoryStockAdjustmentLine } from '../../se
         InventoryStockAdjustment,
         InventoryStockAdjustmentLine,
     ],
+    compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
 export class StockPlugin { }
 

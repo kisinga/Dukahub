@@ -1,4 +1,5 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
 import { SubscriptionResolver, SUBSCRIPTION_SCHEMA } from './subscription.resolver';
 import { SubscriptionService } from '../../services/subscriptions/subscription.service';
 import { PaystackService } from '../../services/payments/paystack.service';
@@ -36,6 +37,7 @@ import { SubscriptionGuard } from './subscription.guard';
         // to apply the guard more selectively via decorators or middleware.
         return config;
     },
+    compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
 export class SubscriptionPlugin { }
 

@@ -1,4 +1,5 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
 import { MlAutoExtractService } from '../../services/ml/ml-auto-extract.service';
 import { MlExtractionQueueService } from '../../services/ml/ml-extraction-queue.service';
 import { MlExtractionQueueSubscriber } from './ml-extraction-queue.subscriber';
@@ -29,5 +30,6 @@ import { MlWebhookService } from '../../services/ml/ml-webhook.service';
         schema: ML_MODEL_SCHEMA,
         resolvers: [MlModelResolver],
     },
+    compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
 export class MlModelPlugin { }

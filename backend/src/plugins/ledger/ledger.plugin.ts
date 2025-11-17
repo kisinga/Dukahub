@@ -1,4 +1,5 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
 import { PostingService } from '../../ledger/posting.service';
 import { Account } from '../../ledger/account.entity';
 import { JournalEntry } from '../../ledger/journal-entry.entity';
@@ -25,6 +26,7 @@ import { LedgerQueryService } from '../../services/financial/ledger-query.servic
     schema: DASHBOARD_STATS_SCHEMA,
     resolvers: [DashboardStatsResolver],
   },
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
 export class LedgerPlugin {}
 

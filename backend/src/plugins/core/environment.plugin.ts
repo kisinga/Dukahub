@@ -1,4 +1,5 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
 import { EnvironmentConfig } from '../../infrastructure/config/environment.config';
 
 /**
@@ -11,6 +12,7 @@ import { EnvironmentConfig } from '../../infrastructure/config/environment.confi
     imports: [PluginCommonModule],
     providers: [EnvironmentConfig],
     exports: [EnvironmentConfig],
+    compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
 export class EnvironmentPlugin { }
 
