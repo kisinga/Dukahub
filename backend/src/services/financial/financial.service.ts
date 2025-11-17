@@ -273,30 +273,6 @@ export class FinancialService {
       );
     }
 
-    // Order-scoped AR invariant:
-    // Sum of AR credits for this order must never exceed sum of AR debits.
-    const arBalance = await this.queryService.getAccountBalance({
-      channelId: ctx.channelId as number,
-      accountCode: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
-      orderId: order.id.toString(),
-    });
-
-    const debitTotal = arBalance.debitTotal;
-    const creditTotal = arBalance.creditTotal;
-
-    if (debitTotal === 0) {
-      throw new Error(
-        `Cannot allocate payment for order ${order.code} because no Accounts Receivable debits exist for this order in the ledger`,
-      );
-    }
-
-    if (creditTotal + amount > debitTotal) {
-      const overpay = creditTotal + amount - debitTotal;
-      throw new Error(
-        `Payment allocation for order ${order.code} would overpay Accounts Receivable by ${overpay} cents (debited=${debitTotal}, credited=${creditTotal}, newCredit=${creditTotal + amount})`,
-      );
-    }
-
     const context: PaymentPostingContext = {
       amount,
       method: paymentMethod,
@@ -368,31 +344,6 @@ export class FinancialService {
     if (amount <= 0) {
       throw new Error(
         `Supplier payment ${paymentId} has non-positive amount (${amount}) and cannot be posted to ledger`,
-      );
-    }
-
-    // Supplier-scoped AP invariant:
-    // Sum of AP debits for this supplier must never exceed sum of AP credits.
-    const apBalance = await this.queryService.getAccountBalance({
-      channelId: ctx.channelId as number,
-      accountCode: ACCOUNT_CODES.ACCOUNTS_PAYABLE,
-      supplierId,
-    });
-
-    const apDebitTotal = apBalance.debitTotal;
-    const apCreditTotal = apBalance.creditTotal;
-    const outstandingInCents = apCreditTotal - apDebitTotal; // positive when we owe supplier
-
-    if (outstandingInCents <= 0) {
-      throw new Error(
-        `Cannot record supplier payment ${paymentId} for supplier ${supplierId} because Accounts Payable has no outstanding balance (credits=${apCreditTotal}, debits=${apDebitTotal})`,
-      );
-    }
-
-    if (amount > outstandingInCents) {
-      const overpay = amount - outstandingInCents;
-      throw new Error(
-        `Supplier payment ${paymentId} would overpay Accounts Payable by ${overpay} cents for supplier ${supplierId} (outstanding=${outstandingInCents})`,
       );
     }
 

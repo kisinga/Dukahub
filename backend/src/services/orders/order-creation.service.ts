@@ -186,9 +186,18 @@ export class OrderCreationService {
     ): Promise<void> {
         await this.orderFulfillmentService.fulfillOrder(ctx, order.id);
 
+        // Ensure we have a fully-hydrated order with customer relation for ledger posting
+        let orderForPosting = order;
+        if (!orderForPosting.customer) {
+            const reloaded = await this.orderService.findOne(ctx, order.id, ['customer']);
+            if (reloaded) {
+                orderForPosting = reloaded;
+            }
+        }
+
         // Post credit sale to ledger (single source of truth)
         if (this.financialService) {
-            await this.financialService.recordSale(ctx, order);
+            await this.financialService.recordSale(ctx, orderForPosting);
         }
 
         if (this.auditService) {

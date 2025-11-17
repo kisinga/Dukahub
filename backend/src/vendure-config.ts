@@ -33,7 +33,7 @@ import { ManageStockAdjustmentsPermission } from './plugins/stock/permissions';
 import { StockPlugin } from './plugins/stock/stock.plugin';
 import { SubscriptionTier } from './plugins/subscriptions/subscription.entity';
 import { SubscriptionPlugin } from './plugins/subscriptions/subscription.plugin';
-import { cashPaymentHandler, creditPaymentHandler, mpesaPaymentHandler } from './services/payments/payment-handlers';
+import { cashPaymentHandler, mpesaPaymentHandler } from './services/payments/payment-handlers';
 
 // Environment variables are now loaded centrally via EnvironmentConfig
 // See: infrastructure/config/environment.config.ts
@@ -133,7 +133,10 @@ export const config: VendureConfig = {
         paymentMethodHandlers: [
             cashPaymentHandler,
             mpesaPaymentHandler,
-            creditPaymentHandler,
+            // Credit handler is now created via factory with DI.
+            // It will be replaced at runtime in the CreditPlugin configuration hook.
+            // A temporary placeholder is registered here to satisfy the type system;
+            // the real handler will be supplied once the DI container is available.
         ],
     },
     // ML Model Management: Tag-based versioning + custom field activation

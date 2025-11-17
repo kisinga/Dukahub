@@ -84,20 +84,20 @@ export class LedgerQueryService {
 
     // Filter by customer/supplier if provided (via meta field)
     if (query.customerId) {
-      queryBuilder = queryBuilder.andWhere("line.meta->>'customerId' = :customerId", {
-        customerId: query.customerId,
+      queryBuilder = queryBuilder.andWhere('line.meta @> :customerFilter', {
+        customerFilter: JSON.stringify({ customerId: query.customerId }),
       });
     }
 
     if (query.supplierId) {
-      queryBuilder = queryBuilder.andWhere("line.meta->>'supplierId' = :supplierId", {
-        supplierId: query.supplierId,
+      queryBuilder = queryBuilder.andWhere('line.meta @> :supplierFilter', {
+        supplierFilter: JSON.stringify({ supplierId: query.supplierId }),
       });
     }
 
     if (query.orderId) {
-      queryBuilder = queryBuilder.andWhere("line.meta->>'orderId' = :orderId", {
-        orderId: query.orderId,
+      queryBuilder = queryBuilder.andWhere('line.meta @> :orderFilter', {
+        orderFilter: JSON.stringify({ orderId: query.orderId }),
       });
     }
 

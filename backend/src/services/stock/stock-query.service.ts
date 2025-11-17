@@ -48,49 +48,70 @@ export class StockQueryService {
         options: PurchaseListOptions = {}
     ): Promise<{ items: StockPurchase[]; totalItems: number }> {
         const purchaseRepo = this.connection.getRepository(ctx, StockPurchase);
-        const queryBuilder = purchaseRepo
+        const baseFilterQb = purchaseRepo.createQueryBuilder('purchase');
+
+        // Apply filters to base query (used for both count and items)
+        if (options.filter?.supplierId) {
+            baseFilterQb.andWhere('purchase.supplierId = :supplierId', {
+                supplierId: parseInt(String(options.filter.supplierId), 10),
+            });
+        }
+
+        if (options.filter?.startDate) {
+            baseFilterQb.andWhere('purchase.purchaseDate >= :startDate', {
+                startDate: options.filter.startDate,
+            });
+        }
+
+        if (options.filter?.endDate) {
+            baseFilterQb.andWhere('purchase.purchaseDate <= :endDate', {
+                endDate: options.filter.endDate,
+            });
+        }
+
+        // Get total count using lightweight query (no joins)
+        const totalItems = await baseFilterQb.getCount();
+
+        // Build items query with eager joins for the current page
+        const itemsQb = purchaseRepo
             .createQueryBuilder('purchase')
             .leftJoinAndSelect('purchase.supplier', 'supplier')
             .leftJoinAndSelect('purchase.lines', 'lines')
             .leftJoinAndSelect('lines.variant', 'variant')
             .leftJoinAndSelect('lines.stockLocation', 'stockLocation');
 
-        // Apply filters
+        // Reapply filters to items query
         if (options.filter?.supplierId) {
-            // Convert Vendure ID (string) to integer for database query
-            queryBuilder.andWhere('purchase.supplierId = :supplierId', {
+            itemsQb.andWhere('purchase.supplierId = :supplierId', {
                 supplierId: parseInt(String(options.filter.supplierId), 10),
             });
         }
 
         if (options.filter?.startDate) {
-            queryBuilder.andWhere('purchase.purchaseDate >= :startDate', {
+            itemsQb.andWhere('purchase.purchaseDate >= :startDate', {
                 startDate: options.filter.startDate,
             });
         }
 
         if (options.filter?.endDate) {
-            queryBuilder.andWhere('purchase.purchaseDate <= :endDate', {
+            itemsQb.andWhere('purchase.purchaseDate <= :endDate', {
                 endDate: options.filter.endDate,
             });
         }
 
-        // Get total count
-        const totalItems = await queryBuilder.getCount();
-
         // Apply pagination
         if (options.skip !== undefined) {
-            queryBuilder.skip(options.skip);
+            itemsQb.skip(options.skip);
         }
 
         if (options.take !== undefined) {
-            queryBuilder.take(options.take);
+            itemsQb.take(options.take);
         }
 
         // Order by date descending
-        queryBuilder.orderBy('purchase.purchaseDate', 'DESC');
+        itemsQb.orderBy('purchase.purchaseDate', 'DESC');
 
-        const items = await queryBuilder.getMany();
+        const items = await itemsQb.getMany();
 
         return { items, totalItems };
     }
@@ -103,48 +124,70 @@ export class StockQueryService {
         options: StockAdjustmentListOptions = {}
     ): Promise<{ items: InventoryStockAdjustment[]; totalItems: number }> {
         const adjustmentRepo = this.connection.getRepository(ctx, InventoryStockAdjustment);
-        const queryBuilder = adjustmentRepo
+        const baseFilterQb = adjustmentRepo.createQueryBuilder('adjustment');
+
+        // Apply filters to base query (used for both count and items)
+        if (options.filter?.reason) {
+            baseFilterQb.andWhere('adjustment.reason = :reason', {
+                reason: options.filter.reason,
+            });
+        }
+
+        if (options.filter?.startDate) {
+            baseFilterQb.andWhere('adjustment.createdAt >= :startDate', {
+                startDate: options.filter.startDate,
+            });
+        }
+
+        if (options.filter?.endDate) {
+            baseFilterQb.andWhere('adjustment.createdAt <= :endDate', {
+                endDate: options.filter.endDate,
+            });
+        }
+
+        // Get total count using lightweight query (no joins)
+        const totalItems = await baseFilterQb.getCount();
+
+        // Build items query with eager joins for the current page
+        const itemsQb = adjustmentRepo
             .createQueryBuilder('adjustment')
             .leftJoinAndSelect('adjustment.adjustedBy', 'adjustedBy')
             .leftJoinAndSelect('adjustment.lines', 'lines')
             .leftJoinAndSelect('lines.variant', 'variant')
             .leftJoinAndSelect('lines.stockLocation', 'stockLocation');
 
-        // Apply filters
+        // Reapply filters to items query
         if (options.filter?.reason) {
-            queryBuilder.andWhere('adjustment.reason = :reason', {
+            itemsQb.andWhere('adjustment.reason = :reason', {
                 reason: options.filter.reason,
             });
         }
 
         if (options.filter?.startDate) {
-            queryBuilder.andWhere('adjustment.createdAt >= :startDate', {
+            itemsQb.andWhere('adjustment.createdAt >= :startDate', {
                 startDate: options.filter.startDate,
             });
         }
 
         if (options.filter?.endDate) {
-            queryBuilder.andWhere('adjustment.createdAt <= :endDate', {
+            itemsQb.andWhere('adjustment.createdAt <= :endDate', {
                 endDate: options.filter.endDate,
             });
         }
 
-        // Get total count
-        const totalItems = await queryBuilder.getCount();
-
         // Apply pagination
         if (options.skip !== undefined) {
-            queryBuilder.skip(options.skip);
+            itemsQb.skip(options.skip);
         }
 
         if (options.take !== undefined) {
-            queryBuilder.take(options.take);
+            itemsQb.take(options.take);
         }
 
         // Order by date descending
-        queryBuilder.orderBy('adjustment.createdAt', 'DESC');
+        itemsQb.orderBy('adjustment.createdAt', 'DESC');
 
-        const items = await queryBuilder.getMany();
+        const items = await itemsQb.getMany();
 
         return { items, totalItems };
     }
