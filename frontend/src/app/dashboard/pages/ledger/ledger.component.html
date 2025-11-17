@@ -59,10 +59,7 @@
 
   <!-- Summary Statistics Cards (visible in Overview and Transactions tabs) -->
   @if (activeTab() === 'overview' || activeTab() === 'transactions') {
-  <app-ledger-stats
-    [stats]="stats()"
-    [formatCurrency]="formatCurrency"
-  />
+  <app-ledger-stats [stats]="stats()" [formatCurrency]="formatCurrency" />
   }
 
   <!-- Filters Bar -->
@@ -77,526 +74,76 @@
   />
 
   <!-- Tabs -->
-  <div role="tablist" class="tabs tabs-boxed bg-base-200">
-    <button
-      role="tab"
-      class="tab"
-      [class.tab-active]="activeTab() === 'overview'"
-      (click)="setActiveTab('overview')"
-    >
-      Overview
-    </button>
-    <button
-      role="tab"
-      class="tab"
-      [class.tab-active]="activeTab() === 'accounts'"
-      (click)="setActiveTab('accounts')"
-    >
-      Accounts
-    </button>
-    <button
-      role="tab"
-      class="tab"
-      [class.tab-active]="activeTab() === 'transactions'"
-      (click)="setActiveTab('transactions')"
-    >
-      Transactions
-    </button>
-    <button
-      role="tab"
-      class="tab"
-      [class.tab-active]="activeTab() === 'reconciliation'"
-      (click)="setActiveTab('reconciliation')"
-    >
-      Reconciliation
-    </button>
-  </div>
+  <app-ledger-tabs [activeTab]="activeTab()" (tabChange)="setActiveTab($event)" />
 
   <!-- Tab Content -->
   <div class="mt-4">
     <!-- Overview Tab -->
     @if (activeTab() === 'overview') {
-    <div class="space-y-6">
-      <!-- Key Accounts -->
-      <div class="card bg-base-100 shadow">
-        <div class="card-body">
-          <h2 class="card-title">Key Accounts</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            @for (account of keyAccounts(); track account.id) {
-            <div
-              class="p-4 rounded-lg border border-base-300 hover:border-primary transition-colors cursor-pointer"
-              [class.bg-primary/10]="selectedAccount()?.id === account.id"
-              (click)="selectAccount(account)"
-            >
-              <div class="text-sm font-medium text-base-content/70">{{ account.code }}</div>
-              <div class="text-lg font-semibold mt-1">{{ account.name }}</div>
-              <div
-                class="text-xl font-bold mt-2"
-                [class.text-success]="account.balance >= 0"
-                [class.text-error]="account.balance < 0"
-              >
-                {{ formatCurrency(account.balance) }}
-              </div>
-            </div>
-            }
-          </div>
-        </div>
-      </div>
-
-      <!-- Recent Transactions -->
-      <div class="card bg-base-100 shadow">
-        <div class="card-body">
-          <h2 class="card-title">Recent Transactions</h2>
-          @if (isLoading()) {
-          <div class="flex justify-center py-8">
-            <span class="loading loading-spinner loading-lg"></span>
-          </div>
-          } @else if (recentEntries().length === 0) {
-          <div class="text-center py-8 text-base-content/70">
-            <p>No recent transactions found</p>
-          </div>
-          } @else {
-          <div class="overflow-x-auto mt-4">
-            <table class="table table-zebra">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Description</th>
-                  <th>Amount</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (entry of recentEntries(); track entry.id) {
-                <tr>
-                  <td>{{ formatDate(entry.entryDate) }}</td>
-                  <td>
-                    <div class="badge badge-outline">{{ entry.sourceType }}</div>
-                  </td>
-                  <td>{{ entry.memo || entry.sourceId }}</td>
-                  <td>
-                    <div class="flex gap-2">
-                      @if (getEntryTotalDebit(entry) > 0) {
-                      <span class="text-success font-semibold">
-                        +{{ formatCurrency(getEntryTotalDebit(entry)) }}
-                      </span>
-                      }
-                      @if (getEntryTotalCredit(entry) > 0) {
-                      <span class="text-error font-semibold">
-                        -{{ formatCurrency(getEntryTotalCredit(entry)) }}
-                      </span>
-                      }
-                    </div>
-                  </td>
-                  <td>
-                    <button
-                      class="btn btn-sm btn-ghost"
-                      (click)="viewTransaction(entry)"
-                    >
-                      View
-                    </button>
-                  </td>
-                </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-          }
-        </div>
-      </div>
-    </div>
+    <app-overview-tab
+      [keyAccounts]="keyAccounts()"
+      [recentEntries]="recentEntries()"
+      [isLoading]="isLoading()"
+      [selectedAccount]="selectedAccount()"
+      [formatCurrency]="formatCurrency"
+      [formatDate]="formatDate"
+      [getEntryTotalDebit]="getEntryTotalDebit"
+      [getEntryTotalCredit]="getEntryTotalCredit"
+      (accountSelect)="selectAccount($event)"
+      (entryView)="viewTransaction($event)"
+    />
     }
 
     <!-- Accounts Tab -->
     @if (activeTab() === 'accounts') {
-    <div class="space-y-4">
-      @for (type of ['asset', 'liability', 'equity', 'income', 'expense']; track type) {
-      @if (accountsByType()[type].length > 0) {
-      <div class="collapse collapse-arrow bg-base-100 shadow">
-        <input type="checkbox" checked />
-        <div class="collapse-title text-xl font-medium">
-          {{ getAccountTypeLabel(type) }}
-          <span class="badge badge-outline ml-2">
-            {{ accountsByType()[type].length }} accounts
-          </span>
-          <span
-            class="badge ml-2"
-            [class.badge-success]="getAccountTypeTotal(type) >= 0"
-            [class.badge-error]="getAccountTypeTotal(type) < 0"
-          >
-            {{ formatCurrency(getAccountTypeTotal(type)) }}
-          </span>
-        </div>
-        <div class="collapse-content">
-          <div class="overflow-x-auto">
-            <table class="table table-zebra">
-              <thead>
-                <tr>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th>Balance</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (account of accountsByType()[type]; track account.id) {
-                <tr
-                  [class.bg-primary/10]="selectedAccount()?.id === account.id"
-                  class="cursor-pointer hover:bg-base-200"
-                  (click)="selectAccount(account)"
-                >
-                  <td class="font-mono">{{ account.code }}</td>
-                  <td>{{ account.name }}</td>
-                  <td>
-                    <span
-                      class="font-semibold"
-                      [class.text-success]="account.balance >= 0"
-                      [class.text-error]="account.balance < 0"
-                    >
-                      {{ formatCurrency(account.balance) }}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      class="btn btn-sm btn-ghost"
-                      (click)="setActiveTab('transactions'); selectAccount(account); $event.stopPropagation()"
-                    >
-                      View Transactions
-                    </button>
-                  </td>
-                </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      }
-      }
-    </div>
+    <app-accounts-tab
+      [accountsByType]="accountsByType()"
+      [selectedAccount]="selectedAccount()"
+      [formatCurrency]="formatCurrency"
+      [getAccountTypeLabel]="getAccountTypeLabel"
+      [getAccountTypeTotal]="getAccountTypeTotal"
+      (accountSelect)="selectAccount($event)"
+      (viewTransactions)="setActiveTab('transactions'); selectAccount($event)"
+    />
     }
 
     <!-- Transactions Tab -->
     @if (activeTab() === 'transactions') {
-    <div class="space-y-4">
-      @if (isLoading()) {
-      <div class="card bg-base-100 shadow">
-        <div class="card-body">
-          <div class="flex flex-col items-center justify-center py-16">
-            <span class="loading loading-spinner loading-lg text-primary"></span>
-            <p class="text-sm text-base-content/60 mt-4">Loading transactions...</p>
-          </div>
-        </div>
-      </div>
-      } @else if (paginatedEntries().length === 0) {
-      <div class="card bg-base-100 shadow">
-        <div class="card-body">
-          <div class="text-center py-12 lg:py-20 px-4">
-            <div
-              class="w-20 h-20 lg:w-24 lg:h-24 mx-auto mb-4 rounded-full bg-base-200 flex items-center justify-center"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-10 w-10 lg:h-12 lg:w-12 text-base-content/30"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-            </div>
-            <h3 class="text-lg lg:text-xl font-semibold">No transactions found</h3>
-            <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
-              @if (searchTerm() || selectedAccount() || sourceTypeFilter() || dateFilter().start || dateFilter().end) {
-              No transactions match your current filters. Try adjusting your search criteria.
-              } @else {
-              No transactions have been recorded yet.
-              }
-            </p>
-            @if (searchTerm() || selectedAccount() || sourceTypeFilter() || dateFilter().start || dateFilter().end) {
-            <button (click)="clearFilters()" class="btn btn-outline btn-sm lg:btn-md mt-6">
-              Clear Filters
-            </button>
-            }
-          </div>
-        </div>
-      </div>
-      } @else {
-      <!-- Expand/Collapse Controls -->
-      <div class="flex justify-end gap-2">
-        <button class="btn btn-sm btn-ghost" (click)="expandAll()">Expand All</button>
-        <button class="btn btn-sm btn-ghost" (click)="collapseAll()">Collapse All</button>
-      </div>
-
-      <!-- Transactions Table -->
-      <div class="card bg-base-100 shadow">
-        <div class="card-body">
-          <div class="overflow-x-auto">
-            <table class="table table-zebra">
-              <thead>
-                <tr>
-                  <th class="w-12"></th>
-                  <th>Date</th>
-                  <th>Source Type</th>
-                  <th>Source ID</th>
-                  <th>Memo</th>
-                  <th class="text-right">Total Debit</th>
-                  <th class="text-right">Total Credit</th>
-                  <th class="text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (entry of paginatedEntries(); track entry.id) {
-                <tr>
-                  <td>
-                    <button
-                      class="btn btn-ghost btn-xs"
-                      (click)="toggleEntry(entry.id)"
-                    >
-                      @if (expandedEntries().has(entry.id)) {
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M5 15l7-7 7 7"
-                        />
-                      </svg>
-                      } @else {
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                      }
-                    </button>
-                  </td>
-                  <td>{{ formatDate(entry.entryDate) }}</td>
-                  <td>
-                    <div class="badge badge-outline">{{ entry.sourceType }}</div>
-                  </td>
-                  <td class="font-mono text-sm">{{ entry.sourceId }}</td>
-                  <td>{{ entry.memo || '-' }}</td>
-                  <td class="text-right">
-                    <span class="text-success font-semibold">
-                      {{ formatCurrency(getEntryTotalDebit(entry)) }}
-                    </span>
-                  </td>
-                  <td class="text-right">
-                    <span class="text-error font-semibold">
-                      {{ formatCurrency(getEntryTotalCredit(entry)) }}
-                    </span>
-                  </td>
-                  <td class="text-right">
-                    <button
-                      class="btn btn-sm btn-ghost"
-                      (click)="viewTransaction(entry)"
-                    >
-                      Details
-                    </button>
-                  </td>
-                </tr>
-                <!-- Expanded Row: Journal Lines -->
-                @if (expandedEntries().has(entry.id)) {
-                <tr>
-                  <td colspan="8" class="bg-base-200 p-0">
-                    <div class="p-4">
-                      <h4 class="font-semibold mb-2">Journal Lines</h4>
-                      <div class="overflow-x-auto">
-                        <table class="table table-xs table-zebra">
-                          <thead>
-                            <tr>
-                              <th>Account Code</th>
-                              <th>Account Name</th>
-                              <th class="text-right">Debit</th>
-                              <th class="text-right">Credit</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            @for (line of entry.lines; track line.id) {
-                            <tr>
-                              <td class="font-mono text-sm">{{ line.accountCode }}</td>
-                              <td>{{ line.accountName }}</td>
-                              <td class="text-right">
-                                @if (line.debit > 0) {
-                                <span class="text-success">
-                                  {{ formatCurrency(line.debit) }}
-                                </span>
-                                } @else {
-                                <span class="text-base-content/30">-</span>
-                                }
-                              </td>
-                              <td class="text-right">
-                                @if (line.credit > 0) {
-                                <span class="text-error">
-                                  {{ formatCurrency(line.credit) }}
-                                </span>
-                                } @else {
-                                <span class="text-base-content/30">-</span>
-                                }
-                              </td>
-                            </tr>
-                            }
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-                }
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Pagination -->
-          @if (totalPages() > 1) {
-          <div class="join flex justify-center mt-4">
-            <button
-              class="join-item btn btn-sm"
-              [disabled]="currentPage() === 1"
-              (click)="goToPage(currentPage() - 1)"
-            >
-              «
-            </button>
-            @for (page of [].constructor(totalPages()); track $index) {
-            <button
-              class="join-item btn btn-sm"
-              [class.btn-active]="currentPage() === $index + 1"
-              (click)="goToPage($index + 1)"
-            >
-              {{ $index + 1 }}
-            </button>
-            }
-            <button
-              class="join-item btn btn-sm"
-              [disabled]="currentPage() === totalPages()"
-              (click)="goToPage(currentPage() + 1)"
-            >
-              »
-            </button>
-          </div>
-          }
-        </div>
-      </div>
-      }
-    </div>
+    <app-transactions-tab
+      [entries]="paginatedEntries()"
+      [isLoading]="isLoading()"
+      [expandedEntries]="expandedEntries()"
+      [totalPages]="totalPages()"
+      [currentPage]="currentPage()"
+      [searchTerm]="searchTerm()"
+      [selectedAccount]="selectedAccount()"
+      [sourceTypeFilter]="sourceTypeFilter()"
+      [dateFilter]="dateFilter()"
+      [formatCurrency]="formatCurrency"
+      [formatDate]="formatDate"
+      [getEntryTotalDebit]="getEntryTotalDebit"
+      [getEntryTotalCredit]="getEntryTotalCredit"
+      (entryToggle)="toggleEntry($event)"
+      (entryView)="viewTransaction($event)"
+      (expandAll)="expandAll()"
+      (collapseAll)="collapseAll()"
+      (pageChange)="goToPage($event)"
+      (clearFilters)="clearFilters()"
+    />
     }
 
     <!-- Reconciliation Tab -->
     @if (activeTab() === 'reconciliation') {
-    <div class="space-y-4">
-      <div class="card bg-base-100 shadow">
-        <div class="card-body">
-          <h2 class="card-title">Detailed Audit Trail</h2>
-          <p class="text-base-content/70">
-            Complete transaction history with full metadata for reconciliation purposes.
-          </p>
-
-          @if (isLoading()) {
-          <div class="flex justify-center py-8">
-            <span class="loading loading-spinner loading-lg"></span>
-          </div>
-          } @else if (paginatedEntries().length === 0) {
-          <div class="text-center py-8 text-base-content/70">
-            <p>No transactions found</p>
-          </div>
-          } @else {
-          <div class="overflow-x-auto mt-4">
-            <table class="table table-zebra">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Posted At</th>
-                  <th>Source Type</th>
-                  <th>Source ID</th>
-                  <th>Memo</th>
-                  <th>Lines</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (entry of paginatedEntries(); track entry.id) {
-                <tr>
-                  <td>{{ formatDate(entry.entryDate) }}</td>
-                  <td class="text-sm text-base-content/70">
-                    {{ formatDateTime(entry.postedAt) }}
-                  </td>
-                  <td>
-                    <div class="badge badge-outline">{{ entry.sourceType }}</div>
-                  </td>
-                  <td class="font-mono text-sm">{{ entry.sourceId }}</td>
-                  <td>{{ entry.memo || '-' }}</td>
-                  <td>
-                    <span class="badge">{{ entry.lines.length }} lines</span>
-                  </td>
-                  <td>
-                    <button
-                      class="btn btn-sm btn-ghost"
-                      (click)="viewTransaction(entry)"
-                    >
-                      View Details
-                    </button>
-                  </td>
-                </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Pagination -->
-          @if (totalPages() > 1) {
-          <div class="join flex justify-center mt-4">
-            <button
-              class="join-item btn btn-sm"
-              [disabled]="currentPage() === 1"
-              (click)="goToPage(currentPage() - 1)"
-            >
-              «
-            </button>
-            @for (page of [].constructor(totalPages()); track $index) {
-            <button
-              class="join-item btn btn-sm"
-              [class.btn-active]="currentPage() === $index + 1"
-              (click)="goToPage($index + 1)"
-            >
-              {{ $index + 1 }}
-            </button>
-            }
-            <button
-              class="join-item btn btn-sm"
-              [disabled]="currentPage() === totalPages()"
-              (click)="goToPage(currentPage() + 1)"
-            >
-              »
-            </button>
-          </div>
-          }
-          }
-        </div>
-      </div>
-    </div>
+    <app-reconciliation-tab
+      [entries]="paginatedEntries()"
+      [isLoading]="isLoading()"
+      [totalPages]="totalPages()"
+      [currentPage]="currentPage()"
+      [formatDate]="formatDate"
+      [formatDateTime]="formatDateTime"
+      (entryView)="viewTransaction($event)"
+      (pageChange)="goToPage($event)"
+    />
     }
   </div>
 </div>

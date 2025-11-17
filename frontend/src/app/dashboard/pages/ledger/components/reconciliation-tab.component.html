@@ -1,0 +1,89 @@
+<div class="space-y-4">
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Detailed Audit Trail</h2>
+      <p class="text-base-content/70">
+        Complete transaction history with full metadata for reconciliation purposes.
+      </p>
+
+      @if (isLoading()) {
+      <div class="flex justify-center py-8">
+        <span class="loading loading-spinner loading-lg"></span>
+      </div>
+      } @else if (entries().length === 0) {
+      <div class="text-center py-8 text-base-content/70">
+        <p>No transactions found</p>
+      </div>
+      } @else {
+      <div class="overflow-x-auto mt-4">
+        <table class="table table-zebra">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Posted At</th>
+              <th>Source Type</th>
+              <th>Source ID</th>
+              <th>Memo</th>
+              <th>Lines</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of entries(); track entry.id) {
+            <tr>
+              <td>{{ formatDate()(entry.entryDate) }}</td>
+              <td class="text-sm text-base-content/70">
+                {{ formatDateTime()(entry.postedAt) }}
+              </td>
+              <td>
+                <div class="badge badge-outline">{{ entry.sourceType }}</div>
+              </td>
+              <td class="font-mono text-sm">{{ entry.sourceId }}</td>
+              <td>{{ entry.memo || '-' }}</td>
+              <td>
+                <span class="badge">{{ entry.lines.length }} lines</span>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-ghost" (click)="onViewEntry(entry)">
+                  View Details
+                </button>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+      <div class="join flex justify-center mt-4">
+        <button
+          class="join-item btn btn-sm"
+          [disabled]="currentPage() === 1"
+          (click)="onPageChange(currentPage() - 1)"
+        >
+          «
+        </button>
+        @for (page of [].constructor(totalPages()); track $index) {
+        <button
+          class="join-item btn btn-sm"
+          [class.btn-active]="currentPage() === $index + 1"
+          (click)="onPageChange($index + 1)"
+        >
+          {{ $index + 1 }}
+        </button>
+        }
+        <button
+          class="join-item btn btn-sm"
+          [disabled]="currentPage() === totalPages()"
+          (click)="onPageChange(currentPage() + 1)"
+        >
+          »
+        </button>
+      </div>
+      }
+      }
+    </div>
+  </div>
+</div>
+

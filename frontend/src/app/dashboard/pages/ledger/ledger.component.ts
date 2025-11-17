@@ -12,8 +12,12 @@ import { LedgerService, LedgerAccount, JournalEntry } from '../../../core/servic
 import { TransactionDetailModalComponent } from './components/transaction-detail-modal.component';
 import { LedgerStatsComponent, LedgerStats } from './components/ledger-stats.component';
 import { LedgerFiltersComponent, LedgerFilters } from './components/ledger-filters.component';
-
-type TabType = 'overview' | 'accounts' | 'transactions' | 'reconciliation';
+import { LedgerTabsComponent } from './components/ledger-tabs.component';
+import type { TabType } from './components/ledger-tabs.component';
+import { OverviewTabComponent } from './components/overview-tab.component';
+import { AccountsTabComponent } from './components/accounts-tab.component';
+import { TransactionsTabComponent } from './components/transactions-tab.component';
+import { ReconciliationTabComponent } from './components/reconciliation-tab.component';
 
 @Component({
   selector: 'app-ledger',
@@ -22,6 +26,11 @@ type TabType = 'overview' | 'accounts' | 'transactions' | 'reconciliation';
     TransactionDetailModalComponent,
     LedgerStatsComponent,
     LedgerFiltersComponent,
+    LedgerTabsComponent,
+    OverviewTabComponent,
+    AccountsTabComponent,
+    TransactionsTabComponent,
+    ReconciliationTabComponent,
   ],
   templateUrl: './ledger.component.html',
   styleUrl: './ledger.component.scss',
