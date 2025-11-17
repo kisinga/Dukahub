@@ -25,7 +25,7 @@ import { ItemType, ProductType } from '../types/product-creation.types';
                             (click)="onProductTypeChange('measured')"
                         >
                             <div class="flex-1">
-                                <div class="font-semibold">⚖️ Measured (by weight/volume/length)</div>
+                                <div class="font-semibold">Measured (by weight/volume/length)</div>
                                 <div class="text-xs opacity-70">Customers buy any amount: 2.5kg, 1.3L, 0.8m</div>
                             </div>
                         </button>
@@ -37,7 +37,7 @@ import { ItemType, ProductType } from '../types/product-creation.types';
                             (click)="onProductTypeChange('discrete')"
                         >
                             <div class="flex-1">
-                                <div class="font-semibold">📦 Discrete (by unit/package)</div>
+                                <div class="font-semibold">Discrete (by unit/package)</div>
                                 <div class="text-xs opacity-70">
                                     Customers buy whole units: 3 bags, 2 bottles, 1 item
                                 </div>

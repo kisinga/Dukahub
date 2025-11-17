@@ -42,8 +42,9 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
                         </optgroup>
                     </select>
 
-                    <div class="bg-info/10 p-2 rounded text-xs mt-2">
-                        ✅ Fractional sales enabled - customers can buy any amount
+                    <div class="bg-info/10 p-2 rounded text-xs mt-2 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">info</span>
+                        <span>Fractional sales enabled — customers can buy any amount.</span>
                     </div>
                 </div>
             </div>

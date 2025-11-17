@@ -11,12 +11,15 @@ import {
 import {
     FormArray,
     FormBuilder,
+    FormControl,
     FormGroup,
     ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
+import { ProductNameInputComponent } from '../product-create/components/product-name-input.component';
+import { ValidationIssuesPanelComponent } from '../product-create/components/validation-issues-panel.component';
 import { PhotoEditUnlockModalComponent } from './components/photo-edit-unlock-modal.component';
 import { PhotoEditorComponent, ProductAsset } from './components/photo-editor.component';
 
@@ -29,7 +32,14 @@ import { PhotoEditorComponent, ProductAsset } from './components/photo-editor.co
  */
 @Component({
     selector: 'app-product-edit',
-    imports: [CommonModule, ReactiveFormsModule, PhotoEditUnlockModalComponent, PhotoEditorComponent],
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        PhotoEditUnlockModalComponent,
+        PhotoEditorComponent,
+        ProductNameInputComponent,
+        ValidationIssuesPanelComponent,
+    ],
     templateUrl: './product-edit.component.html',
     styleUrl: './product-edit.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,6 +53,9 @@ export class ProductEditComponent implements OnInit {
     // Product ID from route
     readonly productId = signal<string | null>(null);
     readonly isLoading = signal(false);
+
+    // 2-stage flow for editing (defaults to pricing & stock)
+    readonly currentStage = signal<1 | 2>(2);
 
     // Form
     readonly productForm: FormGroup;
@@ -64,6 +77,11 @@ export class ProductEditComponent implements OnInit {
     // Computed: SKUs FormArray
     get skus(): FormArray {
         return this.productForm.get('skus') as FormArray;
+    }
+
+    // Convenience getter for name control (used by shared name input component)
+    get nameControl(): FormControl {
+        return this.productForm.get('name') as FormControl;
     }
 
     // Computed: Form validity
@@ -100,6 +118,16 @@ export class ProductEditComponent implements OnInit {
             name: ['', [Validators.required, Validators.minLength(3)]],
             skus: this.fb.array([]),
         });
+    }
+
+    // --- Stage navigation helpers ---
+
+    goToStage1(): void {
+        this.currentStage.set(1);
+    }
+
+    goToStage2(): void {
+        this.currentStage.set(2);
     }
 
     async ngOnInit(): Promise<void> {
@@ -222,37 +250,30 @@ export class ProductEditComponent implements OnInit {
                 return;
             }
 
-            // Update product name
-            const productInput = {
-                id: productId,
-                name: formValue.name.trim(),
-            };
+            const trimmedName = formValue.name.trim();
 
-            // Update variants
-            const variantUpdates = formValue.skus.map((sku: any) => {
-                // Convert decimal price to cents
-                const priceInCents = Math.round(Number(sku.price) * 100);
+            // Variant updates (prices in decimal units, not cents)
+            const variantUpdates = formValue.skus.map((sku: any) => ({
+                id: sku.id,
+                name: sku.name.trim(),
+                price: Number(sku.price),
+            }));
 
-                return {
-                    id: sku.id,
-                    name: sku.name.trim(),
-                    price: priceInCents, // Price in cents, inc tax
-                    // Stock is NOT updated here - use inventory module
-                };
-            });
+            const ok = await this.productService.updateProductWithVariants(
+                productId,
+                trimmedName,
+                variantUpdates,
+            );
 
-            // TODO: Call product service update method
-            // For now, log the update
-            console.log('Update product:', productInput);
-            console.log('Update variants:', variantUpdates);
-
-            // Temporary success
-            this.submitSuccess.set(true);
-
-            setTimeout(() => {
-                this.router.navigate(['/dashboard/products']);
-            }, 1500);
-
+            if (ok) {
+                this.submitSuccess.set(true);
+                setTimeout(() => {
+                    this.router.navigate(['/dashboard/products']);
+                }, 1500);
+            } else {
+                const errorMsg = this.productService.error();
+                this.submitError.set(errorMsg || 'Failed to update product');
+            }
         } catch (error: any) {
             console.error('Product update failed:', error);
             this.submitError.set(error.message || 'An unexpected error occurred');

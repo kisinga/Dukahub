@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { RequestContext, TransactionalConnection } from '@vendure/core';
+import { PeriodLock } from '../domain/period/period-lock.entity';
+import { Account } from './account.entity';
 import { JournalEntry } from './journal-entry.entity';
 import { JournalLine } from './journal-line.entity';
-import { Account } from './account.entity';
-import { PeriodLock } from '../domain/period/period-lock.entity';
 
 export interface PostingPayload {
   channelId: number;
@@ -20,7 +20,7 @@ export interface PostingPayload {
 
 @Injectable()
 export class PostingService {
-  constructor(private readonly connection: TransactionalConnection) {}
+  constructor(private readonly connection: TransactionalConnection) { }
 
   /**
    * Posts a journal entry idempotently for a given (sourceType, sourceId).

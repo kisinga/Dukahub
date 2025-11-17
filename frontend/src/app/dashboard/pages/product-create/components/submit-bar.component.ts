@@ -34,14 +34,16 @@ import { ItemType } from '../types/product-creation.types';
             </button>
 
             @if (submitError()) {
-                <div class="alert alert-error mt-2">
-                    <span class="text-sm">{{ submitError() }}</span>
+                <div class="alert alert-error mt-2 text-xs flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">error</span>
+                    <span>{{ submitError() }}</span>
                 </div>
             }
-            
+
             @if (submitSuccess()) {
-                <div class="alert alert-success mt-2">
-                    <span class="text-sm">✅ Product created successfully!</span>
+                <div class="alert alert-success mt-2 text-xs flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    <span>Product created successfully.</span>
                 </div>
             }
         </div>

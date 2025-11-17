@@ -33,7 +33,7 @@ import { FormArray, ReactiveFormsModule } from '@angular/forms';
                 <!-- SKU List -->
                 <div class="space-y-3">
                     @for (sku of skus().controls; track $index) {
-                        <div [formGroup]="sku" class="p-3 bg-base-200 rounded">
+                        <div [formGroup]="$any(sku)" class="p-3 bg-base-200 rounded">
                             <!-- SKU Name (read-only, auto-generated) -->
                             <div class="mb-2">
                                 <div class="text-xs opacity-70 mb-1">SKU Name</div>
@@ -65,9 +65,9 @@ import { FormArray, ReactiveFormsModule } from '@angular/forms';
                                 }
                             </div>
 
-                            <!-- Stock -->
+                            <!-- Opening stock -->
                             <div class="mb-2">
-                                <label class="text-xs opacity-70 mb-1 block">Stock</label>
+                            <label class="text-xs opacity-70 mb-1 block">Opening stock</label>
                                 <input
                                     type="number"
                                     formControlName="stockOnHand"

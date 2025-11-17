@@ -29,10 +29,14 @@ import { PhotoManagerComponent } from './photo-manager.component';
                             [class.btn-primary]="identificationMethod() === 'barcode'"
                             (click)="onMethodChange('barcode')"
                         >
-                            📱 Scan Barcode
+                            Scan barcode
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline" (click)="startBarcodeScanner()">
-                            📷 Scan
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline"
+                            (click)="startBarcodeScanner()"
+                        >
+                            Use camera
                         </button>
                     </div>
 
@@ -53,9 +57,9 @@ import { PhotoManagerComponent } from './photo-manager.component';
                             [class.btn-primary]="identificationMethod() === 'label-photos'"
                             (click)="onMethodChange('label-photos')"
                         >
-                            📸 Label Photos
+                            Label photos
                         </button>
-                        <span class="text-xs opacity-60"> {{ photoCount() }}/5 photos </span>
+                        <span class="text-xs opacity-60">{{ photoCount() }}/5 photos</span>
                     </div>
 
                     @if (identificationMethod() === 'label-photos') {
@@ -69,7 +73,7 @@ import { PhotoManagerComponent } from './photo-manager.component';
 
                 @if (!hasValidIdentification()) {
                     <div class="bg-warning/10 p-2 rounded text-xs mt-2">
-                        ⚠️ Please scan a barcode OR upload 5+ label photos
+                        Add a barcode or at least 5 label photos to continue. You can add more photos later in edit.
                     </div>
                 }
             </div>
