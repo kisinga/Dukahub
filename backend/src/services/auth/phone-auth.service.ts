@@ -7,7 +7,7 @@ import {
     User,
     UserService,
 } from '@vendure/core';
-import { getChannelStatus } from '../../domain/channel-custom-fields';
+import { ChannelStatus, getChannelStatus } from '../../domain/channel-custom-fields';
 import { RegistrationStorageService } from '../../infrastructure/storage/registration-storage.service';
 import { formatPhoneNumber } from '../../utils/phone.utils';
 import { OtpService } from './otp.service';
@@ -20,13 +20,6 @@ export enum AuthorizationStatus {
     PENDING = 'PENDING',
     APPROVED = 'APPROVED',
     REJECTED = 'REJECTED',
-}
-
-export enum ChannelStatus {
-    UNAPPROVED = 'UNAPPROVED',
-    APPROVED = 'APPROVED',
-    DISABLED = 'DISABLED',
-    BANNED = 'BANNED',
 }
 
 export enum AccessLevel {
@@ -330,8 +323,8 @@ export class PhoneAuthService {
         return {
             success: true,
             token: sessionToken,
-            message: accessLevel === AccessLevel.FULL 
-                ? 'OTP verified successfully' 
+            message: accessLevel === AccessLevel.FULL
+                ? 'OTP verified successfully'
                 : 'OTP verified successfully. Your channel is pending approval - you have read-only access.',
             user: {
                 id: user.id.toString(),

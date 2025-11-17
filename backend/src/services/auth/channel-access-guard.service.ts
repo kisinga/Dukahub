@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { ChannelService, RequestContext } from '@vendure/core';
-import { getChannelStatus } from '../../domain/channel-custom-fields';
-import { AccessLevel, ChannelStatus } from './phone-auth.service';
+import { ChannelStatus, getChannelStatus } from '../../domain/channel-custom-fields';
+import { AccessLevel } from './phone-auth.service';
 
 /**
  * Channel Access Guard Service
