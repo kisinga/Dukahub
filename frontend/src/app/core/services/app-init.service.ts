@@ -1,6 +1,7 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, Injector, inject, signal } from '@angular/core';
 import { CompanyService } from './company.service';
-import { MlModelService } from './ml-model.service';
+import type { MlModelService } from './ml-model.service';
+import { loadMlModelService } from './ml-model.loader';
 import { ProductCacheService } from './product/product-cache.service';
 import { StockLocationService } from './stock-location.service';
 
@@ -25,8 +26,9 @@ export interface InitStatus {
 export class AppInitService {
   private readonly companyService = inject(CompanyService);
   private readonly productCacheService = inject(ProductCacheService);
-  private readonly mlModelService = inject(MlModelService);
   private readonly stockLocationService = inject(StockLocationService);
+  private readonly injector = inject(Injector);
+  private mlModelService: MlModelService | null = null;
 
   private readonly initStatusSignal = signal<InitStatus>({
     productsLoaded: false,
@@ -108,13 +110,14 @@ export class AppInitService {
   private async prefetchModel(channelId: string): Promise<boolean> {
     try {
       // Check if model exists first
-      const exists = await this.mlModelService.checkModelExists(channelId);
+      const mlModelService = await this.ensureMlModelService();
+      const exists = await mlModelService.checkModelExists(channelId);
       if (!exists.exists) {
         console.warn('ML model not available:', exists.error?.message);
         return false;
       }
 
-      return await this.mlModelService.loadModel(channelId);
+      return await mlModelService.loadModel(channelId);
     } catch (error: any) {
       console.error('Failed to prefetch ML model:', error);
       return false;
@@ -139,7 +142,7 @@ export class AppInitService {
    */
   clearCache(): void {
     this.productCacheService.clearCache();
-    this.mlModelService.unloadModel();
+    this.mlModelService?.unloadModel();
     this.stockLocationService.clearLocations();
     this.isInitializingSignal.set(false);
     this.lastInitChannelId.set(null);
@@ -165,6 +168,16 @@ export class AppInitService {
    */
   isMLReady(): boolean {
     return this.initStatusSignal().modelLoaded;
+  }
+
+  private async ensureMlModelService(): Promise<MlModelService> {
+    if (this.mlModelService) {
+      return this.mlModelService;
+    }
+
+    const service = await loadMlModelService(this.injector);
+    this.mlModelService = service;
+    return service;
   }
 }
 

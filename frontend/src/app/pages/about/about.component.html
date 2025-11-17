@@ -1,0 +1,116 @@
+<app-navbar />
+
+<main class="bg-base-100 text-base-content">
+  <section class="section scroll-mt-28">
+    <div class="container-app space-y-8">
+      <div class="space-y-4 text-center">
+        <span
+          class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80"
+        >
+          About Dukahub
+        </span>
+        <h1 class="text-4xl font-bold md:text-5xl">Built for Kenyan businesses</h1>
+        <p class="mx-auto max-w-2xl text-lg text-base-content/70">
+          We're on a mission to help small and medium businesses in Kenya run smoother operations,
+          sell faster, and grow with confidence.
+        </p>
+      </div>
+
+      <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <article
+          class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 shadow-lg"
+        >
+          <span class="text-3xl">🎯</span>
+          <h3 class="mt-4 text-lg font-semibold">Our Mission</h3>
+          <p class="mt-2 text-base-content/70">
+            Make running a shop simpler. We believe every business owner deserves tools that work
+            when they need them, even without perfect internet.
+          </p>
+        </article>
+
+        <article
+          class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 shadow-lg"
+        >
+          <span class="text-3xl">🇰🇪</span>
+          <h3 class="mt-4 text-lg font-semibold">Made for Kenya</h3>
+          <p class="mt-2 text-base-content/70">
+            Built with M-Pesa, cash payments, and offline-first in mind. We understand the unique
+            challenges Kenyan businesses face.
+          </p>
+        </article>
+
+        <article
+          class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 shadow-lg"
+        >
+          <span class="text-3xl">🤝</span>
+          <h3 class="mt-4 text-lg font-semibold">Your Success</h3>
+          <p class="mt-2 text-base-content/70">
+            When you succeed, we succeed. We're committed to providing ongoing support and building
+            features that matter to you.
+          </p>
+        </article>
+      </div>
+
+      <div class="rounded-2xl border border-base-300 bg-base-200/60 p-8">
+        <h2 class="mb-4 text-2xl font-bold">What makes Dukahub different</h2>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="flex items-start gap-3">
+            <span class="text-xl">📷</span>
+            <div>
+              <h3 class="font-semibold">Point and sell</h3>
+              <p class="text-sm text-base-content/70">
+                No barcode scanner needed. Point your phone at products and sell instantly.
+              </p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-xl">📡</span>
+            <div>
+              <h3 class="font-semibold">Works offline</h3>
+              <p class="text-sm text-base-content/70">
+                Keep selling even when internet is down. Everything syncs when you reconnect.
+              </p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-xl">💰</span>
+            <div>
+              <h3 class="font-semibold">Built-in accounting</h3>
+              <p class="text-sm text-base-content/70">
+                Every sale and purchase automatically updates your ledger. No separate software
+                needed.
+              </p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-xl">💳</span>
+            <div>
+              <h3 class="font-semibold">M-Pesa ready</h3>
+              <p class="text-sm text-base-content/70">
+                Accept cash and M-Pesa payments in one system. Everything tracked automatically.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-4 rounded-2xl bg-gradient-to-r from-primary/20 to-secondary/10 p-6 md:flex-row md:items-center md:justify-between">
+        <p class="max-w-2xl">
+          Ready to see how Dukahub can help your business?
+          <a routerLink="/features" class="link link-primary">Explore features</a> or
+          <a routerLink="/signup" class="link link-primary">start your free trial</a>.
+        </p>
+        <a
+          routerLink="/signup"
+          [queryParams]="{ plan: 'pro', trial: 'true' }"
+          class="btn btn-primary btn-lg"
+        >
+          Start free trial
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<app-footer />
+

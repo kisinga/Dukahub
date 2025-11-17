@@ -1,5 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
-import * as tf from '@tensorflow/tfjs';
+import type { LayersModel, Tensor } from '@tensorflow/tfjs';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
 
@@ -15,6 +15,21 @@ import { CompanyService } from './company.service';
  * Deployment: backend/scripts/deploy-ml-model.js
  * Documentation: ML_GUIDE.md
  */
+
+type TfModule = typeof import('@tensorflow/tfjs');
+
+let tfModule: TfModule | null = null;
+let tfModulePromise: Promise<TfModule> | null = null;
+
+async function getTf(): Promise<TfModule> {
+    if (tfModule) {
+        return tfModule;
+    }
+
+    tfModulePromise ??= import('@tensorflow/tfjs');
+    tfModule = await tfModulePromise;
+    return tfModule;
+}
 
 export interface ModelMetadata {
     version: string;
@@ -54,7 +69,7 @@ export class MlModelService {
     private readonly apolloService = inject(ApolloService);
     private readonly companyService = inject(CompanyService);
 
-    private model: tf.LayersModel | null = null;
+    private model: LayersModel | null = null;
     private metadata: ModelMetadata | null = null;
     private readonly isLoadingSignal = signal<boolean>(false);
     private readonly isInitializedSignal = signal<boolean>(false);
@@ -201,6 +216,7 @@ export class MlModelService {
                 throw new Error('ML model not configured for this channel. Please set up the model asset IDs in channel settings.');
             }
 
+            const tf = await getTf();
             // Initialize TensorFlow backend
             await tf.setBackend('webgl');
             await tf.ready();
@@ -254,6 +270,7 @@ export class MlModelService {
         }
 
         try {
+            const tf = await getTf();
             const tensor = tf.tidy(() => {
                 let img = tf.browser.fromPixels(imageElement);
                 const imageSize = this.metadata?.imageSize || 224;
@@ -262,7 +279,7 @@ export class MlModelService {
                 return img.expandDims(0);
             });
 
-            const predictions = this.model.predict(tensor) as tf.Tensor;
+            const predictions = this.model.predict(tensor) as Tensor;
             const probabilities = await predictions.data();
 
             tensor.dispose();
@@ -330,6 +347,7 @@ export class MlModelService {
             const cacheKey = `indexeddb://${this.MODEL_CACHE_NAME}/${channelId}`;
             this.unloadModel();
 
+            const tf = await getTf();
             const models = await tf.io.listModels();
             if (models[cacheKey]) {
                 await tf.io.removeModel(cacheKey);

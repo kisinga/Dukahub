@@ -26,7 +26,15 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.scss"]
+            "styles": ["src/styles.scss"],
+            "allowedCommonJsDependencies": [
+              "seedrandom",
+              "shimmer",
+              "node-fetch",
+              "string_decoder",
+              "long",
+              "protobufjs/minimal"
+            ]
           },
           "configurations": {
             "production": {

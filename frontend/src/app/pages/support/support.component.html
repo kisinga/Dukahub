@@ -1,0 +1,86 @@
+<app-navbar />
+
+<main class="bg-base-100 text-base-content">
+  <section class="section scroll-mt-28">
+    <div class="container-app space-y-8">
+      <div class="space-y-4 text-center">
+        <span
+          class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80"
+        >
+          Help & Support
+        </span>
+        <h1 class="text-4xl font-bold md:text-5xl">We're here to help</h1>
+        <p class="mx-auto max-w-2xl text-lg text-base-content/70">
+          Find answers to common questions or get in touch with our support team.
+        </p>
+      </div>
+
+      <div class="grid gap-6 md:grid-cols-3">
+        <div class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 text-center shadow-lg">
+          <span class="text-4xl">📚</span>
+          <h3 class="mt-4 text-lg font-semibold">Documentation</h3>
+          <p class="mt-2 text-sm text-base-content/70">
+            Learn how to use Dukahub with step-by-step guides and tutorials.
+          </p>
+        </div>
+
+        <div class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 text-center shadow-lg">
+          <span class="text-4xl">💬</span>
+          <h3 class="mt-4 text-lg font-semibold">Contact Support</h3>
+          <p class="mt-2 text-sm text-base-content/70">
+            Can't find what you're looking for?
+            <a routerLink="/contact" class="link link-primary">Get in touch</a> with our team.
+          </p>
+        </div>
+
+        <div class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 text-center shadow-lg">
+          <span class="text-4xl">🎥</span>
+          <h3 class="mt-4 text-lg font-semibold">Video Tutorials</h3>
+          <p class="mt-2 text-sm text-base-content/70">
+            Watch quick video guides to get the most out of Dukahub.
+          </p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <h2 class="text-2xl font-bold">Frequently asked questions</h2>
+        <div class="grid gap-3">
+          @for (faq of faqItems(); track $index) {
+          <details
+            class="collapse collapse-plus border border-base-300 bg-base-200/60 text-left"
+            [open]="faq.open"
+          >
+            <summary class="collapse-title text-base font-semibold" (click)="toggleFAQ($index)">
+              {{ faq.question }}
+            </summary>
+            <div class="collapse-content text-sm text-base-content/70">
+              <p>{{ faq.answer }}</p>
+            </div>
+          </details>
+          }
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-base-300 bg-base-200/60 p-8">
+        <h2 class="mb-4 text-2xl font-bold">Still need help?</h2>
+        <p class="mb-6 text-base-content/70">
+          Our support team is ready to assist you. Reach out and we'll get back to you within 24
+          hours.
+        </p>
+        <div class="flex flex-col gap-3 sm:flex-row">
+          <a routerLink="/contact" class="btn btn-primary btn-lg">Contact support</a>
+          <a
+            routerLink="/signup"
+            [queryParams]="{ plan: 'pro', trial: 'true' }"
+            class="btn btn-ghost btn-lg"
+          >
+            Start free trial
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<app-footer />
+

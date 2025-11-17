@@ -53,6 +53,13 @@ interface ValueHighlight {
   badge: string;
 }
 
+interface ComingSoonFeature {
+  icon: string;
+  title: string;
+  description: string;
+  category: string;
+}
+
 interface FAQItem {
   question: string;
   answer: string;
@@ -147,6 +154,33 @@ export class HomeComponent {
       title: 'Build customer trust',
       description: 'Show clear balances and histories for every customer and supplier.',
       badge: 'Transparent'
+    }
+  ];
+
+  protected readonly comingSoonFeatures: ComingSoonFeature[] = [
+    {
+      icon: '📊',
+      title: 'Ledger control',
+      description: 'Full control over your accounting ledger with detailed transaction tracking and reconciliation.',
+      category: 'Accounting'
+    },
+    {
+      icon: '📦',
+      title: 'COGS via FIFO tracking',
+      description: 'Track cost of goods sold using FIFO method with batch tracking for expiry management and automated reminders.',
+      category: 'Accounting'
+    },
+    {
+      icon: '💼',
+      title: 'Expenses management',
+      description: 'Comprehensive ERP features for tracking and managing business expenses with categorization and reporting.',
+      category: 'Accounting'
+    },
+    {
+      icon: '🔒',
+      title: 'Period end closing',
+      description: 'Enforce reconciliation of payment accounts before closing periods, ensuring ledger accuracy with inter-account transfer support.',
+      category: 'Accounting'
     }
   ];
 
