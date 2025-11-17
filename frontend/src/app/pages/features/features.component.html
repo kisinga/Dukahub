@@ -1,0 +1,192 @@
+<app-navbar />
+
+<main class="features">
+  <!-- Hero -->
+  <section class="section hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <span class="badge badge-primary badge-soft">Feature tour</span>
+        <h1>See everything Dukahub does for your business</h1>
+        <p>
+          Explore how Dukahub keeps selling fast, inventory honest, and finances calm — all in one
+          simple workspace.
+        </p>
+        <div class="hero-cta">
+          <a
+            routerLink="/signup"
+            [queryParams]="{ plan: 'pro', trial: 'true' }"
+            class="btn btn-primary btn-lg"
+          >
+            Start your free trial
+          </a>
+          <a routerLink="/" class="btn btn-ghost btn-lg">Back to homepage</a>
+        </div>
+        <div class="hero-points">
+          <div class="point">
+            <span class="icon">🔍</span>
+            <span>At-a-glance summaries for owners and managers</span>
+          </div>
+          <div class="point">
+            <span class="icon">⚙️</span>
+            <span>Practical automation, no complicated setup</span>
+          </div>
+          <div class="point">
+            <span class="icon">📱</span>
+            <span>Designed for phones, friendly on desktop</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="mockup">
+          <div class="mockup-header">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+          <div class="mockup-body">
+            <div class="mockup-card">
+              <div class="mockup-icon">⚡</div>
+              <div>
+                <h3>Sell in 3 seconds</h3>
+                <p>Point your phone at a price label and the right product appears instantly.</p>
+              </div>
+            </div>
+            <div class="mockup-card">
+              <div class="mockup-icon">📦</div>
+              <div>
+                <h3>See what’s in stock</h3>
+                <p>Know your best sellers and low stock before it hurts sales.</p>
+              </div>
+            </div>
+            <div class="mockup-card">
+              <div class="mockup-icon">💳</div>
+              <div>
+                <h3>Track who owes what</h3>
+                <p>Customer credit and supplier balances update automatically.</p>
+              </div>
+            </div>
+          </div>
+          <div class="mockup-footer">
+            <span class="tag tag-primary">Offline ready</span>
+            <span class="tag">MPesa + cash</span>
+            <span class="tag">Unlimited products</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories -->
+  @for (category of categories; track category.name; let i = $index) {
+  <section class="section category" [class.category-alt]="i % 2 === 1">
+    <div class="container">
+      <div class="category-header">
+        <div>
+          <span class="eyebrow">{{ category.name }}</span>
+          <h2>{{ category.description }}</h2>
+        </div>
+        <p>
+          These tools are tuned for small and mid-sized shops who want clarity without extra
+          paperwork.
+        </p>
+      </div>
+      <div class="feature-grid">
+        @for (feature of category.features; track feature.title) {
+        <article class="feature-card">
+          <div class="feature-icon">{{ feature.icon }}</div>
+          <div class="feature-meta">
+            @if (feature.origin === 'Dukahub-Exclusive') {
+            <span class="tag tag-exclusive">Dukahub exclusive</span>
+            } @else if (feature.origin === 'Dukahub-Enhanced') {
+            <span class="tag tag-enhanced">Dukahub enhanced</span>
+            } @else {
+            <span class="tag">Standard</span>
+            }
+          </div>
+          <h3>{{ feature.title }}</h3>
+          <p>{{ feature.description }}</p>
+          @if (feature.useCase) {
+          <div class="use-case">💡 {{ feature.useCase }}</div>
+          }
+        </article>
+        }
+      </div>
+    </div>
+  </section>
+  }
+
+  <!-- Comparison -->
+  <section class="section compare" id="compare">
+    <div class="container section-header">
+      <span class="eyebrow">Make the confident choice</span>
+      <h2>Why teams graduate from paper or generic POS to Dukahub</h2>
+      <p>
+        The difference shows up in day-to-day calm — less chasing, faster checkout, fewer surprises.
+      </p>
+    </div>
+    <div class="container compare-grid">
+      <article class="compare-card compare-primary">
+        <h3>Dukahub</h3>
+        <p class="compare-sub">Purpose-built for Kenyan retail and services.</p>
+        <ul>
+          @for (item of comparisonData.dukahub; track item) {
+          <li>
+            <span class="icon">✅</span>
+            <span>{{ item }}</span>
+          </li>
+          }
+        </ul>
+      </article>
+      <article class="compare-card">
+        <h3>Manual systems</h3>
+        <p class="compare-sub">Notebooks and memory can’t keep up.</p>
+        <ul>
+          @for (item of comparisonData.manual; track item) {
+          <li>
+            <span class="icon">⚠️</span>
+            <span>{{ item }}</span>
+          </li>
+          }
+        </ul>
+      </article>
+      <article class="compare-card">
+        <h3>Generic POS</h3>
+        <p class="compare-sub">Great for barcode-only stores, less so for local flow.</p>
+        <ul>
+          @for (item of comparisonData.genericPOS; track item) {
+          <li>
+            <span class="icon">⚠️</span>
+            <span>{{ item }}</span>
+          </li>
+          }
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <!-- Closing CTA -->
+  <section class="section closing">
+    <div class="container closing-card">
+      <div>
+        <span class="eyebrow">Start calmly</span>
+        <h2>Try every feature free for 30 days</h2>
+        <p>
+          Onboarding help, unlimited products and locations, and a team that knows Kenyan retail
+          inside out.
+        </p>
+      </div>
+      <div class="closing-actions">
+        <a
+          routerLink="/signup"
+          [queryParams]="{ plan: 'pro', trial: 'true' }"
+          class="btn btn-primary btn-lg"
+        >
+          Start free trial
+        </a>
+        <a routerLink="/" class="btn btn-ghost btn-lg">Back to homepage</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<app-footer />
