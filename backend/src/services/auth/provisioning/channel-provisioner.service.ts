@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Channel, ChannelService, CurrencyCode, LanguageCode, RequestContext } from '@vendure/core';
 import { RegistrationInput } from '../registration.service';
 import { RegistrationAuditorService } from './registration-auditor.service';
@@ -36,7 +36,9 @@ export class ChannelProvisionerService {
                 pricesIncludeTax: false,
                 defaultShippingZoneId: defaultChannel.defaultShippingZone!.id,
                 defaultTaxZoneId: defaultChannel.defaultTaxZone!.id,
-                customFields: {},
+                customFields: {
+                    status: 'UNAPPROVED', // New channels start as unapproved
+                },
             });
 
             if ('errorCode' in channelResult) {

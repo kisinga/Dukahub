@@ -247,17 +247,36 @@ export const config: VendureConfig = {
                 ui: { tab: 'Settings' },
             },
             {
-                name: 'isApproved',
-                type: 'boolean',
-                label: [{ languageCode: LanguageCode.en, value: 'Channel Approved' }],
+                name: 'status',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'Channel Status' }],
                 description: [{
                     languageCode: LanguageCode.en,
-                    value: 'Whether this channel has been approved by an administrator'
+                    value: 'Channel status controls user access: UNAPPROVED (read-only), APPROVED (full access), DISABLED/BANNED (no access)'
                 }],
-                defaultValue: false,
+                defaultValue: 'UNAPPROVED',
                 public: true,
                 nullable: false,
+                readonly: false,
                 ui: { tab: 'Settings' },
+                options: [
+                    {
+                        value: 'UNAPPROVED',
+                        label: [{ languageCode: LanguageCode.en, value: 'Unapproved' }],
+                    },
+                    {
+                        value: 'APPROVED',
+                        label: [{ languageCode: LanguageCode.en, value: 'Approved' }],
+                    },
+                    {
+                        value: 'DISABLED',
+                        label: [{ languageCode: LanguageCode.en, value: 'Disabled' }],
+                    },
+                    {
+                        value: 'BANNED',
+                        label: [{ languageCode: LanguageCode.en, value: 'Banned' }],
+                    },
+                ],
             },
             {
                 name: 'mlTrainingStatus',
@@ -1005,10 +1024,25 @@ export const config: VendureConfig = {
                 name: 'authorizationStatus',
                 type: 'string',
                 label: [{ languageCode: LanguageCode.en, value: 'Authorization Status' }],
-                description: [{ languageCode: LanguageCode.en, value: 'User authorization status for login access' }],
+                description: [{ languageCode: LanguageCode.en, value: 'User authorization status: PENDING (can login), APPROVED (can login), REJECTED (blocks login)' }],
                 defaultValue: 'PENDING',
-                public: false,
+                public: true,
                 nullable: false,
+                ui: { tab: 'Settings' },
+                options: [
+                    {
+                        value: 'PENDING',
+                        label: [{ languageCode: LanguageCode.en, value: 'Pending' }],
+                    },
+                    {
+                        value: 'APPROVED',
+                        label: [{ languageCode: LanguageCode.en, value: 'Approved' }],
+                    },
+                    {
+                        value: 'REJECTED',
+                        label: [{ languageCode: LanguageCode.en, value: 'Rejected' }],
+                    },
+                ],
             },
             {
                 name: 'notificationPreferences',

@@ -4,6 +4,7 @@ import { OtpTokenAuthStrategy } from './otp-token-auth.strategy';
 import { OtpService } from '../../services/auth/otp.service';
 import { PhoneAuthResolver, phoneAuthSchema } from './phone-auth.resolver';
 import { PhoneAuthService } from '../../services/auth/phone-auth.service';
+import { ChannelAccessGuardService } from '../../services/auth/channel-access-guard.service';
 import { RegistrationStorageService } from '../../infrastructure/storage/registration-storage.service';
 import { RegistrationService } from '../../services/auth/registration.service';
 import { SmsProviderFactory } from '../../infrastructure/sms/sms-provider.factory';
@@ -41,6 +42,7 @@ import { StoreProvisionerService } from '../../services/auth/provisioning/store-
         // Phone Auth Infrastructure
         PhoneAuthResolver,
         PhoneAuthService,
+        ChannelAccessGuardService,
         OtpService,
         OtpTokenAuthStrategy,
         NativeAuthenticationStrategy,
