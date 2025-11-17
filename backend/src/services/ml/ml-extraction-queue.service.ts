@@ -3,6 +3,8 @@ import { RequestContext, TransactionalConnection } from '@vendure/core';
 import { ChannelEventRouterService } from '../../infrastructure/events/channel-event-router.service';
 import { ActionCategory } from '../../infrastructure/events/types/action-category.enum';
 import { ChannelEventType } from '../../infrastructure/events/types/event-type.enum';
+import { TracingService } from '../../infrastructure/observability/tracing.service';
+import { MetricsService } from '../../infrastructure/observability/metrics.service';
 
 export interface ScheduledExtraction {
     id: string;
@@ -27,22 +29,39 @@ export class MlExtractionQueueService {
     constructor(
         private connection: TransactionalConnection,
         @Optional() private eventRouter?: ChannelEventRouterService, // Optional to avoid circular dependency
+        @Optional() private tracingService?: TracingService,
+        @Optional() private metricsService?: MetricsService,
     ) { }
 
     /**
      * Schedule a new extraction for a channel
      */
     async scheduleExtraction(ctx: RequestContext, channelId: string, delayMinutes: number = 5): Promise<string> {
-        const scheduledAt = new Date(Date.now() + (delayMinutes * 60 * 1000));
+        const span = this.tracingService?.startSpan('ml.scheduleExtraction', {
+            'ml.channel_id': channelId,
+            'ml.delay_minutes': delayMinutes.toString(),
+        });
 
-        const result = await this.connection.rawConnection.query(`
-            INSERT INTO ml_extraction_queue (channel_id, scheduled_at, status, created_at, updated_at)
-            VALUES ($1, $2, 'pending', NOW(), NOW())
-            RETURNING id
-        `, [channelId, scheduledAt]);
+        try {
+            const scheduledAt = new Date(Date.now() + (delayMinutes * 60 * 1000));
 
-        const extractionId = result.rows[0].id;
-        this.logger.log(`Scheduled extraction ${extractionId} for channel ${channelId} at ${scheduledAt.toISOString()}`);
+            const result = await this.connection.rawConnection.query(`
+                INSERT INTO ml_extraction_queue (channel_id, scheduled_at, status, created_at, updated_at)
+                VALUES ($1, $2, 'pending', NOW(), NOW())
+                RETURNING id
+            `, [channelId, scheduledAt]);
+
+            const extractionId = result.rows[0].id;
+            
+            this.tracingService?.setAttributes(span!, {
+                'ml.extraction_id': extractionId,
+                'ml.scheduled_at': scheduledAt.toISOString(),
+            });
+            this.tracingService?.addEvent(span!, 'ml.extraction.scheduled', {
+                'ml.extraction_id': extractionId,
+            });
+            
+            this.logger.log(`Scheduled extraction ${extractionId} for channel ${channelId} at ${scheduledAt.toISOString()}`);
 
         // Emit extraction queued event
         if (this.eventRouter) {
@@ -61,7 +80,12 @@ export class MlExtractionQueueService {
             });
         }
 
-        return extractionId;
+            this.tracingService?.endSpan(span!, true);
+            return extractionId;
+        } catch (error) {
+            this.tracingService?.endSpan(span!, false, error instanceof Error ? error : new Error(String(error)));
+            throw error;
+        }
     }
 
     /**

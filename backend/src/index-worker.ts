@@ -2,6 +2,11 @@ import { bootstrapWorker } from '@vendure/core';
 import { config } from './vendure-config';
 // Initialize environment configuration early
 import './infrastructure/config/environment.config';
+// Initialize OpenTelemetry telemetry before worker bootstrap
+import { initializeTelemetry } from './infrastructure/observability/telemetry.init';
+
+// Initialize telemetry (must be done before any other application code)
+initializeTelemetry('dukahub-worker');
 
 bootstrapWorker(config)
     .then(worker => worker.startJobQueue())

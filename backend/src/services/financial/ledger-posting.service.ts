@@ -1,5 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { RequestContext, TransactionalConnection } from '@vendure/core';
+import { MetricsService } from '../../infrastructure/observability/metrics.service';
+import { TracingService } from '../../infrastructure/observability/tracing.service';
 import { ACCOUNT_CODES } from '../../ledger/account-codes.constants';
 import { Account } from '../../ledger/account.entity';
 import { JournalLine } from '../../ledger/journal-line.entity';
@@ -25,6 +27,8 @@ export class LedgerPostingService {
   constructor(
     private readonly postingService: PostingService,
     private readonly connection: TransactionalConnection,
+    @Optional() private readonly tracingService?: TracingService,
+    @Optional() private readonly metricsService?: MetricsService,
   ) { }
 
   /**
@@ -58,20 +62,39 @@ export class LedgerPostingService {
     sourceId: string,
     context: PaymentPostingContext
   ): Promise<void> {
-    const template = createPaymentEntry(context);
-    const accountCodes = template.lines.map(l => l.accountCode);
+    const span = this.tracingService?.startSpan('ledger.postPayment', {
+      'ledger.type': 'Payment',
+      'ledger.source_id': sourceId,
+      'ledger.channel_id': ctx.channelId?.toString() || '',
+      'ledger.order_code': context.orderCode,
+    });
 
-    await this.ensureAccountsExist(ctx, accountCodes);
+    try {
+      const template = createPaymentEntry(context);
+      const accountCodes = template.lines.map(l => l.accountCode);
 
-    const payload: PostingPayload = {
-      channelId: ctx.channelId as number,
-      entryDate: new Date().toISOString().slice(0, 10),
-      memo: template.memo,
-      lines: template.lines,
-    };
+      await this.ensureAccountsExist(ctx, accountCodes);
 
-    await this.postingService.post(ctx, 'Payment', sourceId, payload);
-    this.logger.log(`Posted payment entry for payment ${sourceId}, order ${context.orderCode}`);
+      const payload: PostingPayload = {
+        channelId: ctx.channelId as number,
+        entryDate: new Date().toISOString().slice(0, 10),
+        memo: template.memo,
+        lines: template.lines,
+      };
+
+      await this.postingService.post(ctx, 'Payment', sourceId, payload);
+
+      this.metricsService?.recordLedgerPosting('Payment', ctx.channelId?.toString() || '');
+      this.tracingService?.addEvent(span!, 'ledger.posted', {
+        'ledger.source_id': sourceId,
+      });
+
+      this.logger.log(`Posted payment entry for payment ${sourceId}, order ${context.orderCode}`);
+      this.tracingService?.endSpan(span!, true);
+    } catch (error) {
+      this.tracingService?.endSpan(span!, false, error instanceof Error ? error : new Error(String(error)));
+      throw error;
+    }
   }
 
   /**

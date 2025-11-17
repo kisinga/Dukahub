@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { RequestContext } from '@vendure/core';
 import { formatPhoneNumber } from '../../utils/phone.utils';
+import { TracingService } from '../../infrastructure/observability/tracing.service';
 import { AccessProvisionerService } from './provisioning/access-provisioner.service';
 import { ChannelProvisionerService } from './provisioning/channel-provisioner.service';
 import { PaymentProvisionerService } from './provisioning/payment-provisioner.service';
@@ -70,6 +71,7 @@ export class RegistrationService {
         private readonly roleProvisioner: RoleProvisionerService,
         private readonly accessProvisioner: AccessProvisionerService,
         private readonly errorService: RegistrationErrorService,
+        @Optional() private readonly tracingService?: TracingService,
     ) { }
 
     /**
@@ -89,6 +91,12 @@ export class RegistrationService {
         ctx: RequestContext,
         registrationData: RegistrationInput
     ): Promise<ProvisionResult> {
+        const span = this.tracingService?.startSpan('registration.provisionCustomer', {
+            'registration.company_code': registrationData.companyCode,
+            'registration.company_name': registrationData.companyName,
+            'registration.currency': registrationData.currency,
+        });
+
         try {
             // Normalize phone number at the very start for consistent usage
             const formattedPhone = formatPhoneNumber(registrationData.adminPhoneNumber);
@@ -100,6 +108,7 @@ export class RegistrationService {
 
             // Step 2: Create Channel (company workspace)
             this.logger.log(`Creating channel: ${registrationData.companyCode}`);
+            this.tracingService?.addEvent(span!, 'registration.channel.creating');
             const channel = await this.channelProvisioner.createChannel(
                 ctx,
                 registrationData,
@@ -107,6 +116,10 @@ export class RegistrationService {
                 formattedPhone
             );
             this.logger.log(`Channel created: ${channel.id} Token: ${channel.token}`);
+            this.tracingService?.setAttributes(span!, {
+                'registration.channel_id': channel.id.toString(),
+            });
+            this.tracingService?.addEvent(span!, 'registration.channel.created');
 
             // Step 3: Create Store (stock location) and assign to channel
             this.logger.log(`Creating store: ${registrationData.storeName}`);
@@ -158,10 +171,22 @@ export class RegistrationService {
                 userId: administrator.user.id.toString(),
             };
 
+            this.tracingService?.setAttributes(span!, {
+                'registration.stock_location_id': stockLocation.id.toString(),
+                'registration.role_id': role.id.toString(),
+                'registration.admin_id': administrator.id.toString(),
+                'registration.user_id': administrator.user.id.toString(),
+            });
+            this.tracingService?.addEvent(span!, 'registration.complete', {
+                'registration.channel_id': channel.id.toString(),
+            });
+
             this.logger.log(`Provisioning complete: ${JSON.stringify(result)}`);
+            this.tracingService?.endSpan(span!, true);
             return result;
         } catch (error: any) {
             this.errorService.logError('RegistrationService', error, 'Provisioning');
+            this.tracingService?.endSpan(span!, false, error instanceof Error ? error : new Error(String(error)));
             throw this.errorService.wrapError(error, 'PROVISIONING_FAILED');
         }
     }

@@ -2,18 +2,39 @@
 set -e
 
 # Frontend Container Entrypoint
-# Configures nginx with backend service discovery
+# Configures nginx with backend service discovery and runtime config injection
 
 # Default values
 export BACKEND_HOST="${BACKEND_HOST:-backend}"
 export BACKEND_PORT="${BACKEND_PORT:-3000}"
 
+# SigNoz Observability Configuration (optional)
+# All values can be overridden via environment variables
+export ENABLE_TRACING="${ENABLE_TRACING:-false}"
+export SIGNOZ_ENDPOINT="${SIGNOZ_ENDPOINT:-/signoz/v1/traces}"
+export SERVICE_NAME="${SERVICE_NAME:-dukahub-frontend}"
+export SERVICE_VERSION="${SERVICE_VERSION:-2.0.0}"
+
 echo "🔧 Configuring nginx for backend: ${BACKEND_HOST}:${BACKEND_PORT}"
+echo "📊 Observability: Tracing=${ENABLE_TRACING}, Endpoint=${SIGNOZ_ENDPOINT}"
 
 # Verify the nginx template exists
 if [ ! -f /etc/nginx/conf.d/default.conf.template ]; then
     echo "❌ Error: nginx template not found at /etc/nginx/conf.d/default.conf.template"
     exit 1
+fi
+
+# Inject runtime configuration into index.html
+echo "📝 Injecting runtime configuration into index.html..."
+if [ -f /usr/share/nginx/html/index.html ]; then
+  # Create config script with service metadata
+  CONFIG_SCRIPT="<script>window.__APP_CONFIG__={enableTracing:${ENABLE_TRACING},signozEndpoint:'${SIGNOZ_ENDPOINT}',serviceName:'${SERVICE_NAME}',serviceVersion:'${SERVICE_VERSION}'};</script>"
+  
+  # Inject before closing </head> tag
+  sed -i "s|</head>|${CONFIG_SCRIPT}</head>|" /usr/share/nginx/html/index.html
+  echo "✅ Runtime configuration injected"
+else
+  echo "⚠️  Warning: index.html not found, skipping config injection"
 fi
 
 # Substitute environment variables in nginx config

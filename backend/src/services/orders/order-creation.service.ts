@@ -10,6 +10,8 @@ import {
 } from '@vendure/core';
 import { AuditService } from '../../infrastructure/audit/audit.service';
 import { FinancialService } from '../financial/financial.service';
+import { TracingService } from '../../infrastructure/observability/tracing.service';
+import { MetricsService } from '../../infrastructure/observability/metrics.service';
 import { OrderAddressService } from './order-address.service';
 import { OrderCreditValidatorService } from './order-credit-validator.service';
 import { OrderFulfillmentService } from './order-fulfillment.service';
@@ -54,6 +56,8 @@ export class OrderCreationService {
         private readonly orderFulfillmentService: OrderFulfillmentService,
         @Optional() private readonly auditService?: AuditService,
         @Optional() private readonly financialService?: FinancialService, // Optional for migration period
+        @Optional() private readonly tracingService?: TracingService,
+        @Optional() private readonly metricsService?: MetricsService,
     ) { }
 
     /**
@@ -61,12 +65,21 @@ export class OrderCreationService {
      * All operations are wrapped in a transaction for atomicity
      */
     async createOrder(ctx: RequestContext, input: CreateOrderInput): Promise<Order> {
-        return this.connection.withTransaction(ctx, async (transactionCtx) => {
-            try {
-                // 1. Validate inputs
-                this.validateInput(input);
+        const span = this.tracingService?.startSpan('order.create', {
+            'order.channel_id': ctx.channelId?.toString() || '',
+            'order.is_credit_sale': input.isCreditSale?.toString() || 'false',
+            'order.is_cashier_flow': input.isCashierFlow?.toString() || 'false',
+            'order.items_count': input.cartItems.length.toString(),
+        });
 
-                // 2. Validate credit approval (basic check)
+        try {
+            return await this.connection.withTransaction(ctx, async (transactionCtx) => {
+                try {
+                    // 1. Validate inputs
+                    this.validateInput(input);
+                    this.tracingService?.addEvent(span!, 'order.validation.complete');
+
+                    // 2. Validate credit approval (basic check)
                 const customerId = await this.ensureCustomer(transactionCtx, input.customerId);
                 if (input.isCreditSale) {
                     await this.orderCreditValidator.validateCreditApproval(transactionCtx, customerId);
@@ -125,15 +138,38 @@ export class OrderCreationService {
                 // 13. Log audit events
                 await this.logAuditEvents(transactionCtx, order, input, customerId);
 
+                // Record metrics
+                this.metricsService?.recordOrderCreated(
+                    ctx.channelId?.toString() || '',
+                    input.paymentMethodCode,
+                    order.totalWithTax
+                );
+
+                // Update span with order details
+                this.tracingService?.setAttributes(span!, {
+                    'order.id': order.id.toString(),
+                    'order.code': order.code,
+                    'order.total': order.totalWithTax.toString(),
+                });
+                this.tracingService?.addEvent(span!, 'order.created', {
+                    'order.code': order.code,
+                });
+
                 this.logger.log(`Order created successfully: ${order.code}`);
+                this.tracingService?.endSpan(span!, true);
                 return order;
             } catch (error) {
                 this.logger.error(
                     `Failed to create order: ${error instanceof Error ? error.message : String(error)}`
                 );
+                this.tracingService?.endSpan(span!, false, error instanceof Error ? error : new Error(String(error)));
                 throw error;
             }
-        });
+            });
+        } catch (error) {
+            this.tracingService?.endSpan(span!, false, error instanceof Error ? error : new Error(String(error)));
+            throw error;
+        }
     }
 
     /**

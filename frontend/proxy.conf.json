@@ -1,5 +1,6 @@
 {
   "$comment": "Change 'target' to your backend URL (localhost:3000, homelab:3000, etc.)",
+  "$note": "SigNoz tracing is NOT available in dev mode - proxy.conf.json is static and cannot proxy /signoz/ requests",
   "/admin-api": {
     "target": "http://localhost:3000",
     "secure": false,
