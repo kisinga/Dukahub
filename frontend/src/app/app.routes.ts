@@ -27,6 +27,31 @@ export const routes: Routes = [
         loadComponent: () =>
             import('./pages/features/features.component').then((m) => m.FeaturesComponent)
     },
+    {
+        path: 'about',
+        loadComponent: () =>
+            import('./pages/about/about.component').then((m) => m.AboutComponent)
+    },
+    {
+        path: 'contact',
+        loadComponent: () =>
+            import('./pages/contact/contact.component').then((m) => m.ContactComponent)
+    },
+    {
+        path: 'support',
+        loadComponent: () =>
+            import('./pages/support/support.component').then((m) => m.SupportComponent)
+    },
+    {
+        path: 'privacy',
+        loadComponent: () =>
+            import('./pages/privacy/privacy.component').then((m) => m.PrivacyComponent)
+    },
+    {
+        path: 'terms',
+        loadComponent: () =>
+            import('./pages/terms/terms.component').then((m) => m.TermsComponent)
+    },
 
     // Dashboard - separate layout with sidebar and mobile bottom nav
     {

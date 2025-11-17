@@ -1,0 +1,126 @@
+<app-navbar />
+
+<main class="bg-base-100 text-base-content">
+  <section class="section scroll-mt-28">
+    <div class="container-app space-y-8">
+      <div class="space-y-4 text-center">
+        <span
+          class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80"
+        >
+          Get in touch
+        </span>
+        <h1 class="text-4xl font-bold md:text-5xl">Contact us</h1>
+        <p class="mx-auto max-w-2xl text-lg text-base-content/70">
+          Have questions? Need help? We're here to support you. Reach out and we'll get back to you
+          as soon as possible.
+        </p>
+      </div>
+
+      <div class="grid gap-8 lg:grid-cols-[1fr,1.2fr]">
+        <div class="space-y-6">
+          <div
+            class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 shadow-lg"
+          >
+            <span class="text-3xl">📧</span>
+            <h3 class="mt-4 text-lg font-semibold">Email us</h3>
+            <p class="mt-2 text-base-content/70">
+              Send us an email and we'll respond within 24 hours.
+            </p>
+            <a href="mailto:support@dukahub.com" class="link link-primary mt-4 inline-block">
+              hello@dukahub.com
+            </a>
+          </div>
+
+          <div
+            class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 shadow-lg"
+          >
+            <span class="text-3xl">📱</span>
+            <h3 class="mt-4 text-lg font-semibold">WhatsApp us</h3>
+            <p class="mt-2 text-base-content/70">
+              Chat with us on WhatsApp for quick responses and support.
+            </p>
+            <a
+              href="https://wa.me/254788922222"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="link link-primary mt-4 inline-block"
+            >
+              +254 788 922 222
+            </a>
+          </div>
+
+          <div
+            class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 shadow-lg"
+          >
+            <span class="text-3xl">💬</span>
+            <h3 class="mt-4 text-lg font-semibold">Support</h3>
+            <p class="mt-2 text-base-content/70">
+              Need help with your account? Check out our
+              <a routerLink="/support" class="link link-primary">support page</a> for answers to
+              common questions.
+            </p>
+          </div>
+
+          <div
+            class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 shadow-lg"
+          >
+            <span class="text-3xl">💼</span>
+            <h3 class="mt-4 text-lg font-semibold">Enterprise inquiries</h3>
+            <p class="mt-2 text-base-content/70">
+              Interested in Enterprise plans or custom solutions? We'd love to discuss how Dukahub
+              can work for your business.
+            </p>
+            <a href="mailto:enterprise@dukahub.com" class="link link-primary mt-4 inline-block">
+              hello@dukahub.com
+            </a>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-base-300 bg-base-200/60 p-8">
+          <h2 class="mb-6 text-2xl font-bold">Send us a message</h2>
+          <form class="space-y-4">
+            <div>
+              <label class="label">
+                <span class="label-text">Name</span>
+              </label>
+              <input type="text" placeholder="Your name" class="input input-bordered w-full" />
+            </div>
+            <div>
+              <label class="label">
+                <span class="label-text">Email</span>
+              </label>
+              <input
+                type="email"
+                placeholder="your@email.com"
+                class="input input-bordered w-full"
+              />
+            </div>
+            <div>
+              <label class="label">
+                <span class="label-text">Subject</span>
+              </label>
+              <input
+                type="text"
+                placeholder="What's this about?"
+                class="input input-bordered w-full"
+              />
+            </div>
+            <div>
+              <label class="label">
+                <span class="label-text">Message</span>
+              </label>
+              <textarea
+                class="textarea textarea-bordered w-full"
+                placeholder="Tell us how we can help..."
+                rows="6"
+              ></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg w-full">Send message</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<app-footer />

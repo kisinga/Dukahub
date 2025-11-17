@@ -1,18 +1,24 @@
 <app-navbar />
 
-<main class="home">
-  <!-- Hero -->
-  <section id="hero" class="section-hero">
-    <div class="container hero-grid">
-      <div class="hero-copy">
-        <span class="badge badge-primary badge-soft"
-          >Join {{ socialProof.customerCount }}+ Kenyan businesses</span
-        >
-        <h1 class="hero-title">Run your shop with calm confidence</h1>
-        <p class="hero-subtitle">
+<main class="bg-base-100 text-base-content">
+  <section
+    id="hero"
+    class="section scroll-mt-28 bg-gradient-to-b from-base-100 via-base-200/40 to-base-100"
+  >
+    <div
+      class="container-app grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:items-center"
+    >
+      <div class="flex flex-col gap-6">
+        <span class="badge badge-primary badge-soft w-fit">
+          Join {{ socialProof.customerCount }}+ Kenyan businesses
+        </span>
+        <h1 class="text-4xl font-bold leading-tight md:text-5xl">
+          Run your shop with calm confidence
+        </h1>
+        <p class="max-w-xl text-lg text-base-content/70">
           Dukahub keeps sales fast, stock clear, and cash flow safe, even when the network drops.
         </p>
-        <div class="hero-cta">
+        <div class="flex flex-col gap-3 sm:max-w-md sm:flex-row sm:items-center">
           <a
             routerLink="/signup"
             [queryParams]="{ plan: 'pro', trial: 'true' }"
@@ -22,50 +28,58 @@
           </a>
           <a href="#journey" class="btn btn-ghost btn-lg">See how it works</a>
         </div>
-        <div class="hero-highlights">
+        <div class="flex flex-wrap items-center gap-2 text-sm font-medium text-base-content/80">
           @for (item of heroHighlights; track item.text) {
-          <span class="highlight-chip">
-            <span class="icon">{{ item.icon }}</span
-            >{{ item.text }}
+          <span class="badge badge-neutral badge-soft gap-2">
+            <span class="text-lg leading-none">{{ item.icon }}</span>
+            {{ item.text }}
           </span>
           }
         </div>
-        <div class="hero-trust">
-          <div class="trust-item">
-            <span class="trust-icon">🛡️</span>
+        <div
+          class="grid gap-3 border-t border-base-300/60 pt-4 text-sm text-base-content/70 sm:grid-cols-3"
+        >
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🛡️</span>
             <span>No credit card required</span>
           </div>
-          <div class="trust-item">
-            <span class="trust-icon">⏱️</span>
+          <div class="flex items-center gap-2">
+            <span class="text-lg">⏱️</span>
             <span>Set up in under an hour</span>
           </div>
-          <div class="trust-item">
-            <span class="trust-icon">🌍</span>
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🌍</span>
             <span>Built for Kenyan shops</span>
           </div>
         </div>
       </div>
-      <div class="hero-visual">
-        <div class="visual-card">
-          <div class="visual-header">
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
+      <div class="flex justify-center">
+        <div
+          class="w-full max-w-md rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 shadow-xl"
+        >
+          <div class="flex gap-2 border-b border-base-300/70 p-4">
+            <span class="h-2 w-2 rounded-full bg-base-300"></span>
+            <span class="h-2 w-2 rounded-full bg-base-300"></span>
+            <span class="h-2 w-2 rounded-full bg-base-300"></span>
           </div>
-          <div class="visual-body">
-            <div class="video-placeholder">
-              <span class="play">▶</span>
+          <div class="flex flex-col gap-6 p-6">
+            <div
+              class="grid aspect-video place-items-center gap-2 rounded-xl border border-dashed border-base-300 text-sm text-base-content/60"
+            >
+              <span class="text-2xl">▶</span>
               <p>Product walkthrough coming soon</p>
             </div>
-          </div>
-          <div class="visual-footer">
-            <div class="stat">
-              <span class="stat-value">{{ socialProof.timeSaved }}</span>
-              <span class="stat-label">time saved daily</span>
-            </div>
-            <div class="stat">
-              <span class="stat-value">100%</span>
-              <span class="stat-label">offline ready</span>
+            <div class="grid grid-cols-2 gap-4 border-t border-base-300/70 pt-4 text-center">
+              <div class="space-y-1">
+                <span class="block text-lg font-semibold text-base-content">{{
+                  socialProof.timeSaved
+                }}</span>
+                <span class="text-sm text-base-content/70">time saved daily</span>
+              </div>
+              <div class="space-y-1">
+                <span class="block text-lg font-semibold text-base-content">100%</span>
+                <span class="text-sm text-base-content/70">offline ready</span>
+              </div>
             </div>
           </div>
         </div>
@@ -73,95 +87,131 @@
     </div>
   </section>
 
-  <!-- Core Pillars -->
-  <section class="section core" id="pillars">
-    <div class="container section-header">
-      <span class="eyebrow">Why Dukahub works</span>
-      <h2 class="section-title">Everything your team needs in one calm workspace</h2>
-      <p class="section-subtitle">
+  <section class="section scroll-mt-28 bg-base-100" id="pillars">
+    <div class="container-app space-y-4 text-center">
+      <span
+        class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80"
+      >
+        Why Dukahub works
+      </span>
+      <h2 class="text-3xl font-bold md:text-4xl">
+        Everything your team needs in one calm workspace
+      </h2>
+      <p class="mx-auto max-w-2xl text-base text-base-content/70">
         Dukahub makes the things that should be simple actually simple — from ringing up a sale to
         knowing who owes what.
       </p>
     </div>
-    <div class="container core-grid">
+    <div class="container-app mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
       @for (pillar of corePillars; track pillar.title) {
-      <article class="core-card">
-        <div class="core-icon">{{ pillar.icon }}</div>
-        <h3>{{ pillar.title }}</h3>
-        <p>{{ pillar.description }}</p>
-        <ul>
-          @for (point of pillar.bullets; track point) {
-          <li>{{ point }}</li>
-          }
-        </ul>
+      <article
+        class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 text-left shadow-lg transition-shadow hover:shadow-xl"
+      >
+        <div class="flex flex-col gap-4">
+          <span class="text-3xl">{{ pillar.icon }}</span>
+          <h3 class="text-lg font-semibold">{{ pillar.title }}</h3>
+          <p class="text-base-content/70">{{ pillar.description }}</p>
+          <ul class="list-disc space-y-2 pl-4 text-sm text-base-content/70">
+            @for (point of pillar.bullets; track point) {
+            <li>{{ point }}</li>
+            }
+          </ul>
+        </div>
       </article>
       }
     </div>
   </section>
 
-  <!-- Journey -->
-  <section class="section journey" id="journey">
-    <div class="container section-header">
-      <span class="eyebrow">From first login to confident selling</span>
-      <h2 class="section-title">Three smooth steps to a calm back office</h2>
-      <p class="section-subtitle">
+  <section class="section scroll-mt-28 bg-base-200/40" id="journey">
+    <div class="container-app space-y-4 text-center">
+      <span
+        class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80"
+      >
+        From first login to confident selling
+      </span>
+      <h2 class="text-3xl font-bold md:text-4xl">Three smooth steps to a calm back office</h2>
+      <p class="mx-auto max-w-2xl text-base text-base-content/70">
         We designed the flow so shop owners, managers, and cashiers always know what to do next.
       </p>
     </div>
-    <div class="container journey-grid">
+    <div class="container-app mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
       @for (stage of journeyStages; track stage.number) {
-      <article class="journey-card">
-        <div class="journey-number">{{ stage.number }}</div>
-        <div class="journey-content">
-          <h3>{{ stage.title }}</h3>
-          <p class="journey-summary">{{ stage.summary }}</p>
-          <p class="journey-detail">{{ stage.detail }}</p>
+      <article
+        class="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-lg transition-shadow hover:shadow-xl"
+      >
+        <div class="grid grid-cols-[auto,1fr] items-start gap-4">
+          <span
+            class="grid h-12 w-12 place-items-center rounded-full bg-primary/15 text-lg font-semibold text-primary"
+          >
+            {{ stage.number }}
+          </span>
+          <div class="space-y-2 text-left">
+            <h3 class="text-lg font-semibold">{{ stage.title }}</h3>
+            <p class="font-medium text-base-content/80">{{ stage.summary }}</p>
+            <p class="text-sm text-base-content/70">{{ stage.detail }}</p>
+          </div>
         </div>
       </article>
       }
     </div>
   </section>
 
-  <!-- Proof -->
-  <section class="section proof" id="proof">
-    <div class="container proof-grid">
-      <div class="proof-copy">
-        <span class="eyebrow">Proof in the aisle</span>
-        <h2 class="section-title">Shopkeepers across Kenya already run calmer days with Dukahub</h2>
-        <p class="section-subtitle">
+  <section
+    class="section scroll-mt-28 bg-gradient-to-br from-base-100 via-base-200/40 to-base-100"
+    id="proof"
+  >
+    <div
+      class="container-app grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center"
+    >
+      <div class="flex flex-col gap-6">
+        <span
+          class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80"
+        >
+          Proof in the aisle
+        </span>
+        <h2 class="text-3xl font-bold md:text-4xl">
+          Shopkeepers across Kenya already run calmer days with Dukahub
+        </h2>
+        <p class="max-w-2xl text-base text-base-content/70">
           Whether you run a mini-mart, agrovet, or salon, Dukahub keeps your team in sync and your
           customers happy.
         </p>
-        <div class="proof-stats">
-          <div class="stat-card">
-            <span class="stat-value">{{ socialProof.customerCount }}+</span>
-            <span class="stat-label">active businesses</span>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="rounded-2xl border border-base-300 bg-base-100 p-6 text-left shadow-lg">
+            <span class="text-2xl font-bold text-base-content"
+              >{{ socialProof.customerCount }}+</span
+            >
+            <span class="text-sm text-base-content/70">active businesses</span>
           </div>
-          <div class="stat-card">
-            <span class="stat-value">{{ socialProof.timeSaved }}</span>
-            <span class="stat-label">saved every day</span>
+          <div class="rounded-2xl border border-base-300 bg-base-100 p-6 text-left shadow-lg">
+            <span class="text-2xl font-bold text-base-content">{{ socialProof.timeSaved }}</span>
+            <span class="text-sm text-base-content/70">saved every day</span>
           </div>
-          <div class="stat-card">
-            <span class="stat-value">{{ socialProof.recentSignups }}</span>
-            <span class="stat-label">new signups this month</span>
+          <div class="rounded-2xl border border-base-300 bg-base-100 p-6 text-left shadow-lg">
+            <span class="text-2xl font-bold text-base-content">{{
+              socialProof.recentSignups
+            }}</span>
+            <span class="text-sm text-base-content/70">new signups this month</span>
           </div>
         </div>
       </div>
-      <div class="proof-testimonials">
-        <div class="video-shell">
-          <span class="play">▶</span>
+      <div class="flex flex-col gap-5">
+        <div
+          class="grid aspect-video place-items-center gap-2 rounded-2xl border border-dashed border-base-300 text-sm text-base-content/60"
+        >
+          <span class="text-2xl">▶</span>
           <p>Video walkthrough coming soon</p>
         </div>
-        <div class="testimonial-grid">
+        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           @for (testimonial of testimonials; track $index) {
-          <figure class="testimonial-card">
-            <div class="quote-mark">“</div>
-            <blockquote>{{ testimonial.quote }}</blockquote>
+          <figure class="rounded-2xl border border-base-300 bg-base-100 p-6 text-left shadow-lg">
+            <span class="text-4xl text-primary/40 leading-none">“</span>
+            <blockquote class="mt-2 text-base-content/80">{{ testimonial.quote }}</blockquote>
             @if (testimonial.metric) {
-            <span class="badge badge-success badge-sm">{{ testimonial.metric }}</span>
+            <span class="badge badge-success badge-sm mt-2 w-fit">{{ testimonial.metric }}</span>
             }
-            <figcaption>
-              <strong>{{ testimonial.author }}</strong>
+            <figcaption class="mt-4 flex flex-col gap-1 text-sm text-base-content/70">
+              <strong class="text-base text-base-content">{{ testimonial.author }}</strong>
               <span>{{ testimonial.title }}</span>
             </figcaption>
           </figure>
@@ -171,38 +221,84 @@
     </div>
   </section>
 
-  <!-- Value Highlights -->
-  <section class="section value" id="values">
-    <div class="container section-header">
-      <span class="eyebrow">Built for safety and growth</span>
-      <h2 class="section-title">The everyday wins Dukahub unlocks</h2>
-      <p class="section-subtitle">
+  <section class="section scroll-mt-28 bg-base-100" id="values">
+    <div class="container-app space-y-4 text-center">
+      <span
+        class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80"
+      >
+        Built for safety and growth
+      </span>
+      <h2 class="text-3xl font-bold md:text-4xl">The everyday wins Dukahub unlocks</h2>
+      <p class="mx-auto max-w-2xl text-base text-base-content/70">
         Small moments add up — faster checkouts, cleaner books, smoother follow-ups.
       </p>
     </div>
-    <div class="container value-grid">
+    <div class="container-app mt-10 grid gap-6 md:grid-cols-3">
       @for (item of valueHighlights; track item.title) {
-      <article class="value-card">
-        <span class="value-icon">{{ item.icon }}</span>
-        <h3>{{ item.title }}</h3>
-        <p>{{ item.description }}</p>
-        <span class="badge badge-neutral badge-soft">{{ item.badge }}</span>
+      <article
+        class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 text-left shadow-lg transition-shadow hover:shadow-xl"
+      >
+        <div class="flex flex-col gap-4">
+          <span class="text-3xl">{{ item.icon }}</span>
+          <h3 class="text-lg font-semibold">{{ item.title }}</h3>
+          <p class="text-base-content/70">{{ item.description }}</p>
+          <span class="badge badge-neutral badge-soft w-fit">{{ item.badge }}</span>
+        </div>
       </article>
       }
     </div>
   </section>
 
-  <!-- Pricing CTA preview -->
-  <section class="section pricing-preview" id="pricing-preview">
-    <div class="container pricing-card">
-      <div class="pricing-copy">
-        <span class="eyebrow">Simple pricing</span>
-        <h2>KES 1,500 per month after your free trial</h2>
-        <p>
+  <section class="section scroll-mt-28 bg-base-200/40" id="coming-soon">
+    <div class="container-app space-y-4 text-center">
+      <span
+        class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80"
+      >
+        Coming soon
+      </span>
+      <h2 class="text-3xl font-bold md:text-4xl">More powerful tools on the way</h2>
+      <p class="mx-auto max-w-2xl text-base text-base-content/70">
+        We're building advanced accounting and ERP features to give you even more control over your
+        business finances.
+      </p>
+    </div>
+    <div class="container-app mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      @for (feature of comingSoonFeatures; track feature.title) {
+      <article
+        class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-100 to-base-200/60 p-6 text-left shadow-lg transition-shadow hover:shadow-xl"
+      >
+        <div class="flex flex-col gap-4">
+          <div class="flex items-start justify-between">
+            <span class="text-3xl">{{ feature.icon }}</span>
+            <span class="badge badge-neutral badge-soft badge-sm">{{ feature.category }}</span>
+          </div>
+          <h3 class="text-lg font-semibold">{{ feature.title }}</h3>
+          <p class="text-base-content/70">{{ feature.description }}</p>
+        </div>
+      </article>
+      }
+    </div>
+  </section>
+
+  <section
+    class="section scroll-mt-28 bg-gradient-to-br from-base-200/40 to-base-100"
+    id="pricing-preview"
+  >
+    <div
+      class="container-app grid gap-8 rounded-3xl border border-base-300 bg-base-100 p-8 shadow-2xl lg:grid-cols-[1.1fr,0.9fr] lg:items-center"
+    >
+      <div class="space-y-4">
+        <span
+          class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80"
+        >
+          Simple pricing
+        </span>
+        <h2 class="text-3xl font-bold md:text-4xl">KES 1,500 per month after your free trial</h2>
+        <p class="text-base-content/70">
           That’s about KES 50 per day — less than one lost sale. Pause anytime, keep your data, and
           upgrade when you’re ready.
         </p>
-        <div class="pricing-cta">
+        <div class="flex flex-col gap-3 sm:flex-row">
           <a
             routerLink="/signup"
             [queryParams]="{ plan: 'pro', trial: 'true' }"
@@ -213,67 +309,85 @@
           <a href="#pricing" class="btn btn-ghost btn-lg">View full pricing</a>
         </div>
       </div>
-      <div class="pricing-highlights">
-        <div class="pricing-item">
-          <span class="pricing-icon">✅</span>
+      <div class="grid gap-4 text-base-content/70">
+        <div class="flex items-start gap-3">
+          <span class="text-xl">✅</span>
           <p>Cancel anytime – no contracts</p>
         </div>
-        <div class="pricing-item">
-          <span class="pricing-icon">📦</span>
+        <div class="flex items-start gap-3">
+          <span class="text-xl">📦</span>
           <p>Unlimited products & locations</p>
         </div>
-        <div class="pricing-item">
-          <span class="pricing-icon">🤝</span>
+        <div class="flex items-start gap-3">
+          <span class="text-xl">🤝</span>
           <p>Team onboarding support included</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- FAQ -->
-  <section id="faq" class="section faq">
-    <div class="container section-header">
-      <span class="eyebrow">Questions we hear most</span>
-      <h2 class="section-title">Answers in plain language</h2>
-      <p class="section-subtitle">
+  <section class="section scroll-mt-28 bg-base-100" id="faq">
+    <div class="container-app space-y-4 text-center">
+      <span
+        class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80"
+      >
+        Questions we hear most
+      </span>
+      <h2 class="text-3xl font-bold md:text-4xl">Answers in plain language</h2>
+      <p class="mx-auto max-w-2xl text-base text-base-content/70">
         Still exploring? These short answers help you decide if Dukahub fits your shop.
       </p>
     </div>
-    <div class="container faq-grid">
-      <div class="faq-cards">
-        <div class="faq-pill">
-          <span class="faq-icon">🔒</span>
-          <div>
-            <h3>Safe to use</h3>
-            <p>Industry-standard security keeps your business data private.</p>
+    <div class="container-app mt-12 grid gap-10 lg:grid-cols-[0.9fr,1.1fr]">
+      <div class="grid gap-4">
+        <div class="rounded-2xl border border-base-300 bg-base-200/70 p-5 text-left shadow-sm">
+          <span class="text-2xl">🔒</span>
+          <div class="mt-3 space-y-1">
+            <h3 class="text-lg font-semibold">Safe to use</h3>
+            <p class="text-sm text-base-content/70">
+              Industry-standard security keeps your business data private.
+            </p>
           </div>
         </div>
-        <div class="faq-pill">
-          <span class="faq-icon">🇰🇪</span>
-          <div>
-            <h3>Made for Kenya</h3>
-            <p>Optimised for M-Pesa, cash, and offline-first selling.</p>
+        <div class="rounded-2xl border border-base-300 bg-base-200/70 p-5 text-left shadow-sm">
+          <span class="text-2xl">🇰🇪</span>
+          <div class="mt-3 space-y-1">
+            <h3 class="text-lg font-semibold">Made for Kenya</h3>
+            <p class="text-sm text-base-content/70">
+              Optimised for M-Pesa, cash, and offline-first selling.
+            </p>
           </div>
         </div>
-        <div class="faq-pill">
-          <span class="faq-icon">📞</span>
-          <div>
-            <h3>Human support</h3>
-            <p>Friendly onboarding and ongoing check-ins for your team.</p>
+        <div class="rounded-2xl border border-base-300 bg-base-200/70 p-5 text-left shadow-sm">
+          <span class="text-2xl">📞</span>
+          <div class="mt-3 space-y-1">
+            <h3 class="text-lg font-semibold">Human support</h3>
+            <p class="text-sm text-base-content/70">
+              Friendly onboarding and ongoing check-ins for your team.
+            </p>
           </div>
         </div>
       </div>
-      <div class="faq-list">
+      <div class="grid gap-3">
         @for (faq of faqItems(); track $index) {
-        <details class="faq-item" [open]="faq.open">
-          <summary (click)="toggleFAQ($index)">{{ faq.question }}</summary>
-          <p>{{ faq.answer }}</p>
+        <details
+          class="collapse collapse-plus border border-base-300 bg-base-200/60 text-left"
+          [open]="faq.open"
+        >
+          <summary class="collapse-title text-base font-semibold" (click)="toggleFAQ($index)">
+            {{ faq.question }}
+          </summary>
+          <div class="collapse-content text-sm text-base-content/70">
+            <p>{{ faq.answer }}</p>
+          </div>
         </details>
         }
       </div>
     </div>
-    <div class="container faq-cta">
-      <p>
+    <div
+      class="container-app mt-12 flex flex-col gap-4 rounded-2xl bg-gradient-to-r from-primary/20 to-secondary/10 p-6 text-base-content md:flex-row md:items-center md:justify-between"
+    >
+      <p class="max-w-2xl">
         Want to dive deeper?
         <a routerLink="/features" class="link link-primary">Explore the full feature tour</a>
         or start your trial and feel it for yourself.
@@ -288,17 +402,18 @@
     </div>
   </section>
 
-  <!-- Final CTA -->
-  <section class="section final-cta" id="cta">
-    <div class="container final-card">
-      <div>
-        <h2>Ready for calmer days at the shop?</h2>
-        <p>
+  <section class="section scroll-mt-28 bg-base-100" id="cta">
+    <div
+      class="container-app grid gap-6 rounded-3xl border border-base-300 bg-base-200/60 p-8 shadow-xl md:grid-cols-[2fr,1fr] md:items-center"
+    >
+      <div class="space-y-4">
+        <h2 class="text-3xl font-bold md:text-4xl">Ready for calmer days at the shop?</h2>
+        <p class="text-base-content/70">
           Join {{ socialProof.customerCount }}+ business owners selling faster, balancing smarter,
           and getting home earlier.
         </p>
       </div>
-      <div class="final-actions">
+      <div class="flex flex-col gap-3 md:flex-row md:justify-end">
         <a
           routerLink="/signup"
           [queryParams]="{ plan: 'pro', trial: 'true' }"

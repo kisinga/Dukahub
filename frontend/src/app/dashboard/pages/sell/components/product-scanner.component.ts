@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  Injector,
   OnDestroy,
   OnInit,
   computed,
@@ -17,7 +18,8 @@ import {
   BarcodeScannerService,
 } from '../../../../core/services/barcode-scanner.service';
 import { CameraService } from '../../../../core/services/camera.service';
-import { MlModelService, ModelPrediction } from '../../../../core/services/ml-model.service';
+import type { MlModelService, ModelPrediction } from '../../../../core/services/ml-model.service';
+import { loadMlModelService } from '../../../../core/services/ml-model.loader';
 import { ProductSearchResult, ProductSearchService } from '../../../../core/services/product/product-search.service';
 
 type ScannerStatus =
@@ -122,7 +124,8 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
   readonly scanningStateChange = output<boolean>(); // Emit when scanning starts/stops
 
   // Services
-  readonly mlModelService = inject(MlModelService);
+  private readonly injector = inject(Injector);
+  private readonly mlModelServiceSignal = signal<MlModelService | null>(null);
   private readonly cameraService = inject(CameraService);
   private readonly barcodeService = inject(BarcodeScannerService);
   private readonly productSearchService = inject(ProductSearchService);
@@ -133,7 +136,7 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
   // State
   readonly scannerStatus = signal<ScannerStatus>('idle');
   readonly isScanning = signal<boolean>(false);
-  readonly mlModelError = computed(() => this.mlModelService.error());
+  readonly mlModelError = computed(() => this.mlModelServiceSignal()?.error() ?? null);
 
   // Detection loop
   private detectionInterval: any = null;
@@ -149,7 +152,7 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopScanner();
-    this.mlModelService.unloadModel();
+    this.mlModelServiceSignal()?.unloadModel();
   }
 
   private async initializeScanner(): Promise<void> {
@@ -170,10 +173,11 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
 
       if (this.enableMLDetection()) {
         this.scannerStatus.set('loading_model');
-        const modelLoaded = await this.mlModelService.loadModel(this.channelId());
+        const mlModelService = await this.ensureMlModelService();
+        const modelLoaded = await mlModelService.loadModel(this.channelId());
 
         if (!modelLoaded) {
-          const error = this.mlModelService.error();
+          const error = mlModelService.error();
           console.warn('ML model not available:', error?.message);
         }
       }
@@ -284,7 +288,7 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
       );
     }
 
-    if (this.enableMLDetection() && this.mlModelService.isInitialized()) {
+    if (this.enableMLDetection() && this.isMlModelInitialized()) {
       this.detectionInterval = setInterval(() => {
         this.runMLDetection(videoElement);
       }, this.detectionIntervalMs());
@@ -302,7 +306,8 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const predictions = await this.mlModelService.predict(videoElement, 3);
+      const mlModelService = await this.ensureMlModelService();
+      const predictions = await mlModelService.predict(videoElement, 3);
       const bestPrediction = predictions[0];
 
       if (bestPrediction && bestPrediction.probability >= this.confidenceThreshold()) {
@@ -316,7 +321,8 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
   }
 
   private async handleMLDetection(prediction: ModelPrediction): Promise<void> {
-    const productId = this.mlModelService.getProductIdFromLabel(prediction.className);
+    const mlModelService = await this.ensureMlModelService();
+    const productId = mlModelService.getProductIdFromLabel(prediction.className);
 
     try {
       // const product = await this.productSearchService.getProductById(productId);
@@ -365,6 +371,22 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
 
   private isMobileDevice(): boolean {
     return navigator.maxTouchPoints > 0 && window.innerWidth < 768;
+  }
+
+  private isMlModelInitialized(): boolean {
+    const service = this.mlModelServiceSignal();
+    return service ? service.isInitialized() : false;
+  }
+
+  private async ensureMlModelService(): Promise<MlModelService> {
+    const existing = this.mlModelServiceSignal();
+    if (existing) {
+      return existing;
+    }
+
+    const service = await loadMlModelService(this.injector);
+    this.mlModelServiceSignal.set(service);
+    return service;
   }
 }
 

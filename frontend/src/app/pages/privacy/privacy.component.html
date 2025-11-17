@@ -1,0 +1,125 @@
+<app-navbar />
+
+<main class="bg-base-100 text-base-content">
+  <section class="section scroll-mt-28">
+    <div class="container-app space-y-8">
+      <div class="space-y-4 text-center">
+        <span
+          class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80"
+        >
+          Privacy Policy
+        </span>
+        <h1 class="text-4xl font-bold md:text-5xl">Your privacy matters</h1>
+        <p class="mx-auto max-w-2xl text-lg text-base-content/70">
+          We're committed to protecting your business data and personal information. This policy
+          explains how we collect, use, and safeguard your information.
+        </p>
+        <p class="text-sm text-base-content/60">Last updated: {{ lastUpdated }}</p>
+      </div>
+
+      <div class="prose prose-base mx-auto max-w-3xl">
+        <div class="space-y-6 rounded-2xl border border-base-300 bg-base-200/60 p-8">
+          <section>
+            <h2 class="text-2xl font-bold">Information we collect</h2>
+            <p class="mt-4 text-base-content/70">
+              We collect information necessary to provide and improve our services:
+            </p>
+            <ul class="mt-4 list-disc space-y-2 pl-6 text-base-content/70">
+              <li>Business information (name, address, contact details)</li>
+              <li>Product and inventory data</li>
+              <li>Sales and transaction records</li>
+              <li>Customer and supplier information</li>
+              <li>Account and payment information</li>
+              <li>Usage data and analytics</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold">How we use your information</h2>
+            <p class="mt-4 text-base-content/70">We use your information to:</p>
+            <ul class="mt-4 list-disc space-y-2 pl-6 text-base-content/70">
+              <li>Provide and maintain our services</li>
+              <li>Process transactions and manage your account</li>
+              <li>Send important updates and notifications</li>
+              <li>Improve our services and develop new features</li>
+              <li>Ensure security and prevent fraud</li>
+              <li>Comply with legal obligations</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold">Data security</h2>
+            <p class="mt-4 text-base-content/70">
+              We implement industry-standard security measures to protect your data:
+            </p>
+            <ul class="mt-4 list-disc space-y-2 pl-6 text-base-content/70">
+              <li>Encryption of data in transit and at rest</li>
+              <li>Regular security audits and updates</li>
+              <li>Access controls and authentication</li>
+              <li>Secure data storage and backup systems</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold">Data sharing</h2>
+            <p class="mt-4 text-base-content/70">
+              We do not sell your data. We may share information only in these circumstances:
+            </p>
+            <ul class="mt-4 list-disc space-y-2 pl-6 text-base-content/70">
+              <li>With your explicit consent</li>
+              <li>To comply with legal obligations</li>
+              <li>With service providers who assist in operating our platform (under strict
+                confidentiality agreements)</li>
+              <li>In case of business transfer (with notice to users)</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold">Your rights</h2>
+            <p class="mt-4 text-base-content/70">You have the right to:</p>
+            <ul class="mt-4 list-disc space-y-2 pl-6 text-base-content/70">
+              <li>Access your personal and business data</li>
+              <li>Correct inaccurate information</li>
+              <li>Request deletion of your data</li>
+              <li>Export your data</li>
+              <li>Opt out of marketing communications</li>
+              <li>Close your account at any time</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold">Cookies and tracking</h2>
+            <p class="mt-4 text-base-content/70">
+              We use cookies and similar technologies to improve your experience, analyze usage,
+              and provide personalized content. You can control cookie preferences through your
+              browser settings.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold">Changes to this policy</h2>
+            <p class="mt-4 text-base-content/70">
+              We may update this privacy policy from time to time. We'll notify you of significant
+              changes by email or through our platform. Continued use of our services after changes
+              constitutes acceptance of the updated policy.
+            </p>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-bold">Contact us</h2>
+            <p class="mt-4 text-base-content/70">
+              If you have questions about this privacy policy or how we handle your data, please
+              contact us at
+              <a href="mailto:privacy@dukahub.com" class="link link-primary">privacy@dukahub.com</a>
+              or through our
+              <a routerLink="/contact" class="link link-primary">contact page</a>.
+            </p>
+          </section>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<app-footer />
+
