@@ -46,6 +46,7 @@ runMigrations(config)
         return app;
     })
     .catch(err => {
+        // Use console.error for bootstrap failures (logger not yet initialized)
         console.error('❌ Failed to start application:', err);
         process.exit(1);
     });

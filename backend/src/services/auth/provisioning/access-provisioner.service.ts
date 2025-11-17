@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
     Administrator,
     ID,
@@ -23,6 +23,8 @@ import { RegistrationErrorService } from './registration-error.service';
  */
 @Injectable()
 export class AccessProvisionerService {
+    private readonly logger = new Logger(AccessProvisionerService.name);
+
     constructor(
         private readonly connection: TransactionalConnection,
         private readonly passwordCipher: PasswordCipher,
@@ -169,7 +171,7 @@ export class AccessProvisionerService {
                     lastName: registrationData.adminLastName,
                 },
             }).catch(err => {
-                console.warn(`Failed to route admin created event: ${err instanceof Error ? err.message : String(err)}`);
+                this.logger.warn(`Failed to route admin created event: ${err instanceof Error ? err.message : String(err)}`);
             });
 
             await this.eventRouter.routeEvent({
@@ -182,7 +184,7 @@ export class AccessProvisionerService {
                     adminId: administrator.id.toString(),
                 },
             }).catch(err => {
-                console.warn(`Failed to route user created event: ${err instanceof Error ? err.message : String(err)}`);
+                this.logger.warn(`Failed to route user created event: ${err instanceof Error ? err.message : String(err)}`);
             });
         }
     }

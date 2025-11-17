@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { RequestContext } from '@vendure/core';
 import { formatPhoneNumber } from '../../utils/phone.utils';
 import { AccessProvisionerService } from './provisioning/access-provisioner.service';
@@ -60,6 +60,8 @@ export interface ProvisionResult {
  */
 @Injectable()
 export class RegistrationService {
+    private readonly logger = new Logger(RegistrationService.name);
+
     constructor(
         private readonly validator: RegistrationValidatorService,
         private readonly channelProvisioner: ChannelProvisionerService,
@@ -92,56 +94,56 @@ export class RegistrationService {
             const formattedPhone = formatPhoneNumber(registrationData.adminPhoneNumber);
 
             // Step 1: Validate input (currency, channel code, zones)
-            console.log('[RegistrationService] Validating registration input');
+            this.logger.log('Validating registration input');
             await this.validator.validateInput(ctx, registrationData);
             const defaultChannel = await this.validator.getDefaultChannel(ctx);
 
             // Step 2: Create Channel (company workspace)
-            console.log('[RegistrationService] Creating channel:', registrationData.companyCode);
+            this.logger.log(`Creating channel: ${registrationData.companyCode}`);
             const channel = await this.channelProvisioner.createChannel(
                 ctx,
                 registrationData,
                 defaultChannel,
                 formattedPhone
             );
-            console.log('[RegistrationService] Channel created:', channel.id, 'Token:', channel.token);
+            this.logger.log(`Channel created: ${channel.id} Token: ${channel.token}`);
 
             // Step 3: Create Store (stock location) and assign to channel
-            console.log('[RegistrationService] Creating store:', registrationData.storeName);
+            this.logger.log(`Creating store: ${registrationData.storeName}`);
             const stockLocation = await this.storeProvisioner.createAndAssignStore(
                 ctx,
                 registrationData,
                 channel.id.toString()
             );
-            console.log('[RegistrationService] Store created and assigned:', stockLocation.id);
+            this.logger.log(`Store created and assigned: ${stockLocation.id}`);
 
             // Step 4: Create Payment Methods and assign to channel
-            console.log('[RegistrationService] Creating payment methods for channel:', channel.id);
+            this.logger.log(`Creating payment methods for channel: ${channel.id}`);
             const paymentMethods = await this.paymentProvisioner.createAndAssignPaymentMethods(
                 ctx,
                 channel.id.toString(),
                 registrationData.companyCode
             );
-            console.log('[RegistrationService] Payment methods created and assigned:', paymentMethods.length);
+            this.logger.log(`Payment methods created and assigned: ${paymentMethods.length}`);
 
             // Step 5: Create Role (access control) with all permissions
-            console.log('[RegistrationService] Creating admin role for channel:', channel.id);
+            this.logger.log(`Creating admin role for channel: ${channel.id}`);
             const role = await this.roleProvisioner.createAdminRole(
                 ctx,
                 registrationData,
                 channel.id
             );
-            console.log('[RegistrationService] Admin role created:', role.id, 'Code:', role.code);
+            this.logger.log(`Admin role created: ${role.id} Code: ${role.code}`);
 
             // Step 6: Create Access (user + administrator) with role
-            console.log('[RegistrationService] Creating administrator with role:', role.id);
+            this.logger.log(`Creating administrator with role: ${role.id}`);
             const administrator = await this.accessProvisioner.createAdministrator(
                 ctx,
                 registrationData,
                 role,
                 formattedPhone
             );
-            console.log('[RegistrationService] Administrator created:', administrator.id);
+            this.logger.log(`Administrator created: ${administrator.id}`);
 
             // Verify all required entities were created
             if (!administrator.user) {
@@ -156,7 +158,7 @@ export class RegistrationService {
                 userId: administrator.user.id.toString(),
             };
 
-            console.log('[RegistrationService] Provisioning complete:', result);
+            this.logger.log(`Provisioning complete: ${JSON.stringify(result)}`);
             return result;
         } catch (error: any) {
             this.errorService.logError('RegistrationService', error, 'Provisioning');

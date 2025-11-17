@@ -1,10 +1,12 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { EventBus, OrderStateTransitionEvent, StockMovementEvent } from '@vendure/core';
 import { CreateNotificationInput, NotificationService, NotificationType } from './notification.service';
 import { PushNotificationService } from './push-notification.service';
 
 @Injectable()
 export class NotificationHandlerService implements OnModuleInit {
+    private readonly logger = new Logger(NotificationHandlerService.name);
+
     constructor(
         private eventBus: EventBus,
         private notificationService: NotificationService,
@@ -70,7 +72,7 @@ export class NotificationHandlerService implements OnModuleInit {
 
     private async handleStockMovement(event: StockMovementEvent) {
         // For now, skip stock movement notifications until we understand the event structure
-        console.log('Stock movement event received:', event);
+        this.logger.log(`Stock movement event received: ${JSON.stringify(event)}`);
     }
 
     async handleMLTrainingEvent(
@@ -141,7 +143,7 @@ export class NotificationHandlerService implements OnModuleInit {
                 );
             }
         } catch (error) {
-            console.error('Failed to create channel notification:', error);
+            this.logger.error('Failed to create channel notification:', error);
         }
     }
 }

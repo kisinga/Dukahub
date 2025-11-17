@@ -1,4 +1,4 @@
-import { Optional } from '@nestjs/common';
+import { Logger, Optional } from '@nestjs/common';
 import { Args, Mutation, Parent, Query, Resolver } from '@nestjs/graphql';
 import { Allow, Ctx, Customer, Permission, RequestContext, Order } from '@vendure/core';
 
@@ -44,6 +44,8 @@ interface CreditValidationResult {
 
 @Resolver('CreditSummary')
 export class CreditResolver {
+    private readonly logger = new Logger(CreditResolver.name);
+
     constructor(
         private readonly creditService: CreditService,
         private readonly orderCreationService: OrderCreationService,
@@ -135,7 +137,7 @@ export class CreditResolver {
                 input.creditDuration
             ).catch(error => {
                 // Log but don't fail the mutation
-                console.warn(`Failed to send approval notification: ${error instanceof Error ? error.message : String(error)}`);
+                this.logger.warn(`Failed to send approval notification: ${error instanceof Error ? error.message : String(error)}`);
             });
         }
 

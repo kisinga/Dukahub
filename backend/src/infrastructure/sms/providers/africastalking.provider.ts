@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ISmsProvider, SmsResult } from '../interfaces/sms-provider.interface';
 
 /**
@@ -44,6 +44,7 @@ import { ISmsProvider, SmsResult } from '../interfaces/sms-provider.interface';
  */
 @Injectable()
 export class AfricasTalkingProvider implements ISmsProvider {
+    private readonly logger = new Logger(AfricasTalkingProvider.name);
     private apiUrl: string | null = null;
     private username: string | null = null;
     private apiKey: string | null = null;
@@ -70,12 +71,13 @@ export class AfricasTalkingProvider implements ISmsProvider {
 
             // Debug logging to help diagnose configuration issues
             if (process.env.NODE_ENV !== 'production') {
-                console.log('[AfricasTalking Provider] Configuration loaded:');
-                console.log(`  - Environment: ${this.environment}`);
-                console.log(`  - API URL: ${this.apiUrl}`);
-                console.log(`  - Username: ${this.username || 'NOT SET'}`);
-                console.log(`  - API Key: ${this.apiKey ? '***' + this.apiKey.slice(-4) : 'NOT SET'}`);
-                console.log(`  - Sender ID: ${this.senderId || 'NOT SET (using default)'}`);
+                this.logger.debug('Configuration loaded:', {
+                    environment: this.environment,
+                    apiUrl: this.apiUrl,
+                    username: this.username || 'NOT SET',
+                    apiKey: this.apiKey ? '***' + this.apiKey.slice(-4) : 'NOT SET',
+                    senderId: this.senderId || 'NOT SET (using default)',
+                });
             }
         }
         return {
@@ -282,7 +284,7 @@ export class AfricasTalkingProvider implements ISmsProvider {
             }
 
             // Log full response for debugging
-            console.log('[AfricasTalking Provider] Full API Response:', JSON.stringify(result, null, 2));
+            this.logger.debug('Full API Response:', JSON.stringify(result, null, 2));
 
             // AfricasTalking response structure: { SMSMessageData: { Message: "...", Recipients: [...] } }
             // Reference: https://help.africastalking.com/en/articles/742491-why-did-my-messages-fail
@@ -319,17 +321,15 @@ export class AfricasTalkingProvider implements ISmsProvider {
 
                         // Log error with appropriate level based on error type
                         if (this.isRetryableError(statusCode)) {
-                            console.warn(`[AfricasTalking Provider] SMS send failed (retryable):`, {
+                            this.logger.warn(`SMS send failed (retryable): ${errorMessage}`, {
                                 statusCode,
                                 status,
-                                error: errorMessage,
                                 recipient: recipient,
                             });
                         } else {
-                            console.error(`[AfricasTalking Provider] SMS send failed:`, {
+                            this.logger.error(`SMS send failed: ${errorMessage}`, {
                                 statusCode,
                                 status,
-                                error: errorMessage,
                                 recipient: recipient,
                             });
                         }
@@ -351,7 +351,7 @@ export class AfricasTalkingProvider implements ISmsProvider {
                     if (message.toLowerCase().includes('sent') ||
                         message.toLowerCase().includes('queued') ||
                         message.toLowerCase().includes('success')) {
-                        console.warn('[AfricasTalking Provider] Success message but no recipients array:', result);
+                        this.logger.warn('Success message but no recipients array:', result);
                         return {
                             success: true,
                             metadata: {
@@ -387,7 +387,7 @@ export class AfricasTalkingProvider implements ISmsProvider {
             }
 
             // Unknown response format - log and return error
-            console.error('[AfricasTalking Provider] Unknown response format:', result);
+            this.logger.error('Unknown response format:', result);
             return {
                 success: false,
                 error: 'Unknown response format from AfricasTalking API',

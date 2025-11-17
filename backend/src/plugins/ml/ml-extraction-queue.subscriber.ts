@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { RequestContext } from '@vendure/core';
 import { MlExtractionQueueService } from '../../services/ml/ml-extraction-queue.service';
 import { MlTrainingService } from '../../services/ml/ml-training.service';
@@ -11,6 +11,7 @@ import { MlTrainingService } from '../../services/ml/ml-training.service';
  */
 @Injectable()
 export class MlExtractionQueueSubscriber implements OnModuleInit {
+    private readonly logger = new Logger(MlExtractionQueueSubscriber.name);
     private processingInterval: NodeJS.Timeout | null = null;
 
     constructor(
@@ -29,7 +30,7 @@ export class MlExtractionQueueSubscriber implements OnModuleInit {
             this.cleanupOldExtractions();
         }, 5000); // 5 second delay to allow migrations to complete
 
-        console.log('[ML Extraction Queue Subscriber] Initialized');
+        this.logger.log('Initialized');
     }
 
     /**
@@ -41,11 +42,11 @@ export class MlExtractionQueueSubscriber implements OnModuleInit {
             try {
                 await this.processQueue();
             } catch (error) {
-                console.error('[ML Extraction Queue Subscriber] Error processing queue:', error);
+                this.logger.error('Error processing queue:', error);
             }
         }, 30000);
 
-        console.log('[ML Extraction Queue Subscriber] Queue processor started (30s interval)');
+        this.logger.log('Queue processor started (30s interval)');
     }
 
     /**
@@ -53,18 +54,18 @@ export class MlExtractionQueueSubscriber implements OnModuleInit {
      */
     private async processQueue(): Promise<void> {
         try {
-            console.log('[ML Extraction Queue Subscriber] Checking for due extractions...');
+            this.logger.debug('Checking for due extractions...');
             const dueExtractions = await this.extractionQueueService.getDueExtractions(RequestContext.empty());
 
             if (dueExtractions.length === 0) {
-                console.log('[ML Extraction Queue Subscriber] No extractions to process (this is normal when no products have been updated recently)');
+                this.logger.debug('No extractions to process (this is normal when no products have been updated recently)');
                 return;
             }
 
-            console.log(`[ML Extraction Queue Subscriber] Processing ${dueExtractions.length} due extractions`);
+            this.logger.log(`Processing ${dueExtractions.length} due extractions`);
             for (const extraction of dueExtractions) {
                 try {
-                    console.log(`[ML Extraction Queue Subscriber] Processing extraction ${extraction.id} for channel ${extraction.channelId}`);
+                    this.logger.log(`Processing extraction ${extraction.id} for channel ${extraction.channelId}`);
 
                     // Mark as processing (this will emit ML_EXTRACTION_STARTED event)
                     await this.extractionQueueService.markAsProcessing(RequestContext.empty(), extraction.id);
@@ -77,13 +78,13 @@ export class MlExtractionQueueSubscriber implements OnModuleInit {
 
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                    console.error(`[ML Extraction Queue Subscriber] Error processing extraction ${extraction.id}:`, error);
+                    this.logger.error(`Error processing extraction ${extraction.id}:`, error);
                     // Mark as failed (this will emit ML_EXTRACTION_FAILED event)
                     await this.extractionQueueService.markAsFailed(RequestContext.empty(), extraction.id, errorMessage);
                 }
             }
         } catch (error) {
-            console.error('[ML Extraction Queue Subscriber] Error getting due extractions:', error);
+            this.logger.error('Error getting due extractions:', error);
         }
     }
 
@@ -94,10 +95,10 @@ export class MlExtractionQueueSubscriber implements OnModuleInit {
         try {
             const cleanedCount = await this.extractionQueueService.cleanupOldExtractions(RequestContext.empty());
             if (cleanedCount > 0) {
-                console.log(`[ML Extraction Queue Subscriber] Cleaned up ${cleanedCount} old extractions on startup`);
+                this.logger.log(`Cleaned up ${cleanedCount} old extractions on startup`);
             }
         } catch (error) {
-            console.error('[ML Extraction Queue Subscriber] Error cleaning up old extractions:', error);
+            this.logger.error('Error cleaning up old extractions:', error);
         }
     }
 }

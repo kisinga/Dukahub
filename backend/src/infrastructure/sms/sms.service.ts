@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { formatPhoneNumber } from '../../utils/phone.utils';
 import { ISmsProvider, SmsResult } from './interfaces/sms-provider.interface';
 import { SmsProviderFactory } from './sms-provider.factory';
@@ -11,6 +11,7 @@ import { SmsProviderFactory } from './sms-provider.factory';
  */
 @Injectable()
 export class SmsService {
+    private readonly logger = new Logger(SmsService.name);
     private provider: ISmsProvider;
 
     constructor(private readonly providerFactory: SmsProviderFactory) {
@@ -38,8 +39,8 @@ export class SmsService {
                     ? ` Missing: ${configStatus.missing.join(', ')}`
                     : '';
                 
-                console.warn(
-                    `[SMS Service] Provider "${this.provider.getName()}" is not configured.${missingVars}`
+                this.logger.warn(
+                    `Provider "${this.provider.getName()}" is not configured.${missingVars}`
                 );
                 return {
                     success: false,
@@ -52,19 +53,19 @@ export class SmsService {
 
             // Log result
             if (result.success) {
-                console.log(
-                    `[SMS Service] SMS sent successfully via ${this.provider.getName()} to ${normalizedPhone}`
+                this.logger.log(
+                    `SMS sent successfully via ${this.provider.getName()} to ${normalizedPhone}`
                 );
             } else {
-                console.error(
-                    `[SMS Service] Failed to send SMS via ${this.provider.getName()} to ${normalizedPhone}: ${result.error}`
+                this.logger.error(
+                    `Failed to send SMS via ${this.provider.getName()} to ${normalizedPhone}: ${result.error}`
                 );
             }
 
             return result;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            console.error(`[SMS Service] Error sending SMS: ${errorMessage}`, error);
+            this.logger.error(`Error sending SMS: ${errorMessage}`, error);
 
             return {
                 success: false,

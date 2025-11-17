@@ -1,9 +1,9 @@
-import { Injectable, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
 import { RequestContext } from '@vendure/core';
 import Redis from 'ioredis';
-import { formatPhoneNumber } from '../../utils/phone.utils';
 import { ChannelSmsService } from '../../infrastructure/events/channel-sms.service';
 import { SmsService } from '../../infrastructure/sms/sms.service';
+import { formatPhoneNumber } from '../../utils/phone.utils';
 
 /**
  * OTP Service
@@ -12,6 +12,7 @@ import { SmsService } from '../../infrastructure/sms/sms.service';
  */
 @Injectable()
 export class OtpService implements OnModuleInit, OnModuleDestroy {
+    private readonly logger = new Logger(OtpService.name);
     public redis: Redis | null = null; // Public for access by auth strategy
 
     // Configuration
@@ -50,11 +51,11 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
             });
 
             this.redis.on('error', (error) => {
-                console.error('Redis connection error:', error);
+                this.logger.error('Redis connection error:', error);
             });
 
             this.redis.on('connect', () => {
-                console.log('✅ Redis connected for OTP storage');
+                this.logger.log('✅ Redis connected for OTP storage');
             });
 
             // Test connection asynchronously - don't block module init
@@ -62,15 +63,15 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
             setImmediate(async () => {
                 try {
                     await this.redis?.ping();
-                    console.log('✅ Redis connection verified');
+                    this.logger.log('✅ Redis connection verified');
                 } catch (pingError) {
-                    console.warn('⚠️ Redis ping failed:', pingError);
-                    console.warn('OTP service will retry on first use');
+                    this.logger.warn('⚠️ Redis ping failed:', pingError);
+                    this.logger.warn('OTP service will retry on first use');
                 }
             });
         } catch (error) {
-            console.error('Failed to initialize Redis:', error);
-            console.warn('OTP service will use in-memory storage (not recommended for production)');
+            this.logger.error('Failed to initialize Redis:', error);
+            this.logger.warn('OTP service will use in-memory storage (not recommended for production)');
             this.redis = null;
         }
     }
@@ -135,7 +136,7 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
             if (error instanceof Error && error.message.includes('Too many requests')) {
                 throw error;
             }
-            console.error('Rate limit check error:', error);
+            this.logger.error('Rate limit check error:', error);
             return false;
         }
     }
@@ -155,7 +156,7 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
                 await this.redis.expire(key, this.RATE_LIMIT_WINDOW_SECONDS);
             }
         } catch (error) {
-            console.error('Rate limit update error:', error);
+            this.logger.error('Rate limit update error:', error);
         }
     }
 
@@ -178,15 +179,15 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
             if (!result.success) {
                 // Log error but don't throw - OTP is still generated, just SMS failed
                 // This allows OTP generation to continue even if SMS provider is unavailable
-                console.error('[OTP SERVICE] Failed to send SMS:', result.error);
+                this.logger.error(`Failed to send SMS: ${result.error}`);
 
                 // Log OTP in development for testing purposes
                 if (!this.IS_PRODUCTION) {
-                    console.warn('[OTP SERVICE] SMS not sent. OTP code:', message.match(/\d{6}/)?.[0] || 'N/A');
+                    this.logger.warn(`SMS not sent. OTP code: ${message.match(/\d{6}/)?.[0] || 'N/A'}`);
                 }
             }
         } catch (error) {
-            console.error('[OTP SERVICE] SMS sending error:', error);
+            this.logger.error('SMS sending error:', error);
             // Don't throw - OTP is still generated, just log the error
             // In production, you might want to throw here or use a fallback method
         }
@@ -221,7 +222,7 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
                 await this.redis.setex(otpKey, this.OTP_EXPIRY_SECONDS, otpCode);
                 await this.redis.setex(attemptsKey, this.OTP_EXPIRY_SECONDS, '0');
             } catch (error) {
-                console.error('[OTP SERVICE] Failed to store OTP:', error);
+                this.logger.error('Failed to store OTP:', error);
                 throw new Error('Failed to generate OTP. Please try again.');
             }
         }
@@ -314,7 +315,7 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
                 message: 'OTP verified successfully',
             };
         } catch (error) {
-            console.error('[OTP SERVICE] OTP verification error:', error);
+            this.logger.error('OTP verification error:', error);
             return {
                 valid: false,
                 message: 'OTP verification failed. Please try again.',
@@ -333,7 +334,7 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
             const ttl = await this.redis.ttl(key);
             return Math.max(0, ttl);
         } catch (error) {
-            console.error('Rate limit remaining check error:', error);
+            this.logger.error('Rate limit remaining check error:', error);
             return 0;
         }
     }
@@ -349,7 +350,7 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
             const ttl = await this.redis.ttl(key);
             return Math.max(0, ttl);
         } catch (error) {
-            console.error('OTP expiry check error:', error);
+            this.logger.error('OTP expiry check error:', error);
             return 0;
         }
     }
