@@ -1,4 +1,4 @@
-import { Injectable, Logger, Optional } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
     ID,
     OrderService,
@@ -22,7 +22,7 @@ export class OrderPaymentService {
     constructor(
         private readonly orderService: OrderService,
         private readonly paymentService: PaymentService,
-        @Optional() private readonly financialService?: FinancialService, // Optional for migration period
+        private readonly financialService: FinancialService,
     ) { }
 
     /**
@@ -92,14 +92,6 @@ export class OrderPaymentService {
             }
             // Payment is now settled - use the settled payment from the result
             settledPayment = settleResult as Payment;
-        }
-
-        // Post to ledger (single source of truth) - must be in same transaction
-        if (!this.financialService) {
-            this.logger.warn(
-                `FinancialService not available - ledger posting skipped for payment ${settledPayment.id} on order ${order.code}`
-            );
-            return;
         }
 
         // Verify payment is settled before posting

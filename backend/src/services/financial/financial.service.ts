@@ -63,10 +63,21 @@ export class FinancialService {
     amountPaid: number;
     amountOwing: number;
   }> {
-    // TODO: Implement order-specific balance query
-    // For now, this is a placeholder that will be implemented
-    // when we have order-level tracking in ledger
-    throw new Error('getOrderPaymentStatus not yet implemented - use order.payments for now');
+    const balance = await this.queryService.getAccountBalance({
+      channelId: ctx.channelId as number,
+      accountCode: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
+      orderId,
+    });
+
+    const totalOwedInCents = balance.debitTotal;
+    const amountPaidInCents = balance.creditTotal;
+    const amountOwingInCents = Math.max(balance.balance, 0); // AR should not go negative
+
+    return {
+      totalOwed: totalOwedInCents / 100,
+      amountPaid: amountPaidInCents / 100,
+      amountOwing: amountOwingInCents / 100,
+    };
   }
 
   /**
@@ -154,6 +165,12 @@ export class FinancialService {
     payment: Payment,
     order: Order
   ): Promise<void> {
+    if (payment.amount <= 0) {
+      throw new Error(
+        `Payment ${payment.id} has non-positive amount (${payment.amount}) and cannot be posted to ledger`,
+      );
+    }
+
     // Only post if payment is settled
     if (payment.state !== 'Settled') {
       this.logger.warn(
@@ -214,6 +231,12 @@ export class FinancialService {
       throw new Error('Order must have customer for credit sale');
     }
 
+    if (order.total <= 0) {
+      throw new Error(
+        `Order ${order.id} has non-positive total (${order.total}) and cannot be posted as a credit sale`,
+      );
+    }
+
     const context: SalePostingContext = {
       amount: order.total,
       orderId: order.id.toString(),
@@ -244,6 +267,36 @@ export class FinancialService {
     paymentMethod: string,
     amount: number
   ): Promise<void> {
+    if (amount <= 0) {
+      throw new Error(
+        `Payment allocation for order ${order.id} has non-positive amount (${amount}) and cannot be posted to ledger`,
+      );
+    }
+
+    // Order-scoped AR invariant:
+    // Sum of AR credits for this order must never exceed sum of AR debits.
+    const arBalance = await this.queryService.getAccountBalance({
+      channelId: ctx.channelId as number,
+      accountCode: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
+      orderId: order.id.toString(),
+    });
+
+    const debitTotal = arBalance.debitTotal;
+    const creditTotal = arBalance.creditTotal;
+
+    if (debitTotal === 0) {
+      throw new Error(
+        `Cannot allocate payment for order ${order.code} because no Accounts Receivable debits exist for this order in the ledger`,
+      );
+    }
+
+    if (creditTotal + amount > debitTotal) {
+      const overpay = creditTotal + amount - debitTotal;
+      throw new Error(
+        `Payment allocation for order ${order.code} would overpay Accounts Receivable by ${overpay} cents (debited=${debitTotal}, credited=${creditTotal}, newCredit=${creditTotal + amount})`,
+      );
+    }
+
     const context: PaymentPostingContext = {
       amount,
       method: paymentMethod,
@@ -275,6 +328,11 @@ export class FinancialService {
     supplierId: string,
     totalCost: number
   ): Promise<void> {
+    if (totalCost <= 0) {
+      throw new Error(
+        `Purchase ${purchaseId} has non-positive total cost (${totalCost}) and cannot be posted to ledger`,
+      );
+    }
     const context: PurchasePostingContext = {
       amount: totalCost,
       purchaseId,
@@ -307,6 +365,37 @@ export class FinancialService {
     amount: number,
     paymentMethod: string
   ): Promise<void> {
+    if (amount <= 0) {
+      throw new Error(
+        `Supplier payment ${paymentId} has non-positive amount (${amount}) and cannot be posted to ledger`,
+      );
+    }
+
+    // Supplier-scoped AP invariant:
+    // Sum of AP debits for this supplier must never exceed sum of AP credits.
+    const apBalance = await this.queryService.getAccountBalance({
+      channelId: ctx.channelId as number,
+      accountCode: ACCOUNT_CODES.ACCOUNTS_PAYABLE,
+      supplierId,
+    });
+
+    const apDebitTotal = apBalance.debitTotal;
+    const apCreditTotal = apBalance.creditTotal;
+    const outstandingInCents = apCreditTotal - apDebitTotal; // positive when we owe supplier
+
+    if (outstandingInCents <= 0) {
+      throw new Error(
+        `Cannot record supplier payment ${paymentId} for supplier ${supplierId} because Accounts Payable has no outstanding balance (credits=${apCreditTotal}, debits=${apDebitTotal})`,
+      );
+    }
+
+    if (amount > outstandingInCents) {
+      const overpay = amount - outstandingInCents;
+      throw new Error(
+        `Supplier payment ${paymentId} would overpay Accounts Payable by ${overpay} cents for supplier ${supplierId} (outstanding=${outstandingInCents})`,
+      );
+    }
+
     const context: SupplierPaymentPostingContext = {
       amount,
       purchaseId,

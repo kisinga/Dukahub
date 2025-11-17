@@ -813,8 +813,8 @@ export const config: VendureConfig = {
                 nullable: false,
                 ui: { tab: 'Financial' },
             },
-            // outstandingAmount removed - now calculated dynamically from orders and payments
-            // See CreditService.calculateOutstandingAmount() for implementation
+            // outstandingAmount removed - now calculated dynamically from the ledger
+            // See FinancialService.getCustomerBalance() for implementation
             {
                 name: 'lastRepaymentDate',
                 type: 'datetime',

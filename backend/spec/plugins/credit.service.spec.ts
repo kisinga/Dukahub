@@ -1,11 +1,18 @@
 import { Order, OrderService, RequestContext } from '@vendure/core';
 import { CreditService } from '../../src/services/credit/credit.service';
+import { FinancialService } from '../../src/services/financial/financial.service';
 
 describe('CreditService', () => {
     const ctx = {} as RequestContext;
 
     const createOrderService = (): OrderService => {
         return {} as OrderService;
+    };
+
+    const createFinancialService = (outstandingAmount: number): FinancialService => {
+        return {
+            getCustomerBalance: jest.fn().mockResolvedValue(outstandingAmount),
+        } as unknown as FinancialService;
     };
 
     const createConnection = (orders: Order[] = []) => {
@@ -44,9 +51,10 @@ describe('CreditService', () => {
     };
 
     it('computes available credit from summary', async () => {
-        const { connection } = createConnection([]); // No orders, so outstanding amount should be 0
+        const { connection } = createConnection([]); // Customer data only; orders are ignored by CreditService
         const orderService = createOrderService();
-        const service = new CreditService(connection, orderService);
+        const financialService = createFinancialService(0); // No outstanding balance in ledger
+        const service = new CreditService(connection, orderService, financialService);
 
         const summary = await service.getCreditSummary(ctx, 'CUST_1');
 
@@ -60,18 +68,10 @@ describe('CreditService', () => {
     });
 
     it('computes available credit with outstanding orders', async () => {
-        // Create orders with total of 20000 cents (200 base units)
-        const orders: Order[] = [
-            {
-                id: 'ORDER_1',
-                total: 20000, // 200 in base units (cents)
-                state: 'ArrangingPayment',
-                payments: [],
-            } as unknown as Order,
-        ];
-        const { connection } = createConnection(orders);
+        const { connection } = createConnection();
         const orderService = createOrderService();
-        const service = new CreditService(connection, orderService);
+        const financialService = createFinancialService(200); // Ledger reports 200 outstanding
+        const service = new CreditService(connection, orderService, financialService);
 
         const summary = await service.getCreditSummary(ctx, 'CUST_1');
 
@@ -87,7 +87,8 @@ describe('CreditService', () => {
     it('applies credit charge is a no-op (deprecated)', async () => {
         const { connection, saveMock } = createConnection();
         const orderService = createOrderService();
-        const service = new CreditService(connection, orderService);
+        const financialService = createFinancialService(0);
+        const service = new CreditService(connection, orderService, financialService);
 
         await service.applyCreditCharge(ctx, 'CUST_1', 150);
 
@@ -98,7 +99,8 @@ describe('CreditService', () => {
     it('releases credit charge updates repayment tracking fields', async () => {
         const { connection, saveMock } = createConnection();
         const orderService = createOrderService();
-        const service = new CreditService(connection, orderService);
+        const financialService = createFinancialService(0);
+        const service = new CreditService(connection, orderService, financialService);
 
         await service.releaseCreditCharge(ctx, 'CUST_1', 150);
 
@@ -119,7 +121,8 @@ describe('CreditService', () => {
     it('releases credit charge does nothing for zero or negative amounts', async () => {
         const { connection, saveMock } = createConnection();
         const orderService = createOrderService();
-        const service = new CreditService(connection, orderService);
+        const financialService = createFinancialService(0);
+        const service = new CreditService(connection, orderService, financialService);
 
         await service.releaseCreditCharge(ctx, 'CUST_1', 0);
         expect(saveMock).not.toHaveBeenCalled();

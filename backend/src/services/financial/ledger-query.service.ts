@@ -11,6 +11,7 @@ export interface BalanceQuery {
   endDate?: string; // YYYY-MM-DD
   customerId?: string; // For AR account filtering
   supplierId?: string; // For AP account filtering
+  orderId?: string; // For order-scoped AR queries
 }
 
 export interface AccountBalance {
@@ -91,6 +92,12 @@ export class LedgerQueryService {
     if (query.supplierId) {
       queryBuilder = queryBuilder.andWhere("line.meta->>'supplierId' = :supplierId", {
         supplierId: query.supplierId,
+      });
+    }
+
+    if (query.orderId) {
+      queryBuilder = queryBuilder.andWhere("line.meta->>'orderId' = :orderId", {
+        orderId: query.orderId,
       });
     }
 
@@ -386,7 +393,7 @@ export class LedgerQueryService {
   }
 
   private getCacheKey(query: BalanceQuery): string {
-    return `${query.channelId}:${query.accountCode}:${query.startDate || ''}:${query.endDate || ''}:${query.customerId || ''}:${query.supplierId || ''}`;
+    return `${query.channelId}:${query.accountCode}:${query.startDate || ''}:${query.endDate || ''}:${query.customerId || ''}:${query.supplierId || ''}:${query.orderId || ''}`;
   }
 }
 

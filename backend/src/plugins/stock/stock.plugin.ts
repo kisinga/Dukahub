@@ -13,9 +13,10 @@ import { PurchaseCreditValidatorService } from '../../services/stock/purchase-cr
 import { SupplierCreditService } from '../../services/credit/supplier-credit.service';
 import { StockPurchase, StockPurchaseLine } from '../../services/stock/entities/purchase.entity';
 import { InventoryStockAdjustment, InventoryStockAdjustmentLine } from '../../services/stock/entities/stock-adjustment.entity';
+import { CreditPlugin } from '../credit/credit.plugin';
 
 @VendurePlugin({
-    imports: [PluginCommonModule],
+    imports: [PluginCommonModule, CreditPlugin],
     providers: [
         StockValidationService,
         StockMovementService,
