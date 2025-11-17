@@ -1,4 +1,17 @@
-import { ChannelStatus } from '../services/auth/phone-auth.service';
+/**
+ * Channel approval status enum
+ * 
+ * UNAPPROVED: Read-only access
+ * APPROVED: Full access
+ * DISABLED: No access (temporary)
+ * BANNED: No access (permanent)
+ */
+export enum ChannelStatus {
+    UNAPPROVED = 'UNAPPROVED',
+    APPROVED = 'APPROVED',
+    DISABLED = 'DISABLED',
+    BANNED = 'BANNED',
+}
 
 /**
  * TypeScript interface for Channel customFields
@@ -15,7 +28,7 @@ export interface ChannelCustomFields {
      * BANNED: No access (permanent)
      */
     status: ChannelStatus;
-    
+
     // Other custom fields can be added here as needed
     // For now, we only type the status field since it's critical for access control
 }
@@ -27,4 +40,3 @@ export interface ChannelCustomFields {
 export function getChannelStatus(customFields: any): ChannelStatus {
     return (customFields?.status as ChannelStatus) || ChannelStatus.UNAPPROVED;
 }
-

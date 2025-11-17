@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { NavbarComponent } from '../../core/layout/navbar/navbar.component';
 import { FooterComponent } from '../../core/layout/footer/footer.component';
+import { NavbarComponent } from '../../core/layout/navbar/navbar.component';
 
 interface PricingPlan {
   name: string;
@@ -27,6 +27,32 @@ interface SocialProof {
   timeSaved: string;
 }
 
+interface FeatureHighlight {
+  icon: string;
+  text: string;
+}
+
+interface CorePillar {
+  icon: string;
+  title: string;
+  description: string;
+  bullets: string[];
+}
+
+interface JourneyStage {
+  number: string;
+  title: string;
+  summary: string;
+  detail: string;
+}
+
+interface ValueHighlight {
+  icon: string;
+  title: string;
+  description: string;
+  badge: string;
+}
+
 interface FAQItem {
   question: string;
   answer: string;
@@ -49,23 +75,94 @@ export class HomeComponent {
     timeSaved: '2 hours daily'
   };
 
+  protected readonly heroHighlights: FeatureHighlight[] = [
+    { icon: '⚡', text: 'Sell in 3 seconds' },
+    { icon: '📡', text: 'Works without internet' },
+    { icon: '💳', text: 'Accept cash & M-Pesa' }
+  ];
+
+  protected readonly corePillars: CorePillar[] = [
+    {
+      icon: '📷',
+      title: 'Faster selling',
+      description: 'Point your phone at price labels or barcodes and ring up a sale instantly.',
+      bullets: ['Label-photo recognition', 'Barcode scanning', '3-second checkout']
+    },
+    {
+      icon: '📦',
+      title: 'Clear inventory',
+      description: 'Always know what is in stock across every shelf, stall, or warehouse.',
+      bullets: ['Real-time counts', 'Multi-location tracking', 'Low-stock nudges']
+    },
+    {
+      icon: '💰',
+      title: 'Healthy cash flow',
+      description: 'Stay on top of customer and supplier balances without extra spreadsheets.',
+      bullets: ['Credit limits & approvals', 'Automatic reminders', 'Ledger built in']
+    },
+    {
+      icon: '📈',
+      title: 'Decisions with data',
+      description: 'See daily trends, best sellers, and what needs attention at a glance.',
+      bullets: ['Dashboards & reports', 'Top product insights', 'Performance alerts']
+    }
+  ];
+
+  protected readonly journeyStages: JourneyStage[] = [
+    {
+      number: '1',
+      title: 'Capture your catalog',
+      summary: 'Scan labels or take five quick photos per product.',
+      detail: 'Dukahub learns each item in under a minute — no spreadsheets required.'
+    },
+    {
+      number: '2',
+      title: 'Sell from any device',
+      summary: 'Point, confirm, and accept cash or M-Pesa in seconds.',
+      detail: 'No signal? Keep selling. Each sale syncs automatically when you reconnect.'
+    },
+    {
+      number: '3',
+      title: 'Stay in control',
+      summary: 'Stock, cash, and credit update automatically after every sale.',
+      detail: 'Reminders and dashboards keep your whole team aligned and confident.'
+    }
+  ];
+
+  protected readonly valueHighlights: ValueHighlight[] = [
+    {
+      icon: '🕒',
+      title: 'Save two hours daily',
+      description: 'Cut manual books and endless follow-up calls.',
+      badge: 'Time back'
+    },
+    {
+      icon: '🚫',
+      title: 'Prevent lost sales',
+      description: 'Sell even during outages or peak rush, without missing a beat.',
+      badge: 'No guesswork'
+    },
+    {
+      icon: '🤝',
+      title: 'Build customer trust',
+      description: 'Show clear balances and histories for every customer and supplier.',
+      badge: 'Transparent'
+    }
+  ];
+
   protected readonly pricingPlans: PricingPlan[] = [
     {
       name: 'Pro Trial',
       monthlyPrice: 'KES 0',
       yearlyPrice: 'KES 0',
-      description: 'Try Pro free for 30 days. Full access to all features, no credit card required.',
+      description: 'Try every Dukahub feature free for 30 days. No credit card required.',
       features: [
-        { text: '30-day access to all Pro features', included: true },
-        { text: 'AI camera recognition - sell in 3 seconds', included: true },
-        { text: 'Customer & supplier credit management', included: true },
+        { text: 'Full Pro access for 30 days', included: true },
+        { text: 'Sell with camera, barcode, or quick search', included: true },
+        { text: 'Works offline and syncs when online', included: true },
+        { text: 'Track customer & supplier credit', included: true },
         { text: 'Automatic payment reminders', included: true },
-        { text: 'Advanced reporting & insights', included: true },
-        { text: 'Up to 5 users', included: true },
-        { text: 'M-Pesa integration', included: true },
-        { text: 'Reliable offline mode', included: true },
-        { text: 'Smart inventory alerts', included: true },
-        { text: 'After 30 days: Upgrade to Pro or pause account', included: true }
+        { text: 'Dashboards and product insights', included: true }
       ],
       ctaText: 'Start Free 30-Day Trial',
       ctaLink: '/signup?plan=pro&trial=true'
@@ -74,17 +171,14 @@ export class HomeComponent {
       name: 'Pro',
       monthlyPrice: 'KES 1,500',
       yearlyPrice: 'KES 14,400',
-      description: 'The complete solution. Everything you need to grow your business. Join serious businesses.',
+      description: 'Everything a growing shop needs to stay organised, sell fast, and stay on top of cash flow.',
       features: [
-        { text: 'Unlimited products', included: true },
-        { text: 'AI camera recognition - sell in 3 seconds', included: true },
-        { text: 'Customer & supplier credit management', included: true },
-        { text: 'Automatic payment reminders (you & customers)', included: true },
-        { text: 'Advanced reporting & insights', included: true },
-        { text: 'Up to 5 users', included: true },
-        { text: 'M-Pesa integration', included: true },
-        { text: 'Reliable offline mode', included: true },
-        { text: 'Smart inventory alerts', included: true }
+        { text: 'Unlimited products and locations', included: true },
+        { text: 'Camera recognition & barcode selling', included: true },
+        { text: 'Offline-first POS with auto-sync', included: true },
+        { text: 'Customer & supplier credit controls', included: true },
+        { text: 'Payment reminders & MPesa integration', included: true },
+        { text: 'Dashboards, reports, and exports', included: true }
       ],
       ctaText: 'Start Your Free 30-Day Trial',
       ctaLink: '/signup?plan=pro&trial=true',
@@ -94,15 +188,13 @@ export class HomeComponent {
       name: 'Enterprise',
       monthlyPrice: 'Custom',
       yearlyPrice: 'Custom',
-      description: 'For larger businesses with multiple locations. Custom solutions tailored to your needs.',
+      description: 'For larger teams that need custom integrations, locations, or dedicated support.',
       features: [
         { text: 'Everything in Pro', included: true },
-        { text: 'Unlimited users', included: true },
-        { text: 'Multi-location support', included: true },
-        { text: 'API access', included: true },
-        { text: 'Dedicated support', included: true },
-        { text: 'Custom integrations', included: true },
-        { text: 'Priority feature requests', included: true }
+        { text: 'Unlimited users & locations', included: true },
+        { text: 'Advanced API integrations', included: true },
+        { text: 'Dedicated success manager', included: true },
+        { text: 'Custom onboarding & training', included: true }
       ],
       ctaText: 'Contact Sales',
       ctaLink: '/contact'
@@ -132,38 +224,33 @@ export class HomeComponent {
 
   protected readonly faqItems = signal<FAQItem[]>([
     {
-      question: 'What happens after my 30-day Pro trial ends?',
-      answer: 'After your 30-day free Pro trial, you can choose to upgrade to Pro (KES 1,500/month) to continue using all features, or your account will be paused. You can reactivate and upgrade to Pro anytime. Pro is our complete solution with all features - the trial gives you full access to experience everything before committing.',
+      question: 'What happens after my 30-day trial ends?',
+      answer: 'After your free 30-day trial, you can upgrade to Pro (KES 1,500/month) to keep using all features, or pause your account. You can upgrade anytime. No credit card needed to start.',
       open: false
     },
     {
-      question: 'How does the AI product recognition work?',
-      answer: 'You take about 5 photos of each product from different angles using the app. Our AI system learns to identify the item visually. When making a sale, just point your camera, and the app recognizes it in seconds. This is great for items without barcodes. Barcode scanning is also supported and is usually faster if available.',
+      question: 'How does the product recognition work?',
+      answer: 'Take a few photos of each product. When you sell, just point your camera at the product and it recognizes it in seconds. Works great for items without barcodes. Barcode scanning also works if available.',
       open: false
     },
     {
-      question: 'How does the offline mode work? Is it safe?',
-      answer: 'You can record up to 30 sales transactions completely offline. The data is stored securely on your device. When you reconnect to the internet, the app syncs each transaction individually and carefully checks against your online inventory to prevent errors like selling out-of-stock items. It\'s designed for reliability in areas with unstable internet.',
+      question: 'Does it work without internet?',
+      answer: 'Yes! You can record up to 30 sales without internet. Everything is stored safely on your device. When you reconnect, it syncs automatically. Perfect for areas with unreliable internet.',
       open: false
     },
     {
-      question: 'Is my business data secure and private?',
-      answer: 'Yes. Security is a top priority. We use industry-standard encryption for data stored on your device and when it\'s synced to our servers. Your specific business data (sales, inventory) is kept confidential and is not shared. We comply with data protection best practices.',
+      question: 'Is my data safe?',
+      answer: 'Yes. Your business data is encrypted and kept private. We never share your information. Security is a top priority.',
       open: false
     },
     {
-      question: 'How long does it take to set up?',
-      answer: 'Most businesses are set up in under an hour. Download the app, sign up for your free Pro trial, and start adding products by scanning barcodes or taking photos. It\'s designed to be intuitive, even if you\'re not tech-savvy.',
+      question: 'How long does setup take?',
+      answer: 'Most businesses are set up in under an hour. Sign up, add products by scanning barcodes or taking photos, and you\'re ready to go. Simple and intuitive.',
       open: false
     },
     {
-      question: 'Can I use it for services (salon, repair)?',
-      answer: 'Absolutely! Create simple visual cards or icons for your services (e.g., a picture for \'Haircut\'). Add them like products, and the AI or you can select them during sales. You can track service sales and popularity easily.',
-      open: false
-    },
-    {
-      question: 'How does the credit management and automatic reminders work?',
-      answer: 'Dukahub tracks all customer and supplier credit automatically. When you make a credit sale or purchase, the system records it. You can set up automatic reminders that notify both you and your customers when payments are due. This means customers get friendly reminders to pay, and you get notified to follow up. The system also tracks supplier payments you need to make, so you never miss a deadline. It\'s all designed to improve cash flow and reduce the time spent chasing payments.',
+      question: 'Can I track services too?',
+      answer: 'Yes! Create visual cards for services like haircuts or repairs. Track them just like products. Perfect for salons, barbers, and service businesses.',
       open: false
     }
   ]);

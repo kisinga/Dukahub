@@ -22,6 +22,11 @@ export const routes: Routes = [
         loadComponent: () =>
             import('./pages/auth/signup/signup.component').then((m) => m.SignupComponent)
     },
+    {
+        path: 'features',
+        loadComponent: () =>
+            import('./pages/features/features.component').then((m) => m.FeaturesComponent)
+    },
 
     // Dashboard - separate layout with sidebar and mobile bottom nav
     {

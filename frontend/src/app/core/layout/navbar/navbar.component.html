@@ -24,7 +24,7 @@
         class="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-52 p-2 shadow-xl border border-base-300"
       >
         <li><a href="#how-it-works" (click)="closeMenu()">How It Works</a></li>
-        <li><a href="#features" (click)="closeMenu()">Features</a></li>
+        <li><a routerLink="/features" (click)="closeMenu()">Features</a></li>
         <li><a href="#pricing" (click)="closeMenu()">Pricing</a></li>
         <li><a href="#faq" (click)="closeMenu()">FAQ</a></li>
         <div class="divider my-1"></div>
@@ -44,7 +44,7 @@
   <div class="navbar-center hidden lg:flex">
     <ul class="menu menu-horizontal px-1">
       <li><a href="#how-it-works">How It Works</a></li>
-      <li><a href="#features">Features</a></li>
+      <li><a routerLink="/features">Features</a></li>
       <li><a href="#pricing">Pricing</a></li>
       <li><a href="#faq">FAQ</a></li>
     </ul>

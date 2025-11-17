@@ -249,13 +249,14 @@ services:
       # SigNoz configuration
       # All values can be overridden via environment variables
       OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.name=dukahub,service.version=2.0.0}
-      # ClickHouse configuration (SigNoz uses ClickHouse for storage)
-      CLICKHOUSE_HOST: ${CLICKHOUSE_HOST:-clickhouse}
-      CLICKHOUSE_PORT: ${CLICKHOUSE_PORT:-9000}
+      SIGNOZ_TELEMETRYSTORE_PROVIDER: ${SIGNOZ_TELEMETRYSTORE_PROVIDER:-clickhouse}
+      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN:-tcp://${CLICKHOUSE_USER:-default}:${CLICKHOUSE_PASSWORD:-}@${CLICKHOUSE_HOST:-clickhouse}:${CLICKHOUSE_PORT:-9000}}
+      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER:-cluster}
+      SIGNOZ_SQLSTORE_SQLITE_PATH: ${SIGNOZ_SQLSTORE_SQLITE_PATH:-/var/lib/signoz/signoz.db}
     ports:
       # UI port - ONLY expose if behind authenticated reverse proxy
       # Remove this line in production or use internal network only
-      - "${SIGNOZ_UI_PORT:-3301}:3301" # UI (SECURITY: Should be behind auth)
+      - "${SIGNOZ_UI_PORT:-3301}:8080" # UI (SECURITY: Should be behind auth)
       # OTLP ports - internal only, do not expose to host in production
       # These are used by backend/frontend services via Docker network
       - "127.0.0.1:${SIGNOZ_OTLP_GRPC_PORT:-4317}:4317" # OTLP gRPC (localhost only)
@@ -271,7 +272,7 @@ services:
         - --no-verbose
         - --tries=1
         - --spider
-        - http://localhost:3301/api/health
+        - http://localhost:8080/api/v1/health
       interval: 30s
       timeout: 10s
       retries: 5
@@ -292,6 +293,7 @@ services:
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
       # CLICKHOUSE_PASSWORD: Empty by default (no auth). Set in production!
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
+      CLICKHOUSE_SKIP_USER_SETUP: ${CLICKHOUSE_SKIP_USER_SETUP:-0}
     volumes:
       - clickhouse_data:/var/lib/clickhouse
     # Do not expose ports to host - internal network only

@@ -1,0 +1,304 @@
+## Integrations, Notifications & Automation
+
+This guide explains how Dukahub connects to other systems and automates work, in terms that matter to merchants and ops teams.
+
+---
+
+## What Problems This Solves
+
+- Connect Dukahub to **payment providers (Paystack)** and **observability tools**.
+- Receive **real-time notifications** about orders, stock, ML training and payments.
+- Provide a stable **GraphQL API** for custom dashboards, data export and integrations.
+- Keep the platform **observable and debuggable** as you scale.
+
+---
+
+## Key Capabilities (with Origins)
+
+- **Admin GraphQL API** – Full-featured API behind the Dukahub dashboard for managing products, orders, customers and more.  
+  **Origin:** Vendure Core.
+
+- **Paystack subscription & payments integration** – Connect Dukahub’s own billing and subscriptions to Paystack, with webhooks and STK push support.  
+  **Origin:** Dukahub-Exclusive (see `SUBSCRIPTION_INTEGRATION.md`).
+
+- **Event-driven notification system** – In-app toasts and web push notifications for key events (orders, stock, ML training, payments).  
+  **Origin:** Dukahub-Exclusive (see `NOTIFICATION_SYSTEM.md`).
+
+- **ML training pipeline endpoints** – GraphQL operations that external ML services can use to extract images, fetch manifests and upload trained models.  
+  **Origin:** Dukahub-Exclusive (see `ML_TRAINING_SETUP.md`).
+
+- **Observability & monitoring** – Traces, metrics and logs via SigNoz and OpenTelemetry to keep the system healthy and support SLOs.  
+  **Origin:** Dukahub-Exclusive (see `OBSERVABILITY.md`, `OBSERVABILITY_OPERATIONS.md`).
+
+---
+
+## GraphQL Admin API
+
+### 1. What It Is
+
+The Dukahub dashboard is just a client of the **Vendure admin GraphQL API**:
+
+- All operations visible in the UI – product creation, price changes, order management – correspond to GraphQL queries and mutations.
+- You can use the same API to:
+  - Build internal tools.
+  - Run scripts for bulk operations.
+  - Export data to other systems.
+
+**Origin:** Vendure Core (admin API).
+
+---
+
+### 2. How You Can Use It (Safely)
+
+For advanced users and integrators:
+
+- Access the GraphQL playground (when enabled) at `/admin-api`.
+- Use an admin token or cookie-based session for authenticated requests.
+- Follow Vendure’s own documentation (`VENDURE.md` refers to the upstream docs).
+
+Recommended use cases:
+
+- Bulk import of products.
+- Data exports to accounting systems.
+- Custom reports before a full analytics stack is in place.
+
+---
+
+## Paystack Integration (Subscriptions & Payments)
+
+### 1. Subscription Billing (Dukahub’s Own Plans)
+
+As detailed in `SUBSCRIPTION_INTEGRATION.md`, Dukahub integrates with **Paystack** to manage:
+
+- Subscription tiers (e.g. Basic, Pro).
+- Trial periods and renewal dates.
+- Paystack customers and subscriptions.
+- Webhook callbacks for payment events.
+
+From a business owner’s perspective:
+
+- You see a **Subscription** section in Dukahub.
+- You can select a plan and pay using M‑Pesa (via Paystack STK or other supported flows).
+- Dukahub automatically updates your subscription status and access level.
+
+**Origin:** Dukahub-Exclusive plugin on top of Vendure.
+
+---
+
+### 2. Operational Considerations
+
+For operations and finance teams:
+
+- Environment variables configure Paystack keys and webhook secrets.
+- Webhooks are validated and logged.
+- Subscription state is stored on the channel and used by:
+  - The **subscription guard** (backend).
+  - A **frontend interceptor** that displays helpful messages.
+
+This allows clear billing logic without manual toggling in the database.
+
+---
+
+## Notification System
+
+### 1. What Events Generate Notifications?
+
+Per `NOTIFICATION_SYSTEM.md`, Dukahub can generate notifications for:
+
+- **Orders** – new orders, state transitions.
+- **Stock** – low stock alerts, stock movements.
+- **ML training** – training started, completed, or failed.
+- **Payments** – payment confirmed events.
+
+These can appear:
+
+- As **toasts** inside the Dukahub app.
+- As **push notifications** on supported browsers/devices.
+
+**Origin:** Dukahub-Exclusive event-driven notification plugin.
+
+---
+
+### 2. How it Works Conceptually
+
+Flow (simplified from the architecture):
+
+```text
+Business event (order, stock, ML) 
+  → Notification handler 
+  → Notification records in DB 
+  → In-app toasts and optional Web Push
+```
+
+On the backend:
+
+- A Vendure plugin listens to domain events.
+- It creates notification entries and, when configured, uses the Web Push API.
+
+On the frontend:
+
+- A notification service:
+  - Reads the notifications via GraphQL.
+  - Shows toast messages using the shared toast component.
+  - Manages push subscription and browser permissions.
+
+---
+
+### 3. How to Use It Day-to-Day
+
+For typical users:
+
+- You will see a **notification bell** and toast messages indicating:
+  - New orders.
+  - Low stock on key items.
+  - Completion of ML training tasks.
+  - Payment confirmations.
+
+For administrators:
+
+- The **Settings → Test Notifications** page lets you:
+  - Trigger test notifications from the backend.
+  - Verify push subscriptions and browser behaviour.
+
+---
+
+## ML Training & Automation Endpoints
+
+From `ML_TRAINING_SETUP.md`, Dukahub exposes ML-specific automation:
+
+- **Photo extraction** – Command the system to gather all relevant product images for training.
+- **Manifest generation** – Get a JSON manifest listing products and associated images.
+- **Model upload** – Upload trained model files (JSON, weights, metadata) back to Dukahub.
+
+These operations can be used by:
+
+- In-house ML services.
+- External ML providers.
+
+They turn Dukahub into a **training-friendly platform**, not just a consumer of ML models.
+
+**Origin:** Dukahub-Exclusive.
+
+---
+
+## Observability & Monitoring
+
+### 1. Why It Matters
+
+For production environments and serious SMEs, it is crucial to:
+
+- Detect and resolve problems quickly.
+- Understand performance, errors and usage.
+- Support uptime and SLAs.
+
+---
+
+### 2. Dukahub’s Observability Stack
+
+As described in `OBSERVABILITY.md` and `INFRASTRUCTURE.md`:
+
+- **SigNoz** is used for:
+  - Traces across frontend and backend.
+  - Metrics (e.g. request latency, error rates).
+  - Log correlation.
+- **OpenTelemetry** instrumentation:
+  - Automatically captures HTTP, database and GraphQL calls.
+  - Adds business-specific spans (orders, payments, ML operations, registration).
+
+For most customers, this is managed by the Dukahub platform operator, but it directly benefits you through:
+
+- Faster incident response.
+- More confidence in the reliability of the service.
+
+**Origin:** Dukahub-Exclusive ops layer.
+
+---
+
+## Deployment & Infrastructure Automation
+
+Although primarily an internal concern, it’s useful to know that Dukahub is:
+
+- **Containerised** – frontend, backend, database, cache and observability all run as Docker containers (`INFRASTRUCTURE.md`).
+- Equipped with a **first-run** sequence for fresh databases:
+  - Populate base Vendure data.
+  - Run custom migrations.
+  - Exit cleanly before starting the normal server.
+
+For operators:
+
+- This reduces the risk of broken environments.
+- Makes it safe to set up new instances or test environments programmatically.
+
+**Origin:** Dukahub-Exclusive deployment tooling.
+
+---
+
+## How to Use & Configure (Workflows)
+
+### A. Connecting Paystack (Operator View)
+
+**Who:** Dukahub ops / engineering; not usually merchants.
+
+1. Obtain Paystack API keys (test or live).
+2. Configure environment variables as described in `SUBSCRIPTION_INTEGRATION.md`.
+3. Set up webhook URLs in Paystack:
+   - Point them to the Dukahub backend’s webhook endpoint.
+   - Select required events (e.g. `charge.success`, `subscription.create`).
+4. Test using Paystack’s test mode before going live.
+
+Merchants then interact only with the **Subscription** UI; the underlying integration is invisible to them.
+
+---
+
+### B. Enabling Notifications for a User
+
+**Who:** Individual dashboard user.
+
+1. Open the Dukahub dashboard in a supported browser.
+2. Accept the prompt to allow notifications (when the app asks).
+3. Optionally visit **Settings → Notifications** or the **Test Notifications** page to:
+   - Trigger a test notification.
+   - Confirm you see toasts and/or push notifications.
+
+---
+
+### C. Using the Admin GraphQL API (Power Users)
+
+**Who:** Advanced merchants, integrators.
+
+1. Request or generate suitable credentials/permissions.
+2. Use a GraphQL client (Insomnia, Postman, VS Code extension).
+3. Connect to `/admin-api`.
+4. Start with safe read-only queries:
+   - Products list.
+   - Orders list.
+   - Customers list.
+5. Only move to mutations once you have tested in a non-production environment.
+
+---
+
+## Limitations & Notes
+
+- **Vendor lock-in for billing:** The current subscription implementation is tightly tied to Paystack; alternative billers require custom integration.
+- **Notifications rely on browser support:** Push notifications and service workers depend on the user’s browser and OS; some combinations may not support all features.
+- **GraphQL API is powerful but sharp:** It allows full control; use with care and appropriate permissions.
+
+---
+
+## Vendure vs Dukahub: What’s What
+
+- **Vendure Core**
+  - Admin GraphQL API.
+  - Plugin system used to add custom back-office features.
+
+- **Dukahub-Enhanced**
+  - Subscription-aware guards driven by channel custom fields.
+  - Observability hooks instrumenting business operations.
+
+- **Dukahub-Exclusive**
+  - Paystack subscription plugin and payment workflows.
+  - Event-driven notification system with push support.
+  - ML training pipeline endpoints.
+  - Containerised deployment, first-run automation, and observability stack.
+
+
