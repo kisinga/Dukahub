@@ -9,6 +9,8 @@ npm install
 npm start  # http://localhost:4200
 ```
 
+**⚠️ Note:** SigNoz observability tracing is **NOT available** in development mode (`ng serve`). The Angular dev server's `proxy.conf.json` is static and cannot proxy `/signoz/` requests. Use Docker Compose for testing observability features.
+
 ## Tech Stack
 
 - Angular 20.3 (Standalone + Signals)

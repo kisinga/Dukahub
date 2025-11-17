@@ -41,26 +41,26 @@ export class StockMovementService {
         quantityChange: number,
         reason: string
     ): Promise<StockMovementResult> {
-        // Get variant
+        // Get variant and pessimistically lock it so concurrent adjustments
+        // for the same variant are serialized. This avoids race conditions
+        // when creating or updating StockLevel rows.
         const variantRepo = this.connection.getRepository(ctx, ProductVariant);
-        const variant = await variantRepo.findOne({
-            where: { id: variantId },
-            relations: ['stockLevels', 'stockLevels.stockLocation'],
-        });
+        const variant = await variantRepo
+            .createQueryBuilder('variant')
+            .setLock('pessimistic_write')
+            .leftJoinAndSelect('variant.stockLevels', 'stockLevels')
+            .leftJoinAndSelect('stockLevels.stockLocation', 'stockLocation')
+            .where('variant.id = :variantId', { variantId })
+            .getOne();
 
         if (!variant) {
             throw new UserInputError(`Product variant ${variantId} not found`);
         }
 
-        // Get or create stock level for this location
+        // Get or create stock level for this location from the locked variant snapshot
         const stockLevelRepo = this.connection.getRepository(ctx, StockLevel);
-        let stockLevel = await stockLevelRepo.findOne({
-            where: {
-                productVariant: { id: variantId },
-                stockLocation: { id: locationId },
-            },
-            relations: ['stockLocation'],
-        });
+        let stockLevel =
+            variant.stockLevels?.find(level => level.stockLocation?.id === locationId) ?? null;
 
         const previousStock = stockLevel?.stockOnHand ?? 0;
         const newStock = previousStock + quantityChange;

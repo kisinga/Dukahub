@@ -548,10 +548,34 @@ Dukahub uses platform-agnostic container images for flexible deployment.
 
 ## Monitoring & Observability
 
-- **Logging**: Structured logs via Winston
-- **Metrics**: Performance and business metrics
-- **Error Tracking**: Centralized error reporting
-- **Health Checks**: Service availability monitoring
+Dukahub uses **SigNoz** as a unified observability platform providing traces, metrics, and logs.
+
+### Architecture
+
+- **SigNoz**: Self-hosted observability platform (Docker)
+- **OpenTelemetry**: Automatic instrumentation (HTTP, GraphQL, PostgreSQL, Redis)
+- **Manual Instrumentation**: Business operations (orders, payments, ledger, ML, registration)
+- **Data Flow**: Frontend → OTLP HTTP → SigNoz ← OTLP gRPC ← Backend (Server/Worker)
+
+### Key Features
+
+- **Distributed Tracing**: End-to-end request flows across frontend and backend
+- **Metrics**: Business KPIs (orders, payments) and performance metrics (latency, error rates)
+- **Log Correlation**: Automatic trace ID inclusion in logs for correlation
+- **Automatic Instrumentation**: HTTP, GraphQL, database, and Redis operations
+
+### Services Instrumented
+
+- **Backend Server**: `dukahub-backend-dukahub-server`
+- **Backend Worker**: `dukahub-backend-dukahub-worker`
+- **Frontend**: `dukahub-frontend`
+
+### Configuration
+
+- **Backend**: `SIGNOZ_ENABLED`, `SIGNOZ_HOST`, `SIGNOZ_OTLP_GRPC_PORT`
+- **Frontend**: `ENABLE_TRACING`, `SIGNOZ_ENDPOINT` (runtime config via `window.__APP_CONFIG__`)
+
+See [OBSERVABILITY.md](./docs/OBSERVABILITY.md) for setup and usage guide.
 
 ## Product Creation Flow (Transactional)
 

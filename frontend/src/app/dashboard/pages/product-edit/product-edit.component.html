@@ -4,9 +4,27 @@
 <div class="sticky top-0 z-30 bg-base-100/95 backdrop-blur-sm border-b">
   <div class="container-app py-2">
     <div class="flex items-center justify-between gap-2">
-      <h1 class="text-lg font-bold">✏️ Edit Product</h1>
+      <h1 class="text-lg font-bold">Edit product</h1>
       <button type="button" (click)="cancel()" class="btn btn-sm btn-circle btn-ghost">✕</button>
     </div>
+
+    <!-- Steps -->
+    <ul class="steps steps-horizontal w-full text-[11px] mt-2">
+      <li
+        class="step"
+        [class.step-primary]="currentStage() === 1"
+        (click)="goToStage1()"
+      >
+        Details
+      </li>
+      <li
+        class="step"
+        [class.step-primary]="currentStage() === 2"
+        (click)="goToStage2()"
+      >
+        Pricing & stock
+      </li>
+    </ul>
   </div>
 </div>
 
@@ -38,24 +56,10 @@
   <!-- Form -->
   @if (!isLoading()) {
   <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="space-y-3">
-    <!-- Product Name -->
-    <div class="card bg-base-100 shadow">
-      <div class="card-body p-3">
-        <h3 class="font-bold text-sm mb-2">Product Name</h3>
-        <input
-          type="text"
-          formControlName="name"
-          placeholder="e.g., Tomatoes"
-          class="input input-bordered w-full"
-          [class.input-error]="productForm.get('name')?.invalid && productForm.get('name')?.touched"
-        />
-        @if (productForm.get('name')?.invalid && productForm.get('name')?.touched) {
-        <p class="text-error text-xs mt-1">Product name is required (min 3 characters)</p>
-        }
-      </div>
-    </div>
+    <!-- Stage 1: Basics & photos -->
+    @if (currentStage() === 1) {
+    <app-product-name-input [nameControl]="nameControl" />
 
-    <!-- Product Photos -->
     <div class="card bg-base-100 shadow">
       <div class="card-body p-3">
         <div class="flex items-center justify-between mb-2">
@@ -121,8 +125,10 @@
         }
       </div>
     </div>
+    }
 
-    <!-- SKUs -->
+    <!-- Stage 2: SKUs & pricing -->
+    @if (currentStage() === 2) {
     <div class="card bg-base-100 shadow">
       <div class="card-body p-3">
         <div class="flex items-center justify-between mb-2">
@@ -211,32 +217,7 @@
       </div>
     </div>
 
-    <!-- Validation Issues -->
-    @if (validationIssues().length > 0 && (productForm.touched || isSubmitting())) {
-    <div role="alert" class="alert alert-warning">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-6 w-6 shrink-0"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-        />
-      </svg>
-      <div class="text-xs">
-        <p class="font-semibold mb-1">Please fix:</p>
-        <ul class="list-disc list-inside space-y-0.5">
-          @for (issue of validationIssues(); track issue) {
-          <li>{{ issue }}</li>
-          }
-        </ul>
-      </div>
-    </div>
+    <app-validation-issues-panel [issues]="validationIssues()" />
     }
 
     <!-- Actions -->

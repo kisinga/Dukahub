@@ -71,7 +71,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, output, signal, viewChi
                 (click)="photoInput.click()"
                 class="btn btn-outline btn-block gap-2 h-auto py-6 flex-col btn-upload-empty"
             >
-                <span class="text-4xl">📸</span>
+                <span class="material-symbols-outlined text-4xl">photo_camera</span>
                 <div class="flex items-center gap-2">
                     <span class="font-semibold">Add Photos</span>
                     <div 
@@ -81,7 +81,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, output, signal, viewChi
                         <span class="badge badge-xs badge-ghost">?</span>
                     </div>
                 </div>
-                <span class="text-xs opacity-60">📱 Camera or 🖼️ Gallery</span>
+                <span class="text-xs opacity-60">Camera or gallery</span>
             </button>
         } @else {
             <!-- Photo Grid -->
@@ -92,8 +92,8 @@ import { ChangeDetectionStrategy, Component, ElementRef, output, signal, viewChi
                     (click)="photoInput.click()"
                     class="btn btn-sm btn-outline btn-block gap-1"
                 >
-                    <span>➕</span>
-                    <span>Add More</span>
+                    <span class="material-symbols-outlined text-base">add</span>
+                    <span>Add more</span>
                     <span class="badge badge-sm" [class.badge-primary]="photos().length > 0">
                         {{ photos().length }}
                     </span>
@@ -124,7 +124,8 @@ import { ChangeDetectionStrategy, Component, ElementRef, output, signal, viewChi
                             <!-- Featured Badge -->
                             @if (i === 0) {
                                 <div class="badge badge-xs badge-primary absolute bottom-1 left-1 gap-0.5">
-                                    ⭐ Main
+                                    <span class="material-symbols-outlined text-[10px]">star</span>
+                                    <span>Main</span>
                                 </div>
                             }
                         </div>
@@ -133,7 +134,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, output, signal, viewChi
 
                 <!-- Helpful Hint -->
                 <div class="text-center">
-                    <p class="text-xs opacity-60">⭐ First photo appears as main</p>
+                    <p class="text-xs opacity-60">First photo appears as the main image.</p>
                 </div>
             </div>
         }

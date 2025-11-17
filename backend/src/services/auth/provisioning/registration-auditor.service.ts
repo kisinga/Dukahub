@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { RequestContext } from '@vendure/core';
 import { AuditService } from '../../../infrastructure/audit/audit.service';
 
@@ -10,6 +10,8 @@ import { AuditService } from '../../../infrastructure/audit/audit.service';
  */
 @Injectable()
 export class RegistrationAuditorService {
+    private readonly logger = new Logger(RegistrationAuditorService.name);
+
     constructor(
         @Optional() private readonly auditService?: AuditService,
     ) { }
@@ -37,7 +39,7 @@ export class RegistrationAuditorService {
                 ...additionalData,
             },
         }).catch((err: unknown) => {
-            console.warn(
+            this.logger.warn(
                 `Failed to log ${entityType} created audit: ` +
                 `${err instanceof Error ? err.message : String(err)}`
             );

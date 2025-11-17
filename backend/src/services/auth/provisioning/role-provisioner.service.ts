@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ChannelService, ID, Permission, RequestContext, Role, RoleService, TransactionalConnection } from '@vendure/core';
 import { RegistrationInput } from '../registration.service';
 import { RegistrationAuditorService } from './registration-auditor.service';
@@ -12,6 +12,8 @@ import { RegistrationErrorService } from './registration-error.service';
  */
 @Injectable()
 export class RoleProvisionerService {
+    private readonly logger = new Logger(RoleProvisionerService.name);
+
     /**
      * All required admin permissions as per CUSTOMER_PROVISIONING.md Step 5
      * Factored into constant for maintainability
@@ -132,10 +134,10 @@ export class RoleProvisionerService {
                 throw new Error(errorMessage);
             }
 
-            console.log('[RoleProvisioner] Role created via RoleService:', roleResult.id, 'Code:', roleResult.code);
+            this.logger.log(`Role created via RoleService: ${roleResult.id} Code: ${roleResult.code}`);
             return roleResult as Role;
         } catch (error: any) {
-            console.warn('[RoleProvisioner] RoleService.create() failed, falling back to repository:', error.message);
+            this.logger.warn(`RoleService.create() failed, falling back to repository: ${error.message}`);
             return null;
         }
     }
@@ -176,7 +178,7 @@ export class RoleProvisionerService {
         roleWithChannels.channels.push(channel);
 
         const role = await roleRepo.save(roleWithChannels);
-        console.log('[RoleProvisioner] Role created via repository:', role.id, 'Code:', role.code);
+        this.logger.log(`Role created via repository: ${role.id} Code: ${role.code}`);
         return role;
     }
 

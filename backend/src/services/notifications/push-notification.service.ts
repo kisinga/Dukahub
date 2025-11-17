@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { RequestContext } from '@vendure/core';
 import * as webpush from 'web-push';
 import { NotificationService } from './notification.service';
 
 @Injectable()
 export class PushNotificationService {
+    private readonly logger = new Logger(PushNotificationService.name);
     private vapidKeys = {
         publicKey: process.env.VAPID_PUBLIC_KEY || '',
         privateKey: process.env.VAPID_PRIVATE_KEY || '',
@@ -28,10 +29,10 @@ export class PushNotificationService {
     ): Promise<boolean> {
         try {
             // In a real implementation, you would save the subscription to database
-            console.log('Push subscription saved for user:', userId, 'channel:', channelId);
+            this.logger.log(`Push subscription saved for user: ${userId} channel: ${channelId}`);
             return true;
         } catch (error) {
-            console.error('Failed to save push subscription:', error);
+            this.logger.error('Failed to save push subscription:', error);
             return false;
         }
     }
@@ -39,10 +40,10 @@ export class PushNotificationService {
     async unsubscribeFromPush(ctx: RequestContext, userId: string): Promise<boolean> {
         try {
             // In a real implementation, you would remove the subscription from database
-            console.log('Push subscription removed for user:', userId);
+            this.logger.log(`Push subscription removed for user: ${userId}`);
             return true;
         } catch (error) {
-            console.error('Failed to remove push subscription:', error);
+            this.logger.error('Failed to remove push subscription:', error);
             return false;
         }
     }
@@ -58,10 +59,10 @@ export class PushNotificationService {
             // In a real implementation, you would:
             // 1. Get user's push subscription from database
             // 2. Send push notification using web-push
-            console.log('Push notification sent to user:', userId, 'title:', title);
+            this.logger.log(`Push notification sent to user: ${userId} title: ${title}`);
             return true;
         } catch (error) {
-            console.error('Failed to send push notification:', error);
+            this.logger.error('Failed to send push notification:', error);
             return false;
         }
     }
@@ -85,10 +86,10 @@ export class PushNotificationService {
             const results = await Promise.allSettled(promises);
             const successCount = results.filter(result => result.status === 'fulfilled').length;
 
-            console.log(`Push notifications sent to ${successCount}/${userIds.length} users in channel ${channelId}`);
+            this.logger.log(`Push notifications sent to ${successCount}/${userIds.length} users in channel ${channelId}`);
             return successCount;
         } catch (error) {
-            console.error('Failed to send push notifications to channel:', error);
+            this.logger.error('Failed to send push notifications to channel:', error);
             return 0;
         }
     }

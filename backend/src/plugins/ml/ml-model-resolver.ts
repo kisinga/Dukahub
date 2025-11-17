@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import {
     Allow,
@@ -107,6 +108,8 @@ export const ML_MODEL_SCHEMA = gql`
  */
 @Resolver()
 export class MlModelResolver {
+    private readonly logger = new Logger(MlModelResolver.name);
+
     constructor(
         private channelService: ChannelService,
         private assetService: AssetService,
@@ -143,7 +146,7 @@ export class MlModelResolver {
         @Ctx() ctx: RequestContext,
         @Args() args: { channelId: ID; modelJsonId: ID; modelBinId: ID; metadataId: ID },
     ): Promise<boolean> {
-        console.log('[ML Model] linkMlModelAssets called', args);
+        this.logger.debug('linkMlModelAssets called', args);
 
         const channel = await this.channelService.findOne(ctx, args.channelId);
         if (!channel) {
@@ -181,7 +184,7 @@ export class MlModelResolver {
             },
         });
 
-        console.log('[ML Model] Assets linked and assigned to channel successfully');
+        this.logger.log('Assets linked and assigned to channel successfully');
         return true;
     }
 
@@ -265,7 +268,7 @@ export class MlModelResolver {
         @Ctx() ctx: RequestContext,
         @Args() args: { channelId: ID },
     ): Promise<boolean> {
-        console.log('[ML Model] extractPhotosForTraining called', args);
+        this.logger.debug('extractPhotosForTraining called', args);
 
         await this.mlTrainingService.extractPhotosForChannel(ctx, args.channelId.toString());
         return true;
@@ -278,7 +281,7 @@ export class MlModelResolver {
         @Ctx() ctx: RequestContext,
         @Args() args: { channelId: ID; status: string; progress?: number; error?: string },
     ): Promise<boolean> {
-        console.log('[ML Model] updateTrainingStatus called', args);
+        this.logger.debug('updateTrainingStatus called', args);
 
         await this.mlTrainingService.updateTrainingStatus(
             ctx,
@@ -302,7 +305,7 @@ export class MlModelResolver {
             metadata: any;
         },
     ): Promise<boolean> {
-        console.log('[ML Model] completeTraining called', { channelId: args.channelId });
+        this.logger.debug('completeTraining called', { channelId: args.channelId });
 
         try {
             // Upload the three files as assets with proper tags
@@ -353,7 +356,7 @@ export class MlModelResolver {
                 productCount = metadataObj.productCount || 0;
                 imageCount = metadataObj.imageCount || 0;
             } catch (e) {
-                console.warn('[ML Model] Could not parse metadata.json for stats');
+                this.logger.warn('Could not parse metadata.json for stats');
             }
 
             // Update channel with new model assets and stats
@@ -372,11 +375,11 @@ export class MlModelResolver {
                 },
             });
 
-            console.log('[ML Model] Training completed successfully');
+            this.logger.log('Training completed successfully');
             return true;
 
         } catch (error) {
-            console.error('[ML Model] Error completing training:', error);
+            this.logger.error('Error completing training:', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             await this.mlTrainingService.updateTrainingStatus(
                 ctx,

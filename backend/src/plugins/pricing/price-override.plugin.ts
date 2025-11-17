@@ -1,5 +1,6 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
 import gql from 'graphql-tag';
+import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
 import { CustomPriceCalculationStrategy } from './custom-price-calculation.strategy';
 import { PriceOverrideResolver } from './price-override.resolver';
 import { PriceOverrideService } from '../../services/orders/price-override.service';
@@ -34,5 +35,6 @@ const schemaExtension = gql`
         config.orderOptions.orderItemPriceCalculationStrategy = new CustomPriceCalculationStrategy();
         return config;
     },
+    compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
 export class PriceOverridePlugin { }

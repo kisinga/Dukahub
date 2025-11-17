@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { RequestContext, TransactionalConnection } from '@vendure/core';
+import { PeriodLock } from '../domain/period/period-lock.entity';
+import { Account } from './account.entity';
 import { JournalEntry } from './journal-entry.entity';
 import { JournalLine } from './journal-line.entity';
-import { Account } from './account.entity';
-import { PeriodLock } from '../domain/period/period-lock.entity';
 
 export interface PostingPayload {
   channelId: number;
@@ -20,20 +20,26 @@ export interface PostingPayload {
 
 @Injectable()
 export class PostingService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(private readonly connection: TransactionalConnection) { }
 
   /**
    * Posts a journal entry idempotently for a given (sourceType, sourceId).
    * Throws on period lock or imbalance.
    */
   async post(
+    ctx: RequestContext,
     sourceType: string,
     sourceId: string,
     payload: PostingPayload
   ): Promise<JournalEntry> {
-    return this.dataSource.transaction(async (manager) => {
+    return this.connection.withTransaction(ctx, async (txCtx) => {
+      const journalEntryRepo = this.connection.getRepository(txCtx, JournalEntry);
+      const accountRepo = this.connection.getRepository(txCtx, Account);
+      const journalLineRepo = this.connection.getRepository(txCtx, JournalLine);
+      const periodLockRepo = this.connection.getRepository(txCtx, PeriodLock);
+
       // idempotency check
-      const existing = await manager.findOne(JournalEntry, {
+      const existing = await journalEntryRepo.findOne({
         where: { channelId: payload.channelId, sourceType, sourceId },
         relations: ['lines'],
       });
@@ -43,8 +49,7 @@ export class PostingService {
 
       // Load accounts by code within channel
       const codes = Array.from(new Set(payload.lines.map((l) => l.accountCode)));
-      const accounts = await manager
-        .getRepository(Account)
+      const accounts = await accountRepo
         .createQueryBuilder('a')
         .where('a.channelId = :channelId', { channelId: payload.channelId })
         .andWhere('a.code IN (:...codes)', { codes })
@@ -68,7 +73,7 @@ export class PostingService {
       }
 
       // PeriodLock check
-      const lock = await manager.findOne(PeriodLock, { where: { channelId: payload.channelId } });
+      const lock = await periodLockRepo.findOne({ where: { channelId: payload.channelId } });
       if (lock?.lockEndDate) {
         const entryDate = new Date(payload.entryDate);
         const lockedUntil = new Date(lock.lockEndDate);
@@ -78,18 +83,18 @@ export class PostingService {
         }
       }
 
-      const entry = manager.create(JournalEntry, {
+      const entry = journalEntryRepo.create({
         channelId: payload.channelId,
         entryDate: payload.entryDate,
         memo: payload.memo,
         sourceType,
         sourceId,
       });
-      await manager.save(entry);
+      await journalEntryRepo.save(entry);
 
       const byCode = new Map(accounts.map((a) => [a.code, a]));
       const lines = payload.lines.map((l) =>
-        manager.create(JournalLine, {
+        journalLineRepo.create({
           entryId: entry.id,
           accountId: byCode.get(l.accountCode)!.id,
           channelId: payload.channelId,
@@ -98,7 +103,7 @@ export class PostingService {
           meta: l.meta ?? null,
         }),
       );
-      await manager.save(lines);
+      await journalLineRepo.save(lines);
       entry.lines = lines;
       return entry;
     });

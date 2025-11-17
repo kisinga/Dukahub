@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
     AssetService,
     ChannelService,
@@ -38,6 +38,8 @@ export interface TrainingManifest {
  */
 @Injectable()
 export class MlTrainingService {
+    private readonly logger = new Logger(MlTrainingService.name);
+
     constructor(
         private channelService: ChannelService,
         private productService: ProductService,
@@ -51,7 +53,7 @@ export class MlTrainingService {
      * Extract photos for a channel and generate training manifest
      */
     async extractPhotosForChannel(ctx: RequestContext, channelId: string): Promise<TrainingManifest> {
-        console.log(`[ML Training] Extracting photos for channel ${channelId}`);
+        this.logger.log(`Extracting photos for channel ${channelId}`);
 
         // Update status to extracting
         await this.updateTrainingStatus(ctx, channelId, 'extracting', 0);
@@ -120,11 +122,11 @@ export class MlTrainingService {
             // Send webhook notification
             await this.webhookService.notifyTrainingReady(ctx, channelId);
 
-            console.log(`[ML Training] Extracted ${manifestProducts.length} products with ${totalImageCount} images`);
+            this.logger.log(`Extracted ${manifestProducts.length} products with ${totalImageCount} images`);
             return manifest;
 
         } catch (error) {
-            console.error(`[ML Training] Error extracting photos for channel ${channelId}:`, error);
+            this.logger.error(`Error extracting photos for channel ${channelId}:`, error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             await this.updateTrainingStatus(ctx, channelId, 'failed', 0, errorMessage);
 
@@ -184,7 +186,7 @@ export class MlTrainingService {
             customFields: updateData,
         });
 
-        console.log(`[ML Training] Updated channel ${channelId} status to ${status} (${progress}%)`);
+        this.logger.log(`Updated channel ${channelId} status to ${status} (${progress}%)`);
 
         // Emit event for channel events framework
         if (this.eventRouter) {
@@ -212,7 +214,7 @@ export class MlTrainingService {
                         channelId,
                     },
                 }).catch(err => {
-                    console.warn(`Failed to route ML training event: ${err instanceof Error ? err.message : String(err)}`);
+                    this.logger.warn(`Failed to route ML training event: ${err instanceof Error ? err.message : String(err)}`);
                 });
             }
         }
@@ -241,7 +243,7 @@ export class MlTrainingService {
     async scheduleAutoExtraction(ctx: RequestContext, channelId: string): Promise<void> {
         // In a real implementation, you would use Vendure's job queue
         // For now, we'll just trigger extraction immediately
-        console.log(`[ML Training] Scheduling auto-extraction for channel ${channelId}`);
+        this.logger.log(`Scheduling auto-extraction for channel ${channelId}`);
 
         // Check if channel has ML enabled
         const hasMlEnabled = await this.isMlEnabled(ctx, channelId);

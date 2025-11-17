@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ISmsProvider, SmsResult } from '../interfaces/sms-provider.interface';
 
 /**
@@ -37,6 +37,7 @@ import { ISmsProvider, SmsResult } from '../interfaces/sms-provider.interface';
  */
 @Injectable()
 export class TextsmsProvider implements ISmsProvider {
+    private readonly logger = new Logger(TextsmsProvider.name);
     private apiKey: string | null = null;
     private partnerId: string | null = null;
     private shortcode: string | null = null;
@@ -54,11 +55,12 @@ export class TextsmsProvider implements ISmsProvider {
 
             // Debug logging to help diagnose configuration issues
             if (process.env.NODE_ENV !== 'production') {
-                console.log('[TextSMS Provider] Configuration loaded:');
-                console.log(`  - API URL: ${this.apiUrl}`);
-                console.log(`  - API Key: ${this.apiKey ? '***' + this.apiKey.slice(-4) : 'NOT SET'}`);
-                console.log(`  - Partner ID: ${this.partnerId || 'NOT SET'}`);
-                console.log(`  - Shortcode: ${this.shortcode || 'NOT SET'}`);
+                this.logger.debug('Configuration loaded:', {
+                    apiUrl: this.apiUrl,
+                    apiKey: this.apiKey ? '***' + this.apiKey.slice(-4) : 'NOT SET',
+                    partnerId: this.partnerId || 'NOT SET',
+                    shortcode: this.shortcode || 'NOT SET',
+                });
             }
         }
         return {
@@ -225,7 +227,7 @@ export class TextsmsProvider implements ISmsProvider {
             }
 
             // Log full response for debugging
-            console.log('[TextSMS Provider] Full API Response:', JSON.stringify(result, null, 2));
+            this.logger.debug('Full API Response:', JSON.stringify(result, null, 2));
 
             // TextSMS response structure: { responses: [{ respose-code, response-description, mobile, messageid, networkid }] }
             if (result.responses && Array.isArray(result.responses) && result.responses.length > 0) {
@@ -252,10 +254,9 @@ export class TextsmsProvider implements ISmsProvider {
                     // Error response code - get user-friendly error message
                     const errorMessage = this.getErrorMessage(responseCode, responseDescription);
 
-                    console.error(`[TextSMS Provider] SMS send failed:`, {
+                    this.logger.error(`SMS send failed: ${errorMessage}`, {
                         responseCode,
                         responseDescription,
-                        error: errorMessage,
                         responseData,
                     });
 
@@ -286,7 +287,7 @@ export class TextsmsProvider implements ISmsProvider {
             }
 
             // Unknown response format - log and return error
-            console.error('[TextSMS Provider] Unknown response format:', result);
+            this.logger.error('Unknown response format:', result);
             return {
                 success: false,
                 error: 'Unknown response format from TextSMS API',
@@ -298,7 +299,7 @@ export class TextsmsProvider implements ISmsProvider {
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            console.error('[TextSMS Provider] Error sending SMS:', errorMessage, error);
+            this.logger.error(`Error sending SMS: ${errorMessage}`, error);
             return {
                 success: false,
                 error: `TextSMS error: ${errorMessage}`,

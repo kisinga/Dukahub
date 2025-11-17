@@ -87,8 +87,9 @@ import { ProductType, VariantDimension } from '../types/product-creation.types';
                         </div>
                     }
 
-                    <div class="bg-warning/10 p-2 rounded text-xs mt-2">
-                        ⚠️ Fractional sales disabled - customers buy whole units
+                    <div class="bg-warning/10 p-2 rounded text-xs mt-2 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">warning</span>
+                        <span>Fractional sales disabled — customers buy whole units.</span>
                     </div>
                 </div>
             </div>

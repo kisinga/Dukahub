@@ -94,6 +94,16 @@ export class EnvironmentConfig implements OnModuleInit {
         password: '',
     };
 
+    // SigNoz/Observability configuration
+    readonly observability = {
+        enabled: false,
+        endpoint: '',
+        serviceName: 'dukahub-backend',
+        serviceVersion: '2.0.0',
+        otlpGrpcEndpoint: '',
+        otlpHttpEndpoint: '',
+    };
+
     /**
      * Get singleton instance (for use before DI container is ready)
      */
@@ -200,6 +210,24 @@ export class EnvironmentConfig implements OnModuleInit {
         // Load Superadmin configuration
         this.superadmin.username = process.env.SUPERADMIN_USERNAME || '';
         this.superadmin.password = process.env.SUPERADMIN_PASSWORD || '';
+
+        // Load SigNoz/Observability configuration
+        this.observability.enabled = process.env.SIGNOZ_ENABLED === 'true';
+        this.observability.serviceName = process.env.SIGNOZ_SERVICE_NAME || 'dukahub-backend';
+        this.observability.serviceVersion = process.env.SIGNOZ_SERVICE_VERSION || '2.0.0';
+        
+        // OTLP endpoint configuration
+        const signozHost = process.env.SIGNOZ_HOST || 'signoz';
+        const signozGrpcPort = process.env.SIGNOZ_OTLP_GRPC_PORT || '4317';
+        const signozHttpPort = process.env.SIGNOZ_OTLP_HTTP_PORT || '4318';
+        
+        this.observability.otlpGrpcEndpoint = process.env.SIGNOZ_OTLP_GRPC_ENDPOINT || 
+            `http://${signozHost}:${signozGrpcPort}`;
+        this.observability.otlpHttpEndpoint = process.env.SIGNOZ_OTLP_HTTP_ENDPOINT || 
+            `http://${signozHost}:${signozHttpPort}`;
+        
+        // Legacy endpoint support (for backward compatibility)
+        this.observability.endpoint = process.env.SIGNOZ_ENDPOINT || this.observability.otlpGrpcEndpoint;
     }
 
     /**

@@ -32,17 +32,18 @@ export class CreditService {
     constructor(
         private readonly connection: TransactionalConnection,
         private readonly orderService: OrderService,
+        private readonly financialService: FinancialService,
         @Optional() private readonly communicationService?: ChannelCommunicationService, // Optional to avoid circular dependency
         @Optional() private readonly auditService?: AuditService, // Optional to avoid circular dependency
-        @Optional() private readonly financialService?: FinancialService, // Optional for migration period
     ) { }
 
     async getCreditSummary(ctx: RequestContext, customerId: ID): Promise<CreditSummary> {
         const customer = await this.getCustomerOrThrow(ctx, customerId);
         // Get outstanding amount from ledger (single source of truth)
-        const outstandingAmount = this.financialService
-            ? await this.financialService.getCustomerBalance(ctx, customerId.toString())
-            : await this.calculateOutstandingAmount(ctx, customerId); // Fallback during migration
+        const outstandingAmount = await this.financialService.getCustomerBalance(
+            ctx,
+            customerId.toString(),
+        );
         return this.mapToSummary(customer, outstandingAmount);
     }
 
@@ -87,9 +88,10 @@ export class CreditService {
             });
         }
 
-        const outstandingAmount = this.financialService
-            ? await this.financialService.getCustomerBalance(ctx, customerId.toString())
-            : await this.calculateOutstandingAmount(ctx, customerId); // Fallback during migration
+        const outstandingAmount = await this.financialService.getCustomerBalance(
+            ctx,
+            customerId.toString(),
+        );
         return this.mapToSummary(customer, outstandingAmount);
     }
 
@@ -132,9 +134,10 @@ export class CreditService {
             });
         }
 
-        const outstandingAmount = this.financialService
-            ? await this.financialService.getCustomerBalance(ctx, customerId.toString())
-            : await this.calculateOutstandingAmount(ctx, customerId); // Fallback during migration
+        const outstandingAmount = await this.financialService.getCustomerBalance(
+            ctx,
+            customerId.toString(),
+        );
         return this.mapToSummary(customer, outstandingAmount);
     }
 
@@ -157,44 +160,15 @@ export class CreditService {
         await this.connection.getRepository(ctx, Customer).save(customer);
         this.logger.log(`Updated credit duration for customer ${customerId} to ${creditDuration} days`);
 
-        const outstandingAmount = this.financialService
-            ? await this.financialService.getCustomerBalance(ctx, customerId.toString())
-            : await this.calculateOutstandingAmount(ctx, customerId); // Fallback during migration
+        const outstandingAmount = await this.financialService.getCustomerBalance(
+            ctx,
+            customerId.toString(),
+        );
         return this.mapToSummary(customer, outstandingAmount);
     }
 
     /**
-     * Calculate outstanding amount dynamically from orders and payments
-     * @deprecated Use FinancialService.getCustomerBalance() instead. This method is kept for migration fallback.
-     * This replaces the stored outstandingAmount field
-     */
-    private async calculateOutstandingAmount(ctx: RequestContext, customerId: ID): Promise<number> {
-        // Query all orders for customer in states that indicate unpaid orders
-        const orderRepo = this.connection.getRepository(ctx, Order);
-        const orders = await orderRepo.find({
-            where: {
-                customer: { id: customerId },
-                state: In(['ArrangingPayment', 'Fulfilled', 'PartiallyFulfilled']),
-            },
-            relations: ['payments'],
-        });
-
-        // Calculate outstanding amount: sum of order totals minus settled payments
-        // Note: order.total and payment.amount are in smallest currency unit (cents)
-        const outstandingAmountInCents = orders.reduce((sum, order) => {
-            const settledPayments = (order.payments || [])
-                .filter(p => p.state === 'Settled')
-                .reduce((total, p) => total + p.amount, 0);
-            return sum + (order.total - settledPayments);
-        }, 0);
-
-        // Convert from cents to base currency units (divide by 100)
-        // This matches the unit used for creditLimit (base currency units)
-        return outstandingAmountInCents / 100;
-    }
-
-    /**
-     * @deprecated Use calculateOutstandingAmount instead. Outstanding balance is now calculated dynamically.
+     * @deprecated Outstanding balance is derived from the ledger.
      * This method is kept for backward compatibility but does nothing.
      */
     async applyCreditCharge(ctx: RequestContext, customerId: ID, amount: number): Promise<void> {
@@ -205,7 +179,7 @@ export class CreditService {
     }
 
     /**
-     * @deprecated Use calculateOutstandingAmount instead. Outstanding balance is now calculated dynamically.
+     * @deprecated Outstanding balance is derived from the ledger.
      * This method is kept for backward compatibility but updates lastRepaymentDate and lastRepaymentAmount.
      */
     async releaseCreditCharge(ctx: RequestContext, customerId: ID, amount: number): Promise<void> {
@@ -229,11 +203,12 @@ export class CreditService {
             `Recorded repayment tracking for customer ${customerId}. Amount: ${amount}, Date: ${now}`
         );
 
-        // Notify about balance change (outstanding balance is calculated dynamically)
+        // Notify about balance change (outstanding balance is calculated from ledger)
         if (this.communicationService) {
-            const currentOutstanding = this.financialService
-                ? await this.financialService.getCustomerBalance(ctx, customerId.toString())
-                : await this.calculateOutstandingAmount(ctx, customerId); // Fallback during migration
+            const currentOutstanding = await this.financialService.getCustomerBalance(
+                ctx,
+                customerId.toString(),
+            );
             // Note: We can't calculate the previous outstanding without the old stored value,
             // so we'll just notify with the current value
             await this.communicationService.sendBalanceChangeNotification(

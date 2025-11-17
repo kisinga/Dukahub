@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import {
+    Channel,
+    ChannelService,
     RequestContext,
     TransactionalConnection,
     User,
     UserService,
 } from '@vendure/core';
+import { getChannelStatus } from '../../domain/channel-custom-fields';
 import { RegistrationStorageService } from '../../infrastructure/storage/registration-storage.service';
 import { formatPhoneNumber } from '../../utils/phone.utils';
 import { OtpService } from './otp.service';
@@ -19,6 +22,18 @@ export enum AuthorizationStatus {
     REJECTED = 'REJECTED',
 }
 
+export enum ChannelStatus {
+    UNAPPROVED = 'UNAPPROVED',
+    APPROVED = 'APPROVED',
+    DISABLED = 'DISABLED',
+    BANNED = 'BANNED',
+}
+
+export enum AccessLevel {
+    READ_ONLY = 'READ_ONLY',
+    FULL = 'FULL',
+}
+
 /**
  * Phone-based authentication service
  * Handles OTP request/verification and authentication logic only.
@@ -29,6 +44,7 @@ export class PhoneAuthService {
     constructor(
         private readonly otpService: OtpService,
         private readonly userService: UserService,
+        private readonly channelService: ChannelService,
         private readonly registrationService: RegistrationService,
         private readonly registrationStorageService: RegistrationStorageService,
         private readonly connection: TransactionalConnection,
@@ -182,6 +198,10 @@ export class PhoneAuthService {
 
     /**
      * Verify login OTP
+     * 
+     * Two-tier authorization:
+     * 1. User-level: Only REJECTED blocks login (PENDING/APPROVED allow login)
+     * 2. Channel-level: Channel status determines access level (READ_ONLY vs FULL)
      */
     async verifyLoginOTP(
         ctx: RequestContext,
@@ -196,6 +216,8 @@ export class PhoneAuthService {
         };
         message: string;
         authorizationStatus?: AuthorizationStatus;
+        accessLevel?: AccessLevel;
+        channelId?: string;
     }> {
         // Normalize phone number first for OTP verification
         const formattedPhone = formatPhoneNumber(phoneNumber);
@@ -208,8 +230,11 @@ export class PhoneAuthService {
             };
         }
 
-        // Find user (phone number already normalized)
-        const user = await this.userService.getUserByEmailAddress(ctx, formattedPhone);
+        // Find user with roles and channels loaded
+        const user = await this.connection.getRepository(ctx, User).findOne({
+            where: { identifier: formattedPhone },
+            relations: ['roles', 'roles.channels'],
+        });
 
         if (!user) {
             return {
@@ -218,34 +243,73 @@ export class PhoneAuthService {
             };
         }
 
-        // Get authorization status - this is now BLOCKING
+        // Check user-level authorization status - only REJECTED blocks login
         const authorizationStatus = (user.customFields as any)?.authorizationStatus || AuthorizationStatus.PENDING;
 
-        // Enforce authorization status: only APPROVED users can login
-        if (authorizationStatus !== AuthorizationStatus.APPROVED) {
-            if (authorizationStatus === AuthorizationStatus.PENDING) {
-                return {
-                    success: false,
-                    message: 'Account pending approval. You\'ll be able to log in after an admin approves your account.',
-                    authorizationStatus,
-                };
-            } else if (authorizationStatus === AuthorizationStatus.REJECTED) {
-                return {
-                    success: false,
-                    message: 'Account rejected. Please contact support if you believe this is an error.',
-                    authorizationStatus,
-                };
-            } else {
-                // Fallback for unknown status
-                return {
-                    success: false,
-                    message: 'Account not approved. Please contact support.',
-                    authorizationStatus,
-                };
+        if (authorizationStatus === AuthorizationStatus.REJECTED) {
+            return {
+                success: false,
+                message: 'Account rejected. Please contact support if you believe this is an error.',
+                authorizationStatus,
+            };
+        }
+
+        // Get all channels for this user via their roles
+        const userChannels: Channel[] = [];
+        if (user.roles) {
+            for (const role of user.roles) {
+                if (role.channels) {
+                    for (const channel of role.channels) {
+                        // Avoid duplicates
+                        if (!userChannels.some(ch => ch.id === channel.id)) {
+                            userChannels.push(channel);
+                        }
+                    }
+                }
             }
         }
 
-        // Authorization status is APPROVED - create session token for login
+        if (userChannels.length === 0) {
+            return {
+                success: false,
+                message: 'No channels found for this account. Please contact support.',
+                authorizationStatus,
+            };
+        }
+
+        // Load full channel data to get status
+        const channelsWithStatus: Array<{ channel: Channel; status: ChannelStatus }> = [];
+        for (const channel of userChannels) {
+            const fullChannel = await this.channelService.findOne(ctx, channel.id);
+            if (fullChannel) {
+                // Get channel status from customFields - status field is the single source of truth
+                const status = getChannelStatus(fullChannel.customFields);
+                channelsWithStatus.push({ channel: fullChannel, status });
+            }
+        }
+
+        // Check if any channel is DISABLED or BANNED - block login
+        const blockedChannels = channelsWithStatus.filter(
+            ch => ch.status === ChannelStatus.DISABLED || ch.status === ChannelStatus.BANNED
+        );
+        if (blockedChannels.length > 0) {
+            const statusText = blockedChannels[0].status === ChannelStatus.DISABLED ? 'disabled' : 'banned';
+            return {
+                success: false,
+                message: `Your channel has been ${statusText}. Please contact support.`,
+                authorizationStatus,
+            };
+        }
+
+        // Determine access level based on channel status
+        // If any channel is APPROVED, use FULL access (prefer first APPROVED channel)
+        // Otherwise, all channels are UNAPPROVED, use READ_ONLY
+        const approvedChannel = channelsWithStatus.find(ch => ch.status === ChannelStatus.APPROVED);
+        const accessLevel = approvedChannel ? AccessLevel.FULL : AccessLevel.READ_ONLY;
+        const activeChannel = approvedChannel || channelsWithStatus[0];
+        const channelId = activeChannel.channel.id.toString();
+
+        // Create session token with access level and channel ID
         const sessionToken = `otp_session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
         if (!this.otpService.redis) {
@@ -258,18 +322,24 @@ export class PhoneAuthService {
             JSON.stringify({
                 userId: user.id.toString(),
                 phoneNumber: formattedPhone,
+                accessLevel,
+                channelId,
             })
         );
 
         return {
             success: true,
             token: sessionToken,
-            message: 'OTP verified successfully',
+            message: accessLevel === AccessLevel.FULL 
+                ? 'OTP verified successfully' 
+                : 'OTP verified successfully. Your channel is pending approval - you have read-only access.',
             user: {
                 id: user.id.toString(),
                 identifier: user.identifier,
             },
             authorizationStatus,
+            accessLevel,
+            channelId,
         };
     }
 

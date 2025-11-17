@@ -245,6 +245,30 @@ export class ProductService {
     }
 
     /**
+     * Update product base data (name) and variant details (name + price).
+     * Used by the product edit screen.
+     */
+    async updateProductWithVariants(
+        productId: string,
+        name: string,
+        variants: { id: string; name: string; price: number }[],
+    ): Promise<boolean> {
+        try {
+            const productUpdated = await this.apiService.updateProductName(productId, name);
+            if (!productUpdated) {
+                return false;
+            }
+
+            const variantsUpdated = await this.variantService.updateVariantDetails(variants);
+            return variantsUpdated;
+        } catch (error: any) {
+            console.error('Failed to update product and variants:', error);
+            this.stateService.setError(error.message || 'Failed to update product');
+            return false;
+        }
+    }
+
+    /**
      * Clear error state
      */
     clearError(): void {

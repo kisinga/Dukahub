@@ -1,21 +1,23 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { RequestContext } from '@vendure/core';
-import { PostingService, PostingPayload } from '../../ledger/posting.service';
+import { Injectable, Logger, Optional } from '@nestjs/common';
+import { RequestContext, TransactionalConnection } from '@vendure/core';
+import { MetricsService } from '../../infrastructure/observability/metrics.service';
+import { TracingService } from '../../infrastructure/observability/tracing.service';
+import { ACCOUNT_CODES } from '../../ledger/account-codes.constants';
 import { Account } from '../../ledger/account.entity';
-import { DataSource } from 'typeorm';
+import { JournalLine } from '../../ledger/journal-line.entity';
+import { PostingPayload, PostingService } from '../../ledger/posting.service';
 import {
-  JournalEntryTemplate,
   PaymentPostingContext,
-  SalePostingContext,
   PurchasePostingContext,
-  SupplierPaymentPostingContext,
   RefundPostingContext,
-  createPaymentEntry,
+  SalePostingContext,
+  SupplierPaymentPostingContext,
   createCreditSaleEntry,
   createPaymentAllocationEntry,
-  createSupplierPurchaseEntry,
-  createSupplierPaymentEntry,
+  createPaymentEntry,
   createRefundEntry,
+  createSupplierPaymentEntry,
+  createSupplierPurchaseEntry
 } from './posting-policy';
 
 @Injectable()
@@ -24,18 +26,20 @@ export class LedgerPostingService {
 
   constructor(
     private readonly postingService: PostingService,
-    private readonly dataSource: DataSource,
-  ) {}
+    private readonly connection: TransactionalConnection,
+    @Optional() private readonly tracingService?: TracingService,
+    @Optional() private readonly metricsService?: MetricsService,
+  ) { }
 
   /**
    * Ensure required accounts exist for a channel
    * Throws if any account is missing
    */
-  async ensureAccountsExist(channelId: number, accountCodes: string[]): Promise<void> {
-    const accounts = await this.dataSource
-      .getRepository(Account)
+  async ensureAccountsExist(ctx: RequestContext, accountCodes: string[]): Promise<void> {
+    const accounts = await this.connection
+      .getRepository(ctx, Account)
       .createQueryBuilder('a')
-      .where('a.channelId = :channelId', { channelId })
+      .where('a.channelId = :channelId', { channelId: ctx.channelId as number })
       .andWhere('a.code IN (:...codes)', { codes: accountCodes })
       .getMany();
 
@@ -44,7 +48,7 @@ export class LedgerPostingService {
 
     if (missing.length > 0) {
       throw new Error(
-        `Missing required accounts for channel ${channelId}: ${missing.join(', ')}. ` +
+        `Missing required accounts for channel ${ctx.channelId}: ${missing.join(', ')}. ` +
         `Please initialize Chart of Accounts for this channel.`
       );
     }
@@ -58,20 +62,39 @@ export class LedgerPostingService {
     sourceId: string,
     context: PaymentPostingContext
   ): Promise<void> {
-    const template = createPaymentEntry(context);
-    const accountCodes = template.lines.map(l => l.accountCode);
-    
-    await this.ensureAccountsExist(ctx.channelId as number, accountCodes);
+    const span = this.tracingService?.startSpan('ledger.postPayment', {
+      'ledger.type': 'Payment',
+      'ledger.source_id': sourceId,
+      'ledger.channel_id': ctx.channelId?.toString() || '',
+      'ledger.order_code': context.orderCode,
+    });
 
-    const payload: PostingPayload = {
-      channelId: ctx.channelId as number,
-      entryDate: new Date().toISOString().slice(0, 10),
-      memo: template.memo,
-      lines: template.lines,
-    };
+    try {
+      const template = createPaymentEntry(context);
+      const accountCodes = template.lines.map(l => l.accountCode);
 
-    await this.postingService.post('Payment', sourceId, payload);
-    this.logger.log(`Posted payment entry for payment ${sourceId}, order ${context.orderCode}`);
+      await this.ensureAccountsExist(ctx, accountCodes);
+
+      const payload: PostingPayload = {
+        channelId: ctx.channelId as number,
+        entryDate: new Date().toISOString().slice(0, 10),
+        memo: template.memo,
+        lines: template.lines,
+      };
+
+      await this.postingService.post(ctx, 'Payment', sourceId, payload);
+
+      this.metricsService?.recordLedgerPosting('Payment', ctx.channelId?.toString() || '');
+      this.tracingService?.addEvent(span!, 'ledger.posted', {
+        'ledger.source_id': sourceId,
+      });
+
+      this.logger.log(`Posted payment entry for payment ${sourceId}, order ${context.orderCode}`);
+      this.tracingService?.endSpan(span!, true);
+    } catch (error) {
+      this.tracingService?.endSpan(span!, false, error instanceof Error ? error : new Error(String(error)));
+      throw error;
+    }
   }
 
   /**
@@ -84,8 +107,8 @@ export class LedgerPostingService {
   ): Promise<void> {
     const template = createCreditSaleEntry(context);
     const accountCodes = template.lines.map(l => l.accountCode);
-    
-    await this.ensureAccountsExist(ctx.channelId as number, accountCodes);
+
+    await this.ensureAccountsExist(ctx, accountCodes);
 
     const payload: PostingPayload = {
       channelId: ctx.channelId as number,
@@ -94,7 +117,7 @@ export class LedgerPostingService {
       lines: template.lines,
     };
 
-    await this.postingService.post('CreditSale', sourceId, payload);
+    await this.postingService.post(ctx, 'CreditSale', sourceId, payload);
     this.logger.log(`Posted credit sale entry for order ${context.orderCode}`);
   }
 
@@ -108,8 +131,8 @@ export class LedgerPostingService {
   ): Promise<void> {
     const template = createPaymentAllocationEntry(context);
     const accountCodes = template.lines.map(l => l.accountCode);
-    
-    await this.ensureAccountsExist(ctx.channelId as number, accountCodes);
+
+    await this.ensureAccountsExist(ctx, accountCodes);
 
     const payload: PostingPayload = {
       channelId: ctx.channelId as number,
@@ -118,8 +141,12 @@ export class LedgerPostingService {
       lines: template.lines,
     };
 
-    await this.postingService.post('PaymentAllocation', sourceId, payload);
-    this.logger.log(`Posted payment allocation entry for payment ${sourceId}, order ${context.orderCode}`);
+    // Post allocation and enforce AR invariant inside the same transaction.
+    await this.postingService.post(ctx, 'PaymentAllocation', sourceId, payload);
+    await this.assertAccountsReceivableInvariant(ctx, context.orderId);
+    this.logger.log(
+      `Posted payment allocation entry for payment ${sourceId}, order ${context.orderCode}`
+    );
   }
 
   /**
@@ -132,8 +159,8 @@ export class LedgerPostingService {
   ): Promise<void> {
     const template = createSupplierPurchaseEntry(context);
     const accountCodes = template.lines.map(l => l.accountCode);
-    
-    await this.ensureAccountsExist(ctx.channelId as number, accountCodes);
+
+    await this.ensureAccountsExist(ctx, accountCodes);
 
     const payload: PostingPayload = {
       channelId: ctx.channelId as number,
@@ -142,7 +169,7 @@ export class LedgerPostingService {
       lines: template.lines,
     };
 
-    await this.postingService.post('SupplierPurchase', sourceId, payload);
+    await this.postingService.post(ctx, 'SupplierPurchase', sourceId, payload);
     this.logger.log(`Posted supplier purchase entry for purchase ${context.purchaseReference}`);
   }
 
@@ -156,8 +183,8 @@ export class LedgerPostingService {
   ): Promise<void> {
     const template = createSupplierPaymentEntry(context);
     const accountCodes = template.lines.map(l => l.accountCode);
-    
-    await this.ensureAccountsExist(ctx.channelId as number, accountCodes);
+
+    await this.ensureAccountsExist(ctx, accountCodes);
 
     const payload: PostingPayload = {
       channelId: ctx.channelId as number,
@@ -166,8 +193,12 @@ export class LedgerPostingService {
       lines: template.lines,
     };
 
-    await this.postingService.post('SupplierPayment', sourceId, payload);
-    this.logger.log(`Posted supplier payment entry for payment ${sourceId}, purchase ${context.purchaseReference}`);
+    // Post payment and enforce AP invariant inside the same transaction.
+    await this.postingService.post(ctx, 'SupplierPayment', sourceId, payload);
+    await this.assertAccountsPayableInvariant(ctx, context.supplierId);
+    this.logger.log(
+      `Posted supplier payment entry for payment ${sourceId}, purchase ${context.purchaseReference}`
+    );
   }
 
   /**
@@ -180,8 +211,8 @@ export class LedgerPostingService {
   ): Promise<void> {
     const template = createRefundEntry(context);
     const accountCodes = template.lines.map(l => l.accountCode);
-    
-    await this.ensureAccountsExist(ctx.channelId as number, accountCodes);
+
+    await this.ensureAccountsExist(ctx, accountCodes);
 
     const payload: PostingPayload = {
       channelId: ctx.channelId as number,
@@ -190,8 +221,108 @@ export class LedgerPostingService {
       lines: template.lines,
     };
 
-    await this.postingService.post('Refund', sourceId, payload);
+    await this.postingService.post(ctx, 'Refund', sourceId, payload);
     this.logger.log(`Posted refund entry for refund ${sourceId}, order ${context.orderCode}`);
+  }
+
+  /**
+   * Assert that, for a given order, AR credits do not exceed AR debits.
+   * Runs inside the same transaction as the posting to guarantee consistency.
+   */
+  private async assertAccountsReceivableInvariant(
+    ctx: RequestContext,
+    orderId: string,
+  ): Promise<void> {
+    const accountRepo = this.connection.getRepository(ctx, Account);
+    const arAccount = await accountRepo.findOne({
+      where: {
+        channelId: ctx.channelId as number,
+        code: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
+      },
+    });
+
+    if (!arAccount) {
+      // Misconfiguration rather than a runtime invariant violation.
+      throw new Error(
+        `Accounts Receivable account not found for channel ${ctx.channelId}. ` +
+        `Please initialize Chart of Accounts.`,
+      );
+    }
+
+    const lineRepo = this.connection.getRepository(ctx, JournalLine);
+    const result = await lineRepo
+      .createQueryBuilder('line')
+      .innerJoin('line.entry', 'entry')
+      .where('line.channelId = :channelId', { channelId: ctx.channelId as number })
+      .andWhere('line.accountId = :accountId', { accountId: arAccount.id })
+      .andWhere("line.meta->>'orderId' = :orderId", { orderId })
+      .select('SUM(CAST(line.debit AS BIGINT))', 'debitTotal')
+      .addSelect('SUM(CAST(line.credit AS BIGINT))', 'creditTotal')
+      .getRawOne();
+
+    const debitTotal = parseInt(result?.debitTotal || '0', 10);
+    const creditTotal = parseInt(result?.creditTotal || '0', 10);
+
+    if (debitTotal === 0) {
+      throw new Error(
+        `Cannot allocate payment for order ${orderId} because no Accounts Receivable debits exist ` +
+        `for this order in the ledger`,
+      );
+    }
+
+    if (creditTotal > debitTotal) {
+      const overpay = creditTotal - debitTotal;
+      throw new Error(
+        `Payment allocation would overpay Accounts Receivable by ${overpay} cents for order ${orderId} ` +
+        `(debited=${debitTotal}, credited=${creditTotal})`,
+      );
+    }
+  }
+
+  /**
+   * Assert that, for a given supplier, AP debits do not exceed AP credits.
+   * Runs inside the same transaction as the posting to guarantee consistency.
+   */
+  private async assertAccountsPayableInvariant(
+    ctx: RequestContext,
+    supplierId: string,
+  ): Promise<void> {
+    const accountRepo = this.connection.getRepository(ctx, Account);
+    const apAccount = await accountRepo.findOne({
+      where: {
+        channelId: ctx.channelId as number,
+        code: ACCOUNT_CODES.ACCOUNTS_PAYABLE,
+      },
+    });
+
+    if (!apAccount) {
+      throw new Error(
+        `Accounts Payable account not found for channel ${ctx.channelId}. ` +
+        `Please initialize Chart of Accounts.`,
+      );
+    }
+
+    const lineRepo = this.connection.getRepository(ctx, JournalLine);
+    const result = await lineRepo
+      .createQueryBuilder('line')
+      .innerJoin('line.entry', 'entry')
+      .where('line.channelId = :channelId', { channelId: ctx.channelId as number })
+      .andWhere('line.accountId = :accountId', { accountId: apAccount.id })
+      .andWhere("line.meta->>'supplierId' = :supplierId", { supplierId })
+      .select('SUM(CAST(line.debit AS BIGINT))', 'debitTotal')
+      .addSelect('SUM(CAST(line.credit AS BIGINT))', 'creditTotal')
+      .getRawOne();
+
+    const debitTotal = parseInt(result?.debitTotal || '0', 10);
+    const creditTotal = parseInt(result?.creditTotal || '0', 10);
+    const outstandingInCents = creditTotal - debitTotal; // positive when we owe supplier
+
+    if (outstandingInCents < 0) {
+      throw new Error(
+        `Accounts Payable invariant violated for supplier ${supplierId}: ` +
+        `debits (${debitTotal}) exceed credits (${creditTotal}).`,
+      );
+    }
   }
 }
 

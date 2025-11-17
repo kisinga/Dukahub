@@ -24,6 +24,13 @@ export type Scalars = {
   Upload: { input: any; output: any; }
 };
 
+export type AccountBreakdown = {
+  __typename?: 'AccountBreakdown';
+  icon: Scalars['String']['output'];
+  label: Scalars['String']['output'];
+  value: Scalars['Float']['output'];
+};
+
 export type AddFulfillmentToOrderResult = CreateFulfillmentError | EmptyOrderLineSelectionError | Fulfillment | FulfillmentStateTransitionError | InsufficientStockOnHandError | InvalidFulfillmentHandlerError | ItemsAlreadyFulfilledError;
 
 export type AddItemInput = {
@@ -501,6 +508,7 @@ export type ChannelCustomFields = {
   cashierOpen?: Maybe<Scalars['Boolean']['output']>;
   companyLogoAsset?: Maybe<Asset>;
   eventConfig?: Maybe<Scalars['String']['output']>;
+  isApproved?: Maybe<Scalars['Boolean']['output']>;
   lastPaymentAmount?: Maybe<Scalars['Int']['output']>;
   lastPaymentDate?: Maybe<Scalars['DateTime']['output']>;
   mlImageCount?: Maybe<Scalars['Int']['output']>;
@@ -570,6 +578,7 @@ export type ChannelFilterParameter = {
   defaultLanguageCode?: InputMaybe<StringOperators>;
   eventConfig?: InputMaybe<StringOperators>;
   id?: InputMaybe<IdOperators>;
+  isApproved?: InputMaybe<BooleanOperators>;
   lastPaymentAmount?: InputMaybe<NumberOperators>;
   lastPaymentDate?: InputMaybe<DateOperators>;
   mlImageCount?: InputMaybe<NumberOperators>;
@@ -650,6 +659,7 @@ export type ChannelSortParameter = {
   createdAt?: InputMaybe<SortOrder>;
   eventConfig?: InputMaybe<SortOrder>;
   id?: InputMaybe<SortOrder>;
+  isApproved?: InputMaybe<SortOrder>;
   lastPaymentAmount?: InputMaybe<SortOrder>;
   lastPaymentDate?: InputMaybe<SortOrder>;
   mlImageCount?: InputMaybe<SortOrder>;
@@ -1008,6 +1018,7 @@ export type CreateChannelCustomFieldsInput = {
   cashierOpen?: InputMaybe<Scalars['Boolean']['input']>;
   companyLogoAssetId?: InputMaybe<Scalars['ID']['input']>;
   eventConfig?: InputMaybe<Scalars['String']['input']>;
+  isApproved?: InputMaybe<Scalars['Boolean']['input']>;
   lastPaymentAmount?: InputMaybe<Scalars['Int']['input']>;
   lastPaymentDate?: InputMaybe<Scalars['DateTime']['input']>;
   mlImageCount?: InputMaybe<Scalars['Int']['input']>;
@@ -1909,6 +1920,13 @@ export type CustomerSortParameter = {
   updatedAt?: InputMaybe<SortOrder>;
 };
 
+export type DashboardStats = {
+  __typename?: 'DashboardStats';
+  expenses: PeriodStats;
+  purchases: PeriodStats;
+  sales: PeriodStats;
+};
+
 /** Operators for filtering on a list of Date fields */
 export type DateListOperators = {
   inList: Scalars['DateTime']['input'];
@@ -2714,6 +2732,42 @@ export enum JobState {
   RUNNING = 'RUNNING'
 }
 
+export type JournalEntriesOptions = {
+  accountCode?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sourceType?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+  take?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type JournalEntriesResult = {
+  __typename?: 'JournalEntriesResult';
+  items: Array<JournalEntry>;
+  totalItems: Scalars['Int']['output'];
+};
+
+export type JournalEntry = {
+  __typename?: 'JournalEntry';
+  entryDate: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  lines: Array<JournalLine>;
+  memo?: Maybe<Scalars['String']['output']>;
+  postedAt: Scalars['DateTime']['output'];
+  sourceId: Scalars['String']['output'];
+  sourceType: Scalars['String']['output'];
+};
+
+export type JournalLine = {
+  __typename?: 'JournalLine';
+  accountCode: Scalars['String']['output'];
+  accountName: Scalars['String']['output'];
+  credit: Scalars['Float']['output'];
+  debit: Scalars['Float']['output'];
+  id: Scalars['ID']['output'];
+  meta?: Maybe<Scalars['JSON']['output']>;
+};
+
 /**
  * @description
  * Languages in the form of a ISO 639-1 language code with optional
@@ -3046,6 +3100,21 @@ export type LanguageNotAvailableError = ErrorResult & {
   errorCode: ErrorCode;
   languageCode: Scalars['String']['output'];
   message: Scalars['String']['output'];
+};
+
+export type LedgerAccount = {
+  __typename?: 'LedgerAccount';
+  balance: Scalars['Float']['output'];
+  code: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  type: Scalars['String']['output'];
+};
+
+export type LedgerAccountsResult = {
+  __typename?: 'LedgerAccountsResult';
+  items: Array<LedgerAccount>;
 };
 
 export type LocaleStringCustomFieldConfig = CustomField & {
@@ -5270,6 +5339,14 @@ export type PaymentStateTransitionError = ErrorResult & {
   transitionError: Scalars['String']['output'];
 };
 
+export type PeriodStats = {
+  __typename?: 'PeriodStats';
+  accounts: Array<AccountBreakdown>;
+  month: Scalars['Float']['output'];
+  today: Scalars['Float']['output'];
+  week: Scalars['Float']['output'];
+};
+
 /**
  * @description
  * Permissions for administrators and customers. Used to control access to
@@ -6040,6 +6117,7 @@ export type Query = {
   customerGroup?: Maybe<CustomerGroup>;
   customerGroups: CustomerGroupList;
   customers: CustomerList;
+  dashboardStats: DashboardStats;
   /** Returns a list of eligible shipping methods for the draft Order */
   eligibleShippingMethodsForDraftOrder: Array<ShippingMethodQuote>;
   /** Returns all configured EntityDuplicators. */
@@ -6065,6 +6143,9 @@ export type Query = {
   jobQueues: Array<JobQueue>;
   jobs: JobList;
   jobsById: Array<Job>;
+  journalEntries: JournalEntriesResult;
+  journalEntry?: Maybe<JournalEntry>;
+  ledgerAccounts: LedgerAccountsResult;
   me?: Maybe<CurrentUser>;
   /** Get metrics for the given interval and metric types. */
   metricSummary: Array<MetricSummary>;
@@ -6221,6 +6302,12 @@ export type QueryCustomersArgs = {
 };
 
 
+export type QueryDashboardStatsArgs = {
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+
 export type QueryEligibleShippingMethodsForDraftOrderArgs = {
   orderId: Scalars['ID']['input'];
 };
@@ -6283,6 +6370,16 @@ export type QueryJobsArgs = {
 
 export type QueryJobsByIdArgs = {
   jobIds: Array<Scalars['ID']['input']>;
+};
+
+
+export type QueryJournalEntriesArgs = {
+  options?: InputMaybe<JournalEntriesOptions>;
+};
+
+
+export type QueryJournalEntryArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -7705,6 +7802,7 @@ export type UpdateChannelCustomFieldsInput = {
   cashierOpen?: InputMaybe<Scalars['Boolean']['input']>;
   companyLogoAssetId?: InputMaybe<Scalars['ID']['input']>;
   eventConfig?: InputMaybe<Scalars['String']['input']>;
+  isApproved?: InputMaybe<Scalars['Boolean']['input']>;
   lastPaymentAmount?: InputMaybe<Scalars['Int']['input']>;
   lastPaymentDate?: InputMaybe<Scalars['DateTime']['input']>;
   mlImageCount?: InputMaybe<Scalars['Int']['input']>;
@@ -8390,6 +8488,14 @@ export type GetOrdersForPeriodQueryVariables = Exact<{
 
 export type GetOrdersForPeriodQuery = { __typename?: 'Query', orders: { __typename?: 'OrderList', items: Array<{ __typename?: 'Order', id: string, total: number, totalWithTax: number, orderPlacedAt?: any | null, state: string, payments?: Array<{ __typename?: 'Payment', id: string, amount: number, method: string, state: string }> | null }> } };
 
+export type GetDashboardStatsQueryVariables = Exact<{
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+}>;
+
+
+export type GetDashboardStatsQuery = { __typename?: 'Query', dashboardStats: { __typename?: 'DashboardStats', sales: { __typename?: 'PeriodStats', today: number, week: number, month: number, accounts: Array<{ __typename?: 'AccountBreakdown', label: string, value: number, icon: string }> }, purchases: { __typename?: 'PeriodStats', today: number, week: number, month: number, accounts: Array<{ __typename?: 'AccountBreakdown', label: string, value: number, icon: string }> }, expenses: { __typename?: 'PeriodStats', today: number, week: number, month: number, accounts: Array<{ __typename?: 'AccountBreakdown', label: string, value: number, icon: string }> } } };
+
 export type GetProductStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -8919,6 +9025,25 @@ export type GetStockAdjustmentsQueryVariables = Exact<{
 
 export type GetStockAdjustmentsQuery = { __typename?: 'Query', stockAdjustments: { __typename?: 'InventoryStockAdjustmentList', totalItems: number, items: Array<{ __typename?: 'InventoryStockAdjustment', id: string, reason: string, notes?: string | null, adjustedByUserId?: string | null, createdAt: any, updatedAt: any, lines: Array<{ __typename?: 'InventoryStockAdjustmentLine', id: string, variantId: string, quantityChange: number, previousStock: number, newStock: number, stockLocationId: string }> }> } };
 
+export type GetLedgerAccountsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetLedgerAccountsQuery = { __typename?: 'Query', ledgerAccounts: { __typename?: 'LedgerAccountsResult', items: Array<{ __typename?: 'LedgerAccount', id: string, code: string, name: string, type: string, isActive: boolean, balance: number }> } };
+
+export type GetJournalEntriesQueryVariables = Exact<{
+  options?: InputMaybe<JournalEntriesOptions>;
+}>;
+
+
+export type GetJournalEntriesQuery = { __typename?: 'Query', journalEntries: { __typename?: 'JournalEntriesResult', totalItems: number, items: Array<{ __typename?: 'JournalEntry', id: string, entryDate: string, postedAt: any, sourceType: string, sourceId: string, memo?: string | null, lines: Array<{ __typename?: 'JournalLine', id: string, accountCode: string, accountName: string, debit: number, credit: number, meta?: any | null }> }> } };
+
+export type GetJournalEntryQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetJournalEntryQuery = { __typename?: 'Query', journalEntry?: { __typename?: 'JournalEntry', id: string, entryDate: string, postedAt: any, sourceType: string, sourceId: string, memo?: string | null, lines: Array<{ __typename?: 'JournalLine', id: string, accountCode: string, accountName: string, debit: number, credit: number, meta?: any | null }> } | null };
+
 
 export const UpdateOrderLineQuantityDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateOrderLineQuantity"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderLineId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"quantity"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateOrderLineQuantity"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderLineId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderLineId"}}},{"kind":"Argument","name":{"kind":"Name","value":"quantity"},"value":{"kind":"Variable","name":{"kind":"Name","value":"quantity"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Order"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"lines"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"productVariant"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"allowFractionalQuantity"}}]}}]}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ErrorResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateOrderLineQuantityMutation, UpdateOrderLineQuantityMutationVariables>;
 export const GetActiveAdministratorDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetActiveAdministrator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activeAdministrator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"identifier"}},{"kind":"Field","name":{"kind":"Name","value":"roles"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetActiveAdministratorQuery, GetActiveAdministratorQueryVariables>;
@@ -8952,6 +9077,7 @@ export const GetProductDocument = {"kind":"Document","definitions":[{"kind":"Ope
 export const SearchByBarcodeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchByBarcode"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sku"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"term"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sku"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"take"},"value":{"kind":"IntValue","value":"1"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"productId"}},{"kind":"Field","name":{"kind":"Name","value":"productName"}},{"kind":"Field","name":{"kind":"Name","value":"productVariantId"}},{"kind":"Field","name":{"kind":"Name","value":"productVariantName"}},{"kind":"Field","name":{"kind":"Name","value":"sku"}},{"kind":"Field","name":{"kind":"Name","value":"priceWithTax"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"SinglePrice"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"productAsset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"preview"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchByBarcodeQuery, SearchByBarcodeQueryVariables>;
 export const PrefetchProductsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"PrefetchProducts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"take"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"products"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"take"},"value":{"kind":"Variable","name":{"kind":"Name","value":"take"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"skip"},"value":{"kind":"IntValue","value":"0"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalItems"}},{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"featuredAsset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"preview"}}]}},{"kind":"Field","name":{"kind":"Name","value":"variants"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"sku"}},{"kind":"Field","name":{"kind":"Name","value":"price"}},{"kind":"Field","name":{"kind":"Name","value":"priceWithTax"}},{"kind":"Field","name":{"kind":"Name","value":"stockOnHand"}},{"kind":"Field","name":{"kind":"Name","value":"customFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"wholesalePrice"}},{"kind":"Field","name":{"kind":"Name","value":"allowFractionalQuantity"}}]}},{"kind":"Field","name":{"kind":"Name","value":"prices"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"price"}},{"kind":"Field","name":{"kind":"Name","value":"currencyCode"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<PrefetchProductsQuery, PrefetchProductsQueryVariables>;
 export const GetOrdersForPeriodDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetOrdersForPeriod"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"startDate"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"DateTime"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"orders"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"filter"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"orderPlacedAt"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"startDate"}}}]}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"take"},"value":{"kind":"IntValue","value":"1000"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"total"}},{"kind":"Field","name":{"kind":"Name","value":"totalWithTax"}},{"kind":"Field","name":{"kind":"Name","value":"orderPlacedAt"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"payments"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"method"}},{"kind":"Field","name":{"kind":"Name","value":"state"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetOrdersForPeriodQuery, GetOrdersForPeriodQueryVariables>;
+export const GetDashboardStatsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDashboardStats"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"startDate"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DateTime"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"endDate"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DateTime"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"dashboardStats"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"startDate"},"value":{"kind":"Variable","name":{"kind":"Name","value":"startDate"}}},{"kind":"Argument","name":{"kind":"Name","value":"endDate"},"value":{"kind":"Variable","name":{"kind":"Name","value":"endDate"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sales"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"today"}},{"kind":"Field","name":{"kind":"Name","value":"week"}},{"kind":"Field","name":{"kind":"Name","value":"month"}},{"kind":"Field","name":{"kind":"Name","value":"accounts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"icon"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"purchases"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"today"}},{"kind":"Field","name":{"kind":"Name","value":"week"}},{"kind":"Field","name":{"kind":"Name","value":"month"}},{"kind":"Field","name":{"kind":"Name","value":"accounts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"icon"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"expenses"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"today"}},{"kind":"Field","name":{"kind":"Name","value":"week"}},{"kind":"Field","name":{"kind":"Name","value":"month"}},{"kind":"Field","name":{"kind":"Name","value":"accounts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"icon"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetDashboardStatsQuery, GetDashboardStatsQueryVariables>;
 export const GetProductStatsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetProductStats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"products"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"take"},"value":{"kind":"IntValue","value":"1"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalItems"}}]}},{"kind":"Field","name":{"kind":"Name","value":"productVariants"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"take"},"value":{"kind":"IntValue","value":"1"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalItems"}}]}}]}}]} as unknown as DocumentNode<GetProductStatsQuery, GetProductStatsQueryVariables>;
 export const GetRecentOrdersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetRecentOrders"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"orders"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"take"},"value":{"kind":"IntValue","value":"10"}},{"kind":"ObjectField","name":{"kind":"Name","value":"sort"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"createdAt"},"value":{"kind":"EnumValue","value":"DESC"}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"total"}},{"kind":"Field","name":{"kind":"Name","value":"totalWithTax"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"currencyCode"}},{"kind":"Field","name":{"kind":"Name","value":"customer"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"lines"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"productVariant"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"sku"}},{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetRecentOrdersQuery, GetRecentOrdersQueryVariables>;
 export const CreateDraftOrderDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateDraftOrder"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createDraftOrder"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"total"}},{"kind":"Field","name":{"kind":"Name","value":"totalWithTax"}}]}}]}}]} as unknown as DocumentNode<CreateDraftOrderMutation, CreateDraftOrderMutationVariables>;
@@ -9021,3 +9147,6 @@ export const RecordPurchaseDocument = {"kind":"Document","definitions":[{"kind":
 export const GetPurchasesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetPurchases"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"options"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"PurchaseListOptions"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"purchases"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"Variable","name":{"kind":"Name","value":"options"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"supplierId"}},{"kind":"Field","name":{"kind":"Name","value":"supplier"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"emailAddress"}}]}},{"kind":"Field","name":{"kind":"Name","value":"purchaseDate"}},{"kind":"Field","name":{"kind":"Name","value":"referenceNumber"}},{"kind":"Field","name":{"kind":"Name","value":"totalCost"}},{"kind":"Field","name":{"kind":"Name","value":"paymentStatus"}},{"kind":"Field","name":{"kind":"Name","value":"isCreditPurchase"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"lines"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"variantId"}},{"kind":"Field","name":{"kind":"Name","value":"variant"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"sku"}}]}},{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"unitCost"}},{"kind":"Field","name":{"kind":"Name","value":"totalCost"}},{"kind":"Field","name":{"kind":"Name","value":"stockLocationId"}},{"kind":"Field","name":{"kind":"Name","value":"stockLocation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalItems"}}]}}]}}]} as unknown as DocumentNode<GetPurchasesQuery, GetPurchasesQueryVariables>;
 export const RecordStockAdjustmentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RecordStockAdjustment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RecordStockAdjustmentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"recordStockAdjustment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"adjustedByUserId"}},{"kind":"Field","name":{"kind":"Name","value":"lines"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"variantId"}},{"kind":"Field","name":{"kind":"Name","value":"quantityChange"}},{"kind":"Field","name":{"kind":"Name","value":"previousStock"}},{"kind":"Field","name":{"kind":"Name","value":"newStock"}},{"kind":"Field","name":{"kind":"Name","value":"stockLocationId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<RecordStockAdjustmentMutation, RecordStockAdjustmentMutationVariables>;
 export const GetStockAdjustmentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetStockAdjustments"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"options"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"StockAdjustmentListOptions"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"stockAdjustments"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"Variable","name":{"kind":"Name","value":"options"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"adjustedByUserId"}},{"kind":"Field","name":{"kind":"Name","value":"lines"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"variantId"}},{"kind":"Field","name":{"kind":"Name","value":"quantityChange"}},{"kind":"Field","name":{"kind":"Name","value":"previousStock"}},{"kind":"Field","name":{"kind":"Name","value":"newStock"}},{"kind":"Field","name":{"kind":"Name","value":"stockLocationId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalItems"}}]}}]}}]} as unknown as DocumentNode<GetStockAdjustmentsQuery, GetStockAdjustmentsQueryVariables>;
+export const GetLedgerAccountsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetLedgerAccounts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ledgerAccounts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"balance"}}]}}]}}]}}]} as unknown as DocumentNode<GetLedgerAccountsQuery, GetLedgerAccountsQueryVariables>;
+export const GetJournalEntriesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetJournalEntries"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"options"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"JournalEntriesOptions"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"journalEntries"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"Variable","name":{"kind":"Name","value":"options"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"entryDate"}},{"kind":"Field","name":{"kind":"Name","value":"postedAt"}},{"kind":"Field","name":{"kind":"Name","value":"sourceType"}},{"kind":"Field","name":{"kind":"Name","value":"sourceId"}},{"kind":"Field","name":{"kind":"Name","value":"memo"}},{"kind":"Field","name":{"kind":"Name","value":"lines"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"accountCode"}},{"kind":"Field","name":{"kind":"Name","value":"accountName"}},{"kind":"Field","name":{"kind":"Name","value":"debit"}},{"kind":"Field","name":{"kind":"Name","value":"credit"}},{"kind":"Field","name":{"kind":"Name","value":"meta"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalItems"}}]}}]}}]} as unknown as DocumentNode<GetJournalEntriesQuery, GetJournalEntriesQueryVariables>;
+export const GetJournalEntryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetJournalEntry"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"journalEntry"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"entryDate"}},{"kind":"Field","name":{"kind":"Name","value":"postedAt"}},{"kind":"Field","name":{"kind":"Name","value":"sourceType"}},{"kind":"Field","name":{"kind":"Name","value":"sourceId"}},{"kind":"Field","name":{"kind":"Name","value":"memo"}},{"kind":"Field","name":{"kind":"Name","value":"lines"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"accountCode"}},{"kind":"Field","name":{"kind":"Name","value":"accountName"}},{"kind":"Field","name":{"kind":"Name","value":"debit"}},{"kind":"Field","name":{"kind":"Name","value":"credit"}},{"kind":"Field","name":{"kind":"Name","value":"meta"}}]}}]}}]}}]} as unknown as DocumentNode<GetJournalEntryQuery, GetJournalEntryQueryVariables>;

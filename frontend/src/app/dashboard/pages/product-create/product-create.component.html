@@ -7,77 +7,110 @@
       <button type="button" class="btn btn-ghost btn-sm" (click)="cancel()">Cancel</button>
     </div>
 
-    <!-- Step 0: Item Type Selection -->
-    <app-item-type-selector [itemType]="itemType()" (itemTypeChange)="setItemType($event)" />
+    <!-- Steps -->
+    <ul class="steps steps-horizontal w-full text-xs mt-1">
+      <li
+        class="step"
+        [class.step-primary]="currentStage() === 1"
+        (click)="goToStage1()"
+      >
+        Step 1 · Setup
+      </li>
+      <li
+        class="step"
+        [class.step-primary]="currentStage() === 2"
+        (click)="goToStage2()"
+      >
+        Step 2 · Pricing & stock
+      </li>
+    </ul>
 
-    <!-- Step 1: Product Type (Only if itemType === 'product') -->
-    <app-product-type-selector
-      [itemType]="itemType()"
-      [productType]="productType()"
-      (productTypeChange)="setProductType($event)"
-    />
+    <!-- Stage 1: Item type, product basics & how it's sold -->
+    @if (currentStage() === 1) {
+    <div class="space-y-3">
+      <!-- Item type (product vs service) comes first -->
+      <app-item-type-selector [itemType]="itemType()" (itemTypeChange)="setItemType($event)" />
 
-    <!-- Step 2: Product Name -->
-    <app-product-name-input [nameControl]="nameControl" />
+      <!-- Product name -->
+      <app-product-name-input [nameControl]="nameControl" />
 
-    <!-- Step 3: Identification -->
-    <app-identification-selector
-      #identificationSelector
-      [identificationMethod]="identificationMethod()"
-      [barcodeControl]="barcodeControl"
-      [photoCount]="photoCount()"
-      [hasValidIdentification]="hasValidIdentification()"
-      (methodChange)="chooseIdentificationMethod($event)"
-      (barcodeScanned)="onBarcodeScanned($event)"
-      (photosChanged)="onPhotosChanged($event)"
-    />
+      <!-- How it's sold (presets) for products only -->
+      @if (itemType() === 'product') {
+      <app-how-sold-selector
+        [selected]="howSoldPreset()"
+        (selectedChange)="onHowSoldSelected($event)"
+      />
 
-    <!-- Step 4: Type-Specific Configuration -->
-    @if (itemType() === 'product') {
-    <!-- Measurement Unit Selector (for measured products) -->
-    <app-measurement-unit-selector
-      [measurementUnit]="measurementUnit()"
-      [visible]="productType() === 'measured'"
-      (unitChange)="setMeasurementUnit($event)"
-    />
+      <!-- Measurement unit (only for measured presets) -->
+      <app-measurement-unit-selector
+        [measurementUnit]="measurementUnit()"
+        [visible]="productType() === 'measured'"
+        (unitChange)="setMeasurementUnit($event)"
+      />
+      }
 
-    <!-- Variant Dimension Editor -->
-    <app-variant-dimension-editor
-      [variantDimensions]="variantDimensions()"
-      [productType]="productType()"
-      (addDimension)="addVariantDimension()"
-      (removeDimension)="removeVariantDimension($event)"
-      (updateOptions)="updateDimensionOptions($event.id, $event.options)"
-    />
+      <!-- Identification -->
+      <app-identification-selector
+        #identificationSelector
+        [identificationMethod]="identificationMethod()"
+        [barcodeControl]="barcodeControl"
+        [photoCount]="photoCount()"
+        [hasValidIdentification]="hasValidIdentification()"
+        (methodChange)="chooseIdentificationMethod($event)"
+        (barcodeScanned)="onBarcodeScanned($event)"
+        (photosChanged)="onPhotosChanged($event)"
+      />
+
+      <!-- Continue to Stage 2 -->
+      <div class="flex justify-end">
+        <button type="button" class="btn btn-primary btn-sm" (click)="goToStage2()">
+          Continue to pricing
+        </button>
+      </div>
+    </div>
     }
 
-    <!-- Step 5: Generated SKUs Preview -->
-    @if (itemType() === 'product') {
-    <app-sku-list-editor [skus]="skus" [canRegenerate]="true" (regenerate)="generateSkus()" />
+    <!-- Stage 2: Variants / SKUs, pricing & stock -->
+    @if (currentStage() === 2) {
+    <div class="space-y-3">
+      @if (itemType() === 'product') {
+      <!-- Variant dimensions for products -->
+      <app-variant-dimension-editor
+        [variantDimensions]="variantDimensions()"
+        [productType]="productType()"
+        (addDimension)="addVariantDimension()"
+        (removeDimension)="removeVariantDimension($event)"
+        (updateOptions)="updateDimensionOptions($event.id, $event.options)"
+      />
+
+      <!-- Generated SKUs with pricing & opening stock -->
+      <app-sku-list-editor [skus]="skus" [canRegenerate]="true" (regenerate)="generateSkus()" />
+      }
+
+      <!-- Service-specific form -->
+      @if (itemType() === 'service') {
+      <app-service-sku-editor [skuFormGroup]="firstSkuFormGroup" />
+      }
+
+      <!-- Validation Issues -->
+      <app-validation-issues-panel [issues]="validationIssues()" />
+
+      <!-- Location (bottom, just before create button) -->
+      <app-location-display [location]="defaultLocation()" />
+    </div>
     }
 
-    <!-- Step 6: Location -->
-    @if (itemType() === 'product') {
-    <app-location-display [location]="defaultLocation()" />
+    <!-- Submit Button (Stage 2 only) -->
+    @if (currentStage() === 2) {
+      <app-submit-bar
+        [canSubmit]="canSubmit()"
+        [isLoading]="isLoading()"
+        [isEditMode]="isEditMode()"
+        [itemType]="itemType()"
+        [submitError]="submitError()"
+        [submitSuccess]="submitSuccess()"
+        (submit)="submitForm()"
+      />
     }
-
-    <!-- Service-specific form -->
-    @if (itemType() === 'service') {
-    <app-service-sku-editor [skuFormGroup]="firstSkuFormGroup" />
-    }
-
-    <!-- Validation Issues -->
-    <app-validation-issues-panel [issues]="validationIssues()" />
-
-    <!-- Submit Button -->
-    <app-submit-bar
-      [canSubmit]="canSubmit()"
-      [isLoading]="isLoading()"
-      [isEditMode]="isEditMode()"
-      [itemType]="itemType()"
-      [submitError]="submitError()"
-      [submitSuccess]="submitSuccess()"
-      (submit)="submitForm()"
-    />
   </div>
 </div>

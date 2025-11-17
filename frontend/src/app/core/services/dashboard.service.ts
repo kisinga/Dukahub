@@ -1,5 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { GET_PRODUCT_STATS, GET_PRODUCTS, GET_RECENT_ORDERS } from '../graphql/operations.graphql';
+import { GET_DASHBOARD_STATS, GET_PRODUCT_STATS, GET_PRODUCTS, GET_RECENT_ORDERS } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
 import { CompanyService } from './company.service';
 import { CurrencyService } from './currency.service';
@@ -111,19 +111,20 @@ export class DashboardService {
 
         try {
             // Fetch data in parallel for performance
-            const [salesMetrics, products, recentOrders, purchaseMetrics, lowStockCount] = await Promise.all([
+            const [salesMetrics, products, recentOrders, purchaseMetrics, lowStockCount, expenseMetrics] = await Promise.all([
                 this.salesMetricsService.fetchSalesMetrics(),
                 this.fetchProductStats(),
                 this.fetchRecentOrders(),
                 this.purchaseMetricsService.fetchPurchaseMetrics(),
                 this.fetchLowStockCount(),
+                this.fetchExpenseMetrics(),
             ]);
 
             // Aggregate into dashboard stats
             const stats: DashboardStats = {
                 sales: salesMetrics.periodStats,
                 purchases: purchaseMetrics,
-                expenses: this.getDefaultExpenseStats(), // Not tracked in Vendure
+                expenses: expenseMetrics,
                 productCount: products.productCount,
                 activeUsers: 1, // Placeholder - would need custom tracking
                 averageSale: salesMetrics.averageOrderValue,
@@ -295,19 +296,68 @@ export class DashboardService {
     }
 
     /**
-     * Get default expense stats (Vendure doesn't track expenses)
+     * Fetch expense metrics from ledger
      */
-    private getDefaultExpenseStats(): PeriodStats {
-        return {
-            today: 0,
-            week: 0,
-            month: 0,
-            accounts: [
-                { label: 'Rent', value: 0, icon: '🏠' },
-                { label: 'Salaries', value: 0, icon: '👥' },
-                { label: 'Other', value: 0, icon: '📋' },
-            ],
-        };
+    private async fetchExpenseMetrics(): Promise<PeriodStats> {
+        const client = this.apolloService.getClient();
+
+        try {
+            // Fetch dashboard stats from ledger (all periods calculated server-side)
+            const result = await client.query<{
+                dashboardStats: {
+                    expenses: {
+                        today: number;
+                        week: number;
+                        month: number;
+                        accounts: Array<{
+                            label: string;
+                            value: number;
+                            icon: string;
+                        }>;
+                    };
+                };
+            }>({
+                query: GET_DASHBOARD_STATS,
+                fetchPolicy: 'network-only', // Always fetch fresh data from ledger
+            });
+
+            const expenses = result.data?.dashboardStats?.expenses;
+            if (!expenses) {
+                return {
+                    today: 0,
+                    week: 0,
+                    month: 0,
+                    accounts: [
+                        { label: 'Rent', value: 0, icon: '🏠' },
+                        { label: 'Salaries', value: 0, icon: '👥' },
+                        { label: 'Other', value: 0, icon: '📋' },
+                    ],
+                };
+            }
+
+            return {
+                today: expenses.today,
+                week: expenses.week,
+                month: expenses.month,
+                accounts: expenses.accounts.map(acc => ({
+                    label: acc.label,
+                    value: acc.value,
+                    icon: acc.icon,
+                })),
+            };
+        } catch (error) {
+            console.error('Failed to fetch expense metrics from ledger:', error);
+            return {
+                today: 0,
+                week: 0,
+                month: 0,
+                accounts: [
+                    { label: 'Rent', value: 0, icon: '🏠' },
+                    { label: 'Salaries', value: 0, icon: '👥' },
+                    { label: 'Other', value: 0, icon: '📋' },
+                ],
+            };
+        }
     }
 
     /**

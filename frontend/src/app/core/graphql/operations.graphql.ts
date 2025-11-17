@@ -629,6 +629,43 @@ export const GET_ORDERS_FOR_PERIOD = graphql(`
   }
 `);
 
+export const GET_DASHBOARD_STATS = graphql(`
+  query GetDashboardStats($startDate: DateTime, $endDate: DateTime) {
+    dashboardStats(startDate: $startDate, endDate: $endDate) {
+      sales {
+        today
+        week
+        month
+        accounts {
+          label
+          value
+          icon
+        }
+      }
+      purchases {
+        today
+        week
+        month
+        accounts {
+          label
+          value
+          icon
+        }
+      }
+      expenses {
+        today
+        week
+        month
+        accounts {
+          label
+          value
+          icon
+        }
+      }
+    }
+  }
+`);
+
 export const GET_PRODUCT_STATS = graphql(`
   query GetProductStats {
     products(options: { take: 1 }) {
@@ -2181,6 +2218,70 @@ export const GET_STOCK_ADJUSTMENTS = graphql(`
         updatedAt
       }
       totalItems
+    }
+  }
+`);
+
+// ============================================================================
+// LEDGER & ACCOUNTING
+// ============================================================================
+
+export const GET_LEDGER_ACCOUNTS = graphql(`
+  query GetLedgerAccounts {
+    ledgerAccounts {
+      items {
+        id
+        code
+        name
+        type
+        isActive
+        balance
+      }
+    }
+  }
+`);
+
+export const GET_JOURNAL_ENTRIES = graphql(`
+  query GetJournalEntries($options: JournalEntriesOptions) {
+    journalEntries(options: $options) {
+      items {
+        id
+        entryDate
+        postedAt
+        sourceType
+        sourceId
+        memo
+        lines {
+          id
+          accountCode
+          accountName
+          debit
+          credit
+          meta
+        }
+      }
+      totalItems
+    }
+  }
+`);
+
+export const GET_JOURNAL_ENTRY = graphql(`
+  query GetJournalEntry($id: ID!) {
+    journalEntry(id: $id) {
+      id
+      entryDate
+      postedAt
+      sourceType
+      sourceId
+      memo
+      lines {
+        id
+        accountCode
+        accountName
+        debit
+        credit
+        meta
+      }
     }
   }
 `);

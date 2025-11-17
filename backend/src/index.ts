@@ -3,6 +3,11 @@ import { OtpTokenAuthStrategy } from './plugins/auth/otp-token-auth.strategy';
 import { config } from './vendure-config';
 // Initialize environment configuration early
 import './infrastructure/config/environment.config';
+// Initialize OpenTelemetry telemetry before application bootstrap
+import { initializeTelemetry } from './infrastructure/observability/telemetry.init';
+
+// Initialize telemetry (must be done before any other application code)
+initializeTelemetry('dukahub-server');
 
 // Run migrations first, then bootstrap the application
 runMigrations(config)
@@ -46,6 +51,7 @@ runMigrations(config)
         return app;
     })
     .catch(err => {
+        // Use console.error for bootstrap failures (logger not yet initialized)
         console.error('❌ Failed to start application:', err);
         process.exit(1);
     });

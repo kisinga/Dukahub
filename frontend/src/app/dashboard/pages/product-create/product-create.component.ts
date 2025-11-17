@@ -25,13 +25,13 @@ import { ItemTypeSelectorComponent } from './components/item-type-selector.compo
 import { LocationDisplayComponent } from './components/location-display.component';
 import { MeasurementUnitSelectorComponent } from './components/measurement-unit-selector.component';
 import { ProductNameInputComponent } from './components/product-name-input.component';
-import { ProductTypeSelectorComponent } from './components/product-type-selector.component';
+import { HowSoldSelectorComponent } from './components/how-sold-selector.component';
 import { ServiceSkuEditorComponent } from './components/service-sku-editor.component';
 import { SkuListEditorComponent } from './components/sku-list-editor.component';
 import { SubmitBarComponent } from './components/submit-bar.component';
 import { ValidationIssuesPanelComponent } from './components/validation-issues-panel.component';
 import { VariantDimensionEditorComponent } from './components/variant-dimension-editor.component';
-import { ItemType, ProductType, VariantDimension } from './types/product-creation.types';
+import { HowSoldPreset, ItemType, ProductType, VariantDimension } from './types/product-creation.types';
 
 /**
  * Product Creation Component - MEASURED vs DISCRETE Model
@@ -56,7 +56,7 @@ import { ItemType, ProductType, VariantDimension } from './types/product-creatio
         CommonModule,
         ReactiveFormsModule,
         ItemTypeSelectorComponent,
-        ProductTypeSelectorComponent,
+        HowSoldSelectorComponent,
         ProductNameInputComponent,
         IdentificationSelectorComponent,
         MeasurementUnitSelectorComponent,
@@ -86,11 +86,13 @@ export class ProductCreateComponent implements OnInit {
     readonly isEditMode = signal(false);
     readonly productId = signal<string | null>(null);
 
-    // New model: Item type and product type
+    // New model: Item type, product type and how it's sold (2-stage flow)
     readonly itemType = signal<ItemType>('product');
     readonly productType = signal<ProductType | null>(null);
     readonly measurementUnit = signal<string | null>(null);
     readonly variantDimensions = signal<VariantDimension[]>([]);
+    readonly howSoldPreset = signal<HowSoldPreset | null>(null);
+    readonly currentStage = signal<1 | 2>(1);
 
     // Form: Product + Multiple SKUs
     readonly productForm: FormGroup;
@@ -162,50 +164,53 @@ export class ProductCreateComponent implements OnInit {
     readonly validationIssues = computed(() => {
         const issues: string[] = [];
         const type = this.itemType();
+        const stage = this.currentStage();
 
         if (!this.hasValidIdentification()) {
             issues.push(`Barcode OR 5+ label photos`);
         }
         if (!this.productNameValid()) issues.push('Product name required');
 
-        // SKU validation (trigger ensures recomputation)
-        this.skuValidityTrigger(); // Access signal to track changes
+        // SKU + location validation only matters once we're in Stage 2
+        if (stage === 2) {
+            // SKU validation (trigger ensures recomputation)
+            this.skuValidityTrigger(); // Access signal to track changes
 
-        if (this.skus.length === 0) {
-            issues.push('At least 1 SKU required');
-        } else {
-            // Check for invalid SKUs - must have name, sku, and price
-            const invalidSkus = this.skus.controls.filter(sku => {
-                const name = sku.get('name');
-                const skuCode = sku.get('sku');
-                const price = sku.get('price');
-                const stock = sku.get('stockOnHand');
+            if (this.skus.length === 0) {
+                issues.push('At least 1 SKU required');
+            } else {
+                // Check for invalid SKUs - must have name, sku, price and stock
+                const invalidSkus = this.skus.controls.filter(sku => {
+                    const name = sku.get('name');
+                    const skuCode = sku.get('sku');
+                    const price = sku.get('price');
+                    const stock = sku.get('stockOnHand');
 
-                // All products require stock validation
-                return (
-                    (name?.invalid) ||
-                    (skuCode?.invalid) ||
-                    (price?.invalid) ||
-                    (stock?.invalid)
-                );
-            }).length;
+                    return (
+                        (name?.invalid) ||
+                        (skuCode?.invalid) ||
+                        (price?.invalid) ||
+                        (stock?.invalid)
+                    );
+                }).length;
 
-            if (invalidSkus > 0) {
-                issues.push(`${invalidSkus} SKU(s) have errors`);
+                if (invalidSkus > 0) {
+                    issues.push(`${invalidSkus} SKU(s) have errors`);
+                }
+
+                // Check for duplicate SKU codes
+                const skuCodes = this.skus.controls
+                    .map(sku => sku.get('sku')?.value?.trim().toUpperCase())
+                    .filter(code => code);
+                const uniqueSkuCodes = new Set(skuCodes);
+                if (skuCodes.length !== uniqueSkuCodes.size) {
+                    issues.push('Duplicate SKU codes detected');
+                }
             }
 
-            // Check for duplicate SKU codes
-            const skuCodes = this.skus.controls
-                .map(sku => sku.get('sku')?.value?.trim().toUpperCase())
-                .filter(code => code);
-            const uniqueSkuCodes = new Set(skuCodes);
-            if (skuCodes.length !== uniqueSkuCodes.size) {
-                issues.push('Duplicate SKU codes detected');
+            if (type === 'product' && !this.defaultLocation()) {
+                issues.push('No location selected');
             }
-        }
-
-        if (type === 'product' && !this.defaultLocation()) {
-            issues.push('No location selected');
         }
 
         return issues;
@@ -233,17 +238,7 @@ export class ProductCreateComponent implements OnInit {
             this.isEditMode.set(true);
             this.productId.set(productId);
             await this.loadProductForEdit(productId);
-        }
-
-        // Stock locations are loaded on boot via AppInitService
-        // Just check if active location is set
-        if (!this.defaultLocation()) {
-            this.submitError.set('No active location selected. Please select a location from the navbar.');
-        }
-
-        // Add first SKU by default if not in edit mode
-        if (!this.isEditMode()) {
-            this.addSku();
+            this.currentStage.set(2);
         }
 
         // Watch for manual barcode entry
@@ -315,6 +310,17 @@ export class ProductCreateComponent implements OnInit {
         });
     }
 
+    /**
+     * Build a unique, human-readable SKU from a base code and index.
+     * This runs when the variants form (SKUs list) is generated/modified,
+     * so the user sees the final SKU before submit.
+     */
+    private buildUniqueSkuCode(base: string, index: number): string {
+        const cleanedBase = (base || 'SKU').trim().toUpperCase();
+        const safeBase = cleanedBase.length > 0 ? cleanedBase : 'SKU';
+        return `${safeBase}-${this.skuUniqueSuffix}-${index}`;
+    }
+
     // ============================================================================
     // NEW MODEL METHODS
     // ============================================================================
@@ -328,7 +334,21 @@ export class ProductCreateComponent implements OnInit {
             this.productType.set(null);
             this.measurementUnit.set(null);
             this.variantDimensions.set([]);
+            this.howSoldPreset.set(null);
             this.generateSkus();
+        } else {
+            // Reset product-specific configuration
+            this.productType.set(null);
+            this.measurementUnit.set(null);
+            this.variantDimensions.set([]);
+            this.howSoldPreset.set(null);
+            this.skus.clear();
+            this.skuValidityTrigger.update(v => v + 1);
+        }
+
+        // Always return to Stage 1 when switching type in create flow (edit mode handled separately)
+        if (!this.isEditMode()) {
+            this.currentStage.set(1);
         }
     }
 
@@ -337,6 +357,8 @@ export class ProductCreateComponent implements OnInit {
      */
     setProductType(type: ProductType): void {
         this.productType.set(type);
+        // Product type is now mostly driven by howSoldPreset.
+        // We still regenerate SKUs when type is changed manually (edit mode).
         this.generateSkus();
     }
 
@@ -369,6 +391,14 @@ export class ProductCreateComponent implements OnInit {
     }
 
     /**
+     * Move back to Stage 1 (setup) without touching SKUs.
+     */
+    goToStage1(): void {
+        this.submitError.set(null);
+        this.currentStage.set(1);
+    }
+
+    /**
      * Update dimension options from array or comma-separated string
      */
     updateDimensionOptions(id: string, options: string[] | string): void {
@@ -379,6 +409,93 @@ export class ProductCreateComponent implements OnInit {
             dims.map(dim => dim.id === id ? { ...dim, options: optionsArray } : dim)
         );
         this.generateSkus();
+    }
+
+    /**
+     * Handle high-level "how it's sold" preset selection.
+     * This sets sensible defaults for productType, measurementUnit and dimensions,
+     * then generates SKUs ready for Stage 2 (pricing).
+     */
+    onHowSoldSelected(preset: HowSoldPreset): void {
+        this.howSoldPreset.set(preset);
+
+        // All presets apply to products, not services
+        this.itemType.set('product');
+
+        if (preset === 'single-item') {
+            // One discrete SKU, no dimensions
+            this.productType.set('discrete');
+            this.measurementUnit.set(null);
+            this.variantDimensions.set([]);
+        } else if (preset === 'multi-variant') {
+            // Discrete variants, start with a generic "Size / Pack size" dimension
+            this.productType.set('discrete');
+            const baseDimension: VariantDimension = {
+                id: Date.now().toString(),
+                name: 'Size / Pack size',
+                options: [],
+            };
+            this.variantDimensions.set([baseDimension]);
+        } else if (preset === 'by-weight-kg') {
+            this.productType.set('measured');
+            this.measurementUnit.set('KG');
+            this.variantDimensions.set([]);
+        } else if (preset === 'by-volume-litre') {
+            this.productType.set('measured');
+            this.measurementUnit.set('L');
+            this.variantDimensions.set([]);
+        }
+
+        this.generateSkus();
+    }
+
+    /**
+     * Move from Stage 1 (setup) to Stage 2 (pricing & stock).
+     * Validates minimum Stage 1 requirements: name + identification.
+     */
+    goToStage2(): void {
+        const nameControl = this.productForm.get('name');
+        if (nameControl) {
+            nameControl.markAsTouched();
+        }
+
+        const hasName = !!nameControl && nameControl.valid;
+        const hasId = this.hasValidIdentification();
+
+        if (!hasName || !hasId) {
+            this.submitError.set('Add a product name and a barcode or 5+ label photos before continuing.');
+            return;
+        }
+
+        this.submitError.set(null);
+
+        // Ensure SKUs exist for products
+        if (this.itemType() === 'product' && this.skus.length === 0) {
+            this.generateSkus();
+
+            if (this.skus.length === 0) {
+                const defaultName = this.productForm.get('name')?.value || 'Product';
+                const baseSku = this.generateSku(defaultName);
+                const code = this.buildUniqueSkuCode(baseSku, 1);
+                this.skus.push(
+                    this.createSkuFormGroup(
+                        code,
+                        defaultName,
+                        1,
+                        0,
+                        this.productType() === 'measured',
+                        0,
+                    ),
+                );
+            }
+        }
+
+        // Ensure a SKU exists for services
+        if (this.itemType() === 'service' && this.skus.length === 0) {
+            this.generateSkus();
+        }
+
+        this.currentStage.set(2);
     }
 
     /**
@@ -404,7 +521,9 @@ export class ProductCreateComponent implements OnInit {
      */
     private generateServiceSkus(): void {
         const productName = this.productForm.get('name')?.value || 'Service';
-        const skuCode = this.generateSku(productName);
+        const index = 1;
+        const baseSku = this.generateSku(productName);
+        const skuCode = this.buildUniqueSkuCode(baseSku, index);
         const skuGroup = this.createSkuFormGroup(skuCode, productName, 1, 0, false, 0);
         this.skus.push(skuGroup);
     }
@@ -418,13 +537,17 @@ export class ProductCreateComponent implements OnInit {
 
         if (dimensions.length === 0) {
             // Pure measured: just the unit
-            const skuCode = this.generateSku(unit);
+            const index = this.skus.length + 1;
+            const baseSku = this.generateSku(unit);
+            const skuCode = this.buildUniqueSkuCode(baseSku, index);
             this.skus.push(this.createSkuFormGroup(skuCode, unit, 1, 0, true, 0));
         } else {
             // Measured with variants: "Grade A - KG", "Grade B - KG"
             dimensions[0].options.forEach(option => {
                 const name = `${option} - ${unit}`;
-                const skuCode = this.generateSku(name);
+                const index = this.skus.length + 1;
+                const baseSku = this.generateSku(name);
+                const skuCode = this.buildUniqueSkuCode(baseSku, index);
                 this.skus.push(this.createSkuFormGroup(skuCode, name, 1, 0, true, 0));
             });
         }
@@ -439,19 +562,25 @@ export class ProductCreateComponent implements OnInit {
         if (dimensions.length === 0) {
             // Single discrete SKU
             const name = this.productForm.get('name')?.value || 'Product';
-            const skuCode = this.generateSku(name);
+            const index = this.skus.length + 1;
+            const baseSku = this.generateSku(name);
+            const skuCode = this.buildUniqueSkuCode(baseSku, index);
             this.skus.push(this.createSkuFormGroup(skuCode, name, 1, 0, false, 0));
         } else if (dimensions.length === 1) {
             // Single dimension: "Red", "Blue", "Yellow"
             dimensions[0].options.forEach(option => {
-                const skuCode = this.generateSku(option);
+                const index = this.skus.length + 1;
+                const baseSku = this.generateSku(option);
+                const skuCode = this.buildUniqueSkuCode(baseSku, index);
                 this.skus.push(this.createSkuFormGroup(skuCode, option, 1, 0, false, 0));
             });
         } else {
             // Multiple dimensions: Cartesian product
             this.generateCartesianProduct(dimensions).forEach(combination => {
                 const name = combination.join(' - ');
-                const skuCode = this.generateSku(name);
+                const index = this.skus.length + 1;
+                const baseSku = this.generateSku(name);
+                const skuCode = this.buildUniqueSkuCode(baseSku, index);
                 this.skus.push(this.createSkuFormGroup(skuCode, name, 1, 0, false, 0));
             });
         }
@@ -475,9 +604,8 @@ export class ProductCreateComponent implements OnInit {
         const index = this.skus.length + 1;
 
         // Auto-generate SKU code
-        const skuCode = productName
-            ? `${this.generateSku(productName)}-${index}`
-            : `SKU-${index}`;
+        const baseSku = productName ? this.generateSku(productName) : 'SKU';
+        const skuCode = this.buildUniqueSkuCode(baseSku, index);
 
         // Create SKU with pre-filled code to avoid validation issues
         const skuGroup = this.createSkuFormGroup(skuCode, '', 0, 0, false, 0);
@@ -543,7 +671,7 @@ export class ProductCreateComponent implements OnInit {
         this.productForm.patchValue({ barcode });
         this.barcodeValue.set(barcode);
         this.identificationMethod.set('barcode');
-        console.log('📦 Barcode scanned:', barcode);
+        console.log('Barcode scanned:', barcode);
     }
 
 
@@ -657,18 +785,14 @@ export class ProductCreateComponent implements OnInit {
 
             // Multiple variant inputs from SKUs FormArray
             // All variants are products with tracked inventory
-            console.log('🔍 Form data before processing:', formValue);
-            console.log('🔍 SKUs from form:', formValue.skus);
+            console.log('Form data before processing:', formValue);
+            console.log('SKUs from form:', formValue.skus);
 
             const variantInputs = formValue.skus.map((sku: any, index: number) => {
-                console.log(`🔍 Processing SKU ${index + 1}:`, sku);
-
-                // Append unique suffix to SKU to prevent duplicates
-                // Format: USER_SKU-TIMESTAMP-INDEX
-                const uniqueSku = `${sku.sku.trim().toUpperCase()}-${this.skuUniqueSuffix}-${index + 1}`;
+                console.log(`Processing SKU ${index + 1}:`, sku);
 
                 return {
-                    sku: uniqueSku,
+                    sku: sku.sku.trim().toUpperCase(),
                     name: sku.name.trim(),
                     price: Number(sku.price),
                     trackInventory: true, // Products: track stock
@@ -681,7 +805,7 @@ export class ProductCreateComponent implements OnInit {
                 };
             });
 
-            console.log('🔍 Final variant inputs:', variantInputs);
+            console.log('Final variant inputs:', variantInputs);
 
             const productId = await this.productService.createProductWithVariants(
                 productInput,
@@ -689,7 +813,7 @@ export class ProductCreateComponent implements OnInit {
             );
 
             if (productId) {
-                console.log('✅ Transaction Phase 1 COMPLETE: Product & Variants created');
+                console.log('Transaction Phase 1 COMPLETE: Product & Variants created');
 
                 // Upload photos if any were added (Phase 2 - non-blocking)
                 const identificationSelector = this.identificationSelector();
@@ -698,24 +822,24 @@ export class ProductCreateComponent implements OnInit {
                     if (photoManager) {
                         const photos = photoManager.getPhotos();
                         if (photos.length > 0) {
-                            console.log(`📸 Transaction Phase 2: Uploading ${photos.length} photo(s)...`);
+                            console.log(`Transaction Phase 2: Uploading ${photos.length} photo(s)...`);
                             try {
                                 const assetIds = await this.productService.uploadProductPhotos(productId, photos);
                                 if (assetIds && assetIds.length > 0) {
-                                    console.log('✅ Transaction Phase 2 COMPLETE: Photos uploaded');
+                                    console.log('Transaction Phase 2 COMPLETE: Photos uploaded');
                                     this.submitSuccess.set(true);
                                 } else {
-                                    console.warn('⚠️ Transaction Phase 2 FAILED: Photos upload failed');
-                                    console.warn('⚠️ But product was successfully created (photos can be added later)');
+                                    console.warn('Transaction Phase 2 FAILED: Photos upload failed');
+                                    console.warn('But product was successfully created (photos can be added later)');
                                     // Show partial success message
                                     this.submitError.set('Product created, but photo upload failed. You can add photos later.');
                                 }
                             } catch (photoError: any) {
-                                console.error('❌ Photo upload error:', photoError);
+                                console.error('Photo upload error:', photoError);
                                 this.submitError.set('Product created, but photo upload failed. You can add photos later.');
                             }
                         } else {
-                            console.log('📸 No photos to upload');
+                            console.log('No photos to upload');
                             this.submitSuccess.set(true);
                         }
                     } else {
@@ -734,7 +858,7 @@ export class ProductCreateComponent implements OnInit {
                 this.submitError.set(error || `Failed to create product`);
             }
         } catch (error: any) {
-            console.error(`❌ ${this.itemType()} creation failed:`, error);
+            console.error(`${this.itemType()} creation failed:`, error);
             this.submitError.set(error.message || 'An unexpected error occurred');
         } finally {
             this.isSubmitting.set(false);

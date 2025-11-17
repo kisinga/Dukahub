@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { CREATE_PRODUCT, DELETE_PRODUCT, GET_PRODUCT_DETAIL } from '../../graphql/operations.graphql';
+import { gql } from '@apollo/client/core';
 import { ApolloService } from '../apollo.service';
 import { ProductInput } from '../product.service';
 import { ProductStateService } from './product-state.service';
@@ -47,6 +48,44 @@ export class ProductApiService {
         } catch (error) {
             console.error('Product creation failed:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Update basic product information such as name and slug.
+     * Light wrapper around Vendure's updateProduct mutation.
+     */
+    async updateProductName(productId: string, name: string): Promise<boolean> {
+        const UPDATE_PRODUCT_NAME = gql`
+            mutation UpdateProductName($id: ID!, $name: String!, $slug: String!) {
+              updateProduct(input: {
+                id: $id,
+                translations: [{
+                  languageCode: en,
+                  name: $name,
+                  slug: $slug
+                }]
+              }) {
+                id
+                name
+                slug
+              }
+            }
+        `;
+
+        try {
+            const client = this.apolloService.getClient();
+            const slug = this.generateSlug(name);
+
+            const result = await client.mutate<any>({
+                mutation: UPDATE_PRODUCT_NAME,
+                variables: { id: productId, name, slug },
+            });
+
+            return !!result.data?.updateProduct?.id;
+        } catch (error) {
+            console.error('Failed to update product name:', error);
+            return false;
         }
     }
 

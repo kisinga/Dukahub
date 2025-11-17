@@ -38,11 +38,36 @@ All configuration is managed via environment variables.
 
 ### Frontend (Docker Only)
 
-| Variable        | Example           | Default   | Notes                                         |
-| --------------- | ----------------- | --------- | --------------------------------------------- |
-| `BACKEND_HOST`  | `api.example.com` | `backend` | Backend hostname, IP, or domain to connect to |
-| `BACKEND_PORT`  | `3000`            | `3000`    | Backend port to connect to                    |
-| `FRONTEND_PORT` | `4200`            | `4200`    | Frontend port (exposed to host)               |
+| Variable          | Example                        | Default   | Notes                                         |
+| ----------------- | ------------------------------ | --------- | --------------------------------------------- |
+| `BACKEND_HOST`    | `api.example.com`              | `backend` | Backend hostname, IP, or domain to connect to |
+| `BACKEND_PORT`    | `3000`                         | `3000`    | Backend port to connect to                    |
+| `FRONTEND_PORT`   | `4200`                         | `4200`    | Frontend port (exposed to host)               |
+| `ENABLE_TRACING`  | `true`                         | `false`   | Enable OpenTelemetry tracing                  |
+| `SIGNOZ_ENDPOINT` | `http://signoz:4318/v1/traces` | —         | SigNoz OTLP HTTP endpoint                     |
+
+### Observability (SigNoz)
+
+| Variable                     | Example                | Default                                      | Notes                                  |
+| ---------------------------- | ---------------------- | -------------------------------------------- | -------------------------------------- |
+| `SIGNOZ_ENABLED`             | `true`                 | `false`                                      | Enable backend observability           |
+| `SIGNOZ_HOST`                | `signoz`               | `signoz`                                     | SigNoz service hostname                |
+| `SIGNOZ_OTLP_GRPC_PORT`      | `4317`                 | `4317`                                       | OTLP gRPC port (backend)               |
+| `SIGNOZ_OTLP_HTTP_PORT`      | `4318`                 | `4318`                                       | OTLP HTTP port (frontend)              |
+| `SIGNOZ_SERVICE_NAME`        | `dukahub-backend`      | `dukahub-backend`                            | Backend service identifier             |
+| `SIGNOZ_SERVICE_VERSION`     | `2.0.0`                | `2.0.0`                                      | Service version                        |
+| `SIGNOZ_UI_PORT`             | `3301`                 | `3301`                                       | SigNoz UI port (exposed to host)       |
+| `SIGNOZ_OTLP_GRPC_ENDPOINT`  | `http://signoz:4317`   | —                                            | Override OTLP gRPC endpoint (optional) |
+| `SIGNOZ_OTLP_HTTP_ENDPOINT`  | `http://signoz:4318`   | —                                            | Override OTLP HTTP endpoint (optional) |
+| `SIGNOZ_ENDPOINT`            | `http://signoz:4317`   | —                                            | Legacy endpoint (optional)             |
+| `ENABLE_TRACING`             | `true`                 | `false`                                      | Enable frontend tracing                |
+| `SIGNOZ_ENDPOINT` (frontend) | `/signoz/v1/traces`    | `/signoz/v1/traces`                          | Frontend SigNoz endpoint (nginx proxy) |
+| `CLICKHOUSE_DB`              | `signoz`               | `signoz`                                     | ClickHouse database name               |
+| `CLICKHOUSE_USER`            | `default`              | `default`                                    | ClickHouse user                        |
+| `CLICKHOUSE_PASSWORD`        | `secure-password`      | —                                            | ClickHouse password                    |
+| `CLICKHOUSE_HOST`            | `clickhouse`           | `clickhouse`                                 | ClickHouse hostname (for SigNoz)       |
+| `CLICKHOUSE_PORT`            | `9000`                 | `9000`                                       | ClickHouse port (for SigNoz)           |
+| `OTEL_RESOURCE_ATTRIBUTES`   | `service.name=dukahub` | `service.name=dukahub,service.version=2.0.0` | OpenTelemetry resource attributes      |
 
 **Flexible Backend Connection:** The frontend can connect to backends anywhere:
 

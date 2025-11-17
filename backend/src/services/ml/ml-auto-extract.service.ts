@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import {
     AssetEvent,
     ChannelService,
@@ -17,6 +17,8 @@ import { MlTrainingService } from './ml-training.service';
  */
 @Injectable()
 export class MlAutoExtractService implements OnModuleInit {
+    private readonly logger = new Logger(MlAutoExtractService.name);
+
     constructor(
         private eventBus: EventBus,
         private channelService: ChannelService,
@@ -39,7 +41,7 @@ export class MlAutoExtractService implements OnModuleInit {
             }
         });
 
-        console.log('[ML Auto-Extract] Event listeners initialized');
+        this.logger.log('Event listeners initialized');
     }
 
     /**
@@ -54,7 +56,7 @@ export class MlAutoExtractService implements OnModuleInit {
                 await this.scheduleExtractionForChannel(ctx, channel.id);
             }
         } catch (error) {
-            console.error('[ML Auto-Extract] Error handling product change:', error);
+            this.logger.error('Error handling product change:', error);
         }
     }
 
@@ -74,7 +76,7 @@ export class MlAutoExtractService implements OnModuleInit {
                 }
             }
         } catch (error) {
-            console.error('[ML Auto-Extract] Error handling asset change:', error);
+            this.logger.error('Error handling asset change:', error);
         }
     }
 
@@ -86,23 +88,23 @@ export class MlAutoExtractService implements OnModuleInit {
             // Check if channel has ML enabled using shared utility
             const hasMlEnabled = await this.mlTrainingService.isMlEnabled(ctx, channelId);
             if (!hasMlEnabled) {
-                console.log(`[ML Auto-Extract] Channel ${channelId} does not have ML enabled, skipping`);
+                this.logger.log(`Channel ${channelId} does not have ML enabled, skipping`);
                 return;
             }
 
             // Check for recent pending extractions to prevent duplicates
             const hasRecent = await this.extractionQueueService.hasRecentPendingExtraction(ctx, channelId);
             if (hasRecent) {
-                console.log(`[ML Auto-Extract] Channel ${channelId} already has a recent pending extraction, skipping duplicate`);
+                this.logger.log(`Channel ${channelId} already has a recent pending extraction, skipping duplicate`);
                 return;
             }
 
             // Schedule extraction in database
             await this.extractionQueueService.scheduleExtraction(ctx, channelId, 5);
-            console.log(`[ML Auto-Extract] Scheduled extraction for channel ${channelId} in database`);
+            this.logger.log(`Scheduled extraction for channel ${channelId} in database`);
 
         } catch (error) {
-            console.error(`[ML Auto-Extract] Error scheduling extraction for channel ${channelId}:`, error);
+            this.logger.error(`Error scheduling extraction for channel ${channelId}:`, error);
         }
     }
 
@@ -131,7 +133,7 @@ export class MlAutoExtractService implements OnModuleInit {
      * This schedules an immediate extraction (0 delay) in the queue
      */
     async triggerExtraction(ctx: RequestContext, channelId: string): Promise<void> {
-        console.log(`[ML Auto-Extract] Manual trigger for channel ${channelId}`);
+        this.logger.log(`Manual trigger for channel ${channelId}`);
         // Schedule with 0 delay for immediate processing
         await this.extractionQueueService.scheduleExtraction(ctx, channelId, 0);
     }
@@ -146,9 +148,9 @@ export class MlAutoExtractService implements OnModuleInit {
             for (const channel of channels.items) {
                 await this.extractionQueueService.cancelPendingExtractions(RequestContext.empty(), channel.id.toString());
             }
-            console.log('[ML Auto-Extract] Cleared all pending extractions from database');
+            this.logger.log('Cleared all pending extractions from database');
         } catch (error) {
-            console.error('[ML Auto-Extract] Error clearing pending extractions:', error);
+            this.logger.error('Error clearing pending extractions:', error);
         }
     }
 }

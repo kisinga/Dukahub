@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ISmsProvider } from './interfaces/sms-provider.interface';
 import { AfricasTalkingProvider } from './providers/africastalking.provider';
 import { TextsmsProvider } from './providers/textsms.provider';
@@ -11,6 +11,7 @@ import { TextsmsProvider } from './providers/textsms.provider';
  */
 @Injectable()
 export class SmsProviderFactory {
+    private readonly logger = new Logger(SmsProviderFactory.name);
     private providerCache: Map<string, ISmsProvider> = new Map();
 
     /**
@@ -53,9 +54,7 @@ export class SmsProviderFactory {
             //     return new MockSmsProvider();
 
             default:
-                console.warn(
-                    `[SMS Factory] Unknown provider "${providerName}", falling back to textsms`
-                );
+                this.logger.warn(`Unknown provider "${providerName}", falling back to textsms`);
                 return new TextsmsProvider();
         }
     }

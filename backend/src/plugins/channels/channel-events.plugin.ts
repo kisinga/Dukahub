@@ -1,4 +1,5 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
 import { NotificationService } from '../../services/notifications/notification.service';
 import { PushNotificationService } from '../../services/notifications/push-notification.service';
 import { SmsProviderFactory } from '../../infrastructure/sms/sms-provider.factory';
@@ -57,6 +58,7 @@ import { UserContextResolver } from '../../infrastructure/audit/user-context.res
         ChannelSmsService,
         NotificationPreferenceService,
     ],
+    compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
 export class ChannelEventsPlugin { }
 

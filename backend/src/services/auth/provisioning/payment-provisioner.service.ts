@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { LanguageCode, PaymentMethod, PaymentMethodService, RequestContext } from '@vendure/core';
+import { PAYMENT_METHOD_CODES } from '../../payments/payment-method-codes.constants';
 import { ChannelAssignmentService } from './channel-assignment.service';
 import { RegistrationAuditorService } from './registration-auditor.service';
 import { RegistrationErrorService } from './registration-error.service';
@@ -36,13 +37,13 @@ export class PaymentProvisionerService {
             const cashPayment = await this.createPaymentMethod(
                 ctx,
                 channelId,
-                'cash-payment',
+                PAYMENT_METHOD_CODES.CASH,
                 'Cash Payment',
                 'Cash Payment - Immediate settlement'
             );
             await this.channelAssignment.assignPaymentMethodToChannel(ctx, cashPayment.id, channelId as any);
             await this.auditor.logEntityCreated(ctx, 'PaymentMethod', cashPayment.id.toString(), cashPayment, {
-                handler: 'cash-payment',
+                handler: PAYMENT_METHOD_CODES.CASH,
                 channelId,
                 companyCode,
             });
@@ -52,13 +53,13 @@ export class PaymentProvisionerService {
             const mpesaPayment = await this.createPaymentMethod(
                 ctx,
                 channelId,
-                'mpesa-payment',
+                PAYMENT_METHOD_CODES.MPESA,
                 'M-Pesa Payment',
                 'M-Pesa Payment - Mobile money'
             );
             await this.channelAssignment.assignPaymentMethodToChannel(ctx, mpesaPayment.id, channelId as any);
             await this.auditor.logEntityCreated(ctx, 'PaymentMethod', mpesaPayment.id.toString(), mpesaPayment, {
-                handler: 'mpesa-payment',
+                handler: PAYMENT_METHOD_CODES.MPESA,
                 channelId,
                 companyCode,
             });
@@ -76,6 +77,13 @@ export class PaymentProvisionerService {
 
     /**
      * Create a single payment method
+     * 
+     * **Naming Convention:**
+     * - handlerCode: Base code from PAYMENT_METHOD_CODES (e.g., 'cash', 'mpesa')
+     * - paymentMethodCode: Channel-specific code stored in database (e.g., 'cash-1', 'mpesa-2')
+     * - Format: `${handlerCode}-${channelId}`
+     * 
+     * This ensures each channel has its own payment method instances while sharing the same handler.
      */
     private async createPaymentMethod(
         ctx: RequestContext,
@@ -84,8 +92,12 @@ export class PaymentProvisionerService {
         name: string,
         description: string
     ): Promise<PaymentMethod> {
+        // Payment method code follows convention: ${handlerCode}-${channelId}
+        // Example: 'cash-1', 'mpesa-2', 'credit-3'
+        const paymentMethodCode = `${handlerCode}-${channelId}`;
+        
         const paymentMethodResult = await this.paymentMethodService.create(ctx, {
-            code: `${handlerCode}-${channelId}`,
+            code: paymentMethodCode,
             enabled: true,
             handler: {
                 code: handlerCode,

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { ApolloClient, HttpLink, InMemoryCache, from } from '@apollo/client';
 import { SetContextLink } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
+import { propagation, context as otelContext } from '@opentelemetry/api';
 import { environment } from '../../../environments/environment';
 
 /**
@@ -142,6 +143,9 @@ export class ApolloService {
             if (channelToken && !prevContext['skipChannelToken']) {
                 headers['vendure-token'] = channelToken;
             }
+
+            // Propagate trace context to backend for distributed tracing
+            propagation.inject(otelContext.active(), headers);
 
             return { headers };
         });

@@ -19,8 +19,7 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
                 <p class="text-xs opacity-60 mb-2">Services are sold as whole units only</p>
 
                 <!-- Single SKU for service -->
-                <div formArrayName="skus" class="space-y-2">
-                    <div [formGroupName]="0">
+                <div [formGroup]="skuFormGroup()" class="space-y-2">
                     <div>
                         <label class="text-xs opacity-70 mb-1 block">Service Name</label>
                         <input
@@ -46,7 +45,6 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
                     <input type="hidden" formControlName="sku" />
                     <input type="hidden" formControlName="stockOnHand" value="0" />
                     <input type="hidden" formControlName="allowFractionalQuantity" value="false" />
-                    </div>
                 </div>
             </div>
         </div>

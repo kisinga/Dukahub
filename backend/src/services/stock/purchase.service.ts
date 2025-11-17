@@ -1,4 +1,4 @@
-import { Injectable, Logger, Optional } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
     Customer,
     ID,
@@ -40,7 +40,7 @@ export class PurchaseService {
     constructor(
         private readonly connection: TransactionalConnection,
         private readonly validationService: StockValidationService,
-        @Optional() private readonly financialService?: FinancialService, // Optional for migration period
+        private readonly financialService: FinancialService,
     ) { }
 
     /**
@@ -90,7 +90,7 @@ export class PurchaseService {
         const savedPurchase = await purchaseRepo.save(purchase);
 
         // Post credit purchase to ledger (single source of truth)
-        if (savedPurchase.isCreditPurchase && this.financialService) {
+        if (savedPurchase.isCreditPurchase) {
             await this.financialService.recordPurchase(
                 ctx,
                 savedPurchase.id,

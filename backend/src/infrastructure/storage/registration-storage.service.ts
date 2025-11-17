@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OtpService } from '../../services/auth/otp.service';
 import { RegistrationInput } from '../../services/auth/registration.service';
 
@@ -16,6 +16,7 @@ import { RegistrationInput } from '../../services/auth/registration.service';
  */
 @Injectable()
 export class RegistrationStorageService {
+    private readonly logger = new Logger(RegistrationStorageService.name);
     private readonly STORAGE_PREFIX = 'registration:data:';
     private readonly STORAGE_EXPIRY_SECONDS = 15 * 60; // 15 minutes (matches OTP expiry + buffer)
 
@@ -49,7 +50,7 @@ export class RegistrationStorageService {
 
         const expiresAt = Date.now() + (this.STORAGE_EXPIRY_SECONDS * 1000);
 
-        console.log('[RegistrationStorage] Stored registration data:', sessionId, 'Expires:', new Date(expiresAt));
+        this.logger.debug(`Stored registration data: ${sessionId}, Expires: ${new Date(expiresAt).toISOString()}`);
 
         return { sessionId, expiresAt };
     }
@@ -67,18 +68,18 @@ export class RegistrationStorageService {
         const data = await this.otpService.redis.get(storageKey);
 
         if (!data) {
-            console.warn('[RegistrationStorage] Registration data not found or expired:', sessionId);
+            this.logger.warn(`Registration data not found or expired: ${sessionId}`);
             return null;
         }
 
         // Delete data after retrieval (one-time use)
         await this.otpService.redis.del(storageKey);
-        console.log('[RegistrationStorage] Retrieved and deleted registration data:', sessionId);
+        this.logger.debug(`Retrieved and deleted registration data: ${sessionId}`);
 
         try {
             return JSON.parse(data) as RegistrationInput;
         } catch (error) {
-            console.error('[RegistrationStorage] Failed to parse registration data:', error);
+            this.logger.error('Failed to parse registration data:', error);
             return null;
         }
     }

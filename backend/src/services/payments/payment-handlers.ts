@@ -5,22 +5,8 @@ import {
     SettlePaymentResult,
     UserInputError
 } from '@vendure/core';
-
-// Service locator for CreditService
-// This will be set by the plugin when it initializes
-let creditServiceRef: any | null = null;
-
-export function setPaymentHandlerCreditService(creditService: any): void {
-    creditServiceRef = creditService;
-}
-
-// Service locator for AuditService
-// This will be set by the audit plugin when it initializes
-let auditServiceRef: any | null = null;
-
-export function setPaymentHandlerAuditService(auditService: any): void {
-    auditServiceRef = auditService;
-}
+import { PAYMENT_METHOD_CODES } from './payment-method-codes.constants';
+import { CreditService } from '../credit/credit.service';
 
 /**
  * Cash Payment Handler
@@ -29,7 +15,7 @@ export function setPaymentHandlerAuditService(auditService: any): void {
  * No external API integration required.
  */
 export const cashPaymentHandler = new PaymentMethodHandler({
-    code: 'cash-payment',
+    code: PAYMENT_METHOD_CODES.CASH,
     description: [{
         languageCode: LanguageCode.en,
         value: 'Cash Payment - Immediate settlement'
@@ -72,7 +58,7 @@ export const cashPaymentHandler = new PaymentMethodHandler({
  * - Update payment state based on API response
  */
 export const mpesaPaymentHandler = new PaymentMethodHandler({
-    code: 'mpesa-payment',
+    code: PAYMENT_METHOD_CODES.MPESA,
     description: [{
         languageCode: LanguageCode.en,
         value: 'M-Pesa Payment - Mobile money (stub for future API integration)'
@@ -107,64 +93,62 @@ export const mpesaPaymentHandler = new PaymentMethodHandler({
 });
 
 /**
- * Credit Payment Handler
+ * Factory for Credit Payment Handler
+ *
+ * We construct this handler with an injected CreditService to avoid
+ * global service-locator state and to fail fast if the plugin wiring
+ * is incorrect.
  */
-export const creditPaymentHandler = new PaymentMethodHandler({
-    code: 'credit-payment',
-    description: [{
-        languageCode: LanguageCode.en,
-        value: 'Customer credit payment',
-    }],
-    args: {},
-    createPayment: async (ctx, order): Promise<CreatePaymentResult> => {
-        const customerId = order.customer?.id;
+export function createCreditPaymentHandler(creditService: CreditService): PaymentMethodHandler {
+    return new PaymentMethodHandler({
+        code: PAYMENT_METHOD_CODES.CREDIT,
+        description: [{
+            languageCode: LanguageCode.en,
+            value: 'Customer credit payment',
+        }],
+        args: {},
+        createPayment: async (ctx, order): Promise<CreatePaymentResult> => {
+            const customerId = order.customer?.id;
 
-        if (!customerId) {
-            throw new UserInputError('Credit payments require an associated customer.');
-        }
+            if (!customerId) {
+                throw new UserInputError('Credit payments require an associated customer.');
+            }
 
-        // Get CreditService from service locator
-        // Note: This requires the service to be set by a plugin during initialization
-        if (!creditServiceRef) {
-            throw new UserInputError('Credit service not initialized. Please ensure credit plugin is loaded.');
-        }
+            // Get credit summary via injected service
+            const summary = await creditService.getCreditSummary(ctx, customerId);
 
-        // Get credit summary
-        const summary = await creditServiceRef.getCreditSummary(ctx, customerId);
+            if (!summary.isCreditApproved) {
+                throw new UserInputError('Customer is not approved for credit purchases.');
+            }
 
-        if (!summary.isCreditApproved) {
-            throw new UserInputError('Customer is not approved for credit purchases.');
-        }
+            if (summary.availableCredit * 100 < order.total) {
+                // summary.availableCredit is in base units; order.total is cents
+                throw new UserInputError('Customer credit limit exceeded.');
+            }
 
-        if (summary.availableCredit < order.total) {
-            throw new UserInputError('Customer credit limit exceeded.');
-        }
+            const result: CreatePaymentResult = {
+                amount: order.total,
+                state: 'Authorized' as const,
+                transactionId: `CREDIT-${Date.now()}`,
+                metadata: {
+                    paymentType: 'credit',
+                    customerId,
+                    creditLimit: summary.creditLimit,
+                    outstandingAmount: summary.outstandingAmount,
+                    userId: ctx.activeUserId?.toString(),
+                },
+            };
 
-        // Note: Outstanding balance is now calculated dynamically from orders
-        // No need to call applyCreditCharge - balance will be calculated on-the-fly
+            // Note: Payment custom fields will be updated by VendureEventAuditSubscriber
+            // when PaymentStateTransitionEvent fires, using userId from metadata
 
-        const result: CreatePaymentResult = {
-            amount: order.total,
-            state: 'Authorized' as const,
-            transactionId: `CREDIT-${Date.now()}`,
-            metadata: {
-                paymentType: 'credit',
-                customerId,
-                creditLimit: summary.creditLimit,
-                outstandingAmount: summary.outstandingAmount, // Current outstanding (will be recalculated dynamically)
-                userId: ctx.activeUserId?.toString(), // Store user ID in metadata for later tracking
-            },
-        };
-        
-        // Note: Payment custom fields will be updated by VendureEventAuditSubscriber
-        // when PaymentStateTransitionEvent fires, using userId from metadata
-        
-        return result;
-    },
-    settlePayment: async (): Promise<SettlePaymentResult> => {
-        // Credit payment is already authorized in createPayment
-        // Settlement just confirms the authorization
-        return { success: true };
-    },
-});
+            return result;
+        },
+        settlePayment: async (): Promise<SettlePaymentResult> => {
+            // Credit payment is already authorized in createPayment
+            // Settlement just confirms the authorization
+            return { success: true };
+        },
+    });
+}
 

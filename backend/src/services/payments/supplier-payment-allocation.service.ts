@@ -8,6 +8,7 @@ import { In } from 'typeorm';
 import { AuditService } from '../../infrastructure/audit/audit.service';
 import { SupplierCreditService } from '../credit/supplier-credit.service';
 import { FinancialService } from '../financial/financial.service';
+import { PAYMENT_METHOD_CODES } from './payment-method-codes.constants';
 import { StockPurchase } from '../stock/entities/purchase.entity';
 import {
     PaymentAllocationItem,
@@ -39,8 +40,8 @@ export class SupplierPaymentAllocationService {
     constructor(
         private readonly connection: TransactionalConnection,
         private readonly supplierCreditService: SupplierCreditService,
+        private readonly financialService: FinancialService,
         @Optional() private readonly auditService?: AuditService,
-        @Optional() private readonly financialService?: FinancialService, // Optional for migration period
     ) { }
 
     /**
@@ -152,18 +153,16 @@ export class SupplierPaymentAllocationService {
                     );
 
                     // Post to ledger via FinancialService (single source of truth)
-                    if (this.financialService) {
-                        const paymentId = `supplier-payment-${purchase.id}-${Date.now()}`;
-                        await this.financialService.recordSupplierPayment(
-                            transactionCtx,
-                            paymentId,
-                            purchase.id,
-                            purchase.referenceNumber || purchase.id,
-                            input.supplierId,
-                            allocation.amountToAllocate,
-                            'cash-payment' // Default to cash, can be made configurable
-                        );
-                    }
+                    const paymentId = `supplier-payment-${purchase.id}-${Date.now()}`;
+                    await this.financialService.recordSupplierPayment(
+                        transactionCtx,
+                        paymentId,
+                        purchase.id,
+                        purchase.referenceNumber || purchase.id,
+                        input.supplierId,
+                        allocation.amountToAllocate,
+                        PAYMENT_METHOD_CODES.CASH // Default to cash, can be made configurable
+                    );
 
                     purchasesPaid.push({
                         purchaseId: purchase.id,

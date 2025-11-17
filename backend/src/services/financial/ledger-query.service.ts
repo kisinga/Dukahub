@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { JournalLine } from '../../ledger/journal-line.entity';
+import { ACCOUNT_CODES } from '../../ledger/account-codes.constants';
 import { Account } from '../../ledger/account.entity';
+import { JournalLine } from '../../ledger/journal-line.entity';
 
 export interface BalanceQuery {
   channelId: number;
@@ -10,6 +11,7 @@ export interface BalanceQuery {
   endDate?: string; // YYYY-MM-DD
   customerId?: string; // For AR account filtering
   supplierId?: string; // For AP account filtering
+  orderId?: string; // For order-scoped AR queries
 }
 
 export interface AccountBalance {
@@ -26,7 +28,7 @@ export class LedgerQueryService {
   private balanceCache = new Map<string, { balance: number; timestamp: number }>();
   private readonly CACHE_TTL = 60000; // 1 minute
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(private readonly dataSource: DataSource) { }
 
   /**
    * Get account balance from ledger
@@ -37,7 +39,7 @@ export class LedgerQueryService {
   async getAccountBalance(query: BalanceQuery): Promise<AccountBalance> {
     const cacheKey = this.getCacheKey(query);
     const cached = this.balanceCache.get(cacheKey);
-    
+
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
       return {
         accountCode: query.accountCode,
@@ -82,14 +84,20 @@ export class LedgerQueryService {
 
     // Filter by customer/supplier if provided (via meta field)
     if (query.customerId) {
-      queryBuilder = queryBuilder.andWhere("line.meta->>'customerId' = :customerId", {
-        customerId: query.customerId,
+      queryBuilder = queryBuilder.andWhere('line.meta @> :customerFilter', {
+        customerFilter: JSON.stringify({ customerId: query.customerId }),
       });
     }
 
     if (query.supplierId) {
-      queryBuilder = queryBuilder.andWhere("line.meta->>'supplierId' = :supplierId", {
-        supplierId: query.supplierId,
+      queryBuilder = queryBuilder.andWhere('line.meta @> :supplierFilter', {
+        supplierFilter: JSON.stringify({ supplierId: query.supplierId }),
+      });
+    }
+
+    if (query.orderId) {
+      queryBuilder = queryBuilder.andWhere('line.meta @> :orderFilter', {
+        orderFilter: JSON.stringify({ orderId: query.orderId }),
       });
     }
 
@@ -124,7 +132,7 @@ export class LedgerQueryService {
   async getCustomerBalance(channelId: number, customerId: string): Promise<number> {
     const balance = await this.getAccountBalance({
       channelId,
-      accountCode: 'ACCOUNTS_RECEIVABLE',
+      accountCode: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
       customerId,
     });
     // AR is an asset account
@@ -141,7 +149,7 @@ export class LedgerQueryService {
   async getSupplierBalance(channelId: number, supplierId: string): Promise<number> {
     const balance = await this.getAccountBalance({
       channelId,
-      accountCode: 'ACCOUNTS_PAYABLE',
+      accountCode: ACCOUNT_CODES.ACCOUNTS_PAYABLE,
       supplierId,
     });
     // AP is a liability account
@@ -161,12 +169,16 @@ export class LedgerQueryService {
   ): Promise<number> {
     const balance = await this.getAccountBalance({
       channelId,
-      accountCode: 'SALES',
+      accountCode: ACCOUNT_CODES.SALES,
       startDate,
       endDate,
     });
     // Sales is income (credit normal), so negative balance = total sales
-    return Math.abs(balance.balance);
+    const total = Math.abs(balance.balance);
+    this.logger.debug(
+      `getSalesTotal: channelId=${channelId}, startDate=${startDate}, endDate=${endDate}, balance=${balance.balance}, total=${total}`
+    );
+    return total;
   }
 
   /**
@@ -179,7 +191,7 @@ export class LedgerQueryService {
   ): Promise<number> {
     const balance = await this.getAccountBalance({
       channelId,
-      accountCode: 'PURCHASES',
+      accountCode: ACCOUNT_CODES.PURCHASES,
       startDate,
       endDate,
     });
@@ -197,12 +209,167 @@ export class LedgerQueryService {
   ): Promise<number> {
     const balance = await this.getAccountBalance({
       channelId,
-      accountCode: 'EXPENSES',
+      accountCode: ACCOUNT_CODES.EXPENSES,
       startDate,
       endDate,
     });
     // Expenses is expense (debit normal), so positive balance = total expenses
     return balance.balance;
+  }
+
+  /**
+   * Get sales breakdown by payment method (cash vs credit)
+   * Returns cash sales and credit sales totals for a period
+   * 
+   * Cash sales = debits to CASH_ON_HAND and CLEARING_MPESA that are part of sales entries
+   * Credit sales = debits to ACCOUNTS_RECEIVABLE that are part of sales entries
+   * 
+   * We filter by entries that also have SALES credits to ensure we only count sales transactions
+   */
+  async getSalesBreakdown(
+    channelId: number,
+    startDate?: string,
+    endDate?: string
+  ): Promise<{ cashSales: number; creditSales: number }> {
+    // Get SALES account
+    const salesAccount = await this.dataSource
+      .getRepository(Account)
+      .findOne({
+        where: {
+          channelId,
+          code: ACCOUNT_CODES.SALES,
+        },
+      });
+
+    if (!salesAccount) {
+      return { cashSales: 0, creditSales: 0 };
+    }
+
+    // Get cash accounts
+    const cashOnHandAccount = await this.dataSource
+      .getRepository(Account)
+      .findOne({
+        where: {
+          channelId,
+          code: ACCOUNT_CODES.CASH_ON_HAND,
+        },
+      });
+
+    const mpesaAccount = await this.dataSource
+      .getRepository(Account)
+      .findOne({
+        where: {
+          channelId,
+          code: ACCOUNT_CODES.CLEARING_MPESA,
+        },
+      });
+
+    // Get AR account
+    const arAccount = await this.dataSource
+      .getRepository(Account)
+      .findOne({
+        where: {
+          channelId,
+          code: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
+        },
+      });
+
+    if (!cashOnHandAccount || !mpesaAccount || !arAccount) {
+      return { cashSales: 0, creditSales: 0 };
+    }
+
+    // Query for cash sales: debits to CASH_ON_HAND or CLEARING_MPESA in entries that also credit SALES
+    // Use EXISTS subquery to check if entry has SALES credit
+    let cashSalesQuery = this.dataSource
+      .getRepository(JournalLine)
+      .createQueryBuilder('line')
+      .innerJoin('line.entry', 'entry')
+      .where('line.channelId = :channelId', { channelId })
+      .andWhere('(line.accountId = :cashAccountId OR line.accountId = :mpesaAccountId)', {
+        cashAccountId: cashOnHandAccount.id,
+        mpesaAccountId: mpesaAccount.id,
+      })
+      .andWhere('CAST(line.debit AS BIGINT) > 0')
+      .andWhere(
+        `EXISTS (
+          SELECT 1 FROM ledger_journal_line salesLine
+          WHERE salesLine."entryId" = entry.id
+          AND salesLine."accountId" = :salesAccountId
+          AND CAST(salesLine.credit AS BIGINT) > 0
+        )`,
+        { salesAccountId: salesAccount.id }
+      );
+
+    // Query for credit sales: debits to ACCOUNTS_RECEIVABLE in entries that also credit SALES
+    let creditSalesQuery = this.dataSource
+      .getRepository(JournalLine)
+      .createQueryBuilder('line')
+      .innerJoin('line.entry', 'entry')
+      .where('line.channelId = :channelId', { channelId })
+      .andWhere('line.accountId = :arAccountId', { arAccountId: arAccount.id })
+      .andWhere('CAST(line.debit AS BIGINT) > 0')
+      .andWhere(
+        `EXISTS (
+          SELECT 1 FROM ledger_journal_line salesLine
+          WHERE salesLine."entryId" = entry.id
+          AND salesLine."accountId" = :salesAccountId
+          AND CAST(salesLine.credit AS BIGINT) > 0
+        )`,
+        { salesAccountId: salesAccount.id }
+      );
+
+    // Apply date filters
+    if (startDate) {
+      cashSalesQuery = cashSalesQuery.andWhere('entry.entryDate >= :startDate', { startDate });
+      creditSalesQuery = creditSalesQuery.andWhere('entry.entryDate >= :startDate', { startDate });
+    }
+
+    if (endDate) {
+      cashSalesQuery = cashSalesQuery.andWhere('entry.entryDate <= :endDate', { endDate });
+      creditSalesQuery = creditSalesQuery.andWhere('entry.entryDate <= :endDate', { endDate });
+    }
+
+    // Get totals
+    const cashSalesResult = await cashSalesQuery
+      .select('SUM(CAST(line.debit AS BIGINT))', 'total')
+      .getRawOne();
+
+    const creditSalesResult = await creditSalesQuery
+      .select('SUM(CAST(line.debit AS BIGINT))', 'total')
+      .getRawOne();
+
+    const cashSales = parseInt(cashSalesResult?.total || '0', 10);
+    const creditSales = parseInt(creditSalesResult?.total || '0', 10);
+
+    return {
+      cashSales,
+      creditSales,
+    };
+  }
+
+  /**
+   * Calculate period boundaries (today, week, month start dates)
+   * Returns dates in YYYY-MM-DD format
+   */
+  calculatePeriods(fromDate: Date = new Date()): {
+    startOfToday: string;
+    startOfWeek: string;
+    startOfMonth: string;
+  } {
+    const startOfMonth = new Date(fromDate.getFullYear(), fromDate.getMonth(), 1);
+
+    const startOfWeek = new Date(fromDate);
+    startOfWeek.setDate(fromDate.getDate() - fromDate.getDay()); // Start of week (Sunday)
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const startOfToday = new Date(fromDate);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    return {
+      startOfToday: startOfToday.toISOString().slice(0, 10),
+      startOfWeek: startOfWeek.toISOString().slice(0, 10),
+      startOfMonth: startOfMonth.toISOString().slice(0, 10),
+    };
   }
 
   /**
@@ -226,7 +393,7 @@ export class LedgerQueryService {
   }
 
   private getCacheKey(query: BalanceQuery): string {
-    return `${query.channelId}:${query.accountCode}:${query.startDate || ''}:${query.endDate || ''}:${query.customerId || ''}:${query.supplierId || ''}`;
+    return `${query.channelId}:${query.accountCode}:${query.startDate || ''}:${query.endDate || ''}:${query.customerId || ''}:${query.supplierId || ''}:${query.orderId || ''}`;
   }
 }
 

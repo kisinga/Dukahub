@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OrderItemPriceCalculationStrategy, PriceCalculationResult, ProductVariant, RequestContext } from '@vendure/core';
 
 @Injectable()
 export class CustomPriceCalculationStrategy implements OrderItemPriceCalculationStrategy {
+    private readonly logger = new Logger(CustomPriceCalculationStrategy.name);
     calculateUnitPrice(
         ctx: RequestContext,
         productVariant: ProductVariant,
@@ -22,7 +23,7 @@ export class CustomPriceCalculationStrategy implements OrderItemPriceCalculation
             const wholesalePrice = (productVariant.customFields as any)?.wholesalePrice;
             if (wholesalePrice && customLinePrice < wholesalePrice) {
                 // Don't block the transaction, but log a warning
-                console.warn(`Price override below wholesale limit: ${customLinePrice} < ${wholesalePrice} for variant ${productVariant.id}`);
+                this.logger.warn(`Price override below wholesale limit: ${customLinePrice} < ${wholesalePrice} for variant ${productVariant.id}`);
             }
 
             // Custom line price is total for all items (tax-inclusive)

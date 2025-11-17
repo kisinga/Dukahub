@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
 import { LedgerPlugin } from '../ledger/ledger.plugin';
 import { gql } from 'graphql-tag';
 
@@ -19,7 +20,7 @@ import { OrderStateService } from '../../services/orders/order-state.service';
 import { PriceOverrideService } from '../../services/orders/price-override.service';
 import { PaymentAllocationService } from '../../services/payments/payment-allocation.service';
 import { PaymentEventsAdapter } from '../../services/payments/payment-events.adapter';
-import { setPaymentHandlerCreditService } from '../../services/payments/payment-handlers';
+import { createCreditPaymentHandler } from '../../services/payments/payment-handlers';
 import { SupplierPaymentAllocationService } from '../../services/payments/supplier-payment-allocation.service';
 import { PurchaseCreditValidatorService } from '../../services/stock/purchase-credit-validator.service';
 import { CreditPaymentSubscriber } from './credit-payment.subscriber';
@@ -192,17 +193,6 @@ const COMBINED_SCHEMA = gql`
     }
 `;
 
-// Service to initialize payment handler service reference
-@Injectable()
-class PaymentHandlerInitializer implements OnModuleInit {
-    constructor(private creditService: CreditService) { }
-
-    onModuleInit() {
-        // Set the credit service reference for payment handlers
-        setPaymentHandlerCreditService(this.creditService);
-    }
-}
-
 @VendurePlugin({
     imports: [PluginCommonModule, LedgerPlugin],
     providers: [
@@ -232,7 +222,6 @@ class PaymentHandlerInitializer implements OnModuleInit {
         CreditResolver,
         CustomerFieldResolver,
         CreditPaymentSubscriber,
-        PaymentHandlerInitializer,
         PaymentAllocationResolver,
         SupplierCreditResolver,
         SupplierPaymentAllocationResolver,
@@ -251,6 +240,16 @@ class PaymentHandlerInitializer implements OnModuleInit {
             ManageCustomerCreditLimitPermission,
             ManageSupplierCreditPurchasesPermission,
         ];
+
+        // Replace the placeholder credit payment handler with a DI-backed instance.
+        // The CreditService provider is available in the plugin context, so we can
+        // construct the handler using the factory.
+        const creditServiceProvider = CreditService as any;
+        config.paymentOptions.paymentMethodHandlers = [
+            ...config.paymentOptions.paymentMethodHandlers,
+            createCreditPaymentHandler(creditServiceProvider),
+        ];
+
         return config;
     },
     adminApiExtensions: {
@@ -263,6 +262,7 @@ class PaymentHandlerInitializer implements OnModuleInit {
             SupplierPaymentAllocationResolver,
         ],
     },
+    compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
 export class CreditPlugin { }
 

@@ -11,6 +11,7 @@ import {
 import { In } from 'typeorm';
 import { AuditService } from '../../infrastructure/audit/audit.service';
 import { FinancialService } from '../financial/financial.service';
+import { PAYMENT_METHOD_CODES } from './payment-method-codes.constants';
 import {
     PaymentAllocationItem,
     calculatePaymentAllocation,
@@ -42,8 +43,8 @@ export class PaymentAllocationService {
         private readonly connection: TransactionalConnection,
         private readonly orderService: OrderService,
         private readonly paymentService: PaymentService,
+        private readonly financialService: FinancialService,
         @Optional() private readonly auditService?: AuditService,
-        @Optional() private readonly financialService?: FinancialService, // Optional for migration period
     ) {}
 
     /**
@@ -135,7 +136,7 @@ export class PaymentAllocationService {
                         transactionCtx,
                         {
                             orderId: order.id,
-                            method: 'credit-payment',
+                            method: PAYMENT_METHOD_CODES.CREDIT,
                             metadata: {
                                 paymentType: 'credit',
                                 customerId: input.customerId,
@@ -159,15 +160,13 @@ export class PaymentAllocationService {
                         if (payment) {
                             await this.paymentService.settlePayment(transactionCtx, payment.id);
                             // Post to ledger via FinancialService (single source of truth)
-                            if (this.financialService) {
-                                await this.financialService.recordPaymentAllocation(
-                                    transactionCtx,
-                                    payment.id.toString(),
-                                    updatedOrder,
-                                    'credit-payment',
-                                    amountToAllocate
-                                );
-                            }
+                            await this.financialService.recordPaymentAllocation(
+                                transactionCtx,
+                                payment.id.toString(),
+                                updatedOrder,
+                                PAYMENT_METHOD_CODES.CREDIT,
+                                amountToAllocate
+                            );
                         }
                     }
 

@@ -29,17 +29,18 @@ export class SupplierCreditService {
 
     constructor(
         private readonly connection: TransactionalConnection,
+        private readonly financialService: FinancialService,
         @Optional() private readonly communicationService?: ChannelCommunicationService,
         @Optional() private readonly auditService?: AuditService,
-        @Optional() private readonly financialService?: FinancialService, // Optional for migration period
     ) { }
 
     async getSupplierCreditSummary(ctx: RequestContext, supplierId: ID): Promise<SupplierCreditSummary> {
         const supplier = await this.getSupplierOrThrow(ctx, supplierId);
         // Get outstanding amount from ledger (single source of truth)
-        const outstandingAmount = this.financialService
-            ? await this.financialService.getSupplierBalance(ctx, supplierId.toString())
-            : await this.calculateSupplierOutstandingAmount(ctx, supplierId); // Fallback during migration
+        const outstandingAmount = await this.financialService.getSupplierBalance(
+            ctx,
+            supplierId.toString(),
+        );
         return this.mapToSummary(supplier, outstandingAmount);
     }
 
@@ -89,9 +90,10 @@ export class SupplierCreditService {
             });
         }
 
-        const outstandingAmount = this.financialService
-            ? await this.financialService.getSupplierBalance(ctx, supplierId.toString())
-            : await this.calculateSupplierOutstandingAmount(ctx, supplierId); // Fallback during migration
+        const outstandingAmount = await this.financialService.getSupplierBalance(
+            ctx,
+            supplierId.toString(),
+        );
         return this.mapToSummary(supplier, outstandingAmount);
     }
 
@@ -134,9 +136,10 @@ export class SupplierCreditService {
             });
         }
 
-        const outstandingAmount = this.financialService
-            ? await this.financialService.getSupplierBalance(ctx, supplierId.toString())
-            : await this.calculateSupplierOutstandingAmount(ctx, supplierId); // Fallback during migration
+        const outstandingAmount = await this.financialService.getSupplierBalance(
+            ctx,
+            supplierId.toString(),
+        );
         return this.mapToSummary(supplier, outstandingAmount);
     }
 
@@ -159,58 +162,11 @@ export class SupplierCreditService {
         await this.connection.getRepository(ctx, Customer).save(supplier);
         this.logger.log(`Updated supplier credit duration for supplier ${supplierId} to ${creditDuration} days`);
 
-        const outstandingAmount = this.financialService
-            ? await this.financialService.getSupplierBalance(ctx, supplierId.toString())
-            : await this.calculateSupplierOutstandingAmount(ctx, supplierId); // Fallback during migration
+        const outstandingAmount = await this.financialService.getSupplierBalance(
+            ctx,
+            supplierId.toString(),
+        );
         return this.mapToSummary(supplier, outstandingAmount);
-    }
-
-    /**
-     * Calculate outstanding amount dynamically from credit purchases and payments
-     * @deprecated Use FinancialService.getSupplierBalance() instead. This method is kept for migration fallback.
-     * This replaces any stored outstandingAmount field
-     */
-    async calculateSupplierOutstandingAmount(ctx: RequestContext, supplierId: ID): Promise<number> {
-        // Query all credit purchases for supplier in states that indicate unpaid purchases
-        const purchaseRepo = this.connection.getRepository(ctx, StockPurchase);
-        // Convert Vendure ID (string) to integer for database query
-        const purchases = await purchaseRepo.find({
-            where: {
-                supplierId: parseInt(String(supplierId), 10),
-                isCreditPurchase: true,
-                paymentStatus: In(['pending', 'partial']),
-            },
-        });
-
-        // Calculate outstanding amount: sum of purchase totals minus paid amounts
-        // Note: totalCost is in smallest currency unit (cents)
-        // We need to track payments separately - for now, we'll use paymentStatus
-        // 'paid' = fully paid, 'partial' = partially paid, 'pending' = unpaid
-        // For simplicity, we'll calculate based on paymentStatus:
-        // - 'pending': full amount owed
-        // - 'partial': need to track actual paid amount (this would require a payments table)
-        // For now, we'll treat 'partial' as having some payment but not fully paid
-        // This is a simplification - ideally we'd have a payments table for purchases
-
-        // TODO: In the future, add a purchase_payment table similar to order payments
-        // For now, we'll use a simple calculation based on paymentStatus
-        const outstandingAmountInCents = purchases.reduce((sum, purchase) => {
-            if (purchase.paymentStatus === 'paid') {
-                return sum; // Fully paid, no outstanding
-            } else if (purchase.paymentStatus === 'partial') {
-                // For partial payments, we'd need to track actual paid amount
-                // For now, we'll estimate as 50% paid (this should be replaced with actual payment tracking)
-                // This is a temporary solution until purchase payments are properly tracked
-                return sum + Math.floor(purchase.totalCost * 0.5);
-            } else {
-                // 'pending' - full amount owed
-                return sum + purchase.totalCost;
-            }
-        }, 0);
-
-        // Convert from cents to base currency units (divide by 100)
-        // This matches the unit used for supplierCreditLimit (base currency units)
-        return outstandingAmountInCents / 100;
     }
 
     /**
@@ -242,11 +198,12 @@ export class SupplierCreditService {
             `Recorded supplier repayment tracking for supplier ${supplierId}. Amount: ${amount}, Date: ${now}`
         );
 
-        // Notify about balance change (outstanding balance is calculated dynamically)
+        // Notify about balance change (outstanding balance is calculated from ledger)
         if (this.communicationService) {
-            const currentOutstanding = this.financialService
-                ? await this.financialService.getSupplierBalance(ctx, supplierId.toString())
-                : await this.calculateSupplierOutstandingAmount(ctx, supplierId); // Fallback during migration
+            const currentOutstanding = await this.financialService.getSupplierBalance(
+                ctx,
+                supplierId.toString(),
+            );
             await this.communicationService.sendBalanceChangeNotification(
                 ctx,
                 String(supplierId),

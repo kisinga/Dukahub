@@ -1,8 +1,10 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { RequestContext, TransactionalConnection } from '@vendure/core';
 import { ChannelEventRouterService } from '../../infrastructure/events/channel-event-router.service';
 import { ActionCategory } from '../../infrastructure/events/types/action-category.enum';
 import { ChannelEventType } from '../../infrastructure/events/types/event-type.enum';
+import { TracingService } from '../../infrastructure/observability/tracing.service';
+import { MetricsService } from '../../infrastructure/observability/metrics.service';
 
 export interface ScheduledExtraction {
     id: string;
@@ -22,25 +24,44 @@ export interface ScheduledExtraction {
  */
 @Injectable()
 export class MlExtractionQueueService {
+    private readonly logger = new Logger(MlExtractionQueueService.name);
+
     constructor(
         private connection: TransactionalConnection,
         @Optional() private eventRouter?: ChannelEventRouterService, // Optional to avoid circular dependency
+        @Optional() private tracingService?: TracingService,
+        @Optional() private metricsService?: MetricsService,
     ) { }
 
     /**
      * Schedule a new extraction for a channel
      */
     async scheduleExtraction(ctx: RequestContext, channelId: string, delayMinutes: number = 5): Promise<string> {
-        const scheduledAt = new Date(Date.now() + (delayMinutes * 60 * 1000));
+        const span = this.tracingService?.startSpan('ml.scheduleExtraction', {
+            'ml.channel_id': channelId,
+            'ml.delay_minutes': delayMinutes.toString(),
+        });
 
-        const result = await this.connection.rawConnection.query(`
-            INSERT INTO ml_extraction_queue (channel_id, scheduled_at, status, created_at, updated_at)
-            VALUES ($1, $2, 'pending', NOW(), NOW())
-            RETURNING id
-        `, [channelId, scheduledAt]);
+        try {
+            const scheduledAt = new Date(Date.now() + (delayMinutes * 60 * 1000));
 
-        const extractionId = result.rows[0].id;
-        console.log(`[ML Extraction Queue] Scheduled extraction ${extractionId} for channel ${channelId} at ${scheduledAt.toISOString()}`);
+            const result = await this.connection.rawConnection.query(`
+                INSERT INTO ml_extraction_queue (channel_id, scheduled_at, status, created_at, updated_at)
+                VALUES ($1, $2, 'pending', NOW(), NOW())
+                RETURNING id
+            `, [channelId, scheduledAt]);
+
+            const extractionId = result.rows[0].id;
+            
+            this.tracingService?.setAttributes(span!, {
+                'ml.extraction_id': extractionId,
+                'ml.scheduled_at': scheduledAt.toISOString(),
+            });
+            this.tracingService?.addEvent(span!, 'ml.extraction.scheduled', {
+                'ml.extraction_id': extractionId,
+            });
+            
+            this.logger.log(`Scheduled extraction ${extractionId} for channel ${channelId} at ${scheduledAt.toISOString()}`);
 
         // Emit extraction queued event
         if (this.eventRouter) {
@@ -55,11 +76,16 @@ export class MlExtractionQueueService {
                     scheduledAt: scheduledAt.toISOString(),
                 },
             }).catch(err => {
-                console.warn(`Failed to route ML extraction queued event: ${err instanceof Error ? err.message : String(err)}`);
+                this.logger.warn(`Failed to route ML extraction queued event: ${err instanceof Error ? err.message : String(err)}`);
             });
         }
 
-        return extractionId;
+            this.tracingService?.endSpan(span!, true);
+            return extractionId;
+        } catch (error) {
+            this.tracingService?.endSpan(span!, false, error instanceof Error ? error : new Error(String(error)));
+            throw error;
+        }
     }
 
     /**
@@ -79,10 +105,10 @@ export class MlExtractionQueueService {
         } catch (error) {
             // Handle table not existing
             if (error instanceof Error && error.message.includes('relation "ml_extraction_queue" does not exist')) {
-                console.log('[ML Extraction Queue] Table does not exist yet, returning false for recent check');
+                this.logger.log('Table does not exist yet, returning false for recent check');
                 return false;
             }
-            console.error('[ML Extraction Queue] Error checking recent pending extraction:', error);
+            this.logger.error('Error checking recent pending extraction:', error);
             return false;
         }
     }
@@ -102,15 +128,15 @@ export class MlExtractionQueueService {
 
             // Handle case where table doesn't exist yet or query fails
             if (!result || !result.rows) {
-                console.log('[ML Extraction Queue] Table not found or no results, returning empty array');
+                this.logger.log('Table not found or no results, returning empty array');
                 return [];
             }
 
             // Log the number of due extractions found
             if (result.rows.length === 0) {
-                console.log('[ML Extraction Queue] No due extractions found (this is normal when no products have been updated recently)');
+                this.logger.log('No due extractions found (this is normal when no products have been updated recently)');
             } else {
-                console.log(`[ML Extraction Queue] Found ${result.rows.length} due extractions to process`);
+                this.logger.log(`Found ${result.rows.length} due extractions to process`);
             }
 
             return result.rows.map((row: any) => ({
@@ -125,10 +151,10 @@ export class MlExtractionQueueService {
         } catch (error) {
             // Handle table not existing or other database errors
             if (error instanceof Error && error.message.includes('relation "ml_extraction_queue" does not exist')) {
-                console.log('[ML Extraction Queue] Table does not exist yet, returning empty array');
+                this.logger.log('Table does not exist yet, returning empty array');
                 return [];
             }
-            console.error('[ML Extraction Queue] Error getting due extractions:', error);
+            this.logger.error('Error getting due extractions:', error);
             return [];
         }
     }
@@ -143,7 +169,7 @@ export class MlExtractionQueueService {
         `, [extractionId]);
 
         if (extractionResult.rows.length === 0) {
-            console.warn(`[ML Extraction Queue] Extraction ${extractionId} not found when marking as processing`);
+            this.logger.warn(`Extraction ${extractionId} not found when marking as processing`);
             return;
         }
 
@@ -155,7 +181,7 @@ export class MlExtractionQueueService {
             WHERE id = $1
         `, [extractionId]);
 
-        console.log(`[ML Extraction Queue] Marked extraction ${extractionId} as processing`);
+        this.logger.log(`Marked extraction ${extractionId} as processing`);
 
         // Emit extraction started event
         if (this.eventRouter) {
@@ -169,7 +195,7 @@ export class MlExtractionQueueService {
                     channelId,
                 },
             }).catch(err => {
-                console.warn(`Failed to route ML extraction started event: ${err instanceof Error ? err.message : String(err)}`);
+                this.logger.warn(`Failed to route ML extraction started event: ${err instanceof Error ? err.message : String(err)}`);
             });
         }
     }
@@ -184,7 +210,7 @@ export class MlExtractionQueueService {
         `, [extractionId]);
 
         if (extractionResult.rows.length === 0) {
-            console.warn(`[ML Extraction Queue] Extraction ${extractionId} not found when marking as completed`);
+            this.logger.warn(`Extraction ${extractionId} not found when marking as completed`);
             return;
         }
 
@@ -196,7 +222,7 @@ export class MlExtractionQueueService {
             WHERE id = $1
         `, [extractionId]);
 
-        console.log(`[ML Extraction Queue] Marked extraction ${extractionId} as completed`);
+        this.logger.log(`Marked extraction ${extractionId} as completed`);
 
         // Emit extraction completed event
         if (this.eventRouter) {
@@ -210,7 +236,7 @@ export class MlExtractionQueueService {
                     channelId,
                 },
             }).catch(err => {
-                console.warn(`Failed to route ML extraction completed event: ${err instanceof Error ? err.message : String(err)}`);
+                this.logger.warn(`Failed to route ML extraction completed event: ${err instanceof Error ? err.message : String(err)}`);
             });
         }
     }
@@ -225,7 +251,7 @@ export class MlExtractionQueueService {
         `, [extractionId]);
 
         if (extractionResult.rows.length === 0) {
-            console.warn(`[ML Extraction Queue] Extraction ${extractionId} not found when marking as failed`);
+            this.logger.warn(`Extraction ${extractionId} not found when marking as failed`);
             return;
         }
 
@@ -237,7 +263,7 @@ export class MlExtractionQueueService {
             WHERE id = $1
         `, [extractionId, error]);
 
-        console.log(`[ML Extraction Queue] Marked extraction ${extractionId} as failed: ${error}`);
+        this.logger.log(`Marked extraction ${extractionId} as failed: ${error}`);
 
         // Emit extraction failed event
         if (this.eventRouter) {
@@ -252,7 +278,7 @@ export class MlExtractionQueueService {
                     error,
                 },
             }).catch(err => {
-                console.warn(`Failed to route ML extraction failed event: ${err instanceof Error ? err.message : String(err)}`);
+                this.logger.warn(`Failed to route ML extraction failed event: ${err instanceof Error ? err.message : String(err)}`);
             });
         }
     }
@@ -270,17 +296,17 @@ export class MlExtractionQueueService {
 
             const deletedCount = result.rowCount || 0;
             if (deletedCount > 0) {
-                console.log(`[ML Extraction Queue] Cleaned up ${deletedCount} old extractions`);
+                this.logger.log(`Cleaned up ${deletedCount} old extractions`);
             }
 
             return deletedCount;
         } catch (error) {
             // Handle table not existing or other database errors
             if (error instanceof Error && error.message.includes('relation "ml_extraction_queue" does not exist')) {
-                console.log('[ML Extraction Queue] Table does not exist yet, skipping cleanup');
+                this.logger.log('Table does not exist yet, skipping cleanup');
                 return 0;
             }
-            console.error('[ML Extraction Queue] Error cleaning up old extractions:', error);
+            this.logger.error('Error cleaning up old extractions:', error);
             return 0;
         }
     }
@@ -320,7 +346,7 @@ export class MlExtractionQueueService {
 
         const cancelledCount = result.rowCount || 0;
         if (cancelledCount > 0) {
-            console.log(`[ML Extraction Queue] Cancelled ${cancelledCount} pending extractions for channel ${channelId}`);
+            this.logger.log(`Cancelled ${cancelledCount} pending extractions for channel ${channelId}`);
         }
 
         return cancelledCount;

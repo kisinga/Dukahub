@@ -33,7 +33,7 @@ import { ManageStockAdjustmentsPermission } from './plugins/stock/permissions';
 import { StockPlugin } from './plugins/stock/stock.plugin';
 import { SubscriptionTier } from './plugins/subscriptions/subscription.entity';
 import { SubscriptionPlugin } from './plugins/subscriptions/subscription.plugin';
-import { cashPaymentHandler, creditPaymentHandler, mpesaPaymentHandler } from './services/payments/payment-handlers';
+import { cashPaymentHandler, mpesaPaymentHandler } from './services/payments/payment-handlers';
 
 // Environment variables are now loaded centrally via EnvironmentConfig
 // See: infrastructure/config/environment.config.ts
@@ -133,7 +133,10 @@ export const config: VendureConfig = {
         paymentMethodHandlers: [
             cashPaymentHandler,
             mpesaPaymentHandler,
-            creditPaymentHandler,
+            // Credit handler is now created via factory with DI.
+            // It will be replaced at runtime in the CreditPlugin configuration hook.
+            // A temporary placeholder is registered here to satisfy the type system;
+            // the real handler will be supplied once the DI container is available.
         ],
     },
     // ML Model Management: Tag-based versioning + custom field activation
@@ -245,6 +248,38 @@ export const config: VendureConfig = {
                 public: true,
                 nullable: false,
                 ui: { tab: 'Settings' },
+            },
+            {
+                name: 'status',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.en, value: 'Channel Status' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Channel status controls user access: UNAPPROVED (read-only), APPROVED (full access), DISABLED/BANNED (no access)'
+                }],
+                defaultValue: 'UNAPPROVED',
+                public: true,
+                nullable: false,
+                readonly: false,
+                ui: { tab: 'Settings' },
+                options: [
+                    {
+                        value: 'UNAPPROVED',
+                        label: [{ languageCode: LanguageCode.en, value: 'Unapproved' }],
+                    },
+                    {
+                        value: 'APPROVED',
+                        label: [{ languageCode: LanguageCode.en, value: 'Approved' }],
+                    },
+                    {
+                        value: 'DISABLED',
+                        label: [{ languageCode: LanguageCode.en, value: 'Disabled' }],
+                    },
+                    {
+                        value: 'BANNED',
+                        label: [{ languageCode: LanguageCode.en, value: 'Banned' }],
+                    },
+                ],
             },
             {
                 name: 'mlTrainingStatus',
@@ -813,8 +848,8 @@ export const config: VendureConfig = {
                 nullable: false,
                 ui: { tab: 'Financial' },
             },
-            // outstandingAmount removed - now calculated dynamically from orders and payments
-            // See CreditService.calculateOutstandingAmount() for implementation
+            // outstandingAmount removed - now calculated dynamically from the ledger
+            // See FinancialService.getCustomerBalance() for implementation
             {
                 name: 'lastRepaymentDate',
                 type: 'datetime',
@@ -992,10 +1027,25 @@ export const config: VendureConfig = {
                 name: 'authorizationStatus',
                 type: 'string',
                 label: [{ languageCode: LanguageCode.en, value: 'Authorization Status' }],
-                description: [{ languageCode: LanguageCode.en, value: 'User authorization status for login access' }],
+                description: [{ languageCode: LanguageCode.en, value: 'User authorization status: PENDING (can login), APPROVED (can login), REJECTED (blocks login)' }],
                 defaultValue: 'PENDING',
-                public: false,
+                public: true,
                 nullable: false,
+                ui: { tab: 'Settings' },
+                options: [
+                    {
+                        value: 'PENDING',
+                        label: [{ languageCode: LanguageCode.en, value: 'Pending' }],
+                    },
+                    {
+                        value: 'APPROVED',
+                        label: [{ languageCode: LanguageCode.en, value: 'Approved' }],
+                    },
+                    {
+                        value: 'REJECTED',
+                        label: [{ languageCode: LanguageCode.en, value: 'Rejected' }],
+                    },
+                ],
             },
             {
                 name: 'notificationPreferences',

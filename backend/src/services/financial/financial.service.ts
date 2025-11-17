@@ -1,13 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RequestContext, Payment, Order, ID } from '@vendure/core';
+import { Order, Payment, RequestContext } from '@vendure/core';
+import { ACCOUNT_CODES, type AccountCode } from '../../ledger/account-codes.constants';
 import { LedgerPostingService } from './ledger-posting.service';
 import { LedgerQueryService } from './ledger-query.service';
+import { mapPaymentMethodToAccount } from './payment-method-mapping.config';
 import {
   PaymentPostingContext,
-  SalePostingContext,
   PurchasePostingContext,
-  SupplierPaymentPostingContext,
   RefundPostingContext,
+  SalePostingContext,
+  SupplierPaymentPostingContext,
 } from './posting-policy';
 
 /**
@@ -24,7 +26,7 @@ export class FinancialService {
   constructor(
     private readonly postingService: LedgerPostingService,
     private readonly queryService: LedgerQueryService,
-  ) {}
+  ) { }
 
   // ==================== READ OPERATIONS ====================
 
@@ -61,10 +63,21 @@ export class FinancialService {
     amountPaid: number;
     amountOwing: number;
   }> {
-    // TODO: Implement order-specific balance query
-    // For now, this is a placeholder that will be implemented
-    // when we have order-level tracking in ledger
-    throw new Error('getOrderPaymentStatus not yet implemented - use order.payments for now');
+    const balance = await this.queryService.getAccountBalance({
+      channelId: ctx.channelId as number,
+      accountCode: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
+      orderId,
+    });
+
+    const totalOwedInCents = balance.debitTotal;
+    const amountPaidInCents = balance.creditTotal;
+    const amountOwingInCents = Math.max(balance.balance, 0); // AR should not go negative
+
+    return {
+      totalOwed: totalOwedInCents / 100,
+      amountPaid: amountPaidInCents / 100,
+      amountOwing: amountOwingInCents / 100,
+    };
   }
 
   /**
@@ -152,9 +165,17 @@ export class FinancialService {
     payment: Payment,
     order: Order
   ): Promise<void> {
+    if (payment.amount <= 0) {
+      throw new Error(
+        `Payment ${payment.id} has non-positive amount (${payment.amount}) and cannot be posted to ledger`,
+      );
+    }
+
     // Only post if payment is settled
     if (payment.state !== 'Settled') {
-      this.logger.warn(`Payment ${payment.id} is not settled, skipping ledger posting`);
+      this.logger.warn(
+        `Payment ${payment.id} is not settled (state: ${payment.state}), skipping ledger posting for order ${order.code}`
+      );
       return;
     }
 
@@ -166,16 +187,36 @@ export class FinancialService {
       customerId: order.customer?.id?.toString(),
     };
 
-    await this.postingService.postPayment(
-      ctx,
-      payment.id.toString(),
-      context
-    );
+    try {
+      this.logger.log(
+        `Posting payment ${payment.id} to ledger: order ${order.code}, amount ${payment.amount}, method ${payment.method}`
+      );
 
-    // Invalidate cache for affected accounts
-    this.queryService.invalidateCache(ctx.channelId as number, 'SALES');
-    const clearingAccount = this.mapMethodToAccount(payment.method);
-    this.queryService.invalidateCache(ctx.channelId as number, clearingAccount);
+      await this.postingService.postPayment(
+        ctx,
+        payment.id.toString(),
+        context
+      );
+
+      this.logger.log(
+        `Successfully posted payment ${payment.id} to ledger for order ${order.code}`
+      );
+
+      // Invalidate cache for affected accounts
+      // Clear SALES cache (most important for dashboard)
+      this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.SALES);
+      const clearingAccount = this.mapMethodToAccount(payment.method);
+      this.queryService.invalidateCache(ctx.channelId as number, clearingAccount);
+      this.logger.debug(
+        `Invalidated cache for SALES and ${clearingAccount} accounts (channel: ${ctx.channelId})`
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to post payment ${payment.id} to ledger for order ${order.code}: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error; // Re-throw to ensure transaction rollback
+    }
   }
 
   /**
@@ -188,6 +229,12 @@ export class FinancialService {
   ): Promise<void> {
     if (!order.customer) {
       throw new Error('Order must have customer for credit sale');
+    }
+
+    if (order.total <= 0) {
+      throw new Error(
+        `Order ${order.id} has non-positive total (${order.total}) and cannot be posted as a credit sale`,
+      );
     }
 
     const context: SalePostingContext = {
@@ -205,8 +252,8 @@ export class FinancialService {
     );
 
     // Invalidate cache
-    this.queryService.invalidateCache(ctx.channelId as number, 'ACCOUNTS_RECEIVABLE');
-    this.queryService.invalidateCache(ctx.channelId as number, 'SALES');
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.ACCOUNTS_RECEIVABLE);
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.SALES);
   }
 
   /**
@@ -220,6 +267,12 @@ export class FinancialService {
     paymentMethod: string,
     amount: number
   ): Promise<void> {
+    if (amount <= 0) {
+      throw new Error(
+        `Payment allocation for order ${order.id} has non-positive amount (${amount}) and cannot be posted to ledger`,
+      );
+    }
+
     const context: PaymentPostingContext = {
       amount,
       method: paymentMethod,
@@ -235,7 +288,7 @@ export class FinancialService {
     );
 
     // Invalidate cache
-    this.queryService.invalidateCache(ctx.channelId as number, 'ACCOUNTS_RECEIVABLE');
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.ACCOUNTS_RECEIVABLE);
     const clearingAccount = this.mapMethodToAccount(paymentMethod);
     this.queryService.invalidateCache(ctx.channelId as number, clearingAccount);
   }
@@ -251,6 +304,11 @@ export class FinancialService {
     supplierId: string,
     totalCost: number
   ): Promise<void> {
+    if (totalCost <= 0) {
+      throw new Error(
+        `Purchase ${purchaseId} has non-positive total cost (${totalCost}) and cannot be posted to ledger`,
+      );
+    }
     const context: PurchasePostingContext = {
       amount: totalCost,
       purchaseId,
@@ -266,8 +324,8 @@ export class FinancialService {
     );
 
     // Invalidate cache
-    this.queryService.invalidateCache(ctx.channelId as number, 'PURCHASES');
-    this.queryService.invalidateCache(ctx.channelId as number, 'ACCOUNTS_PAYABLE');
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.PURCHASES);
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.ACCOUNTS_PAYABLE);
   }
 
   /**
@@ -283,6 +341,12 @@ export class FinancialService {
     amount: number,
     paymentMethod: string
   ): Promise<void> {
+    if (amount <= 0) {
+      throw new Error(
+        `Supplier payment ${paymentId} has non-positive amount (${amount}) and cannot be posted to ledger`,
+      );
+    }
+
     const context: SupplierPaymentPostingContext = {
       amount,
       purchaseId,
@@ -298,7 +362,7 @@ export class FinancialService {
     );
 
     // Invalidate cache
-    this.queryService.invalidateCache(ctx.channelId as number, 'ACCOUNTS_PAYABLE');
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.ACCOUNTS_PAYABLE);
     const cashAccount = this.mapMethodToAccount(paymentMethod);
     this.queryService.invalidateCache(ctx.channelId as number, cashAccount);
   }
@@ -329,25 +393,17 @@ export class FinancialService {
     );
 
     // Invalidate cache
-    this.queryService.invalidateCache(ctx.channelId as number, 'SALES_RETURNS');
+    this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.SALES_RETURNS);
     const clearingAccount = this.mapMethodToAccount(originalPayment.method);
     this.queryService.invalidateCache(ctx.channelId as number, clearingAccount);
   }
 
   /**
    * Map payment method to account code
+   * Delegates to centralized configuration-based mapping
    */
-  private mapMethodToAccount(methodCode: string): string {
-    switch (methodCode) {
-      case 'cash-payment':
-        return 'CASH_ON_HAND';
-      case 'mpesa-payment':
-        return 'CLEARING_MPESA';
-      case 'credit-payment':
-        return 'CLEARING_CREDIT';
-      default:
-        return 'CLEARING_GENERIC';
-    }
+  private mapMethodToAccount(methodCode: string): AccountCode {
+    return mapPaymentMethodToAccount(methodCode);
   }
 }
 

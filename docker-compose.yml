@@ -159,6 +159,19 @@ services:
 
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-info}
+
+      # SigNoz Observability Configuration (Backend)
+      # All values can be overridden via environment variables
+      SIGNOZ_ENABLED: ${SIGNOZ_ENABLED:-false}
+      SIGNOZ_HOST: ${SIGNOZ_HOST:-signoz}
+      SIGNOZ_OTLP_GRPC_PORT: ${SIGNOZ_OTLP_GRPC_PORT:-4317}
+      SIGNOZ_OTLP_HTTP_PORT: ${SIGNOZ_OTLP_HTTP_PORT:-4318}
+      SIGNOZ_SERVICE_NAME: ${SIGNOZ_SERVICE_NAME:-dukahub-backend}
+      SIGNOZ_SERVICE_VERSION: ${SIGNOZ_SERVICE_VERSION:-2.0.0}
+      # Optional: Override OTLP endpoints if using external SigNoz (leave empty to use defaults)
+      SIGNOZ_OTLP_GRPC_ENDPOINT: ${SIGNOZ_OTLP_GRPC_ENDPOINT:-}
+      SIGNOZ_OTLP_HTTP_ENDPOINT: ${SIGNOZ_OTLP_HTTP_ENDPOINT:-}
+
     volumes:
       - backend_assets:/app/static/assets
       - backend_uploads:/app/static/uploads
@@ -199,6 +212,14 @@ services:
 
       # Additional frontend configuration
       NODE_ENV: ${NODE_ENV:-production}
+
+      # SigNoz Observability Configuration (Frontend)
+      # Endpoint is proxied via nginx, so use relative path for browser
+      # All values can be overridden via environment variables
+      ENABLE_TRACING: ${ENABLE_TRACING:-false}
+      SIGNOZ_ENDPOINT: ${SIGNOZ_ENDPOINT:-/signoz/v1/traces}
+      SERVICE_NAME: ${SIGNOZ_SERVICE_NAME:-dukahub-frontend}
+      SERVICE_VERSION: ${SIGNOZ_SERVICE_VERSION:-2.0.0}
     ports:
       - "${FRONTEND_PORT:-4200}:4200"
     depends_on:
@@ -213,6 +234,81 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
+
+  # ========================================
+  # SigNoz Observability Platform
+  # ========================================
+  # SECURITY WARNING: Do NOT expose SigNoz UI (port 3301) directly to the internet!
+  # Use a reverse proxy with authentication (e.g., nginx with basic auth, OAuth)
+  # Only expose OTLP ports (4317, 4318) to internal Docker network
+  signoz:
+    image: signoz/signoz:latest
+    restart: unless-stopped
+    environment:
+      # SigNoz configuration
+      # All values can be overridden via environment variables
+      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.name=dukahub,service.version=2.0.0}
+      # ClickHouse configuration (SigNoz uses ClickHouse for storage)
+      CLICKHOUSE_HOST: ${CLICKHOUSE_HOST:-clickhouse}
+      CLICKHOUSE_PORT: ${CLICKHOUSE_PORT:-9000}
+    ports:
+      # UI port - ONLY expose if behind authenticated reverse proxy
+      # Remove this line in production or use internal network only
+      - "${SIGNOZ_UI_PORT:-3301}:3301" # UI (SECURITY: Should be behind auth)
+      # OTLP ports - internal only, do not expose to host in production
+      # These are used by backend/frontend services via Docker network
+      - "127.0.0.1:${SIGNOZ_OTLP_GRPC_PORT:-4317}:4317" # OTLP gRPC (localhost only)
+      - "127.0.0.1:${SIGNOZ_OTLP_HTTP_PORT:-4318}:4318" # OTLP HTTP (localhost only)
+    volumes:
+      - signoz_data:/var/lib/signoz
+    depends_on:
+      - clickhouse
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --no-verbose
+        - --tries=1
+        - --spider
+        - http://localhost:3301/api/health
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ========================================
+  # ClickHouse (SigNoz Storage)
+  # ========================================
+  # SECURITY: ClickHouse should NOT be exposed to the internet
+  # Only accessible within Docker network for SigNoz
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    restart: unless-stopped
+    environment:
+      # ClickHouse configuration
+      # All values can be overridden via environment variables
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-signoz}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      # CLICKHOUSE_PASSWORD: Empty by default (no auth). Set in production!
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    # Do not expose ports to host - internal network only
+    # ports:
+    #   - "${CLICKHOUSE_PORT:-8123}:8123"  # HTTP interface (internal only)
+    #   - "${CLICKHOUSE_NATIVE_PORT:-9000}:9000"  # Native interface (internal only)
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --no-verbose
+        - --tries=1
+        - --spider
+        - http://localhost:8123/ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
       start_period: 30s
 
 # ========================================
@@ -232,4 +328,10 @@ volumes:
     driver: local
 
   timescaledb_audit_data:
+    driver: local
+
+  signoz_data:
+    driver: local
+
+  clickhouse_data:
     driver: local

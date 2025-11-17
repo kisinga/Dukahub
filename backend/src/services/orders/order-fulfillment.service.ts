@@ -28,8 +28,9 @@ export class OrderFulfillmentService {
     ) { }
 
     /**
-     * Create and complete fulfillment for an order
-     * For POS handover, fulfillment is immediately delivered
+     * Create and complete fulfillment for an order.
+     * For POS handover, we attempt a deterministic state progression using the
+     * default Vendure fulfillment process (Created -> Pending -> Shipped).
      */
     async fulfillOrder(ctx: RequestContext, orderId: ID): Promise<Fulfillment> {
         const order = await this.orderService.findOne(ctx, orderId, ['lines']);
@@ -52,9 +53,9 @@ export class OrderFulfillmentService {
             },
         };
 
-        // Create fulfillment using FulfillmentService.create method
-        // This is the standard Vendure API for creating fulfillments
-        // Method signature: create(ctx, order, items, handler)
+        // Create fulfillment using FulfillmentService.create method.
+        // This is the standard Vendure API for creating fulfillments:
+        //   create(ctx, order, items, handler)
         const fulfillment = await (this.fulfillmentService as any).create(
             ctx,
             order,
@@ -72,35 +73,55 @@ export class OrderFulfillmentService {
             );
         }
 
-        // Transition to Shipped if possible (for immediate POS delivery)
-        await this.transitionToShippedIfPossible(ctx, fulfillment.id);
+        // Deterministically advance fulfillment state for POS handover
+        await this.progressFulfillmentForPos(ctx, fulfillment);
 
         this.logger.log(`Order ${order.code} fulfilled with fulfillment ${fulfillment.id}`);
         return fulfillment;
     }
 
     /**
-     * Transition fulfillment to Shipped state if available
+     * For POS we want immediate handover. With the default fulfillment process,
+     * the valid path is Created -> Pending -> Shipped. Walk that path and stop
+     * cleanly on the first invalid transition.
      */
-    private async transitionToShippedIfPossible(
+    private async progressFulfillmentForPos(
         ctx: RequestContext,
-        fulfillmentId: ID
+        fulfillment: Fulfillment
     ): Promise<void> {
-        try {
-            const result = await (this.fulfillmentService as any).transitionToState(
-                ctx,
-                fulfillmentId,
-                'Shipped'
-            );
+        let currentState = fulfillment.state;
+        const steps: Array<'Pending' | 'Shipped'> = ['Pending', 'Shipped'];
 
-            if (result && 'errorCode' in result) {
-                this.logger.warn(`Could not transition fulfillment to Shipped: ${result.message}`);
+        for (const targetState of steps) {
+            if (currentState === targetState) {
+                continue;
             }
-        } catch (error) {
-            this.logger.warn(
-                `Error transitioning fulfillment: ${error instanceof Error ? error.message : String(error)}`
-            );
-            // Non-fatal - fulfillment is still created
+
+            try {
+                const result = await (this.fulfillmentService as any).transitionToState(
+                    ctx,
+                    fulfillment.id,
+                    targetState
+                );
+
+                if (result && 'errorCode' in result) {
+                    const errorResult = result as { errorCode?: string; message?: string };
+                    this.logger.debug(
+                        `Could not transition fulfillment ${fulfillment.id} from ${currentState} to ${targetState}: ` +
+                        `${errorResult.message || errorResult.errorCode || 'Unknown error'}`
+                    );
+                    break;
+                }
+
+                currentState = (result as Fulfillment).state;
+            } catch (error) {
+                this.logger.debug(
+                    `Error transitioning fulfillment ${fulfillment.id} to ${targetState}: ` +
+                    `${error instanceof Error ? error.message : String(error)}`
+                );
+                // Non-fatal - fulfillment is still created, stop trying further transitions
+                break;
+            }
         }
     }
 }

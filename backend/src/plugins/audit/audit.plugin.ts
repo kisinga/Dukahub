@@ -1,8 +1,9 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
+import { AuditDbConnection } from '../../infrastructure/audit/audit-db.connection';
 import { AuditService } from '../../infrastructure/audit/audit.service';
 import { UserContextResolver } from '../../infrastructure/audit/user-context.resolver';
 import { VendureEventAuditSubscriber } from '../../infrastructure/audit/vendure-events.subscriber';
-import { AuditDbConnection } from '../../infrastructure/audit/audit-db.connection';
 import { AuditResolver, auditSchema } from './audit.resolver';
 
 /**
@@ -33,6 +34,7 @@ import { AuditResolver, auditSchema } from './audit.resolver';
         AuditDbConnection, // Export so other plugins can use the same instance
         UserContextResolver, // Export for consistency
     ],
+    compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class AuditPlugin {}
+export class AuditPlugin { }
 

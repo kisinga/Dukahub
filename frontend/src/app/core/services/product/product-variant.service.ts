@@ -181,5 +181,48 @@ export class ProductVariantService {
             return false;
         }
     }
+
+    /**
+     * Update variant details (name + price) for existing variants.
+     * Used by the product edit flow.
+     */
+    async updateVariantDetails(
+        variants: { id: string; name: string; price: number }[]
+    ): Promise<boolean> {
+        try {
+            const client = this.apolloService.getClient();
+
+            for (const variant of variants) {
+                const priceInCents = Math.round(variant.price * 100);
+
+                const result = await client.mutate<UpdateProductVariantMutation, UpdateProductVariantMutationVariables>({
+                    mutation: UPDATE_PRODUCT_VARIANT,
+                    variables: {
+                        input: {
+                            id: variant.id,
+                            price: priceInCents,
+                            prices: [
+                                {
+                                    price: priceInCents,
+                                    currencyCode: 'KES' as any,
+                                },
+                            ],
+                        },
+                    },
+                });
+
+                if (result.error) {
+                    console.error(`❌ Failed to update variant ${variant.id}:`, result.error);
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (error: any) {
+            console.error('❌ Failed to update variant details:', error);
+            this.stateService.setError(error.message || 'Failed to update variant details');
+            return false;
+        }
+    }
 }
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 /**
  * Registration Error Service
@@ -8,6 +8,7 @@ import { Injectable } from '@nestjs/common';
  */
 @Injectable()
 export class RegistrationErrorService {
+    private readonly logger = new Logger(RegistrationErrorService.name);
     /**
      * Wrap error with REGISTRATION_ prefix if not already present
      */
@@ -32,9 +33,9 @@ export class RegistrationErrorService {
      * Log error with context
      */
     logError(context: string, error: any, operation: string): void {
-        console.error(`[${context}] ${operation} failed:`, error);
+        this.logger.error(`[${context}] ${operation} failed:`, error);
         if (error?.stack) {
-            console.error(`[${context}] Error stack:`, error.stack);
+            this.logger.error(`[${context}] Error stack: ${error.stack}`);
         }
     }
 }
