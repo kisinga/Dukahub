@@ -41,15 +41,12 @@ export class StockMovementService {
         quantityChange: number,
         reason: string
     ): Promise<StockMovementResult> {
-        // Get variant and pessimistically lock it so concurrent adjustments
-        // for the same variant are serialized. This avoids race conditions
-        // when creating or updating StockLevel rows.
+        // Lock the variant first (without joins) to serialize concurrent adjustments
+        // This avoids race conditions when creating or updating StockLevel rows.
         const variantRepo = this.connection.getRepository(ctx, ProductVariant);
         const variant = await variantRepo
             .createQueryBuilder('variant')
             .setLock('pessimistic_write')
-            .leftJoinAndSelect('variant.stockLevels', 'stockLevels')
-            .leftJoinAndSelect('stockLevels.stockLocation', 'stockLocation')
             .where('variant.id = :variantId', { variantId })
             .getOne();
 
@@ -57,10 +54,17 @@ export class StockMovementService {
             throw new UserInputError(`Product variant ${variantId} not found`);
         }
 
-        // Get or create stock level for this location from the locked variant snapshot
+        // Now query and lock the stock level separately if it exists
+        // Use inner join to avoid FOR UPDATE on nullable side of outer join
         const stockLevelRepo = this.connection.getRepository(ctx, StockLevel);
-        let stockLevel =
-            variant.stockLevels?.find(level => level.stockLocation?.id === locationId) ?? null;
+        let stockLevel = await stockLevelRepo
+            .createQueryBuilder('stockLevel')
+            .setLock('pessimistic_write')
+            .innerJoinAndSelect('stockLevel.productVariant', 'variant')
+            .innerJoinAndSelect('stockLevel.stockLocation', 'location')
+            .where('variant.id = :variantId', { variantId })
+            .andWhere('location.id = :locationId', { locationId })
+            .getOne();
 
         const previousStock = stockLevel?.stockOnHand ?? 0;
         const newStock = previousStock + quantityChange;

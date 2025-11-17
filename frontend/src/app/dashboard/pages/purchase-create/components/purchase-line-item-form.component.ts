@@ -34,8 +34,11 @@ import { PurchaseLineItem } from '../../../../core/services/purchase.service.typ
                                         class="w-full text-left px-4 py-2 hover:bg-base-200"
                                         (click)="onProductSelect(variant)"
                                     >
-                                        <div class="font-medium">{{ variant.name || variant.sku }}</div>
-                                        <div class="text-sm opacity-60">SKU: {{ variant.sku }}</div>
+                                        <div class="font-medium">{{ variant.productName || variant.name || variant.sku }}</div>
+                                        @if (variant.name && variant.name !== variant.productName) {
+                                        <div class="text-sm opacity-70">{{ variant.name }}</div>
+                                        }
+                                        <div class="text-xs opacity-60">SKU: {{ variant.sku }}</div>
                                     </button>
                                 }
                             </div>

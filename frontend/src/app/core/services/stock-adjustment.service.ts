@@ -1,4 +1,6 @@
 import { Injectable, computed, inject } from '@angular/core';
+import { GetVariantStockLevelDocument } from '../graphql/generated/graphql';
+import { ApolloService } from './apollo.service';
 import { AuthService } from './auth.service';
 import { StockAdjustmentDraftService } from './draft/stock-adjustment-draft.service';
 import { StockAdjustmentValidationService } from './stock-adjustment/stock-adjustment-validation.service';
@@ -26,6 +28,7 @@ export class StockAdjustmentService {
     private readonly validationService = inject(StockAdjustmentValidationService);
     private readonly apiService = inject(StockAdjustmentApiService);
     private readonly authService = inject(AuthService);
+    private readonly apolloService = inject(ApolloService);
 
     // Expose draft service signals
     readonly adjustmentDraft = this.draftService.draft;
@@ -148,5 +151,36 @@ export class StockAdjustmentService {
      */
     clearError(): void {
         this.draftService.clearError();
+    }
+
+    /**
+     * Get current stock level for a variant at a specific location
+     * Returns null if not found or on error
+     */
+    async getStockLevelForLocation(variantId: string, locationId: string): Promise<number | null> {
+        try {
+            const client = this.apolloService.getClient();
+            const result = await client.query<any>({
+                query: GetVariantStockLevelDocument,
+                variables: { variantId },
+                fetchPolicy: 'network-only',
+            });
+
+            const variant = result.data?.productVariant;
+            if (!variant) {
+                return null;
+            }
+
+            // Find stock level for the specific location
+            const stockLevel = variant.stockLevels?.find(
+                (sl: { stockOnHand: number; stockLocation?: { id: string; name: string } }) => 
+                    sl.stockLocation?.id === locationId || sl.stockLocation?.id === String(locationId)
+            );
+
+            return stockLevel?.stockOnHand ?? variant.stockOnHand ?? 0;
+        } catch (error) {
+            console.error('Failed to fetch stock level:', error);
+            return null;
+        }
     }
 }

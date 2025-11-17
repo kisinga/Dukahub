@@ -547,6 +547,25 @@ export const GET_PRODUCT = graphql(`
   }
 `);
 
+export const GET_VARIANT_STOCK_LEVEL = graphql(`
+  query GetVariantStockLevel($variantId: ID!) {
+    productVariant(id: $variantId) {
+      id
+      name
+      sku
+      stockOnHand
+      stockLevels {
+        id
+        stockOnHand
+        stockLocation {
+          id
+          name
+        }
+      }
+    }
+  }
+`);
+
 export const SEARCH_BY_BARCODE = graphql(`
   query SearchByBarcode($sku: String!) {
     search(input: { term: $sku, take: 1 }) {
