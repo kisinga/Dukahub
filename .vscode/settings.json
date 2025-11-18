@@ -4,6 +4,8 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
+  "prettier.requireConfig": true,
+  "prettier.useEditorConfig": true,
   "[go]": {
     "editor.defaultFormatter": "golang.go"
   },

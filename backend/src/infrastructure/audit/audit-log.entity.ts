@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column, Index } from 'typeorm';
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 /**
  * Audit Log Entity
@@ -34,6 +34,10 @@ export class AuditLog {
 
     @Column('integer', { nullable: true })
     userId: number | null; // Vendure user ID (numeric), who performed the action
+
+    @Column({ type: 'varchar', nullable: true })
+    @Index(['ipAddress'])
+    ipAddress: string | null; // Client IP address (from reverse proxy headers or direct connection)
 
     @Column('jsonb')
     data: Record<string, any>; // Flexible event data

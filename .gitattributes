@@ -1,0 +1,23 @@
+# EditorConfig is the single source of truth for formatting rules
+# This file only tells Git to normalize text files and mark binaries
+
+# Normalize all text files to LF (EditorConfig enforces this)
+* text=auto eol=lf
+
+# Binary files that should never be normalized
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.bin binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
+

@@ -27,6 +27,7 @@ RUN echo "Build verification:" && \
     ls -la dist/ && \
     if [ ! -f "dist/src/index.js" ]; then echo "❌ dist/src/index.js not found!"; exit 1; fi && \
     if [ ! -f "dist/src/index-worker.js" ]; then echo "❌ dist/src/index-worker.js not found!"; exit 1; fi && \
+    if [ ! -f "dist/src/entrypoint.js" ]; then echo "❌ dist/src/entrypoint.js not found!"; exit 1; fi && \
     echo "✅ Build verification successful"
 
 # Stage 2: Production runtime
@@ -54,15 +55,12 @@ COPY --from=builder /app/dist ./dist
 # Copy static assets and templates
 COPY static ./static
 
-# Copy and setup entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
 # Verify copied files exist
 RUN echo "Verifying production files:" && \
     ls -la dist/ && \
     if [ ! -f "dist/src/index.js" ]; then echo "❌ dist/src/index.js not found in production stage!"; exit 1; fi && \
     if [ ! -f "dist/src/index-worker.js" ]; then echo "❌ dist/src/index-worker.js not found in production stage!"; exit 1; fi && \
+    if [ ! -f "dist/src/entrypoint.js" ]; then echo "❌ dist/src/entrypoint.js not found in production stage!"; exit 1; fi && \
     echo "✅ Production stage verification successful"
 
 # Create non-root user for security
@@ -80,4 +78,4 @@ EXPOSE 3000
 
 # Use dumb-init for proper signal handling and process reaping
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["docker-entrypoint.sh"]
+CMD ["node", "dist/src/entrypoint.js"]

@@ -19,6 +19,7 @@ export const auditSchema = gql`
         entityType: String
         entityId: String
         userId: ID
+        ipAddress: String
         data: JSON!
         source: String!
     }
