@@ -49,3 +49,4 @@ export class CreateMlExtractionQueue6000000000 implements MigrationInterface {
     }
 }
 
+

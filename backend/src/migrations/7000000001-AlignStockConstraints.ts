@@ -70,3 +70,4 @@ export class AlignStockConstraints7000000001 implements MigrationInterface {
     }
 }
 
+

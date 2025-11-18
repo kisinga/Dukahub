@@ -88,3 +88,4 @@ export class CreateAuditLogTable4000000000 implements MigrationInterface {
     }
 }
 
+

@@ -110,3 +110,4 @@ export class AddChannelApprovalField1000000006 implements MigrationInterface {
     }
 }
 
+

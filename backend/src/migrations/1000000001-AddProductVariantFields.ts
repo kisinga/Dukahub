@@ -80,3 +80,4 @@ export class AddProductVariantFields1000000001 implements MigrationInterface {
     }
 }
 
+

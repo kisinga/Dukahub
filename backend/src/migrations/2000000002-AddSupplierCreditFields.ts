@@ -84,3 +84,4 @@ export class AddSupplierCreditFields2000000002 implements MigrationInterface {
     }
 }
 
+

@@ -202,3 +202,4 @@ export class AddUserAuthorizationFields3000000000 implements MigrationInterface 
     }
 }
 
+

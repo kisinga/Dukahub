@@ -160,3 +160,4 @@ export class AddChannelAssetRelationships1000000007 implements MigrationInterfac
     }
 }
 
+
