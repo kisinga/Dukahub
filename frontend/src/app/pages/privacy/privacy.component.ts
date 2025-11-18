@@ -14,3 +14,4 @@ export class PrivacyComponent {
   protected readonly lastUpdated = '2024-01-01';
 }
 
+

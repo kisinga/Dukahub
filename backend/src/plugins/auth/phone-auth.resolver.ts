@@ -23,7 +23,7 @@ export const phoneAuthSchema = gql`
         token: String
         user: UserInfo
         message: String!
-        authorizationStatus: String  # Status: PENDING, APPROVED, REJECTED - included for UI communication, not blocking
+        authorizationStatus: String  # Status: PENDING, APPROVED, REJECTED - channel must be APPROVED before login succeeds
     }
 
     type UserInfo {

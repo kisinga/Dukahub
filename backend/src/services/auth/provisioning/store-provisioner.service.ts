@@ -57,9 +57,18 @@ export class StoreProvisionerService {
         ctx: RequestContext,
         registrationData: RegistrationInput
     ): Promise<StockLocation> {
+        const storeName = registrationData.storeName?.trim();
+
+        if (!storeName) {
+            throw this.errorService.createError(
+                'REGISTRATION_STORE_NAME_REQUIRED',
+                'Store name is required to complete registration.'
+            );
+        }
+
         const stockLocationResult = await this.stockLocationService.create(ctx, {
-            name: registrationData.storeName,
-            description: registrationData.storeAddress || '',
+            name: storeName,
+            description: registrationData.storeAddress?.trim() || '',
         });
 
         if ('errorCode' in stockLocationResult) {

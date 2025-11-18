@@ -167,7 +167,13 @@ export class HomeComponent {
     {
       icon: '📦',
       title: 'COGS via FIFO tracking',
-      description: 'Track cost of goods sold using FIFO method with batch tracking for expiry management and automated reminders.',
+      description: 'Track cost of goods sold using FIFO method with batch tracking to accurately calculate inventory costs.',
+      category: 'Accounting'
+    },
+    {
+      icon: '⏰',
+      title: 'Expiry tracking & reminders',
+      description: 'Track product batches with expiry dates and receive automated reminders before items expire, reducing waste and losses.',
       category: 'Accounting'
     },
     {

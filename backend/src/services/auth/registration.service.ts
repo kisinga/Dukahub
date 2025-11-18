@@ -1,5 +1,5 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
-import { RequestContext } from '@vendure/core';
+import { RequestContext, User } from '@vendure/core';
 import { formatPhoneNumber } from '../../utils/phone.utils';
 import { TracingService } from '../../infrastructure/observability/tracing.service';
 import { AccessProvisionerService } from './provisioning/access-provisioner.service';
@@ -89,7 +89,8 @@ export class RegistrationService {
      */
     async provisionCustomer(
         ctx: RequestContext,
-        registrationData: RegistrationInput
+        registrationData: RegistrationInput,
+        existingUser?: User
     ): Promise<ProvisionResult> {
         const span = this.tracingService?.startSpan('registration.provisionCustomer', {
             'registration.company_code': registrationData.companyCode,
@@ -154,7 +155,8 @@ export class RegistrationService {
                 ctx,
                 registrationData,
                 role,
-                formattedPhone
+                formattedPhone,
+                existingUser
             );
             this.logger.log(`Administrator created: ${administrator.id}`);
 
