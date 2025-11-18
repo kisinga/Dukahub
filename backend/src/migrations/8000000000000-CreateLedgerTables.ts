@@ -12,8 +12,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - All ledger tables with correct constraints and indexes
  * - Legacy indexes/constraints dropped
  */
-export class CreateLedgerTables8000000000 implements MigrationInterface {
-    name = 'CreateLedgerTables8000000000';
+export class CreateLedgerTables8000000000000 implements MigrationInterface {
+    name = 'CreateLedgerTables8000000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Ensure pgcrypto extension

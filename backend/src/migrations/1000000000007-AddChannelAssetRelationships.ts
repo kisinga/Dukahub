@@ -12,8 +12,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - PaymentMethod: Image asset ID (integer), isActive (boolean)
  * - All FK constraints with correct names and syntax
  */
-export class AddChannelAssetRelationships1000000007 implements MigrationInterface {
-    name = 'AddChannelAssetRelationships1000000007';
+export class AddChannelAssetRelationships1000000000007 implements MigrationInterface {
+    name = 'AddChannelAssetRelationships1000000000007';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`

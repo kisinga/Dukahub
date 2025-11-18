@@ -13,8 +13,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - ProductVariant: customFieldsWholesaleprice, customFieldsAllowfractionalquantity
  * - ProductVariant: NO customFieldsQuantityunit (removed)
  */
-export class AddProductVariantFields1000000001 implements MigrationInterface {
-    name = 'AddProductVariantFields1000000001';
+export class AddProductVariantFields1000000000001 implements MigrationInterface {
+    name = 'AddProductVariantFields1000000000001';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Add product barcode field

@@ -17,8 +17,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - FK constraint: FK_cfa828418e58de180707fd03e1a with ON DELETE NO ACTION
  * - Unique constraint: UQ_f4afafa5c0e63ab4eb176ac22f8 on subscription_tier.code
  */
-export class AddChannelSubscriptionFields1000000005 implements MigrationInterface {
-    name = 'AddChannelSubscriptionFields1000000005';
+export class AddChannelSubscriptionFields1000000000005 implements MigrationInterface {
+    name = 'AddChannelSubscriptionFields1000000000005';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Create subscription_tier table

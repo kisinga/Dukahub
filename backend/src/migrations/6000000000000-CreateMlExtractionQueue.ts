@@ -9,8 +9,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Final state:
  * - ml_extraction_queue table with created_at, updated_at (keeping functional timestamps)
  */
-export class CreateMlExtractionQueue6000000000 implements MigrationInterface {
-    name = 'CreateMlExtractionQueue6000000000';
+export class CreateMlExtractionQueue6000000000000 implements MigrationInterface {
+    name = 'CreateMlExtractionQueue6000000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`

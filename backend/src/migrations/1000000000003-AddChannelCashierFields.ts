@@ -10,8 +10,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - Channel: cashierFlowEnabled, cashierOpen
  * - StockLocation: NO cashier fields (moved to channel)
  */
-export class AddChannelCashierFields1000000003 implements MigrationInterface {
-    name = 'AddChannelCashierFields1000000003';
+export class AddChannelCashierFields1000000000003 implements MigrationInterface {
+    name = 'AddChannelCashierFields1000000000003';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`
