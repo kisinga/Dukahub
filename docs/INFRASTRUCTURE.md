@@ -87,7 +87,6 @@ The nginx configuration supports both Docker internal DNS and public DNS resolut
 | `COOKIE_SECURE`    | `true` / `false`          | `false`       | HTTPS-only cookies                |
 | `FRONTEND_URL`     | `http://example.com`      | —             | CORS origins (comma-separated)    |
 | `ASSET_URL_PREFIX` | `https://cdn.example.com` | —             | CDN URL for assets                |
-| `FIRST_RUN`        | `true` / `false`          | `false`       | First-time initialization process |
 
 ### Security
 
@@ -136,47 +135,55 @@ This happens because migrations try to run before the database schema is properl
 
 ### The Solution
 
-The issue has been fixed by introducing a **FIRST_RUN** environment flag that handles the complete initialization process sequentially:
+The issue has been fixed by implementing **automatic database detection and initialization**. The system now automatically:
 
-1. **Step 1: Populate database** - Creates base Vendure schema + sample data
-2. **Step 2: Run migrations** - Adds custom fields to existing tables
-3. **Step 3: Shutdown gracefully** - Allows you to toggle off and restart normally
+1. **Detects if the database is empty** (no tables exist)
+2. **Populates the database** if empty (creates base Vendure schema + sample data)
+3. **Runs migrations** (adds custom fields to existing tables)
+4. **Starts the application** normally
 
-### Quick Setup
+**No manual flags or restarts required!**
 
-### What Happens During FIRST_RUN Setup
+### What Happens During Automatic Initialization
 
-1. **Step 1: Database Population:**
+1. **Database Detection:**
+
+   - System checks if database is completely empty (no tables)
+   - Waits for database to be available (with retries)
+   - Only proceeds with population if database is empty
+
+2. **Database Population (if empty):**
 
    - PostgreSQL starts and creates the database
    - Vendure creates the base schema using `synchronize: true`
    - Sample data is populated (channels, products, etc.)
 
-2. **Step 2: Migration Application:**
+3. **Migration Application:**
 
    - Custom fields are added to existing tables
    - ML training fields are added to Channel
    - Customer/Supplier fields are added to Customer
+   - Only pending migrations are executed (idempotent)
 
-3. **Step 3: Graceful Shutdown:**
-   - Container exits after successful initialization
-   - **Vendure server does NOT start during FIRST_RUN=true**
-   - You set `FIRST_RUN=false` and restart
+4. **Application Startup:**
    - Application starts normally with all data and custom fields
+   - All initialization happens automatically on first run
 
 ### Expected Behavior
 
-**During FIRST_RUN=true:**
+**On First Run (Empty Database):**
 
-- Container runs populate + migrations
-- Container exits after completion
-- **Vendure server does NOT start**
-- You must set `FIRST_RUN=false` and restart
+- Container detects empty database
+- Automatically runs populate + migrations
+- Starts Vendure server with all data and custom fields
+- No manual intervention required
 
-**During FIRST_RUN=false:**
+**On Subsequent Runs (Existing Database):**
 
-- Container starts Vendure server normally
-- All data and custom fields are available
+- Container detects existing database
+- Skips population (database already has data)
+- Runs any pending migrations
+- Starts Vendure server normally
 
 ### Verification
 

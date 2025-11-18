@@ -13,12 +13,21 @@ export class PushNotificationService {
     };
 
     constructor(private notificationService: NotificationService) {
-        // Configure web-push with VAPID keys
-        webpush.setVapidDetails(
-            this.vapidKeys.subject,
-            this.vapidKeys.publicKey,
-            this.vapidKeys.privateKey
-        );
+        // Configure web-push with VAPID keys only if they are provided
+        if (this.vapidKeys.publicKey && this.vapidKeys.privateKey) {
+            try {
+                webpush.setVapidDetails(
+                    this.vapidKeys.subject,
+                    this.vapidKeys.publicKey,
+                    this.vapidKeys.privateKey
+                );
+                this.logger.log('Push notifications enabled with VAPID keys');
+            } catch (error) {
+                this.logger.warn('Failed to configure VAPID keys, push notifications will be disabled:', error);
+            }
+        } else {
+            this.logger.warn('VAPID keys not configured. Push notifications will be disabled. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY to enable.');
+        }
     }
 
     async subscribeToPush(
@@ -55,6 +64,11 @@ export class PushNotificationService {
         message: string,
         data?: any
     ): Promise<boolean> {
+        if (!this.vapidKeys.publicKey || !this.vapidKeys.privateKey) {
+            this.logger.debug('Push notifications disabled (VAPID keys not configured)');
+            return false;
+        }
+
         try {
             // In a real implementation, you would:
             // 1. Get user's push subscription from database

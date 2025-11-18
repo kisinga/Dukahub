@@ -7,7 +7,6 @@
     "dev:worker": "ts-node ./src/index-worker.ts",
     "dev": "concurrently npm:dev:*",
     "build": "tsc",
-    "prestart": "npm run migration:run",
     "start:server": "node ./dist/src/index.js",
     "start:worker": "node ./dist/src/index-worker.js",
     "start": "concurrently npm:start:*",

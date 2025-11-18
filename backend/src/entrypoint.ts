@@ -5,12 +5,17 @@
  * 
  * This module contains the core initialization logic used by both
  * the Docker entrypoint and the test suite to ensure identical behavior.
+ * 
+ * Automatically detects empty databases and populates them, then runs
+ * migrations and starts the application.
  */
 
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
+// Initialize environment configuration early (before database detection)
+import './infrastructure/config/environment.config';
+import { isDatabaseEmpty, waitForDatabase } from './utils/database-detection';
 
 export interface EntrypointOptions {
-    firstRun?: boolean;
     testMode?: boolean;
     skipServerStart?: boolean;
 }
@@ -20,7 +25,6 @@ export class DukahubEntrypoint {
 
     constructor(options: EntrypointOptions = {}) {
         this.options = {
-            firstRun: false,
             testMode: false,
             skipServerStart: false,
             ...options
@@ -28,35 +32,57 @@ export class DukahubEntrypoint {
     }
 
     /**
-     * Step 1: Populate database (creates schema + sample data)
-     * This mirrors the docker-entrypoint.sh logic exactly
+     * Detect if database is empty and populate if needed
+     * Only populates if database is completely empty (no tables exist)
      */
-    async populateDatabase(): Promise<void> {
-        console.log('📦 Step 1: Populating database with sample data...');
+    async detectAndPopulate(): Promise<void> {
+        console.log('🔍 Checking database state...');
 
         try {
-            // Run the populate script
-            execSync('npm run populate', {
-                stdio: 'inherit',
-                cwd: process.cwd()
-            });
+            // Wait for database to be available (with retries)
+            const dbAvailable = await waitForDatabase(30, 1000);
+            if (!dbAvailable) {
+                throw new Error('Database is not available after maximum retries');
+            }
 
-            console.log('✅ Population complete');
+            // Check if database is empty
+            const isEmpty = await isDatabaseEmpty();
+
+            if (isEmpty) {
+                console.log('📦 Database is empty, populating with sample data...');
+
+                try {
+                    // Run the populate script
+                    execSync('npm run populate', {
+                        stdio: 'inherit',
+                        cwd: process.cwd()
+                    });
+
+                    console.log('✅ Population complete');
+                } catch (error) {
+                    console.error('❌ Population failed!');
+                    throw error;
+                }
+            } else {
+                console.log('✅ Database already contains data, skipping population');
+            }
         } catch (error) {
-            console.error('❌ Population failed!');
-            throw error;
+            // If we can't check the database state, log and continue
+            // This allows the system to start even if detection fails
+            // (migrations will handle any missing schema)
+            console.warn('⚠️  Could not determine database state, skipping population:', error instanceof Error ? error.message : String(error));
+            console.warn('⚠️  Continuing with migrations...');
         }
     }
 
     /**
-     * Step 2: Run migrations (adds custom fields)
-     * This mirrors the docker-entrypoint.sh logic exactly
+     * Run migrations (adds custom fields)
+     * Uses Vendure's runMigrations which only runs pending migrations
      */
     async runMigrations(): Promise<void> {
-        console.log('🔧 Step 2: Running migrations to add custom fields...');
+        console.log('🔧 Running migrations...');
 
         try {
-            // Run migrations using the same method as docker-entrypoint.sh
             execSync('npm run migration:run', {
                 stdio: 'inherit',
                 cwd: process.cwd()
@@ -70,55 +96,117 @@ export class DukahubEntrypoint {
     }
 
     /**
-     * Step 3: Start the application
-     * This mirrors the docker-entrypoint.sh logic exactly
+     * Start the application
+     * Starts server and worker processes directly
      */
     async startApplication(): Promise<void> {
         if (this.options.skipServerStart) {
-            console.log('🚫 Server start skipped (test mode or first run)');
+            console.log('🚫 Server start skipped (test mode)');
             return;
         }
 
         console.log('🚀 Starting Vendure server and worker...');
 
-        try {
-            execSync('npm run start', {
-                stdio: 'inherit',
-                cwd: process.cwd()
+        // Start both processes directly
+        const serverProcess = spawn('node', ['./dist/src/index.js'], {
+            stdio: 'inherit',
+            cwd: process.cwd()
+        });
+
+        const workerProcess = spawn('node', ['./dist/src/index-worker.js'], {
+            stdio: 'inherit',
+            cwd: process.cwd()
+        });
+
+        // Handle process errors
+        serverProcess.on('error', (error) => {
+            console.error('❌ Server process error:', error);
+        });
+
+        workerProcess.on('error', (error) => {
+            console.error('❌ Worker process error:', error);
+        });
+
+        // Forward signals to child processes
+        const shutdown = (signal: string) => {
+            console.log(`\n🛑 Received ${signal}, shutting down...`);
+            serverProcess.kill(signal as NodeJS.Signals);
+            workerProcess.kill(signal as NodeJS.Signals);
+            process.exit(0);
+        };
+
+        process.on('SIGTERM', () => shutdown('SIGTERM'));
+        process.on('SIGINT', () => shutdown('SIGINT'));
+
+        // Wait for both processes (they should run indefinitely)
+        // If one exits, we log it but keep the container running until both exit
+        return new Promise<void>((resolve, reject) => {
+            let serverExited = false;
+            let workerExited = false;
+            let serverExitCode: number | null = null;
+            let workerExitCode: number | null = null;
+
+            const checkBothExited = () => {
+                if (serverExited && workerExited) {
+                    // Both processes exited
+                    if ((serverExitCode !== null && serverExitCode !== 0) ||
+                        (workerExitCode !== null && workerExitCode !== 0)) {
+                        reject(new Error(`Processes exited - Server: ${serverExitCode}, Worker: ${workerExitCode}`));
+                    } else {
+                        // Both exited with 0 or signal (graceful shutdown)
+                        resolve();
+                    }
+                }
+            };
+
+            serverProcess.on('exit', (code, signal) => {
+                serverExited = true;
+                serverExitCode = code;
+                if (signal) {
+                    console.log(`Server was killed with signal ${signal}`);
+                } else if (code !== null && code !== 0) {
+                    console.error(`❌ Server exited with code ${code}`);
+                }
+                checkBothExited();
             });
-        } catch (error) {
-            console.error('❌ Application start failed!');
-            throw error;
-        }
+
+            workerProcess.on('exit', (code, signal) => {
+                workerExited = true;
+                workerExitCode = code;
+                if (signal) {
+                    console.log(`Worker was killed with signal ${signal}`);
+                } else if (code !== null && code !== 0) {
+                    console.error(`❌ Worker exited with code ${code}`);
+                }
+                checkBothExited();
+            });
+        });
     }
 
     /**
-     * Main entrypoint logic that mirrors docker-entrypoint.sh exactly
+     * Main entrypoint logic
+     * 
+     * Flow:
+     * 1. Detect if database is empty and populate if needed
+     * 2. Run migrations (only pending ones will run, idempotent)
+     * 3. Start the application
      */
     async run(): Promise<void> {
         console.log('🚀 Dukahub Entrypoint starting...');
 
-        if (this.options.firstRun) {
-            console.log('🚀 FIRST_RUN=true detected, starting initialization process...');
+        try {
+            // Step 1: Detect and populate if database is empty
+            await this.detectAndPopulate();
 
-            // Step 1: Populate database (creates schema + sample data)
-            await this.populateDatabase();
-
-            // Step 2: Run migrations (adds custom fields)
+            // Step 2: Always run migrations (Vendure's runMigrations only runs pending ones)
             await this.runMigrations();
 
-            // Step 3: Shutdown gracefully - DO NOT START VENDURE SERVER
-            console.log('✅ First run initialization complete!');
-            console.log('🔄 Please set FIRST_RUN=false and restart the container');
-            console.log('🚫 Vendure server will NOT start during FIRST_RUN=true');
-            return;
+            // Step 3: Start the application
+            await this.startApplication();
+        } catch (error) {
+            console.error('❌ Entrypoint failed:', error);
+            throw error;
         }
-
-        // Always ensure the latest migrations are applied before starting
-        await this.runMigrations();
-
-        // Start the application
-        await this.startApplication();
     }
 
 }
@@ -127,13 +215,11 @@ export class DukahubEntrypoint {
  * CLI entrypoint for Docker
  */
 if (require.main === module) {
-    const firstRun = process.env.FIRST_RUN === 'true';
     const testMode = process.env.NODE_ENV === 'test';
 
     const entrypoint = new DukahubEntrypoint({
-        firstRun,
         testMode,
-        skipServerStart: firstRun
+        skipServerStart: testMode
     });
 
     entrypoint.run().catch(error => {

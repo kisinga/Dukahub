@@ -90,7 +90,9 @@ services:
   # Backend Service (Vendure)
   # ========================================
   backend:
-    image: ghcr.io/kisinga/dukahub/backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       # Database configuration
@@ -153,9 +155,6 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_EMAIL: ${VAPID_EMAIL:-mailto:admin@dukahub.com}
-
-      # First run initialization flag
-      FIRST_RUN: ${FIRST_RUN:-false}
 
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-info}
@@ -250,7 +249,9 @@ services:
       # All values can be overridden via environment variables
       OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.name=dukahub,service.version=2.0.0}
       SIGNOZ_TELEMETRYSTORE_PROVIDER: ${SIGNOZ_TELEMETRYSTORE_PROVIDER:-clickhouse}
-      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN:-tcp://${CLICKHOUSE_USER:-default}:${CLICKHOUSE_PASSWORD:-}@${CLICKHOUSE_HOST:-clickhouse}:${CLICKHOUSE_PORT:-9000}}
+      # ClickHouse DSN: format is tcp://user:password@host:port
+      # When password is empty, omit the password part entirely
+      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN:-tcp://clickhouse:9000?username=default}
       SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER:-cluster}
       SIGNOZ_SQLSTORE_SQLITE_PATH: ${SIGNOZ_SQLSTORE_SQLITE_PATH:-/var/lib/signoz/signoz.db}
     ports:
@@ -293,7 +294,8 @@ services:
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
       # CLICKHOUSE_PASSWORD: Empty by default (no auth). Set in production!
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
-      CLICKHOUSE_SKIP_USER_SETUP: ${CLICKHOUSE_SKIP_USER_SETUP:-0}
+      # Skip user setup to allow default user without password
+      CLICKHOUSE_SKIP_USER_SETUP: ${CLICKHOUSE_SKIP_USER_SETUP:-1}
     volumes:
       - clickhouse_data:/var/lib/clickhouse
     # Do not expose ports to host - internal network only
