@@ -90,10 +90,21 @@
       <h2 class="text-3xl font-bold md:text-4xl">
         Shopkeepers across Kenya already run calmer days with Dukahub
       </h2>
-      <p class="mx-auto max-w-2xl text-base text-base-content/70">
-        Whether you run a mini-mart, agrovet, or salon, Dukahub keeps your team in sync and your
-        customers happy.
-      </p>
+      <div class="mx-auto max-w-2xl space-y-4">
+        <div class="flex flex-wrap items-center justify-center gap-2">
+          @for (business of businessExamples; track business.name) {
+          <span
+            class="badge badge-soft gap-1.5 text-sm transition-transform duration-200 hover:-translate-y-0.5"
+          >
+            <span class="text-base leading-none">{{ business.icon }}</span>
+            <span>{{ business.name }}</span>
+          </span>
+          }
+        </div>
+        <p class="text-base text-base-content/70">
+          Dukahub keeps your team in sync and your customers happy.
+        </p>
+      </div>
     </div>
     <div class="container-app mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <div
