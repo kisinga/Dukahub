@@ -1,14 +1,14 @@
 import { NativeAuthenticationStrategy, PluginCommonModule, VendurePlugin } from '@vendure/core';
 import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
-import { OtpTokenAuthStrategy } from './otp-token-auth.strategy';
-import { OtpService } from '../../services/auth/otp.service';
-import { PhoneAuthResolver, phoneAuthSchema } from './phone-auth.resolver';
-import { PhoneAuthService } from '../../services/auth/phone-auth.service';
-import { ChannelAccessGuardService } from '../../services/auth/channel-access-guard.service';
-import { RegistrationStorageService } from '../../infrastructure/storage/registration-storage.service';
-import { RegistrationService } from '../../services/auth/registration.service';
 import { SmsProviderFactory } from '../../infrastructure/sms/sms-provider.factory';
 import { SmsService } from '../../infrastructure/sms/sms.service';
+import { RegistrationStorageService } from '../../infrastructure/storage/registration-storage.service';
+import { ChannelAccessGuardService } from '../../services/auth/channel-access-guard.service';
+import { OtpService } from '../../services/auth/otp.service';
+import { PhoneAuthService } from '../../services/auth/phone-auth.service';
+import { RegistrationService } from '../../services/auth/registration.service';
+import { OtpTokenAuthStrategy } from './otp-token-auth.strategy';
+import { PhoneAuthResolver, phoneAuthSchema } from './phone-auth.resolver';
 // Registration Provisioning Services
 import { AccessProvisionerService } from '../../services/auth/provisioning/access-provisioner.service';
 import { ChannelAssignmentService } from '../../services/auth/provisioning/channel-assignment.service';
@@ -44,29 +44,36 @@ import { StoreProvisionerService } from '../../services/auth/provisioning/store-
         PhoneAuthService,
         ChannelAccessGuardService,
         OtpService,
-        OtpTokenAuthStrategy,
-        NativeAuthenticationStrategy,
+        // Note: Authentication strategies are configured via config.authOptions.adminAuthenticationStrategy
+        // in the configuration() hook below, not via DI providers, to keep the source of truth in one place.
     ],
     configuration: (config: any) => {
-        // Initialize array if it doesn't exist
         const existingStrategies = config.authOptions.adminAuthenticationStrategy ?? [];
 
+        const hasOtp = existingStrategies.some(
+            (strategy: any) => strategy instanceof OtpTokenAuthStrategy
+        );
         const hasNative = existingStrategies.some(
             (strategy: any) => strategy instanceof NativeAuthenticationStrategy
         );
-        const nativeStrategy = hasNative ? [] : [new NativeAuthenticationStrategy()];
 
-        // Instantiate the strategy here, before bootstrap
-        // OtpService will be injected via DI during init()
-        const strategy = new OtpTokenAuthStrategy();
+        const strategies: any[] = [];
 
-        // Add OTP strategy before any existing ones so it gets checked first, but keep the originals intact
+        // OtpTokenAuthStrategy wraps native auth and logs both OTP and non-OTP admin logins.
+        // It must appear before the plain NativeAuthenticationStrategy so it can inspect the
+        // password and delegate appropriately.
+        if (!hasOtp) {
+            strategies.push(new OtpTokenAuthStrategy());
+        }
+
+        if (!hasNative) {
+            strategies.push(new NativeAuthenticationStrategy());
+        }
+
         config.authOptions.adminAuthenticationStrategy = [
-            strategy,
-            ...nativeStrategy,
+            ...strategies,
             ...existingStrategies,
         ];
-
 
         return config;
     },

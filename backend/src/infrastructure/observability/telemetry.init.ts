@@ -17,9 +17,7 @@ import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-grpc';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
-import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
-import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
@@ -31,6 +29,7 @@ import { env } from '../config/environment.config';
 
 let sdk: NodeSDK | null = null;
 let initialized = false;
+let shuttingDown = false;
 
 /**
  * Initialize OpenTelemetry SDK
@@ -104,9 +103,23 @@ export function initializeTelemetry(serviceName: string = 'dukahub-backend'): vo
 
         console.log('[Telemetry] OpenTelemetry SDK initialized successfully');
 
-        // Handle graceful shutdown
-        process.on('SIGTERM', shutdown);
-        process.on('SIGINT', shutdown);
+        // Handle graceful shutdown (ensure we only react once per process)
+        const handleSignal = (signal: NodeJS.Signals | string) => {
+            if (shuttingDown) {
+                console.log(`[Telemetry] Shutdown already in progress, ignoring ${signal}`);
+                return;
+            }
+            shuttingDown = true;
+            console.log(`[Telemetry] Received ${signal}, shutting down OpenTelemetry SDK...`);
+            shutdown().finally(() => {
+                console.log('[Telemetry] Shutdown complete, exiting process');
+                // Force process exit so dev workflows (npm/concurrently) don't hang
+                process.exit(0);
+            });
+        };
+
+        process.once('SIGTERM', handleSignal);
+        process.once('SIGINT', handleSignal);
     } catch (error) {
         console.error('[Telemetry] Failed to initialize OpenTelemetry SDK:', error);
         // Don't throw - allow application to continue without telemetry
@@ -128,6 +141,7 @@ export function shutdown(): Promise<void> {
             .then(() => {
                 console.log('[Telemetry] OpenTelemetry SDK shut down successfully');
                 initialized = false;
+                sdk = null;
                 resolve();
             })
             .catch((error) => {

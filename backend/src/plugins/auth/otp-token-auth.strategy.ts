@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { SpanStatusCode, metrics, trace } from '@opentelemetry/api';
 import {
     AuthenticationStrategy,
     Injector,
@@ -20,10 +21,21 @@ import { OtpService } from '../../services/auth/otp.service';
 export class OtpTokenAuthStrategy implements AuthenticationStrategy<{ username: string; password: string }> {
     name = 'native';
 
+    private readonly tracer = trace.getTracer('dukahub-auth');
+    private readonly meter = metrics.getMeter('dukahub-auth');
+    private readonly authAttemptsCounter = this.meter.createCounter('auth.admin.attempts', {
+        description: 'Total number of admin authentication attempts',
+    });
+    private readonly authSuccessCounter = this.meter.createCounter('auth.admin.success', {
+        description: 'Total number of successful admin authentications',
+    });
+    private readonly authFailureCounter = this.meter.createCounter('auth.admin.failure', {
+        description: 'Total number of failed admin authentications',
+    });
+
     private nativeStrategy?: NativeAuthenticationStrategy;
     private userService?: UserService;
     private otpService?: OtpService;
-    private injector?: Injector;
 
     constructor(
         private readonly otpServiceInject?: OtpService,
@@ -35,57 +47,30 @@ export class OtpTokenAuthStrategy implements AuthenticationStrategy<{ username: 
     }
 
     init(injector: Injector): void {
-        this.injector = injector;
-        
         try {
             this.nativeStrategy = injector.get(NativeAuthenticationStrategy);
+            const maybeInit = (this.nativeStrategy as any)?.init;
+            if (typeof maybeInit === 'function') {
+                maybeInit.call(this.nativeStrategy, injector);
+            }
         } catch (error: any) {
-            // Native strategy not available yet, will lazy initialize if needed
+            // If native strategy cannot be resolved, non-OTP logins will fail fast in authenticate().
         }
-        
+
+        // Resolve supporting services used for OTP logins
         try {
             this.userService = injector.get(UserService);
         } catch (error: any) {
-            // UserService not available yet, will lazy initialize if needed
+            // UserService is only required for OTP logins; failures will be reflected in spans.
         }
-        
+
         // Get OtpService from DI container if not already set
         try {
             if (!this.otpService) {
                 this.otpService = injector.get(OtpService);
             }
         } catch (error: any) {
-            // OtpService not available yet, will lazy initialize if needed
-        }
-    }
-    
-    private ensureInitialized(): void {
-        if (!this.injector) {
-            return;
-        }
-        
-        if (!this.nativeStrategy) {
-            try {
-                this.nativeStrategy = this.injector.get(NativeAuthenticationStrategy);
-            } catch (error: any) {
-                // Native strategy still not available
-            }
-        }
-        
-        if (!this.userService) {
-            try {
-                this.userService = this.injector.get(UserService);
-            } catch (error: any) {
-                // UserService still not available
-            }
-        }
-        
-        if (!this.otpService) {
-            try {
-                this.otpService = this.injector.get(OtpService);
-            } catch (error: any) {
-                // OtpService still not available
-            }
+            // OTP logins require OtpService.redis; failures will be reflected in spans.
         }
     }
 
@@ -103,81 +88,234 @@ export class OtpTokenAuthStrategy implements AuthenticationStrategy<{ username: 
         data: { username: string; password: string }
     ): Promise<User | false> {
         const { username, password } = data;
+        const isOtpToken = !!password && password.startsWith('otp_session_');
 
-        // Ensure dependencies are initialized (lazy init if needed)
-        this.ensureInitialized();
+        // Increment attempts metric
+        this.authAttemptsCounter.add(1, {
+            'auth.username': username,
+            'auth.isOtpToken': isOtpToken,
+        });
 
-        // Only process OTP tokens, fall back to native auth for everything else
-        if (!password?.startsWith('otp_session_')) {
-            if (!this.nativeStrategy) {
-                this.ensureInitialized();
-            }
-            if (!this.nativeStrategy) {
-                return false;
-            }
-            if (typeof (this.nativeStrategy as any)?.init === 'function') {
-                await (this.nativeStrategy as any).init(this.injector);
-            }
-            const result = await this.nativeStrategy.authenticate(ctx, data);
-            return result;
-        }
-        
-        // If it's an OTP token but Redis isn't available, we can't authenticate
-        if (!this.otpService?.redis) {
-            return false;
-        }
-
-        const sessionKey = `otp:session:${password}`;
+        const span = this.tracer.startSpan('auth.admin.authenticate', {
+            attributes: {
+                'auth.username': username,
+                'auth.isOtpToken': isOtpToken,
+            },
+        });
 
         try {
-            if (!this.otpService?.redis) {
+            // Non-OTP → delegate to native strategy
+            if (!isOtpToken) {
                 if (!this.nativeStrategy) {
+                    span.setStatus({
+                        code: SpanStatusCode.ERROR,
+                        message: 'native_strategy_unavailable',
+                    });
+                    span.setAttribute('auth.outcome', 'native_strategy_unavailable');
+                    this.authFailureCounter.add(1, {
+                        'auth.username': username,
+                        'auth.reason': 'native_strategy_unavailable',
+                    });
                     return false;
                 }
-                return this.nativeStrategy.authenticate(ctx, data);
+
+                span.setAttribute('auth.path', 'native');
+                const result = await this.nativeStrategy.authenticate(ctx, data);
+
+                if (result) {
+                    span.setStatus({ code: SpanStatusCode.OK });
+                    span.setAttribute('auth.outcome', 'success');
+                    this.authSuccessCounter.add(1, { 'auth.username': username });
+                } else {
+                    span.setStatus({
+                        code: SpanStatusCode.ERROR,
+                        message: 'native_auth_failed',
+                    });
+                    span.setAttribute('auth.outcome', 'native_auth_failed');
+                    this.authFailureCounter.add(1, {
+                        'auth.username': username,
+                        'auth.reason': 'native_auth_failed',
+                    });
+                }
+
+                return result;
             }
-            
+
+            // OTP path
+            span.setAttribute('auth.path', 'otp');
+
+            if (!this.otpService?.redis) {
+                span.addEvent('otp.redis.unavailable');
+                span.setStatus({
+                    code: SpanStatusCode.ERROR,
+                    message: 'otp_redis_unavailable',
+                });
+                span.setAttribute('auth.outcome', 'otp_redis_unavailable');
+                this.authFailureCounter.add(1, {
+                    'auth.username': username,
+                    'auth.reason': 'otp_redis_unavailable',
+                });
+                return false;
+            }
+
+            const sessionKey = `otp:session:${password}`;
             const sessionData = await this.otpService.redis.get(sessionKey);
 
             if (!sessionData) {
+                span.addEvent('otp.session.missing', { sessionKey });
+                span.setAttribute('auth.outcome', 'otp_session_missing');
+                // fall back to native if possible
                 if (!this.nativeStrategy) {
+                    span.setStatus({
+                        code: SpanStatusCode.ERROR,
+                        message: 'otp_session_missing_and_native_unavailable',
+                    });
+                    this.authFailureCounter.add(1, {
+                        'auth.username': username,
+                        'auth.reason': 'otp_session_missing_and_native_unavailable',
+                    });
                     return false;
                 }
-                return this.nativeStrategy.authenticate(ctx, data);
+                const result = await this.nativeStrategy.authenticate(ctx, data);
+                if (result) {
+                    span.setStatus({ code: SpanStatusCode.OK });
+                    span.setAttribute('auth.outcome', 'success_native_fallback');
+                    this.authSuccessCounter.add(1, { 'auth.username': username });
+                } else {
+                    span.setStatus({
+                        code: SpanStatusCode.ERROR,
+                        message: 'native_auth_failed_after_otp_session_missing',
+                    });
+                    this.authFailureCounter.add(1, {
+                        'auth.username': username,
+                        'auth.reason': 'native_auth_failed_after_otp_session_missing',
+                    });
+                }
+                return result;
             }
 
             const session = JSON.parse(sessionData);
-            
+
             if (session.phoneNumber !== username || !session.userId) {
+                span.addEvent('otp.session.mismatch', {
+                    sessionPhone: session.phoneNumber,
+                    sessionUserId: session.userId,
+                });
+                span.setAttribute('auth.outcome', 'otp_session_mismatch');
                 if (!this.nativeStrategy) {
+                    span.setStatus({
+                        code: SpanStatusCode.ERROR,
+                        message: 'otp_session_mismatch_and_native_unavailable',
+                    });
+                    this.authFailureCounter.add(1, {
+                        'auth.username': username,
+                        'auth.reason': 'otp_session_mismatch_and_native_unavailable',
+                    });
                     return false;
                 }
-                return this.nativeStrategy.authenticate(ctx, data);
+                const result = await this.nativeStrategy.authenticate(ctx, data);
+                if (result) {
+                    span.setStatus({ code: SpanStatusCode.OK });
+                    span.setAttribute('auth.outcome', 'success_native_fallback');
+                    this.authSuccessCounter.add(1, { 'auth.username': username });
+                } else {
+                    span.setStatus({
+                        code: SpanStatusCode.ERROR,
+                        message: 'native_auth_failed_after_otp_session_mismatch',
+                    });
+                    this.authFailureCounter.add(1, {
+                        'auth.username': username,
+                        'auth.reason': 'native_auth_failed_after_otp_session_mismatch',
+                    });
+                }
+                return result;
             }
 
             if (!this.userService) {
+                span.addEvent('otp.user_service.unavailable');
+                span.setStatus({
+                    code: SpanStatusCode.ERROR,
+                    message: 'user_service_unavailable',
+                });
+                span.setAttribute('auth.outcome', 'user_service_unavailable');
+                this.authFailureCounter.add(1, {
+                    'auth.username': username,
+                    'auth.reason': 'user_service_unavailable',
+                });
                 return false;
             }
 
             const user = await this.userService.getUserByEmailAddress(ctx, username);
-            
+
             if (!user || user.id.toString() !== session.userId) {
+                span.addEvent('otp.user.missing_or_mismatch', {
+                    sessionUserId: session.userId,
+                    resolvedUserId: user?.id?.toString() ?? 'null',
+                });
+                span.setAttribute('auth.outcome', 'otp_user_mismatch');
                 if (!this.nativeStrategy) {
+                    span.setStatus({
+                        code: SpanStatusCode.ERROR,
+                        message: 'otp_user_mismatch_and_native_unavailable',
+                    });
+                    this.authFailureCounter.add(1, {
+                        'auth.username': username,
+                        'auth.reason': 'otp_user_mismatch_and_native_unavailable',
+                    });
                     return false;
                 }
-                return this.nativeStrategy.authenticate(ctx, data);
+                const result = await this.nativeStrategy.authenticate(ctx, data);
+                if (result) {
+                    span.setStatus({ code: SpanStatusCode.OK });
+                    span.setAttribute('auth.outcome', 'success_native_fallback');
+                    this.authSuccessCounter.add(1, { 'auth.username': username });
+                } else {
+                    span.setStatus({
+                        code: SpanStatusCode.ERROR,
+                        message: 'native_auth_failed_after_otp_user_mismatch',
+                    });
+                    this.authFailureCounter.add(1, {
+                        'auth.username': username,
+                        'auth.reason': 'native_auth_failed_after_otp_user_mismatch',
+                    });
+                }
+                return result;
             }
 
             // Token validated - delete it and return user
             if (this.otpService?.redis) {
                 await this.otpService.redis.del(sessionKey);
             }
+
+            span.addEvent('otp.session.success', {
+                userId: user.id.toString(),
+            });
+            span.setStatus({ code: SpanStatusCode.OK });
+            span.setAttribute('auth.outcome', 'success');
+            this.authSuccessCounter.add(1, { 'auth.username': username });
+
             return user;
-        } catch (error) {
+        } catch (error: any) {
+            span.recordException(error);
+            span.setStatus({
+                code: SpanStatusCode.ERROR,
+                message: error instanceof Error ? error.message : String(error),
+            });
+            span.setAttribute('auth.outcome', 'exception');
+            this.authFailureCounter.add(1, {
+                'auth.username': username,
+                'auth.reason': 'exception',
+            });
+
             if (!this.nativeStrategy) {
                 return false;
             }
-            return this.nativeStrategy.authenticate(ctx, data);
+
+            // On exception, last resort is to try native auth
+            const result = await this.nativeStrategy.authenticate(ctx, data);
+            return result;
+        } finally {
+            span.end();
         }
     }
 }
