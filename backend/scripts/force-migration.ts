@@ -7,21 +7,10 @@
  */
 
 import { DataSource } from 'typeorm';
-import { config as dotenvConfig } from 'dotenv';
-import path from 'path';
-import fs from 'fs';
+import { EnvironmentConfig } from '../src/infrastructure/config/environment.config';
 
-// Load environment variables
-const envPaths = [
-  path.join(process.cwd(), '../configs/.env'),
-  path.join(process.cwd(), '../../configs/.env'),
-  path.join(__dirname, '../../../configs/.env'),
-];
-
-const envPath = envPaths.find(p => fs.existsSync(p));
-if (envPath) {
-  dotenvConfig({ path: envPath });
-}
+// Load environment configuration (single source of truth)
+const env = EnvironmentConfig.getInstance();
 
 const migrationName = process.argv[2];
 
@@ -33,12 +22,12 @@ if (!migrationName) {
 
 const dataSource = new DataSource({
   type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: +(process.env.DB_PORT || 5432),
-  username: process.env.DB_USERNAME || 'vendure',
-  password: process.env.DB_PASSWORD || 'vendure',
-  database: process.env.DB_NAME || 'vendure',
-  schema: process.env.DB_SCHEMA || 'public',
+  host: env.db.host,
+  port: env.db.port,
+  username: env.db.username,
+  password: env.db.password,
+  database: env.db.name,
+  schema: env.db.schema,
 });
 
 async function forceMigration() {

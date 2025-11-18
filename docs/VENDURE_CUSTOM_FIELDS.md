@@ -1,6 +1,6 @@
 # Vendure Custom Fields & Migration Playbook
 
-> Scope: Dukahub backend (`backend/`) on Vendure 3.4 / TypeORM 0.3. This doc captures the patterns that keep `npm run dev` happy locally and ensure migrations replay cleanly on the managed Postgres instance declared in `configs/.env`.
+> Scope: Dukahub backend (`backend/`) on Vendure 3.4 / TypeORM 0.3. This doc captures the patterns that keep `npm run dev` happy locally and ensure migrations replay cleanly on the managed Postgres instance declared in root `.env`.
 
 ---
 
@@ -19,7 +19,7 @@
      ```bash
      cd backend
      npm run build
-     node -e "require('dotenv').config({ path: '../configs/.env' }); require('@vendure/core').runMigrations(require('./dist/src/vendure-config').config)"
+     node -e "require('dotenv').config({ path: '../.env' }); require('@vendure/core').runMigrations(require('./dist/src/vendure-config').config)"
      ```
    - In CI / production containers we lean on `npm run migration:run` which wraps the same call.
 
