@@ -132,12 +132,14 @@ export class EnvironmentConfig implements OnModuleInit {
     private loadEnvironment(): void {
         // Try multiple paths to handle both development (src/) and production (dist/) scenarios
         // All paths now point to root-level .env file
+        // In Docker: /usr/src/app/.env (mounted from project root)
+        // In local dev: .env (project root) or ../.env (from backend/)
         const envPaths = [
-            path.join(process.cwd(), '.env'),                  // From project root
-            path.join(process.cwd(), '../.env'),              // From backend/ directory
+            path.join(process.cwd(), '.env'),                  // From project root (Docker: /usr/src/app/.env)
+            path.join(process.cwd(), '../.env'),              // From backend/ directory (local dev)
             path.join(__dirname, '../../../../.env'),          // From dist/src/infrastructure/config/
             path.join(__dirname, '../../../.env'),             // From dist/src/infrastructure/config/ (alternative)
-            path.join(__dirname, '../../.env'),               // From src/infrastructure/config/
+            path.join(__dirname, '../../.env'),                // From src/infrastructure/config/
         ];
 
         const envPath = envPaths.find(p => {
@@ -152,9 +154,13 @@ export class EnvironmentConfig implements OnModuleInit {
             const result = dotenvConfig({ path: envPath });
             if (result.error) {
                 this.logger.warn(`Failed to load .env file: ${result.error.message}`);
+            } else {
+                this.logger.log(`✅ Loaded environment from .env file: ${envPath}`);
             }
         } else {
-            this.logger.warn('No .env file found in expected paths. Using environment variables or defaults.');
+            // No .env file found - this is expected in platforms like Coolify, Kubernetes, etc.
+            // where environment variables are passed directly to containers
+            this.logger.log('ℹ️  No .env file found. Using environment variables from container (e.g., Coolify, Kubernetes, or docker-compose env vars).');
         }
 
         // Load database configuration
@@ -218,17 +224,17 @@ export class EnvironmentConfig implements OnModuleInit {
         this.observability.enabled = process.env.SIGNOZ_ENABLED === 'true';
         this.observability.serviceName = process.env.SIGNOZ_SERVICE_NAME || 'dukahub-backend';
         this.observability.serviceVersion = process.env.SIGNOZ_SERVICE_VERSION || '2.0.0';
-        
+
         // OTLP endpoint configuration
         const signozHost = process.env.SIGNOZ_HOST || 'signoz';
         const signozGrpcPort = process.env.SIGNOZ_OTLP_GRPC_PORT || '4317';
         const signozHttpPort = process.env.SIGNOZ_OTLP_HTTP_PORT || '4318';
-        
-        this.observability.otlpGrpcEndpoint = process.env.SIGNOZ_OTLP_GRPC_ENDPOINT || 
+
+        this.observability.otlpGrpcEndpoint = process.env.SIGNOZ_OTLP_GRPC_ENDPOINT ||
             `http://${signozHost}:${signozGrpcPort}`;
-        this.observability.otlpHttpEndpoint = process.env.SIGNOZ_OTLP_HTTP_ENDPOINT || 
+        this.observability.otlpHttpEndpoint = process.env.SIGNOZ_OTLP_HTTP_ENDPOINT ||
             `http://${signozHost}:${signozHttpPort}`;
-        
+
         // Legacy endpoint support (for backward compatibility)
         this.observability.endpoint = process.env.SIGNOZ_ENDPOINT || this.observability.otlpGrpcEndpoint;
     }
