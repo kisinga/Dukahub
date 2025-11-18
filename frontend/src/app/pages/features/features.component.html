@@ -37,39 +37,25 @@
         </div>
       </div>
       <div class="hero-visual">
-        <div class="mockup">
-          <div class="mockup-header">
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-          </div>
-          <div class="mockup-body">
-            <div class="mockup-card">
-              <div class="mockup-icon">⚡</div>
-              <div>
-                <h3>Sell in 3 seconds</h3>
-                <p>Point your phone at a price label and the right product appears instantly.</p>
+        <div
+          class="group relative w-full max-w-2xl overflow-hidden rounded-2xl border border-base-300 bg-base-200 shadow-md transition-transform transition-shadow duration-200 hover:-translate-y-1 hover:shadow-xl hover:border-primary/40"
+        >
+          <div
+            class="aspect-video flex items-center justify-center bg-gradient-to-br from-base-200 to-base-300"
+          >
+            <div class="flex flex-col items-center gap-4 text-base-content/70">
+              <div
+                class="flex h-20 w-20 items-center justify-center rounded-full bg-primary/20 transition-transform duration-200 group-hover:scale-110"
+              >
+                <span class="text-4xl text-primary">▶</span>
+              </div>
+              <div class="text-center space-y-1">
+                <p class="text-base font-semibold text-base-content">
+                  Complete product walkthrough
+                </p>
+                <p class="text-sm">See how Dukahub works in real shops</p>
               </div>
             </div>
-            <div class="mockup-card">
-              <div class="mockup-icon">📦</div>
-              <div>
-                <h3>See what’s in stock</h3>
-                <p>Know your best sellers and low stock before it hurts sales.</p>
-              </div>
-            </div>
-            <div class="mockup-card">
-              <div class="mockup-icon">💳</div>
-              <div>
-                <h3>Track who owes what</h3>
-                <p>Customer credit and supplier balances update automatically.</p>
-              </div>
-            </div>
-          </div>
-          <div class="mockup-footer">
-            <span class="tag tag-primary">Offline ready</span>
-            <span class="tag">MPesa + cash</span>
-            <span class="tag">Unlimited products</span>
           </div>
         </div>
       </div>
@@ -90,26 +76,51 @@
           paperwork.
         </p>
       </div>
-      <div class="feature-grid">
-        @for (feature of category.features; track feature.title) {
-        <article class="feature-card">
-          <div class="feature-icon">{{ feature.icon }}</div>
-          <div class="feature-meta">
-            @if (feature.origin === 'Dukahub-Exclusive') {
-            <span class="tag tag-exclusive">Dukahub exclusive</span>
-            } @else if (feature.origin === 'Dukahub-Enhanced') {
-            <span class="tag tag-enhanced">Dukahub enhanced</span>
-            } @else {
-            <span class="tag">Standard</span>
+
+      <div class="mt-10 grid gap-8 lg:grid-cols-[1fr,1fr] lg:items-start">
+        <div class="feature-grid">
+          @for (feature of category.features; track feature.title) {
+          <article class="feature-card">
+            <div class="feature-icon">{{ feature.icon }}</div>
+            <div class="feature-meta">
+              @if (feature.origin === 'Dukahub-Exclusive') {
+              <span class="tag tag-exclusive">Dukahub exclusive</span>
+              } @else if (feature.origin === 'Dukahub-Enhanced') {
+              <span class="tag tag-enhanced">Dukahub enhanced</span>
+              } @else {
+              <span class="tag">Standard</span>
+              }
+            </div>
+            <h3>{{ feature.title }}</h3>
+            <p>{{ feature.description }}</p>
+            @if (feature.useCase) {
+            <div class="use-case">💡 {{ feature.useCase }}</div>
             }
-          </div>
-          <h3>{{ feature.title }}</h3>
-          <p>{{ feature.description }}</p>
-          @if (feature.useCase) {
-          <div class="use-case">💡 {{ feature.useCase }}</div>
+          </article>
           }
-        </article>
-        }
+        </div>
+
+        <div class="flex items-center justify-center">
+          <div
+            class="group relative w-full max-w-md overflow-hidden rounded-2xl border border-base-300 bg-base-200 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/40"
+          >
+            <div
+              class="aspect-video flex items-center justify-center bg-gradient-to-br from-base-200 to-base-300"
+            >
+              <div class="flex flex-col items-center gap-3 text-base-content/70">
+                <div
+                  class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/20 transition-transform duration-300 group-hover:scale-110"
+                >
+                  <span class="text-3xl text-primary">▶</span>
+                </div>
+                <div class="text-center space-y-1">
+                  <p class="text-sm font-semibold text-base-content">{{ category.name }}</p>
+                  <p class="text-xs text-base-content/60">See it in action</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -161,6 +172,34 @@
           }
         </ul>
       </article>
+    </div>
+  </section>
+
+  <!-- Coming Soon -->
+  <section class="section category">
+    <div class="container">
+      <div class="category-header">
+        <div>
+          <span class="eyebrow">Coming soon</span>
+          <h2>More powerful tools on the way</h2>
+        </div>
+        <p>
+          We're building advanced accounting and ERP features to give you even more control over
+          your business finances.
+        </p>
+      </div>
+      <div class="feature-grid">
+        @for (feature of comingSoonFeatures; track feature.title) {
+        <article class="feature-card">
+          <div class="feature-icon">{{ feature.icon }}</div>
+          <div class="feature-meta">
+            <span class="tag">{{ feature.category }}</span>
+          </div>
+          <h3>{{ feature.title }}</h3>
+          <p>{{ feature.description }}</p>
+        </article>
+        }
+      </div>
     </div>
   </section>
 

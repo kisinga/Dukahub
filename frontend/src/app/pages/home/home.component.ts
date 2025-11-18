@@ -46,19 +46,6 @@ interface JourneyStage {
   detail: string;
 }
 
-interface ValueHighlight {
-  icon: string;
-  title: string;
-  description: string;
-  badge: string;
-}
-
-interface ComingSoonFeature {
-  icon: string;
-  title: string;
-  description: string;
-  category: string;
-}
 
 interface FAQItem {
   question: string;
@@ -136,59 +123,6 @@ export class HomeComponent {
     }
   ];
 
-  protected readonly valueHighlights: ValueHighlight[] = [
-    {
-      icon: '🕒',
-      title: 'Save two hours daily',
-      description: 'Cut manual books and endless follow-up calls.',
-      badge: 'Time back'
-    },
-    {
-      icon: '🚫',
-      title: 'Prevent lost sales',
-      description: 'Sell even during outages or peak rush, without missing a beat.',
-      badge: 'No guesswork'
-    },
-    {
-      icon: '🤝',
-      title: 'Build customer trust',
-      description: 'Show clear balances and histories for every customer and supplier.',
-      badge: 'Transparent'
-    }
-  ];
-
-  protected readonly comingSoonFeatures: ComingSoonFeature[] = [
-    {
-      icon: '📊',
-      title: 'Ledger control',
-      description: 'Full control over your accounting ledger with detailed transaction tracking and reconciliation.',
-      category: 'Accounting'
-    },
-    {
-      icon: '📦',
-      title: 'COGS via FIFO tracking',
-      description: 'Track cost of goods sold using FIFO method with batch tracking to accurately calculate inventory costs.',
-      category: 'Accounting'
-    },
-    {
-      icon: '⏰',
-      title: 'Expiry tracking & reminders',
-      description: 'Track product batches with expiry dates and receive automated reminders before items expire, reducing waste and losses.',
-      category: 'Accounting'
-    },
-    {
-      icon: '💼',
-      title: 'Expenses management',
-      description: 'Comprehensive ERP features for tracking and managing business expenses with categorization and reporting.',
-      category: 'Accounting'
-    },
-    {
-      icon: '🔒',
-      title: 'Period end closing',
-      description: 'Enforce reconciliation of payment accounts before closing periods, ensuring ledger accuracy with inter-account transfer support.',
-      category: 'Accounting'
-    }
-  ];
 
   protected readonly pricingPlans: PricingPlan[] = [
     {
