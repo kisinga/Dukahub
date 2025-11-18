@@ -155,32 +155,42 @@ export class PhoneAuthService {
             throw new Error('Registration data not found or expired. Please start registration again.');
         }
 
-        // Step 4: Check if user already exists (duplicate registration prevention)
-        // NOTE: If the transaction fails after user creation but before all provisioning completes,
-        // we may have a User without a channel. This will block re-registration and must be repaired by ops.
+        // Step 4: Load existing user if any. Existing users can add additional businesses.
         const existingUser = await this.userService.getUserByEmailAddress(ctx, formattedPhone);
-        if (existingUser) {
-            throw new Error('REGISTRATION_DUPLICATE_USER: An account with this phone number already exists. Please login instead.');
-        }
         // Note: Channel code uniqueness is validated in provisionCustomer() to avoid redundant checks
 
         // Step 5: Create entities in transaction
         // This creates: Channel, Stock Location, Payment Methods, Role, and Administrator
         // All operations are wrapped in a transaction for atomicity
         const provisionResult = await this.connection.withTransaction(ctx, async (transactionCtx) => {
-            return await this.registrationService.provisionCustomer(transactionCtx, registrationData);
+            return await this.registrationService.provisionCustomer(
+                transactionCtx,
+                registrationData,
+                existingUser,
+            );
         });
 
-        // Step 6: Update User's authorization status to PENDING
-        await this.connection.getRepository(ctx, User).update(
-            { id: provisionResult.userId },
-            {
-                identifier: formattedPhone, // Ensure identifier is phone
-                customFields: {
+        const userRepo = this.connection.getRepository(ctx, User);
+
+        if (!existingUser) {
+            // Step 6: Update newly created user's authorization status to PENDING
+            const createdUser = await userRepo.findOne({ where: { id: provisionResult.userId } });
+            if (createdUser) {
+                const updatedCustomFields = {
+                    ...(createdUser.customFields as Record<string, unknown> | undefined),
                     authorizationStatus: AuthorizationStatus.PENDING,
-                },
+                };
+                (createdUser as any).customFields = updatedCustomFields;
+                createdUser.identifier = formattedPhone; // Ensure identifier normalized
+                await userRepo.save(createdUser);
             }
-        );
+        } else if (existingUser.identifier !== formattedPhone) {
+            // Normalize identifier for existing user if needed
+            await userRepo.update(
+                { id: existingUser.id },
+                { identifier: formattedPhone }
+            );
+        }
 
         return {
             success: true,
@@ -294,13 +304,20 @@ export class PhoneAuthService {
             };
         }
 
-        // Determine access level based on channel status
-        // If any channel is APPROVED, use FULL access (prefer first APPROVED channel)
-        // Otherwise, all channels are UNAPPROVED, use READ_ONLY
+        // Determine access based on channel status.
+        // Newly provisioned businesses stay UNAPPROVED until manual review, so block login
+        // until at least one linked channel is APPROVED.
         const approvedChannel = channelsWithStatus.find(ch => ch.status === ChannelStatus.APPROVED);
-        const accessLevel = approvedChannel ? AccessLevel.FULL : AccessLevel.READ_ONLY;
-        const activeChannel = approvedChannel || channelsWithStatus[0];
-        const channelId = activeChannel.channel.id.toString();
+        if (!approvedChannel) {
+            return {
+                success: false,
+                message: 'Your business is pending approval. Please contact support once an admin has approved your account.',
+                authorizationStatus,
+            };
+        }
+
+        const accessLevel = AccessLevel.FULL;
+        const channelId = approvedChannel.channel.id.toString();
 
         // Create session token with access level and channel ID
         const sessionToken = `otp_session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
@@ -323,9 +340,7 @@ export class PhoneAuthService {
         return {
             success: true,
             token: sessionToken,
-            message: accessLevel === AccessLevel.FULL
-                ? 'OTP verified successfully'
-                : 'OTP verified successfully. Your channel is pending approval - you have read-only access.',
+            message: 'OTP verified successfully.',
             user: {
                 id: user.id.toString(),
                 identifier: user.identifier,

@@ -14,3 +14,4 @@ export class AboutComponent {
   protected readonly currentYear = new Date().getFullYear();
 }
 
+

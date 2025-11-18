@@ -1,3 +1,25 @@
 :host {
   display: block;
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-hero-intro {
+    animation: home-fade-up 600ms ease-out both;
+  }
+
+  .home-hero-intro-delay {
+    animation: home-fade-up 700ms ease-out both;
+  }
+}
+
+@keyframes home-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -14,3 +14,4 @@ export class TermsComponent {
   protected readonly lastUpdated = '2024-01-01';
 }
 
+
