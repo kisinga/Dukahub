@@ -158,6 +158,7 @@ export class AuditDbConnection implements OnModuleInit, OnModuleDestroy {
                         "entityType" character varying,
                         "entityId" character varying,
                         "userId" integer,
+                        "ipAddress" character varying,
                         data jsonb NOT NULL DEFAULT '{}',
                         source character varying NOT NULL,
                         CONSTRAINT "PK_audit_log" PRIMARY KEY (id, timestamp)
@@ -180,7 +181,36 @@ export class AuditDbConnection implements OnModuleInit, OnModuleDestroy {
                     ON audit_log ("channelId", "userId")
                 `);
 
+                await queryRunner.query(`
+                    CREATE INDEX IF NOT EXISTS "IDX_audit_log_ip_address" 
+                    ON audit_log ("ipAddress")
+                `);
+
                 this.logger.log('Created audit_log table with integer columns');
+            } else {
+                // Table exists - check if ipAddress column exists and add it if missing
+                const columnExists = await queryRunner.query(`
+                    SELECT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name = 'audit_log' 
+                        AND column_name = 'ipAddress'
+                    )
+                `);
+
+                if (!columnExists[0]?.exists) {
+                    this.logger.log('Adding ipAddress column to existing audit_log table...');
+                    await queryRunner.query(`
+                        ALTER TABLE audit_log 
+                        ADD COLUMN IF NOT EXISTS "ipAddress" character varying
+                    `);
+
+                    await queryRunner.query(`
+                        CREATE INDEX IF NOT EXISTS "IDX_audit_log_ip_address" 
+                        ON audit_log ("ipAddress")
+                    `);
+
+                    this.logger.log('Added ipAddress column and index to audit_log table');
+                }
             }
 
             // Enable TimescaleDB extension if not already enabled

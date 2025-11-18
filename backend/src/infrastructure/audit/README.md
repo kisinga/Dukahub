@@ -31,6 +31,7 @@ The audit system provides comprehensive, channel-scoped logging of all sensitive
 
 - **Channel-Scoped:** All audit records are associated with a channel
 - **User Attribution:** Tracks who performed each action
+- **IP Address Logging:** Captures client IP address for user-associated events (handles reverse proxy headers)
 - **Single Source of Truth:** User actions store attribution immediately; system events inherit
 - **Non-Blocking:** Audit logging failures don't prevent operations
 - **Time-Series Optimized:** Efficient querying with proper indexes
@@ -232,6 +233,40 @@ System events (from VendureEventAuditSubscriber) automatically:
 3. Store as `null` with metadata if no user context found
 
 This ensures system events inherit user attribution from the original user action.
+
+## IP Address Logging
+
+The audit system automatically captures the client IP address for all user-associated events. This provides an additional layer of security and auditability.
+
+### How It Works
+
+- **Automatic Capture:** IP addresses are extracted automatically when a `userId` is associated with an audit event
+- **Reverse Proxy Support:** Uses the `request-ip` library to properly handle reverse proxy headers (`X-Forwarded-For`, `X-Real-IP`) with fallback to direct connection IP
+- **Best-Effort:** IP extraction is non-blocking and returns `null` if the request object is unavailable (e.g., background/system events)
+- **Trust Model:** IP addresses are derived directly from the network connection and cannot be overridden by caller-provided audit `data` - this ensures the IP address reflects the actual network source
+
+### When IP is Captured
+
+- **User Actions:** IP is captured for all events logged via `log()` when a `userId` is present
+- **System Events:** IP is captured for events logged via `logSystemEvent()` when a user is associated with the event
+- **Background Events:** IP will be `null` for events that don't have an associated HTTP request (e.g., scheduled jobs, background workers)
+
+### GraphQL Access
+
+The `ipAddress` field is available in the GraphQL `AuditLog` type:
+
+```graphql
+query {
+  auditLogs {
+    id
+    timestamp
+    userId
+    ipAddress  # Client IP address (null if not available)
+    eventType
+    data
+  }
+}
+```
 
 ## Future Enhancements
 
