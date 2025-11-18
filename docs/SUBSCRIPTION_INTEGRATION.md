@@ -74,7 +74,7 @@ This document describes the Paystack subscription and payment flow integration f
 
 ### 1. Environment Variables
 
-Add to backend `.env` or `configs/.env`:
+Add to root `.env`:
 
 ```bash
 PAYSTACK_SECRET_KEY=sk_live_xxx

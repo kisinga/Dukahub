@@ -106,7 +106,7 @@ openssl rand -base64 24 | tr -d "=+/" | cut -c1-20
 
 **Local Development:**
 
-- Backend loads from `configs/.env` via dotenv
+- Backend loads from root `.env` via EnvironmentConfig (single source of truth)
 - Frontend uses `proxy.conf.json` for backend URL
 - Services connect via `localhost` ports
 
@@ -257,8 +257,8 @@ Run frontend and backend manually on your machine for fastest iteration.
 docker compose -f docker-compose.dev.yml up -d
 
 # 2. Configure environment
-cp configs/env.example configs/.env
-nano configs/.env
+cp .env.example .env
+nano .env
 ```
 
 **Required changes in `.env`:**

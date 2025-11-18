@@ -25,6 +25,7 @@ export class EnvironmentConfig implements OnModuleInit {
         name: '',
         username: '',
         password: '',
+        schema: 'public',
     };
 
     // Audit database configuration
@@ -130,12 +131,13 @@ export class EnvironmentConfig implements OnModuleInit {
      */
     private loadEnvironment(): void {
         // Try multiple paths to handle both development (src/) and production (dist/) scenarios
+        // All paths now point to root-level .env file
         const envPaths = [
-            path.join(process.cwd(), 'configs/.env'),         // From project root
-            path.join(process.cwd(), '../configs/.env'),      // From backend/ directory
-            path.join(__dirname, '../../../../configs/.env'), // From dist/src/infrastructure/config/
-            path.join(__dirname, '../../../configs/.env'),    // From dist/src/infrastructure/config/ (alternative)
-            path.join(__dirname, '../../configs/.env'),        // From src/infrastructure/config/
+            path.join(process.cwd(), '.env'),                  // From project root
+            path.join(process.cwd(), '../.env'),              // From backend/ directory
+            path.join(__dirname, '../../../../.env'),          // From dist/src/infrastructure/config/
+            path.join(__dirname, '../../../.env'),             // From dist/src/infrastructure/config/ (alternative)
+            path.join(__dirname, '../../.env'),               // From src/infrastructure/config/
         ];
 
         const envPath = envPaths.find(p => {
@@ -161,6 +163,7 @@ export class EnvironmentConfig implements OnModuleInit {
         this.db.name = process.env.DB_NAME || 'vendure';
         this.db.username = process.env.DB_USERNAME || 'vendure';
         this.db.password = process.env.DB_PASSWORD || 'vendure';
+        this.db.schema = process.env.DB_SCHEMA || 'public';
 
         // Load audit database configuration
         this.auditDb.host = process.env.AUDIT_DB_HOST || 'timescaledb_audit';

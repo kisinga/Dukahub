@@ -90,9 +90,7 @@ services:
   # Backend Service (Vendure)
   # ========================================
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/kisinga/dukahub/backend:latest
     restart: unless-stopped
     environment:
       # Database configuration
@@ -249,9 +247,7 @@ services:
       # All values can be overridden via environment variables
       OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.name=dukahub,service.version=2.0.0}
       SIGNOZ_TELEMETRYSTORE_PROVIDER: ${SIGNOZ_TELEMETRYSTORE_PROVIDER:-clickhouse}
-      # ClickHouse DSN: format is tcp://host:port (no auth) or tcp://user:password@host:port
-      # For no password, use tcp://default@clickhouse:9000 (empty password after colon)
-      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN:-tcp://default@clickhouse:9000}
+      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN:-tcp://${CLICKHOUSE_USER:-default}:${CLICKHOUSE_PASSWORD:-}@${CLICKHOUSE_HOST:-clickhouse}:${CLICKHOUSE_PORT:-9000}}
       SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER:-cluster}
       SIGNOZ_SQLSTORE_SQLITE_PATH: ${SIGNOZ_SQLSTORE_SQLITE_PATH:-/var/lib/signoz/signoz.db}
     ports:
@@ -294,8 +290,7 @@ services:
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
       # CLICKHOUSE_PASSWORD: Empty by default (no auth). Set in production!
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
-      # Skip user setup to allow default user without password
-      CLICKHOUSE_SKIP_USER_SETUP: ${CLICKHOUSE_SKIP_USER_SETUP:-1}
+      CLICKHOUSE_SKIP_USER_SETUP: ${CLICKHOUSE_SKIP_USER_SETUP:-0}
     volumes:
       - clickhouse_data:/var/lib/clickhouse
     # Do not expose ports to host - internal network only
