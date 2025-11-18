@@ -1,9 +1,18 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateMlExtractionQueueTable1760540000003 implements MigrationInterface {
+/**
+ * Create ML Extraction Queue
+ * 
+ * Merges:
+ * - 1760540000003-CreateMlExtractionQueueTable.ts
+ * 
+ * Final state:
+ * - ml_extraction_queue table with created_at, updated_at (keeping functional timestamps)
+ */
+export class CreateMlExtractionQueue6000000000000 implements MigrationInterface {
+    name = 'CreateMlExtractionQueue6000000000000';
 
-    public async up(queryRunner: QueryRunner): Promise<any> {
-        // Create ML extraction queue table
+    public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "ml_extraction_queue" (
                 "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -14,32 +23,30 @@ export class CreateMlExtractionQueueTable1760540000003 implements MigrationInter
                 "updated_at" TIMESTAMP NOT NULL DEFAULT NOW(),
                 "error" text
             )
-        `, undefined);
+        `);
 
-        // Create indexes for better performance
         await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "idx_ml_extraction_queue_channel_id" 
             ON "ml_extraction_queue" ("channel_id")
-        `, undefined);
+        `);
 
         await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "idx_ml_extraction_queue_status_scheduled" 
             ON "ml_extraction_queue" ("status", "scheduled_at")
-        `, undefined);
+        `);
 
         await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "idx_ml_extraction_queue_created_at" 
             ON "ml_extraction_queue" ("created_at")
-        `, undefined);
+        `);
     }
 
-    public async down(queryRunner: QueryRunner): Promise<any> {
-        // Drop indexes first
-        await queryRunner.query(`DROP INDEX IF EXISTS "idx_ml_extraction_queue_created_at"`, undefined);
-        await queryRunner.query(`DROP INDEX IF EXISTS "idx_ml_extraction_queue_status_scheduled"`, undefined);
-        await queryRunner.query(`DROP INDEX IF EXISTS "idx_ml_extraction_queue_channel_id"`, undefined);
-
-        // Drop table
-        await queryRunner.query(`DROP TABLE IF EXISTS "ml_extraction_queue"`, undefined);
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`DROP INDEX IF EXISTS "idx_ml_extraction_queue_created_at"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "idx_ml_extraction_queue_status_scheduled"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "idx_ml_extraction_queue_channel_id"`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "ml_extraction_queue"`);
     }
 }
+
+

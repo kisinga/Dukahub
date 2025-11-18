@@ -1,7 +1,44 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateAuditLogTable1764000100000 implements MigrationInterface {
+/**
+ * Create Audit Log Table
+ * 
+ * Merges:
+ * - 1764000000000-DropOldAuditLog.ts
+ * - 1764000100000-CreateAuditLogTable.ts
+ * - 1764000050000-DropFixRelationalCustomFields.ts (workaround columns already handled in Phase 3)
+ * 
+ * Final state:
+ * - audit_log table created with proper schema
+ * - All indexes created
+ * - Old audit_log table dropped if exists
+ */
+export class CreateAuditLogTable4000000000000 implements MigrationInterface {
+    name = 'CreateAuditLogTable4000000000000';
+
     public async up(queryRunner: QueryRunner): Promise<void> {
+        // Drop old audit_log table if it exists
+        await queryRunner.query(`
+            DO $$
+            BEGIN
+                -- Drop hypertable if it exists (TimescaleDB)
+                BEGIN
+                    PERFORM drop_hypertable('audit_log', if_exists => true);
+                EXCEPTION
+                    WHEN undefined_object THEN NULL;
+                    WHEN OTHERS THEN NULL;
+                END;
+
+                -- Drop table if it exists
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_name = 'audit_log'
+                ) THEN
+                    DROP TABLE IF EXISTS audit_log CASCADE;
+                END IF;
+            END $$;
+        `);
+
         // Create audit_log table with proper schema
         await queryRunner.query(`
             DO $$
@@ -44,13 +81,11 @@ export class CreateAuditLogTable1764000100000 implements MigrationInterface {
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        // Drop indexes
         await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_log_channel_user"`);
         await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_log_channel_entity"`);
         await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_log_channel_timestamp"`);
-
-        // Drop table
         await queryRunner.query(`DROP TABLE IF EXISTS audit_log`);
     }
 }
+
 
