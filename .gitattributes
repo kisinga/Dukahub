@@ -1,18 +1,10 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# EditorConfig is the single source of truth for formatting rules
+# This file only tells Git to normalize text files and mark binaries
 
-# Explicitly declare text files you want to always be normalized and converted to native line endings on checkout
-*.ts text eol=lf
-*.js text eol=lf
-*.json text eol=lf
-*.html text eol=lf
-*.scss text eol=lf
-*.css text eol=lf
-*.md text eol=lf
-*.yml text eol=lf
-*.yaml text eol=lf
+# Normalize all text files to LF (EditorConfig enforces this)
+* text=auto eol=lf
 
-# Denote all files that are truly binary and should not be modified
+# Binary files that should never be normalized
 *.png binary
 *.jpg binary
 *.jpeg binary
@@ -23,4 +15,9 @@
 *.woff2 binary
 *.ttf binary
 *.eot binary
+*.bin binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
 

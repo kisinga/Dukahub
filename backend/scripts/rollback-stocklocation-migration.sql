@@ -21,3 +21,4 @@ ALTER COLUMN "stockLocationId" TYPE uuid USING "stockLocationId"::uuid;
 COMMIT;
 
 
+
