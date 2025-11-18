@@ -11,8 +11,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Final state:
  * - Customer: All supplier fields EXCEPT supplierCode and outstandingAmount
  */
-export class AddCustomerSupplierFields2000000000 implements MigrationInterface {
-    name = 'AddCustomerSupplierFields2000000000';
+export class AddCustomerSupplierFields2000000000000 implements MigrationInterface {
+    name = 'AddCustomerSupplierFields2000000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`

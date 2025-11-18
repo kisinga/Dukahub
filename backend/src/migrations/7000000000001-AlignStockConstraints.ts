@@ -10,8 +10,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - All stock constraints aligned with correct names
  * - adjustedById column added if needed
  */
-export class AlignStockConstraints7000000001 implements MigrationInterface {
-    name = 'AlignStockConstraints7000000001';
+export class AlignStockConstraints7000000000001 implements MigrationInterface {
+    name = 'AlignStockConstraints7000000000001';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`

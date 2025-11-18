@@ -9,8 +9,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Final state:
  * - All channels have required accounts
  */
-export class SetupChartOfAccounts8000000001 implements MigrationInterface {
-    name = 'SetupChartOfAccounts8000000001';
+export class SetupChartOfAccounts8000000000001 implements MigrationInterface {
+    name = 'SetupChartOfAccounts8000000000001';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`

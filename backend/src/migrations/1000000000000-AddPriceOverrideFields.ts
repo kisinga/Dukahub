@@ -12,8 +12,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - OrderLine: customFieldsCustomlineprice (renamed from customFieldsCustomprice)
  * - OrderLine: customFieldsPriceoverridereason
  */
-export class AddPriceOverrideFields1000000000 implements MigrationInterface {
-    name = 'AddPriceOverrideFields1000000000';
+export class AddPriceOverrideFields1000000000000 implements MigrationInterface {
+    name = 'AddPriceOverrideFields1000000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Add order_line custom fields (with table existence check)

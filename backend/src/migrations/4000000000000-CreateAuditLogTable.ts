@@ -13,8 +13,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - All indexes created
  * - Old audit_log table dropped if exists
  */
-export class CreateAuditLogTable4000000000 implements MigrationInterface {
-    name = 'CreateAuditLogTable4000000000';
+export class CreateAuditLogTable4000000000000 implements MigrationInterface {
+    name = 'CreateAuditLogTable4000000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Drop old audit_log table if it exists

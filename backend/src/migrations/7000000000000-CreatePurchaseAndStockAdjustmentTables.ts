@@ -13,8 +13,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - All tables with createdAt, updatedAt (keeping functional timestamps)
  * - All FK constraints with correct names
  */
-export class CreatePurchaseAndStockAdjustmentTables7000000000 implements MigrationInterface {
-    name = 'CreatePurchaseAndStockAdjustmentTables7000000000';
+export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements MigrationInterface {
+    name = 'CreatePurchaseAndStockAdjustmentTables7000000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Ensure pgcrypto extension

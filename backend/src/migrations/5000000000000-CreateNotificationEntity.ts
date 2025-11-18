@@ -10,8 +10,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - notification table with createdAt (keeping functional timestamp)
  * - notification_type_enum type
  */
-export class CreateNotificationEntity5000000000 implements MigrationInterface {
-    name = 'CreateNotificationEntity5000000000';
+export class CreateNotificationEntity5000000000000 implements MigrationInterface {
+    name = 'CreateNotificationEntity5000000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Create enum type

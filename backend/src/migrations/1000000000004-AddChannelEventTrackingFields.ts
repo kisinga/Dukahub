@@ -13,8 +13,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - Channel: actionTrackingResetType with correct type and constraints
  * - User: notificationPreferences
  */
-export class AddChannelEventTrackingFields1000000004 implements MigrationInterface {
-    name = 'AddChannelEventTrackingFields1000000004';
+export class AddChannelEventTrackingFields1000000000004 implements MigrationInterface {
+    name = 'AddChannelEventTrackingFields1000000000004';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`

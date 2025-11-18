@@ -11,8 +11,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Final state:
  * - All ledger performance indexes (regular and GIN)
  */
-export class AddLedgerIndexes8000000003 implements MigrationInterface {
-    name = 'AddLedgerIndexes8000000003';
+export class AddLedgerIndexes8000000000003 implements MigrationInterface {
+    name = 'AddLedgerIndexes8000000000003';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Regular indexes for ledger queries

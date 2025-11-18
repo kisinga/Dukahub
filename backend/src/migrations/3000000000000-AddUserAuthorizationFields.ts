@@ -14,8 +14,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - Customer: creditApprovedByUserId
  * - All FK constraints for user tracking fields
  */
-export class AddUserAuthorizationFields3000000000 implements MigrationInterface {
-    name = 'AddUserAuthorizationFields3000000000';
+export class AddUserAuthorizationFields3000000000000 implements MigrationInterface {
+    name = 'AddUserAuthorizationFields3000000000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Add user authorization status

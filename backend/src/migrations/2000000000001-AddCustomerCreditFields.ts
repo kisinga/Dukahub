@@ -10,8 +10,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Final state:
  * - Customer: All credit and repayment fields
  */
-export class AddCustomerCreditFields2000000001 implements MigrationInterface {
-    name = 'AddCustomerCreditFields2000000001';
+export class AddCustomerCreditFields2000000000001 implements MigrationInterface {
+    name = 'AddCustomerCreditFields2000000000001';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`

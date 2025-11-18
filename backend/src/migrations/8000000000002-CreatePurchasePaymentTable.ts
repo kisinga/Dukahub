@@ -10,8 +10,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Final state:
  * - purchase_payment table with correct FK constraints and defaults
  */
-export class CreatePurchasePaymentTable8000000002 implements MigrationInterface {
-    name = 'CreatePurchasePaymentTable8000000002';
+export class CreatePurchasePaymentTable8000000000002 implements MigrationInterface {
+    name = 'CreatePurchasePaymentTable8000000000002';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Ensure pgcrypto extension

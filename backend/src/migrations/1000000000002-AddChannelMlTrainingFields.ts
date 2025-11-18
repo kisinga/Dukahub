@@ -9,8 +9,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Final state:
  * - Channel: ML training fields with NOT NULL constraints
  */
-export class AddChannelMlTrainingFields1000000002 implements MigrationInterface {
-    name = 'AddChannelMlTrainingFields1000000002';
+export class AddChannelMlTrainingFields1000000000002 implements MigrationInterface {
+    name = 'AddChannelMlTrainingFields1000000000002';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`
