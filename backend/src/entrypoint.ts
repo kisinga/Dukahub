@@ -13,7 +13,7 @@
 import { execSync, spawn } from 'child_process';
 // Initialize environment configuration early (before database detection)
 import './infrastructure/config/environment.config';
-import { isDatabaseEmpty, waitForDatabase } from './utils/database-detection';
+import { isDatabaseEmpty, verifyTablesExist, waitForDatabase } from './utils/database-detection';
 
 export interface EntrypointOptions {
     testMode?: boolean;
@@ -89,6 +89,22 @@ export class DukahubEntrypoint {
             });
 
             console.log('✅ Migrations complete');
+
+            // Verify critical custom tables exist after migrations
+            // This ensures our custom migrations actually completed successfully
+            // Core Vendure tables (channel, user, etc.) are verified during populate step
+            const criticalCustomTables = [
+                'ml_extraction_queue',  // ML extraction queue (created by our custom migration)
+            ];
+
+            console.log('🔍 Verifying custom migration tables exist...');
+            const tablesExist = await verifyTablesExist(criticalCustomTables, 10, 500);
+
+            if (!tablesExist) {
+                throw new Error('Critical custom tables missing after migrations. Migrations may have failed.');
+            }
+
+            console.log('✅ All custom migration tables verified');
         } catch (error) {
             console.error('❌ Migrations failed!');
             throw error;

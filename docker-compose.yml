@@ -172,6 +172,9 @@ services:
     volumes:
       - backend_assets:/app/static/assets
       - backend_uploads:/app/static/uploads
+      # Mount .env file so EnvironmentConfig can load it (optional - works without it if env vars are passed directly)
+      # Note: In platforms like Coolify/Kubernetes, env vars are passed directly, so this mount is not needed
+      - ./.env:/usr/src/app/.env:ro
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     depends_on:
@@ -247,7 +250,10 @@ services:
       # All values can be overridden via environment variables
       OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.name=dukahub,service.version=2.0.0}
       SIGNOZ_TELEMETRYSTORE_PROVIDER: ${SIGNOZ_TELEMETRYSTORE_PROVIDER:-clickhouse}
-      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN:-tcp://${CLICKHOUSE_USER:-default}:${CLICKHOUSE_PASSWORD:-}@${CLICKHOUSE_HOST:-clickhouse}:${CLICKHOUSE_PORT:-9000}}
+      # ClickHouse DSN: Use TCP port 9000 (not HTTP port 8123)
+      # Format: tcp://[user]:[password]@[host]:[port]
+      # If no password, use: tcp://default@clickhouse:9000
+      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN:-tcp://default@clickhouse:9000}
       SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER:-cluster}
       SIGNOZ_SQLSTORE_SQLITE_PATH: ${SIGNOZ_SQLSTORE_SQLITE_PATH:-/var/lib/signoz/signoz.db}
     ports:
@@ -289,8 +295,10 @@ services:
       CLICKHOUSE_DB: ${CLICKHOUSE_DB:-signoz}
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
       # CLICKHOUSE_PASSWORD: Empty by default (no auth). Set in production!
+      # If password is set, SigNoz DSN must include it: tcp://default:password@clickhouse:9000
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
-      CLICKHOUSE_SKIP_USER_SETUP: ${CLICKHOUSE_SKIP_USER_SETUP:-0}
+      # Skip user setup to allow default user without password (set to 1 for no-auth setup)
+      CLICKHOUSE_SKIP_USER_SETUP: ${CLICKHOUSE_SKIP_USER_SETUP:-1}
     volumes:
       - clickhouse_data:/var/lib/clickhouse
     # Do not expose ports to host - internal network only
