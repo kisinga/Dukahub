@@ -53,6 +53,14 @@ interface FAQItem {
   open: boolean;
 }
 
+interface BusinessExample {
+  name: string;
+  icon: string;
+  // Internal metrics for knowledge (not displayed on page)
+  marketShare: string;
+  employeeRange: string;
+}
+
 @Component({
   selector: 'app-home',
   imports: [RouterLink, NavbarComponent, FooterComponent],
@@ -193,6 +201,41 @@ export class HomeComponent {
       author: 'Grace W.',
       title: 'Salon Owner, Mombasa',
       metric: '30% more organized'
+    }
+  ];
+
+  // Business examples representing 80% of Kenyan MSMEs that can afford Dukahub
+  // Metrics stored for internal knowledge, only name and icon displayed on page
+  protected readonly businessExamples: BusinessExample[] = [
+    {
+      name: 'Retail Shops & Dukas',
+      icon: '🏪',
+      marketShare: '38.3% of small enterprises',
+      employeeRange: '1-9 employees'
+    },
+    {
+      name: 'Agrovets & Pharmacies',
+      icon: '💊',
+      marketShare: 'Critical for agricultural economy',
+      employeeRange: '1-9 employees'
+    },
+    {
+      name: 'Kinyozi & Salons',
+      icon: '✂️',
+      marketShare: 'Growing service sector',
+      employeeRange: '1-5 employees'
+    },
+    {
+      name: 'Food & Beverage',
+      icon: '🍽️',
+      marketShare: 'Significant service sector',
+      employeeRange: '1-9 employees'
+    },
+    {
+      name: 'Hardware & Construction',
+      icon: '🔨',
+      marketShare: '14.5% of micro enterprises',
+      employeeRange: '1-9 employees'
     }
   ];
 
