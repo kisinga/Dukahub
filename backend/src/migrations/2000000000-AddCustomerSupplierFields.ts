@@ -83,3 +83,4 @@ export class AddCustomerSupplierFields2000000000 implements MigrationInterface {
     }
 }
 
+

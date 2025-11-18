@@ -229,3 +229,4 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000 implements Migrati
     }
 }
 
+

@@ -64,3 +64,4 @@ export class SetupChartOfAccounts8000000001 implements MigrationInterface {
     }
 }
 
+

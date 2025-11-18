@@ -76,3 +76,4 @@ export class AddChannelCashierFields1000000003 implements MigrationInterface {
     }
 }
 
+

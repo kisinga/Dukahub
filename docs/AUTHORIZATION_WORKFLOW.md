@@ -272,3 +272,4 @@ When a user is approved or rejected, consider sending notifications:
 
 - `docs/CHANNEL_STATUS_AUTH.md` - Detailed channel status authorization system documentation
 - `docs/CHANNEL_LINKING_IMPLEMENTATION.md` - Channel-user linking implementation
+

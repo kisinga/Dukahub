@@ -110,3 +110,4 @@ export class CreatePurchasePaymentTable8000000002 implements MigrationInterface 
     }
 }
 
+

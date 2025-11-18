@@ -320,3 +320,4 @@ export class AddChannelSubscriptionFields1000000005 implements MigrationInterfac
     }
 }
 
+
