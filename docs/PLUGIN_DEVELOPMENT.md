@@ -1,6 +1,6 @@
 # Plugin Development Guide
 
-This guide covers best practices for developing custom Vendure plugins in the Dukahub codebase.
+This guide covers best practices for developing custom Vendure plugins in the Dukarun codebase.
 
 ## Table of Contents
 

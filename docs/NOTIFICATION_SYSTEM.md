@@ -1,4 +1,4 @@
-# 📚 DukaHub Notification System Documentation
+# 📚 DukaRun Notification System Documentation
 
 ## 🏗️ Architecture Overview
 
@@ -150,7 +150,7 @@ Add these to your `.env` file:
 # Web Push Notifications (VAPID Keys)
 VAPID_PUBLIC_KEY=your_public_key_here
 VAPID_PRIVATE_KEY=your_private_key_here
-VAPID_EMAIL=mailto:admin@dukahub.com
+VAPID_EMAIL=mailto:admin@dukarun.com
 ```
 
 ### **VAPID Key Generation**
@@ -206,7 +206,7 @@ npx web-push generate-vapid-keys
 - **Offline Support**: Cached resources available offline
 
 ### **Web App Manifest**
-- **App Name**: DukaHub
+- **App Name**: DukaRun
 - **Theme Color**: #3b82f6
 - **Display Mode**: Standalone
 - **Shortcuts**: Quick access to Sell, Inventory, Products

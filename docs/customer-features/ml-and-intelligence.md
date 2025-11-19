@@ -1,6 +1,6 @@
 ## Machine Learning & Smart POS Intelligence
 
-This guide explains Dukahub’s **AI-powered features** – what they do for merchants and how they are structured behind the scenes.
+This guide explains Dukarun’s **AI-powered features** – what they do for merchants and how they are structured behind the scenes.
 
 ---
 
@@ -15,19 +15,19 @@ This guide explains Dukahub’s **AI-powered features** – what they do for mer
 ## Key Capabilities (with Origins)
 
 - **Label-photo product recognition at POS** – Recognise handwritten price labels and service cards using the phone camera.  
-  **Origin:** Dukahub-Exclusive (frontend ML + backend pipeline).
+  **Origin:** Dukarun-Exclusive (frontend ML + backend pipeline).
 
 - **Per-channel ML models** – Each business can have its own model trained on its own data.  
-  **Origin:** Dukahub-Exclusive (see `ARCHITECTURE.md`, `ML_TRAINING_SETUP.md`).
+  **Origin:** Dukarun-Exclusive (see `ARCHITECTURE.md`, `ML_TRAINING_SETUP.md`).
 
 - **Automated photo extraction & manifest generation** – Generate training datasets and manifests from existing product images.  
-  **Origin:** Dukahub-Exclusive.
+  **Origin:** Dukarun-Exclusive.
 
 - **Model upload and versioning** – Integrate with external training services and store trained models in Vendure assets.  
-  **Origin:** Dukahub-Exclusive (ML plugin).
+  **Origin:** Dukarun-Exclusive (ML plugin).
 
 - **Offline-first model usage** – Cache models on the device for faster and more resilient inference.  
-  **Origin:** Dukahub-Exclusive (frontend architecture).
+  **Origin:** Dukarun-Exclusive (frontend architecture).
 
 ---
 
@@ -40,14 +40,14 @@ Many small and informal retailers:
 - Sell items that look very similar (e.g. tomatoes vs oranges vs onions).
 - Use handwritten **price tags or cards** already at their stalls.
 
-Instead of trying to recognise the product itself (which is variable and visually noisy), Dukahub:
+Instead of trying to recognise the product itself (which is variable and visually noisy), Dukarun:
 
 - Teaches the model to recognise the **label** (“TOMATO 10/=”, “Kids Haircut 300/=”).
 - Keeps the merchant’s existing workflow:
   - They keep writing price tags.
-  - Dukahub simply learns those tags.
+  - Dukarun simply learns those tags.
 
-**Origin:** Dukahub-Exclusive design (see “Product Model” and “Services” in `frontend/ARCHITECTURE.md`).
+**Origin:** Dukarun-Exclusive design (see “Product Model” and “Services” in `frontend/ARCHITECTURE.md`).
 
 ---
 
@@ -61,7 +61,7 @@ For cashiers:
 4. The ML model:
    - Looks at the camera frame.
    - Predicts a product ID and confidence score.
-5. Dukahub:
+5. Dukarun:
    - Uses a **local product cache** to fetch the product instantly.
    - Shows options if multiple SKUs exist (1kg, 2kg, etc.).
 6. Cashier confirms (or corrects) the choice and repeats.
@@ -90,7 +90,7 @@ From `ARCHITECTURE.md` and the ML plugin docs:
 
 - They are served via HTTP(s) using Vendure’s asset server.
 
-**Origin:** Dukahub-Exclusive Vendure plugin.
+**Origin:** Dukarun-Exclusive Vendure plugin.
 
 ---
 
@@ -132,7 +132,7 @@ For external ML teams or services:
 - GraphQL endpoints allow you to:
   - Trigger **photo extraction**.
   - Fetch a **training manifest** – a JSON list of products and their image URLs.
-  - Upload trained models back to Dukahub.
+  - Upload trained models back to Dukarun.
 
 Example (conceptually):
 
@@ -140,11 +140,11 @@ Example (conceptually):
 1. Call “extract photos for training” for Channel A.
 2. Download manifest with image URLs and product IDs.
 3. Train model externally (your infra).
-4. Upload model.json, weights.bin, metadata.json via Dukahub’s GraphQL mutation.
-5. Dukahub updates the channel’s active model.
+4. Upload model.json, weights.bin, metadata.json via Dukarun’s GraphQL mutation.
+5. Dukarun updates the channel’s active model.
 ```
 
-**Origin:** Dukahub-Exclusive ML training integration.
+**Origin:** Dukarun-Exclusive ML training integration.
 
 ---
 
@@ -153,7 +153,7 @@ Example (conceptually):
 The ML integration is tied closely to the **offline-first POS architecture** (see `frontend/ARCHITECTURE.md`):
 
 - On dashboard initialisation:
-  - Dukahub pre-fetches the product catalog into memory.
+  - Dukarun pre-fetches the product catalog into memory.
   - It loads or pre-warms the ML model from prior caching.
 - During scans:
   - Product lookup happens purely in memory (O(1)).
@@ -164,7 +164,7 @@ This is particularly important in:
 - Markets with unreliable connectivity.
 - Mobile-first deployments where offline support is a must-have.
 
-**Origin:** Dukahub-Exclusive.
+**Origin:** Dukarun-Exclusive.
 
 ---
 
@@ -187,7 +187,7 @@ Over time, as ML training is run, these photos become the base for your recognit
 
 ### B. Training or Retraining a Model (Operator / ML Team)
 
-**Who:** Dukahub operator, external ML provider.
+**Who:** Dukarun operator, external ML provider.
 
 1. Use the **ML Training Status** component in the dashboard (for high-level control) or the GraphQL APIs (for automation) to:
    - Prepare training data (photo extraction).
@@ -214,7 +214,7 @@ Over time, as ML training is run, these photos become the base for your recognit
 
 If the model is not yet trained or fails:
 
-- Dukahub gracefully falls back to manual search and barcode scanning.
+- Dukarun gracefully falls back to manual search and barcode scanning.
 
 ---
 
@@ -226,17 +226,17 @@ If the model is not yet trained or fails:
 
 ---
 
-## Vendure vs Dukahub: What’s What
+## Vendure vs Dukarun: What’s What
 
 - **Vendure Core**
   - Asset management (file storage for images and models).
   - Custom field system used to attach ML metadata to channels.
 
-- **Dukahub-Enhanced**
+- **Dukarun-Enhanced**
   - Channel-level asset selectors for ML model files and metadata.
   - POS and product creation flows aware of ML state.
 
-- **Dukahub-Exclusive**
+- **Dukarun-Exclusive**
   - Entire ML training and automation pipeline.
   - Label-photo recognition design and UX.
   - Per-channel model storage, loading and offline caching.

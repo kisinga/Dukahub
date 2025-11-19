@@ -3,10 +3,11 @@ import { config } from './vendure-config';
 // Initialize environment configuration early
 import './infrastructure/config/environment.config';
 // Initialize OpenTelemetry telemetry before worker bootstrap
+import { BRAND_CONFIG } from './constants/brand.constants';
 import { initializeTelemetry } from './infrastructure/observability/telemetry.init';
 
 // Initialize telemetry (must be done before any other application code)
-initializeTelemetry('dukahub-worker');
+initializeTelemetry(`${BRAND_CONFIG.servicePrefix}-worker`);
 
 bootstrapWorker(config)
     .then(worker => worker.startJobQueue())

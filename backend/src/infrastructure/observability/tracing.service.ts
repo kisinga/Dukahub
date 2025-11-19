@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { trace, Span, SpanStatusCode, context, Context } from '@opentelemetry/api';
+import { context, Span, SpanStatusCode, trace } from '@opentelemetry/api';
+import { BRAND_CONFIG } from '../../constants/brand.constants';
 import { env } from '../config/environment.config';
 
 /**
@@ -22,7 +23,7 @@ import { env } from '../config/environment.config';
  */
 @Injectable()
 export class TracingService {
-    private readonly tracer = trace.getTracer('dukahub-tracer');
+    private readonly tracer = trace.getTracer(`${BRAND_CONFIG.servicePrefix}-tracer`);
 
     /**
      * Start a new span for a business operation
@@ -36,16 +37,16 @@ export class TracingService {
             // Return a no-op span if observability is disabled
             return {
                 spanContext: () => ({ traceId: '', spanId: '', traceFlags: 0 }),
-                setAttribute: () => {},
-                setAttributes: () => {},
-                addEvent: () => {},
-                addLink: () => {},
-                addLinks: () => {},
-                setStatus: () => {},
-                updateName: () => {},
-                end: () => {},
+                setAttribute: () => { },
+                setAttributes: () => { },
+                addEvent: () => { },
+                addLink: () => { },
+                addLinks: () => { },
+                setStatus: () => { },
+                updateName: () => { },
+                end: () => { },
                 isRecording: () => false,
-                recordException: () => {},
+                recordException: () => { },
             } as unknown as Span;
         }
 

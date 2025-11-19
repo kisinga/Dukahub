@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
 import { RequestContext } from '@vendure/core';
 import Redis from 'ioredis';
+import { BRAND_CONFIG } from '../../constants/brand.constants';
 import { ChannelSmsService } from '../../infrastructure/events/channel-sms.service';
 import { SmsService } from '../../infrastructure/sms/sms.service';
 import { formatPhoneNumber } from '../../utils/phone.utils';
@@ -229,7 +230,7 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
 
         await this.updateRateLimit(phoneNumber);
 
-        const message = `Your Dukahub verification code is: ${otpCode}. Valid for 5 minutes.`;
+        const message = `Your ${BRAND_CONFIG.name} verification code is: ${otpCode}. Valid for 5 minutes.`;
         await this.sendSMS(phoneNumber, message, ctx, channelId);
 
         return {

@@ -1,6 +1,6 @@
 # Vendure Technical Configuration Guide
 
-This guide covers the technical setup, configuration, and advanced features of the Vendure backend system for Dukahub.
+This guide covers the technical setup, configuration, and advanced features of the Vendure backend system for Dukarun.
 
 ## What This Guide Covers
 
@@ -609,7 +609,7 @@ const toProxyUrl = (source: string): string => {
 npm run migration:run
 
 # Verify database schema
-psql -d dukahub -c "\d channel"
+psql -d dukarun -c "\d channel"
 
 # Test Asset relationships
 npm run test:integration

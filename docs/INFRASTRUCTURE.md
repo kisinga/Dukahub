@@ -54,7 +54,7 @@ All configuration is managed via environment variables.
 | `SIGNOZ_HOST`                | `signoz`               | `signoz`                                     | SigNoz service hostname                |
 | `SIGNOZ_OTLP_GRPC_PORT`      | `4317`                 | `4317`                                       | OTLP gRPC port (backend)               |
 | `SIGNOZ_OTLP_HTTP_PORT`      | `4318`                 | `4318`                                       | OTLP HTTP port (frontend)              |
-| `SIGNOZ_SERVICE_NAME`        | `dukahub-backend`      | `dukahub-backend`                            | Backend service identifier             |
+| `SIGNOZ_SERVICE_NAME`        | `dukarun-backend`      | `dukarun-backend`                            | Backend service identifier             |
 | `SIGNOZ_SERVICE_VERSION`     | `2.0.0`                | `2.0.0`                                      | Service version                        |
 | `SIGNOZ_UI_PORT`             | `3301`                 | `3301`                                       | SigNoz UI port (exposed to host)       |
 | `SIGNOZ_OTLP_GRPC_ENDPOINT`  | `http://signoz:4317`   | —                                            | Override OTLP gRPC endpoint (optional) |
@@ -67,7 +67,7 @@ All configuration is managed via environment variables.
 | `CLICKHOUSE_PASSWORD`        | `secure-password`      | —                                            | ClickHouse password                    |
 | `CLICKHOUSE_HOST`            | `clickhouse`           | `clickhouse`                                 | ClickHouse hostname (for SigNoz)       |
 | `CLICKHOUSE_PORT`            | `9000`                 | `9000`                                       | ClickHouse port (for SigNoz)           |
-| `OTEL_RESOURCE_ATTRIBUTES`   | `service.name=dukahub` | `service.name=dukahub,service.version=2.0.0` | OpenTelemetry resource attributes      |
+| `OTEL_RESOURCE_ATTRIBUTES`   | `service.name=dukarun` | `service.name=dukarun,service.version=2.0.0` | OpenTelemetry resource attributes      |
 
 **Flexible Backend Connection:** The frontend can connect to backends anywhere:
 
@@ -120,7 +120,7 @@ openssl rand -base64 24 | tr -d "=+/" | cut -c1-20
 
 ## Fresh Setup (Production Docker)
 
-This section covers setting up a completely fresh **production Docker** installation of Dukahub, including the database initialization process.
+This section covers setting up a completely fresh **production Docker** installation of Dukarun, including the database initialization process.
 
 ### The Problem
 
@@ -328,8 +328,8 @@ Deploy using Docker Compose with hosted images for a complete, self-contained se
 
 | Service      | Image/Version                             | Port | Requirements         |
 | ------------ | ----------------------------------------- | ---- | -------------------- |
-| **Frontend** | `ghcr.io/kisinga/dukahub/frontend:latest` | 4200 | Backend API          |
-| **Backend**  | `ghcr.io/kisinga/dukahub/backend:latest`  | 3000 | Postgres 17, Redis 7 |
+| **Frontend** | `ghcr.io/kisinga/dukarun/frontend:latest` | 4200 | Backend API          |
+| **Backend**  | `ghcr.io/kisinga/dukarun/backend:latest`  | 3000 | Postgres 17, Redis 7 |
 | **Postgres** | `postgres:17-alpine`                      | 5432 | Persistent storage   |
 | **Redis**    | `redis:7-alpine`                          | 6379 | Persistent storage   |
 

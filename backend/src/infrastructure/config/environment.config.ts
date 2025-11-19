@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { config as dotenvConfig } from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import { BRAND_CONFIG } from '../../constants/brand.constants';
 
 /**
  * Environment Configuration Service
@@ -99,7 +100,7 @@ export class EnvironmentConfig implements OnModuleInit {
     readonly observability = {
         enabled: false,
         endpoint: '',
-        serviceName: 'dukahub-backend',
+        serviceName: `${BRAND_CONFIG.servicePrefix}-backend`,
         serviceVersion: '2.0.0',
         otlpGrpcEndpoint: '',
         otlpHttpEndpoint: '',
@@ -222,7 +223,7 @@ export class EnvironmentConfig implements OnModuleInit {
 
         // Load SigNoz/Observability configuration
         this.observability.enabled = process.env.SIGNOZ_ENABLED === 'true';
-        this.observability.serviceName = process.env.SIGNOZ_SERVICE_NAME || 'dukahub-backend';
+        this.observability.serviceName = process.env.SIGNOZ_SERVICE_NAME || `${BRAND_CONFIG.servicePrefix}-backend`;
         this.observability.serviceVersion = process.env.SIGNOZ_SERVICE_VERSION || '2.0.0';
 
         // OTLP endpoint configuration

@@ -1,8 +1,8 @@
 # Customer Provisioning Guide
 
-> **Reproducible, automatable customer setup for Dukahub POS system**
+> **Reproducible, automatable customer setup for Dukarun POS system**
 
-This guide provides a step-by-step process for provisioning new customers in the Dukahub system. Each step is critical and must be completed in order to ensure the customer can successfully use the POS system.
+This guide provides a step-by-step process for provisioning new customers in the Dukarun system. Each step is critical and must be completed in order to ensure the customer can successfully use the POS system.
 
 ## What This Guide Covers
 

@@ -1,6 +1,6 @@
 ## Analytics, Credit & Ledger
 
-This guide explains Dukahub’s **financial backbone** – how it tracks money, balances, and credit – in business language.
+This guide explains Dukarun’s **financial backbone** – how it tracks money, balances, and credit – in business language.
 
 ---
 
@@ -16,19 +16,19 @@ This guide explains Dukahub’s **financial backbone** – how it tracks money, 
 ## Key Capabilities (with Origins)
 
 - **Double-entry ledger per business** – Every financial operation posts balanced entries to a ledger scoped to a single business (channel).  
-  **Origin:** Dukahub-Exclusive (see `LEDGER_ARCHITECTURE.md`).
+  **Origin:** Dukarun-Exclusive (see `LEDGER_ARCHITECTURE.md`).
 
 - **Channel-specific chart of accounts** – Each business has its own accounts for cash, M‑Pesa, sales, purchases, AR, AP, etc.  
-  **Origin:** Dukahub-Exclusive (see `CUSTOMER_PROVISIONING.md`).
+  **Origin:** Dukarun-Exclusive (see `CUSTOMER_PROVISIONING.md`).
 
 - **Customer & supplier balances from ledger** – Customer and supplier balances are computed from ledger entries, not ad-hoc calculations.  
-  **Origin:** Dukahub-Exclusive.
+  **Origin:** Dukarun-Exclusive.
 
 - **Credit approvals and limits** – Credit policies (who may buy on credit, up to how much) are enforced using credit flags and limits.  
-  **Origin:** Dukahub-Exclusive (credit plugin + custom fields).
+  **Origin:** Dukarun-Exclusive (credit plugin + custom fields).
 
 - **High-level dashboards & KPIs** – The dashboard presents key numbers (sales, inventory indicators) driven by backend services.  
-  **Origin:** Dukahub-Enhanced (frontend dashboards backed by ledger-aware services).
+  **Origin:** Dukarun-Enhanced (frontend dashboards backed by ledger-aware services).
 
 ---
 
@@ -36,7 +36,7 @@ This guide explains Dukahub’s **financial backbone** – how it tracks money, 
 
 ### 1. Single Source of Truth
 
-Per `LEDGER_ARCHITECTURE.md`, Dukahub treats the ledger as the **only** source of financial truth:
+Per `LEDGER_ARCHITECTURE.md`, Dukarun treats the ledger as the **only** source of financial truth:
 
 - Every financial action – sales, payments, purchases, adjustments – creates ledger entries.
 - Each entry is **double-entry**:
@@ -49,7 +49,7 @@ This ensures:
 - Reliable balances.
 - A clean path to integrating with full accounting systems.
 
-**Origin:** Dukahub-Exclusive.
+**Origin:** Dukarun-Exclusive.
 
 ---
 
@@ -97,7 +97,7 @@ The `outstandingAmount` custom field on the customer record is a **view** of thi
 - For suppliers:
   - Positive outstanding amount: you owe the supplier money.
 
-**Origin:** Dukahub-Exclusive ledger integration.
+**Origin:** Dukarun-Exclusive ledger integration.
 
 ---
 
@@ -129,7 +129,7 @@ availableCredit = creditLimit - abs(outstandingAmount)
 
 The POS uses this to decide whether a **credit sale** is allowed at checkout.
 
-**Origin:** Dukahub-Exclusive (credit plugin + ledger-aware validation).
+**Origin:** Dukarun-Exclusive (credit plugin + ledger-aware validation).
 
 ---
 
@@ -154,7 +154,7 @@ From a finance point of view:
 
 ### 1. Operational Dashboards
 
-The Dukahub dashboard (see `frontend/ARCHITECTURE.md`) surfaces operational KPIs such as:
+The Dukarun dashboard (see `frontend/ARCHITECTURE.md`) surfaces operational KPIs such as:
 
 - Total sales over a period.
 - Stock summary.
@@ -166,7 +166,7 @@ These are fed by:
 - Vendure queries for domain objects (products, orders, customers).
 - Ledger-aware backend services for balances and summaries.
 
-**Origin:** Dukahub-Enhanced (dashboard UX + ledger-backed services).
+**Origin:** Dukarun-Enhanced (dashboard UX + ledger-backed services).
 
 ---
 
@@ -181,7 +181,7 @@ For deeper analytics:
   - BI tools (Metabase, Superset, etc.).
   - Accounting tools via CSV or custom integrations.
 
-While Dukahub ships with pragmatic dashboards, it intentionally keeps the underlying data model open for advanced usage.
+While Dukarun ships with pragmatic dashboards, it intentionally keeps the underlying data model open for advanced usage.
 
 ---
 
@@ -189,7 +189,7 @@ While Dukahub ships with pragmatic dashboards, it intentionally keeps the underl
 
 ### A. Onboarding a Channel’s Ledger
 
-**Who:** Dukahub ops or technical implementer.
+**Who:** Dukarun ops or technical implementer.
 
 1. After creating a new channel, ensure the **chart of accounts** is initialised:
    - Use the automated account initialisation if available.
@@ -238,7 +238,7 @@ From then on:
 **Who:** Finance / accounting.
 
 1. For **customer payments**:
-   - Record payments in Dukahub (cash, MPesa, etc.).
+   - Record payments in Dukarun (cash, MPesa, etc.).
    - The ledger reduces `ACCOUNTS_RECEIVABLE` and updates appropriate cash accounts.
 2. For **supplier payments**:
    - Record supplier payments via dedicated flows.
@@ -253,26 +253,26 @@ Because all movements go through the ledger, reconciling is a matter of matching
 
 ## Limitations & Notes
 
-- **Not a full ERP yet:** Dukahub’s ledger is robust but intentionally narrow in scope – it focuses on POS-related transactions and direct integrations.
+- **Not a full ERP yet:** Dukarun’s ledger is robust but intentionally narrow in scope – it focuses on POS-related transactions and direct integrations.
 - **Historical migration:** Moving legacy transaction history into the ledger may require custom migration work and careful reconciliation.
 - **Reporting breadth:** Built-in dashboards are intentionally focused; broad BI and multi-entity financial reports are best handled by external tools connected to the underlying data.
 
 ---
 
-## Vendure vs Dukahub: What’s What
+## Vendure vs Dukarun: What’s What
 
 - **Vendure Core**
   - Provides the base commerce entities (orders, customers, products).
   - Does not ship with a full ledger system.
 
-- **Dukahub-Enhanced**
+- **Dukarun-Enhanced**
   - Integrates commerce events with financial posting services.
   - Ensures that core operations (orders, payments) are ledger-aware.
 
-- **Dukahub-Exclusive**
+- **Dukarun-Exclusive**
   - The entire double-entry ledger design and implementation.
   - Per-channel chart of accounts and account initialisation.
   - Credit plugin and credit-limited checkout enforcement.
-  - Financially-aware dashboards in the Dukahub frontends.
+  - Financially-aware dashboards in the Dukarun frontends.
 
 

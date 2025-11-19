@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the Paystack subscription and payment flow integration for Dukahub. The system supports trial periods, subscription tiers, STK push payments, and read-only mode for expired subscriptions.
+This document describes the Paystack subscription and payment flow integration for Dukarun. The system supports trial periods, subscription tiers, STK push payments, and read-only mode for expired subscriptions.
 
 ## Architecture
 

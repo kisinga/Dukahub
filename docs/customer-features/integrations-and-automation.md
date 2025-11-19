@@ -1,12 +1,12 @@
 ## Integrations, Notifications & Automation
 
-This guide explains how Dukahub connects to other systems and automates work, in terms that matter to merchants and ops teams.
+This guide explains how Dukarun connects to other systems and automates work, in terms that matter to merchants and ops teams.
 
 ---
 
 ## What Problems This Solves
 
-- Connect Dukahub to **payment providers (Paystack)** and **observability tools**.
+- Connect Dukarun to **payment providers (Paystack)** and **observability tools**.
 - Receive **real-time notifications** about orders, stock, ML training and payments.
 - Provide a stable **GraphQL API** for custom dashboards, data export and integrations.
 - Keep the platform **observable and debuggable** as you scale.
@@ -15,20 +15,20 @@ This guide explains how Dukahub connects to other systems and automates work, in
 
 ## Key Capabilities (with Origins)
 
-- **Admin GraphQL API** – Full-featured API behind the Dukahub dashboard for managing products, orders, customers and more.  
+- **Admin GraphQL API** – Full-featured API behind the Dukarun dashboard for managing products, orders, customers and more.  
   **Origin:** Vendure Core.
 
-- **Paystack subscription & payments integration** – Connect Dukahub’s own billing and subscriptions to Paystack, with webhooks and STK push support.  
-  **Origin:** Dukahub-Exclusive (see `SUBSCRIPTION_INTEGRATION.md`).
+- **Paystack subscription & payments integration** – Connect Dukarun’s own billing and subscriptions to Paystack, with webhooks and STK push support.  
+  **Origin:** Dukarun-Exclusive (see `SUBSCRIPTION_INTEGRATION.md`).
 
 - **Event-driven notification system** – In-app toasts and web push notifications for key events (orders, stock, ML training, payments).  
-  **Origin:** Dukahub-Exclusive (see `NOTIFICATION_SYSTEM.md`).
+  **Origin:** Dukarun-Exclusive (see `NOTIFICATION_SYSTEM.md`).
 
 - **ML training pipeline endpoints** – GraphQL operations that external ML services can use to extract images, fetch manifests and upload trained models.  
-  **Origin:** Dukahub-Exclusive (see `ML_TRAINING_SETUP.md`).
+  **Origin:** Dukarun-Exclusive (see `ML_TRAINING_SETUP.md`).
 
 - **Observability & monitoring** – Traces, metrics and logs via SigNoz and OpenTelemetry to keep the system healthy and support SLOs.  
-  **Origin:** Dukahub-Exclusive (see `OBSERVABILITY.md`, `OBSERVABILITY_OPERATIONS.md`).
+  **Origin:** Dukarun-Exclusive (see `OBSERVABILITY.md`, `OBSERVABILITY_OPERATIONS.md`).
 
 ---
 
@@ -36,7 +36,7 @@ This guide explains how Dukahub connects to other systems and automates work, in
 
 ### 1. What It Is
 
-The Dukahub dashboard is just a client of the **Vendure admin GraphQL API**:
+The Dukarun dashboard is just a client of the **Vendure admin GraphQL API**:
 
 - All operations visible in the UI – product creation, price changes, order management – correspond to GraphQL queries and mutations.
 - You can use the same API to:
@@ -66,9 +66,9 @@ Recommended use cases:
 
 ## Paystack Integration (Subscriptions & Payments)
 
-### 1. Subscription Billing (Dukahub’s Own Plans)
+### 1. Subscription Billing (Dukarun’s Own Plans)
 
-As detailed in `SUBSCRIPTION_INTEGRATION.md`, Dukahub integrates with **Paystack** to manage:
+As detailed in `SUBSCRIPTION_INTEGRATION.md`, Dukarun integrates with **Paystack** to manage:
 
 - Subscription tiers (e.g. Basic, Pro).
 - Trial periods and renewal dates.
@@ -77,11 +77,11 @@ As detailed in `SUBSCRIPTION_INTEGRATION.md`, Dukahub integrates with **Paystack
 
 From a business owner’s perspective:
 
-- You see a **Subscription** section in Dukahub.
+- You see a **Subscription** section in Dukarun.
 - You can select a plan and pay using M‑Pesa (via Paystack STK or other supported flows).
-- Dukahub automatically updates your subscription status and access level.
+- Dukarun automatically updates your subscription status and access level.
 
-**Origin:** Dukahub-Exclusive plugin on top of Vendure.
+**Origin:** Dukarun-Exclusive plugin on top of Vendure.
 
 ---
 
@@ -103,7 +103,7 @@ This allows clear billing logic without manual toggling in the database.
 
 ### 1. What Events Generate Notifications?
 
-Per `NOTIFICATION_SYSTEM.md`, Dukahub can generate notifications for:
+Per `NOTIFICATION_SYSTEM.md`, Dukarun can generate notifications for:
 
 - **Orders** – new orders, state transitions.
 - **Stock** – low stock alerts, stock movements.
@@ -112,10 +112,10 @@ Per `NOTIFICATION_SYSTEM.md`, Dukahub can generate notifications for:
 
 These can appear:
 
-- As **toasts** inside the Dukahub app.
+- As **toasts** inside the Dukarun app.
 - As **push notifications** on supported browsers/devices.
 
-**Origin:** Dukahub-Exclusive event-driven notification plugin.
+**Origin:** Dukarun-Exclusive event-driven notification plugin.
 
 ---
 
@@ -164,20 +164,20 @@ For administrators:
 
 ## ML Training & Automation Endpoints
 
-From `ML_TRAINING_SETUP.md`, Dukahub exposes ML-specific automation:
+From `ML_TRAINING_SETUP.md`, Dukarun exposes ML-specific automation:
 
 - **Photo extraction** – Command the system to gather all relevant product images for training.
 - **Manifest generation** – Get a JSON manifest listing products and associated images.
-- **Model upload** – Upload trained model files (JSON, weights, metadata) back to Dukahub.
+- **Model upload** – Upload trained model files (JSON, weights, metadata) back to Dukarun.
 
 These operations can be used by:
 
 - In-house ML services.
 - External ML providers.
 
-They turn Dukahub into a **training-friendly platform**, not just a consumer of ML models.
+They turn Dukarun into a **training-friendly platform**, not just a consumer of ML models.
 
-**Origin:** Dukahub-Exclusive.
+**Origin:** Dukarun-Exclusive.
 
 ---
 
@@ -193,7 +193,7 @@ For production environments and serious SMEs, it is crucial to:
 
 ---
 
-### 2. Dukahub’s Observability Stack
+### 2. Dukarun’s Observability Stack
 
 As described in `OBSERVABILITY.md` and `INFRASTRUCTURE.md`:
 
@@ -205,18 +205,18 @@ As described in `OBSERVABILITY.md` and `INFRASTRUCTURE.md`:
   - Automatically captures HTTP, database and GraphQL calls.
   - Adds business-specific spans (orders, payments, ML operations, registration).
 
-For most customers, this is managed by the Dukahub platform operator, but it directly benefits you through:
+For most customers, this is managed by the Dukarun platform operator, but it directly benefits you through:
 
 - Faster incident response.
 - More confidence in the reliability of the service.
 
-**Origin:** Dukahub-Exclusive ops layer.
+**Origin:** Dukarun-Exclusive ops layer.
 
 ---
 
 ## Deployment & Infrastructure Automation
 
-Although primarily an internal concern, it’s useful to know that Dukahub is:
+Although primarily an internal concern, it’s useful to know that Dukarun is:
 
 - **Containerised** – frontend, backend, database, cache and observability all run as Docker containers (`INFRASTRUCTURE.md`).
 - Equipped with a **first-run** sequence for fresh databases:
@@ -229,7 +229,7 @@ For operators:
 - This reduces the risk of broken environments.
 - Makes it safe to set up new instances or test environments programmatically.
 
-**Origin:** Dukahub-Exclusive deployment tooling.
+**Origin:** Dukarun-Exclusive deployment tooling.
 
 ---
 
@@ -237,12 +237,12 @@ For operators:
 
 ### A. Connecting Paystack (Operator View)
 
-**Who:** Dukahub ops / engineering; not usually merchants.
+**Who:** Dukarun ops / engineering; not usually merchants.
 
 1. Obtain Paystack API keys (test or live).
 2. Configure environment variables as described in `SUBSCRIPTION_INTEGRATION.md`.
 3. Set up webhook URLs in Paystack:
-   - Point them to the Dukahub backend’s webhook endpoint.
+   - Point them to the Dukarun backend’s webhook endpoint.
    - Select required events (e.g. `charge.success`, `subscription.create`).
 4. Test using Paystack’s test mode before going live.
 
@@ -254,7 +254,7 @@ Merchants then interact only with the **Subscription** UI; the underlying integr
 
 **Who:** Individual dashboard user.
 
-1. Open the Dukahub dashboard in a supported browser.
+1. Open the Dukarun dashboard in a supported browser.
 2. Accept the prompt to allow notifications (when the app asks).
 3. Optionally visit **Settings → Notifications** or the **Test Notifications** page to:
    - Trigger a test notification.
@@ -285,17 +285,17 @@ Merchants then interact only with the **Subscription** UI; the underlying integr
 
 ---
 
-## Vendure vs Dukahub: What’s What
+## Vendure vs Dukarun: What’s What
 
 - **Vendure Core**
   - Admin GraphQL API.
   - Plugin system used to add custom back-office features.
 
-- **Dukahub-Enhanced**
+- **Dukarun-Enhanced**
   - Subscription-aware guards driven by channel custom fields.
   - Observability hooks instrumenting business operations.
 
-- **Dukahub-Exclusive**
+- **Dukarun-Exclusive**
   - Paystack subscription plugin and payment workflows.
   - Event-driven notification system with push support.
   - ML training pipeline endpoints.

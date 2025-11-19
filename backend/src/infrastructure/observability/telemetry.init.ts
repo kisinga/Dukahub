@@ -11,20 +11,21 @@
  * - Graceful shutdown handling
  */
 
-import { NodeSDK } from '@opentelemetry/sdk-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
-import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-grpc';
-import { resourceFromAttributes } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
-import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
-import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
-import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { GraphQLInstrumentation } from '@opentelemetry/instrumentation-graphql';
-import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
+import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { BRAND_CONFIG } from '../../constants/brand.constants';
 import { env } from '../config/environment.config';
 
 let sdk: NodeSDK | null = null;
@@ -35,7 +36,7 @@ let shuttingDown = false;
  * Initialize OpenTelemetry SDK
  * This should be called before application bootstrap
  */
-export function initializeTelemetry(serviceName: string = 'dukahub-backend'): void {
+export function initializeTelemetry(serviceName: string = `${BRAND_CONFIG.servicePrefix}-backend`): void {
     // Skip initialization if observability is disabled
     if (!env.observability.enabled) {
         console.log('[Telemetry] Observability disabled, skipping OpenTelemetry initialization');

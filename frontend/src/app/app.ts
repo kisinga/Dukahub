@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, effect, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { BRAND_CONFIG } from './core/constants/brand.constants';
 import { ToastComponent } from './core/layout/toast/toast.component';
 import { NetworkService } from './core/services/network.service';
 import { ToastService } from './core/services/toast.service';
@@ -11,7 +12,7 @@ import { ToastService } from './core/services/toast.service';
   styleUrl: './app.scss'
 })
 export class App implements AfterViewInit {
-  protected readonly title = signal('dukahub-frontend');
+  protected readonly title = signal(`${BRAND_CONFIG.servicePrefix}-frontend`);
   protected readonly toastService = inject(ToastService);
   private readonly networkService = inject(NetworkService);
 

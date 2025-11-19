@@ -1,6 +1,6 @@
 ## Orders, Checkout & Billing
 
-This guide explains how Dukahub handles **sales, payments, and subscription billing** from a merchant’s point of view.
+This guide explains how Dukarun handles **sales, payments, and subscription billing** from a merchant’s point of view.
 
 ---
 
@@ -10,29 +10,29 @@ This guide explains how Dukahub handles **sales, payments, and subscription bill
 - Take **cash and M‑Pesa payments** cleanly, with proper accounting.
 - Support **two-step cashier flows** where a salesperson and cashier are separate people.
 - Enforce **price and credit rules** via permissions rather than manual policing.
-- Manage your own **Dukahub subscription** (trial vs active vs expired).
+- Manage your own **Dukarun subscription** (trial vs active vs expired).
 
 ---
 
 ## Key Capabilities (with Origins)
 
 - **POS-style order flow** – Streamlined order workflow without shipping, tuned for walk-in customers.  
-  **Origin:** Dukahub-Enhanced (custom order process on Vendure).
+  **Origin:** Dukarun-Enhanced (custom order process on Vendure).
 
 - **Walk-in and registered customers** – Support anonymous sales as well as named customers linked to credit and analytics.  
-  **Origin:** Vendure Core + Dukahub-Enhanced mapping (walk-in customer).
+  **Origin:** Vendure Core + Dukarun-Enhanced mapping (walk-in customer).
 
 - **Cash & M‑Pesa payments** – Support cash and mobile money as first-class payment methods, wired into ledger accounts.  
-  **Origin:** Dukahub-Exclusive (payment handlers + ledger integration).
+  **Origin:** Dukarun-Exclusive (payment handlers + ledger integration).
 
 - **Price override controls** – Let only authorised staff override prices, with an audit trail and permission checks.  
-  **Origin:** Dukahub-Exclusive (custom permission & POS UI).
+  **Origin:** Dukarun-Exclusive (custom permission & POS UI).
 
 - **Two-step cashier flow** – Salesperson sends orders to a cashier, who collects payment and completes the sale.  
-  **Origin:** Dukahub-Exclusive.
+  **Origin:** Dukarun-Exclusive.
 
 - **Trial, subscription and read-only mode** – Trial and subscription state automatically control whether a business can keep transacting.  
-  **Origin:** Dukahub-Exclusive (subscription plugin, Paystack integration).
+  **Origin:** Dukarun-Exclusive (subscription plugin, Paystack integration).
 
 ---
 
@@ -58,13 +58,13 @@ There is **no shipping step**. The system has been configured so that:
 
 See `VENDURE.md` (“POS System Configuration”) for the technical details behind this.
 
-**Origin:** Dukahub-Enhanced order process on Vendure.
+**Origin:** Dukarun-Enhanced order process on Vendure.
 
 ---
 
 ### 2. Walk-in Customers vs Named Customers
 
-Dukahub uses a **special walk-in customer** (e.g. `walkin@pos.local`) for anonymous sales, as described in `CUSTOMER_PROVISIONING.md`:
+Dukarun uses a **special walk-in customer** (e.g. `walkin@pos.local`) for anonymous sales, as described in `CUSTOMER_PROVISIONING.md`:
 
 - **Walk-in sales**
   - Every anonymous sale is tied to this shared customer.
@@ -80,7 +80,7 @@ From a cashier’s perspective:
   - Complete the sale quickly under “walk-in”, or
   - Search/select a named customer when necessary (e.g. credit sale).
 
-**Origin:** Vendure Core (customers) + Dukahub-Enhanced configuration and UX.
+**Origin:** Vendure Core (customers) + Dukarun-Enhanced configuration and UX.
 
 ---
 
@@ -92,7 +92,7 @@ From a cashier’s perspective:
 Treats cash as a proper payment method with consistent accounting.
 
 **Who uses it:**  
-Almost every small business using Dukahub.
+Almost every small business using Dukarun.
 
 **Behaviour:**
 
@@ -102,14 +102,14 @@ Almost every small business using Dukahub.
   - Cash account (e.g. `CASH_ON_HAND`) is increased.
   - Appropriate revenue accounts (e.g. `SALES`) are updated via posting policies.
 
-**Origin:** Dukahub-Exclusive payment handler (`payment-handlers.ts`) on top of Vendure.
+**Origin:** Dukarun-Exclusive payment handler (`payment-handlers.ts`) on top of Vendure.
 
 ---
 
 ### 2. M‑Pesa Payment
 
 **What it does:**  
-Allows Dukahub to treat M‑Pesa receipts as a structured payment method.
+Allows Dukarun to treat M‑Pesa receipts as a structured payment method.
 
 **Behaviour:**
 
@@ -119,7 +119,7 @@ Allows Dukahub to treat M‑Pesa receipts as a structured payment method.
   - Optionally tracks transaction references.
 - Later reconciliation can move money from clearing into bank accounts in the ledger.
 
-**Origin:** Dukahub-Exclusive (custom payment handler + ledger mapping).
+**Origin:** Dukarun-Exclusive (custom payment handler + ledger mapping).
 
 ---
 
@@ -149,9 +149,9 @@ Without controls, this can cause:
 
 ---
 
-### 2. How Dukahub Handles Price Overrides
+### 2. How Dukarun Handles Price Overrides
 
-Dukahub adds a custom permission `OverridePrice` (documented in `VENDURE.md` “Price Override Permissions”):
+Dukarun adds a custom permission `OverridePrice` (documented in `VENDURE.md` “Price Override Permissions”):
 
 - Only roles with `OverridePrice` can edit the **line price** in the POS.
 - Overrides are stored as custom fields, with reasons where necessary.
@@ -163,7 +163,7 @@ From the cashier’s perspective:
 - If they **do** have permission:
   - They see quick adjustment options (e.g. percentage discounts) and/or manual price input.
 
-**Origin:** Dukahub-Exclusive permission and POS UI.
+**Origin:** Dukarun-Exclusive permission and POS UI.
 
 ---
 
@@ -206,13 +206,13 @@ Backend order creation and a dedicated cashier UI are under active development; 
 - Location-level toggles.
 - POS and dashboard UI for flow control.
 
-**Origin:** Dukahub-Exclusive.
+**Origin:** Dukarun-Exclusive.
 
 ---
 
-## Dukahub Subscription & Billing
+## Dukarun Subscription & Billing
 
-This section is about **your subscription to Dukahub itself**, not your customers’ payments.
+This section is about **your subscription to Dukarun itself**, not your customers’ payments.
 
 ### 1. Trial Periods
 
@@ -226,15 +226,15 @@ Per `SUBSCRIPTION_INTEGRATION.md`:
 During trial:
 
 - The business has full access to all features.
-- Dukahub can surface banners or warnings as the end approaches.
+- Dukarun can surface banners or warnings as the end approaches.
 
-**Origin:** Dukahub-Exclusive (subscription plugin).
+**Origin:** Dukarun-Exclusive (subscription plugin).
 
 ---
 
 ### 2. Paystack Subscription Integration
 
-Dukahub integrates with **Paystack** to handle subscription billing (see full details in `SUBSCRIPTION_INTEGRATION.md`):
+Dukarun integrates with **Paystack** to handle subscription billing (see full details in `SUBSCRIPTION_INTEGRATION.md`):
 
 - A subscription tier entity (`SubscriptionTier`) defines:
   - Code, name, description.
@@ -249,13 +249,13 @@ Dukahub integrates with **Paystack** to handle subscription billing (see full de
 
 From a business perspective:
 
-- The **subscription status UI** in Dukahub shows:
+- The **subscription status UI** in Dukarun shows:
   - Trial time remaining.
   - Current tier.
   - Payment options (monthly/yearly).
   - Renewal or upgrade paths.
 
-**Origin:** Dukahub-Exclusive.
+**Origin:** Dukarun-Exclusive.
 
 ---
 
@@ -269,7 +269,7 @@ When a business’s subscription **expires**:
 
 This makes it safe to enforce billing without “locking merchants out of their own history”.
 
-**Origin:** Dukahub-Exclusive.
+**Origin:** Dukarun-Exclusive.
 
 ---
 
@@ -305,7 +305,7 @@ Behind the scenes:
 2. Select **M‑Pesa** as the payment method.
 3. Depending on the implementation:
    - Enter the customer’s phone number (or use one from their profile).
-   - Trigger an STK push via the Dukahub subscription/payment UI **or** mark as “paid” after confirming SMS.
+   - Trigger an STK push via the Dukarun subscription/payment UI **or** mark as “paid” after confirming SMS.
 4. Confirm once payment has been verified.
 
 From a reporting perspective:
@@ -317,7 +317,7 @@ From a reporting perspective:
 
 ### C. Enabling the Two-Step Cashier Flow
 
-**Who:** Owner, manager, or Dukahub provisioning team.
+**Who:** Owner, manager, or Dukarun provisioning team.
 
 1. In the Vendure Admin UI, go to **Settings → Stock Locations**.
 2. Edit the location you want to use a two-step flow.
@@ -326,18 +326,18 @@ From a reporting perspective:
    - Use **cashierOpen** to indicate whether the cash register is currently open.
 4. Save.
 
-In the Dukahub dashboard:
+In the Dukarun dashboard:
 
 - The Sell page will show “Send to Cashier” when the flow is enabled and open.
 - The overview dashboard will reflect the cashier status.
 
 ---
 
-### D. Managing Your Dukahub Subscription
+### D. Managing Your Dukarun Subscription
 
 **Who:** Business owner or admin.
 
-1. Navigate to **Settings → Subscription** in the Dukahub dashboard.
+1. Navigate to **Settings → Subscription** in the Dukarun dashboard.
 2. Review:
    - Current plan and status.
    - Trial days remaining (if on trial).
@@ -350,31 +350,31 @@ In the Dukahub dashboard:
    - The channel’s subscription fields are updated.
    - If previously read-only, full access is restored.
 
-Internally, webhooks from Paystack are processed by Dukahub’s subscription service and recorded in the channel custom fields and ledger.
+Internally, webhooks from Paystack are processed by Dukarun’s subscription service and recorded in the channel custom fields and ledger.
 
 ---
 
 ## Limitations & Notes
 
-- **Refund flows** – The underlying Vendure platform supports refunds, but Dukahub’s customer-facing refund UI may be simplified or limited depending on your version.
+- **Refund flows** – The underlying Vendure platform supports refunds, but Dukarun’s customer-facing refund UI may be simplified or limited depending on your version.
 - **Multi-step cashier integration** – The current public build may not yet expose a full cashier station UI; customer documentation will evolve as this solidifies.
 - **Paystack-specific** – Subscription automation is currently built around Paystack; other payment gateways would require integration work.
 
 ---
 
-## Vendure vs Dukahub: What’s What
+## Vendure vs Dukarun: What’s What
 
 - **Vendure Core**
   - Order lifecycle and payment states.
   - Basic payment method framework.
   - Customer and order entities.
 
-- **Dukahub-Enhanced**
+- **Dukarun-Enhanced**
   - POS-specific order flow without shipping.
   - Walk-in customer pattern.
   - Price override permission and POS enforcement.
 
-- **Dukahub-Exclusive**
+- **Dukarun-Exclusive**
   - Cash and M‑Pesa payment handlers wired into the ledger.
   - Location-based two-step cashier flow.
   - Paystack subscription integration, trials and read-only mode.

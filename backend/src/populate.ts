@@ -27,6 +27,15 @@ async function smartPopulate() {
     };
 
     try {
+        // Filter out payment methods from initial data to avoid errors
+        // Payment methods are created per-channel by PaymentProvisionerService
+        // The default Vendure initial data includes a "dummy-payment-handler" which doesn't exist
+        const initialData = require(initialDataPath);
+        const filteredInitialData = {
+            ...initialData,
+            paymentMethods: [], // Remove payment methods - they'll be created per-channel
+        };
+
         await populate(
             () =>
                 bootstrap({
@@ -35,7 +44,7 @@ async function smartPopulate() {
                         importAssetsDir: path.join(productsCsvPath, '../images'),
                     },
                 }),
-            require(initialDataPath),
+            filteredInitialData,
             productsCsvPath,
         );
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the integration of customers and suppliers in the Dukahub system using Vendure's Customer entity with custom fields.
+This document describes the integration of customers and suppliers in the Dukarun system using Vendure's Customer entity with custom fields.
 
 ## Key Insight
 

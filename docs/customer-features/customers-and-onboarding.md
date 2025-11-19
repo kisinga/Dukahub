@@ -1,6 +1,6 @@
 ## Customers, Suppliers & Onboarding
 
-This guide explains how Dukahub models **customers and suppliers**, and how you onboard new businesses and staff.
+This guide explains how Dukarun models **customers and suppliers**, and how you onboard new businesses and staff.
 
 ---
 
@@ -16,19 +16,19 @@ This guide explains how Dukahub models **customers and suppliers**, and how you 
 ## Key Capabilities (with Origins)
 
 - **Unified customers & suppliers** – Every supplier is also a customer with additional fields, so you can treat the same party as buyer or seller.  
-  **Origin:** Dukahub-Exclusive (on top of Vendure Customer).
+  **Origin:** Dukarun-Exclusive (on top of Vendure Customer).
 
 - **Mobile-first customer and supplier forms** – Simple, phone-friendly forms with validation tuned for Kenyan phone formats.  
-  **Origin:** Dukahub-Exclusive.
+  **Origin:** Dukarun-Exclusive.
 
 - **Customer provisioning checklist** – A documented, repeatable process to bring a new business (channel) live, including stock location, payment methods, roles and admin users.  
-  **Origin:** Dukahub-Exclusive (see `CUSTOMER_PROVISIONING.md`).
+  **Origin:** Dukarun-Exclusive (see `CUSTOMER_PROVISIONING.md`).
 
 - **Basic credit fields** – Flags and limits that mark who may buy on credit and up to how much, ready for enforcement by the ledger.  
-  **Origin:** Dukahub-Exclusive (see `CUSTOMER_SUPPLIER_INTEGRATION.md`, `VENDURE_CUSTOM_FIELDS.md`).
+  **Origin:** Dukarun-Exclusive (see `CUSTOMER_SUPPLIER_INTEGRATION.md`, `VENDURE_CUSTOM_FIELDS.md`).
 
 - **Outstanding amount tracking** – Each customer or supplier has a single outstanding balance, driven by the ledger.  
-  **Origin:** Dukahub-Exclusive (ledger integration).
+  **Origin:** Dukarun-Exclusive (ledger integration).
 
 ---
 
@@ -36,7 +36,7 @@ This guide explains how Dukahub models **customers and suppliers**, and how you 
 
 ### 1. Single Entity Approach
 
-Instead of separate “Customer” and “Supplier” records, Dukahub:
+Instead of separate “Customer” and “Supplier” records, Dukarun:
 
 - Extends the Vendure **Customer** entity with additional custom fields.
 - Uses one record for both roles:
@@ -48,7 +48,7 @@ This means:
 - You don’t maintain duplicate records for the same business.
 - A supplier can also place orders as a customer if needed.
 
-**Origin:** Dukahub-Exclusive design on top of Vendure (see `CUSTOMER_SUPPLIER_INTEGRATION.md`).
+**Origin:** Dukarun-Exclusive design on top of Vendure (see `CUSTOMER_SUPPLIER_INTEGRATION.md`).
 
 ---
 
@@ -83,7 +83,7 @@ Validation:
 - Phone numbers must match a 10-digit format starting with `0`.
 - Emails are validated but optional.
 
-**Origin:** Dukahub-Exclusive mobile-first UI (see frontend architecture).
+**Origin:** Dukarun-Exclusive mobile-first UI (see frontend architecture).
 
 ---
 
@@ -100,7 +100,7 @@ Suppliers use a **two-step form**:
 
 This maps directly onto the custom fields used in the backend.
 
-**Origin:** Dukahub-Exclusive.
+**Origin:** Dukarun-Exclusive.
 
 ---
 
@@ -115,7 +115,7 @@ Both customers and suppliers share a **Person Edit** form:
 
 ## Channel Provisioning & Onboarding (New Businesses)
 
-Beyond individual customers and suppliers, Dukahub provides a **Customer Provisioning Guide** for onboarding whole businesses (channels) – see `CUSTOMER_PROVISIONING.md`.
+Beyond individual customers and suppliers, Dukarun provides a **Customer Provisioning Guide** for onboarding whole businesses (channels) – see `CUSTOMER_PROVISIONING.md`.
 
 ### 1. Required Steps Per New Business
 
@@ -130,13 +130,13 @@ For each new customer business you onboard, you must:
 
 The provisioning guide contains SQL snippets and checklists to make this reproducible.
 
-**Origin:** Dukahub-Exclusive operational pattern.
+**Origin:** Dukarun-Exclusive operational pattern.
 
 ---
 
 ### 2. Verification & Handover
 
-Before giving access to the customer, Dukahub recommends verifying:
+Before giving access to the customer, Dukarun recommends verifying:
 
 - Channel exists and is active.
 - Stock location and payment methods are correctly assigned.
@@ -227,7 +227,7 @@ Once set:
 
 ### D. Onboarding a New Business (High-Level)
 
-**Who:** Dukahub operator, implementation partner.
+**Who:** Dukarun operator, implementation partner.
 
 1. Follow `CUSTOMER_PROVISIONING.md` to:
    - Create channel.
@@ -246,22 +246,22 @@ Once set:
 ## Limitations & Notes
 
 - **Filtering large lists:** Advanced backend filtering on custom fields (e.g. `isSupplier`) is partially constrained by Vendure’s current custom-field filter support. For now, some separation is done at the frontend level (see `CUSTOMER_SUPPLIER_INTEGRATION.md` “Future Optimizations”).
-- **Credit policy is business-defined:** Dukahub enforces limits, but deciding who qualifies for credit is still a human decision.
-- **Bulk migrations:** Moving an existing business into Dukahub (with thousands of customers/suppliers) may require tailored scripts using the Vendure admin API.
+- **Credit policy is business-defined:** Dukarun enforces limits, but deciding who qualifies for credit is still a human decision.
+- **Bulk migrations:** Moving an existing business into Dukarun (with thousands of customers/suppliers) may require tailored scripts using the Vendure admin API.
 
 ---
 
-## Vendure vs Dukahub: What’s What
+## Vendure vs Dukarun: What’s What
 
 - **Vendure Core**
   - Customer entity and admin UI screens.
   - Basic groups and filtering abilities.
 
-- **Dukahub-Enhanced**
+- **Dukarun-Enhanced**
   - Opinionated mapping of business fields (business name, contact person) to Vendure fields.
   - Mobile-first forms and validations that suit local contexts (e.g. Kenyan numbers).
 
-- **Dukahub-Exclusive**
+- **Dukarun-Exclusive**
   - Single-entity customers + suppliers design.
   - Customer provisioning blueprint for new businesses.
   - Credit approvals, limits and outstanding balances tied to the ledger.
