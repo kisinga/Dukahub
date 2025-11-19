@@ -1,5 +1,26 @@
 // Karma configuration file for Angular testing
+// Set CHROME_BIN before karma-chrome-launcher initializes
+const { execSync } = require('child_process');
+try {
+  const possiblePaths = ['chromium-browser', 'chromium'];
+  for (const cmd of possiblePaths) {
+    try {
+      const path = execSync(`which ${cmd} 2>/dev/null`, { encoding: 'utf8' }).trim();
+      if (path) {
+        process.env.CHROME_BIN = path;
+        break;
+      }
+    } catch (e) {
+      // Continue to next option
+    }
+  }
+} catch (e) {
+  // Will fall back to karma-chrome-launcher's default detection
+}
+
 module.exports = function (config) {
+  const chromePath = process.env.CHROME_BIN;
+
   config.set({
     basePath: '',
     frameworks: ['jasmine', '@angular-devkit/build-angular'],
@@ -34,6 +55,7 @@ module.exports = function (config) {
       ChromeHeadless: {
         base: 'ChromeHeadless',
         flags: ['--no-sandbox', '--disable-gpu'],
+        ...(chromePath && { executablePath: chromePath }),
       },
     },
     // Fallback configuration for when browsers aren't available

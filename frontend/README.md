@@ -69,12 +69,12 @@ npm run codegen       # Generate GraphQL types
 - **Integration Tests:** Service integration, critical workflows, behavioral smoke tests
 - **Component Tests:** Minimal - only essential component tests (e.g., app initialization)
 
-**Requirements:** Chrome or Chromium must be installed to run tests.
+**Requirements:** Chromium must be installed to run tests.
 
-- **Local development:** Install Chrome/Chromium on your system
-  - If you see `ERROR [launcher]: No binary for ChromeHeadless browser on your platform`, Chrome is not installed
-  - Install with: `sudo apt-get install google-chrome-stable` (Linux) or download from [chrome.com](https://www.google.com/chrome/)
-- **CI:** Chrome is installed automatically in the GitHub Actions workflow
+- **Local development:** Install Chromium on your system
+  - Install with: `sudo apt-get install chromium-browser` (Debian/Ubuntu) or `sudo dnf install chromium` (Fedora)
+  - If you see `ERROR [launcher]: No binary for ChromeHeadless browser on your platform`, Chromium is not installed
+- **CI:** Chromium is installed automatically in the GitHub Actions workflow
 
 ## Environment
 
