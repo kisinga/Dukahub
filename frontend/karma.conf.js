@@ -31,14 +31,9 @@ module.exports = function (config) {
     browsers: ['ChromeHeadless'],
     restartOnFileChange: true,
     customLaunchers: {
-      ChromeHeadlessCI: {
+      ChromeHeadless: {
         base: 'ChromeHeadless',
-        flags: [
-          '--no-sandbox',
-          '--disable-web-security',
-          '--disable-gpu',
-          '--remote-debugging-port=9222',
-        ],
+        flags: ['--no-sandbox', '--disable-gpu'],
       },
     },
     // Fallback configuration for when browsers aren't available

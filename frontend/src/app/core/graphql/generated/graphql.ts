@@ -347,6 +347,7 @@ export type AuditLog = {
   entityType?: Maybe<Scalars['String']['output']>;
   eventType: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  ipAddress?: Maybe<Scalars['String']['output']>;
   source: Scalars['String']['output'];
   timestamp: Scalars['DateTime']['output'];
   userId?: Maybe<Scalars['ID']['output']>;
