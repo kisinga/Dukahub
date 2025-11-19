@@ -20,6 +20,6 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const app = fixture.componentInstance;
-    expect((app as any).title()).toBe('dukahub-frontend');
+    expect((app as any).title()).toBe('dukarun-frontend');
   });
 });
