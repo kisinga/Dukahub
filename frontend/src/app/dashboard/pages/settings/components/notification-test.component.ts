@@ -13,10 +13,12 @@ import { ToastService } from '../../../../core/services/toast.service';
       <div class="card bg-base-100 shadow-sm border border-base-300">
         <div class="card-body">
           <h2 class="card-title text-xl">🔔 Notification System Status</h2>
-          <p class="text-sm opacity-70">Monitor notification system health and trigger test notifications from server</p>
-          
+          <p class="text-sm opacity-70">
+            Monitor notification system health and trigger test notifications from server
+          </p>
+
           <div class="divider"></div>
-          
+
           <!-- System Status -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="stat bg-base-200 rounded-lg">
@@ -35,7 +37,7 @@ import { ToastService } from '../../../../core/services/toast.service';
               <div class="stat-desc">{{ swStatus() ? 'Active' : 'Inactive' }}</div>
             </div>
           </div>
-          
+
           <!-- Server Test Controls -->
           <div class="space-y-4">
             <h3 class="font-semibold text-lg">Server Test Controls</h3>
@@ -48,14 +50,15 @@ import { ToastService } from '../../../../core/services/toast.service';
                       <h3 class="font-semibold">{{ test.label }}</h3>
                     </div>
                     <p class="text-xs opacity-70 mb-3">{{ test.description }}</p>
-                    <button 
+                    <button
                       class="btn btn-sm w-full"
                       [class.btn-primary]="test.type === 'ORDER'"
                       [class.btn-warning]="test.type === 'STOCK'"
                       [class.btn-info]="test.type === 'ML_TRAINING'"
                       [class.btn-success]="test.type === 'PAYMENT'"
                       [disabled]="isLoading()"
-                      (click)="triggerServerNotification(test.type)">
+                      (click)="triggerServerNotification(test.type)"
+                    >
                       @if (isLoading()) {
                         <span class="loading loading-spinner loading-sm"></span>
                       } @else {
@@ -66,13 +69,14 @@ import { ToastService } from '../../../../core/services/toast.service';
                 </div>
               }
             </div>
-            
+
             <!-- Bulk Actions -->
             <div class="flex flex-wrap gap-2">
-              <button 
-                class="btn btn-outline btn-sm" 
+              <button
+                class="btn btn-outline btn-sm"
                 [disabled]="isLoading()"
-                (click)="triggerAllServerNotifications()">
+                (click)="triggerAllServerNotifications()"
+              >
                 @if (isLoading()) {
                   <span class="loading loading-spinner loading-sm"></span>
                 } @else {
@@ -87,16 +91,18 @@ import { ToastService } from '../../../../core/services/toast.service';
               </button>
             </div>
           </div>
-          
+
           <!-- Activity Log -->
           <div class="space-y-2">
             <h3 class="font-semibold">Recent Activity</h3>
             <div class="max-h-60 overflow-y-auto space-y-1">
               @for (log of activityLog(); track log.id) {
-                <div class="flex items-center gap-3 p-2 bg-base-200 rounded text-sm"
-                     [class.bg-success]="log.type === 'success'"
-                     [class.bg-warning]="log.type === 'warning'"
-                     [class.bg-error]="log.type === 'error'">
+                <div
+                  class="flex items-center gap-3 p-2 bg-base-200 rounded text-sm"
+                  [class.bg-success]="log.type === 'success'"
+                  [class.bg-warning]="log.type === 'warning'"
+                  [class.bg-error]="log.type === 'error'"
+                >
                   <span class="text-lg">{{ log.icon }}</span>
                   <div class="flex-1">
                     <span class="font-medium">{{ log.message }}</span>
@@ -123,13 +129,15 @@ export class NotificationTestComponent {
   private readonly companyService = inject(CompanyService);
 
   // State
-  private readonly activityLogSignal = signal<Array<{
-    id: string;
-    type: 'success' | 'warning' | 'error' | 'info';
-    message: string;
-    icon: string;
-    timestamp: string;
-  }>>([]);
+  private readonly activityLogSignal = signal<
+    Array<{
+      id: string;
+      type: 'success' | 'warning' | 'error' | 'info';
+      message: string;
+      icon: string;
+      timestamp: string;
+    }>
+  >([]);
   private readonly isLoadingSignal = signal<boolean>(false);
 
   // Computed values
@@ -142,7 +150,9 @@ export class NotificationTestComponent {
   readonly unreadNotifications = computed(() => this.unreadCount());
 
   private readonly currentUserId = computed(() => this.authService.user()?.user?.id ?? null);
-  private readonly currentChannelId = computed(() => this.companyService.activeChannel()?.id ?? null);
+  private readonly currentChannelId = computed(
+    () => this.companyService.activeChannel()?.id ?? null,
+  );
 
   readonly swStatus = computed(() => {
     return 'serviceWorker' in navigator && navigator.serviceWorker.controller !== null;
@@ -155,26 +165,26 @@ export class NotificationTestComponent {
       type: 'ORDER',
       label: 'Order',
       icon: '💰',
-      description: 'Test order notifications from server'
+      description: 'Test order notifications from server',
     },
     {
       type: 'STOCK',
       label: 'Stock',
       icon: '⚠️',
-      description: 'Test low stock alerts from server'
+      description: 'Test low stock alerts from server',
     },
     {
       type: 'ML_TRAINING',
       label: 'ML Training',
       icon: '🤖',
-      description: 'Test ML model updates from server'
+      description: 'Test ML model updates from server',
     },
     {
       type: 'PAYMENT',
       label: 'Payment',
       icon: '💳',
-      description: 'Test payment notifications from server'
-    }
+      description: 'Test payment notifications from server',
+    },
   ];
 
   async triggerServerNotification(type: string): Promise<void> {
@@ -193,18 +203,30 @@ export class NotificationTestComponent {
         params['channelId'] = channelId;
       }
 
-      await this.http.get(`/test-notifications/trigger`, {
-        params
-      }).toPromise();
+      await this.http
+        .get(`/test-notifications/trigger`, {
+          params,
+        })
+        .toPromise();
 
       this.addActivityLog('success', '✅', `Server ${type} notification triggered`);
-      this.toastService.show('Server Notification', `Test ${type} notification sent from server`, 'success', 3000);
+      this.toastService.show(
+        'Server Notification',
+        `Test ${type} notification sent from server`,
+        'success',
+        3000,
+      );
 
       // Refresh notifications to get the new one from server
       this.refreshNotifications();
     } catch (error) {
       this.addActivityLog('error', '❌', `Failed to trigger server ${type} notification`);
-      this.toastService.show('Error', `Failed to trigger server notification: ${error}`, 'error', 5000);
+      this.toastService.show(
+        'Error',
+        `Failed to trigger server notification: ${error}`,
+        'error',
+        5000,
+      );
     } finally {
       this.isLoadingSignal.set(false);
     }
@@ -229,13 +251,23 @@ export class NotificationTestComponent {
       await this.http.post(`/test-notifications/trigger-all`, payload).toPromise();
 
       this.addActivityLog('success', '🚀', 'All server notifications triggered');
-      this.toastService.show('Server Notifications', 'All test notifications sent from server', 'success', 3000);
+      this.toastService.show(
+        'Server Notifications',
+        'All test notifications sent from server',
+        'success',
+        3000,
+      );
 
       // Refresh notifications
       this.refreshNotifications();
     } catch (error) {
       this.addActivityLog('error', '❌', 'Failed to trigger all server notifications');
-      this.toastService.show('Error', `Failed to trigger all notifications: ${error}`, 'error', 5000);
+      this.toastService.show(
+        'Error',
+        `Failed to trigger all notifications: ${error}`,
+        'error',
+        5000,
+      );
     } finally {
       this.isLoadingSignal.set(false);
     }
@@ -261,17 +293,20 @@ export class NotificationTestComponent {
     }
   }
 
-
-  private addActivityLog(type: 'success' | 'warning' | 'error' | 'info', icon: string, message: string): void {
+  private addActivityLog(
+    type: 'success' | 'warning' | 'error' | 'info',
+    icon: string,
+    message: string,
+  ): void {
     const log = {
       id: this.generateId(),
       type,
       icon,
       message,
-      timestamp: new Date().toLocaleTimeString()
+      timestamp: new Date().toLocaleTimeString(),
     };
 
-    this.activityLogSignal.update(logs => [log, ...logs].slice(0, 20)); // Keep last 20 logs
+    this.activityLogSignal.update((logs) => [log, ...logs].slice(0, 20)); // Keep last 20 logs
   }
 
   private generateId(): string {

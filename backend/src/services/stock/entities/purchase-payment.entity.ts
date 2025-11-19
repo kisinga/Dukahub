@@ -4,7 +4,7 @@ import { StockPurchase } from './purchase.entity';
 
 /**
  * Purchase Payment Entity
- * 
+ *
  * Tracks payments made to suppliers for credit purchases.
  * This is for audit trail and convenience - the ledger is the source of truth.
  */
@@ -42,4 +42,3 @@ export class PurchasePayment {
   @ManyToOne(() => Customer)
   supplier: Customer;
 }
-

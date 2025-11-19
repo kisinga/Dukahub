@@ -6,7 +6,12 @@ import { GET_PAYMENT_METHODS } from '../../../../core/graphql/operations.graphql
 import type { GetPaymentMethodsQuery } from '../../../../core/graphql/generated/graphql';
 import { ApolloService } from '../../../../core/services/apollo.service';
 import { CompanyService } from '../../../../core/services/company.service';
-import { CreatePaymentMethodInput, PaymentMethod, SettingsService, UpdatePaymentMethodInput } from '../../../../core/services/settings.service';
+import {
+  CreatePaymentMethodInput,
+  PaymentMethod,
+  SettingsService,
+  UpdatePaymentMethodInput,
+} from '../../../../core/services/settings.service';
 
 @Component({
   selector: 'app-payment-methods',
@@ -21,7 +26,7 @@ import { CreatePaymentMethodInput, PaymentMethod, SettingsService, UpdatePayment
             ➕ Add Payment Method
           </button>
         </div>
-        
+
         <!-- Payment Methods Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           @for (method of paymentMethods(); track method.id) {
@@ -30,9 +35,11 @@ import { CreatePaymentMethodInput, PaymentMethod, SettingsService, UpdatePayment
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
                     @if (method.customFields?.imageAsset; as icon) {
-                      <img [src]="icon.preview" 
-                           class="w-12 h-12 object-contain" 
-                           [alt]="method.name" />
+                      <img
+                        [src]="icon.preview"
+                        class="w-12 h-12 object-contain"
+                        [alt]="method.name"
+                      />
                     } @else {
                       <div class="w-12 h-12 bg-base-300 rounded flex items-center justify-center">
                         <span class="text-2xl">💳</span>
@@ -46,25 +53,31 @@ import { CreatePaymentMethodInput, PaymentMethod, SettingsService, UpdatePayment
                       }
                     </div>
                   </div>
-                  
+
                   <!-- Toggle Active Status -->
-                  <input type="checkbox" 
-                         class="toggle toggle-sm"
-                         [checked]="method.customFields?.isActive"
-                         [disabled]="isDefaultMethod(method.code) || settingsService.loading()"
-                         (change)="toggleMethodStatus(method, $event)" />
+                  <input
+                    type="checkbox"
+                    class="toggle toggle-sm"
+                    [checked]="method.customFields?.isActive"
+                    [disabled]="isDefaultMethod(method.code) || settingsService.loading()"
+                    (change)="toggleMethodStatus(method, $event)"
+                  />
                 </div>
-                
+
                 @if (!isDefaultMethod(method.code)) {
                   <div class="card-actions justify-end mt-2">
-                    <button class="btn btn-ghost btn-xs" 
-                            (click)="editMethod(method)"
-                            [disabled]="settingsService.loading()">
+                    <button
+                      class="btn btn-ghost btn-xs"
+                      (click)="editMethod(method)"
+                      [disabled]="settingsService.loading()"
+                    >
                       Edit
                     </button>
-                    <button class="btn btn-ghost btn-xs text-error" 
-                            (click)="deleteMethod(method)"
-                            [disabled]="settingsService.loading()">
+                    <button
+                      class="btn btn-ghost btn-xs text-error"
+                      (click)="deleteMethod(method)"
+                      [disabled]="settingsService.loading()"
+                    >
                       Delete
                     </button>
                   </div>
@@ -79,7 +92,7 @@ import { CreatePaymentMethodInput, PaymentMethod, SettingsService, UpdatePayment
         </div>
       </div>
     </div>
-    
+
     <!-- Create/Edit Modal -->
     @if (showModal()) {
       <dialog class="modal modal-open">
@@ -92,12 +105,15 @@ import { CreatePaymentMethodInput, PaymentMethod, SettingsService, UpdatePayment
               <label class="label">
                 <span class="label-text">Name</span>
               </label>
-              <input 
-                type="text" 
-                placeholder="Enter payment method name" 
+              <input
+                type="text"
+                placeholder="Enter payment method name"
                 class="input input-bordered"
-                formControlName="name" />
-              @if (paymentMethodForm.get('name')?.invalid && paymentMethodForm.get('name')?.touched) {
+                formControlName="name"
+              />
+              @if (
+                paymentMethodForm.get('name')?.invalid && paymentMethodForm.get('name')?.touched
+              ) {
                 <label class="label">
                   <span class="label-text-alt text-error">Name is required</span>
                 </label>
@@ -108,12 +124,15 @@ import { CreatePaymentMethodInput, PaymentMethod, SettingsService, UpdatePayment
               <label class="label">
                 <span class="label-text">Code</span>
               </label>
-              <input 
-                type="text" 
-                placeholder="Enter unique code" 
+              <input
+                type="text"
+                placeholder="Enter unique code"
                 class="input input-bordered"
-                formControlName="code" />
-              @if (paymentMethodForm.get('code')?.invalid && paymentMethodForm.get('code')?.touched) {
+                formControlName="code"
+              />
+              @if (
+                paymentMethodForm.get('code')?.invalid && paymentMethodForm.get('code')?.touched
+              ) {
                 <label class="label">
                   <span class="label-text-alt text-error">Code is required</span>
                 </label>
@@ -124,10 +143,11 @@ import { CreatePaymentMethodInput, PaymentMethod, SettingsService, UpdatePayment
               <label class="label">
                 <span class="label-text">Description (Optional)</span>
               </label>
-              <textarea 
-                placeholder="Enter description" 
+              <textarea
+                placeholder="Enter description"
                 class="textarea textarea-bordered"
-                formControlName="description"></textarea>
+                formControlName="description"
+              ></textarea>
             </div>
 
             <div class="form-control mb-4">
@@ -135,21 +155,18 @@ import { CreatePaymentMethodInput, PaymentMethod, SettingsService, UpdatePayment
                 <span class="label-text">Status</span>
               </label>
               <div class="flex items-center gap-2">
-                <input type="checkbox" 
-                       class="toggle toggle-sm"
-                       formControlName="isActive" />
+                <input type="checkbox" class="toggle toggle-sm" formControlName="isActive" />
                 <span class="text-sm">Active</span>
               </div>
             </div>
 
             <div class="modal-action">
-              <button type="button" class="btn" (click)="closeModal()">
-                Cancel
-              </button>
-              <button 
-                type="submit" 
+              <button type="button" class="btn" (click)="closeModal()">Cancel</button>
+              <button
+                type="submit"
                 class="btn btn-primary"
-                [disabled]="paymentMethodForm.invalid || settingsService.loading()">
+                [disabled]="paymentMethodForm.invalid || settingsService.loading()"
+              >
                 @if (settingsService.loading()) {
                   <span class="loading loading-spinner loading-xs"></span>
                 }
@@ -164,8 +181,18 @@ import { CreatePaymentMethodInput, PaymentMethod, SettingsService, UpdatePayment
     <!-- Error Message -->
     @if (settingsService.error(); as error) {
       <div class="alert alert-error mt-4">
-        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="stroke-current shrink-0 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
         <span>{{ error }}</span>
       </div>
@@ -325,7 +352,7 @@ export class PaymentMethodsComponent {
       const methods = result.data?.paymentMethods.items ?? [];
 
       if (this.currentFetchChannelId === channelId) {
-        const normalized: PaymentMethod[] = methods.map(method => ({
+        const normalized: PaymentMethod[] = methods.map((method) => ({
           id: method.id,
           code: method.code,
           name: method.name,

@@ -16,7 +16,7 @@ export class JournalLine {
   @Column({ type: 'uuid' })
   entryId!: string;
 
-  @ManyToOne(() => JournalEntry, (e) => e.lines, { onDelete: 'CASCADE' })
+  @ManyToOne(() => JournalEntry, e => e.lines, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'entryId' })
   entry!: JournalEntry;
 
@@ -39,5 +39,3 @@ export class JournalLine {
   @Column({ type: 'jsonb', nullable: true })
   meta?: Record<string, any> | null;
 }
-
-

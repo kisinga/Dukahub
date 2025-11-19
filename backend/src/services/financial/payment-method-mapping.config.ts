@@ -1,18 +1,18 @@
 /**
  * Payment Method to Ledger Account Mapping Configuration
- * 
+ *
  * This configuration defines how payment method handler codes map to ledger account codes.
  * It supports both exact matches and pattern-based matching for extensibility.
- * 
+ *
  * ## Important: Handler Codes vs Payment Method Codes
- * 
+ *
  * This mapping function receives **handler codes** (e.g., 'cash', 'mpesa', 'credit'),
  * NOT full payment method codes (e.g., 'cash-1', 'mpesa-2').
- * 
+ *
  * Payment entities store the handler code in `Payment.method`, which is what gets
  * passed to this mapping function. The full payment method code (with channel ID)
  * is only used for the PaymentMethod database entity.
- * 
+ *
  * See: `payment-method-codes.constants.ts` for the naming convention documentation.
  */
 
@@ -23,105 +23,101 @@ import { PAYMENT_METHOD_CODES } from '../payments/payment-method-codes.constants
  * Payment method code patterns
  */
 export enum PaymentMethodPattern {
-    CASH = 'cash',
-    MPESA = 'mpesa',
-    CREDIT = 'credit',
+  CASH = 'cash',
+  MPESA = 'mpesa',
+  CREDIT = 'credit',
 }
 
 /**
  * Payment method mapping rule
  */
 interface PaymentMethodMappingRule {
-    /** Exact payment method code match (highest priority) */
-    exactCode?: string;
-    /** Pattern to match in payment method code (case-insensitive) */
-    pattern?: PaymentMethodPattern;
-    /** Target ledger account code */
-    accountCode: AccountCode;
+  /** Exact payment method code match (highest priority) */
+  exactCode?: string;
+  /** Pattern to match in payment method code (case-insensitive) */
+  pattern?: PaymentMethodPattern;
+  /** Target ledger account code */
+  accountCode: AccountCode;
 }
 
 /**
  * Payment method to ledger account mapping configuration
- * 
+ *
  * Rules are evaluated in order - first match wins.
  * Exact matches take precedence over pattern matches.
  */
 const PAYMENT_METHOD_MAPPINGS: PaymentMethodMappingRule[] = [
-    // Exact matches (highest priority) - use constants from single source of truth
-    {
-        exactCode: PAYMENT_METHOD_CODES.CASH,
-        accountCode: ACCOUNT_CODES.CASH_ON_HAND,
-    },
-    {
-        exactCode: PAYMENT_METHOD_CODES.MPESA,
-        accountCode: ACCOUNT_CODES.CLEARING_MPESA,
-    },
-    {
-        exactCode: PAYMENT_METHOD_CODES.CREDIT,
-        accountCode: ACCOUNT_CODES.CLEARING_CREDIT,
-    },
-    // Pattern-based matches (fallback)
-    {
-        pattern: PaymentMethodPattern.MPESA,
-        accountCode: ACCOUNT_CODES.CLEARING_MPESA,
-    },
-    {
-        pattern: PaymentMethodPattern.CASH,
-        accountCode: ACCOUNT_CODES.CASH_ON_HAND,
-    },
-    {
-        pattern: PaymentMethodPattern.CREDIT,
-        accountCode: ACCOUNT_CODES.CLEARING_CREDIT,
-    },
+  // Exact matches (highest priority) - use constants from single source of truth
+  {
+    exactCode: PAYMENT_METHOD_CODES.CASH,
+    accountCode: ACCOUNT_CODES.CASH_ON_HAND,
+  },
+  {
+    exactCode: PAYMENT_METHOD_CODES.MPESA,
+    accountCode: ACCOUNT_CODES.CLEARING_MPESA,
+  },
+  {
+    exactCode: PAYMENT_METHOD_CODES.CREDIT,
+    accountCode: ACCOUNT_CODES.CLEARING_CREDIT,
+  },
+  // Pattern-based matches (fallback)
+  {
+    pattern: PaymentMethodPattern.MPESA,
+    accountCode: ACCOUNT_CODES.CLEARING_MPESA,
+  },
+  {
+    pattern: PaymentMethodPattern.CASH,
+    accountCode: ACCOUNT_CODES.CASH_ON_HAND,
+  },
+  {
+    pattern: PaymentMethodPattern.CREDIT,
+    accountCode: ACCOUNT_CODES.CLEARING_CREDIT,
+  },
 ];
 
 /**
  * Maps a payment method handler code to a ledger account code
- * 
+ *
  * **Important:** This function receives handler codes (e.g., 'cash', 'mpesa', 'credit'),
  * NOT full payment method codes (e.g., 'cash-1', 'mpesa-2').
- * 
+ *
  * The handler code comes from `Payment.method` or `PaymentMethod.handler.code`.
- * 
+ *
  * @param handlerCode Payment method handler code (e.g., 'cash', 'mpesa', 'credit', 'marki-mpesa')
  *                   Can also be a full payment method code (e.g., 'cash-1') - pattern matching will extract the handler
  * @returns Ledger account code
  */
 export function mapPaymentMethodToAccount(handlerCode: string): AccountCode {
-    const normalizedCode = handlerCode.toLowerCase().trim();
+  const normalizedCode = handlerCode.toLowerCase().trim();
 
-    // First, try exact matches against handler codes
-    const exactMatch = PAYMENT_METHOD_MAPPINGS.find(
-        (rule) => rule.exactCode && rule.exactCode.toLowerCase() === normalizedCode
-    );
-    if (exactMatch) {
-        return exactMatch.accountCode;
-    }
+  // First, try exact matches against handler codes
+  const exactMatch = PAYMENT_METHOD_MAPPINGS.find(
+    rule => rule.exactCode && rule.exactCode.toLowerCase() === normalizedCode
+  );
+  if (exactMatch) {
+    return exactMatch.accountCode;
+  }
 
-    // Then, try pattern matches
-    // This handles both handler codes ('mpesa') and full codes ('marki-mpesa', 'mpesa-1')
-    const patternMatch = PAYMENT_METHOD_MAPPINGS.find((rule) => {
-        if (!rule.pattern) return false;
-        return normalizedCode.includes(rule.pattern.toLowerCase());
-    });
-    if (patternMatch) {
-        return patternMatch.accountCode;
-    }
+  // Then, try pattern matches
+  // This handles both handler codes ('mpesa') and full codes ('marki-mpesa', 'mpesa-1')
+  const patternMatch = PAYMENT_METHOD_MAPPINGS.find(rule => {
+    if (!rule.pattern) return false;
+    return normalizedCode.includes(rule.pattern.toLowerCase());
+  });
+  if (patternMatch) {
+    return patternMatch.accountCode;
+  }
 
-    // Default fallback
-    return ACCOUNT_CODES.CLEARING_GENERIC;
+  // Default fallback
+  return ACCOUNT_CODES.CLEARING_GENERIC;
 }
 
 /**
  * Get all payment method codes that map to a specific account
  * Useful for queries and reporting
  */
-export function getPaymentMethodsForAccount(
-    accountCode: AccountCode
-): string[] {
-    return PAYMENT_METHOD_MAPPINGS
-        .filter((rule) => rule.accountCode === accountCode)
-        .map((rule) => rule.exactCode || rule.pattern || '')
-        .filter((code) => code !== '');
+export function getPaymentMethodsForAccount(accountCode: AccountCode): string[] {
+  return PAYMENT_METHOD_MAPPINGS.filter(rule => rule.accountCode === accountCode)
+    .map(rule => rule.exactCode || rule.pattern || '')
+    .filter(code => code !== '');
 }
-

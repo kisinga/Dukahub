@@ -21,71 +21,67 @@ import { RoleProvisionerService } from '../../services/auth/provisioning/role-pr
 import { StoreProvisionerService } from '../../services/auth/provisioning/store-provisioner.service';
 
 @VendurePlugin({
-    imports: [PluginCommonModule],
-    providers: [
-        // SMS Provider Infrastructure
-        SmsProviderFactory,
-        SmsService,
-        // Registration Infrastructure
-        RegistrationService,
-        RegistrationStorageService,
-        // Registration Provisioning Services (composable)
-        RegistrationValidatorService,
-        RegistrationErrorService,
-        RegistrationAuditorService,
-        ChannelAssignmentService,
-        ChannelProvisionerService,
-        StoreProvisionerService,
-        PaymentProvisionerService,
-        RoleProvisionerService,
-        AccessProvisionerService,
-        // Phone Auth Infrastructure
-        PhoneAuthResolver,
-        PhoneAuthService,
-        ChannelAccessGuardService,
-        OtpService,
-        // Note: Authentication strategies are configured via config.authOptions.adminAuthenticationStrategy
-        // in the configuration() hook below, not via DI providers, to keep the source of truth in one place.
-    ],
-    configuration: (config: any) => {
-        const existingStrategies = config.authOptions.adminAuthenticationStrategy ?? [];
+  imports: [PluginCommonModule],
+  providers: [
+    // SMS Provider Infrastructure
+    SmsProviderFactory,
+    SmsService,
+    // Registration Infrastructure
+    RegistrationService,
+    RegistrationStorageService,
+    // Registration Provisioning Services (composable)
+    RegistrationValidatorService,
+    RegistrationErrorService,
+    RegistrationAuditorService,
+    ChannelAssignmentService,
+    ChannelProvisionerService,
+    StoreProvisionerService,
+    PaymentProvisionerService,
+    RoleProvisionerService,
+    AccessProvisionerService,
+    // Phone Auth Infrastructure
+    PhoneAuthResolver,
+    PhoneAuthService,
+    ChannelAccessGuardService,
+    OtpService,
+    // Note: Authentication strategies are configured via config.authOptions.adminAuthenticationStrategy
+    // in the configuration() hook below, not via DI providers, to keep the source of truth in one place.
+  ],
+  configuration: (config: any) => {
+    const existingStrategies = config.authOptions.adminAuthenticationStrategy ?? [];
 
-        const hasOtp = existingStrategies.some(
-            (strategy: any) => strategy instanceof OtpTokenAuthStrategy
-        );
-        const hasNative = existingStrategies.some(
-            (strategy: any) => strategy instanceof NativeAuthenticationStrategy
-        );
+    const hasOtp = existingStrategies.some(
+      (strategy: any) => strategy instanceof OtpTokenAuthStrategy
+    );
+    const hasNative = existingStrategies.some(
+      (strategy: any) => strategy instanceof NativeAuthenticationStrategy
+    );
 
-        const strategies: any[] = [];
+    const strategies: any[] = [];
 
-        // OtpTokenAuthStrategy wraps native auth and logs both OTP and non-OTP admin logins.
-        // It must appear before the plain NativeAuthenticationStrategy so it can inspect the
-        // password and delegate appropriately.
-        if (!hasOtp) {
-            strategies.push(new OtpTokenAuthStrategy());
-        }
+    // OtpTokenAuthStrategy wraps native auth and logs both OTP and non-OTP admin logins.
+    // It must appear before the plain NativeAuthenticationStrategy so it can inspect the
+    // password and delegate appropriately.
+    if (!hasOtp) {
+      strategies.push(new OtpTokenAuthStrategy());
+    }
 
-        if (!hasNative) {
-            strategies.push(new NativeAuthenticationStrategy());
-        }
+    if (!hasNative) {
+      strategies.push(new NativeAuthenticationStrategy());
+    }
 
-        config.authOptions.adminAuthenticationStrategy = [
-            ...strategies,
-            ...existingStrategies,
-        ];
+    config.authOptions.adminAuthenticationStrategy = [...strategies, ...existingStrategies];
 
-        return config;
-    },
-    adminApiExtensions: {
-        resolvers: [PhoneAuthResolver],
-        schema: phoneAuthSchema,
-    },
-    shopApiExtensions: {
-        resolvers: [PhoneAuthResolver],
-        schema: phoneAuthSchema,
-    },
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+    return config;
+  },
+  adminApiExtensions: {
+    resolvers: [PhoneAuthResolver],
+    schema: phoneAuthSchema,
+  },
+  shopApiExtensions: {
+    resolvers: [PhoneAuthResolver],
+    schema: phoneAuthSchema,
+  },
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class PhoneAuthPlugin { }
-
+export class PhoneAuthPlugin {}

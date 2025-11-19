@@ -7,12 +7,14 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:ci": "ng test --code-coverage --watch=false --browsers=ChromeHeadless",
-    "test:coverage": "ng test --code-coverage --watch=false --browsers=ChromeHeadless",
+    "test:ci": "ng test --code-coverage --watch=false",
+    "test:coverage": "ng test --code-coverage --watch=false",
     "test:all": "npm run test:coverage",
     "codegen": "graphql-codegen --config codegen.ts",
     "codegen:watch": "graphql-codegen --config codegen.ts",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "format": "prettier --write \"**/*.{ts,js,json,html,scss,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,json,html,scss,css}\""
   },
   "prettier": {
     "printWidth": 100,
@@ -72,6 +74,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.2"
   }

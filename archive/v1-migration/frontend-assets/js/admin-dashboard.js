@@ -2,31 +2,31 @@
 // These functions are intended to be used with `x-data` attributes on the corresponding HTML elements.
 // Ensure Alpine.js is loaded before this script (e.g., <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>).
 
-import { DbService } from "./pb.js"; // Import DbService
+import { DbService } from './pb.js'; // Import DbService
 
-document.addEventListener("alpine:init", () => {
+document.addEventListener('alpine:init', () => {
   /**
    * Alpine.js handler for the Model Modal.
    * Manages displaying model information when the Bootstrap modal is shown.
    */
-  Alpine.data("modelModalHandler", () => ({
-    companyName: "",
-    modelStatus: "",
-    trainDate: "",
-    newItems: "",
-    newImages: "",
-    totalImages: "",
+  Alpine.data('modelModalHandler', () => ({
+    companyName: '',
+    modelStatus: '',
+    trainDate: '',
+    newItems: '',
+    newImages: '',
+    totalImages: '',
 
     init() {
       // Listen for Bootstrap's 'show.bs.modal' event to populate data
-      this.$el.addEventListener("show.bs.modal", (event) => {
+      this.$el.addEventListener('show.bs.modal', event => {
         const button = event.relatedTarget;
-        this.companyName = button.getAttribute("data-company");
-        this.modelStatus = button.getAttribute("data-status");
-        this.trainDate = button.getAttribute("data-train-date");
-        this.newItems = button.getAttribute("data-new-items");
-        this.newImages = button.getAttribute("data-new-images");
-        this.totalImages = button.getAttribute("data-total-images");
+        this.companyName = button.getAttribute('data-company');
+        this.modelStatus = button.getAttribute('data-status');
+        this.trainDate = button.getAttribute('data-train-date');
+        this.newItems = button.getAttribute('data-new-items');
+        this.newImages = button.getAttribute('data-new-images');
+        this.totalImages = button.getAttribute('data-total-images');
       });
     },
 
@@ -35,12 +35,12 @@ document.addEventListener("alpine:init", () => {
      * Use with `:class="getStatusBadgeClass()"` on the status element.
      */
     getStatusBadgeClass() {
-      if (this.modelStatus === "Trained") {
-        return "badge rounded-pill bg-success";
-      } else if (this.modelStatus === "Untrained") {
-        return "badge rounded-pill bg-danger";
+      if (this.modelStatus === 'Trained') {
+        return 'badge rounded-pill bg-success';
+      } else if (this.modelStatus === 'Untrained') {
+        return 'badge rounded-pill bg-danger';
       } else {
-        return "badge rounded-pill bg-warning";
+        return 'badge rounded-pill bg-warning';
       }
     },
   }));
@@ -50,11 +50,11 @@ document.addEventListener("alpine:init", () => {
    * Manages form input and submission for creating a new company.
    * Apply this to your form element, e.g., <form id="createCompanyForm" x-data="createCompanyFormHandler()" x-on:submit.prevent="submitForm">.
    */
-  Alpine.data("createCompanyFormHandler", () => ({
-    companyName: "",
-    companyLocation: "",
-    companyPhone: "",
-    companyLogo: "", // Assuming this input exists in the form
+  Alpine.data('createCompanyFormHandler', () => ({
+    companyName: '',
+    companyLocation: '',
+    companyPhone: '',
+    companyLogo: '', // Assuming this input exists in the form
 
     /**
      * Handles the form submission for creating a new company.
@@ -67,16 +67,16 @@ document.addEventListener("alpine:init", () => {
           phone: this.companyPhone,
           logo: this.companyLogo,
         };
-        const newCompany = await DbService.create("companies", companyData);
+        const newCompany = await DbService.create('companies', companyData);
 
         if (newCompany) {
-          alert("Company created successfully!");
+          alert('Company created successfully!');
           location.reload(); // Reload to reflect new company
         } else {
-          alert("Error creating company.");
+          alert('Error creating company.');
         }
       } catch (error) {
-        console.error("Error creating company:", error);
+        console.error('Error creating company:', error);
         alert(`An error occurred while creating the company: ${error.message}`);
       }
     },
@@ -87,22 +87,22 @@ document.addEventListener("alpine:init", () => {
    * Manages populating edit form with existing data and handling form submission for updates.
    * Apply this to your edit modal element, e.g., <div id="editCompanyModal" x-data="editCompanyFormHandler()">.
    */
-  Alpine.data("editCompanyFormHandler", () => ({
-    companyId: "",
-    companyName: "",
-    companyLocation: "",
-    companyPhone: "",
-    companyLogo: "", // Assuming this input exists in the form for update
+  Alpine.data('editCompanyFormHandler', () => ({
+    companyId: '',
+    companyName: '',
+    companyLocation: '',
+    companyPhone: '',
+    companyLogo: '', // Assuming this input exists in the form for update
 
     init() {
       // Listen for Bootstrap's 'show.bs.modal' event to populate data
-      this.$el.addEventListener("show.bs.modal", (event) => {
+      this.$el.addEventListener('show.bs.modal', event => {
         const button = event.relatedTarget;
-        this.companyId = button.getAttribute("data-company-id");
-        this.companyName = button.getAttribute("data-company-name");
-        this.companyLocation = button.getAttribute("data-company-location");
-        this.companyPhone = button.getAttribute("data-company-phone");
-        this.companyLogo = button.getAttribute("data-company-logo"); // Set companyLogo from data attribute
+        this.companyId = button.getAttribute('data-company-id');
+        this.companyName = button.getAttribute('data-company-name');
+        this.companyLocation = button.getAttribute('data-company-location');
+        this.companyPhone = button.getAttribute('data-company-phone');
+        this.companyLogo = button.getAttribute('data-company-logo'); // Set companyLogo from data attribute
       });
     },
 
@@ -118,20 +118,16 @@ document.addEventListener("alpine:init", () => {
           phone: this.companyPhone,
           logo: this.companyLogo,
         };
-        const updatedCompany = await DbService.update(
-          "companies",
-          this.companyId,
-          companyData
-        );
+        const updatedCompany = await DbService.update('companies', this.companyId, companyData);
 
         if (updatedCompany) {
-          alert("Company updated successfully!");
+          alert('Company updated successfully!');
           location.reload(); // Reload to reflect updated company
         } else {
-          alert("Error updating company.");
+          alert('Error updating company.');
         }
       } catch (error) {
-        console.error("Error updating company:", error);
+        console.error('Error updating company:', error);
         alert(`An error occurred while updating the company: ${error.message}`);
       }
     },
@@ -142,16 +138,16 @@ document.addEventListener("alpine:init", () => {
    * Manages displaying company name to be deleted and handles the deletion confirmation.
    * Apply this to your delete modal element, e.g., <div id="deleteCompanyModal" x-data="deleteCompanyHandler()">.
    */
-  Alpine.data("deleteCompanyHandler", () => ({
-    companyId: "",
-    companyNameToDelete: "",
+  Alpine.data('deleteCompanyHandler', () => ({
+    companyId: '',
+    companyNameToDelete: '',
 
     init() {
       // Listen for Bootstrap's 'show.bs.modal' event to populate data
-      this.$el.addEventListener("show.bs.modal", (event) => {
+      this.$el.addEventListener('show.bs.modal', event => {
         const button = event.relatedTarget;
-        this.companyId = button.getAttribute("data-company-id");
-        this.companyNameToDelete = button.getAttribute("data-company-name");
+        this.companyId = button.getAttribute('data-company-id');
+        this.companyNameToDelete = button.getAttribute('data-company-name');
       });
     },
 
@@ -162,20 +158,18 @@ document.addEventListener("alpine:init", () => {
     async confirmDelete() {
       try {
         // Perform soft delete by updating the 'is_deleted' field
-        const updatedCompany = await DbService.update(
-          "companies",
-          this.companyId,
-          { is_deleted: true }
-        );
+        const updatedCompany = await DbService.update('companies', this.companyId, {
+          is_deleted: true,
+        });
 
         if (updatedCompany) {
-          alert("Company deleted successfully!");
+          alert('Company deleted successfully!');
           location.reload(); // Reload to reflect deleted company
         } else {
-          alert("Error deleting company.");
+          alert('Error deleting company.');
         }
       } catch (error) {
-        console.error("Error deleting company:", error);
+        console.error('Error deleting company:', error);
         alert(`An error occurred while deleting the company: ${error.message}`);
       }
     },

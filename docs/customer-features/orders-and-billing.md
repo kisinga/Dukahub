@@ -379,5 +379,3 @@ Internally, webhooks from Paystack are processed by Dukarun’s subscription ser
   - Location-based two-step cashier flow.
   - Paystack subscription integration, trials and read-only mode.
   - Subscription and channel-status guards that connect billing and authorization.
-
-

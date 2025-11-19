@@ -14,7 +14,7 @@ import {
 
 /**
  * FinancialService - Clean Facade for Financial Operations
- * 
+ *
  * This service abstracts all accounting terminology and provides
  * business-friendly methods. The ledger is the single source of truth
  * for all financial data.
@@ -25,8 +25,8 @@ export class FinancialService {
 
   constructor(
     private readonly postingService: LedgerPostingService,
-    private readonly queryService: LedgerQueryService,
-  ) { }
+    private readonly queryService: LedgerQueryService
+  ) {}
 
   // ==================== READ OPERATIONS ====================
 
@@ -58,7 +58,10 @@ export class FinancialService {
    * Get order payment status from ledger
    * Returns amount still owed in base currency units
    */
-  async getOrderPaymentStatus(ctx: RequestContext, orderId: string): Promise<{
+  async getOrderPaymentStatus(
+    ctx: RequestContext,
+    orderId: string
+  ): Promise<{
     totalOwed: number;
     amountPaid: number;
     amountOwing: number;
@@ -84,11 +87,7 @@ export class FinancialService {
    * Get sales total for a period
    * Returns amount in base currency units
    */
-  async getSalesTotal(
-    ctx: RequestContext,
-    startDate?: Date,
-    endDate?: Date
-  ): Promise<number> {
+  async getSalesTotal(ctx: RequestContext, startDate?: Date, endDate?: Date): Promise<number> {
     const totalInCents = await this.queryService.getSalesTotal(
       ctx.channelId as number,
       startDate?.toISOString().slice(0, 10),
@@ -101,11 +100,7 @@ export class FinancialService {
    * Get purchases total for a period
    * Returns amount in base currency units
    */
-  async getPurchaseTotal(
-    ctx: RequestContext,
-    startDate?: Date,
-    endDate?: Date
-  ): Promise<number> {
+  async getPurchaseTotal(ctx: RequestContext, startDate?: Date, endDate?: Date): Promise<number> {
     const totalInCents = await this.queryService.getPurchaseTotal(
       ctx.channelId as number,
       startDate?.toISOString().slice(0, 10),
@@ -118,11 +113,7 @@ export class FinancialService {
    * Get expenses total for a period
    * Returns amount in base currency units
    */
-  async getExpenseTotal(
-    ctx: RequestContext,
-    startDate?: Date,
-    endDate?: Date
-  ): Promise<number> {
+  async getExpenseTotal(ctx: RequestContext, startDate?: Date, endDate?: Date): Promise<number> {
     const totalInCents = await this.queryService.getExpenseTotal(
       ctx.channelId as number,
       startDate?.toISOString().slice(0, 10),
@@ -155,19 +146,15 @@ export class FinancialService {
   /**
    * Record a customer payment
    * Must be called within the same transaction as payment settlement
-   * 
+   *
    * Note: This posts a payment entry (cash/clearing debit, sales credit).
    * For credit sales, use recordSale() instead.
    * For payment allocations (paying off credit), use recordPaymentAllocation() instead.
    */
-  async recordPayment(
-    ctx: RequestContext,
-    payment: Payment,
-    order: Order
-  ): Promise<void> {
+  async recordPayment(ctx: RequestContext, payment: Payment, order: Order): Promise<void> {
     if (payment.amount <= 0) {
       throw new Error(
-        `Payment ${payment.id} has non-positive amount (${payment.amount}) and cannot be posted to ledger`,
+        `Payment ${payment.id} has non-positive amount (${payment.amount}) and cannot be posted to ledger`
       );
     }
 
@@ -192,11 +179,7 @@ export class FinancialService {
         `Posting payment ${payment.id} to ledger: order ${order.code}, amount ${payment.amount}, method ${payment.method}`
       );
 
-      await this.postingService.postPayment(
-        ctx,
-        payment.id.toString(),
-        context
-      );
+      await this.postingService.postPayment(ctx, payment.id.toString(), context);
 
       this.logger.log(
         `Successfully posted payment ${payment.id} to ledger for order ${order.code}`
@@ -223,17 +206,14 @@ export class FinancialService {
    * Record a credit sale (order fulfilled without payment)
    * Must be called within the same transaction as order fulfillment
    */
-  async recordSale(
-    ctx: RequestContext,
-    order: Order
-  ): Promise<void> {
+  async recordSale(ctx: RequestContext, order: Order): Promise<void> {
     if (!order.customer) {
       throw new Error('Order must have customer for credit sale');
     }
 
     if (order.total <= 0) {
       throw new Error(
-        `Order ${order.id} has non-positive total (${order.total}) and cannot be posted as a credit sale`,
+        `Order ${order.id} has non-positive total (${order.total}) and cannot be posted as a credit sale`
       );
     }
 
@@ -245,11 +225,7 @@ export class FinancialService {
       isCreditSale: true,
     };
 
-    await this.postingService.postCreditSale(
-      ctx,
-      order.id.toString(),
-      context
-    );
+    await this.postingService.postCreditSale(ctx, order.id.toString(), context);
 
     // Invalidate cache
     this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.ACCOUNTS_RECEIVABLE);
@@ -269,7 +245,7 @@ export class FinancialService {
   ): Promise<void> {
     if (amount <= 0) {
       throw new Error(
-        `Payment allocation for order ${order.id} has non-positive amount (${amount}) and cannot be posted to ledger`,
+        `Payment allocation for order ${order.id} has non-positive amount (${amount}) and cannot be posted to ledger`
       );
     }
 
@@ -281,11 +257,7 @@ export class FinancialService {
       customerId: order.customer?.id?.toString(),
     };
 
-    await this.postingService.postPaymentAllocation(
-      ctx,
-      paymentId,
-      context
-    );
+    await this.postingService.postPaymentAllocation(ctx, paymentId, context);
 
     // Invalidate cache
     this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.ACCOUNTS_RECEIVABLE);
@@ -306,7 +278,7 @@ export class FinancialService {
   ): Promise<void> {
     if (totalCost <= 0) {
       throw new Error(
-        `Purchase ${purchaseId} has non-positive total cost (${totalCost}) and cannot be posted to ledger`,
+        `Purchase ${purchaseId} has non-positive total cost (${totalCost}) and cannot be posted to ledger`
       );
     }
     const context: PurchasePostingContext = {
@@ -317,11 +289,7 @@ export class FinancialService {
       isCreditPurchase: true,
     };
 
-    await this.postingService.postSupplierPurchase(
-      ctx,
-      purchaseId,
-      context
-    );
+    await this.postingService.postSupplierPurchase(ctx, purchaseId, context);
 
     // Invalidate cache
     this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.PURCHASES);
@@ -343,7 +311,7 @@ export class FinancialService {
   ): Promise<void> {
     if (amount <= 0) {
       throw new Error(
-        `Supplier payment ${paymentId} has non-positive amount (${amount}) and cannot be posted to ledger`,
+        `Supplier payment ${paymentId} has non-positive amount (${amount}) and cannot be posted to ledger`
       );
     }
 
@@ -355,11 +323,7 @@ export class FinancialService {
       method: paymentMethod,
     };
 
-    await this.postingService.postSupplierPayment(
-      ctx,
-      paymentId,
-      context
-    );
+    await this.postingService.postSupplierPayment(ctx, paymentId, context);
 
     // Invalidate cache
     this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.ACCOUNTS_PAYABLE);
@@ -386,11 +350,7 @@ export class FinancialService {
       method: originalPayment.method,
     };
 
-    await this.postingService.postRefund(
-      ctx,
-      refundId,
-      context
-    );
+    await this.postingService.postRefund(ctx, refundId, context);
 
     // Invalidate cache
     this.queryService.invalidateCache(ctx.channelId as number, ACCOUNT_CODES.SALES_RETURNS);
@@ -406,4 +366,3 @@ export class FinancialService {
     return mapPaymentMethodToAccount(methodCode);
   }
 }
-

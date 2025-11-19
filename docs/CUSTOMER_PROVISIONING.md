@@ -140,8 +140,8 @@ If your system has automatic CoA initialization, it should run when a channel is
 1. Connect to the database
 2. Run verification query:
    ```sql
-   SELECT code, name, type 
-   FROM ledger_account 
+   SELECT code, name, type
+   FROM ledger_account
    WHERE "channelId" = {channelId}
    ORDER BY type, code;
    ```
@@ -194,6 +194,7 @@ ON CONFLICT ("channelId", code) DO NOTHING;
 Verify these accounts exist for the channel:
 
 **Assets:**
+
 - [ ] `CASH_ON_HAND` - Cash on Hand
 - [ ] `BANK_MAIN` - Bank - Main
 - [ ] `CLEARING_MPESA` - Clearing - M-Pesa
@@ -201,17 +202,21 @@ Verify these accounts exist for the channel:
 - [ ] `CLEARING_GENERIC` - Clearing - Generic
 
 **Income:**
+
 - [ ] `SALES` - Sales Revenue
 - [ ] `SALES_RETURNS` - Sales Returns
 
 **Assets (continued):**
+
 - [ ] `ACCOUNTS_RECEIVABLE` - Customer credit balances (asset - money owed to us)
 
 **Liabilities:**
+
 - [ ] `ACCOUNTS_PAYABLE` - Supplier credit balances (liability - money we owe)
 - [ ] `TAX_PAYABLE` - Taxes Payable
 
 **Expenses:**
+
 - [ ] `PURCHASES` - Inventory purchases
 - [ ] `EXPENSES` - General expenses
 - [ ] `PROCESSOR_FEES` - Payment Processor Fees
@@ -307,13 +312,11 @@ Before handing off to the customer, verify:
 Send the following to the customer:
 
 1. **Login Credentials:**
-
    - Frontend URL: `http://your-domain.com` (or localhost:4200 for development)
    - Email: `admin@{company-domain}.com`
    - Password: `{generated-password}`
 
 2. **Quick Start Guide:**
-
    - How to access the system
    - How to add products
    - How to process sales

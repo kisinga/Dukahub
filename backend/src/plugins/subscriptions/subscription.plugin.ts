@@ -9,7 +9,7 @@ import { SubscriptionGuard } from './subscription.guard';
 
 /**
  * Subscription Plugin
- * 
+ *
  * Provides subscription management with Paystack integration:
  * - Trial period management (30 days)
  * - Subscription tier definitions
@@ -18,31 +18,20 @@ import { SubscriptionGuard } from './subscription.guard';
  * - Read-only mode enforcement for expired subscriptions
  */
 @VendurePlugin({
-    imports: [PluginCommonModule],
-    entities: [SubscriptionTier],
-    providers: [
-        SubscriptionResolver,
-        SubscriptionService,
-        PaystackService,
-        SubscriptionGuard,
-    ],
-    controllers: [SubscriptionWebhookController],
-    adminApiExtensions: {
-        schema: SUBSCRIPTION_SCHEMA,
-        resolvers: [SubscriptionResolver],
-    },
-    configuration: config => {
-        // Register subscription guard for admin API mutations
-        // Note: This is a simplified approach. In production, you might want
-        // to apply the guard more selectively via decorators or middleware.
-        return config;
-    },
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+  imports: [PluginCommonModule],
+  entities: [SubscriptionTier],
+  providers: [SubscriptionResolver, SubscriptionService, PaystackService, SubscriptionGuard],
+  controllers: [SubscriptionWebhookController],
+  adminApiExtensions: {
+    schema: SUBSCRIPTION_SCHEMA,
+    resolvers: [SubscriptionResolver],
+  },
+  configuration: config => {
+    // Register subscription guard for admin API mutations
+    // Note: This is a simplified approach. In production, you might want
+    // to apply the guard more selectively via decorators or middleware.
+    return config;
+  },
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class SubscriptionPlugin { }
-
-
-
-
-
-
+export class SubscriptionPlugin {}

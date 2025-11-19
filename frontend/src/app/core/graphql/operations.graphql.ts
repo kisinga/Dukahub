@@ -4,17 +4,17 @@ import { graphql } from './generated';
  * ============================================================================
  * ALL GRAPHQL OPERATIONS - SINGLE SOURCE OF TRUTH
  * ============================================================================
- * 
+ *
  * This file contains ALL GraphQL queries and mutations used in the application.
  * Organized by domain for easy navigation.
- * 
+ *
  * WHY ONE FILE?
  * - No circular dependencies
- * - No codegen bootstrapping issues  
+ * - No codegen bootstrapping issues
  * - Easy to find and maintain all operations
  * - Single import point for services
  * - Guaranteed type generation
- * 
+ *
  * The graphql() function returns typed DocumentNodes that codegen processes.
  */
 
@@ -243,10 +243,10 @@ export const CREATE_PRODUCT = graphql(`
         sku
         price
         stockOnHand
-                customFields {
-                  wholesalePrice
-                  allowFractionalQuantity
-                }
+        customFields {
+          wholesalePrice
+          allowFractionalQuantity
+        }
       }
     }
   }
@@ -284,7 +284,9 @@ export const CREATE_ASSETS = graphql(`
 
 export const ASSIGN_ASSETS_TO_PRODUCT = graphql(`
   mutation AssignAssetsToProduct($productId: ID!, $assetIds: [ID!]!, $featuredAssetId: ID) {
-    updateProduct(input: { id: $productId, assetIds: $assetIds, featuredAssetId: $featuredAssetId }) {
+    updateProduct(
+      input: { id: $productId, assetIds: $assetIds, featuredAssetId: $featuredAssetId }
+    ) {
       id
       assets {
         id
@@ -310,7 +312,9 @@ export const DELETE_ASSET = graphql(`
 
 export const UPDATE_PRODUCT_ASSETS = graphql(`
   mutation UpdateProductAssets($productId: ID!, $assetIds: [ID!]!, $featuredAssetId: ID) {
-    updateProduct(input: { id: $productId, assetIds: $assetIds, featuredAssetId: $featuredAssetId }) {
+    updateProduct(
+      input: { id: $productId, assetIds: $assetIds, featuredAssetId: $featuredAssetId }
+    ) {
       id
       assets {
         id
@@ -351,10 +355,10 @@ export const GET_PRODUCT_DETAIL = graphql(`
         price
         priceWithTax
         stockOnHand
-                customFields {
-                  wholesalePrice
-                  allowFractionalQuantity
-                }
+        customFields {
+          wholesalePrice
+          allowFractionalQuantity
+        }
         prices {
           price
           currencyCode
@@ -393,10 +397,10 @@ export const GET_PRODUCTS = graphql(`
           price
           priceWithTax
           stockOnHand
-                customFields {
-                  wholesalePrice
-                  allowFractionalQuantity
-                }
+          customFields {
+            wholesalePrice
+            allowFractionalQuantity
+          }
           prices {
             price
             currencyCode
@@ -487,12 +491,7 @@ export const UPDATE_PRODUCT_VARIANT = graphql(`
 
 export const SEARCH_PRODUCTS = graphql(`
   query SearchProducts($term: String!) {
-    products(options: { 
-      filter: { 
-        name: { contains: $term }
-      },
-      take: 5 
-    }) {
+    products(options: { filter: { name: { contains: $term } }, take: 5 }) {
       items {
         id
         name
@@ -506,10 +505,10 @@ export const SEARCH_PRODUCTS = graphql(`
           price
           priceWithTax
           stockOnHand
-                customFields {
-                  wholesalePrice
-                  allowFractionalQuantity
-                }
+          customFields {
+            wholesalePrice
+            allowFractionalQuantity
+          }
           prices {
             price
             currencyCode
@@ -605,10 +604,10 @@ export const PREFETCH_PRODUCTS = graphql(`
           price
           priceWithTax
           stockOnHand
-                customFields {
-                  wholesalePrice
-                  allowFractionalQuantity
-                }
+          customFields {
+            wholesalePrice
+            allowFractionalQuantity
+          }
           prices {
             price
             currencyCode
@@ -625,12 +624,7 @@ export const PREFETCH_PRODUCTS = graphql(`
 
 export const GET_ORDERS_FOR_PERIOD = graphql(`
   query GetOrdersForPeriod($startDate: DateTime!) {
-    orders(options: { 
-      filter: { 
-        orderPlacedAt: { after: $startDate }
-      }
-      take: 1000
-    }) {
+    orders(options: { filter: { orderPlacedAt: { after: $startDate } }, take: 1000 }) {
       items {
         id
         total
@@ -915,7 +909,6 @@ export const SET_DRAFT_ORDER_SHIPPING_ADDRESS = graphql(`
   }
 `);
 
-
 export const TRANSITION_ORDER_TO_STATE = graphql(`
   mutation TransitionOrderToState($id: ID!, $state: String!) {
     transitionOrderToState(id: $id, state: $state) {
@@ -1074,7 +1067,6 @@ export const GET_ORDER_DETAILS = graphql(`
     }
   }
 `);
-
 
 export const GET_ORDER = graphql(`
   query GetOrder($id: ID!) {
@@ -1338,8 +1330,18 @@ export const UPDATE_TRAINING_STATUS = graphql(`
 `);
 
 export const COMPLETE_TRAINING = graphql(`
-  mutation CompleteTraining($channelId: ID!, $modelJson: Upload!, $weightsFile: Upload!, $metadata: Upload!) {
-    completeTraining(channelId: $channelId, modelJson: $modelJson, weightsFile: $weightsFile, metadata: $metadata)
+  mutation CompleteTraining(
+    $channelId: ID!
+    $modelJson: Upload!
+    $weightsFile: Upload!
+    $metadata: Upload!
+  ) {
+    completeTraining(
+      channelId: $channelId
+      modelJson: $modelJson
+      weightsFile: $weightsFile
+      metadata: $metadata
+    )
   }
 `);
 
@@ -1706,7 +1708,6 @@ export const SET_ORDER_LINE_CUSTOM_PRICE = graphql(`
   }
 `);
 
-
 // ============================================================================
 // SUPPLIER MANAGEMENT (Custom Fields)
 // ============================================================================
@@ -1978,7 +1979,6 @@ export const GET_AUDIT_LOGS = graphql(`
     }
   }
 `);
-
 
 // ============================================================================
 // NOTIFICATIONS

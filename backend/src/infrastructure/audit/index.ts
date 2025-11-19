@@ -4,4 +4,3 @@ export { UserContextResolver } from './user-context.resolver';
 export { VendureEventAuditSubscriber } from './vendure-events.subscriber';
 export { AuditDbConnection } from './audit-db.connection';
 export * from './audit.types';
-

@@ -10,9 +10,9 @@ import { AuthSessionService } from './auth/auth-session.service';
 /**
  * Global authentication service for admin users
  * Manages administrator authentication state, login/logout operations, and session management
- * 
+ *
  * Note: Uses admin-api endpoint for authentication
- * 
+ *
  * ARCHITECTURE:
  * - Composed of specialized sub-services for better maintainability
  * - Maintains backward compatibility with existing public API
@@ -47,7 +47,8 @@ export class AuthService {
   readonly hasUpdateSettingsPermission = this.permissionsService.hasUpdateSettingsPermission;
   readonly hasOverridePricePermission = this.permissionsService.hasOverridePricePermission;
   readonly hasCreditManagementPermission = this.permissionsService.hasCreditManagementPermission;
-  readonly hasManageStockAdjustmentsPermission = this.permissionsService.hasManageStockAdjustmentsPermission;
+  readonly hasManageStockAdjustmentsPermission =
+    this.permissionsService.hasManageStockAdjustmentsPermission;
 
   constructor() {
     // Register session expiration handler with Apollo service
@@ -83,7 +84,9 @@ export class AuthService {
   /**
    * Request login OTP
    */
-  async requestLoginOTP(phoneNumber: string): Promise<{ success: boolean; message: string; expiresAt?: number }> {
+  async requestLoginOTP(
+    phoneNumber: string,
+  ): Promise<{ success: boolean; message: string; expiresAt?: number }> {
     return this.otpService.requestLoginOTP(phoneNumber);
   }
 
@@ -93,7 +96,7 @@ export class AuthService {
    */
   async requestRegistrationOTP(
     phoneNumber: string,
-    registrationData: any
+    registrationData: any,
   ): Promise<{ success: boolean; message: string; sessionId?: string; expiresAt?: number }> {
     return this.otpService.requestRegistrationOTP(phoneNumber, registrationData);
   }
@@ -106,7 +109,7 @@ export class AuthService {
   async verifyRegistrationOTP(
     phoneNumber: string,
     otp: string,
-    sessionId: string
+    sessionId: string,
   ): Promise<{ success: boolean; userId?: string; message: string }> {
     return this.otpService.verifyRegistrationOTP(phoneNumber, otp, sessionId);
   }
@@ -114,7 +117,9 @@ export class AuthService {
   /**
    * Check authorization status
    */
-  async checkAuthorizationStatus(identifier: string): Promise<{ status: 'PENDING' | 'APPROVED' | 'REJECTED'; message: string }> {
+  async checkAuthorizationStatus(
+    identifier: string,
+  ): Promise<{ status: 'PENDING' | 'APPROVED' | 'REJECTED'; message: string }> {
     try {
       // TODO: Replace with actual GraphQL query when backend is ready
       // const client = this.apolloService.getClient();

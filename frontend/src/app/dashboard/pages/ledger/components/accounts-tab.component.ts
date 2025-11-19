@@ -34,4 +34,3 @@ export class AccountsTabComponent {
     this.viewTransactions.emit(account);
   }
 }
-

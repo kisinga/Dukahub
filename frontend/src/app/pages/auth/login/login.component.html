@@ -11,132 +11,138 @@
 
       <!-- Error Alert -->
       @if (errorMessage()) {
-      <div role="alert" class="alert alert-error">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 shrink-0 stroke-current"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <span>{{ errorMessage() }}</span>
-      </div>
+        <div role="alert" class="alert alert-error">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 shrink-0 stroke-current"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>{{ errorMessage() }}</span>
+        </div>
       }
 
       <!-- Phone Number Step -->
       @if (currentStep() === 'phone') {
-      <form (ngSubmit)="onRequestOTP()" class="space-y-4">
-        <!-- Phone Number Input -->
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Phone Number</span>
-          </label>
-          <input
-            type="tel"
-            placeholder="07XXXXXXXXX"
-            class="input input-bordered w-full"
-            [(ngModel)]="phoneNumber"
-            name="phoneNumber"
-            required
-            [disabled]="isLoadingAny()"
-            autocomplete="tel"
-          />
-          <label class="label">
-            <span class="label-text-alt text-base-content/60">
-              Enter your Kenyan phone number
-            </span>
-          </label>
-        </div>
+        <form (ngSubmit)="onRequestOTP()" class="space-y-4">
+          <!-- Phone Number Input -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Phone Number</span>
+            </label>
+            <input
+              type="tel"
+              placeholder="07XXXXXXXXX"
+              class="input input-bordered w-full"
+              [(ngModel)]="phoneNumber"
+              name="phoneNumber"
+              required
+              [disabled]="isLoadingAny()"
+              autocomplete="tel"
+            />
+            <label class="label">
+              <span class="label-text-alt text-base-content/60">
+                Enter your Kenyan phone number
+              </span>
+            </label>
+          </div>
 
-        <!-- Submit Button -->
-        <div class="form-control mt-6">
-          <button
-            type="submit"
-            class="btn btn-primary w-full"
-            [disabled]="!isPhoneValid() || isLoadingAny()"
-          >
-            @if (isLoadingAny()) {
-            <span class="loading loading-spinner"></span>
-            Sending OTP... } @else { Send OTP }
-          </button>
-        </div>
-      </form>
+          <!-- Submit Button -->
+          <div class="form-control mt-6">
+            <button
+              type="submit"
+              class="btn btn-primary w-full"
+              [disabled]="!isPhoneValid() || isLoadingAny()"
+            >
+              @if (isLoadingAny()) {
+                <span class="loading loading-spinner"></span>
+                Sending OTP...
+              } @else {
+                Send OTP
+              }
+            </button>
+          </div>
+        </form>
       }
 
       <!-- OTP Verification Step -->
       @if (currentStep() === 'otp') {
-      <div class="space-y-4">
-        <!-- Phone Number Display -->
-        <div class="text-center">
-          <p class="text-sm text-base-content/60">OTP sent to</p>
-          <p class="font-semibold">{{ formattedPhone() }}</p>
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm mt-2"
-            (click)="goBackToPhone()"
-            [disabled]="isLoadingAny()"
-          >
-            Change number
-          </button>
-        </div>
-
-        <!-- OTP Input -->
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Enter OTP</span>
-          </label>
-          <input
-            type="text"
-            inputmode="numeric"
-            placeholder="000000"
-            class="input input-bordered w-full text-center text-2xl tracking-widest font-mono"
-            [(ngModel)]="otpCode"
-            (input)="onOTPInput($event)"
-            name="otpCode"
-            maxlength="6"
-            required
-            [disabled]="isLoadingAny()"
-            autocomplete="one-time-code"
-            autofocus
-          />
-          <label class="label">
-            @if (canResendOTP()) {
+        <div class="space-y-4">
+          <!-- Phone Number Display -->
+          <div class="text-center">
+            <p class="text-sm text-base-content/60">OTP sent to</p>
+            <p class="font-semibold">{{ formattedPhone() }}</p>
             <button
               type="button"
-              class="label-text-alt link link-hover"
-              (click)="onResendOTP()"
+              class="btn btn-ghost btn-sm mt-2"
+              (click)="goBackToPhone()"
               [disabled]="isLoadingAny()"
             >
-              Resend OTP
+              Change number
             </button>
-            } @else {
-            <span class="label-text-alt text-base-content/60">
-              Resend OTP in {{ resendCooldown() }}s
-            </span>
-            }
-          </label>
-        </div>
+          </div>
 
-        <!-- Verify Button -->
-        <div class="form-control mt-6">
-          <button
-            type="button"
-            class="btn btn-primary w-full"
-            (click)="onVerifyOTP()"
-            [disabled]="otpCode().length !== 6 || isLoadingAny() || isVerifying"
-          >
-            @if (isLoadingAny()) {
-            <span class="loading loading-spinner"></span>
-            Verifying... } @else { Verify OTP }
-          </button>
+          <!-- OTP Input -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Enter OTP</span>
+            </label>
+            <input
+              type="text"
+              inputmode="numeric"
+              placeholder="000000"
+              class="input input-bordered w-full text-center text-2xl tracking-widest font-mono"
+              [(ngModel)]="otpCode"
+              (input)="onOTPInput($event)"
+              name="otpCode"
+              maxlength="6"
+              required
+              [disabled]="isLoadingAny()"
+              autocomplete="one-time-code"
+              autofocus
+            />
+            <label class="label">
+              @if (canResendOTP()) {
+                <button
+                  type="button"
+                  class="label-text-alt link link-hover"
+                  (click)="onResendOTP()"
+                  [disabled]="isLoadingAny()"
+                >
+                  Resend OTP
+                </button>
+              } @else {
+                <span class="label-text-alt text-base-content/60">
+                  Resend OTP in {{ resendCooldown() }}s
+                </span>
+              }
+            </label>
+          </div>
+
+          <!-- Verify Button -->
+          <div class="form-control mt-6">
+            <button
+              type="button"
+              class="btn btn-primary w-full"
+              (click)="onVerifyOTP()"
+              [disabled]="otpCode().length !== 6 || isLoadingAny() || isVerifying"
+            >
+              @if (isLoadingAny()) {
+                <span class="loading loading-spinner"></span>
+                Verifying...
+              } @else {
+                Verify OTP
+              }
+            </button>
+          </div>
         </div>
-      </div>
       }
 
       <!-- Register Link -->

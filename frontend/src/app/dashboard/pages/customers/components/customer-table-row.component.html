@@ -1,8 +1,8 @@
 <td>
   <div class="flex items-center gap-3">
-    <app-entity-avatar 
-      [firstName]="customer().firstName" 
-      [lastName]="customer().lastName" 
+    <app-entity-avatar
+      [firstName]="customer().firstName"
+      [lastName]="customer().lastName"
       size="sm"
     />
     <span class="font-medium">{{ getFullName() }}</span>
@@ -21,7 +21,11 @@
 </td>
 <td class="text-right">
   @if (getOutstandingAmount() !== 0) {
-    <div class="font-medium" [class.text-warning]="getOutstandingAmount() < 0" [class.text-success]="getOutstandingAmount() > 0">
+    <div
+      class="font-medium"
+      [class.text-warning]="getOutstandingAmount() < 0"
+      [class.text-success]="getOutstandingAmount() > 0"
+    >
       {{ formatCurrency(Math.abs(getOutstandingAmount())) }}
     </div>
     <div class="text-xs text-base-content/60">
@@ -34,9 +38,7 @@
 <td class="text-right">
   @if (isCreditApproved() && getCreditLimit() > 0) {
     <div class="font-medium">{{ formatCurrency(getAvailableCredit()) }}</div>
-    <div class="text-xs text-base-content/60">
-      of {{ formatCurrency(getCreditLimit()) }}
-    </div>
+    <div class="text-xs text-base-content/60">of {{ formatCurrency(getCreditLimit()) }}</div>
   } @else {
     <span class="text-sm text-base-content/50">—</span>
   }
@@ -45,10 +47,17 @@
   <details class="dropdown dropdown-end">
     <summary class="btn btn-ghost btn-sm btn-square">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+        ></path>
       </svg>
     </summary>
-    <ul class="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-48 border border-base-300">
+    <ul
+      class="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-48 border border-base-300"
+    >
       <li><a (click)="onAction('view')">View</a></li>
       <li><a (click)="onAction('viewOrders')">Orders</a></li>
       @if (isCreditApproved()) {

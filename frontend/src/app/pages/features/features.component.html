@@ -64,66 +64,66 @@
 
   <!-- Categories -->
   @for (category of categories; track category.name; let i = $index) {
-  <section class="section category" [class.category-alt]="i % 2 === 1">
-    <div class="container">
-      <div class="category-header">
-        <div>
-          <span class="eyebrow">{{ category.name }}</span>
-          <h2>{{ category.description }}</h2>
-        </div>
-        <p>
-          These tools are tuned for small and mid-sized shops who want clarity without extra
-          paperwork.
-        </p>
-      </div>
-
-      <div class="mt-10 grid gap-8 lg:grid-cols-[1fr,1fr] lg:items-start">
-        <div class="feature-grid">
-          @for (feature of category.features; track feature.title) {
-          <article class="feature-card">
-            <div class="feature-icon">{{ feature.icon }}</div>
-            <div class="feature-meta">
-              @if (feature.origin === 'Dukahub-Exclusive') {
-              <span class="tag tag-exclusive">Dukahub exclusive</span>
-              } @else if (feature.origin === 'Dukahub-Enhanced') {
-              <span class="tag tag-enhanced">Dukahub enhanced</span>
-              } @else {
-              <span class="tag">Standard</span>
-              }
-            </div>
-            <h3>{{ feature.title }}</h3>
-            <p>{{ feature.description }}</p>
-            @if (feature.useCase) {
-            <div class="use-case">💡 {{ feature.useCase }}</div>
-            }
-          </article>
-          }
+    <section class="section category" [class.category-alt]="i % 2 === 1">
+      <div class="container">
+        <div class="category-header">
+          <div>
+            <span class="eyebrow">{{ category.name }}</span>
+            <h2>{{ category.description }}</h2>
+          </div>
+          <p>
+            These tools are tuned for small and mid-sized shops who want clarity without extra
+            paperwork.
+          </p>
         </div>
 
-        <div class="flex items-center justify-center">
-          <div
-            class="group relative w-full max-w-md overflow-hidden rounded-2xl border border-base-300 bg-base-200 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/40"
-          >
-            <div
-              class="aspect-video flex items-center justify-center bg-gradient-to-br from-base-200 to-base-300"
-            >
-              <div class="flex flex-col items-center gap-3 text-base-content/70">
-                <div
-                  class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/20 transition-transform duration-300 group-hover:scale-110"
-                >
-                  <span class="text-3xl text-primary">▶</span>
+        <div class="mt-10 grid gap-8 lg:grid-cols-[1fr,1fr] lg:items-start">
+          <div class="feature-grid">
+            @for (feature of category.features; track feature.title) {
+              <article class="feature-card">
+                <div class="feature-icon">{{ feature.icon }}</div>
+                <div class="feature-meta">
+                  @if (feature.origin === 'Dukahub-Exclusive') {
+                    <span class="tag tag-exclusive">Dukahub exclusive</span>
+                  } @else if (feature.origin === 'Dukahub-Enhanced') {
+                    <span class="tag tag-enhanced">Dukahub enhanced</span>
+                  } @else {
+                    <span class="tag">Standard</span>
+                  }
                 </div>
-                <div class="text-center space-y-1">
-                  <p class="text-sm font-semibold text-base-content">{{ category.name }}</p>
-                  <p class="text-xs text-base-content/60">See it in action</p>
+                <h3>{{ feature.title }}</h3>
+                <p>{{ feature.description }}</p>
+                @if (feature.useCase) {
+                  <div class="use-case">💡 {{ feature.useCase }}</div>
+                }
+              </article>
+            }
+          </div>
+
+          <div class="flex items-center justify-center">
+            <div
+              class="group relative w-full max-w-md overflow-hidden rounded-2xl border border-base-300 bg-base-200 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/40"
+            >
+              <div
+                class="aspect-video flex items-center justify-center bg-gradient-to-br from-base-200 to-base-300"
+              >
+                <div class="flex flex-col items-center gap-3 text-base-content/70">
+                  <div
+                    class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/20 transition-transform duration-300 group-hover:scale-110"
+                  >
+                    <span class="text-3xl text-primary">▶</span>
+                  </div>
+                  <div class="text-center space-y-1">
+                    <p class="text-sm font-semibold text-base-content">{{ category.name }}</p>
+                    <p class="text-xs text-base-content/60">See it in action</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
   }
 
   <!-- Comparison -->
@@ -141,10 +141,10 @@
         <p class="compare-sub">Purpose-built for Kenyan retail and services.</p>
         <ul>
           @for (item of comparisonData.dukahub; track item) {
-          <li>
-            <span class="icon">✅</span>
-            <span>{{ item }}</span>
-          </li>
+            <li>
+              <span class="icon">✅</span>
+              <span>{{ item }}</span>
+            </li>
           }
         </ul>
       </article>
@@ -153,10 +153,10 @@
         <p class="compare-sub">Notebooks and memory can’t keep up.</p>
         <ul>
           @for (item of comparisonData.manual; track item) {
-          <li>
-            <span class="icon">⚠️</span>
-            <span>{{ item }}</span>
-          </li>
+            <li>
+              <span class="icon">⚠️</span>
+              <span>{{ item }}</span>
+            </li>
           }
         </ul>
       </article>
@@ -165,10 +165,10 @@
         <p class="compare-sub">Great for barcode-only stores, less so for local flow.</p>
         <ul>
           @for (item of comparisonData.genericPOS; track item) {
-          <li>
-            <span class="icon">⚠️</span>
-            <span>{{ item }}</span>
-          </li>
+            <li>
+              <span class="icon">⚠️</span>
+              <span>{{ item }}</span>
+            </li>
           }
         </ul>
       </article>
@@ -190,14 +190,14 @@
       </div>
       <div class="feature-grid">
         @for (feature of comingSoonFeatures; track feature.title) {
-        <article class="feature-card">
-          <div class="feature-icon">{{ feature.icon }}</div>
-          <div class="feature-meta">
-            <span class="tag">{{ feature.category }}</span>
-          </div>
-          <h3>{{ feature.title }}</h3>
-          <p>{{ feature.description }}</p>
-        </article>
+          <article class="feature-card">
+            <div class="feature-icon">{{ feature.icon }}</div>
+            <div class="feature-meta">
+              <span class="tag">{{ feature.category }}</span>
+            </div>
+            <h3>{{ feature.title }}</h3>
+            <p>{{ feature.description }}</p>
+          </article>
         }
       </div>
     </div>

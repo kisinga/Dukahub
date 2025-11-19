@@ -21,7 +21,7 @@
         >
           <option value="">All Accounts</option>
           @for (account of filters().accounts; track account.id) {
-          <option [value]="account.id">{{ account.code }} - {{ account.name }}</option>
+            <option [value]="account.id">{{ account.code }} - {{ account.name }}</option>
           }
         </select>
       </div>
@@ -35,7 +35,7 @@
         >
           <option value="">All Source Types</option>
           @for (sourceType of filters().sourceTypes; track sourceType) {
-          <option [value]="sourceType">{{ sourceType }}</option>
+            <option [value]="sourceType">{{ sourceType }}</option>
           }
         </select>
       </div>
@@ -62,13 +62,12 @@
 
     <!-- Quick Filters -->
     @if (filters().showQuickFilters) {
-    <div class="flex flex-wrap gap-2 mt-2">
-      <button class="btn btn-sm btn-ghost" (click)="onQuickFilter('today')">Today</button>
-      <button class="btn btn-sm btn-ghost" (click)="onQuickFilter('week')">This Week</button>
-      <button class="btn btn-sm btn-ghost" (click)="onQuickFilter('month')">This Month</button>
-      <button class="btn btn-sm btn-ghost" (click)="onQuickFilter('all')">All Time</button>
-    </div>
+      <div class="flex flex-wrap gap-2 mt-2">
+        <button class="btn btn-sm btn-ghost" (click)="onQuickFilter('today')">Today</button>
+        <button class="btn btn-sm btn-ghost" (click)="onQuickFilter('week')">This Week</button>
+        <button class="btn btn-sm btn-ghost" (click)="onQuickFilter('month')">This Month</button>
+        <button class="btn btn-sm btn-ghost" (click)="onQuickFilter('all')">All Time</button>
+      </div>
     }
   </div>
 </div>
-

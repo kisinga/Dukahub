@@ -5,10 +5,7 @@ const saleStoreLogic = {
 
   // Computed properties using getters
   get subtotal() {
-    return this.items.reduce(
-      (sum, item) => sum + item.quantity * item.price,
-      0
-    );
+    return this.items.reduce((sum, item) => sum + item.quantity * item.price, 0);
   },
   get tax() {
     // Calculate tax for each item based on its stored rate and sum them up
@@ -22,7 +19,7 @@ const saleStoreLogic = {
       // Use item's tax rate, fallback to default (0) if null/undefined/NaN
       // Added isNaN check here too for extra safety, though addItem should prevent it
       const itemTaxRate =
-        typeof item.taxRate === "number" && !isNaN(item.taxRate)
+        typeof item.taxRate === 'number' && !isNaN(item.taxRate)
           ? item.taxRate
           : this.defaultTaxRate;
       const itemTax = lineSubtotal * itemTaxRate;
@@ -42,26 +39,18 @@ const saleStoreLogic = {
   // Methods
   addItem(product, quantity, price) {
     if (!product?.id || quantity <= 0 || price < 0) {
-      console.error("SaleStore: Invalid item data received", {
+      console.error('SaleStore: Invalid item data received', {
         product,
         quantity,
         price,
       });
       return;
     }
-    console.log(
-      "SaleStore: Adding item:",
-      Alpine.raw(product),
-      quantity,
-      price
-    );
+    console.log('SaleStore: Adding item:', Alpine.raw(product), quantity, price);
 
     // --- Determine and store item-specific tax rate ---
     // Use product.taxRate if it's a number, otherwise use defaultTaxRate
-    const itemTaxRate =
-      typeof product.taxRate === "number"
-        ? product.taxRate
-        : this.defaultTaxRate; // defaultTaxRate is now 0
+    const itemTaxRate = typeof product.taxRate === 'number' ? product.taxRate : this.defaultTaxRate; // defaultTaxRate is now 0
     console.log(`Using tax rate for ${product.name}: ${itemTaxRate}`);
 
     // --- End Determine tax rate ---
@@ -72,7 +61,7 @@ const saleStoreLogic = {
       : product.id;
     // Find existing based on product ID AND potentially selected SKU ID AND price
     const existingItem = this.items.find(
-      (i) =>
+      i =>
         i.product.id === product.id &&
         i.product.selectedSkuId === product.selectedSkuId && // Match SKU ID (or undefined vs undefined)
         i.price === price
@@ -96,7 +85,7 @@ const saleStoreLogic = {
     // Added params for unique removal
     // Filter based on a unique combination
     this.items = this.items.filter(
-      (item) =>
+      item =>
         !(
           item.product.id === productId &&
           item.product.selectedSkuId === selectedSkuId && // Compare SKU IDs
@@ -104,20 +93,13 @@ const saleStoreLogic = {
         ) // Compare price
     );
   },
-  updateItemQuantity(
-    productId,
-    newQuantity,
-    selectedSkuId = null,
-    price = null
-  ) {
+  updateItemQuantity(productId, newQuantity, selectedSkuId = null, price = null) {
     // Added params
     const quantity = parseInt(newQuantity, 10);
     // Find based on unique combination
     const item = this.items.find(
-      (i) =>
-        i.product.id === productId &&
-        i.product.selectedSkuId === selectedSkuId &&
-        i.price === price
+      i =>
+        i.product.id === productId && i.product.selectedSkuId === selectedSkuId && i.price === price
     );
     if (item) {
       if (!isNaN(quantity) && quantity > 0) {
@@ -134,11 +116,10 @@ const saleStoreLogic = {
   getSaleDataForCheckout() {
     // Getters ensure totals are current
     return {
-      items: this.items.map((item) => {
+      items: this.items.map(item => {
         const lineSubtotal = item.quantity * item.price;
         // Use item's stored tax rate, fallback to default if somehow missing (shouldn't happen)
-        const itemTaxRate =
-          item.taxRate != null ? item.taxRate : this.defaultTaxRate;
+        const itemTaxRate = item.taxRate != null ? item.taxRate : this.defaultTaxRate;
         const itemTax = lineSubtotal * itemTaxRate;
         return {
           productId: item.product.id,

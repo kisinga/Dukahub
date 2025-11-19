@@ -2,20 +2,20 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Add Customer Supplier Fields
- * 
+ *
  * Merges:
  * - 1760550000000-AddCustomerSupplierFields.ts
  * - 1760560000000-UpdateCustomerSupplierFields.ts (removes supplierCode, adds outstandingAmount)
  * - 1764000300000-RemoveOutstandingAmountCustomField.ts (removes outstandingAmount)
- * 
+ *
  * Final state:
  * - Customer: All supplier fields EXCEPT supplierCode and outstandingAmount
  */
 export class AddCustomerSupplierFields2000000000000 implements MigrationInterface {
-    name = 'AddCustomerSupplierFields2000000000000';
+  name = 'AddCustomerSupplierFields2000000000000';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -50,10 +50,10 @@ export class AddCustomerSupplierFields2000000000000 implements MigrationInterfac
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -80,7 +80,5 @@ export class AddCustomerSupplierFields2000000000000 implements MigrationInterfac
                 END IF;
             END $$;
         `);
-    }
+  }
 }
-
-

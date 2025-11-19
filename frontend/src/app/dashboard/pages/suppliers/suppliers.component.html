@@ -7,16 +7,20 @@
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-bold text-base-content">Suppliers</h1>
-            <p class="mt-1 text-sm text-base-content/70">
-              Manage your supplier network
-            </p>
+            <p class="mt-1 text-sm text-base-content/70">Manage your supplier network</p>
           </div>
           <div class="flex items-center space-x-3">
-            <button 
+            <button
               class="btn btn-primary"
-              (click)="router.navigate(['/dashboard/suppliers/create'])">
+              (click)="router.navigate(['/dashboard/suppliers/create'])"
+            >
               <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                ></path>
               </svg>
               Add Supplier
             </button>
@@ -33,16 +37,21 @@
 
     <!-- Search and Filters -->
     <div class="mb-6">
-      <app-supplier-search-bar 
+      <app-supplier-search-bar
         [searchQuery]="searchQuery()"
-        (searchChange)="searchQuery.set($event)" />
+        (searchChange)="searchQuery.set($event)"
+      />
     </div>
 
     <!-- Error Alert -->
     @if (error()) {
       <div class="alert alert-error mb-6">
         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd"
+          ></path>
         </svg>
         <span>{{ error() }}</span>
         <button class="btn btn-sm btn-ghost" (click)="clearError()">Dismiss</button>
@@ -61,12 +70,12 @@
         <div class="hidden lg:block">
           <table class="table table-pin-rows">
             <colgroup>
-              <col style="width: 20%;" />
-              <col style="width: 25%;" />
-              <col style="width: 20%;" />
-              <col style="width: 15%;" />
-              <col style="width: 10%;" />
-              <col style="width: 10%;" />
+              <col style="width: 20%" />
+              <col style="width: 25%" />
+              <col style="width: 20%" />
+              <col style="width: 15%" />
+              <col style="width: 10%" />
+              <col style="width: 10%" />
             </colgroup>
             <thead>
               <tr>
@@ -80,9 +89,11 @@
             </thead>
             <tbody>
               @for (supplier of paginatedSuppliers(); track trackBySupplierId($index, supplier)) {
-                <tr app-supplier-table-row 
+                <tr
+                  app-supplier-table-row
                   [supplier]="supplier"
-                  (action)="onSupplierAction($event)"></tr>
+                  (action)="onSupplierAction($event)"
+                ></tr>
               }
             </tbody>
           </table>
@@ -91,17 +102,25 @@
         <!-- Mobile Card View -->
         <div class="lg:hidden">
           @for (supplier of paginatedSuppliers(); track trackBySupplierId($index, supplier)) {
-            <app-supplier-card 
-              [supplier]="supplier"
-              (action)="onSupplierAction($event)" />
+            <app-supplier-card [supplier]="supplier" (action)="onSupplierAction($event)" />
           }
         </div>
 
         <!-- Empty State -->
         @if (paginatedSuppliers().length === 0 && !isLoading()) {
           <div class="text-center py-12">
-            <svg class="mx-auto h-12 w-12 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+            <svg
+              class="mx-auto h-12 w-12 text-base-content/40"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+              ></path>
             </svg>
             <h3 class="mt-2 text-sm font-medium text-base-content">No suppliers found</h3>
             <p class="mt-1 text-sm text-base-content/60">
@@ -113,11 +132,17 @@
             </p>
             @if (!searchQuery()) {
               <div class="mt-6">
-                <button 
+                <button
                   class="btn btn-primary"
-                  (click)="router.navigate(['/dashboard/suppliers/create'])">
+                  (click)="router.navigate(['/dashboard/suppliers/create'])"
+                >
                   <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 4v16m8-8H4"
+                    ></path>
                   </svg>
                   Add Supplier
                 </button>
@@ -138,7 +163,8 @@
             [endItem]="endItem()"
             [totalItems]="filteredSuppliers().length"
             (pageChange)="goToPage($event)"
-            (itemsPerPageChange)="changeItemsPerPage($event)" />
+            (itemsPerPageChange)="changeItemsPerPage($event)"
+          />
         </div>
       }
     }
@@ -150,7 +176,8 @@
   #deleteModal
   [data]="deleteModalData()"
   (confirmed)="onDeleteConfirmed()"
-  (cancelled)="onDeleteCancelled()" />
+  (cancelled)="onDeleteCancelled()"
+/>
 
 <!-- Supplier View Modal -->
 @if (supplierToView()) {
@@ -158,5 +185,6 @@
     #viewModal
     [supplier]="supplierToView()!"
     (editRequested)="onEditRequested($event)"
-    (deleteRequested)="onDeleteRequested($event)" />
+    (deleteRequested)="onDeleteRequested($event)"
+  />
 }

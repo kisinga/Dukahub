@@ -1,15 +1,15 @@
 <!-- Toast Notification -->
 @if (notificationMessage()) {
-<div class="toast toast-top toast-center z-50 animate-in">
-  <div
-    class="alert shadow-lg"
-    [class.alert-success]="notificationType() === 'success'"
-    [class.alert-warning]="notificationType() === 'warning'"
-    [class.alert-error]="notificationType() === 'error'"
-  >
-    <span class="text-sm">{{ notificationMessage() }}</span>
+  <div class="toast toast-top toast-center z-50 animate-in">
+    <div
+      class="alert shadow-lg"
+      [class.alert-success]="notificationType() === 'success'"
+      [class.alert-warning]="notificationType() === 'warning'"
+      [class.alert-error]="notificationType() === 'error'"
+    >
+      <span class="text-sm">{{ notificationMessage() }}</span>
+    </div>
   </div>
-</div>
 }
 
 <!-- Main Content -->
@@ -26,42 +26,42 @@
 
   <!-- Camera (conditional) -->
   @if (shouldShowCamera()) {
-  <app-product-scanner
-    #scanner
-    [channelId]="channelId()"
-    [autoStartOnMobile]="true"
-    (scannerReady)="handleScannerReady(scanner)"
-    (scanningStateChange)="handleScanningStateChange($event)"
-    (productDetected)="handleProductDetected($event)"
-  />
+    <app-product-scanner
+      #scanner
+      [channelId]="channelId()"
+      [autoStartOnMobile]="true"
+      (scannerReady)="handleScannerReady(scanner)"
+      (scanningStateChange)="handleScanningStateChange($event)"
+      (productDetected)="handleProductDetected($event)"
+    />
   }
 
   <!-- Empty State (only when searching but no results) -->
   @if (isManualSearchActive() && searchResults().length === 0 && !isSearching()) {
-  <div class="text-center py-12">
-    <div class="text-5xl mb-2">🔍</div>
-    <p class="font-semibold">No products found</p>
-    <p class="text-sm opacity-60 mt-1">Try a different search term</p>
-  </div>
+    <div class="text-center py-12">
+      <div class="text-5xl mb-2">🔍</div>
+      <p class="font-semibold">No products found</p>
+      <p class="text-sm opacity-60 mt-1">Try a different search term</p>
+    </div>
   }
 
   <!-- Inline Cart -->
   @if (cartItems().length > 0) {
-  <app-cart
-    [items]="cartItems()"
-    [canOverridePrices]="canOverridePrices()"
-    [displayMode]="'inline'"
-    (quantityChange)="handleCartQuantityChange($event)"
-    (priceChange)="handlePriceOverrideChange($event)"
-    (removeItem)="handleCartItemRemove($event)"
-    (clearCart)="handleClearCart()"
-  />
+    <app-cart
+      [items]="cartItems()"
+      [canOverridePrices]="canOverridePrices()"
+      [displayMode]="'inline'"
+      (quantityChange)="handleCartQuantityChange($event)"
+      (priceChange)="handlePriceOverrideChange($event)"
+      (removeItem)="handleCartItemRemove($event)"
+      (clearCart)="handleClearCart()"
+    />
   }
 </div>
 
 <!-- Checkout FAB -->
 @if (cartItems().length > 0) {
-<app-checkout-fab [total]="cartTotal()" (checkout)="handleProceedToCheckout()" />
+  <app-checkout-fab [total]="cartTotal()" (checkout)="handleProceedToCheckout()" />
 }
 
 <!-- Product Confirmation Modal -->
@@ -74,18 +74,18 @@
 
 <!-- Clear Cart Confirmation Modal -->
 @if (showClearCartConfirm()) {
-<div class="modal modal-open modal-bottom sm:modal-middle animate-in fade-in duration-300">
-  <div class="modal-box animate-in slide-in-from-bottom-4 duration-300">
-    <h3 class="font-bold text-lg text-error mb-4">Clear Cart</h3>
-    <p class="py-4">
-      Are you sure you want to clear all items from your cart? This action cannot be undone.
-    </p>
-    <div class="modal-action">
-      <button class="btn btn-ghost" (click)="handleCancelClearCart()">Cancel</button>
-      <button class="btn btn-error" (click)="handleConfirmClearCart()">Clear Cart</button>
+  <div class="modal modal-open modal-bottom sm:modal-middle animate-in fade-in duration-300">
+    <div class="modal-box animate-in slide-in-from-bottom-4 duration-300">
+      <h3 class="font-bold text-lg text-error mb-4">Clear Cart</h3>
+      <p class="py-4">
+        Are you sure you want to clear all items from your cart? This action cannot be undone.
+      </p>
+      <div class="modal-action">
+        <button class="btn btn-ghost" (click)="handleCancelClearCart()">Cancel</button>
+        <button class="btn btn-error" (click)="handleConfirmClearCart()">Clear Cart</button>
+      </div>
     </div>
   </div>
-</div>
 }
 
 <!-- Checkout Modal -->

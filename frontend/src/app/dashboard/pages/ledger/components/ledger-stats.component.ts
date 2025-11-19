@@ -20,4 +20,3 @@ export class LedgerStatsComponent {
   stats = input.required<LedgerStats>();
   formatCurrency = input.required<(amount: number) => string>();
 }
-

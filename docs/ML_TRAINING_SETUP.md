@@ -46,7 +46,6 @@ The frontend implementation is complete and includes:
 After restarting the backend, you can verify the integration by:
 
 1. **Check GraphQL Schema**: Visit `/admin-api/graphiql` and verify these queries are available:
-
    - `mlTrainingInfo(channelId: ID!)`
    - `mlTrainingManifest(channelId: ID!)`
    - `extractPhotosForTraining(channelId: ID!)`
@@ -144,4 +143,3 @@ The frontend will show a warning message if the GraphQL schema is not available.
 4. **Configure channels** with ML training enabled
 
 The implementation is production-ready and follows all architectural decisions from the original plan.
-

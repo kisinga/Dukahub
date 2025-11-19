@@ -72,13 +72,13 @@ interface RegistrationInput {
   companyName: string;
   companyCode: string;
   currency: string;
-  
+
   // Admin fields
   adminFirstName: string;
   adminLastName: string;
   adminPhoneNumber: string; // This becomes the User identifier
   adminEmail?: string;
-  
+
   // Store fields
   storeName: string;
   storeAddress?: string;
@@ -132,21 +132,3 @@ The following custom fields should be added to the User entity for authorization
 5. User account is in `PENDING` state until admin approval
 6. Admin approves/rejects via admin interface
 7. Only `APPROVED` users can login
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

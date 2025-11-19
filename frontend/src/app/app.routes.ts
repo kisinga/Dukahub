@@ -5,215 +5,204 @@ import { settingsGuard } from './core/guards/settings.guard';
 import { stockAdjustmentGuard } from './core/guards/stock-adjustment.guard';
 
 export const routes: Routes = [
-    // Marketing pages (include their own navbar/footer)
-    {
+  // Marketing pages (include their own navbar/footer)
+  {
+    path: '',
+    loadComponent: () => import('./pages/home/home.component').then((m) => m.HomeComponent),
+  },
+  {
+    path: 'login',
+    canActivate: [noAuthGuard],
+    loadComponent: () => import('./pages/auth/login/login.component').then((m) => m.LoginComponent),
+  },
+  {
+    path: 'signup',
+    canActivate: [noAuthGuard],
+    loadComponent: () =>
+      import('./pages/auth/signup/signup.component').then((m) => m.SignupComponent),
+  },
+  {
+    path: 'features',
+    loadComponent: () =>
+      import('./pages/features/features.component').then((m) => m.FeaturesComponent),
+  },
+  {
+    path: 'about',
+    loadComponent: () => import('./pages/about/about.component').then((m) => m.AboutComponent),
+  },
+  {
+    path: 'contact',
+    loadComponent: () =>
+      import('./pages/contact/contact.component').then((m) => m.ContactComponent),
+  },
+  {
+    path: 'support',
+    loadComponent: () =>
+      import('./pages/support/support.component').then((m) => m.SupportComponent),
+  },
+  {
+    path: 'privacy',
+    loadComponent: () =>
+      import('./pages/privacy/privacy.component').then((m) => m.PrivacyComponent),
+  },
+  {
+    path: 'terms',
+    loadComponent: () => import('./pages/terms/terms.component').then((m) => m.TermsComponent),
+  },
+
+  // Dashboard - separate layout with sidebar and mobile bottom nav
+  {
+    path: 'dashboard',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./dashboard/layout/dashboard-layout.component').then(
+        (m) => m.DashboardLayoutComponent,
+      ),
+    children: [
+      {
         path: '',
-        loadComponent: () => import('./pages/home/home.component').then((m) => m.HomeComponent)
-    },
-    {
-        path: 'login',
-        canActivate: [noAuthGuard],
         loadComponent: () =>
-            import('./pages/auth/login/login.component').then((m) => m.LoginComponent)
-    },
-    {
-        path: 'signup',
-        canActivate: [noAuthGuard],
+          import('./dashboard/pages/overview/overview.component').then((m) => m.OverviewComponent),
+      },
+      {
+        path: 'sell',
         loadComponent: () =>
-            import('./pages/auth/signup/signup.component').then((m) => m.SignupComponent)
-    },
-    {
-        path: 'features',
+          import('./dashboard/pages/sell/sell.component').then((m) => m.SellComponent),
+      },
+      {
+        path: 'products',
         loadComponent: () =>
-            import('./pages/features/features.component').then((m) => m.FeaturesComponent)
-    },
-    {
-        path: 'about',
+          import('./dashboard/pages/products/products.component').then((m) => m.ProductsComponent),
+      },
+      {
+        path: 'products/create',
         loadComponent: () =>
-            import('./pages/about/about.component').then((m) => m.AboutComponent)
-    },
-    {
-        path: 'contact',
+          import('./dashboard/pages/product-create/product-create.component').then(
+            (m) => m.ProductCreateComponent,
+          ),
+      },
+      {
+        path: 'products/edit/:id',
         loadComponent: () =>
-            import('./pages/contact/contact.component').then((m) => m.ContactComponent)
-    },
-    {
-        path: 'support',
+          import('./dashboard/pages/product-edit/product-edit.component').then(
+            (m) => m.ProductEditComponent,
+          ),
+      },
+      {
+        path: 'customers',
         loadComponent: () =>
-            import('./pages/support/support.component').then((m) => m.SupportComponent)
-    },
-    {
-        path: 'privacy',
+          import('./dashboard/pages/customers/customers.component').then(
+            (m) => m.CustomersComponent,
+          ),
+      },
+      {
+        path: 'credit',
+        canActivate: [creditGuard],
         loadComponent: () =>
-            import('./pages/privacy/privacy.component').then((m) => m.PrivacyComponent)
-    },
-    {
-        path: 'terms',
+          import('./dashboard/pages/credit/credit.component').then((m) => m.CreditComponent),
+      },
+      {
+        path: 'customers/create',
         loadComponent: () =>
-            import('./pages/terms/terms.component').then((m) => m.TermsComponent)
-    },
+          import('./dashboard/pages/customer-create/customer-create.component').then(
+            (m) => m.CustomerCreateComponent,
+          ),
+      },
+      {
+        path: 'customers/edit/:id',
+        loadComponent: () =>
+          import('./dashboard/pages/customer-edit/customer-edit.component').then(
+            (m) => m.CustomerEditComponent,
+          ),
+      },
+      {
+        path: 'orders',
+        loadComponent: () =>
+          import('./dashboard/pages/orders/orders.component').then((m) => m.OrdersComponent),
+      },
+      {
+        path: 'orders/:id',
+        loadComponent: () =>
+          import('./dashboard/pages/orders/order-detail/order-detail.component').then(
+            (m) => m.OrderDetailComponent,
+          ),
+      },
+      {
+        path: 'payments',
+        loadComponent: () =>
+          import('./dashboard/pages/payments/payments.component').then((m) => m.PaymentsComponent),
+      },
+      {
+        path: 'payments/:id',
+        loadComponent: () =>
+          import('./dashboard/pages/payments/payment-detail/payment-detail.component').then(
+            (m) => m.PaymentDetailComponent,
+          ),
+      },
+      {
+        path: 'suppliers',
+        loadComponent: () =>
+          import('./dashboard/pages/suppliers/suppliers.component').then(
+            (m) => m.SuppliersComponent,
+          ),
+      },
+      {
+        path: 'suppliers/create',
+        loadComponent: () =>
+          import('./dashboard/pages/supplier-create/supplier-create.component').then(
+            (m) => m.SupplierCreateComponent,
+          ),
+      },
+      {
+        path: 'suppliers/edit/:id',
+        loadComponent: () =>
+          import('./dashboard/pages/supplier-edit/supplier-edit.component').then(
+            (m) => m.SupplierEditComponent,
+          ),
+      },
+      {
+        path: 'purchases',
+        loadComponent: () =>
+          import('./dashboard/pages/purchases/purchases.component').then(
+            (m) => m.PurchasesComponent,
+          ),
+      },
+      {
+        path: 'purchases/create',
+        loadComponent: () =>
+          import('./dashboard/pages/purchase-create/purchase-create.component').then(
+            (m) => m.PurchaseCreateComponent,
+          ),
+      },
+      {
+        path: 'stock-adjustments',
+        canActivate: [stockAdjustmentGuard],
+        loadComponent: () =>
+          import('./dashboard/pages/stock-adjustments/stock-adjustments.component').then(
+            (m) => m.StockAdjustmentsComponent,
+          ),
+      },
+      {
+        path: 'reports',
+        loadComponent: () =>
+          import('./dashboard/pages/reports/reports.component').then((m) => m.ReportsComponent),
+      },
+      {
+        path: 'settings',
+        canActivate: [settingsGuard],
+        loadComponent: () =>
+          import('./dashboard/pages/settings/settings.component').then((m) => m.SettingsComponent),
+      },
+      {
+        path: 'ledger',
+        loadComponent: () =>
+          import('./dashboard/pages/ledger/ledger.component').then((m) => m.LedgerComponent),
+      },
+    ],
+  },
 
-    // Dashboard - separate layout with sidebar and mobile bottom nav
-    {
-        path: 'dashboard',
-        canActivate: [authGuard],
-        loadComponent: () =>
-            import('./dashboard/layout/dashboard-layout.component').then(
-                (m) => m.DashboardLayoutComponent
-            ),
-        children: [
-            {
-                path: '',
-                loadComponent: () =>
-                    import('./dashboard/pages/overview/overview.component').then((m) => m.OverviewComponent)
-            },
-            {
-                path: 'sell',
-                loadComponent: () =>
-                    import('./dashboard/pages/sell/sell.component').then((m) => m.SellComponent)
-            },
-            {
-                path: 'products',
-                loadComponent: () =>
-                    import('./dashboard/pages/products/products.component').then(
-                        (m) => m.ProductsComponent
-                    )
-            },
-            {
-                path: 'products/create',
-                loadComponent: () =>
-                    import('./dashboard/pages/product-create/product-create.component').then(
-                        (m) => m.ProductCreateComponent
-                    )
-            },
-            {
-                path: 'products/edit/:id',
-                loadComponent: () =>
-                    import('./dashboard/pages/product-edit/product-edit.component').then(
-                        (m) => m.ProductEditComponent
-                    )
-            },
-            {
-                path: 'customers',
-                loadComponent: () =>
-                    import('./dashboard/pages/customers/customers.component').then(
-                        (m) => m.CustomersComponent
-                    )
-            },
-            {
-                path: 'credit',
-                canActivate: [creditGuard],
-                loadComponent: () =>
-                    import('./dashboard/pages/credit/credit.component').then(
-                        (m) => m.CreditComponent
-                    )
-            },
-            {
-                path: 'customers/create',
-                loadComponent: () =>
-                    import('./dashboard/pages/customer-create/customer-create.component').then(
-                        (m) => m.CustomerCreateComponent
-                    )
-            },
-            {
-                path: 'customers/edit/:id',
-                loadComponent: () =>
-                    import('./dashboard/pages/customer-edit/customer-edit.component').then(
-                        (m) => m.CustomerEditComponent
-                    )
-            },
-            {
-                path: 'orders',
-                loadComponent: () =>
-                    import('./dashboard/pages/orders/orders.component').then(
-                        (m) => m.OrdersComponent
-                    )
-            },
-            {
-                path: 'orders/:id',
-                loadComponent: () =>
-                    import('./dashboard/pages/orders/order-detail/order-detail.component').then(
-                        (m) => m.OrderDetailComponent
-                    )
-            },
-            {
-                path: 'payments',
-                loadComponent: () =>
-                    import('./dashboard/pages/payments/payments.component').then(
-                        (m) => m.PaymentsComponent
-                    )
-            },
-            {
-                path: 'payments/:id',
-                loadComponent: () =>
-                    import('./dashboard/pages/payments/payment-detail/payment-detail.component').then(
-                        (m) => m.PaymentDetailComponent
-                    )
-            },
-            {
-                path: 'suppliers',
-                loadComponent: () =>
-                    import('./dashboard/pages/suppliers/suppliers.component').then(
-                        (m) => m.SuppliersComponent
-                    )
-            },
-            {
-                path: 'suppliers/create',
-                loadComponent: () =>
-                    import('./dashboard/pages/supplier-create/supplier-create.component').then(
-                        (m) => m.SupplierCreateComponent
-                    )
-            },
-            {
-                path: 'suppliers/edit/:id',
-                loadComponent: () =>
-                    import('./dashboard/pages/supplier-edit/supplier-edit.component').then(
-                        (m) => m.SupplierEditComponent
-                    )
-            },
-            {
-                path: 'purchases',
-                loadComponent: () =>
-                    import('./dashboard/pages/purchases/purchases.component').then(
-                        (m) => m.PurchasesComponent
-                    )
-            },
-            {
-                path: 'purchases/create',
-                loadComponent: () =>
-                    import('./dashboard/pages/purchase-create/purchase-create.component').then(
-                        (m) => m.PurchaseCreateComponent
-                    )
-            },
-            {
-                path: 'stock-adjustments',
-                canActivate: [stockAdjustmentGuard],
-                loadComponent: () =>
-                    import('./dashboard/pages/stock-adjustments/stock-adjustments.component').then(
-                        (m) => m.StockAdjustmentsComponent
-                    )
-            },
-            {
-                path: 'reports',
-                loadComponent: () =>
-                    import('./dashboard/pages/reports/reports.component').then((m) => m.ReportsComponent)
-            },
-            {
-                path: 'settings',
-                canActivate: [settingsGuard],
-                loadComponent: () =>
-                    import('./dashboard/pages/settings/settings.component').then((m) => m.SettingsComponent)
-            },
-            {
-                path: 'ledger',
-                loadComponent: () =>
-                    import('./dashboard/pages/ledger/ledger.component').then((m) => m.LedgerComponent)
-            }
-        ]
-    },
-
-    {
-        path: '**',
-        redirectTo: ''
-    }
+  {
+    path: '**',
+    redirectTo: '',
+  },
 ];

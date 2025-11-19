@@ -16,6 +16,7 @@ The Dukarun financial system uses a **double-entry ledger** as the single source
 ### 2. Double-Entry Accounting
 
 Every financial transaction creates balanced journal entries:
+
 - **Debits = Credits** (always balanced)
 - Each entry has at least two lines (debit and credit)
 - Accounts are categorized (Asset, Liability, Revenue, Expense)
@@ -23,6 +24,7 @@ Every financial transaction creates balanced journal entries:
 ### 3. Channel-Specific Ledger
 
 Each Vendure channel (business) has its own:
+
 - **Chart of Accounts (CoA)** - predefined accounts required for operations
 - **Journal entries** - all entries are channel-scoped
 - **Account balances** - computed per channel
@@ -152,6 +154,7 @@ post(
 ```
 
 **Features:**
+
 - Validates balance (debits = credits)
 - Enforces idempotency (same sourceType + sourceId = same entry)
 - Checks period locks
@@ -162,18 +165,22 @@ post(
 Each channel requires these accounts:
 
 ### Asset Accounts
+
 - `CASH_ON_HAND` - Physical cash
 - `CLEARING_MPESA` - M-Pesa clearing account
 - `CLEARING_CREDIT` - Credit clearing account
 - `ACCOUNTS_RECEIVABLE` - Customer outstanding amounts (AR)
 
 ### Liability Accounts
+
 - `ACCOUNTS_PAYABLE` - Supplier outstanding amounts (AP)
 
 ### Revenue Accounts
+
 - `SALES` - Sales revenue
 
 ### Expense Accounts
+
 - `PURCHASES` - Purchase costs
 - `DISCOUNTS` - Discounts given
 - `RETURNS` - Returns/refunds
@@ -181,6 +188,7 @@ Each channel requires these accounts:
 ### Setup
 
 Accounts are initialized per channel via:
+
 1. **Automated**: `ChartOfAccountsService.initializeChannelAccounts(channelId)`
 2. **Manual**: SQL script (see `CUSTOMER_PROVISIONING.md`)
 
@@ -247,6 +255,7 @@ WHERE account_code = 'ACCOUNTS_RECEIVABLE'
 ```
 
 **Note:** AR is an asset account, so:
+
 - **Debit** = Customer owes us (positive balance)
 - **Credit** = Customer paid us (negative balance)
 - **Outstanding** = Sum of all lines (debits - credits)
@@ -263,6 +272,7 @@ WHERE account_code = 'ACCOUNTS_PAYABLE'
 ```
 
 **Note:** AP is a liability account, so:
+
 - **Credit** = We owe supplier (positive balance)
 - **Debit** = We paid supplier (negative balance)
 - **Outstanding** = Sum of all lines (credits - debits)
@@ -276,6 +286,7 @@ All ledger postings are **idempotent**:
 - Example: `('payment', 'payment-123')` always creates the same entry
 
 This ensures:
+
 - Safe retries on network errors
 - No duplicate postings
 - Eventual consistency
@@ -371,12 +382,14 @@ try {
 **Problem**: Balance calculation returns wrong value.
 
 **Possible Causes**:
+
 1. Accounts not initialized for channel
 2. Journal entries not posted (check `PostingService` logs)
 3. Wrong account code used in query
 4. Cache not invalidated (restart server)
 
-**Solution**: 
+**Solution**:
+
 1. Verify accounts exist: `SELECT * FROM ledger_account WHERE channel_id = :channelId`
 2. Check journal entries: `SELECT * FROM ledger_journal_entry WHERE channel_id = :channelId`
 3. Verify account codes match CoA definitions
@@ -387,6 +400,7 @@ try {
 **Problem**: Same transaction posted multiple times.
 
 **Solution**: Idempotency should prevent this. Check:
+
 1. `sourceType` and `sourceId` are consistent
 2. `PostingService.post()` is called with same parameters
 3. Database constraint on `(source_type, source_id)` exists
@@ -397,4 +411,3 @@ try {
 - `ARCHITECTURE.md` - Overall system architecture
 - Backend code: `backend/src/services/financial/`
 - Frontend code: `frontend/src/app/core/services/customer/customer-credit.service.ts`
-

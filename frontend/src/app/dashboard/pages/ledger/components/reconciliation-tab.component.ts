@@ -28,4 +28,3 @@ export class ReconciliationTabComponent {
     this.pageChange.emit(page);
   }
 }
-

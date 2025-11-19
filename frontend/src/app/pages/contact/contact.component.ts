@@ -8,17 +8,6 @@ import { NavbarComponent } from '../../core/layout/navbar/navbar.component';
   imports: [RouterLink, NavbarComponent, FooterComponent],
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContactComponent {}
-
-
-
-
-
-
-
-
-
-
-

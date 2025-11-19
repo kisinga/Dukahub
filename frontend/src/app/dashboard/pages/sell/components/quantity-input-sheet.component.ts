@@ -1,5 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyService } from '../../../../core/services/currency.service';
 
@@ -142,7 +151,7 @@ export interface QuantityInputData {
       </div>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QuantityInputSheetComponent {
   private readonly fb = inject(FormBuilder);
@@ -158,10 +167,7 @@ export class QuantityInputSheetComponent {
 
   // Form
   readonly quantityForm: FormGroup;
-  readonly quantityControl = this.fb.control(0, [
-    Validators.required,
-    Validators.min(0.1)
-  ]);
+  readonly quantityControl = this.fb.control(0, [Validators.required, Validators.min(0.1)]);
 
   // State
   readonly quantityError = signal<string | null>(null);
@@ -174,7 +180,7 @@ export class QuantityInputSheetComponent {
 
   constructor() {
     this.quantityForm = this.fb.group({
-      quantity: this.quantityControl
+      quantity: this.quantityControl,
     });
 
     // Initialize with current quantity when data changes
@@ -242,7 +248,7 @@ export class QuantityInputSheetComponent {
 
     this.quantityUpdated.emit({
       variantId: this.data()!.variantId,
-      quantity: quantity
+      quantity: quantity,
     });
     this.close();
   }

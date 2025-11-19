@@ -24,39 +24,67 @@ import { PaymentMethodsComponent } from './components/payment-methods.component'
   template: `
     <div class="space-y-6">
       <h1 class="text-3xl font-bold">⚙️ Settings</h1>
-      
+
       <!-- Tabs -->
       <div role="tablist" class="tabs tabs-box">
-        <input type="radio" name="settings_tabs" 
-               class="tab" aria-label="General" 
-               [checked]="activeTab() === 'general'"
-               (change)="setActiveTab('general')" />
-        <input type="radio" name="settings_tabs" 
-               class="tab" aria-label="ML Model" 
-               [checked]="activeTab() === 'ml-model'"
-               (change)="setActiveTab('ml-model')" />
-        <input type="radio" name="settings_tabs" 
-               class="tab" aria-label="Notifications" 
-               [checked]="activeTab() === 'notifications'"
-               (change)="setActiveTab('notifications')" />
-        <input type="radio" name="settings_tabs" 
-               class="tab" aria-label="Test Notifications" 
-               [checked]="activeTab() === 'test-notifications'"
-               (change)="setActiveTab('test-notifications')" />
-        <input type="radio" name="settings_tabs" 
-               class="tab" aria-label="Admins" 
-               [checked]="activeTab() === 'admins'"
-               (change)="setActiveTab('admins')" />
-        <input type="radio" name="settings_tabs" 
-               class="tab" aria-label="Payments" 
-               [checked]="activeTab() === 'payments'"
-               (change)="setActiveTab('payments')" />
-        <input type="radio" name="settings_tabs" 
-               class="tab" aria-label="Audit Trail" 
-               [checked]="activeTab() === 'audit-trail'"
-               (change)="setActiveTab('audit-trail')" />
+        <input
+          type="radio"
+          name="settings_tabs"
+          class="tab"
+          aria-label="General"
+          [checked]="activeTab() === 'general'"
+          (change)="setActiveTab('general')"
+        />
+        <input
+          type="radio"
+          name="settings_tabs"
+          class="tab"
+          aria-label="ML Model"
+          [checked]="activeTab() === 'ml-model'"
+          (change)="setActiveTab('ml-model')"
+        />
+        <input
+          type="radio"
+          name="settings_tabs"
+          class="tab"
+          aria-label="Notifications"
+          [checked]="activeTab() === 'notifications'"
+          (change)="setActiveTab('notifications')"
+        />
+        <input
+          type="radio"
+          name="settings_tabs"
+          class="tab"
+          aria-label="Test Notifications"
+          [checked]="activeTab() === 'test-notifications'"
+          (change)="setActiveTab('test-notifications')"
+        />
+        <input
+          type="radio"
+          name="settings_tabs"
+          class="tab"
+          aria-label="Admins"
+          [checked]="activeTab() === 'admins'"
+          (change)="setActiveTab('admins')"
+        />
+        <input
+          type="radio"
+          name="settings_tabs"
+          class="tab"
+          aria-label="Payments"
+          [checked]="activeTab() === 'payments'"
+          (change)="setActiveTab('payments')"
+        />
+        <input
+          type="radio"
+          name="settings_tabs"
+          class="tab"
+          aria-label="Audit Trail"
+          [checked]="activeTab() === 'audit-trail'"
+          (change)="setActiveTab('audit-trail')"
+        />
       </div>
-      
+
       <!-- Tab Content -->
       @switch (activeTab()) {
         @case ('general') {
@@ -85,10 +113,26 @@ import { PaymentMethodsComponent } from './components/payment-methods.component'
   `,
 })
 export class SettingsComponent {
-  readonly activeTab = signal<'general' | 'ml-model' | 'notifications' | 'test-notifications' | 'admins' | 'payments' | 'audit-trail'>('general');
+  readonly activeTab = signal<
+    | 'general'
+    | 'ml-model'
+    | 'notifications'
+    | 'test-notifications'
+    | 'admins'
+    | 'payments'
+    | 'audit-trail'
+  >('general');
 
-  setActiveTab(tab: 'general' | 'ml-model' | 'notifications' | 'test-notifications' | 'admins' | 'payments' | 'audit-trail'): void {
+  setActiveTab(
+    tab:
+      | 'general'
+      | 'ml-model'
+      | 'notifications'
+      | 'test-notifications'
+      | 'admins'
+      | 'payments'
+      | 'audit-trail',
+  ): void {
     this.activeTab.set(tab);
   }
 }
-

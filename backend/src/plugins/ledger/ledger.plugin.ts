@@ -24,7 +24,16 @@ const COMBINED_SCHEMA = gql`
 
 @VendurePlugin({
   imports: [PluginCommonModule],
-  entities: [Account, JournalEntry, JournalLine, MoneyEvent, CashierSession, Reconciliation, PeriodLock, PurchasePayment],
+  entities: [
+    Account,
+    JournalEntry,
+    JournalLine,
+    MoneyEvent,
+    CashierSession,
+    Reconciliation,
+    PeriodLock,
+    PurchasePayment,
+  ],
   providers: [PostingService, DashboardStatsResolver, LedgerViewerResolver, LedgerQueryService],
   exports: [PostingService],
   adminApiExtensions: {
@@ -38,5 +47,3 @@ const COMBINED_SCHEMA = gql`
   compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
 export class LedgerPlugin {}
-
-

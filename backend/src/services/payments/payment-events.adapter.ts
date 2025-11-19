@@ -4,11 +4,11 @@ import { FinancialService } from '../financial/financial.service';
 
 /**
  * PaymentEventsAdapter - Safety Net
- * 
+ *
  * This adapter serves as a safety net to catch any payments that weren't posted
  * synchronously in the transaction. In normal operation, FinancialService.recordPayment()
  * should be called synchronously, making this adapter unnecessary.
- * 
+ *
  * This is kept for backward compatibility and as a failsafe.
  */
 @Injectable()
@@ -20,13 +20,13 @@ export class PaymentEventsAdapter implements OnModuleInit {
   ) {}
 
   onModuleInit(): any {
-    this.eventBus.ofType(PaymentStateTransitionEvent).subscribe(async (event) => {
+    this.eventBus.ofType(PaymentStateTransitionEvent).subscribe(async event => {
       try {
         const ctx = event.ctx as RequestContext;
         const payment = event.payment;
         const order = event.order;
         const toState = event.toState as PaymentState;
-        
+
         if (toState === 'Settled' && this.financialService) {
           // Safety net: Post payment if not already posted synchronously
           // This should rarely be needed if FinancialService.recordPayment() is called in transactions
@@ -49,5 +49,3 @@ export class PaymentEventsAdapter implements OnModuleInit {
     });
   }
 }
-
-

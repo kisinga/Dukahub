@@ -1,6 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { LOGIN, LOGOUT } from '../../graphql/operations.graphql';
-import type { LoginMutation, LoginMutationVariables, LogoutMutation } from '../../models/user.model';
+import type {
+  LoginMutation,
+  LoginMutationVariables,
+  LogoutMutation,
+} from '../../models/user.model';
 import { formatPhoneNumber } from '../../utils/phone.utils';
 import { ApolloService } from '../apollo.service';
 import { CompanyService } from '../company.service';
@@ -9,123 +13,121 @@ import { AuthSessionService } from './auth-session.service';
 
 /**
  * Auth Login Service
- * 
+ *
  * Handles login operations.
  * Coordinates OTP verification and login.
  */
 @Injectable({
-    providedIn: 'root',
+  providedIn: 'root',
 })
 export class AuthLoginService {
-    private readonly apolloService = inject(ApolloService);
-    private readonly otpService = inject(AuthOtpService);
-    private readonly sessionService = inject(AuthSessionService);
-    private readonly companyService = inject(CompanyService);
+  private readonly apolloService = inject(ApolloService);
+  private readonly otpService = inject(AuthOtpService);
+  private readonly sessionService = inject(AuthSessionService);
+  private readonly companyService = inject(CompanyService);
 
-    /**
-     * Login with phone number and OTP (passwordless)
-     * This is the new primary login method
-     */
-    async loginWithOTP(phoneNumber: string, otp: string): Promise<void> {
-        try {
-            const client = this.apolloService.getClient();
+  /**
+   * Login with phone number and OTP (passwordless)
+   * This is the new primary login method
+   */
+  async loginWithOTP(phoneNumber: string, otp: string): Promise<void> {
+    try {
+      const client = this.apolloService.getClient();
 
-            // Verify OTP and get session token
-            const verifyResult = await this.otpService.verifyLoginOTP(phoneNumber, otp);
+      // Verify OTP and get session token
+      const verifyResult = await this.otpService.verifyLoginOTP(phoneNumber, otp);
 
-            // Use token to complete login
-            // Ensure phone number is normalized for login (must match format used during OTP verification)
-            const normalizedPhone = formatPhoneNumber(phoneNumber);
-            console.log('[AUTH SERVICE] Attempting login with:', {
-                username: normalizedPhone,
-                originalPhone: phoneNumber,
-                tokenPrefix: verifyResult.token?.substring(0, 20),
-                tokenLength: verifyResult.token?.length,
-            });
+      // Use token to complete login
+      // Ensure phone number is normalized for login (must match format used during OTP verification)
+      const normalizedPhone = formatPhoneNumber(phoneNumber);
+      console.log('[AUTH SERVICE] Attempting login with:', {
+        username: normalizedPhone,
+        originalPhone: phoneNumber,
+        tokenPrefix: verifyResult.token?.substring(0, 20),
+        tokenLength: verifyResult.token?.length,
+      });
 
-            const loginResult = await client.mutate<LoginMutation, LoginMutationVariables>({
-                mutation: LOGIN,
-                variables: {
-                    username: normalizedPhone,
-                    password: verifyResult.token!,
-                    rememberMe: false,
-                },
-                context: { skipChannelToken: true },
-            });
+      const loginResult = await client.mutate<LoginMutation, LoginMutationVariables>({
+        mutation: LOGIN,
+        variables: {
+          username: normalizedPhone,
+          password: verifyResult.token!,
+          rememberMe: false,
+        },
+        context: { skipChannelToken: true },
+      });
 
-            const loginData = loginResult.data?.login;
-            if (!loginData || 'errorCode' in loginData) {
-                throw new Error(loginData?.message || 'Login failed');
-            }
+      const loginData = loginResult.data?.login;
+      if (!loginData || 'errorCode' in loginData) {
+        throw new Error(loginData?.message || 'Login failed');
+      }
 
-            await this.sessionService.fetchActiveAdministrator();
+      await this.sessionService.fetchActiveAdministrator();
+    } catch (error: any) {
+      console.error('Login error:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        graphQLErrors: error?.graphQLErrors,
+        networkError: error?.networkError,
+      });
 
-        } catch (error: any) {
-            console.error('Login error:', error);
-            console.error('Error details:', {
-                message: error?.message,
-                graphQLErrors: error?.graphQLErrors,
-                networkError: error?.networkError,
-            });
+      // Extract error message from various sources
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        'Login failed. Please try again.';
 
-            // Extract error message from various sources
-            const errorMessage =
-                error?.graphQLErrors?.[0]?.message ||
-                error?.networkError?.message ||
-                error?.message ||
-                'Login failed. Please try again.';
-
-            throw new Error(errorMessage);
-        }
+      throw new Error(errorMessage);
     }
+  }
 
-    /**
-     * Legacy login with username and password (kept for backward compatibility)
-     * @deprecated Use loginWithOTP instead
-     */
-    async login(credentials: LoginMutationVariables): Promise<LoginMutation['login']> {
-        try {
-            const client = this.apolloService.getClient();
-            const result = await client.mutate<LoginMutation, LoginMutationVariables>({
-                mutation: LOGIN,
-                variables: credentials,
-                context: { skipChannelToken: true },
-            });
-            const { data } = result;
+  /**
+   * Legacy login with username and password (kept for backward compatibility)
+   * @deprecated Use loginWithOTP instead
+   */
+  async login(credentials: LoginMutationVariables): Promise<LoginMutation['login']> {
+    try {
+      const client = this.apolloService.getClient();
+      const result = await client.mutate<LoginMutation, LoginMutationVariables>({
+        mutation: LOGIN,
+        variables: credentials,
+        context: { skipChannelToken: true },
+      });
+      const { data } = result;
 
-            const loginResult = data?.login;
+      const loginResult = data?.login;
 
-            // Successful login
-            if (loginResult?.__typename === 'CurrentUser') {
-                // Set companies/channels from login response
-                if (loginResult.channels && loginResult.channels.length > 0) {
-                    this.companyService.setCompaniesFromChannels(loginResult.channels);
-                }
-
-                // Fetch full administrator details
-                await this.sessionService.fetchActiveAdministrator();
-            }
-
-            return loginResult!;
-        } catch (error) {
-            console.error('Login error:', error);
-            throw error;
+      // Successful login
+      if (loginResult?.__typename === 'CurrentUser') {
+        // Set companies/channels from login response
+        if (loginResult.channels && loginResult.channels.length > 0) {
+          this.companyService.setCompaniesFromChannels(loginResult.channels);
         }
-    }
 
-    /**
-     * Logout current user
-     */
-    async logout(): Promise<void> {
-        try {
-            const client = this.apolloService.getClient();
-            await client.mutate<LogoutMutation>({
-                mutation: LOGOUT,
-                context: { skipChannelToken: true },
-            });
-        } catch (error) {
-            console.error('Logout error:', error);
-        }
+        // Fetch full administrator details
+        await this.sessionService.fetchActiveAdministrator();
+      }
+
+      return loginResult!;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
+  }
+
+  /**
+   * Logout current user
+   */
+  async logout(): Promise<void> {
+    try {
+      const client = this.apolloService.getClient();
+      await client.mutate<LogoutMutation>({
+        mutation: LOGOUT,
+        context: { skipChannelToken: true },
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  }
 }
-

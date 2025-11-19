@@ -68,14 +68,14 @@
         <!-- Page Numbers (Desktop only) -->
         <div class="join hidden sm:flex">
           @for (page of pageNumbers(); track page) {
-          <button
-            class="join-item btn btn-sm lg:btn-md min-w-[2.5rem]"
-            [class.btn-active]="page === currentPage()"
-            (click)="onPageChange(page)"
-            [attr.aria-current]="page === currentPage() ? 'page' : null"
-          >
-            {{ page }}
-          </button>
+            <button
+              class="join-item btn btn-sm lg:btn-md min-w-[2.5rem]"
+              [class.btn-active]="page === currentPage()"
+              (click)="onPageChange(page)"
+              [attr.aria-current]="page === currentPage() ? 'page' : null"
+            >
+              {{ page }}
+            </button>
           }
         </div>
 

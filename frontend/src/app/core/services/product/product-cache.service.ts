@@ -158,16 +158,14 @@ export class ProductCacheService {
     }
 
     // Limit results and sort by relevance
-    return results
-      .slice(0, 10)
-      .sort((a, b) => {
-        // Exact match first
-        const aExact = a.name.toLowerCase().startsWith(normalized);
-        const bExact = b.name.toLowerCase().startsWith(normalized);
-        if (aExact && !bExact) return -1;
-        if (!aExact && bExact) return 1;
-        return a.name.localeCompare(b.name);
-      });
+    return results.slice(0, 10).sort((a, b) => {
+      // Exact match first
+      const aExact = a.name.toLowerCase().startsWith(normalized);
+      const bExact = b.name.toLowerCase().startsWith(normalized);
+      if (aExact && !bExact) return -1;
+      if (!aExact && bExact) return 1;
+      return a.name.localeCompare(b.name);
+    });
   }
 
   /**
@@ -192,4 +190,3 @@ export class ProductCacheService {
     });
   }
 }
-

@@ -6,7 +6,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
   imports: [CommonModule],
   templateUrl: './customer-search-bar.component.html',
   styleUrl: './customer-search-bar.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CustomerSearchBarComponent {
   @Input({ required: true }) searchQuery!: string;

@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  signal,
+} from '@angular/core';
 
 export interface DeleteConfirmationData {
   customerName: string;
@@ -11,7 +18,7 @@ export interface DeleteConfirmationData {
   imports: [CommonModule],
   templateUrl: './delete-confirmation-modal.component.html',
   styleUrl: './delete-confirmation-modal.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DeleteConfirmationModalComponent {
   @Input({ required: true }) data!: DeleteConfirmationData;

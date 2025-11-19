@@ -7,8 +7,8 @@ const modalStoreLogic = {
   product: null,
   quantity: 1,
   price: 0.0,
-  selectedSkuId: "",
-  errorMessage: "",
+  selectedSkuId: '',
+  errorMessage: '',
   _modalInstance: null, // Bootstrap modal instance
 
   // --- Getters ---
@@ -42,27 +42,25 @@ const modalStoreLogic = {
 
   // --- Methods ---
   initModal(modalElement) {
-    if (modalElement && typeof bootstrap !== "undefined") {
+    if (modalElement && typeof bootstrap !== 'undefined') {
       // Check bootstrap exists
       this._modalInstance = new bootstrap.Modal(modalElement);
     } else if (!modalElement) {
-      console.error(
-        "Modal Store: Scan modal element not found for initialization."
-      );
+      console.error('Modal Store: Scan modal element not found for initialization.');
     } else {
-      console.error("Modal Store: Bootstrap not found for initialization.");
+      console.error('Modal Store: Bootstrap not found for initialization.');
     }
   },
   open(productData) {
     if (!this._modalInstance) {
-      console.error("Modal Store: Cannot open, instance not initialized.");
+      console.error('Modal Store: Cannot open, instance not initialized.');
       return;
     }
     this.reset();
     this.product = productData; // Product data now includes expand.skus
     this.quantity = 1;
     this.price = productData.price ?? 0.01; // Base price initially
-    this.selectedSkuId = "";
+    this.selectedSkuId = '';
     if (this.hasVariations) {
       // Use the getter to check if SKUs are present
       const skus = this.product.expand?.skus;
@@ -70,24 +68,19 @@ const modalStoreLogic = {
       if (skus && skus.length > 0 && skus[0] && skus[0].id) {
         const firstSkuId = skus[0].id;
         console.log(
-          `Pre-selecting first SKU: ID=${firstSkuId}, Name=${
-            skus[0].name || firstSkuId
-          }`
+          `Pre-selecting first SKU: ID=${firstSkuId}, Name=${skus[0].name || firstSkuId}`
         );
         this.selectedSkuId = firstSkuId; // Set the selectedSkuId store property
         this.updatePriceFromSku(firstSkuId); // Update the price based on this selection
       } else {
-        console.warn(
-          "Product has variations array, but first SKU is invalid or missing ID.",
-          skus
-        );
+        console.warn('Product has variations array, but first SKU is invalid or missing ID.', skus);
         // Optionally set an error message if selection is mandatory but first is invalid
         // this.errorMessage = "Could not automatically select a variation.";
       }
     }
     this.isOpen = true;
     this._modalInstance.show();
-    console.log("Modal opened with product:", Alpine.raw(this.product)); // Log raw product data
+    console.log('Modal opened with product:', Alpine.raw(this.product)); // Log raw product data
   },
   close() {
     if (this._modalInstance) this._modalInstance.hide();
@@ -97,9 +90,9 @@ const modalStoreLogic = {
     this.product = null;
     this.quantity = 1;
     this.price = 0.0;
-    this.selectedSkuId = "";
-    this.errorMessage = "";
-    console.log("Modal store reset");
+    this.selectedSkuId = '';
+    this.errorMessage = '';
+    console.log('Modal store reset');
   },
   adjustQuantity(amount) {
     /* ... copy method ... */
@@ -109,17 +102,10 @@ const modalStoreLogic = {
   getSkuPrice(skuId) {
     if (!this.product || !skuId) return this.product?.price ?? 0;
     const skus = this.product.expand?.skus;
-    const selectedSkuData = skus?.find((sku) => sku.id === skuId);
+    const selectedSkuData = skus?.find(sku => sku.id === skuId);
     // get the related price from the inventory
     const inventory = this.product?.inventory;
-    console.log(
-      "Selected SKU data:",
-      selectedSkuData,
-      "Inventory:",
-      inventory,
-      "SKU ID:",
-      skuId
-    );
+    console.log('Selected SKU data:', selectedSkuData, 'Inventory:', inventory, 'SKU ID:', skuId);
     if (inventory && inventory.length > 0) {
       //  loop through the inventory to find the related sku
       for (const item of inventory) {
@@ -132,24 +118,24 @@ const modalStoreLogic = {
   },
 
   updatePriceFromSku(selectedSkuId) {
-    this.errorMessage = "";
+    this.errorMessage = '';
     if (selectedSkuId) {
       this.price = this.getSkuPrice(selectedSkuId);
     } else {
       this.price = this.product?.price ?? 0.01;
-      this.errorMessage = "Please select a product variation.";
+      this.errorMessage = 'Please select a product variation.';
     }
   },
   addItemToSale(keepScanning = false) {
-    this.errorMessage = "";
+    this.errorMessage = '';
     if (!this.isValidToAdd) {
       if (isNaN(this.quantity) || this.quantity < 1)
-        this.errorMessage = "Quantity must be a valid number (at least 1).";
+        this.errorMessage = 'Quantity must be a valid number (at least 1).';
       else if (isNaN(this.price) || this.price < 0)
-        this.errorMessage = "Price must be a valid number (0 or more).";
+        this.errorMessage = 'Price must be a valid number (0 or more).';
       else if (this.hasVariations && !this.selectedSkuId)
-        this.errorMessage = "Please select a product variation.";
-      else this.errorMessage = "Cannot add item. Please check details.";
+        this.errorMessage = 'Please select a product variation.';
+      else this.errorMessage = 'Cannot add item. Please check details.';
       return;
     }
     try {
@@ -162,9 +148,7 @@ const modalStoreLogic = {
 
       if (this.hasVariations && this.selectedSkuId) {
         const skus = this.product.expand?.skus; // Access expanded SKUs
-        const selectedSkuData = skus?.find(
-          (sku) => sku.id === this.selectedSkuId
-        );
+        const selectedSkuData = skus?.find(sku => sku.id === this.selectedSkuId);
         if (selectedSkuData) {
           selectedSkuName = selectedSkuData.name || this.selectedSkuId; // Get SKU name
           itemNameToAdd = `${this.product.name} - ${selectedSkuName}`;
@@ -177,27 +161,27 @@ const modalStoreLogic = {
       itemProductData.name = itemNameToAdd; // Update name for display
 
       console.log(
-        "Adding item from modal:",
+        'Adding item from modal:',
         itemProductData,
-        "Qty:",
+        'Qty:',
         this.quantity,
-        "Price:",
+        'Price:',
         this.price
       );
 
       // Add to sale using current modal price
-      Alpine.store("sale").addItem(itemProductData, this.quantity, this.price);
+      Alpine.store('sale').addItem(itemProductData, this.quantity, this.price);
       this.close();
       if (keepScanning) {
-        const scanner = Alpine.store("scanner"); // Call scanner store
+        const scanner = Alpine.store('scanner'); // Call scanner store
         if (scanner?.isConfigured && !scanner?.isScanning) {
           setTimeout(() => scanner.start(), 100);
         }
       }
     } catch (e) {
       /* ... copy error handling ... */
-      console.error("Error adding item from modal:", e);
-      this.errorMessage = `Error: ${e.message || "Could not add product."}`;
+      console.error('Error adding item from modal:', e);
+      this.errorMessage = `Error: ${e.message || 'Could not add product.'}`;
     }
   },
 };

@@ -16,7 +16,9 @@
       </div>
 
       <div class="grid gap-6 md:grid-cols-3">
-        <div class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 text-center shadow-lg">
+        <div
+          class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 text-center shadow-lg"
+        >
           <span class="text-4xl">📚</span>
           <h3 class="mt-4 text-lg font-semibold">Documentation</h3>
           <p class="mt-2 text-sm text-base-content/70">
@@ -24,7 +26,9 @@
           </p>
         </div>
 
-        <div class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 text-center shadow-lg">
+        <div
+          class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 text-center shadow-lg"
+        >
           <span class="text-4xl">💬</span>
           <h3 class="mt-4 text-lg font-semibold">Contact Support</h3>
           <p class="mt-2 text-sm text-base-content/70">
@@ -33,7 +37,9 @@
           </p>
         </div>
 
-        <div class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 text-center shadow-lg">
+        <div
+          class="rounded-2xl border border-base-300 bg-gradient-to-br from-base-200 to-base-100 p-6 text-center shadow-lg"
+        >
           <span class="text-4xl">🎥</span>
           <h3 class="mt-4 text-lg font-semibold">Video Tutorials</h3>
           <p class="mt-2 text-sm text-base-content/70">
@@ -46,17 +52,17 @@
         <h2 class="text-2xl font-bold">Frequently asked questions</h2>
         <div class="grid gap-3">
           @for (faq of faqItems(); track $index) {
-          <details
-            class="collapse collapse-plus border border-base-300 bg-base-200/60 text-left"
-            [open]="faq.open"
-          >
-            <summary class="collapse-title text-base font-semibold" (click)="toggleFAQ($index)">
-              {{ faq.question }}
-            </summary>
-            <div class="collapse-content text-sm text-base-content/70">
-              <p>{{ faq.answer }}</p>
-            </div>
-          </details>
+            <details
+              class="collapse collapse-plus border border-base-300 bg-base-200/60 text-left"
+              [open]="faq.open"
+            >
+              <summary class="collapse-title text-base font-semibold" (click)="toggleFAQ($index)">
+                {{ faq.question }}
+              </summary>
+              <div class="collapse-content text-sm text-base-content/70">
+                <p>{{ faq.answer }}</p>
+              </div>
+            </details>
           }
         </div>
       </div>
@@ -83,14 +89,3 @@
 </main>
 
 <app-footer />
-
-
-
-
-
-
-
-
-
-
-

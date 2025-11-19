@@ -7,18 +7,15 @@ export type CustomerAction = 'edit' | 'delete' | 'viewOrders' | 'recordPayment' 
 
 @Component({
   selector: 'app-customer-card',
-  imports: [
-    EntityAvatarComponent,
-    StatusBadgeComponent
-  ],
+  imports: [EntityAvatarComponent, StatusBadgeComponent],
   templateUrl: './customer-card.component.html',
   styleUrl: './customer-card.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CustomerCardComponent {
   customer = input.required<any>();
   action = output<{ action: CustomerAction; customerId: string }>();
-  
+
   readonly currencyService = inject(CurrencyService);
 
   onAction(action: CustomerAction): void {

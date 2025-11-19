@@ -1,0 +1,12 @@
+{
+  "backend/**/*.{ts,js,json}": [
+    "sh -c 'for f in \"$@\"; do (cd backend && npx prettier --write \"${f#backend/}\"); done' _"
+  ],
+  "frontend/**/*.{ts,js,json,scss,css}": [
+    "sh -c 'for f in \"$@\"; do (cd frontend && npx prettier --write \"${f#frontend/}\"); done' _"
+  ],
+  "frontend/**/*.html": [
+    "sh -c 'for f in \"$@\"; do (cd frontend && npx prettier --write --parser angular \"${f#frontend/}\" || true); done' _"
+  ],
+  "*.{md,json}": ["prettier --write"]
+}

@@ -2,7 +2,11 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CompanyService } from '../../../../core/services/company.service';
-import { ChannelSettings, SettingsService, UpdateChannelSettingsInput } from '../../../../core/services/settings.service';
+import {
+  ChannelSettings,
+  SettingsService,
+  UpdateChannelSettingsInput,
+} from '../../../../core/services/settings.service';
 
 @Component({
   selector: 'app-general-settings',
@@ -11,13 +15,12 @@ import { ChannelSettings, SettingsService, UpdateChannelSettingsInput } from '..
   template: `
     <div class="card bg-base-100 shadow-lg">
       <div class="card-body space-y-6">
-        
         <!-- Company Logo -->
         <div class="form-control">
           <label class="label">
             <span class="label-text font-semibold">🏢 Company Logo</span>
           </label>
-          
+
           <!-- Logo Display -->
           <div class="flex items-center gap-4">
             <!-- Current Logo or Preview -->
@@ -66,7 +69,7 @@ import { ChannelSettings, SettingsService, UpdateChannelSettingsInput } from '..
             }
           </div>
         </div>
-        
+
         <!-- Cashier Flow Toggle -->
         <div class="form-control">
           <label class="label cursor-pointer">
@@ -76,10 +79,12 @@ import { ChannelSettings, SettingsService, UpdateChannelSettingsInput } from '..
                 Orders require cashier approval before completion
               </div>
             </span>
-            <input type="checkbox" 
-                   class="toggle toggle-primary"
-                   [checked]="settings()?.cashierFlowEnabled"
-                   (change)="toggleCashierFlow($event)" />
+            <input
+              type="checkbox"
+              class="toggle toggle-primary"
+              [checked]="settings()?.cashierFlowEnabled"
+              (change)="toggleCashierFlow($event)"
+            />
           </label>
         </div>
 
@@ -93,19 +98,23 @@ import { ChannelSettings, SettingsService, UpdateChannelSettingsInput } from '..
                   Real-time status: Is a cashier currently serving?
                 </div>
               </span>
-              <input type="checkbox" 
-                     class="toggle toggle-success"
-                     [checked]="settings()?.cashierOpen"
-                     (change)="toggleCashierOpen($event)" />
+              <input
+                type="checkbox"
+                class="toggle toggle-success"
+                [checked]="settings()?.cashierOpen"
+                (change)="toggleCashierOpen($event)"
+              />
             </label>
           </div>
         }
-        
+
         <!-- Save Button -->
         <div class="card-actions justify-end">
-          <button class="btn btn-primary" 
-                  [disabled]="!hasChanges() || settingsService.loading()"
-                  (click)="saveSettings()">
+          <button
+            class="btn btn-primary"
+            [disabled]="!hasChanges() || settingsService.loading()"
+            (click)="saveSettings()"
+          >
             @if (settingsService.loading()) {
               <span class="loading loading-spinner loading-xs"></span>
             }
@@ -116,8 +125,18 @@ import { ChannelSettings, SettingsService, UpdateChannelSettingsInput } from '..
         <!-- Error Message -->
         @if (settingsService.error(); as error) {
           <div class="alert alert-error">
-            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="stroke-current shrink-0 h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span>{{ error }}</span>
           </div>
@@ -194,7 +213,7 @@ export class GeneralSettingsComponent {
     const target = event.target as HTMLInputElement;
 
     // If disabling cashier flow, also disable cashier open
-    this.settingsState.update(settings => {
+    this.settingsState.update((settings) => {
       if (!settings) {
         return settings;
       }
@@ -219,7 +238,7 @@ export class GeneralSettingsComponent {
   toggleCashierOpen(event: Event): void {
     const target = event.target as HTMLInputElement;
 
-    this.settingsState.update(settings => {
+    this.settingsState.update((settings) => {
       if (!settings) {
         return settings;
       }
@@ -254,7 +273,7 @@ export class GeneralSettingsComponent {
       console.log('📄 File details:', {
         name: file.name,
         size: file.size,
-        type: file.type
+        type: file.type,
       });
 
       // Validate file size (max 5MB)
@@ -290,7 +309,7 @@ export class GeneralSettingsComponent {
     // Clear the preview and mark for removal
     this.logoPreview.set(null);
     this.selectedLogoFile.set(null);
-    this.settingsState.update(settings => {
+    this.settingsState.update((settings) => {
       if (!settings) {
         return settings;
       }

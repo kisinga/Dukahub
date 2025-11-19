@@ -30,4 +30,3 @@ export class OverviewTabComponent {
     this.entryView.emit(entry);
   }
 }
-

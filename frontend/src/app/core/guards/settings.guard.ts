@@ -6,16 +6,16 @@ import { AuthService } from '../services/auth.service';
  * Guard to protect settings page - only users with UpdateSettings permission can access
  */
 export const settingsGuard = () => {
-    const authService = inject(AuthService);
-    const router = inject(Router);
+  const authService = inject(AuthService);
+  const router = inject(Router);
 
-    // Check if user has UpdateSettings permission
-    if (authService.hasUpdateSettingsPermission()) {
-        return true;
-    }
+  // Check if user has UpdateSettings permission
+  if (authService.hasUpdateSettingsPermission()) {
+    return true;
+  }
 
-    // Redirect to dashboard if no permission
-    console.warn('🚫 Access denied: User does not have UpdateSettings permission');
-    router.navigate(['/dashboard']);
-    return false;
+  // Redirect to dashboard if no permission
+  console.warn('🚫 Access denied: User does not have UpdateSettings permission');
+  router.navigate(['/dashboard']);
+  return false;
 };

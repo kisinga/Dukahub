@@ -73,8 +73,8 @@ export class AppInitService {
         locationsLoaded: locationsSuccess.status === 'fulfilled' && locationsSuccess.value,
         error:
           productsSuccess.status === 'rejected' ||
-            modelSuccess.status === 'rejected' ||
-            locationsSuccess.status === 'rejected'
+          modelSuccess.status === 'rejected' ||
+          locationsSuccess.status === 'rejected'
             ? 'Some features failed to initialize'
             : null,
       }));
@@ -180,4 +180,3 @@ export class AppInitService {
     return service;
   }
 }
-

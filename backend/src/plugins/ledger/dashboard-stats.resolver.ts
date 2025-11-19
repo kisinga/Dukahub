@@ -32,7 +32,7 @@ export class DashboardStatsResolver {
   ): Promise<DashboardStats> {
     const channelId = ctx.channelId as number;
     const now = endDate || new Date();
-    
+
     // Calculate period boundaries
     const periods = this.ledgerQueryService.calculatePeriods(now);
     const endDateStr = endDate ? endDate.toISOString().slice(0, 10) : undefined;
@@ -122,4 +122,3 @@ export class DashboardStatsResolver {
     };
   }
 }
-

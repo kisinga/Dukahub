@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, OnInit, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 export interface PriceOverrideData {
@@ -23,16 +31,13 @@ export interface PriceOverrideData {
             <label class="text-xs font-medium text-base-content/70 mb-2 block">Quick Adjust:</label>
             <div class="grid grid-cols-4 gap-2">
               @for (adj of quickAdjustments(); track adj.label) {
-                <button
-                  class="btn btn-sm"
-                  (click)="applyQuickAdjustment(adj.value)"
-                >
+                <button class="btn btn-sm" (click)="applyQuickAdjustment(adj.value)">
                   {{ adj.label }}
                 </button>
               }
             </div>
           </div>
-          
+
           <!-- Custom Line Price Input -->
           <div>
             <label class="text-xs font-medium text-base-content/70 mb-1 block">
@@ -51,7 +56,7 @@ export interface PriceOverrideData {
               {{ formatPreview() }}
             </div>
           </div>
-          
+
           <!-- Reason Input -->
           <div>
             <label class="text-xs font-medium text-base-content/70 mb-1 block">Reason:</label>
@@ -63,15 +68,11 @@ export interface PriceOverrideData {
               placeholder="e.g., Bulk discount"
             />
           </div>
-          
+
           <!-- Action Buttons -->
           <div class="flex gap-2">
-            <button class="btn btn-success flex-1" (click)="save()">
-              Apply
-            </button>
-            <button class="btn btn-ghost" (click)="cancel()">
-              Cancel
-            </button>
+            <button class="btn btn-success flex-1" (click)="save()">Apply</button>
+            <button class="btn btn-ghost" (click)="cancel()">Cancel</button>
           </div>
         </div>
       } @else {
@@ -88,19 +89,15 @@ export interface PriceOverrideData {
               <span class="text-base-content/50">{{ displayPrice() }}</span>
             }
           </div>
-          <button class="btn btn-sm btn-ghost" (click)="startEditing()">
-            ✏️
-          </button>
+          <button class="btn btn-sm btn-ghost" (click)="startEditing()">✏️</button>
           @if (hasOverride()) {
-            <button class="btn btn-sm btn-error btn-ghost" (click)="remove()">
-              ↶
-            </button>
+            <button class="btn btn-sm btn-error btn-ghost" (click)="remove()">↶</button>
           }
         </div>
       }
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PriceOverrideComponent implements OnInit {
   // Inputs
@@ -137,7 +134,7 @@ export class PriceOverrideComponent implements OnInit {
       { label: '-10%', value: Math.round(basePrice * 0.9) },
       { label: '-5%', value: Math.round(basePrice * 0.95) },
       { label: '+5%', value: Math.round(basePrice * 1.05) },
-      { label: '+10%', value: Math.round(basePrice * 1.10) },
+      { label: '+10%', value: Math.round(basePrice * 1.1) },
     ];
   });
 
@@ -166,13 +163,13 @@ export class PriceOverrideComponent implements OnInit {
       this.priceChange.emit({
         variantId: this.variantId(),
         customLinePrice: Math.round(linePrice * 100), // Convert to cents
-        reason
+        reason,
       });
     } else {
       this.priceChange.emit({
         variantId: this.variantId(),
         customLinePrice: undefined,
-        reason: undefined
+        reason: undefined,
       });
     }
 
@@ -183,7 +180,7 @@ export class PriceOverrideComponent implements OnInit {
     this.priceChange.emit({
       variantId: this.variantId(),
       customLinePrice: undefined,
-      reason: undefined
+      reason: undefined,
     });
   }
 
@@ -213,7 +210,7 @@ export class PriceOverrideComponent implements OnInit {
   private formatPrice(price: number): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(price);
   }
 }

@@ -9,7 +9,7 @@ import { ToastService } from './core/services/toast.service';
   selector: 'app-root',
   imports: [RouterOutlet, ToastComponent],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
 })
 export class App implements AfterViewInit {
   protected readonly title = signal(`${BRAND_CONFIG.servicePrefix}-frontend`);

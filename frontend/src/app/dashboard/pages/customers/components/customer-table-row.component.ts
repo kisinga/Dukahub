@@ -6,22 +6,19 @@ import { CustomerAction } from './customer-card.component';
 
 @Component({
   selector: 'tr[app-customer-table-row]',
-  imports: [
-    EntityAvatarComponent,
-    StatusBadgeComponent
-  ],
+  imports: [EntityAvatarComponent, StatusBadgeComponent],
   templateUrl: './customer-table-row.component.html',
   styleUrl: './customer-table-row.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    'class': 'hover cursor-pointer',
-    '(click)': 'onRowClick()'
-  }
+    class: 'hover cursor-pointer',
+    '(click)': 'onRowClick()',
+  },
 })
 export class CustomerTableRowComponent {
   customer = input.required<any>();
   action = output<{ action: CustomerAction; customerId: string }>();
-  
+
   readonly currencyService = inject(CurrencyService);
 
   onAction(action: CustomerAction): void {

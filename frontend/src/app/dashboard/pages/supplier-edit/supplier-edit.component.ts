@@ -7,10 +7,10 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
 
 /**
  * Supplier Edit Component
- * 
+ *
  * Mobile-optimized supplier editing form.
  * Uses shared PersonEditFormComponent for basic info and custom form for supplier details.
- * 
+ *
  * ARCHITECTURE: Reuses shared form component for maintainability.
  */
 @Component({
@@ -21,17 +21,19 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
       <!-- Header -->
       <div class="sticky top-0 z-10 bg-base-100 border-b border-base-200 px-4 py-3">
         <div class="flex items-center justify-between">
-          <button 
-            (click)="goBack()" 
-            class="btn btn-ghost btn-sm btn-circle"
-            aria-label="Go back"
-          >
+          <button (click)="goBack()" class="btn btn-ghost btn-sm btn-circle" aria-label="Go back">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              ></path>
             </svg>
           </button>
           <h1 class="text-lg font-semibold">Edit Supplier</h1>
-          <div class="w-10"></div> <!-- Spacer for centering -->
+          <div class="w-10"></div>
+          <!-- Spacer for centering -->
         </div>
       </div>
 
@@ -40,7 +42,12 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
         @if (error()) {
           <div class="alert alert-error mb-4">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
             </svg>
             <span>{{ error() }}</span>
             <button (click)="clearError()" class="btn btn-ghost btn-sm">×</button>
@@ -67,12 +74,12 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
             <!-- Supplier Details Section -->
             <div class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm">
               <input type="checkbox" checked />
-              <div class="collapse-title text-lg font-semibold px-4 py-3">
-                🏭 Supplier Details
-              </div>
+              <div class="collapse-title text-lg font-semibold px-4 py-3">🏭 Supplier Details</div>
               <div class="collapse-content px-4 pb-4">
-                <p class="text-sm text-base-content/70 mb-4">Update supplier-specific information</p>
-                
+                <p class="text-sm text-base-content/70 mb-4">
+                  Update supplier-specific information
+                </p>
+
                 <form [formGroup]="supplierForm" class="space-y-4">
                   <!-- Supplier Type -->
                   <div class="form-control">
@@ -155,7 +162,7 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
       </div>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SupplierEditComponent {
   private readonly router = inject(Router);
@@ -176,7 +183,7 @@ export class SupplierEditComponent {
       supplierType: [''],
       contactPerson: [''],
       paymentTerms: [''],
-      notes: ['']
+      notes: [''],
     });
 
     this.loadSupplier();
@@ -199,7 +206,7 @@ export class SupplierEditComponent {
           businessName: supplier.firstName || '',
           contactPerson: supplier.lastName || '',
           emailAddress: supplier.emailAddress || '',
-          phoneNumber: supplier.phoneNumber || ''
+          phoneNumber: supplier.phoneNumber || '',
         });
 
         // Populate supplier form with existing data
@@ -208,7 +215,7 @@ export class SupplierEditComponent {
           supplierType: customFields.supplierType || '',
           contactPerson: customFields.contactPerson || '',
           paymentTerms: customFields.paymentTerms || '',
-          notes: customFields.notes || ''
+          notes: customFields.notes || '',
         });
       } else {
         this.error.set('Supplier not found');
@@ -245,13 +252,13 @@ export class SupplierEditComponent {
       const basicData = this.basicFormData() || this.supplierData();
       const updateData: any = {
         firstName: basicData.businessName, // Business Name -> firstName
-        lastName: basicData.contactPerson,  // Contact Person -> lastName
+        lastName: basicData.contactPerson, // Contact Person -> lastName
         phoneNumber: basicData.phoneNumber,
         // Supplier-specific fields will be handled in customFields by the service
         supplierType: this.supplierForm.value.supplierType,
         contactPerson: this.supplierForm.value.contactPerson,
         paymentTerms: this.supplierForm.value.paymentTerms,
-        notes: this.supplierForm.value.notes
+        notes: this.supplierForm.value.notes,
       };
 
       // Only include email if it's not empty

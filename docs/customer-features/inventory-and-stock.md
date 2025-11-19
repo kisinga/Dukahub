@@ -75,14 +75,12 @@ Product: "Haircut"
 Dukarun supports three main ways to identify items:
 
 - **Barcode products** (packaged goods)
-
   - Use the **Barcode Scanner** component in product creation.
   - Scan the barcode and link it to a product/variant.
   - At POS, cashiers scan the barcode and Dukarun adds the right SKU to the cart.
   - **Origin:** Dukarun-Enhanced (frontend, reusing Vendure SKUs).
 
 - **Label/photo products** (fresh produce, bulk items)
-
   - Instead of scanning barcodes, you **take multiple photos of the price label/tag**.
   - Dukarun trains a per-business ML model to recognise these labels.
   - At POS, cashiers point the camera at the label; the model suggests the product and you choose the correct SKU (e.g. 2kg).
@@ -292,13 +290,11 @@ Behind the scenes, Dukarun’s ledger and inventory services can tie these adjus
 ## Vendure vs Dukarun: What’s What
 
 - **Vendure Core**
-
   - Product and variant model.
   - Stock locations and basic inventory tracking.
   - `trackInventory` flag for differentiating products vs services.
 
 - **Dukarun-Enhanced**
-
   - POS-centric product creation and edit flows.
   - Barcode scanner components reused across product creation, POS checkout and inventory actions.
   - Simplified order process with no shipping requirements.

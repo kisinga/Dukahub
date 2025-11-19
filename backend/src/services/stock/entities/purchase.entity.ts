@@ -3,41 +3,41 @@ import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'ty
 
 @Entity('stock_purchase')
 export class StockPurchase {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ type: 'integer' })
-    supplierId: number;
+  @Column({ type: 'integer' })
+  supplierId: number;
 
-    @ManyToOne(() => Customer)
-    supplier: Customer;
+  @ManyToOne(() => Customer)
+  supplier: Customer;
 
-    @Column({ type: 'timestamp' })
-    purchaseDate: Date;
+  @Column({ type: 'timestamp' })
+  purchaseDate: Date;
 
-    @Column({ type: 'varchar', nullable: true })
-    referenceNumber: string | null;
+  @Column({ type: 'varchar', nullable: true })
+  referenceNumber: string | null;
 
-    @Column({ type: 'bigint' })
-    totalCost: number; // In smallest currency unit (cents)
+  @Column({ type: 'bigint' })
+  totalCost: number; // In smallest currency unit (cents)
 
-    @Column({ type: 'varchar' })
-    paymentStatus: string; // 'paid', 'pending', 'partial'
+  @Column({ type: 'varchar' })
+  paymentStatus: string; // 'paid', 'pending', 'partial'
 
-    @Column({ type: 'text', nullable: true })
-    notes: string | null;
+  @Column({ type: 'text', nullable: true })
+  notes: string | null;
 
-    @Column({ type: 'boolean', default: false })
-    isCreditPurchase: boolean;
+  @Column({ type: 'boolean', default: false })
+  isCreditPurchase: boolean;
 
-    @OneToMany(() => StockPurchaseLine, line => line.purchase, { cascade: true })
-    lines: StockPurchaseLine[];
+  @OneToMany(() => StockPurchaseLine, line => line.purchase, { cascade: true })
+  lines: StockPurchaseLine[];
 
-    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    createdAt: Date;
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
 
-    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
-    updatedAt: Date;
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
 }
 
 /**
@@ -46,34 +46,33 @@ export class StockPurchase {
  */
 @Entity('stock_purchase_line')
 export class StockPurchaseLine {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column()
-    purchaseId: string;
+  @Column()
+  purchaseId: string;
 
-    @ManyToOne(() => StockPurchase, purchase => purchase.lines, { onDelete: 'CASCADE' })
-    purchase: StockPurchase;
+  @ManyToOne(() => StockPurchase, purchase => purchase.lines, { onDelete: 'CASCADE' })
+  purchase: StockPurchase;
 
-    @Column({ type: 'integer' })
-    variantId: number;
+  @Column({ type: 'integer' })
+  variantId: number;
 
-    @ManyToOne(() => ProductVariant)
-    variant: ProductVariant;
+  @ManyToOne(() => ProductVariant)
+  variant: ProductVariant;
 
-    @Column({ type: 'float' })
-    quantity: number;
+  @Column({ type: 'float' })
+  quantity: number;
 
-    @Column({ type: 'bigint' })
-    unitCost: number; // In smallest currency unit (cents)
+  @Column({ type: 'bigint' })
+  unitCost: number; // In smallest currency unit (cents)
 
-    @Column({ type: 'bigint' })
-    totalCost: number; // In smallest currency unit (cents)
+  @Column({ type: 'bigint' })
+  totalCost: number; // In smallest currency unit (cents)
 
-    @Column({ type: 'integer' })
-    stockLocationId: number;
+  @Column({ type: 'integer' })
+  stockLocationId: number;
 
-    @ManyToOne(() => StockLocation)
-    stockLocation: StockLocation;
+  @ManyToOne(() => StockLocation)
+  stockLocation: StockLocation;
 }
-

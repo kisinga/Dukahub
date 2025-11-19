@@ -10,7 +10,7 @@ type ContactPreference = 'email' | 'phone';
       {{ displayContact() }}
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContactDisplayComponent {
   email = input<string>('');
@@ -29,4 +29,3 @@ export class ContactDisplayComponent {
     }
   });
 }
-

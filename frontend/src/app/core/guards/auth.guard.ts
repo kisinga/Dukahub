@@ -7,18 +7,18 @@ import { AuthService } from '../services/auth.service';
  * Waits for initial auth check to complete before making decision
  */
 export const authGuard: CanActivateFn = async () => {
-    const authService = inject(AuthService);
-    const router = inject(Router);
+  const authService = inject(AuthService);
+  const router = inject(Router);
 
-    // Wait for initial session verification to complete
-    await authService.waitForInitialization();
+  // Wait for initial session verification to complete
+  await authService.waitForInitialization();
 
-    if (authService.isAuthenticated()) {
-        return true;
-    }
+  if (authService.isAuthenticated()) {
+    return true;
+  }
 
-    // Redirect to login page
-    return router.createUrlTree(['/login']);
+  // Redirect to login page
+  return router.createUrlTree(['/login']);
 };
 
 /**
@@ -26,17 +26,16 @@ export const authGuard: CanActivateFn = async () => {
  * Waits for initial auth check to complete before making decision
  */
 export const noAuthGuard: CanActivateFn = async () => {
-    const authService = inject(AuthService);
-    const router = inject(Router);
+  const authService = inject(AuthService);
+  const router = inject(Router);
 
-    // Wait for initial session verification to complete
-    await authService.waitForInitialization();
+  // Wait for initial session verification to complete
+  await authService.waitForInitialization();
 
-    if (!authService.isAuthenticated()) {
-        return true;
-    }
+  if (!authService.isAuthenticated()) {
+    return true;
+  }
 
-    // Redirect authenticated users to dashboard
-    return router.createUrlTree(['/dashboard']);
+  // Redirect authenticated users to dashboard
+  return router.createUrlTree(['/dashboard']);
 };
-

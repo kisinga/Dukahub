@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { CurrencyService } from '../../../../core/services/currency.service';
 import { PriceOverrideData } from './price-override.component';
 import { QuantityInputData, QuantityInputSheetComponent } from './quantity-input-sheet.component';
@@ -197,7 +205,7 @@ export interface CartItemData {
       (closed)="closeQuantitySheet()"
     />
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CartItemComponent {
   // Inputs
@@ -218,8 +226,8 @@ export class CartItemComponent {
   // Computed
   isPriceOverridden = computed(() => this.item().customLinePrice !== undefined);
 
-  allowsFractionalQuantity = computed(() =>
-    this.item().variant.customFields?.allowFractionalQuantity || false
+  allowsFractionalQuantity = computed(
+    () => this.item().variant.customFields?.allowFractionalQuantity || false,
   );
 
   isBelowWholesalePrice = computed(() => {
@@ -237,7 +245,7 @@ export class CartItemComponent {
       currentQuantity: item.quantity,
       allowFractionalQuantity: item.variant.customFields?.allowFractionalQuantity || false,
       pricePerUnit: item.variant.priceWithTax,
-      variantName: item.variant.name
+      variantName: item.variant.name,
     };
   });
 
@@ -248,7 +256,7 @@ export class CartItemComponent {
   increaseQuantity(): void {
     this.quantityChange.emit({
       variantId: this.item().variant.id,
-      quantity: this.item().quantity + 1
+      quantity: this.item().quantity + 1,
     });
 
     // Reset custom line price when quantity changes
@@ -256,7 +264,7 @@ export class CartItemComponent {
       this.priceChange.emit({
         variantId: this.item().variant.id,
         customLinePrice: undefined,
-        reason: 'Quantity changed - reset price'
+        reason: 'Quantity changed - reset price',
       });
     }
   }
@@ -265,7 +273,7 @@ export class CartItemComponent {
     if (this.item().quantity > 1) {
       this.quantityChange.emit({
         variantId: this.item().variant.id,
-        quantity: this.item().quantity - 1
+        quantity: this.item().quantity - 1,
       });
 
       // Reset custom line price when quantity changes
@@ -273,7 +281,7 @@ export class CartItemComponent {
         this.priceChange.emit({
           variantId: this.item().variant.id,
           customLinePrice: undefined,
-          reason: 'Quantity changed - reset price'
+          reason: 'Quantity changed - reset price',
         });
       }
     }
@@ -283,7 +291,8 @@ export class CartItemComponent {
     if (!this.canOverridePrices()) return;
 
     // Get current line total in cents
-    const currentLineTotalCents = this.item().customLinePrice || Math.round(this.item().subtotal * 100);
+    const currentLineTotalCents =
+      this.item().customLinePrice || Math.round(this.item().subtotal * 100);
 
     // Apply 3% increase in cents, then round to nearest whole number
     const newLineTotalCents = Math.round(currentLineTotalCents * 1.03);
@@ -291,7 +300,7 @@ export class CartItemComponent {
     this.priceChange.emit({
       variantId: this.item().variant.id,
       customLinePrice: newLineTotalCents,
-      reason: '3% increase'
+      reason: '3% increase',
     });
   }
 
@@ -299,7 +308,8 @@ export class CartItemComponent {
     if (!this.canOverridePrices()) return;
 
     // Get current line total in cents
-    const currentLineTotalCents = this.item().customLinePrice || Math.round(this.item().subtotal * 100);
+    const currentLineTotalCents =
+      this.item().customLinePrice || Math.round(this.item().subtotal * 100);
 
     // Apply 3% decrease in cents, then round to nearest whole number
     const newLineTotalCents = Math.round(currentLineTotalCents * 0.97);
@@ -307,7 +317,7 @@ export class CartItemComponent {
     this.priceChange.emit({
       variantId: this.item().variant.id,
       customLinePrice: newLineTotalCents,
-      reason: '3% decrease'
+      reason: '3% decrease',
     });
   }
 
@@ -323,7 +333,10 @@ export class CartItemComponent {
   getFormattedPerItemPrice(): string {
     // If custom line price exists, calculate per-item price in cents
     if (this.item().customLinePrice !== undefined) {
-      return this.currencyService.format(Math.round(this.item().customLinePrice! / this.item().quantity), false);
+      return this.currencyService.format(
+        Math.round(this.item().customLinePrice! / this.item().quantity),
+        false,
+      );
     }
     // Otherwise, use the original variant price (convert to cents)
     return this.currencyService.format(Math.round(this.item().variant.priceWithTax * 100), false);

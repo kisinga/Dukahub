@@ -2,19 +2,19 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Add Channel Cashier Fields
- * 
+ *
  * Merges:
  * - 1760530000000-MoveCashierToChannel.ts
- * 
+ *
  * Final state:
  * - Channel: cashierFlowEnabled, cashierOpen
  * - StockLocation: NO cashier fields (moved to channel)
  */
 export class AddChannelCashierFields1000000000003 implements MigrationInterface {
-    name = 'AddChannelCashierFields1000000000003';
+  name = 'AddChannelCashierFields1000000000003';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 -- Add cashier fields to Channel
@@ -42,10 +42,10 @@ export class AddChannelCashierFields1000000000003 implements MigrationInterface 
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 -- Restore cashier fields to StockLocation
@@ -73,7 +73,5 @@ export class AddChannelCashierFields1000000000003 implements MigrationInterface 
                 END IF;
             END $$;
         `);
-    }
+  }
 }
-
-

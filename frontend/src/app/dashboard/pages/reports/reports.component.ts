@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
-    selector: 'app-reports',
-    imports: [],
-    template: `
+  selector: 'app-reports',
+  imports: [],
+  template: `
     <div class="space-y-6">
       <h1 class="text-3xl font-bold">Reports & Analytics</h1>
       <div class="card bg-base-100 shadow-lg">
@@ -13,7 +13,6 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
       </div>
     </div>
   `,
-    changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ReportsComponent { }
-
+export class ReportsComponent {}

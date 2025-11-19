@@ -37,9 +37,9 @@ public/
 
 ```javascript
 // Global stores registered on Alpine initialization
-Alpine.store("sale", saleStoreLogic); // Cart and transaction state
-Alpine.store("scanner", scannerStoreLogic); // ML model and camera state
-Alpine.store("modal", modalStoreLogic); // Modal management
+Alpine.store('sale', saleStoreLogic); // Cart and transaction state
+Alpine.store('scanner', scannerStoreLogic); // ML model and camera state
+Alpine.store('modal', modalStoreLogic); // Modal management
 ```
 
 ### Store Interdependencies

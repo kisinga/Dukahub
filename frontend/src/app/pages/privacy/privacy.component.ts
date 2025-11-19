@@ -8,19 +8,8 @@ import { NavbarComponent } from '../../core/layout/navbar/navbar.component';
   imports: [RouterLink, NavbarComponent, FooterComponent],
   templateUrl: './privacy.component.html',
   styleUrl: './privacy.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PrivacyComponent {
   protected readonly lastUpdated = '2024-01-01';
 }
-
-
-
-
-
-
-
-
-
-
-

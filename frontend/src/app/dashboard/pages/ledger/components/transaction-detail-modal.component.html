@@ -44,7 +44,9 @@
               <div>
                 <div class="text-sm text-base-content/70 mb-1">Source ID</div>
                 <div class="flex items-center gap-2">
-                  <code class="text-sm bg-base-100 px-2 py-1 rounded">{{ entryData.sourceId }}</code>
+                  <code class="text-sm bg-base-100 px-2 py-1 rounded">{{
+                    entryData.sourceId
+                  }}</code>
                   <button
                     class="btn btn-xs btn-ghost"
                     (click)="copyToClipboard(entryData.sourceId)"
@@ -95,7 +97,9 @@
                   @for (line of entryData.lines; track line.id) {
                     <tr>
                       <td>
-                        <code class="text-sm bg-base-200 px-2 py-1 rounded">{{ line.accountCode }}</code>
+                        <code class="text-sm bg-base-200 px-2 py-1 rounded">{{
+                          line.accountCode
+                        }}</code>
                       </td>
                       <td class="font-medium">{{ line.accountName }}</td>
                       <td class="text-right">
@@ -149,10 +153,15 @@
                   <div class="bg-base-100 p-4 rounded-lg border border-base-300">
                     <div class="flex items-center justify-between mb-2">
                       <div class="text-sm font-medium text-base-content/70">Account</div>
-                      <code class="text-sm bg-base-200 px-2 py-1 rounded">{{ line.accountCode }}</code>
+                      <code class="text-sm bg-base-200 px-2 py-1 rounded">{{
+                        line.accountCode
+                      }}</code>
                     </div>
                     <div class="mt-2">
-                      <pre class="text-xs bg-base-100 p-3 rounded overflow-x-auto border border-base-300">{{ formatJson(line.meta) }}</pre>
+                      <pre
+                        class="text-xs bg-base-100 p-3 rounded overflow-x-auto border border-base-300"
+                        >{{ formatJson(line.meta) }}</pre
+                      >
                     </div>
                   </div>
                 }

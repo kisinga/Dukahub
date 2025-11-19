@@ -32,8 +32,6 @@ export class JournalEntry {
   @Column({ type: 'text', nullable: true })
   memo?: string | null;
 
-  @OneToMany(() => JournalLine, (line) => line.entry, { cascade: true })
+  @OneToMany(() => JournalLine, line => line.entry, { cascade: true })
   lines!: JournalLine[];
 }
-
-

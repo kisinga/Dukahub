@@ -12,7 +12,7 @@ type AvatarSize = 'sm' | 'md' | 'lg';
       </div>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EntityAvatarComponent {
   firstName = input<string>('');
@@ -36,4 +36,3 @@ export class EntityAvatarComponent {
     return size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-base' : 'text-sm';
   });
 }
-

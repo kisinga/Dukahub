@@ -248,12 +248,10 @@ ProductVariant {
 The `BarcodeScannerComponent` and `BarcodeScannerService` are modular and reused across:
 
 1. **Product Creation** (`product-create.component.ts`)
-
    - Scan barcode to identify packaged goods
    - Auto-fill product info if barcode exists in catalog
 
 2. **POS Checkout** (`sell.component.ts`)
-
    - Scan items to add to cart
    - Fast checkout workflow
 
@@ -624,7 +622,7 @@ effect(
       this.dashboardService.fetchDashboardData();
     }
   },
-  { allowSignalWrites: true }
+  { allowSignalWrites: true },
 );
 ```
 

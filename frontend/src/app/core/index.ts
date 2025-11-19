@@ -25,35 +25,34 @@ export { graphql } from './graphql/generated';
 
 // Re-export auth-specific types from user.model (includes ActiveAdministrator)
 export type {
-    ActiveAdministrator,
-    Administrator,
-    CurrentUser,
-    Customer,
-    GetActiveAdministratorQuery,
-    LoginMutation,
-    LoginMutationVariables,
-    LogoutMutation,
-    UpdateAdministratorMutation
+  ActiveAdministrator,
+  Administrator,
+  CurrentUser,
+  Customer,
+  GetActiveAdministratorQuery,
+  LoginMutation,
+  LoginMutationVariables,
+  LogoutMutation,
+  UpdateAdministratorMutation,
 } from './models/user.model';
 
 // Re-export other generated types directly from GraphQL
 export type {
-    // Channel related types
-    Channel,
-    CurrentUserChannel,
-    // Common generated types
-    ErrorCode,
-    ErrorResult,
-    GetUserChannelsQuery,
-    // Error types
-    InvalidCredentialsError,
-    NativeAuthStrategyError,
-    // Common types
-    Node,
-    PaginatedList,
-    Success,
-    // Input types
-    UpdateActiveAdministratorInput,
-    UpdateCustomerInput
+  // Channel related types
+  Channel,
+  CurrentUserChannel,
+  // Common generated types
+  ErrorCode,
+  ErrorResult,
+  GetUserChannelsQuery,
+  // Error types
+  InvalidCredentialsError,
+  NativeAuthStrategyError,
+  // Common types
+  Node,
+  PaginatedList,
+  Success,
+  // Input types
+  UpdateActiveAdministratorInput,
+  UpdateCustomerInput,
 } from './graphql/generated/graphql';
-

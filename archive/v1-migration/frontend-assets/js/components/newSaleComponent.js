@@ -1,5 +1,5 @@
 // public/js/components/newSaleComponent.js
-import { DbService } from "/public/js/pb.js";
+import { DbService } from '/public/js/pb.js';
 
 // --- Debounce Utility (if not already global/imported elsewhere) ---
 function debounce(func, delay) {
@@ -18,10 +18,10 @@ function newSaleComponentLogic() {
     // --- Component State ---
     companyId: null,
     modelInfo: null,
-    searchTerm: "",
+    searchTerm: '',
     searchResults: [],
     isSearching: false,
-    checkoutStatus: { message: "", type: "" }, // Status for direct PAY checkout
+    checkoutStatus: { message: '', type: '' }, // Status for direct PAY checkout
     isCheckingOut: false, // General flag to disable buttons during any checkout
     checkoutTarget: null, // 'pay' or 'credit' to show spinner on correct button
     initialized: false,
@@ -35,34 +35,29 @@ function newSaleComponentLogic() {
     init() {
       if (this.initialized) return;
       this.initialized = true;
-      console.log("Initializing NewSale Alpine component...");
+      console.log('Initializing NewSale Alpine component...');
       this.loadPageData();
 
       // Initialize debounced search here
-      this.debouncedCustomerSearch = debounce(
-        this.searchCustomers.bind(this),
-        350
-      );
+      this.debouncedCustomerSearch = debounce(this.searchCustomers.bind(this), 350);
 
-      const scannerStore = Alpine.store("scanner");
-      const modalStore = Alpine.store("modal"); // Scan modal store
+      const scannerStore = Alpine.store('scanner');
+      const modalStore = Alpine.store('modal'); // Scan modal store
 
       scannerStore?.initScanner(this.modelInfo, this.$refs.cameraView);
       modalStore?.initModal(this.$refs.scanModal); // Scan modal init
 
       // --- Initialize Credit Modal Instance (still needed to show/hide) ---
-      if (this.$refs.creditModal && typeof bootstrap !== "undefined") {
+      if (this.$refs.creditModal && typeof bootstrap !== 'undefined') {
         this._creditModalInstance = new bootstrap.Modal(this.$refs.creditModal);
         // NOTE: The hidden.bs.modal listener is now inside the creditModalComponent's init
       } else {
-        console.error(
-          "Credit modal element or Bootstrap not found for initialization in parent."
-        );
+        console.error('Credit modal element or Bootstrap not found for initialization in parent.');
       }
       // --- End Credit Modal Init ---
 
       if (!this.companyId) {
-        console.warn("Company ID missing.");
+        console.warn('Company ID missing.');
       }
       this.startScannerOnMobile();
     },
@@ -84,10 +79,10 @@ function newSaleComponentLogic() {
     },
 
     resetCreditModalState() {
-      this.creditSearchTerm = "";
+      this.creditSearchTerm = '';
       this.creditSearchResults = [];
       this.selectedCustomer = null;
-      this.creditModalStatus = { message: "", type: "" };
+      this.creditModalStatus = { message: '', type: '' };
       // Don't reset isCheckingOut here, it's handled by the checkout flows
     },
 
@@ -105,44 +100,40 @@ function newSaleComponentLogic() {
         // Adjust filter based on your customer fields (e.g., name, phone)
         const filter = `(name ~ '${term}' || phone ~ '${term}') && company = '${this.companyId}'`;
         // Replace 'customers' with your actual customer collection name
-        const customers = await DbService.getList("customers", {
+        const customers = await DbService.getList('customers', {
           filter: filter,
-          sort: "name",
+          sort: 'name',
           perPage: 10, // Limit results
         });
         this.creditSearchResults =
-          customers.length === 0
-            ? [{ id: "not_found", name: "No customers found." }]
-            : customers;
+          customers.length === 0 ? [{ id: 'not_found', name: 'No customers found.' }] : customers;
       } catch (error) {
-        console.error("Customer search failed:", error);
-        this.creditSearchResults = [
-          { id: "error", name: "Customer search failed." },
-        ];
+        console.error('Customer search failed:', error);
+        this.creditSearchResults = [{ id: 'error', name: 'Customer search failed.' }];
       }
     },
 
     selectCustomer(customer) {
-      console.log("Selected customer:", customer);
+      console.log('Selected customer:', customer);
       this.selectedCustomer = customer;
-      this.creditSearchTerm = ""; // Clear search
+      this.creditSearchTerm = ''; // Clear search
       this.creditSearchResults = []; // Hide results
-      this.creditModalStatus = { message: "", type: "" }; // Clear status
+      this.creditModalStatus = { message: '', type: '' }; // Clear status
     },
 
     loadPageData() {
       try {
         /* ... copy loadPageData logic ... */
-        const dataElement = document.getElementById("page-data");
-        if (!dataElement) throw new Error("Page data script tag not found.");
+        const dataElement = document.getElementById('page-data');
+        if (!dataElement) throw new Error('Page data script tag not found.');
         const data = JSON.parse(dataElement.textContent);
         this.companyId = data.companyId;
         this.modelInfo = data.modelInfo;
-        console.log("Page data loaded:", data);
+        console.log('Page data loaded:', data);
       } catch (error) {
         /* ... copy error handling ... */
-        console.error("Failed to read or parse page data:", error);
-        alert("Error loading page configuration.");
+        console.error('Failed to read or parse page data:', error);
+        alert('Error loading page configuration.');
         this.companyId = null;
         this.modelInfo = null;
       }
@@ -154,36 +145,32 @@ function newSaleComponentLogic() {
       );
 
       if (isMobile) {
-        const scannerStore = Alpine.store("scanner");
+        const scannerStore = Alpine.store('scanner');
         // Check if scanner is configured and not already starting/running/in error
         if (
           scannerStore?.isConfigured &&
           !scannerStore.isScanning &&
-          scannerStore.status !== "error"
+          scannerStore.status !== 'error'
         ) {
-          console.log(
-            "Mobile device detected, attempting to auto-start scanner..."
-          );
+          console.log('Mobile device detected, attempting to auto-start scanner...');
           // Use a small timeout to ensure the UI has settled after init
           setTimeout(() => {
             // Re-check state before starting, in case user clicked manually
             if (
               scannerStore.isConfigured &&
               !scannerStore.isScanning &&
-              scannerStore.status !== "error"
+              scannerStore.status !== 'error'
             ) {
               scannerStore.start();
             }
           }, 100); // 100ms delay, adjust if needed
         } else if (scannerStore && !scannerStore.isConfigured) {
-          console.log("Mobile device detected, but scanner is not configured.");
+          console.log('Mobile device detected, but scanner is not configured.');
         } else {
-          console.log(
-            "Mobile device detected, but scanner is already active or in error state."
-          );
+          console.log('Mobile device detected, but scanner is already active or in error state.');
         }
       } else {
-        console.log("Desktop device detected, scanner requires manual start.");
+        console.log('Desktop device detected, scanner requires manual start.');
       }
     },
     // --- Search Methods ---
@@ -200,22 +187,20 @@ function newSaleComponentLogic() {
         // --- Corrected Filter with Company ID ---
         const filter = `(name ~ '${term}' || barcode ~ '${term}') && company = '${this.companyId}'`;
         // --- End Correction ---
-        const products = await DbService.getList("products", {
+        const products = await DbService.getList('products', {
           filter: filter,
-          sort: "name",
+          sort: 'name',
           perPage: 3,
           // --- Expand SKUs directly in search results ---
-          expand: "skus",
+          expand: 'skus',
           // --- End Expand ---
         });
         this.searchResults =
-          products.length === 0
-            ? [{ id: "not_found", name: "No products found." }]
-            : products;
+          products.length === 0 ? [{ id: 'not_found', name: 'No products found.' }] : products;
 
         // fetch all the inventory details for the found products
-        const inventoryPromises = products.map((product) =>
-          DbService.getList("inventory", {
+        const inventoryPromises = products.map(product =>
+          DbService.getList('inventory', {
             filter: `product = '${product.id}'`,
             perPage: 1,
           })
@@ -231,42 +216,42 @@ function newSaleComponentLogic() {
             product.inventory = null; // No inventory found
           }
         });
-        console.log("Search results:", this.searchResults);
+        console.log('Search results:', this.searchResults);
       } catch (error) {
-        console.error("Product search failed:", error);
-        this.searchResults = [{ id: "error", name: "Search failed." }];
+        console.error('Product search failed:', error);
+        this.searchResults = [{ id: 'error', name: 'Search failed.' }];
       } finally {
         this.isSearching = false;
       }
     },
 
     handleSearchResultClick(product) {
-      console.log("Selected from search, opening modal:", product);
+      console.log('Selected from search, opening modal:', product);
       // --- Open Modal instead of adding directly ---
-      Alpine.store("modal").open(product);
+      Alpine.store('modal').open(product);
       // --- End Change ---
-      this.searchTerm = ""; // Clear search term
+      this.searchTerm = ''; // Clear search term
       this.searchResults = []; // Hide results dropdown
     },
 
     // Main checkout function called by buttons
     checkout(isCreditSale = false) {
-      const saleStore = Alpine.store("sale");
+      const saleStore = Alpine.store('sale');
       if (saleStore?.items.length === 0 || this.isCheckingOut) return;
 
-      this.checkoutTarget = isCreditSale ? "credit" : "pay";
+      this.checkoutTarget = isCreditSale ? 'credit' : 'pay';
 
       if (isCreditSale) {
-        console.log("Opening CREDIT modal...");
+        console.log('Opening CREDIT modal...');
         if (this._creditModalInstance) {
           // Optional: Clear any previous modal status before showing
-          Alpine.store("modal")?.resetCreditModalState?.(); // If store method exists
+          Alpine.store('modal')?.resetCreditModalState?.(); // If store method exists
           this._creditModalInstance.show();
         } else {
-          console.error("Cannot open credit modal: instance not available.");
+          console.error('Cannot open credit modal: instance not available.');
         }
       } else {
-        console.log("Initiating PAY sale...");
+        console.log('Initiating PAY sale...');
         this.processCashCheckout();
       }
     },
@@ -274,8 +259,8 @@ function newSaleComponentLogic() {
     async processCashCheckout() {
       this.isCheckingOut = true; // Set general flag
       this.checkoutStatus = {
-        message: "Processing sale...",
-        type: "text-info",
+        message: 'Processing sale...',
+        type: 'text-info',
       };
       try {
         await this.submitSaleToBackend(false, null); // isCredit=false, no customerId
@@ -293,8 +278,8 @@ function newSaleComponentLogic() {
 
       this.isCheckingOut = true; // Set general flag
       this.creditModalStatus = {
-        message: "Processing credit sale...",
-        type: "text-info",
+        message: 'Processing credit sale...',
+        type: 'text-info',
       };
       try {
         await this.submitSaleToBackend(true, this.selectedCustomer.id); // isCredit=true, pass customerId
@@ -309,13 +294,9 @@ function newSaleComponentLogic() {
     },
     handleCreditSaleConfirmation(detail) {
       const customerId = detail?.customerId;
-      console.log(
-        `Received confirm-credit-sale event for customer: ${customerId}`
-      );
+      console.log(`Received confirm-credit-sale event for customer: ${customerId}`);
       if (!customerId) {
-        console.error(
-          "Credit sale confirmation failed: No customer ID received."
-        );
+        console.error('Credit sale confirmation failed: No customer ID received.');
         // Optionally update credit modal status via store/direct access if needed
         return;
       }
@@ -326,13 +307,13 @@ function newSaleComponentLogic() {
     async submitSaleToBackend(isCredit, customerId) {
       // Prevent double submission if already checking out
       if (this.isCheckingOut) {
-        console.warn("Submission prevented: Checkout already in progress.");
+        console.warn('Submission prevented: Checkout already in progress.');
         return;
       }
 
-      const saleStore = Alpine.store("sale");
+      const saleStore = Alpine.store('sale');
       if (!saleStore) {
-        console.error("Sale store not found.");
+        console.error('Sale store not found.');
         return;
       } // Added check
       const saleData = saleStore.getSaleDataForCheckout();
@@ -342,25 +323,25 @@ function newSaleComponentLogic() {
         isCredit: isCredit,
         customerId: customerId,
       };
-      console.log("Submitting sale to backend:", payload);
+      console.log('Submitting sale to backend:', payload);
 
       this.isCheckingOut = true; // Set flag HERE
       // Reset status messages before fetch
-      this.checkoutStatus = { message: "", type: "" };
+      this.checkoutStatus = { message: '', type: '' };
       // Access credit modal component's state if needed, or rely on its internal status
       // For simplicity, let credit modal manage its own status display for processing
-      if (this.checkoutTarget === "pay") {
+      if (this.checkoutTarget === 'pay') {
         this.checkoutStatus = {
-          message: "Processing sale...",
-          type: "text-info",
+          message: 'Processing sale...',
+          type: 'text-info',
         };
       }
       // Credit modal shows its own "Submitting..." message internally now
 
       try {
-        const response = await fetch("/api/sales", {
-          /* ... fetch options ... */ method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/sales', {
+          /* ... fetch options ... */ method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
         if (!response.ok) {
@@ -372,36 +353,34 @@ function newSaleComponentLogic() {
           throw new Error(errorMsg);
         }
         const result = await response.json();
-        console.log("Checkout successful:", result);
+        console.log('Checkout successful:', result);
 
-        const successMessage = `Sale completed! (ID: ${
-          result.saleId || "N/A"
-        })`;
-        if (this.checkoutTarget === "pay") {
+        const successMessage = `Sale completed! (ID: ${result.saleId || 'N/A'})`;
+        if (this.checkoutTarget === 'pay') {
           this.checkoutStatus = {
             message: successMessage,
-            type: "text-success",
+            type: 'text-success',
           };
         } else {
           // Credit sale success: Close the modal, maybe show brief success in main status
           if (this._creditModalInstance) this._creditModalInstance.hide();
           this.checkoutStatus = {
-            message: "Credit sale completed.",
-            type: "text-success",
+            message: 'Credit sale completed.',
+            type: 'text-success',
           };
           // Credit modal's internal status is cleared on hide by its own listener
         }
 
         saleStore.clearSale();
         setTimeout(() => {
-          this.checkoutStatus = { message: "", type: "" };
+          this.checkoutStatus = { message: '', type: '' };
         }, 5000);
         return result; // Success
       } catch (error) {
-        console.error("Checkout submission failed:", error);
+        console.error('Checkout submission failed:', error);
         const errorMessage = `Checkout failed: ${error.message}.`;
-        if (this.checkoutTarget === "pay") {
-          this.checkoutStatus = { message: errorMessage, type: "text-danger" };
+        if (this.checkoutTarget === 'pay') {
+          this.checkoutStatus = { message: errorMessage, type: 'text-danger' };
         } else {
           // Show error within the credit modal (it's still open)
           // Accessing other component's state directly is less ideal,
@@ -412,13 +391,13 @@ function newSaleComponentLogic() {
           if (creditModalComponent) {
             creditModalComponent.creditModalStatus = {
               message: errorMessage,
-              type: "text-danger",
+              type: 'text-danger',
             };
           } else {
             // Fallback if direct access fails
             this.checkoutStatus = {
               message: `Credit Sale Error: ${errorMessage}`,
-              type: "text-danger",
+              type: 'text-danger',
             };
           }
         }

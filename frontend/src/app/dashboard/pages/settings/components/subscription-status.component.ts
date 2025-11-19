@@ -4,13 +4,12 @@ import { CompanyService } from '../../../../core/services/company.service';
 import { SubscriptionService } from '../../../../core/services/subscription.service';
 
 @Component({
-    selector: 'app-subscription-status',
-    imports: [CommonModule],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `
+  selector: 'app-subscription-status',
+  imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
     <div class="card bg-base-100 shadow-lg">
       <div class="card-body space-y-6">
-        
         <!-- Subscription Status Header -->
         <div class="flex items-center gap-4">
           <div class="text-4xl">💳</div>
@@ -57,13 +56,25 @@ import { SubscriptionService } from '../../../../core/services/subscription.serv
         <!-- Trial Information -->
         @if (subscriptionService.isTrialActive()) {
           <div class="alert alert-info">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              class="stroke-current shrink-0 w-6 h-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
             </svg>
             <div>
               <h3 class="font-bold">Trial Period</h3>
-              <div class="text-xs">Your trial ends on {{ trialEndsAt() | date:'medium' }}</div>
-              <div class="text-xs mt-1">Subscribe now to continue using all features after your trial ends.</div>
+              <div class="text-xs">Your trial ends on {{ trialEndsAt() | date: 'medium' }}</div>
+              <div class="text-xs mt-1">
+                Subscribe now to continue using all features after your trial ends.
+              </div>
             </div>
           </div>
         }
@@ -71,19 +82,33 @@ import { SubscriptionService } from '../../../../core/services/subscription.serv
         <!-- Expired Warning -->
         @if (subscriptionService.isExpired()) {
           <div class="alert alert-error">
-            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="stroke-current shrink-0 h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <div>
               <h3 class="font-bold">Subscription Expired</h3>
-              <div class="text-xs">Your subscription has expired. You can view data but cannot create or edit.</div>
+              <div class="text-xs">
+                Your subscription has expired. You can view data but cannot create or edit.
+              </div>
               <div class="text-xs mt-1">Renew your subscription to regain full access.</div>
             </div>
           </div>
         }
 
         <!-- Active Subscription Details -->
-        @if (subscriptionService.isSubscriptionActive() && subscriptionService.subscriptionStatus()) {
+        @if (
+          subscriptionService.isSubscriptionActive() && subscriptionService.subscriptionStatus()
+        ) {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="card bg-base-200">
               <div class="card-body p-4">
@@ -96,7 +121,7 @@ import { SubscriptionService } from '../../../../core/services/subscription.serv
               <div class="card-body p-4">
                 <h3 class="font-semibold text-sm">Next Billing Date</h3>
                 <p class="text-lg font-semibold mt-1">
-                  {{ subscriptionExpiresAt() | date:'mediumDate' }}
+                  {{ subscriptionExpiresAt() | date: 'mediumDate' }}
                 </p>
                 <p class="text-xs text-base-content/60 mt-1">
                   @if (subscriptionService.subscriptionStatus()?.daysRemaining) {
@@ -111,77 +136,64 @@ import { SubscriptionService } from '../../../../core/services/subscription.serv
         <!-- Action Buttons -->
         <div class="flex gap-3">
           @if (!subscriptionService.isExpired()) {
-            <button class="btn btn-outline" (click)="openPaymentModal()">
-              Upgrade Plan
-            </button>
+            <button class="btn btn-outline" (click)="openPaymentModal()">Upgrade Plan</button>
             <button class="btn btn-ghost" (click)="cancelSubscription()">
               Cancel Subscription
             </button>
           } @else {
-            <button class="btn btn-primary" (click)="openPaymentModal()">
-              Renew Subscription
-            </button>
+            <button class="btn btn-primary" (click)="openPaymentModal()">Renew Subscription</button>
           }
         </div>
-
       </div>
     </div>
   `,
 })
 export class SubscriptionStatusComponent implements OnInit {
-    protected readonly companyService = inject(CompanyService);
-    protected readonly subscriptionService = inject(SubscriptionService);
+  protected readonly companyService = inject(CompanyService);
+  protected readonly subscriptionService = inject(SubscriptionService);
 
-    protected readonly daysRemaining = computed(() => {
-        const status = this.subscriptionService.subscriptionStatus();
-        return status?.daysRemaining ?? null;
-    });
+  protected readonly daysRemaining = computed(() => {
+    const status = this.subscriptionService.subscriptionStatus();
+    return status?.daysRemaining ?? null;
+  });
 
-    protected readonly trialEndsAt = computed(() => {
-        return this.companyService.trialEndsAt();
-    });
+  protected readonly trialEndsAt = computed(() => {
+    return this.companyService.trialEndsAt();
+  });
 
-    protected readonly subscriptionExpiresAt = computed(() => {
-        return this.companyService.subscriptionExpiresAt();
-    });
+  protected readonly subscriptionExpiresAt = computed(() => {
+    return this.companyService.subscriptionExpiresAt();
+  });
 
-    protected readonly currentTierName = computed(() => {
-        // This would need to fetch from subscription details
-        return 'Basic Plan';
-    });
+  protected readonly currentTierName = computed(() => {
+    // This would need to fetch from subscription details
+    return 'Basic Plan';
+  });
 
-    protected readonly billingCycle = computed(() => {
-        // This would need to fetch from subscription details
-        return 'Monthly';
-    });
+  protected readonly billingCycle = computed(() => {
+    // This would need to fetch from subscription details
+    return 'Monthly';
+  });
 
-    async ngOnInit() {
+  async ngOnInit() {
+    await this.subscriptionService.checkSubscriptionStatus();
+    await this.subscriptionService.getSubscriptionTiers();
+  }
+
+  openPaymentModal() {
+    // This will be handled by parent component or service
+    // For now, emit event or use service method
+    console.log('Open payment modal');
+  }
+
+  async cancelSubscription() {
+    if (
+      confirm('Are you sure you want to cancel your subscription? This will disable auto-renewal.')
+    ) {
+      const success = await this.subscriptionService.cancelSubscription();
+      if (success) {
         await this.subscriptionService.checkSubscriptionStatus();
-        await this.subscriptionService.getSubscriptionTiers();
+      }
     }
-
-    openPaymentModal() {
-        // This will be handled by parent component or service
-        // For now, emit event or use service method
-        console.log('Open payment modal');
-    }
-
-    async cancelSubscription() {
-        if (confirm('Are you sure you want to cancel your subscription? This will disable auto-renewal.')) {
-            const success = await this.subscriptionService.cancelSubscription();
-            if (success) {
-                await this.subscriptionService.checkSubscriptionStatus();
-            }
-        }
-    }
+  }
 }
-
-
-
-
-
-
-
-
-
-

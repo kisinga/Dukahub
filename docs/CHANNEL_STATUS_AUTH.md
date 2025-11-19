@@ -224,8 +224,8 @@ The channel status field migration has been completed. All channels now use the 
 All code should use the `getChannelStatus()` helper function for type-safe access to channel status:
 
 ```typescript
-import { getChannelStatus } from "../../domain/channel-custom-fields";
-import { ChannelStatus } from "../services/auth/phone-auth.service";
+import { getChannelStatus } from '../../domain/channel-custom-fields';
+import { ChannelStatus } from '../services/auth/phone-auth.service';
 
 // ✅ Correct: Use helper function
 const status = getChannelStatus(channel.customFields);
@@ -242,7 +242,7 @@ const status = (channel.customFields as any)?.status;
 The `ChannelCustomFields` interface in `domain/channel-custom-fields.ts` provides type safety:
 
 ```typescript
-import { ChannelCustomFields } from "../../domain/channel-custom-fields";
+import { ChannelCustomFields } from '../../domain/channel-custom-fields';
 
 const customFields = channel.customFields as ChannelCustomFields;
 // customFields.status is now properly typed as ChannelStatus

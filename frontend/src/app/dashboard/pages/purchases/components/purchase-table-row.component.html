@@ -1,6 +1,6 @@
 <!-- Date -->
 <td>
-  <div class="text-sm">{{ purchase().purchaseDate | date:'shortDate' }}</div>
+  <div class="text-sm">{{ purchase().purchaseDate | date: 'shortDate' }}</div>
 </td>
 
 <!-- Supplier -->
@@ -26,18 +26,14 @@
     {{ purchase().paymentStatus }}
   </span>
   @if (purchase().isCreditPurchase) {
-  <span class="badge badge-xs badge-info ml-1">Credit</span>
+    <span class="badge badge-xs badge-info ml-1">Credit</span>
   }
 </td>
 
 <!-- Actions -->
 <td class="text-right">
   <div class="flex justify-end gap-1">
-    <button
-      (click)="onAction('view')"
-      class="btn btn-ghost btn-xs"
-      title="View Details"
-    >
+    <button (click)="onAction('view')" class="btn btn-ghost btn-xs" title="View Details">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         class="h-4 w-4"
@@ -93,4 +89,3 @@
     </button>
   </div>
 </td>
-

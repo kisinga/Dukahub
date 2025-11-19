@@ -10,9 +10,9 @@ import { initializeTelemetry } from './infrastructure/observability/telemetry.in
 initializeTelemetry(`${BRAND_CONFIG.servicePrefix}-worker`);
 
 bootstrapWorker(config)
-    .then(worker => worker.startJobQueue())
-    .catch(err => {
-        // Use console.error for bootstrap failures (logger not yet initialized)
-        console.error('❌ Failed to start worker:', err);
-        process.exit(1);
-    });
+  .then(worker => worker.startJobQueue())
+  .catch(err => {
+    // Use console.error for bootstrap failures (logger not yet initialized)
+    console.error('❌ Failed to start worker:', err);
+    process.exit(1);
+  });

@@ -1,98 +1,131 @@
 <div class="min-h-screen bg-base-100">
-    <!-- Sticky Header -->
-    <div class="sticky top-0 z-10 bg-base-100 border-b border-base-200 px-4 py-3">
-        <div class="flex items-center justify-between">
-            <button 
-                (click)="goBack()" 
-                class="btn btn-ghost btn-sm btn-circle"
-                aria-label="Go back"
-            >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </button>
-            <h1 class="text-lg font-semibold">Stock Adjustments</h1>
-            <div class="w-10"></div>
-        </div>
+  <!-- Sticky Header -->
+  <div class="sticky top-0 z-10 bg-base-100 border-b border-base-200 px-4 py-3">
+    <div class="flex items-center justify-between">
+      <button (click)="goBack()" class="btn btn-ghost btn-sm btn-circle" aria-label="Go back">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          ></path>
+        </svg>
+      </button>
+      <h1 class="text-lg font-semibold">Stock Adjustments</h1>
+      <div class="w-10"></div>
     </div>
+  </div>
 
-    <!-- Content -->
-    <div class="p-4 space-y-4">
-        <!-- Permission Check -->
-        @if (!hasPermission()) {
-        <div class="alert alert-error">
-            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>You do not have permission to make stock adjustments. Please contact an administrator.</span>
-        </div>
-        } @else {
-        
-        <!-- Success Message -->
-        @if (showSuccessMessage()) {
+  <!-- Content -->
+  <div class="p-4 space-y-4">
+    <!-- Permission Check -->
+    @if (!hasPermission()) {
+      <div class="alert alert-error">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="stroke-current shrink-0 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <span
+          >You do not have permission to make stock adjustments. Please contact an
+          administrator.</span
+        >
+      </div>
+    } @else {
+      <!-- Success Message -->
+      @if (showSuccessMessage()) {
         <div class="alert alert-success">
-            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Stock adjustment recorded successfully!</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="stroke-current shrink-0 h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>Stock adjustment recorded successfully!</span>
         </div>
-        }
+      }
 
-        <!-- Error Message -->
-        @if (error(); as errorMsg) {
+      <!-- Error Message -->
+      @if (error(); as errorMsg) {
         <div class="alert alert-error">
-            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>{{ errorMsg }}</span>
-            <button (click)="clearError()" class="btn btn-ghost btn-sm">×</button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="stroke-current shrink-0 h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>{{ errorMsg }}</span>
+          <button (click)="clearError()" class="btn btn-ghost btn-sm">×</button>
         </div>
-        }
+      }
 
-        @if (adjustmentDraft(); as draft) {
+      @if (adjustmentDraft(); as draft) {
         <div class="space-y-4">
-            <!-- Adjustment Details Form -->
-            <app-stock-adjustment-form-fields
-                [draft]="draft"
-                (reasonChange)="handleReasonChange($event)"
-                (notesChange)="handleNotesChange($event)"
-            />
+          <!-- Adjustment Details Form -->
+          <app-stock-adjustment-form-fields
+            [draft]="draft"
+            (reasonChange)="handleReasonChange($event)"
+            (notesChange)="handleNotesChange($event)"
+          />
 
-            <!-- Add Item Form -->
-            <app-stock-adjustment-line-item-form
-                [stockLocations]="stockLocations()"
-                [productSearchTerm]="productSearchTerm()"
-                [productSearchResults]="productSearchResults()"
-                [lineItem]="newLineItem()"
-                (productSearch)="handleProductSearch($event)"
-                (productSelect)="handleProductSelect($event)"
-                (newStockChange)="handleNewStockChange($event)"
-                (addItem)="handleAddLineItem()"
-            />
+          <!-- Add Item Form -->
+          <app-stock-adjustment-line-item-form
+            [stockLocations]="stockLocations()"
+            [productSearchTerm]="productSearchTerm()"
+            [productSearchResults]="productSearchResults()"
+            [lineItem]="newLineItem()"
+            (productSearch)="handleProductSearch($event)"
+            (productSelect)="handleProductSelect($event)"
+            (newStockChange)="handleNewStockChange($event)"
+            (addItem)="handleAddLineItem()"
+          />
 
-            <!-- Line Items Table -->
-            <app-stock-adjustment-line-items-table
-                [lineItems]="displayLineItems()"
-                [stockLocations]="stockLocations()"
-                (lineItemUpdate)="handleUpdateLineItem($event.index, $event.field, $event.value)"
-                (lineItemRemove)="handleRemoveLineItem($event)"
-            />
+          <!-- Line Items Table -->
+          <app-stock-adjustment-line-items-table
+            [lineItems]="displayLineItems()"
+            [stockLocations]="stockLocations()"
+            (lineItemUpdate)="handleUpdateLineItem($event.index, $event.field, $event.value)"
+            (lineItemRemove)="handleRemoveLineItem($event)"
+          />
 
-            <!-- Submit Button -->
-            <div class="sticky bottom-0 bg-base-100 border-t border-base-200 pt-4 pb-4 -mx-4 px-4">
-                <button
-                    class="btn btn-primary btn-block min-h-[3rem]"
-                    [disabled]="!draft.reason || draft.lines.length === 0 || isLoading()"
-                    (click)="handleSubmitAdjustment()"
-                >
-                    @if (isLoading()) {
-                    <span class="loading loading-spinner loading-xs"></span>
-                    }
-                    💾 Record Adjustment
-                </button>
-            </div>
+          <!-- Submit Button -->
+          <div class="sticky bottom-0 bg-base-100 border-t border-base-200 pt-4 pb-4 -mx-4 px-4">
+            <button
+              class="btn btn-primary btn-block min-h-[3rem]"
+              [disabled]="!draft.reason || draft.lines.length === 0 || isLoading()"
+              (click)="handleSubmitAdjustment()"
+            >
+              @if (isLoading()) {
+                <span class="loading loading-spinner loading-xs"></span>
+              }
+              💾 Record Adjustment
+            </button>
+          </div>
         </div>
-        }
-        }
-    </div>
+      }
+    }
+  </div>
 </div>

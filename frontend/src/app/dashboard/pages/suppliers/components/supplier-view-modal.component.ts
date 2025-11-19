@@ -1,9 +1,18 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, inject, input, output, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 
 /**
  * Supplier View Modal Component
- * 
+ *
  * Mobile-optimized modal for viewing complete supplier information
  */
 @Component({
@@ -12,7 +21,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, inject, input, output, 
   imports: [CommonModule],
   templateUrl: './supplier-view-modal.component.html',
   styleUrl: './supplier-view-modal.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SupplierViewModalComponent {
   // Inputs
@@ -54,7 +63,7 @@ export class SupplierViewModalComponent {
   show(): void {
     // Reset expanded sections
     this.expandedSections.set(new Set(['basic']));
-    
+
     const modal = this.modalRef()?.nativeElement;
     modal?.showModal();
   }
@@ -183,15 +192,3 @@ export class SupplierViewModalComponent {
     this.hide();
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -5,42 +5,41 @@ import { StockAdjustmentDraft } from '../stock-adjustment.service.types';
 
 /**
  * Stock Adjustment API Service
- * 
+ *
  * Handles API communication for stock adjustments.
  * Separated for single responsibility and testability.
  */
 @Injectable({
-    providedIn: 'root',
+  providedIn: 'root',
 })
 export class StockAdjustmentApiService {
-    private readonly apolloService = inject(ApolloService);
+  private readonly apolloService = inject(ApolloService);
 
-    /**
-     * Record stock adjustment via GraphQL mutation
-     */
-    async recordStockAdjustment(draft: StockAdjustmentDraft): Promise<any> {
-        const client = this.apolloService.getClient();
+  /**
+   * Record stock adjustment via GraphQL mutation
+   */
+  async recordStockAdjustment(draft: StockAdjustmentDraft): Promise<any> {
+    const client = this.apolloService.getClient();
 
-        const input = {
-            reason: draft.reason,
-            notes: draft.notes || null,
-            lines: draft.lines.map(line => ({
-                variantId: line.variantId,
-                quantityChange: line.quantityChange,
-                stockLocationId: line.stockLocationId,
-            })),
-        };
+    const input = {
+      reason: draft.reason,
+      notes: draft.notes || null,
+      lines: draft.lines.map((line) => ({
+        variantId: line.variantId,
+        quantityChange: line.quantityChange,
+        stockLocationId: line.stockLocationId,
+      })),
+    };
 
-        const result = await client.mutate({
-            mutation: RECORD_STOCK_ADJUSTMENT,
-            variables: { input },
-        });
+    const result = await client.mutate({
+      mutation: RECORD_STOCK_ADJUSTMENT,
+      variables: { input },
+    });
 
-        if (result.error) {
-            throw new Error(result.error.message || 'Failed to record stock adjustment');
-        }
-
-        return result.data?.recordStockAdjustment;
+    if (result.error) {
+      throw new Error(result.error.message || 'Failed to record stock adjustment');
     }
-}
 
+    return result.data?.recordStockAdjustment;
+  }
+}

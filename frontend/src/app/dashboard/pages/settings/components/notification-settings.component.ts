@@ -10,17 +10,21 @@ import { ToastService } from '../../../../core/services/toast.service';
       <div class="card bg-base-100 shadow-sm border border-base-300">
         <div class="card-body">
           <h2 class="card-title text-xl">🔔 Push Notifications</h2>
-          <p class="text-sm opacity-70">Manage your notification preferences and subscription status</p>
-          
+          <p class="text-sm opacity-70">
+            Manage your notification preferences and subscription status
+          </p>
+
           <div class="divider"></div>
-          
+
           <!-- Push Notification Status -->
           <div class="flex items-center justify-between p-4 bg-base-200 rounded-lg">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full flex items-center justify-center"
-                   [class.bg-success]="isPushEnabled()"
-                   [class.bg-warning]="permission() === 'default'"
-                   [class.bg-error]="!isPushEnabled() && permission() !== 'default'">
+              <div
+                class="w-10 h-10 rounded-full flex items-center justify-center"
+                [class.bg-success]="isPushEnabled()"
+                [class.bg-warning]="permission() === 'default'"
+                [class.bg-error]="!isPushEnabled() && permission() !== 'default'"
+              >
                 <span class="text-xl">{{ getStatusIcon() }}</span>
               </div>
               <div>
@@ -39,13 +43,14 @@ import { ToastService } from '../../../../core/services/toast.service';
                 }
               </div>
             </div>
-            <button 
+            <button
               class="btn"
               [class.btn-success]="isPushEnabled()"
               [class.btn-warning]="permission() === 'default'"
               [class.btn-outline]="!isPushEnabled() && permission() !== 'default'"
               [disabled]="isLoading() || permission() === 'denied'"
-              (click)="togglePushNotifications()">
+              (click)="togglePushNotifications()"
+            >
               @if (isLoading()) {
                 <span class="loading loading-spinner loading-sm"></span>
               } @else {
@@ -53,7 +58,7 @@ import { ToastService } from '../../../../core/services/toast.service';
               }
             </button>
           </div>
-          
+
           <!-- Notification Types -->
           <div class="space-y-4">
             <h3 class="font-semibold text-lg">Notification Types</h3>
@@ -72,21 +77,24 @@ import { ToastService } from '../../../../core/services/toast.service';
               }
             </div>
             <p class="text-sm opacity-60 italic">
-              All notification types are currently enabled by default. Per-type filtering will be available in a future update.
+              All notification types are currently enabled by default. Per-type filtering will be
+              available in a future update.
             </p>
           </div>
         </div>
       </div>
-      
+
       <!-- Notification History -->
       <div class="card bg-base-100 shadow-sm border border-base-300">
         <div class="card-body">
           <div class="flex items-center justify-between mb-4">
             <h2 class="card-title text-xl">📋 Notification History</h2>
             <div class="flex gap-2">
-              <select class="select select-sm select-bordered" 
-                      [value]="selectedType()" 
-                      (change)="onTypeFilterChange($event)">
+              <select
+                class="select select-sm select-bordered"
+                [value]="selectedType()"
+                (change)="onTypeFilterChange($event)"
+              >
                 <option value="">All Types</option>
                 @for (type of notificationTypes; track type.key) {
                   <option [value]="type.key">{{ type.label }}</option>
@@ -97,15 +105,19 @@ import { ToastService } from '../../../../core/services/toast.service';
               </button>
             </div>
           </div>
-          
+
           <div class="space-y-2 max-h-96 overflow-y-auto">
             @for (notification of filteredNotifications(); track notification.id) {
-              <div class="flex items-start gap-3 p-3 rounded-lg border border-base-300 hover:bg-base-200 transition-colors"
-                   [class.bg-base-200]="!notification.read">
-                <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
-                     [class.bg-warning]="getNotificationTypeClass(notification.type) === 'warning'"
-                     [class.bg-success]="getNotificationTypeClass(notification.type) === 'success'"
-                     [class.bg-info]="getNotificationTypeClass(notification.type) === 'info'">
+              <div
+                class="flex items-start gap-3 p-3 rounded-lg border border-base-300 hover:bg-base-200 transition-colors"
+                [class.bg-base-200]="!notification.read"
+              >
+                <div
+                  class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+                  [class.bg-warning]="getNotificationTypeClass(notification.type) === 'warning'"
+                  [class.bg-success]="getNotificationTypeClass(notification.type) === 'success'"
+                  [class.bg-info]="getNotificationTypeClass(notification.type) === 'info'"
+                >
                   <span class="text-lg">{{ getNotificationIcon(notification.type) }}</span>
                 </div>
                 <div class="flex-1 min-w-0">
@@ -118,12 +130,15 @@ import { ToastService } from '../../../../core/services/toast.service';
                     }
                   </div>
                   <p class="text-sm opacity-70 mt-1">{{ notification.message }}</p>
-                  <p class="text-xs opacity-50 mt-1">{{ formatNotificationTime(notification.createdAt) }}</p>
+                  <p class="text-xs opacity-50 mt-1">
+                    {{ formatNotificationTime(notification.createdAt) }}
+                  </p>
                 </div>
-                <button 
+                <button
                   class="btn btn-ghost btn-xs"
                   (click)="markAsRead(notification.id)"
-                  [disabled]="notification.read">
+                  [disabled]="notification.read"
+                >
                   {{ notification.read ? 'Read' : 'Mark Read' }}
                 </button>
               </div>
@@ -161,29 +176,29 @@ export class NotificationSettingsComponent {
       label: 'Orders',
       icon: '💰',
       description: 'Order status updates and payments',
-      enabled: true
+      enabled: true,
     },
     {
       key: 'STOCK',
       label: 'Stock Alerts',
       icon: '⚠️',
       description: 'Low stock and inventory warnings',
-      enabled: true
+      enabled: true,
     },
     {
       key: 'ML_TRAINING',
       label: 'ML Training',
       icon: '🤖',
       description: 'Machine learning model updates',
-      enabled: true
+      enabled: true,
     },
     {
       key: 'PAYMENT',
       label: 'Payments',
       icon: '💳',
       description: 'Payment confirmations and issues',
-      enabled: true
-    }
+      enabled: true,
+    },
   ];
 
   readonly filteredNotifications = computed(() => {
@@ -194,7 +209,7 @@ export class NotificationSettingsComponent {
       return notifications;
     }
 
-    return notifications.filter(notification => notification.type === selectedType);
+    return notifications.filter((notification) => notification.type === selectedType);
   });
 
   async togglePushNotifications(): Promise<void> {
@@ -301,5 +316,3 @@ export class NotificationSettingsComponent {
     return 'Enable';
   }
 }
-
-

@@ -1,5 +1,11 @@
 import { provideHttpClient } from '@angular/common/http';
-import { APP_INITIALIZER, ApplicationConfig, isDevMode, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
+import {
+  APP_INITIALIZER,
+  ApplicationConfig,
+  isDevMode,
+  provideBrowserGlobalErrorListeners,
+  provideZonelessChangeDetection,
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 
@@ -42,25 +48,25 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(), // Only enable in production
-      registrationStrategy: 'registerWhenStable:30000'
+      registrationStrategy: 'registerWhenStable:30000',
     }),
     {
       provide: APP_INITIALIZER,
       useFactory: initializeNotifications,
       deps: [NotificationService],
-      multi: true
+      multi: true,
     },
     {
       provide: APP_INITIALIZER,
       useFactory: initializeNetworkStatus,
       deps: [NetworkService],
-      multi: true
+      multi: true,
     },
     {
       provide: APP_INITIALIZER,
       useFactory: initializeTracing,
       deps: [TracingService],
-      multi: true
-    }
-  ]
+      multi: true,
+    },
+  ],
 };

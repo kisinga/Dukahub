@@ -2,23 +2,23 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Add Product Variant Fields
- * 
+ *
  * Merges:
  * - 1760520000000-AddProductBarcode.ts
  * - 1760800000000-AddWholesaleFractionalFields.ts
  * - 1760820000000-RemoveQuantityUnitField.ts
- * 
+ *
  * Final state:
  * - Product: customFieldsBarcode
  * - ProductVariant: customFieldsWholesaleprice, customFieldsAllowfractionalquantity
  * - ProductVariant: NO customFieldsQuantityunit (removed)
  */
 export class AddProductVariantFields1000000000001 implements MigrationInterface {
-    name = 'AddProductVariantFields1000000000001';
+  name = 'AddProductVariantFields1000000000001';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Add product barcode field
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Add product barcode field
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -31,8 +31,8 @@ export class AddProductVariantFields1000000000001 implements MigrationInterface 
             END $$;
         `);
 
-        // Add product_variant fields
-        await queryRunner.query(`
+    // Add product_variant fields
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -51,10 +51,10 @@ export class AddProductVariantFields1000000000001 implements MigrationInterface 
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -77,7 +77,5 @@ export class AddProductVariantFields1000000000001 implements MigrationInterface 
                 END IF;
             END $$;
         `);
-    }
+  }
 }
-
-

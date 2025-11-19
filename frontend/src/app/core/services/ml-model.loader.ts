@@ -9,7 +9,9 @@ export async function loadMlModelService(injector: Injector): Promise<MlModelSer
     return cachedService;
   }
 
-  loadPromise ??= import('./ml-model.service').then((module) => injector.get(module.MlModelService));
+  loadPromise ??= import('./ml-model.service').then((module) =>
+    injector.get(module.MlModelService),
+  );
   cachedService = await loadPromise;
   return cachedService;
 }

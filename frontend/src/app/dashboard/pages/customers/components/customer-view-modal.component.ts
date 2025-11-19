@@ -1,10 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, inject, input, output, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { CurrencyService } from '../../../../core/services/currency.service';
 
 /**
  * Customer View Modal Component
- * 
+ *
  * Mobile-optimized modal for viewing complete customer information
  */
 @Component({
@@ -13,7 +22,7 @@ import { CurrencyService } from '../../../../core/services/currency.service';
   imports: [CommonModule],
   templateUrl: './customer-view-modal.component.html',
   styleUrl: './customer-view-modal.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CustomerViewModalComponent {
   readonly currencyService = inject(CurrencyService);
@@ -58,7 +67,7 @@ export class CustomerViewModalComponent {
   show(): void {
     // Reset expanded sections
     this.expandedSections.set(new Set(['basic']));
-    
+
     const modal = this.modalRef()?.nativeElement;
     modal?.showModal();
   }
@@ -224,15 +233,3 @@ export class CustomerViewModalComponent {
     this.hide();
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-

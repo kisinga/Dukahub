@@ -382,20 +382,20 @@ The project follows a **behavior-driven testing approach** focused on real-world
 
 ```javascript
 module.exports = {
-  preset: "ts-jest",
-  testEnvironment: "node",
+  preset: 'ts-jest',
+  testEnvironment: 'node',
   collectCoverageFrom: [
-    "src/**/*.ts",
-    "!src/**/*.d.ts",
-    "!src/migrations/**/*.ts",
-    "!src/index.ts",
-    "!src/index-worker.ts",
-    "!src/populate.ts",
-    "!src/vendure-config.ts",
-    "!src/environment.d.ts",
+    'src/**/*.ts',
+    '!src/**/*.d.ts',
+    '!src/migrations/**/*.ts',
+    '!src/index.ts',
+    '!src/index-worker.ts',
+    '!src/populate.ts',
+    '!src/vendure-config.ts',
+    '!src/environment.d.ts',
   ],
-  coverageDirectory: "coverage",
-  coverageReporters: ["text", "lcov", "html"],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
 };
 ```
 
@@ -656,19 +656,16 @@ Benefits:
 **Key Design Decisions:**
 
 1. **Sequential Variants** (not batch)
-
    - Vendure requires unique option combinations per variant
    - Creating variants sequentially avoids this constraint
    - Each variant gets its own mutation call
 
 2. **SKU Validation**
-
    - Checked BEFORE creating product
    - Prevents orphaned products with invalid variants
    - Uses `CHECK_SKU_EXISTS` query
 
 3. **Non-Blocking Photos**
-
    - Product/variants success doesn't depend on photos
    - If upload fails, user can retry or add photos later
    - Prevents data loss from file upload issues
@@ -710,12 +707,10 @@ Or if Phase 2 fails:
 ### Future Improvements
 
 1. **Implement Product Deletion Mutation**
-
    - Currently rollback just logs (DELETE_PRODUCT needs implementation)
    - Add `DELETE_PRODUCT` GraphQL mutation to backend
 
 2. **Batch Asset Upload**
-
    - Create all assets in one mutation instead of sequentially
    - Will require backend optimization
 

@@ -1,4 +1,5 @@
 <!-- 0ea228d7-f994-45b6-a209-3710c883ec34 16ad05d9-88c7-43f8-9b12-b1c85863179b -->
+
 # Period End Closing and Opening with Reconciliation Enforcement
 
 ## Overview
@@ -35,18 +36,18 @@ Implement a robust period end closing system that enforces reconciliation of pay
 
 ```typescript
 export const ManageReconciliationPermission = new PermissionDefinition({
-    name: 'ManageReconciliation',
-    description: 'Allows creating and verifying reconciliations for accounts.',
+  name: 'ManageReconciliation',
+  description: 'Allows creating and verifying reconciliations for accounts.',
 });
 
 export const CloseAccountingPeriodPermission = new PermissionDefinition({
-    name: 'CloseAccountingPeriod',
-    description: 'Allows closing accounting periods after reconciliation verification.',
+  name: 'CloseAccountingPeriod',
+  description: 'Allows closing accounting periods after reconciliation verification.',
 });
 
 export const CreateInterAccountTransferPermission = new PermissionDefinition({
-    name: 'CreateInterAccountTransfer',
-    description: 'Allows creating inter-account transfers during reconciliation sessions.',
+  name: 'CreateInterAccountTransfer',
+  description: 'Allows creating inter-account transfers during reconciliation sessions.',
 });
 ```
 
@@ -419,7 +420,10 @@ Add fields: `sessionId`, `expectedBalance`, `actualBalance`
 ```typescript
 interface ReconciliationRule {
   getRequiredAccounts(channelId: number): Promise<AccountCode[]>;
-  validateReconciliation(ctx: RequestContext, reconciliation: Reconciliation): Promise<ValidationResult>;
+  validateReconciliation(
+    ctx: RequestContext,
+    reconciliation: Reconciliation
+  ): Promise<ValidationResult>;
 }
 ```
 

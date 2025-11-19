@@ -1,45 +1,44 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export interface SubscriptionTierFeatures {
-    features: string[];
+  features: string[];
 }
 
 @Entity()
 export class SubscriptionTier {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ unique: true })
-    code: string;
+  @Column({ unique: true })
+  code: string;
 
-    @Column()
-    name: string;
+  @Column()
+  name: string;
 
-    @Column('text', { nullable: true })
-    description: string;
+  @Column('text', { nullable: true })
+  description: string;
 
-    @Column('int')
-    priceMonthly: number;
+  @Column('int')
+  priceMonthly: number;
 
-    @Column('int')
-    priceYearly: number;
+  @Column('int')
+  priceYearly: number;
 
-    @Column('jsonb', { nullable: true })
-    features: SubscriptionTierFeatures;
+  @Column('jsonb', { nullable: true })
+  features: SubscriptionTierFeatures;
 
-    @Column({ default: true })
-    isActive: boolean;
+  @Column({ default: true })
+  isActive: boolean;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
-
-
-
-
-
-
-

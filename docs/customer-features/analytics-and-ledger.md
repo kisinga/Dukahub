@@ -274,5 +274,3 @@ Because all movements go through the ledger, reconciling is a matter of matching
   - Per-channel chart of accounts and account initialisation.
   - Credit plugin and credit-limited checkout enforcement.
   - Financially-aware dashboards in the Dukarun frontends.
-
-

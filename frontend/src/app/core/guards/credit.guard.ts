@@ -3,14 +3,13 @@ import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 export const creditGuard = () => {
-    const authService = inject(AuthService);
-    const router = inject(Router);
+  const authService = inject(AuthService);
+  const router = inject(Router);
 
-    if (authService.hasCreditManagementPermission()) {
-        return true;
-    }
+  if (authService.hasCreditManagementPermission()) {
+    return true;
+  }
 
-    router.navigate(['/dashboard']);
-    return false;
+  router.navigate(['/dashboard']);
+  return false;
 };
-

@@ -2,34 +2,34 @@
 // These will be replaced by generated types once codegen runs
 
 export interface Notification {
-    id: string;
-    userId: string;
-    channelId: string;
-    type: 'ORDER' | 'STOCK' | 'ML_TRAINING' | 'PAYMENT';
-    title: string;
-    message: string;
-    data?: any;
-    read: boolean;
-    createdAt: string;
+  id: string;
+  userId: string;
+  channelId: string;
+  type: 'ORDER' | 'STOCK' | 'ML_TRAINING' | 'PAYMENT';
+  title: string;
+  message: string;
+  data?: any;
+  read: boolean;
+  createdAt: string;
 }
 
 export interface NotificationList {
-    items: Notification[];
-    totalItems: number;
+  items: Notification[];
+  totalItems: number;
 }
 
 export interface NotificationListOptions {
-    skip?: number;
-    take?: number;
-    type?: string;
+  skip?: number;
+  take?: number;
+  type?: string;
 }
 
 export interface PushSubscriptionInput {
-    endpoint: string;
-    keys: {
-        p256dh: string;
-        auth: string;
-    };
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
 }
 
 // Mock GraphQL operations
@@ -81,4 +81,3 @@ export const UNSUBSCRIBE_TO_PUSH = `
     unsubscribeToPush
   }
 `;
-

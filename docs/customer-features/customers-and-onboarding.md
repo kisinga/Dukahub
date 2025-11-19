@@ -266,5 +266,3 @@ Once set:
   - Customer provisioning blueprint for new businesses.
   - Credit approvals, limits and outstanding balances tied to the ledger.
   - Future optimisations for large customer/supplier datasets.
-
-

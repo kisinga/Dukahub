@@ -28,8 +28,8 @@ import { CreditResolver } from './credit.resolver';
 import { CustomerFieldResolver } from './customer.resolver';
 import { PaymentAllocationResolver } from './payment-allocation.resolver';
 import {
-    ApproveCustomerCreditPermission,
-    ManageCustomerCreditLimitPermission
+  ApproveCustomerCreditPermission,
+  ManageCustomerCreditLimitPermission,
 } from './permissions';
 import { ManageSupplierCreditPurchasesPermission } from './supplier-credit.permissions';
 import { SupplierCreditResolver } from './supplier-credit.resolver';
@@ -37,232 +37,233 @@ import { SupplierPaymentAllocationResolver } from './supplier-payment-allocation
 
 // Merge all schemas into a single DocumentNode
 const COMBINED_SCHEMA = gql`
-    type CreditSummary {
-        customerId: ID!
-        isCreditApproved: Boolean!
-        creditLimit: Float!
-        outstandingAmount: Float!
-        availableCredit: Float!
-        lastRepaymentDate: DateTime
-        lastRepaymentAmount: Float!
-        creditDuration: Int!
-    }
+  type CreditSummary {
+    customerId: ID!
+    isCreditApproved: Boolean!
+    creditLimit: Float!
+    outstandingAmount: Float!
+    availableCredit: Float!
+    lastRepaymentDate: DateTime
+    lastRepaymentAmount: Float!
+    creditDuration: Int!
+  }
 
-    input ApproveCustomerCreditInput {
-        customerId: ID!
-        approved: Boolean!
-        creditLimit: Float
-        creditDuration: Int
-    }
+  input ApproveCustomerCreditInput {
+    customerId: ID!
+    approved: Boolean!
+    creditLimit: Float
+    creditDuration: Int
+  }
 
-    input UpdateCustomerCreditLimitInput {
-        customerId: ID!
-        creditLimit: Float!
-        creditDuration: Int
-    }
+  input UpdateCustomerCreditLimitInput {
+    customerId: ID!
+    creditLimit: Float!
+    creditDuration: Int
+  }
 
-    input UpdateCreditDurationInput {
-        customerId: ID!
-        creditDuration: Int!
-    }
+  input UpdateCreditDurationInput {
+    customerId: ID!
+    creditDuration: Int!
+  }
 
-    input CartItemInput {
-        variantId: ID!
-        quantity: Float!
-        customLinePrice: Int
-        priceOverrideReason: String
-    }
+  input CartItemInput {
+    variantId: ID!
+    quantity: Float!
+    customLinePrice: Int
+    priceOverrideReason: String
+  }
 
-    input CreateOrderInput {
-        cartItems: [CartItemInput!]!
-        paymentMethodCode: String!
-        customerId: ID
-        metadata: JSON
-        isCreditSale: Boolean
-        isCashierFlow: Boolean
-    }
+  input CreateOrderInput {
+    cartItems: [CartItemInput!]!
+    paymentMethodCode: String!
+    customerId: ID
+    metadata: JSON
+    isCreditSale: Boolean
+    isCashierFlow: Boolean
+  }
 
-    type PaymentAllocationResult {
-        ordersPaid: [OrderPayment!]!
-        remainingBalance: Float!
-        totalAllocated: Float!
-        excessPayment: Float!
-    }
+  type PaymentAllocationResult {
+    ordersPaid: [OrderPayment!]!
+    remainingBalance: Float!
+    totalAllocated: Float!
+    excessPayment: Float!
+  }
 
-    type OrderPayment {
-        orderId: ID!
-        orderCode: String!
-        amountPaid: Float!
-    }
+  type OrderPayment {
+    orderId: ID!
+    orderCode: String!
+    amountPaid: Float!
+  }
 
-    input PaymentAllocationInput {
-        customerId: ID!
-        paymentAmount: Float!
-        orderIds: [ID!]
-    }
+  input PaymentAllocationInput {
+    customerId: ID!
+    paymentAmount: Float!
+    orderIds: [ID!]
+  }
 
-    type CreditValidationResult {
-        isValid: Boolean!
-        error: String
-        availableCredit: Float!
-        estimatedOrderTotal: Float!
-        wouldExceedLimit: Boolean!
-    }
+  type CreditValidationResult {
+    isValid: Boolean!
+    error: String
+    availableCredit: Float!
+    estimatedOrderTotal: Float!
+    wouldExceedLimit: Boolean!
+  }
 
-    input ValidateCreditInput {
-        customerId: ID!
-        estimatedOrderTotal: Float!
-    }
+  input ValidateCreditInput {
+    customerId: ID!
+    estimatedOrderTotal: Float!
+  }
 
-    extend type Customer {
-        outstandingAmount: Float!
-    }
+  extend type Customer {
+    outstandingAmount: Float!
+  }
 
-    extend type Query {
-        creditSummary(customerId: ID!): CreditSummary!
-        unpaidOrdersForCustomer(customerId: ID!): [Order!]!
-        validateCredit(input: ValidateCreditInput!): CreditValidationResult!
-    }
+  extend type Query {
+    creditSummary(customerId: ID!): CreditSummary!
+    unpaidOrdersForCustomer(customerId: ID!): [Order!]!
+    validateCredit(input: ValidateCreditInput!): CreditValidationResult!
+  }
 
-    extend type Mutation {
-        approveCustomerCredit(input: ApproveCustomerCreditInput!): CreditSummary!
-        updateCustomerCreditLimit(input: UpdateCustomerCreditLimitInput!): CreditSummary!
-        updateCreditDuration(input: UpdateCreditDurationInput!): CreditSummary!
-        createOrder(input: CreateOrderInput!): Order!
-        allocateBulkPayment(input: PaymentAllocationInput!): PaymentAllocationResult!
-    }
+  extend type Mutation {
+    approveCustomerCredit(input: ApproveCustomerCreditInput!): CreditSummary!
+    updateCustomerCreditLimit(input: UpdateCustomerCreditLimitInput!): CreditSummary!
+    updateCreditDuration(input: UpdateCreditDurationInput!): CreditSummary!
+    createOrder(input: CreateOrderInput!): Order!
+    allocateBulkPayment(input: PaymentAllocationInput!): PaymentAllocationResult!
+  }
 
-    type SupplierCreditSummary {
-        supplierId: ID!
-        isSupplierCreditApproved: Boolean!
-        supplierCreditLimit: Float!
-        outstandingAmount: Float!
-        availableCredit: Float!
-        lastRepaymentDate: DateTime
-        lastRepaymentAmount: Float!
-        supplierCreditDuration: Int!
-    }
+  type SupplierCreditSummary {
+    supplierId: ID!
+    isSupplierCreditApproved: Boolean!
+    supplierCreditLimit: Float!
+    outstandingAmount: Float!
+    availableCredit: Float!
+    lastRepaymentDate: DateTime
+    lastRepaymentAmount: Float!
+    supplierCreditDuration: Int!
+  }
 
-    input ApproveSupplierCreditInput {
-        supplierId: ID!
-        approved: Boolean!
-        supplierCreditLimit: Float
-        supplierCreditDuration: Int
-    }
+  input ApproveSupplierCreditInput {
+    supplierId: ID!
+    approved: Boolean!
+    supplierCreditLimit: Float
+    supplierCreditDuration: Int
+  }
 
-    input UpdateSupplierCreditLimitInput {
-        supplierId: ID!
-        supplierCreditLimit: Float!
-        supplierCreditDuration: Int
-    }
+  input UpdateSupplierCreditLimitInput {
+    supplierId: ID!
+    supplierCreditLimit: Float!
+    supplierCreditDuration: Int
+  }
 
-    input UpdateSupplierCreditDurationInput {
-        supplierId: ID!
-        supplierCreditDuration: Int!
-    }
+  input UpdateSupplierCreditDurationInput {
+    supplierId: ID!
+    supplierCreditDuration: Int!
+  }
 
-    type SupplierPaymentAllocationResult {
-        purchasesPaid: [SupplierPurchasePayment!]!
-        remainingBalance: Float!
-        totalAllocated: Float!
-        excessPayment: Float!
-    }
+  type SupplierPaymentAllocationResult {
+    purchasesPaid: [SupplierPurchasePayment!]!
+    remainingBalance: Float!
+    totalAllocated: Float!
+    excessPayment: Float!
+  }
 
-    type SupplierPurchasePayment {
-        purchaseId: ID!
-        purchaseReference: String!
-        amountPaid: Float!
-    }
+  type SupplierPurchasePayment {
+    purchaseId: ID!
+    purchaseReference: String!
+    amountPaid: Float!
+  }
 
-    input SupplierPaymentAllocationInput {
-        supplierId: ID!
-        paymentAmount: Float!
-        purchaseIds: [ID!]
-    }
+  input SupplierPaymentAllocationInput {
+    supplierId: ID!
+    paymentAmount: Float!
+    purchaseIds: [ID!]
+  }
 
-    extend type Query {
-        supplierCreditSummary(supplierId: ID!): SupplierCreditSummary!
-        unpaidPurchasesForSupplier(supplierId: ID!): [StockPurchase!]!
-    }
+  extend type Query {
+    supplierCreditSummary(supplierId: ID!): SupplierCreditSummary!
+    unpaidPurchasesForSupplier(supplierId: ID!): [StockPurchase!]!
+  }
 
-    extend type Mutation {
-        approveSupplierCredit(input: ApproveSupplierCreditInput!): SupplierCreditSummary!
-        updateSupplierCreditLimit(input: UpdateSupplierCreditLimitInput!): SupplierCreditSummary!
-        updateSupplierCreditDuration(input: UpdateSupplierCreditDurationInput!): SupplierCreditSummary!
-        allocateBulkSupplierPayment(input: SupplierPaymentAllocationInput!): SupplierPaymentAllocationResult!
-    }
+  extend type Mutation {
+    approveSupplierCredit(input: ApproveSupplierCreditInput!): SupplierCreditSummary!
+    updateSupplierCreditLimit(input: UpdateSupplierCreditLimitInput!): SupplierCreditSummary!
+    updateSupplierCreditDuration(input: UpdateSupplierCreditDurationInput!): SupplierCreditSummary!
+    allocateBulkSupplierPayment(
+      input: SupplierPaymentAllocationInput!
+    ): SupplierPaymentAllocationResult!
+  }
 `;
 
 @VendurePlugin({
-    imports: [PluginCommonModule, LedgerPlugin],
-    providers: [
-        // Financial services (ledger infrastructure)
-        LedgerQueryService,
-        LedgerPostingService,
-        FinancialService,
-        ChartOfAccountsService,
-        // Credit services
-        CreditService,
-        SupplierCreditService,
-        // Order services
-        OrderCreationService,
-        PriceOverrideService,
-        OrderAddressService,
-        OrderCreditValidatorService,
-        OrderFulfillmentService,
-        OrderItemService,
-        OrderPaymentService,
-        OrderStateService,
-        // Payment services
-        PaymentAllocationService,
-        SupplierPaymentAllocationService,
-        // Stock services
-        PurchaseCreditValidatorService,
-        // Resolvers and subscribers
-        CreditResolver,
-        CustomerFieldResolver,
-        CreditPaymentSubscriber,
-        PaymentAllocationResolver,
-        SupplierCreditResolver,
-        SupplierPaymentAllocationResolver,
-        PaymentEventsAdapter, // Moved from LedgerPlugin - needs FinancialService
-    ],
-    exports: [
-        // Export FinancialService for use by other plugins
-        FinancialService,
-        ChartOfAccountsService,
-    ],
-    configuration: (config) => {
-        // Register custom permissions
-        config.authOptions.customPermissions = [
-            ...(config.authOptions.customPermissions || []),
-            ApproveCustomerCreditPermission,
-            ManageCustomerCreditLimitPermission,
-            ManageSupplierCreditPurchasesPermission,
-        ];
+  imports: [PluginCommonModule, LedgerPlugin],
+  providers: [
+    // Financial services (ledger infrastructure)
+    LedgerQueryService,
+    LedgerPostingService,
+    FinancialService,
+    ChartOfAccountsService,
+    // Credit services
+    CreditService,
+    SupplierCreditService,
+    // Order services
+    OrderCreationService,
+    PriceOverrideService,
+    OrderAddressService,
+    OrderCreditValidatorService,
+    OrderFulfillmentService,
+    OrderItemService,
+    OrderPaymentService,
+    OrderStateService,
+    // Payment services
+    PaymentAllocationService,
+    SupplierPaymentAllocationService,
+    // Stock services
+    PurchaseCreditValidatorService,
+    // Resolvers and subscribers
+    CreditResolver,
+    CustomerFieldResolver,
+    CreditPaymentSubscriber,
+    PaymentAllocationResolver,
+    SupplierCreditResolver,
+    SupplierPaymentAllocationResolver,
+    PaymentEventsAdapter, // Moved from LedgerPlugin - needs FinancialService
+  ],
+  exports: [
+    // Export FinancialService for use by other plugins
+    FinancialService,
+    ChartOfAccountsService,
+  ],
+  configuration: config => {
+    // Register custom permissions
+    config.authOptions.customPermissions = [
+      ...(config.authOptions.customPermissions || []),
+      ApproveCustomerCreditPermission,
+      ManageCustomerCreditLimitPermission,
+      ManageSupplierCreditPurchasesPermission,
+    ];
 
-        // Replace the placeholder credit payment handler with a DI-backed instance.
-        // The CreditService provider is available in the plugin context, so we can
-        // construct the handler using the factory.
-        const creditServiceProvider = CreditService as any;
-        config.paymentOptions.paymentMethodHandlers = [
-            ...config.paymentOptions.paymentMethodHandlers,
-            createCreditPaymentHandler(creditServiceProvider),
-        ];
+    // Replace the placeholder credit payment handler with a DI-backed instance.
+    // The CreditService provider is available in the plugin context, so we can
+    // construct the handler using the factory.
+    const creditServiceProvider = CreditService as any;
+    config.paymentOptions.paymentMethodHandlers = [
+      ...config.paymentOptions.paymentMethodHandlers,
+      createCreditPaymentHandler(creditServiceProvider),
+    ];
 
-        return config;
-    },
-    adminApiExtensions: {
-        schema: COMBINED_SCHEMA,
-        resolvers: [
-            CreditResolver,
-            CustomerFieldResolver,
-            PaymentAllocationResolver,
-            SupplierCreditResolver,
-            SupplierPaymentAllocationResolver,
-        ],
-    },
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+    return config;
+  },
+  adminApiExtensions: {
+    schema: COMBINED_SCHEMA,
+    resolvers: [
+      CreditResolver,
+      CustomerFieldResolver,
+      PaymentAllocationResolver,
+      SupplierCreditResolver,
+      SupplierPaymentAllocationResolver,
+    ],
+  },
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class CreditPlugin { }
-
+export class CreditPlugin {}

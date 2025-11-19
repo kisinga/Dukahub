@@ -47,27 +47,27 @@
       <div class="flex-none gap-1 sm:gap-2">
         <!-- Offline Indicator -->
         @if (!isOnline()) {
-        <div class="tooltip tooltip-bottom" data-tip="Offline Mode">
-          <div class="btn btn-ghost btn-square btn-lg indicator">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5 text-warning"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"
-              />
-            </svg>
-            <span
-              class="badge badge-warning badge-xs indicator-item indicator-top indicator-end"
-            ></span>
+          <div class="tooltip tooltip-bottom" data-tip="Offline Mode">
+            <div class="btn btn-ghost btn-square btn-lg indicator">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-warning"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"
+                />
+              </svg>
+              <span
+                class="badge badge-warning badge-xs indicator-item indicator-top indicator-end"
+              ></span>
+            </div>
           </div>
-        </div>
         }
 
         <!-- Notifications - Streamlined -->
@@ -88,7 +88,7 @@
               />
             </svg>
             @if (unreadCount() > 0) {
-            <span class="badge badge-error badge-xs indicator-item">{{ unreadCount() }}</span>
+              <span class="badge badge-error badge-xs indicator-item">{{ unreadCount() }}</span>
             }
           </div>
           <div
@@ -102,59 +102,59 @@
               <div>
                 <h3 class="font-semibold">Notifications</h3>
                 @if (unreadCount() > 0) {
-                <p class="text-xs opacity-60 mt-0.5">{{ unreadCount() }} unread</p>
+                  <p class="text-xs opacity-60 mt-0.5">{{ unreadCount() }} unread</p>
                 }
               </div>
               @if (unreadCount() > 0) {
-              <button class="btn btn-ghost btn-xs" (click)="markAllNotificationsAsRead()">
-                Mark all read
-              </button>
+                <button class="btn btn-ghost btn-xs" (click)="markAllNotificationsAsRead()">
+                  Mark all read
+                </button>
               }
             </div>
 
             <!-- Notifications List - Better Spacing -->
             <div class="max-h-[70vh] overflow-y-auto">
               @for (notif of notifications(); track notif.id) {
-              <div
-                class="flex items-start gap-3 p-4 hover:bg-base-200 active:bg-base-300 cursor-pointer transition-colors border-b border-base-300 last:border-b-0"
-                [class.bg-base-200]="!notif.read"
-                (click)="markNotificationAsRead(notif.id)"
-              >
                 <div
-                  class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
-                  [class.bg-warning]="getNotificationTypeClass(notif.type) === 'warning'"
-                  [class.bg-success]="getNotificationTypeClass(notif.type) === 'success'"
-                  [class.bg-info]="getNotificationTypeClass(notif.type) === 'info'"
+                  class="flex items-start gap-3 p-4 hover:bg-base-200 active:bg-base-300 cursor-pointer transition-colors border-b border-base-300 last:border-b-0"
+                  [class.bg-base-200]="!notif.read"
+                  (click)="markNotificationAsRead(notif.id)"
                 >
-                  <span class="text-xl">{{ getNotificationIcon(notif.type) }}</span>
+                  <div
+                    class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+                    [class.bg-warning]="getNotificationTypeClass(notif.type) === 'warning'"
+                    [class.bg-success]="getNotificationTypeClass(notif.type) === 'success'"
+                    [class.bg-info]="getNotificationTypeClass(notif.type) === 'info'"
+                  >
+                    <span class="text-xl">{{ getNotificationIcon(notif.type) }}</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm leading-relaxed" [class.font-semibold]="!notif.read">
+                      {{ notif.title }}
+                    </p>
+                    <p class="text-xs opacity-60 mt-1">{{ notif.message }}</p>
+                    <p class="text-xs opacity-60 mt-1">
+                      {{ formatNotificationTime(notif.createdAt) }}
+                    </p>
+                  </div>
+                  @if (!notif.read) {
+                    <div class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1"></div>
+                  }
                 </div>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm leading-relaxed" [class.font-semibold]="!notif.read">
-                    {{ notif.title }}
-                  </p>
-                  <p class="text-xs opacity-60 mt-1">{{ notif.message }}</p>
-                  <p class="text-xs opacity-60 mt-1">
-                    {{ formatNotificationTime(notif.createdAt) }}
-                  </p>
-                </div>
-                @if (!notif.read) {
-                <div class="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1"></div>
-                }
-              </div>
               } @empty {
-              <div class="text-center py-16">
-                <div class="text-5xl mb-3">🔔</div>
-                <p class="font-medium">No notifications</p>
-                <p class="text-sm opacity-60 mt-1">You're all caught up!</p>
-              </div>
+                <div class="text-center py-16">
+                  <div class="text-5xl mb-3">🔔</div>
+                  <p class="font-medium">No notifications</p>
+                  <p class="text-sm opacity-60 mt-1">You're all caught up!</p>
+                </div>
               }
             </div>
 
             <!-- Footer Actions -->
             @if (notifications.length > 0) {
-            <div class="border-t border-base-300 p-3">
-              <button class="btn btn-block min-h-[3rem]">View All Notifications</button>
-            </div>
+              <div class="border-t border-base-300 p-3">
+                <button class="btn btn-block min-h-[3rem]">View All Notifications</button>
+              </div>
             }
           </div>
         </div>
@@ -410,18 +410,18 @@
       <div class="flex-1 overflow-y-auto p-4">
         <ul class="menu menu-lg gap-1">
           @for (item of navItems(); track item.route) {
-          <li>
-            <a
-              [routerLink]="item.route"
-              routerLinkActive="active"
-              [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
-              (click)="closeDrawer()"
-              class="flex items-center gap-3 rounded-lg min-h-[3rem]"
-            >
-              <span class="text-xl">{{ item.icon }}</span>
-              <span class="font-medium">{{ item.label }}</span>
-            </a>
-          </li>
+            <li>
+              <a
+                [routerLink]="item.route"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+                (click)="closeDrawer()"
+                class="flex items-center gap-3 rounded-lg min-h-[3rem]"
+              >
+                <span class="text-xl">{{ item.icon }}</span>
+                <span class="font-medium">{{ item.label }}</span>
+              </a>
+            </li>
           }
         </ul>
       </div>
@@ -430,81 +430,81 @@
       <div class="border-t border-base-300 p-4">
         <!-- Company Switcher (Rare Access) -->
         @if (companies().length > 1) {
-        <div class="mb-3">
-          <div class="text-xs font-semibold opacity-60 mb-2 px-2">Switch Company</div>
-          <div class="dropdown dropdown-top w-full">
-            <div
-              tabindex="0"
-              role="button"
-              class="btn btn-ghost btn-block justify-start gap-3 min-h-[3rem]"
-            >
-              <div class="avatar">
-                <div class="w-8 h-8 rounded-lg">
-                  <img [src]="logoUrl()" [alt]="companyDisplayName()" />
-                </div>
-              </div>
-              <div class="flex-1 text-left min-w-0">
-                <div class="font-medium truncate">{{ activeCompany()?.code }}</div>
-                <div class="text-xs opacity-60">{{ companies().length }} companies</div>
-              </div>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4 flex-shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+          <div class="mb-3">
+            <div class="text-xs font-semibold opacity-60 mb-2 px-2">Switch Company</div>
+            <div class="dropdown dropdown-top w-full">
+              <div
+                tabindex="0"
+                role="button"
+                class="btn btn-ghost btn-block justify-start gap-3 min-h-[3rem]"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M7 16l-4-4m0 0l4-4m-4 4h18"
-                />
-              </svg>
-            </div>
-            <div
-              tabindex="0"
-              class="dropdown-content bg-base-100 rounded-box z-50 mb-2 w-full shadow-2xl border border-base-300"
-            >
-              <div class="max-h-[40vh] overflow-y-auto">
-                <ul class="menu p-2">
-                  @for (company of companies(); track company.id) {
-                  <li>
-                    <a
-                      (click)="selectCompany(company.id); closeDrawer()"
-                      [class.active]="company.id === activeCompanyId()"
-                      class="flex items-center gap-3 py-3 min-h-[3rem]"
-                    >
-                      <div class="avatar">
-                        <div class="w-8 h-8 rounded-lg">
-                          <img src="default_avatar.png" [alt]="company.code" />
-                        </div>
-                      </div>
-                      <div class="flex-1 min-w-0">
-                        <div class="font-medium truncate">{{ company.code }}</div>
-                      </div>
-                      @if (company.id === activeCompanyId()) {
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-5 w-5 text-primary"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fill-rule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clip-rule="evenodd"
-                        />
-                      </svg>
-                      }
-                    </a>
-                  </li>
-                  }
-                </ul>
+                <div class="avatar">
+                  <div class="w-8 h-8 rounded-lg">
+                    <img [src]="logoUrl()" [alt]="companyDisplayName()" />
+                  </div>
+                </div>
+                <div class="flex-1 text-left min-w-0">
+                  <div class="font-medium truncate">{{ activeCompany()?.code }}</div>
+                  <div class="text-xs opacity-60">{{ companies().length }} companies</div>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 16l-4-4m0 0l4-4m-4 4h18"
+                  />
+                </svg>
+              </div>
+              <div
+                tabindex="0"
+                class="dropdown-content bg-base-100 rounded-box z-50 mb-2 w-full shadow-2xl border border-base-300"
+              >
+                <div class="max-h-[40vh] overflow-y-auto">
+                  <ul class="menu p-2">
+                    @for (company of companies(); track company.id) {
+                      <li>
+                        <a
+                          (click)="selectCompany(company.id); closeDrawer()"
+                          [class.active]="company.id === activeCompanyId()"
+                          class="flex items-center gap-3 py-3 min-h-[3rem]"
+                        >
+                          <div class="avatar">
+                            <div class="w-8 h-8 rounded-lg">
+                              <img src="default_avatar.png" [alt]="company.code" />
+                            </div>
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <div class="font-medium truncate">{{ company.code }}</div>
+                          </div>
+                          @if (company.id === activeCompanyId()) {
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              class="h-5 w-5 text-primary"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fill-rule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clip-rule="evenodd"
+                              />
+                            </svg>
+                          }
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         }
 
         <div class="alert alert-info mb-3">

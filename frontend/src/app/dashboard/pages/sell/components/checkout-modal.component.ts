@@ -1,7 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { CurrencyService } from '../../../../core/services/currency.service';
-import { PaymentMethod, PaymentMethodService } from '../../../../core/services/payment-method.service';
+import {
+  PaymentMethod,
+  PaymentMethodService,
+} from '../../../../core/services/payment-method.service';
 import { Customer, CustomerSelectorComponent } from './customer-selector.component';
 
 type CheckoutType = 'credit' | 'cashier' | 'cash' | null;
@@ -631,7 +643,9 @@ export class CheckoutModalComponent implements OnInit {
       this.paymentMethodsError.set(null);
     } catch (error) {
       console.error('Failed to load payment methods:', error);
-      this.paymentMethodsError.set(error instanceof Error ? error.message : 'Failed to load payment methods');
+      this.paymentMethodsError.set(
+        error instanceof Error ? error.message : 'Failed to load payment methods',
+      );
       this.paymentMethods.set([]);
     }
   }
@@ -640,7 +654,7 @@ export class CheckoutModalComponent implements OnInit {
     const selectedCode = this.selectedPaymentMethod();
     if (!selectedCode) return '';
 
-    const method = this.paymentMethods().find(m => m.code === selectedCode);
+    const method = this.paymentMethods().find((m) => m.code === selectedCode);
     return method?.name || selectedCode;
   }
 
@@ -648,4 +662,3 @@ export class CheckoutModalComponent implements OnInit {
     this.paymentMethodSelect.emit(code as PaymentMethodCode);
   }
 }
-

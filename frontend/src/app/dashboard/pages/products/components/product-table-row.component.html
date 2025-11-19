@@ -12,9 +12,9 @@
   <div class="flex flex-col">
     <div class="font-semibold">{{ product().name }}</div>
     @if (product().description) {
-    <div class="text-xs text-base-content/60 line-clamp-1">
-      {{ product().description }}
-    </div>
+      <div class="text-xs text-base-content/60 line-clamp-1">
+        {{ product().description }}
+      </div>
     }
   </div>
 </td>
@@ -46,9 +46,9 @@
 <!-- Status -->
 <td class="text-center">
   @if (product().enabled) {
-  <span class="badge badge-success badge-sm">Active</span>
+    <span class="badge badge-success badge-sm">Active</span>
   } @else {
-  <span class="badge badge-ghost badge-sm">Disabled</span>
+    <span class="badge badge-ghost badge-sm">Disabled</span>
   }
 </td>
 

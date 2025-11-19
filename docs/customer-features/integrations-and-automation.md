@@ -124,9 +124,9 @@ These can appear:
 Flow (simplified from the architecture):
 
 ```text
-Business event (order, stock, ML) 
-  → Notification handler 
-  → Notification records in DB 
+Business event (order, stock, ML)
+  → Notification handler
+  → Notification records in DB
   → In-app toasts and optional Web Push
 ```
 
@@ -300,5 +300,3 @@ Merchants then interact only with the **Subscription** UI; the underlying integr
   - Event-driven notification system with push support.
   - ML training pipeline endpoints.
   - Containerised deployment, first-run automation, and observability stack.
-
-

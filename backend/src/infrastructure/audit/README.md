@@ -44,20 +44,22 @@ The audit system provides comprehensive, channel-scoped logging of all sensitive
 @Injectable()
 export class MyService {
   constructor(
-    private readonly auditService: AuditService,
+    private readonly auditService: AuditService
     // ... other dependencies
   ) {}
 
   async performAction(ctx: RequestContext, input: SomeInput): Promise<Result> {
     const result = await this.doWork(ctx, input);
-    
+
     // Log user action
     await this.auditService.log(ctx, 'my_action.performed', {
       entityType: 'MyEntity',
       entityId: result.id.toString(),
-      data: { /* relevant data */ }
+      data: {
+        /* relevant data */
+      },
     });
-    
+
     return result;
   }
 }
@@ -66,11 +68,13 @@ export class MyService {
 ### When to Use `log()` vs `logSystemEvent()`
 
 **Use `log()` for:**
+
 - Direct user actions (order creation, payment addition, settings changes)
 - Operations triggered by user requests
 - Any action where `RequestContext.activeUserId` is available
 
 **Use `logSystemEvent()` for:**
+
 - Vendure events (OrderStateTransitionEvent, PaymentStateTransitionEvent)
 - System-triggered events that inherit user context from entities
 - Events where user context comes from entity custom fields
@@ -85,15 +89,15 @@ await this.orderService.update(ctx, {
   id: orderId,
   customFields: {
     createdByUserId: ctx.activeUserId,
-    lastModifiedByUserId: ctx.activeUserId
-  }
+    lastModifiedByUserId: ctx.activeUserId,
+  },
 });
 
 // Then log audit event
 await this.auditService.log(ctx, 'order.created', {
   entityType: 'Order',
   entityId: orderId.toString(),
-  data: { orderCode: order.code, total: order.total }
+  data: { orderCode: order.code, total: order.total },
 });
 ```
 
@@ -121,23 +125,23 @@ Convention: `{entity}.{action}` or `{entity}.{category}.{action}`
 // Get all events for an entity
 const events = await this.auditService.getAuditTrail(ctx, {
   entityType: 'Order',
-  entityId: orderId.toString()
+  entityId: orderId.toString(),
 });
 
 // Get events by user
 const userEvents = await this.auditService.getAuditTrail(ctx, {
-  userId: userId.toString()
+  userId: userId.toString(),
 });
 
 // Get events by type
 const orderEvents = await this.auditService.getAuditTrail(ctx, {
-  eventType: 'order.created'
+  eventType: 'order.created',
 });
 
 // Get events in time range
 const recentEvents = await this.auditService.getAuditTrail(ctx, {
   startDate: new Date('2024-01-01'),
-  endDate: new Date('2024-12-31')
+  endDate: new Date('2024-12-31'),
 });
 ```
 
@@ -161,19 +165,19 @@ Log immediately after performing the action:
 ```typescript
 async createSomething(ctx: RequestContext, input: Input): Promise<Entity> {
   const entity = await this.createEntity(ctx, input);
-  
+
   // Update custom fields if needed
   await this.updateEntityCustomFields(ctx, entity.id, {
     createdByUserId: ctx.activeUserId
   });
-  
+
   // Log audit event
   await this.auditService.log(ctx, 'entity.created', {
     entityType: 'Entity',
     entityId: entity.id.toString(),
     data: { /* relevant data */ }
   });
-  
+
   return entity;
 }
 ```
@@ -201,8 +205,8 @@ await this.auditService.log(ctx, 'order.created', {
     total: order.total,
     customerId: order.customer?.id.toString(),
     paymentMethod: input.paymentMethodCode,
-    itemCount: order.lines.length
-  }
+    itemCount: order.lines.length,
+  },
 });
 ```
 
@@ -228,6 +232,7 @@ These are updated by services when actions occur and used by system events to in
 ## System Events
 
 System events (from VendureEventAuditSubscriber) automatically:
+
 1. Look up user context from entity custom fields
 2. Fall back to `event.ctx.activeUserId` if available
 3. Store as `null` with metadata if no user context found
@@ -261,7 +266,7 @@ query {
     id
     timestamp
     userId
-    ipAddress  # Client IP address (null if not available)
+    ipAddress # Client IP address (null if not available)
     eventType
     data
   }
@@ -275,4 +280,3 @@ query {
 - Real-time audit log streaming
 - Retention policies and archival
 - TimescaleDB migration for better performance
-

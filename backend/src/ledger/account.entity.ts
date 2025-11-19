@@ -23,8 +23,3 @@ export class Account {
   @Column({ type: 'boolean', default: true })
   isActive!: boolean;
 }
-
-
-
-
-

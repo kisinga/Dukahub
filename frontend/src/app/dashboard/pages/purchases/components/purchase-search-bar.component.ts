@@ -6,17 +6,16 @@ import { FormsModule } from '@angular/forms';
  * Purchase search bar component
  */
 @Component({
-    selector: 'app-purchase-search-bar',
-    imports: [CommonModule, FormsModule],
-    templateUrl: './purchase-search-bar.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-purchase-search-bar',
+  imports: [CommonModule, FormsModule],
+  templateUrl: './purchase-search-bar.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PurchaseSearchBarComponent {
-    readonly placeholder = input<string>('Search by supplier, reference...');
-    readonly searchQuery = model<string>('');
+  readonly placeholder = input<string>('Search by supplier, reference...');
+  readonly searchQuery = model<string>('');
 
-    clearSearch(): void {
-        this.searchQuery.set('');
-    }
+  clearSearch(): void {
+    this.searchQuery.set('');
+  }
 }
-

@@ -16,7 +16,7 @@ This guide covers best practices for developing custom Vendure plugins in the Du
 Vendure requires all plugins to declare a compatibility range to ensure they work correctly with the installed Vendure version. Without this declaration, Vendure will log warnings at startup:
 
 ```
-[Vendure Server] The plugin "YourPlugin" does not specify a compatibility range, 
+[Vendure Server] The plugin "YourPlugin" does not specify a compatibility range,
 so it is not guaranteed to be compatible with this version of Vendure.
 ```
 
@@ -28,15 +28,16 @@ All plugins **must** include a `compatibility` property in the `@VendurePlugin` 
 import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
 
 @VendurePlugin({
-    // ... plugin configuration
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+  // ... plugin configuration
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class YourPlugin { }
+export class YourPlugin {}
 ```
 
 ### Centralized Version Management
 
 The Vendure compatibility version is centrally managed in:
+
 - **File**: `backend/src/constants/vendure-version.constants.ts`
 - **Constant**: `VENDURE_COMPATIBILITY_VERSION`
 - **Current Value**: `^3.4.0` (compatible with Vendure 3.4.0 and above, but below 4.0.0)
@@ -46,6 +47,7 @@ The Vendure compatibility version is centrally managed in:
 ### Version Range Format
 
 The version range follows semantic versioning (semver) format:
+
 - `^3.4.0` - Compatible with 3.4.0 and above, but below 4.0.0 (allows patch and minor updates)
 - `~3.4.0` - Compatible with 3.4.0 and above, but below 3.5.0 (allows only patch updates)
 - `3.4.3` - Exact version match only
@@ -58,9 +60,9 @@ If a plugin requires a different compatibility range (e.g., it uses features fro
 
 ```typescript
 export class AdvancedPlugin {
-    static defineCompatibility() {
-        return '^3.5.0'; // Requires newer features
-    }
+  static defineCompatibility() {
+    return '^3.5.0'; // Requires newer features
+  }
 }
 ```
 
@@ -87,11 +89,11 @@ import { PluginCommonModule, VendurePlugin } from '@vendure/core';
 import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
 
 @VendurePlugin({
-    imports: [PluginCommonModule],
-    // ... your plugin configuration
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+  imports: [PluginCommonModule],
+  // ... your plugin configuration
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class YourNewPlugin { }
+export class YourNewPlugin {}
 ```
 
 ### Step 3: Register in vendure-config.ts
@@ -102,11 +104,11 @@ Add your plugin to the `plugins` array in `backend/src/vendure-config.ts`:
 import { YourNewPlugin } from './plugins/your-plugin/your-plugin.plugin';
 
 export const config: VendureConfig = {
-    // ...
-    plugins: [
-        // ... other plugins
-        YourNewPlugin,
-    ],
+  // ...
+  plugins: [
+    // ... other plugins
+    YourNewPlugin,
+  ],
 };
 ```
 
@@ -148,43 +150,45 @@ import { YourService } from '../../services/your-service';
 import { YourResolver } from './your.resolver';
 
 @VendurePlugin({
-    imports: [PluginCommonModule],
-    providers: [YourService, YourResolver],
-    adminApiExtensions: {
-        schema: yourSchema,
-        resolvers: [YourResolver],
-    },
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+  imports: [PluginCommonModule],
+  providers: [YourService, YourResolver],
+  adminApiExtensions: {
+    schema: yourSchema,
+    resolvers: [YourResolver],
+  },
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class YourPlugin { }
+export class YourPlugin {}
 ```
 
 ### Plugin with Entities
 
 ```typescript
 @VendurePlugin({
-    imports: [PluginCommonModule],
-    entities: [YourEntity],
-    providers: [YourService],
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+  imports: [PluginCommonModule],
+  entities: [YourEntity],
+  providers: [YourService],
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class YourPlugin { }
+export class YourPlugin {}
 ```
 
 ### Plugin with Configuration
 
 ```typescript
 @VendurePlugin({
-    imports: [PluginCommonModule],
-    providers: [YourService],
-    configuration: (config) => {
-        // Modify Vendure config
-        config.customOptions = { /* ... */ };
-        return config;
-    },
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+  imports: [PluginCommonModule],
+  providers: [YourService],
+  configuration: config => {
+    // Modify Vendure config
+    config.customOptions = {
+      /* ... */
+    };
+    return config;
+  },
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class YourPlugin { }
+export class YourPlugin {}
 ```
 
 ## Troubleshooting
@@ -195,15 +199,16 @@ export class YourPlugin { }
 
 ```typescript
 @VendurePlugin({
-    // ... other configuration
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+  // ... other configuration
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class YourPlugin { }
+export class YourPlugin {}
 ```
 
 ### Plugin not loading
 
 **Check**:
+
 1. Plugin is registered in `vendure-config.ts`
 2. All imports are correct
 3. No circular dependencies
@@ -218,5 +223,3 @@ export class YourPlugin { }
 - [Vendure Plugin Documentation](https://www.vendure.io/docs/plugins/)
 - [Vendure Plugin API Reference](https://www.vendure.io/docs/typescript-api/plugins/vendure-plugin/)
 - [Semantic Versioning](https://semver.org/)
-
-

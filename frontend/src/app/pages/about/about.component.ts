@@ -8,19 +8,8 @@ import { NavbarComponent } from '../../core/layout/navbar/navbar.component';
   imports: [RouterLink, NavbarComponent, FooterComponent],
   templateUrl: './about.component.html',
   styleUrl: './about.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AboutComponent {
   protected readonly currentYear = new Date().getFullYear();
 }
-
-
-
-
-
-
-
-
-
-
-

@@ -21,12 +21,12 @@
  *   - Versioning: Multiple versions can coexist, tags identify them
  */
 
-const fetch = require("node-fetch");
-const FormData = require("form-data");
-const fs = require("fs");
-const path = require("path");
+const fetch = require('node-fetch');
+const FormData = require('form-data');
+const fs = require('fs');
+const path = require('path');
 
-const DEFAULT_API_URL = "http://localhost:3000/admin-api";
+const DEFAULT_API_URL = 'http://localhost:3000/admin-api';
 
 class MLModelDeployer {
   constructor(apiUrl, authToken) {
@@ -35,34 +35,23 @@ class MLModelDeployer {
   }
 
   async deploy({ channelId, version, modelFile, weightsFile, metadataFile }) {
-    const trainingDate = new Date().toISOString().split("T")[0];
-    const tags = [
-      "ml-model",
-      `channel-${channelId}`,
-      `v${version}`,
-      `trained-${trainingDate}`,
-    ];
+    const trainingDate = new Date().toISOString().split('T')[0];
+    const tags = ['ml-model', `channel-${channelId}`, `v${version}`, `trained-${trainingDate}`];
 
-    console.log(
-      "╔═══════════════════════════════════════════════════════════╗"
-    );
-    console.log(
-      "║  ML MODEL DEPLOYMENT                                      ║"
-    );
-    console.log(
-      "╚═══════════════════════════════════════════════════════════╝"
-    );
+    console.log('╔═══════════════════════════════════════════════════════════╗');
+    console.log('║  ML MODEL DEPLOYMENT                                      ║');
+    console.log('╚═══════════════════════════════════════════════════════════╝');
     console.log(`Channel:        ${channelId}`);
     console.log(`Version:        v${version}`);
     console.log(`Training Date:  ${trainingDate}`);
-    console.log(`Tags:           ${tags.join(", ")}`);
-    console.log("");
+    console.log(`Tags:           ${tags.join(', ')}`);
+    console.log('');
 
     // Validate files exist
     const files = [
-      { path: modelFile, name: "model.json" },
-      { path: weightsFile, name: "weights.bin" },
-      { path: metadataFile, name: "metadata.json" },
+      { path: modelFile, name: 'model.json' },
+      { path: weightsFile, name: 'weights.bin' },
+      { path: metadataFile, name: 'metadata.json' },
     ];
 
     for (const file of files) {
@@ -72,7 +61,7 @@ class MLModelDeployer {
     }
 
     // Step 1: Upload assets
-    console.log("📤 Step 1/3: Uploading files...");
+    console.log('📤 Step 1/3: Uploading files...');
     const assetIds = [];
     for (const file of files) {
       process.stdout.write(`  ⏳ ${file.name}... `);
@@ -80,37 +69,31 @@ class MLModelDeployer {
       assetIds.push(assetId);
       console.log(`✅ (ID: ${assetId})`);
     }
-    console.log("");
+    console.log('');
 
     // Step 2: Assign to channel
-    console.log("🔗 Step 2/3: Assigning to channel...");
+    console.log('🔗 Step 2/3: Assigning to channel...');
     await this.assignAssetsToChannel(assetIds, channelId);
-    console.log("  ✅ Assets assigned");
-    console.log("");
+    console.log('  ✅ Assets assigned');
+    console.log('');
 
     // Step 3: Activate version
-    console.log("⚡ Step 3/3: Activating version...");
+    console.log('⚡ Step 3/3: Activating version...');
     await this.activateVersion(channelId, assetIds);
-    console.log("  ✅ Version activated");
-    console.log("");
+    console.log('  ✅ Version activated');
+    console.log('');
 
     // Summary
-    console.log(
-      "╔═══════════════════════════════════════════════════════════╗"
-    );
-    console.log(
-      "║  ✅ DEPLOYMENT SUCCESSFUL                                 ║"
-    );
-    console.log(
-      "╚═══════════════════════════════════════════════════════════╝"
-    );
-    console.log(`Asset IDs: [${assetIds.join(", ")}]`);
-    console.log("");
-    console.log("Next steps:");
-    console.log("  - Verify in Admin UI: Settings → Channels → ML Model tab");
-    console.log("  - Frontend will auto-load new version on next request");
-    console.log("  - To rollback: Update channel custom fields with old IDs");
-    console.log("");
+    console.log('╔═══════════════════════════════════════════════════════════╗');
+    console.log('║  ✅ DEPLOYMENT SUCCESSFUL                                 ║');
+    console.log('╚═══════════════════════════════════════════════════════════╝');
+    console.log(`Asset IDs: [${assetIds.join(', ')}]`);
+    console.log('');
+    console.log('Next steps:');
+    console.log('  - Verify in Admin UI: Settings → Channels → ML Model tab');
+    console.log('  - Frontend will auto-load new version on next request');
+    console.log('  - To rollback: Update channel custom fields with old IDs');
+    console.log('');
 
     return { assetIds, version, trainingDate };
   }
@@ -119,7 +102,7 @@ class MLModelDeployer {
     const formData = new FormData();
 
     formData.append(
-      "operations",
+      'operations',
       JSON.stringify({
         query: `
         mutation($file: Upload!) {
@@ -141,11 +124,11 @@ class MLModelDeployer {
       })
     );
 
-    formData.append("map", JSON.stringify({ 0: ["variables.file"] }));
-    formData.append("0", fs.createReadStream(filePath));
+    formData.append('map', JSON.stringify({ 0: ['variables.file'] }));
+    formData.append('0', fs.createReadStream(filePath));
 
     const response = await fetch(this.apiUrl, {
-      method: "POST",
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${this.authToken}`,
         ...formData.getHeaders(),
@@ -161,7 +144,7 @@ class MLModelDeployer {
 
     const asset = result.data?.createAssets?.[0];
     if (!asset || !asset.id) {
-      throw new Error("Upload failed: No asset ID returned");
+      throw new Error('Upload failed: No asset ID returned');
     }
 
     return asset.id;
@@ -169,10 +152,10 @@ class MLModelDeployer {
 
   async assignAssetsToChannel(assetIds, channelId) {
     const response = await fetch(this.apiUrl, {
-      method: "POST",
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${this.authToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         query: `
@@ -198,10 +181,10 @@ class MLModelDeployer {
 
   async activateVersion(channelId, assetIds) {
     const response = await fetch(this.apiUrl, {
-      method: "POST",
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${this.authToken}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         query: `
@@ -240,42 +223,35 @@ class MLModelDeployer {
 // CLI argument parsing
 function parseArgs() {
   const args = process.argv.slice(2).reduce((acc, arg) => {
-    const [key, value] = arg.split("=");
-    acc[key.replace("--", "")] = value;
+    const [key, value] = arg.split('=');
+    acc[key.replace('--', '')] = value;
     return acc;
   }, {});
 
-  const required = [
-    "channel",
-    "version",
-    "model",
-    "weights",
-    "metadata",
-    "token",
-  ];
-  const missing = required.filter((key) => !args[key]);
+  const required = ['channel', 'version', 'model', 'weights', 'metadata', 'token'];
+  const missing = required.filter(key => !args[key]);
 
   if (missing.length > 0) {
-    console.error("❌ Missing required arguments:", missing.join(", "));
-    console.log("");
-    console.log("Usage:");
-    console.log("  node deploy-ml-model.js \\");
-    console.log("    --channel=2 \\");
-    console.log("    --version=3.0.0 \\");
-    console.log("    --model=./models/model.json \\");
-    console.log("    --weights=./models/weights.bin \\");
-    console.log("    --metadata=./models/metadata.json \\");
-    console.log("    --token=YOUR_ADMIN_TOKEN \\");
-    console.log("    [--api=http://localhost:3000/admin-api]");
-    console.log("");
-    console.log("Example:");
-    console.log("  node deploy-ml-model.js \\");
-    console.log("    --channel=2 \\");
-    console.log("    --version=1.0.0 \\");
-    console.log("    --model=./ml-models/model.json \\");
-    console.log("    --weights=./ml-models/weights.bin \\");
-    console.log("    --metadata=./ml-models/metadata.json \\");
-    console.log("    --token=abc123...");
+    console.error('❌ Missing required arguments:', missing.join(', '));
+    console.log('');
+    console.log('Usage:');
+    console.log('  node deploy-ml-model.js \\');
+    console.log('    --channel=2 \\');
+    console.log('    --version=3.0.0 \\');
+    console.log('    --model=./models/model.json \\');
+    console.log('    --weights=./models/weights.bin \\');
+    console.log('    --metadata=./models/metadata.json \\');
+    console.log('    --token=YOUR_ADMIN_TOKEN \\');
+    console.log('    [--api=http://localhost:3000/admin-api]');
+    console.log('');
+    console.log('Example:');
+    console.log('  node deploy-ml-model.js \\');
+    console.log('    --channel=2 \\');
+    console.log('    --version=1.0.0 \\');
+    console.log('    --model=./ml-models/model.json \\');
+    console.log('    --weights=./ml-models/weights.bin \\');
+    console.log('    --metadata=./ml-models/metadata.json \\');
+    console.log('    --token=abc123...');
     process.exit(1);
   }
 
@@ -306,20 +282,14 @@ async function main() {
 
     process.exit(0);
   } catch (error) {
-    console.error("");
-    console.error(
-      "╔═══════════════════════════════════════════════════════════╗"
-    );
-    console.error(
-      "║  ❌ DEPLOYMENT FAILED                                     ║"
-    );
-    console.error(
-      "╚═══════════════════════════════════════════════════════════╝"
-    );
-    console.error("Error:", error.message);
-    console.error("");
+    console.error('');
+    console.error('╔═══════════════════════════════════════════════════════════╗');
+    console.error('║  ❌ DEPLOYMENT FAILED                                     ║');
+    console.error('╚═══════════════════════════════════════════════════════════╝');
+    console.error('Error:', error.message);
+    console.error('');
     if (error.stack) {
-      console.error("Stack trace:");
+      console.error('Stack trace:');
       console.error(error.stack);
     }
     process.exit(1);

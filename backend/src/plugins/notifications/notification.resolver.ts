@@ -5,132 +5,133 @@ import { NotificationService } from '../../services/notifications/notification.s
 import { PushNotificationService } from '../../services/notifications/push-notification.service';
 
 export const notificationSchema = gql`
-    enum NotificationType {
-        ORDER
-        STOCK
-        ML_TRAINING
-        PAYMENT
-    }
+  enum NotificationType {
+    ORDER
+    STOCK
+    ML_TRAINING
+    PAYMENT
+  }
 
-    type Notification {
-        id: ID!
-        userId: ID!
-        channelId: ID!
-        type: NotificationType!
-        title: String!
-        message: String!
-        data: JSON
-        read: Boolean!
-        createdAt: DateTime!
-    }
+  type Notification {
+    id: ID!
+    userId: ID!
+    channelId: ID!
+    type: NotificationType!
+    title: String!
+    message: String!
+    data: JSON
+    read: Boolean!
+    createdAt: DateTime!
+  }
 
-    type NotificationList {
-        items: [Notification!]!
-        totalItems: Int!
-    }
+  type NotificationList {
+    items: [Notification!]!
+    totalItems: Int!
+  }
 
-    input NotificationListOptions {
-        skip: Int
-        take: Int
-        type: NotificationType
-    }
+  input NotificationListOptions {
+    skip: Int
+    take: Int
+    type: NotificationType
+  }
 
-    input PushSubscriptionInput {
-        endpoint: String!
-        keys: JSON!
-    }
+  input PushSubscriptionInput {
+    endpoint: String!
+    keys: JSON!
+  }
 
-    extend type Query {
-        getUserNotifications(options: NotificationListOptions): NotificationList!
-        getUnreadCount: Int!
-    }
+  extend type Query {
+    getUserNotifications(options: NotificationListOptions): NotificationList!
+    getUnreadCount: Int!
+  }
 
-    extend type Mutation {
-        markNotificationAsRead(id: ID!): Boolean!
-        markAllAsRead: Int!
-        subscribeToPush(subscription: PushSubscriptionInput!): Boolean!
-        unsubscribeToPush: Boolean!
-    }
+  extend type Mutation {
+    markNotificationAsRead(id: ID!): Boolean!
+    markAllAsRead: Int!
+    subscribeToPush(subscription: PushSubscriptionInput!): Boolean!
+    unsubscribeToPush: Boolean!
+  }
 `;
 
 @Resolver()
 export class NotificationResolver {
-    constructor(
-        private notificationService: NotificationService,
-        private pushNotificationService: PushNotificationService,
-    ) { }
+  constructor(
+    private notificationService: NotificationService,
+    private pushNotificationService: PushNotificationService
+  ) {}
 
-    @Query()
-    async getUserNotifications(
-        @Ctx() ctx: RequestContext,
-        @Args('options') options: any = {},
-    ) {
-        // Get current user and channel from context
-        const userId = ctx.activeUserId;
-        const channelId = ctx.channelId;
+  @Query()
+  async getUserNotifications(@Ctx() ctx: RequestContext, @Args('options') options: any = {}) {
+    // Get current user and channel from context
+    const userId = ctx.activeUserId;
+    const channelId = ctx.channelId;
 
-        if (!userId || !channelId) {
-            return { items: [], totalItems: 0 };
-        }
-
-        return this.notificationService.getUserNotifications(ctx, String(userId), String(channelId), options);
+    if (!userId || !channelId) {
+      return { items: [], totalItems: 0 };
     }
 
-    @Query()
-    async getUnreadCount(@Ctx() ctx: RequestContext) {
-        const userId = ctx.activeUserId;
-        const channelId = ctx.channelId;
+    return this.notificationService.getUserNotifications(
+      ctx,
+      String(userId),
+      String(channelId),
+      options
+    );
+  }
 
-        if (!userId || !channelId) {
-            return 0;
-        }
+  @Query()
+  async getUnreadCount(@Ctx() ctx: RequestContext) {
+    const userId = ctx.activeUserId;
+    const channelId = ctx.channelId;
 
-        return this.notificationService.getUnreadCount(ctx, String(userId), String(channelId));
+    if (!userId || !channelId) {
+      return 0;
     }
 
-    @Mutation()
-    async markNotificationAsRead(
-        @Ctx() ctx: RequestContext,
-        @Args('id') id: string,
-    ) {
-        return this.notificationService.markAsRead(ctx, String(id));
+    return this.notificationService.getUnreadCount(ctx, String(userId), String(channelId));
+  }
+
+  @Mutation()
+  async markNotificationAsRead(@Ctx() ctx: RequestContext, @Args('id') id: string) {
+    return this.notificationService.markAsRead(ctx, String(id));
+  }
+
+  @Mutation()
+  async markAllAsRead(@Ctx() ctx: RequestContext) {
+    const userId = ctx.activeUserId;
+    const channelId = ctx.channelId;
+
+    if (!userId || !channelId) {
+      return 0;
     }
 
-    @Mutation()
-    async markAllAsRead(@Ctx() ctx: RequestContext) {
-        const userId = ctx.activeUserId;
-        const channelId = ctx.channelId;
+    return this.notificationService.markAllAsRead(ctx, String(userId), String(channelId));
+  }
 
-        if (!userId || !channelId) {
-            return 0;
-        }
+  @Mutation()
+  async subscribeToPush(@Ctx() ctx: RequestContext, @Args('subscription') subscription: any) {
+    const userId = ctx.activeUserId;
+    const channelId = ctx.channelId;
 
-        return this.notificationService.markAllAsRead(ctx, String(userId), String(channelId));
+    if (!userId || !channelId) {
+      return false;
     }
 
-    @Mutation()
-    async subscribeToPush(
-        @Ctx() ctx: RequestContext,
-        @Args('subscription') subscription: any,
-    ) {
-        const userId = ctx.activeUserId;
-        const channelId = ctx.channelId;
+    return this.pushNotificationService.subscribeToPush(
+      ctx,
+      String(userId),
+      String(channelId),
+      subscription
+    );
+  }
 
-        if (!userId || !channelId) {
-            return false;
-        }
+  @Mutation()
+  async unsubscribeToPush(@Ctx() ctx: RequestContext) {
+    const userId = ctx.activeUserId;
 
-        return this.pushNotificationService.subscribeToPush(ctx, String(userId), String(channelId), subscription);
+    if (!userId) {
+      return false;
     }
 
-    @Mutation()
-    async unsubscribeToPush(@Ctx() ctx: RequestContext) {
-        const userId = ctx.activeUserId;
-
-        if (!userId) {
-            return false;
-        }
-
-        return this.pushNotificationService.unsubscribeFromPush(ctx, String(userId));
-    }
+    return this.pushNotificationService.unsubscribeFromPush(ctx, String(userId));
+  }
 }

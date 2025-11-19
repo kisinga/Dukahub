@@ -4,16 +4,16 @@ import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.c
 import { FractionalQuantityResolver } from './fractional-quantity.resolver';
 
 @VendurePlugin({
-    imports: [PluginCommonModule],
-    providers: [],
-    adminApiExtensions: {
-        schema: gql`
-            extend type Mutation {
-                updateOrderLineQuantity(orderLineId: ID!, quantity: Float!): UpdateOrderItemsResult!
-            }
-        `,
-        resolvers: [FractionalQuantityResolver],
-    },
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+  imports: [PluginCommonModule],
+  providers: [],
+  adminApiExtensions: {
+    schema: gql`
+      extend type Mutation {
+        updateOrderLineQuantity(orderLineId: ID!, quantity: Float!): UpdateOrderItemsResult!
+      }
+    `,
+    resolvers: [FractionalQuantityResolver],
+  },
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class FractionalQuantityPlugin { }
+export class FractionalQuantityPlugin {}

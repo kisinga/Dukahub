@@ -34,12 +34,12 @@
         </div>
         <div class="flex flex-wrap items-center gap-2.5 text-sm font-medium">
           @for (item of heroHighlights; track item.text) {
-          <span
-            class="badge badge-neutral badge-soft gap-2 text-base-content transition-transform duration-200 hover:-translate-y-0.5"
-          >
-            <span class="text-lg leading-none">{{ item.icon }}</span>
-            {{ item.text }}
-          </span>
+            <span
+              class="badge badge-neutral badge-soft gap-2 text-base-content transition-transform duration-200 hover:-translate-y-0.5"
+            >
+              <span class="text-lg leading-none">{{ item.icon }}</span>
+              {{ item.text }}
+            </span>
           }
         </div>
         <div
@@ -93,12 +93,12 @@
       <div class="mx-auto max-w-2xl space-y-4">
         <div class="flex flex-wrap items-center justify-center gap-2">
           @for (business of businessExamples; track business.name) {
-          <span
-            class="badge badge-soft gap-1.5 text-sm transition-transform duration-200 hover:-translate-y-0.5"
-          >
-            <span class="text-base leading-none">{{ business.icon }}</span>
-            <span>{{ business.name }}</span>
-          </span>
+            <span
+              class="badge badge-soft gap-1.5 text-sm transition-transform duration-200 hover:-translate-y-0.5"
+            >
+              <span class="text-base leading-none">{{ business.icon }}</span>
+              <span>{{ business.name }}</span>
+            </span>
           }
         </div>
         <p class="text-base text-base-content/70">
@@ -148,19 +148,19 @@
     </div>
     <div class="container-app mt-10 grid gap-6 md:grid-cols-3">
       @for (testimonial of testimonials; track $index) {
-      <figure
-        class="group rounded-2xl border border-base-300 bg-base-100 p-6 text-left shadow-md transition-transform transition-shadow duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl"
-      >
-        <span class="text-4xl text-primary/40 leading-none">"</span>
-        <blockquote class="mt-2 text-base-content/80">{{ testimonial.quote }}</blockquote>
-        @if (testimonial.metric) {
-        <span class="badge badge-success badge-sm mt-2 w-fit">{{ testimonial.metric }}</span>
-        }
-        <figcaption class="mt-4 flex flex-col gap-1 text-sm text-base-content/70">
-          <strong class="text-base text-base-content">{{ testimonial.author }}</strong>
-          <span>{{ testimonial.title }}</span>
-        </figcaption>
-      </figure>
+        <figure
+          class="group rounded-2xl border border-base-300 bg-base-100 p-6 text-left shadow-md transition-transform transition-shadow duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl"
+        >
+          <span class="text-4xl text-primary/40 leading-none">"</span>
+          <blockquote class="mt-2 text-base-content/80">{{ testimonial.quote }}</blockquote>
+          @if (testimonial.metric) {
+            <span class="badge badge-success badge-sm mt-2 w-fit">{{ testimonial.metric }}</span>
+          }
+          <figcaption class="mt-4 flex flex-col gap-1 text-sm text-base-content/70">
+            <strong class="text-base text-base-content">{{ testimonial.author }}</strong>
+            <span>{{ testimonial.title }}</span>
+          </figcaption>
+        </figure>
       }
     </div>
   </section>
@@ -182,20 +182,20 @@
     </div>
     <div class="container-app mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
       @for (pillar of corePillars; track pillar.title) {
-      <article
-        class="group rounded-2xl border border-base-300 bg-base-100 p-6 text-left shadow-md transition-transform transition-shadow duration-200 hover:-translate-y-1 hover:shadow-xl hover:border-primary/40"
-      >
-        <div class="flex flex-col gap-4">
-          <span class="text-3xl">{{ pillar.icon }}</span>
-          <h3 class="text-lg font-semibold">{{ pillar.title }}</h3>
-          <p class="text-base-content">{{ pillar.description }}</p>
-          <ul class="list-disc space-y-2 pl-4 text-sm text-base-content/70">
-            @for (point of pillar.bullets; track point) {
-            <li>{{ point }}</li>
-            }
-          </ul>
-        </div>
-      </article>
+        <article
+          class="group rounded-2xl border border-base-300 bg-base-100 p-6 text-left shadow-md transition-transform transition-shadow duration-200 hover:-translate-y-1 hover:shadow-xl hover:border-primary/40"
+        >
+          <div class="flex flex-col gap-4">
+            <span class="text-3xl">{{ pillar.icon }}</span>
+            <h3 class="text-lg font-semibold">{{ pillar.title }}</h3>
+            <p class="text-base-content">{{ pillar.description }}</p>
+            <ul class="list-disc space-y-2 pl-4 text-sm text-base-content/70">
+              @for (point of pillar.bullets; track point) {
+                <li>{{ point }}</li>
+              }
+            </ul>
+          </div>
+        </article>
       }
     </div>
   </section>
@@ -214,22 +214,22 @@
     </div>
     <div class="container-app mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
       @for (stage of journeyStages; track stage.number) {
-      <article
-        class="group rounded-2xl border border-base-300 bg-base-100 p-6 text-left shadow-md transition-transform transition-shadow duration-200 hover:-translate-y-1 hover:shadow-xl hover:border-primary/40"
-      >
-        <div class="grid grid-cols-[auto,1fr] items-start gap-4">
-          <span
-            class="grid h-12 w-12 place-items-center rounded-full bg-primary/15 text-lg font-semibold text-primary"
-          >
-            {{ stage.number }}
-          </span>
-          <div class="space-y-2 text-left">
-            <h3 class="text-lg font-semibold">{{ stage.title }}</h3>
-            <p class="font-medium text-base-content/80">{{ stage.summary }}</p>
-            <p class="text-sm text-base-content/70">{{ stage.detail }}</p>
+        <article
+          class="group rounded-2xl border border-base-300 bg-base-100 p-6 text-left shadow-md transition-transform transition-shadow duration-200 hover:-translate-y-1 hover:shadow-xl hover:border-primary/40"
+        >
+          <div class="grid grid-cols-[auto,1fr] items-start gap-4">
+            <span
+              class="grid h-12 w-12 place-items-center rounded-full bg-primary/15 text-lg font-semibold text-primary"
+            >
+              {{ stage.number }}
+            </span>
+            <div class="space-y-2 text-left">
+              <h3 class="text-lg font-semibold">{{ stage.title }}</h3>
+              <p class="font-medium text-base-content/80">{{ stage.summary }}</p>
+              <p class="text-sm text-base-content/70">{{ stage.detail }}</p>
+            </div>
           </div>
-        </div>
-      </article>
+        </article>
       }
     </div>
   </section>
@@ -324,20 +324,20 @@
       </div>
       <div class="grid gap-3">
         @for (faq of faqItems(); track $index) {
-        <details
-          class="collapse collapse-plus border border-base-300 bg-base-200/60 text-left transition-colors duration-200"
-          [open]="faq.open"
-        >
-          <summary
-            class="collapse-title text-base font-semibold hover:text-primary"
-            (click)="toggleFAQ($index)"
+          <details
+            class="collapse collapse-plus border border-base-300 bg-base-200/60 text-left transition-colors duration-200"
+            [open]="faq.open"
           >
-            {{ faq.question }}
-          </summary>
-          <div class="collapse-content text-sm text-base-content">
-            <p>{{ faq.answer }}</p>
-          </div>
-        </details>
+            <summary
+              class="collapse-title text-base font-semibold hover:text-primary"
+              (click)="toggleFAQ($index)"
+            >
+              {{ faq.question }}
+            </summary>
+            <div class="collapse-content text-sm text-base-content">
+              <p>{{ faq.answer }}</p>
+            </div>
+          </details>
         }
       </div>
     </div>

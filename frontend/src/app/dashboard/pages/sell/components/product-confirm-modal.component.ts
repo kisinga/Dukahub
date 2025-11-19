@@ -1,7 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { CurrencyService } from '../../../../core/services/currency.service';
-import { ProductSearchResult, ProductVariant } from '../../../../core/services/product/product-search.service';
+import {
+  ProductSearchResult,
+  ProductVariant,
+} from '../../../../core/services/product/product-search.service';
 
 /**
  * Modal for confirming product and selecting variant/quantity
@@ -296,4 +299,3 @@ export class ProductConfirmModalComponent {
   readonly variantSelected = output<{ variant: ProductVariant; quantity: number }>();
   readonly closeModal = output<void>();
 }
-

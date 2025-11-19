@@ -1,7 +1,7 @@
 // /public/js/pb.js (or your preferred filename)
 
 // Initialize PocketBase Client (assuming it's served locally or adjust URL)
-const POCKETBASE_URL = "/"; // Or your PocketBase server URL
+const POCKETBASE_URL = '/'; // Or your PocketBase server URL
 const pb = new PocketBase(POCKETBASE_URL);
 
 /**
@@ -11,7 +11,7 @@ const pb = new PocketBase(POCKETBASE_URL);
 class PocketBaseService {
   constructor(pocketbaseInstance) {
     if (!pocketbaseInstance) {
-      throw new Error("PocketBase instance is required.");
+      throw new Error('PocketBase instance is required.');
     }
     this.pb = pocketbaseInstance;
 
@@ -20,10 +20,7 @@ class PocketBaseService {
 
     // Optional: Listen to auth changes for debugging or global state updates
     this.pb.authStore.onChange((token, model) => {
-      console.log(
-        "AuthStore changed:",
-        model ? `User/Admin ${model.id}` : "Logged out"
-      );
+      console.log('AuthStore changed:', model ? `User/Admin ${model.id}` : 'Logged out');
       // If needed, dispatch a global event for other parts of the app:
       // document.dispatchEvent(new CustomEvent('authChange', { detail: { model } }));
     }, true); // `true` triggers immediately
@@ -67,7 +64,7 @@ class PocketBaseService {
       return await requestPromise;
     } catch (error) {
       // Log the raw error for detailed debugging
-      console.error("PocketBase request error:", error);
+      console.error('PocketBase request error:', error);
       // Throw a potentially more user-friendly/standardized error
       throw this._handlePocketBaseError(error);
     }
@@ -81,23 +78,16 @@ class PocketBaseService {
    */
   _handlePocketBaseError(error) {
     // PocketBase ClientResponseError provides more details
-    if (
-      error &&
-      typeof error === "object" &&
-      error.status &&
-      error.data?.message
-    ) {
+    if (error && typeof error === 'object' && error.status && error.data?.message) {
       // Use the message from the PB response data if available
-      return new Error(
-        `PocketBase Error (${error.status}): ${error.data.message}`
-      );
+      return new Error(`PocketBase Error (${error.status}): ${error.data.message}`);
     }
     if (error instanceof Error) {
       // It might be a network error or other standard error
       return error;
     }
     // Fallback for unknown errors
-    return new Error("An unknown PocketBase error occurred.");
+    return new Error('An unknown PocketBase error occurred.');
   }
 
   // --- CRUD Operations ---
@@ -122,9 +112,7 @@ class PocketBaseService {
    * @returns {Promise<import("pocketbase").ListResult<import("pocketbase").Record>>} Paginated list result.
    */
   getPaginatedList(collection, page = 1, perPage = 30, options = {}) {
-    return this._request(
-      this.pb.collection(collection).getList(page, perPage, options)
-    );
+    return this._request(this.pb.collection(collection).getList(page, perPage, options));
   }
 
   /**
@@ -158,9 +146,7 @@ class PocketBaseService {
    * @returns {Promise<import("pocketbase").Record>} The updated record.
    */
   update(collection, id, data, options = {}) {
-    return this._request(
-      this.pb.collection(collection).update(id, data, options)
-    );
+    return this._request(this.pb.collection(collection).update(id, data, options));
   }
 
   /**
@@ -184,9 +170,9 @@ class PocketBaseService {
    */
   async authAdmin(email, password) {
     const authData = await this._request(
-      this.pb.collection("admins").authWithPassword(email, password)
+      this.pb.collection('admins').authWithPassword(email, password)
     );
-    console.log("Admin authenticated:", authData.record);
+    console.log('Admin authenticated:', authData.record);
     return authData.record; // Return the admin record model
   }
 
@@ -199,9 +185,9 @@ class PocketBaseService {
    */
   async authUser(email, password, options = {}) {
     const authData = await this._request(
-      this.pb.collection("users").authWithPassword(email, password, options)
+      this.pb.collection('users').authWithPassword(email, password, options)
     );
-    console.log("User authenticated:", authData.record);
+    console.log('User authenticated:', authData.record);
     return authData.record; // Return the user record model
   }
 
@@ -210,7 +196,7 @@ class PocketBaseService {
    */
   logout() {
     this.pb.authStore.clear();
-    console.log("User logged out.");
+    console.log('User logged out.');
     // Consider dispatching 'authChange' event or handling redirect in UI code
   }
 }

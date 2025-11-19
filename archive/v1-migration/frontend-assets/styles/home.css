@@ -16,9 +16,9 @@
   --card-hover-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   --border-radius: 8px;
   --transition-speed: 0.3s;
-  --font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
-    sans-serif;
+  --font-family:
+    'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+    Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   --navbar-height: 70px; /* Define navbar height */
 }
 
@@ -100,7 +100,7 @@ img {
   padding-bottom: 15px;
 }
 .section-title::after {
-  content: "";
+  content: '';
   position: absolute;
   bottom: 0;
   left: 50%;
@@ -249,7 +249,7 @@ img {
   font-weight: 600;
 }
 .nav-links a:not(.btn)::after {
-  content: "";
+  content: '';
   position: absolute;
   bottom: -2px;
   left: 0;
@@ -348,7 +348,9 @@ img {
 #about .container {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
 }
 #about .container.is-visible {
   opacity: 1;
@@ -369,7 +371,9 @@ img {
   box-shadow: var(--card-shadow);
   text-align: center;
   opacity: 0;
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
 }
 .comparison-image {
   max-width: 280px;
@@ -402,7 +406,9 @@ img {
 #how-it-works .section-title,
 .step {
   opacity: 0;
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
 }
 #how-it-works .section-title {
   transform: translateY(20px);
@@ -425,7 +431,8 @@ img {
   padding: 30px;
   background-color: var(--light-bg);
   border-radius: var(--border-radius);
-  transition: transform var(--transition-speed) ease,
+  transition:
+    transform var(--transition-speed) ease,
     box-shadow var(--transition-speed) ease;
 }
 .step:hover {
@@ -466,7 +473,9 @@ img {
   font-size: 5rem;
   color: rgba(255, 255, 255, 0.9);
   pointer-events: none;
-  transition: transform 0.2s ease, color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
 }
 .video-placeholder:hover .play-button-overlay {
   transform: translate(-50%, -50%) scale(1.1);
@@ -477,7 +486,9 @@ img {
 #who-we-serve .section-title,
 .business-types {
   opacity: 0;
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
 }
 #who-we-serve .section-title {
   transform: translateY(20px);
@@ -524,7 +535,9 @@ img {
 #features .section-title,
 .feature-card {
   opacity: 0;
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
 }
 #features .section-title {
   transform: translateY(20px);
@@ -547,7 +560,8 @@ img {
   padding: 35px 30px;
   border-radius: var(--border-radius);
   box-shadow: var(--card-shadow);
-  transition: transform var(--transition-speed) ease,
+  transition:
+    transform var(--transition-speed) ease,
     box-shadow var(--transition-speed) ease;
   border: 1px solid var(--border-color);
   position: relative;
@@ -609,13 +623,14 @@ img {
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
   opacity: 0;
   visibility: hidden;
-  transition: opacity var(--transition-speed) ease,
+  transition:
+    opacity var(--transition-speed) ease,
     visibility var(--transition-speed) ease,
     transform var(--transition-speed) ease;
   pointer-events: none;
 }
 .tooltip-content::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 100%;
   left: 50%;
@@ -624,7 +639,7 @@ img {
   border-style: solid;
   border-color: var(--heading-color) transparent transparent transparent;
 }
-.feature-card [x-show="tooltipVisible"] {
+.feature-card [x-show='tooltipVisible'] {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(-15px);
@@ -638,7 +653,9 @@ img {
 .plan,
 .trial-note {
   opacity: 0;
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
   transform: translateY(20px);
 }
 #pricing .section-title.is-visible,
@@ -692,7 +709,8 @@ img {
   border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  transition: transform var(--transition-speed) ease,
+  transition:
+    transform var(--transition-speed) ease,
     box-shadow var(--transition-speed) ease;
   position: relative;
   overflow: hidden;
@@ -815,7 +833,9 @@ img {
 #testimonials .section-title,
 .testimonial-card {
   opacity: 0;
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
 }
 #testimonials .section-title {
   transform: translateY(20px);
@@ -855,8 +875,8 @@ img {
   padding-left: 25px;
 }
 .testimonial-card .quote::before {
-  content: "\f10d";
-  font-family: "Font Awesome 6 Free";
+  content: '\f10d';
+  font-family: 'Font Awesome 6 Free';
   font-weight: 900;
   position: absolute;
   left: 0;
@@ -880,7 +900,9 @@ img {
 #faq .section-title,
 .faq-item {
   opacity: 0;
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
 }
 #faq .section-title {
   transform: translateY(20px);
@@ -1047,7 +1069,9 @@ img {
 .faq-item,
 #cta .container {
   opacity: 0;
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
 }
 
 /* Specific initial transforms */
@@ -1147,7 +1171,9 @@ img {
     border-top: 1px solid var(--border-color);
     max-height: calc(100vh - var(--navbar-height));
     overflow-y: auto;
-    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    transition:
+      transform 0.3s ease-out,
+      opacity 0.3s ease-out;
     transform: translateY(-10px);
     opacity: 0;
     pointer-events: none;

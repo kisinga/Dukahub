@@ -34,49 +34,35 @@ export type OrderAddress = OrderData['billingAddress'] | OrderData['shippingAddr
  * Component input types
  */
 export interface OrderDetailHeaderInput {
-    orderCode: string;
-    orderState: string;
-    orderDate: string | null | undefined;
+  orderCode: string;
+  orderState: string;
+  orderDate: string | null | undefined;
 }
 
 export interface OrderCustomerInfoInput {
-    customer: OrderCustomer;
+  customer: OrderCustomer;
 }
 
 export interface OrderAddressInput {
-    address: OrderAddress | null | undefined;
-    label: string;
-    fallbackName?: string;
+  address: OrderAddress | null | undefined;
+  label: string;
+  fallbackName?: string;
 }
 
 export interface OrderItemsTableInput {
-    lines: OrderLine[];
+  lines: OrderLine[];
 }
 
 export interface OrderTotalsInput {
-    subtotal: number;
-    tax: number;
-    total: number;
+  subtotal: number;
+  tax: number;
+  total: number;
 }
 
 export interface OrderPaymentInfoInput {
-    payments: OrderPayment[] | null | undefined;
+  payments: OrderPayment[] | null | undefined;
 }
 
 export interface OrderFulfillmentInfoInput {
-    fulfillments: OrderFulfillment[] | null | undefined;
+  fulfillments: OrderFulfillment[] | null | undefined;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

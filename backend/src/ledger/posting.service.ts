@@ -20,7 +20,7 @@ export interface PostingPayload {
 
 @Injectable()
 export class PostingService {
-  constructor(private readonly connection: TransactionalConnection) { }
+  constructor(private readonly connection: TransactionalConnection) {}
 
   /**
    * Posts a journal entry idempotently for a given (sourceType, sourceId).
@@ -32,7 +32,7 @@ export class PostingService {
     sourceId: string,
     payload: PostingPayload
   ): Promise<JournalEntry> {
-    return this.connection.withTransaction(ctx, async (txCtx) => {
+    return this.connection.withTransaction(ctx, async txCtx => {
       const journalEntryRepo = this.connection.getRepository(txCtx, JournalEntry);
       const accountRepo = this.connection.getRepository(txCtx, Account);
       const journalLineRepo = this.connection.getRepository(txCtx, JournalLine);
@@ -48,7 +48,7 @@ export class PostingService {
       }
 
       // Load accounts by code within channel
-      const codes = Array.from(new Set(payload.lines.map((l) => l.accountCode)));
+      const codes = Array.from(new Set(payload.lines.map(l => l.accountCode)));
       const accounts = await accountRepo
         .createQueryBuilder('a')
         .where('a.channelId = :channelId', { channelId: payload.channelId })
@@ -56,8 +56,8 @@ export class PostingService {
         .getMany();
 
       if (accounts.length !== codes.length) {
-        const found = new Set(accounts.map((a) => a.code));
-        const missing = codes.filter((c) => !found.has(c));
+        const found = new Set(accounts.map(a => a.code));
+        const missing = codes.filter(c => !found.has(c));
         throw new Error(`Missing accounts for codes: ${missing.join(', ')}`);
       }
 
@@ -92,8 +92,8 @@ export class PostingService {
       });
       await journalEntryRepo.save(entry);
 
-      const byCode = new Map(accounts.map((a) => [a.code, a]));
-      const lines = payload.lines.map((l) =>
+      const byCode = new Map(accounts.map(a => [a.code, a]));
+      const lines = payload.lines.map(l =>
         journalLineRepo.create({
           entryId: entry.id,
           accountId: byCode.get(l.accountCode)!.id,
@@ -101,7 +101,7 @@ export class PostingService {
           debit: String(l.debit ?? 0),
           credit: String(l.credit ?? 0),
           meta: l.meta ?? null,
-        }),
+        })
       );
       await journalLineRepo.save(lines);
       entry.lines = lines;
@@ -109,5 +109,3 @@ export class PostingService {
     });
   }
 }
-
-

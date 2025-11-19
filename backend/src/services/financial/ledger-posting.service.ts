@@ -17,7 +17,7 @@ import {
   createPaymentEntry,
   createRefundEntry,
   createSupplierPaymentEntry,
-  createSupplierPurchaseEntry
+  createSupplierPurchaseEntry,
 } from './posting-policy';
 
 @Injectable()
@@ -28,8 +28,8 @@ export class LedgerPostingService {
     private readonly postingService: PostingService,
     private readonly connection: TransactionalConnection,
     @Optional() private readonly tracingService?: TracingService,
-    @Optional() private readonly metricsService?: MetricsService,
-  ) { }
+    @Optional() private readonly metricsService?: MetricsService
+  ) {}
 
   /**
    * Ensure required accounts exist for a channel
@@ -49,7 +49,7 @@ export class LedgerPostingService {
     if (missing.length > 0) {
       throw new Error(
         `Missing required accounts for channel ${ctx.channelId}: ${missing.join(', ')}. ` +
-        `Please initialize Chart of Accounts for this channel.`
+          `Please initialize Chart of Accounts for this channel.`
       );
     }
   }
@@ -92,7 +92,11 @@ export class LedgerPostingService {
       this.logger.log(`Posted payment entry for payment ${sourceId}, order ${context.orderCode}`);
       this.tracingService?.endSpan(span!, true);
     } catch (error) {
-      this.tracingService?.endSpan(span!, false, error instanceof Error ? error : new Error(String(error)));
+      this.tracingService?.endSpan(
+        span!,
+        false,
+        error instanceof Error ? error : new Error(String(error))
+      );
       throw error;
     }
   }
@@ -231,7 +235,7 @@ export class LedgerPostingService {
    */
   private async assertAccountsReceivableInvariant(
     ctx: RequestContext,
-    orderId: string,
+    orderId: string
   ): Promise<void> {
     const accountRepo = this.connection.getRepository(ctx, Account);
     const arAccount = await accountRepo.findOne({
@@ -245,7 +249,7 @@ export class LedgerPostingService {
       // Misconfiguration rather than a runtime invariant violation.
       throw new Error(
         `Accounts Receivable account not found for channel ${ctx.channelId}. ` +
-        `Please initialize Chart of Accounts.`,
+          `Please initialize Chart of Accounts.`
       );
     }
 
@@ -266,7 +270,7 @@ export class LedgerPostingService {
     if (debitTotal === 0) {
       throw new Error(
         `Cannot allocate payment for order ${orderId} because no Accounts Receivable debits exist ` +
-        `for this order in the ledger`,
+          `for this order in the ledger`
       );
     }
 
@@ -274,7 +278,7 @@ export class LedgerPostingService {
       const overpay = creditTotal - debitTotal;
       throw new Error(
         `Payment allocation would overpay Accounts Receivable by ${overpay} cents for order ${orderId} ` +
-        `(debited=${debitTotal}, credited=${creditTotal})`,
+          `(debited=${debitTotal}, credited=${creditTotal})`
       );
     }
   }
@@ -285,7 +289,7 @@ export class LedgerPostingService {
    */
   private async assertAccountsPayableInvariant(
     ctx: RequestContext,
-    supplierId: string,
+    supplierId: string
   ): Promise<void> {
     const accountRepo = this.connection.getRepository(ctx, Account);
     const apAccount = await accountRepo.findOne({
@@ -298,7 +302,7 @@ export class LedgerPostingService {
     if (!apAccount) {
       throw new Error(
         `Accounts Payable account not found for channel ${ctx.channelId}. ` +
-        `Please initialize Chart of Accounts.`,
+          `Please initialize Chart of Accounts.`
       );
     }
 
@@ -320,9 +324,8 @@ export class LedgerPostingService {
     if (outstandingInCents < 0) {
       throw new Error(
         `Accounts Payable invariant violated for supplier ${supplierId}: ` +
-        `debits (${debitTotal}) exceed credits (${creditTotal}).`,
+          `debits (${debitTotal}) exceed credits (${creditTotal}).`
       );
     }
   }
 }
-

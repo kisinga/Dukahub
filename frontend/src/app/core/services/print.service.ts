@@ -4,91 +4,91 @@ import { PrintTemplate, OrderData, Receipt52mmTemplate, A4Template } from './pri
 
 /**
  * Print Service
- * 
+ *
  * Handles printing of orders using different templates.
  * Composable and extensible - new templates can be registered.
  */
 @Injectable({
-    providedIn: 'root',
+  providedIn: 'root',
 })
 export class PrintService {
-    private readonly companyService = inject(CompanyService);
+  private readonly companyService = inject(CompanyService);
 
-    // Available templates
-    private readonly templates = new Map<string, PrintTemplate>([
-        ['receipt-52mm', new Receipt52mmTemplate()],
-        ['a4', new A4Template()],
-    ]);
+  // Available templates
+  private readonly templates = new Map<string, PrintTemplate>([
+    ['receipt-52mm', new Receipt52mmTemplate()],
+    ['a4', new A4Template()],
+  ]);
 
-    /**
-     * Get all available templates
-     */
-    getAvailableTemplates(): Array<{ id: string; name: string; width: string }> {
-        return Array.from(this.templates.entries()).map(([id, template]) => ({
-            id,
-            name: template.name,
-            width: template.width,
-        }));
+  /**
+   * Get all available templates
+   */
+  getAvailableTemplates(): Array<{ id: string; name: string; width: string }> {
+    return Array.from(this.templates.entries()).map(([id, template]) => ({
+      id,
+      name: template.name,
+      width: template.width,
+    }));
+  }
+
+  /**
+   * Get a template by ID
+   */
+  getTemplate(templateId: string): PrintTemplate | null {
+    return this.templates.get(templateId) || null;
+  }
+
+  /**
+   * Register a new template
+   */
+  registerTemplate(id: string, template: PrintTemplate): void {
+    this.templates.set(id, template);
+  }
+
+  /**
+   * Print an order using the specified template
+   * Platform-agnostic: uses hidden iframe instead of opening new tab
+   * @param order - Order data to print
+   * @param templateId - Template ID to use (default: 'receipt-52mm')
+   */
+  async printOrder(order: OrderData, templateId: string = 'receipt-52mm'): Promise<void> {
+    const template = this.getTemplate(templateId);
+    if (!template) {
+      console.error(`Template ${templateId} not found`);
+      return;
     }
 
-    /**
-     * Get a template by ID
-     */
-    getTemplate(templateId: string): PrintTemplate | null {
-        return this.templates.get(templateId) || null;
+    // Get company logo if available
+    const companyLogo = this.companyService.companyLogoAsset()?.preview || null;
+
+    // Render the order
+    const html = template.render(order, companyLogo);
+    const styles = template.getStyles();
+
+    // Create or reuse hidden iframe for printing
+    let printFrame = document.getElementById('print-frame') as HTMLIFrameElement;
+    if (!printFrame) {
+      printFrame = document.createElement('iframe');
+      printFrame.id = 'print-frame';
+      printFrame.style.position = 'absolute';
+      printFrame.style.width = '0';
+      printFrame.style.height = '0';
+      printFrame.style.border = 'none';
+      printFrame.style.left = '-9999px';
+      document.body.appendChild(printFrame);
     }
 
-    /**
-     * Register a new template
-     */
-    registerTemplate(id: string, template: PrintTemplate): void {
-        this.templates.set(id, template);
-    }
+    // Wait for iframe to be ready
+    return new Promise<void>((resolve, reject) => {
+      const iframeDoc = printFrame.contentDocument || printFrame.contentWindow?.document;
+      if (!iframeDoc) {
+        reject(new Error('Failed to access iframe document'));
+        return;
+      }
 
-    /**
-     * Print an order using the specified template
-     * Platform-agnostic: uses hidden iframe instead of opening new tab
-     * @param order - Order data to print
-     * @param templateId - Template ID to use (default: 'receipt-52mm')
-     */
-    async printOrder(order: OrderData, templateId: string = 'receipt-52mm'): Promise<void> {
-        const template = this.getTemplate(templateId);
-        if (!template) {
-            console.error(`Template ${templateId} not found`);
-            return;
-        }
-
-        // Get company logo if available
-        const companyLogo = this.companyService.companyLogoAsset()?.preview || null;
-
-        // Render the order
-        const html = template.render(order, companyLogo);
-        const styles = template.getStyles();
-
-        // Create or reuse hidden iframe for printing
-        let printFrame = document.getElementById('print-frame') as HTMLIFrameElement;
-        if (!printFrame) {
-            printFrame = document.createElement('iframe');
-            printFrame.id = 'print-frame';
-            printFrame.style.position = 'absolute';
-            printFrame.style.width = '0';
-            printFrame.style.height = '0';
-            printFrame.style.border = 'none';
-            printFrame.style.left = '-9999px';
-            document.body.appendChild(printFrame);
-        }
-
-        // Wait for iframe to be ready
-        return new Promise<void>((resolve, reject) => {
-            const iframeDoc = printFrame.contentDocument || printFrame.contentWindow?.document;
-            if (!iframeDoc) {
-                reject(new Error('Failed to access iframe document'));
-                return;
-            }
-
-            // Write the HTML and styles
-            iframeDoc.open();
-            iframeDoc.write(`
+      // Write the HTML and styles
+      iframeDoc.open();
+      iframeDoc.write(`
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -129,39 +129,39 @@ export class PrintService {
                 </body>
                 </html>
             `);
-            iframeDoc.close();
+      iframeDoc.close();
 
-            // Wait for content to load, then print
-            const printWindow = printFrame.contentWindow;
-            if (!printWindow) {
-                reject(new Error('Failed to access iframe window'));
-                return;
-            }
+      // Wait for content to load, then print
+      const printWindow = printFrame.contentWindow;
+      if (!printWindow) {
+        reject(new Error('Failed to access iframe window'));
+        return;
+      }
 
-            printWindow.onload = () => {
-                setTimeout(() => {
-                    try {
-                        printWindow.focus();
-                        printWindow.print();
-                        resolve();
-                    } catch (error) {
-                        reject(error);
-                    }
-                }, 250);
-            };
+      printWindow.onload = () => {
+        setTimeout(() => {
+          try {
+            printWindow.focus();
+            printWindow.print();
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        }, 250);
+      };
 
-            // Fallback: if onload doesn't fire, try printing after a delay
-            setTimeout(() => {
-                try {
-                    if (printWindow.document.readyState === 'complete') {
-                        printWindow.focus();
-                        printWindow.print();
-                        resolve();
-                    }
-                } catch (error) {
-                    // Ignore errors in fallback
-                }
-            }, 500);
-        });
-    }
+      // Fallback: if onload doesn't fire, try printing after a delay
+      setTimeout(() => {
+        try {
+          if (printWindow.document.readyState === 'complete') {
+            printWindow.focus();
+            printWindow.print();
+            resolve();
+          }
+        } catch (error) {
+          // Ignore errors in fallback
+        }
+      }, 500);
+    });
+  }
 }

@@ -11,12 +11,12 @@ initializeTelemetry(`${BRAND_CONFIG.servicePrefix}-server`);
 
 // Run migrations first, then bootstrap the application
 runMigrations(config)
-    .then(async () => {
-        // Bootstrap the application
-        return bootstrap(config);
-    })
-    .catch(err => {
-        // Use console.error for bootstrap failures (logger not yet initialized)
-        console.error('❌ Failed to start application:', err);
-        process.exit(1);
-    });
+  .then(async () => {
+    // Bootstrap the application
+    return bootstrap(config);
+  })
+  .catch(err => {
+    // Use console.error for bootstrap failures (logger not yet initialized)
+    console.error('❌ Failed to start application:', err);
+    process.exit(1);
+  });

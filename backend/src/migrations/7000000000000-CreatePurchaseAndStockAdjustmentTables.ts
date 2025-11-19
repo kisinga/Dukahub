@@ -2,11 +2,11 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Create Purchase and Stock Adjustment Tables
- * 
+ *
  * Merges:
  * - 1763139378335-CreatePurchaseAndStockAdjustmentTables.ts
  * - 1765000000000-FixForeignKeyTypesToInteger.ts (create with integer FKs from start)
- * 
+ *
  * Final state:
  * - stock_purchase: All FKs as integer (supplierId, etc.)
  * - inventory_stock_adjustment: adjustedByUserId as integer
@@ -14,14 +14,14 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - All FK constraints with correct names
  */
 export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements MigrationInterface {
-    name = 'CreatePurchaseAndStockAdjustmentTables7000000000000';
+  name = 'CreatePurchaseAndStockAdjustmentTables7000000000000';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Ensure pgcrypto extension
-        await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Ensure pgcrypto extension
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
 
-        // Create stock_purchase table with integer FK types from start
-        await queryRunner.query(`
+    // Create stock_purchase table with integer FK types from start
+    await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "stock_purchase" (
                 "id" uuid NOT NULL DEFAULT gen_random_uuid(),
                 "supplierId" integer NOT NULL,
@@ -36,8 +36,8 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
             )
         `);
 
-        // Create stock_purchase_line table with integer FK types from start
-        await queryRunner.query(`
+    // Create stock_purchase_line table with integer FK types from start
+    await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "stock_purchase_line" (
                 "id" uuid NOT NULL DEFAULT gen_random_uuid(),
                 "purchaseId" uuid NOT NULL,
@@ -50,8 +50,8 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
             )
         `);
 
-        // Create inventory_stock_adjustment table with integer FK types from start
-        await queryRunner.query(`
+    // Create inventory_stock_adjustment table with integer FK types from start
+    await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "inventory_stock_adjustment" (
                 "id" uuid NOT NULL DEFAULT gen_random_uuid(),
                 "reason" character varying NOT NULL,
@@ -63,8 +63,8 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
             )
         `);
 
-        // Create inventory_stock_adjustment_line table with integer FK types from start
-        await queryRunner.query(`
+    // Create inventory_stock_adjustment_line table with integer FK types from start
+    await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "inventory_stock_adjustment_line" (
                 "id" uuid NOT NULL DEFAULT gen_random_uuid(),
                 "adjustmentId" uuid NOT NULL,
@@ -77,29 +77,29 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
             )
         `);
 
-        // Create indexes
-        await queryRunner.query(`
+    // Create indexes
+    await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "IDX_stock_purchase_supplier" ON "stock_purchase" ("supplierId")
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "IDX_stock_purchase_date" ON "stock_purchase" ("purchaseDate")
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "IDX_stock_purchase_line_purchase" ON "stock_purchase_line" ("purchaseId")
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "IDX_inventory_stock_adjustment_created" ON "inventory_stock_adjustment" ("createdAt")
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "IDX_inventory_stock_adjustment_line_adjustment" ON "inventory_stock_adjustment_line" ("adjustmentId")
         `);
 
-        // Add foreign key constraints with integer types
-        await queryRunner.query(`
+    // Add foreign key constraints with integer types
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -113,7 +113,7 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
             END $$;
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -129,7 +129,7 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
             END $$;
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -143,7 +143,7 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
             END $$;
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -157,7 +157,7 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
             END $$;
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -171,7 +171,7 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
             END $$;
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -187,7 +187,7 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
             END $$;
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -201,7 +201,7 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
             END $$;
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -214,19 +214,19 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_inventory_stock_adjustment_line_adjustment"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_inventory_stock_adjustment_created"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_stock_purchase_line_purchase"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_stock_purchase_date"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_stock_purchase_supplier"`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "inventory_stock_adjustment_line"`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "inventory_stock_adjustment"`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "stock_purchase_line"`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "stock_purchase"`);
-    }
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_inventory_stock_adjustment_line_adjustment"`
+    );
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_inventory_stock_adjustment_created"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_stock_purchase_line_purchase"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_stock_purchase_date"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_stock_purchase_supplier"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "inventory_stock_adjustment_line"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "inventory_stock_adjustment"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "stock_purchase_line"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "stock_purchase"`);
+  }
 }
-
-

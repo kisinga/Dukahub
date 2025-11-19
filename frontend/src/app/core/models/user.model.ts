@@ -10,7 +10,7 @@ export type {
   LoginMutation,
   LoginMutationVariables,
   LogoutMutation,
-  UpdateAdministratorMutation
+  UpdateAdministratorMutation,
 } from '../graphql/generated/graphql';
 
 // Import for use in type definition
@@ -20,9 +20,7 @@ import type { GetActiveAdministratorQuery } from '../graphql/generated/graphql';
  * Type alias for the active administrator data from the query
  * This is what we get from activeAdministrator query
  */
-export type ActiveAdministrator = NonNullable<
-  GetActiveAdministratorQuery['activeAdministrator']
->;
+export type ActiveAdministrator = NonNullable<GetActiveAdministratorQuery['activeAdministrator']>;
 
 /**
  * Authentication state for the application
@@ -32,4 +30,3 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
 }
-

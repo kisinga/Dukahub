@@ -2,22 +2,22 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Add Channel Event Tracking Fields
- * 
+ *
  * Merges:
  * - 1763000000000-AddChannelEventTrackingFields.ts
  * - 1763100000000-RenameChannelEventColumnsToCamelCase.ts
  * - 1763200000000-FixActionTrackingResetTypeColumn.ts
- * 
+ *
  * Final state:
  * - Channel: All event tracking fields with correct camelCase naming
  * - Channel: actionTrackingResetType with correct type and constraints
  * - User: notificationPreferences
  */
 export class AddChannelEventTrackingFields1000000000004 implements MigrationInterface {
-    name = 'AddChannelEventTrackingFields1000000000004';
+  name = 'AddChannelEventTrackingFields1000000000004';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -384,10 +384,10 @@ export class AddChannelEventTrackingFields1000000000004 implements MigrationInte
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -483,7 +483,5 @@ export class AddChannelEventTrackingFields1000000000004 implements MigrationInte
                 END IF;
             END $$;
         `);
-    }
+  }
 }
-
-
