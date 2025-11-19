@@ -1,4 +1,4 @@
-# DukaHub Design System
+# DukaRun Design System
 
 **Mobile-First. Simple. Consistent.**
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 
 /**
- * Dukahub Entrypoint Logic
+ * Dukarun Entrypoint Logic
  * 
  * This module contains the core initialization logic used by both
  * the Docker entrypoint and the test suite to ensure identical behavior.
@@ -12,6 +12,7 @@
 
 import { execSync, spawn } from 'child_process';
 // Initialize environment configuration early (before database detection)
+import { BRAND_CONFIG } from './constants/brand.constants';
 import './infrastructure/config/environment.config';
 import { isDatabaseEmpty, verifyTablesExist, waitForDatabase } from './utils/database-detection';
 
@@ -20,7 +21,7 @@ export interface EntrypointOptions {
     skipServerStart?: boolean;
 }
 
-export class DukahubEntrypoint {
+export class DukarunEntrypoint {
     private options: EntrypointOptions;
 
     constructor(options: EntrypointOptions = {}) {
@@ -208,7 +209,7 @@ export class DukahubEntrypoint {
      * 3. Start the application
      */
     async run(): Promise<void> {
-        console.log('🚀 Dukahub Entrypoint starting...');
+        console.log(`🚀 ${BRAND_CONFIG.displayName} Entrypoint starting...`);
 
         try {
             // Step 1: Detect and populate if database is empty
@@ -233,7 +234,7 @@ export class DukahubEntrypoint {
 if (require.main === module) {
     const testMode = process.env.NODE_ENV === 'test';
 
-    const entrypoint = new DukahubEntrypoint({
+    const entrypoint = new DukarunEntrypoint({
         testMode,
         skipServerStart: testMode
     });

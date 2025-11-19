@@ -1,6 +1,6 @@
-# Dukahub Frontend
+# Dukarun Frontend
 
-Angular admin dashboard for Dukahub - Built for Kenyan SMEs.
+Angular admin dashboard for Dukarun - Built for Kenyan SMEs.
 
 ## Setup
 

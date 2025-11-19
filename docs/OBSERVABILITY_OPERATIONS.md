@@ -40,7 +40,7 @@ curl http://localhost:3301/api/health
 
 ```bash
 # Backup ClickHouse volume
-docker run --rm -v dukahub_clickhouse_data:/data -v $(pwd)/backups:/backup \
+docker run --rm -v dukarun_clickhouse_data:/data -v $(pwd)/backups:/backup \
   alpine tar czf /backup/clickhouse-$(date +%Y%m%d).tar.gz /data
 ```
 

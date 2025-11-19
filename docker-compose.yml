@@ -1,5 +1,5 @@
 # =====================================
-# Dukahub Production Docker Compose
+# Dukarun Production Docker Compose
 # =====================================
 #
 #
@@ -90,7 +90,7 @@ services:
   # Backend Service (Vendure)
   # ========================================
   backend:
-    image: ghcr.io/kisinga/dukahub/backend:latest
+    image: ghcr.io/kisinga/dukarun/backend:latest
     restart: unless-stopped
     environment:
       # Database configuration
@@ -152,7 +152,7 @@ services:
       # Push Notification Configuration (VAPID)
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
-      VAPID_EMAIL: ${VAPID_EMAIL:-mailto:admin@dukahub.com}
+      VAPID_EMAIL: ${VAPID_EMAIL:-mailto:admin@dukarun.com}
 
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-info}
@@ -163,7 +163,7 @@ services:
       SIGNOZ_HOST: ${SIGNOZ_HOST:-signoz}
       SIGNOZ_OTLP_GRPC_PORT: ${SIGNOZ_OTLP_GRPC_PORT:-4317}
       SIGNOZ_OTLP_HTTP_PORT: ${SIGNOZ_OTLP_HTTP_PORT:-4318}
-      SIGNOZ_SERVICE_NAME: ${SIGNOZ_SERVICE_NAME:-dukahub-backend}
+      SIGNOZ_SERVICE_NAME: ${SIGNOZ_SERVICE_NAME:-dukarun-backend}
       SIGNOZ_SERVICE_VERSION: ${SIGNOZ_SERVICE_VERSION:-2.0.0}
       # Optional: Override OTLP endpoints if using external SigNoz (leave empty to use defaults)
       SIGNOZ_OTLP_GRPC_ENDPOINT: ${SIGNOZ_OTLP_GRPC_ENDPOINT:-}
@@ -203,7 +203,7 @@ services:
   # Frontend Service (Angular + Nginx)
   # ========================================
   frontend:
-    image: ghcr.io/kisinga/dukahub/frontend:latest
+    image: ghcr.io/kisinga/dukarun/frontend:latest
     restart: unless-stopped
     environment:
       # Backend connection - using service name for reliable discovery
@@ -218,7 +218,7 @@ services:
       # All values can be overridden via environment variables
       ENABLE_TRACING: ${ENABLE_TRACING:-false}
       SIGNOZ_ENDPOINT: ${SIGNOZ_ENDPOINT:-/signoz/v1/traces}
-      SERVICE_NAME: ${SIGNOZ_SERVICE_NAME:-dukahub-frontend}
+      SERVICE_NAME: ${SIGNOZ_SERVICE_NAME:-dukarun-frontend}
       SERVICE_VERSION: ${SIGNOZ_SERVICE_VERSION:-2.0.0}
     ports:
       - "${FRONTEND_PORT:-4200}:4200"
@@ -248,7 +248,7 @@ services:
     environment:
       # SigNoz configuration
       # All values can be overridden via environment variables
-      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.name=dukahub,service.version=2.0.0}
+      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.name=dukarun,service.version=2.0.0}
       SIGNOZ_TELEMETRYSTORE_PROVIDER: ${SIGNOZ_TELEMETRYSTORE_PROVIDER:-clickhouse}
       # ClickHouse DSN: Use TCP port 9000 (not HTTP port 8123)
       # Format: tcp://[user]:[password]@[host]:[port]

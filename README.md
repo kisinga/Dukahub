@@ -1,13 +1,13 @@
-# Dukahub
+# Dukarun
 
 > **AI-powered point-of-sale system for modern small businesses**
 
-Dukahub helps shopkeepers ditch manual data entry and expensive barcode scanners. Use your phone's camera to instantly recognize products, process sales, and manage inventory—all powered by custom AI trained on your products.
+Dukarun helps shopkeepers ditch manual data entry and expensive barcode scanners. Use your phone's camera to instantly recognize products, process sales, and manage inventory—all powered by custom AI trained on your products.
 
-[![Tests](https://github.com/kisinga/Dukahub/actions/workflows/test.yml/badge.svg)](https://github.com/kisinga/Dukahub/actions/workflows/test.yml)
-[![Coverage](https://codecov.io/gh/kisinga/Dukahub/branch/main/graph/badge.svg)](https://codecov.io/gh/kisinga/Dukahub)
-[![Backend Coverage](https://codecov.io/gh/kisinga/Dukahub/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/kisinga/Dukahub)
-[![Frontend Coverage](https://codecov.io/gh/kisinga/Dukahub/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/kisinga/Dukahub)
+[![Tests](https://github.com/kisinga/Dukarun/actions/workflows/test.yml/badge.svg)](https://github.com/kisinga/Dukarun/actions/workflows/test.yml)
+[![Coverage](https://codecov.io/gh/kisinga/Dukarun/branch/main/graph/badge.svg)](https://codecov.io/gh/kisinga/Dukarun)
+[![Backend Coverage](https://codecov.io/gh/kisinga/Dukarun/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/kisinga/Dukarun)
+[![Frontend Coverage](https://codecov.io/gh/kisinga/Dukarun/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/kisinga/Dukarun)
 
 ## Quick Links
 
@@ -51,7 +51,7 @@ Dukahub helps shopkeepers ditch manual data entry and expensive barcode scanners
 ## Project Structure
 
 ```
-dukahub/
+dukarun/
 ├── backend/          # Vendure server & worker
 ├── frontend/         # Angular SPA
 ├── configs/          # Shared configuration
@@ -62,8 +62,8 @@ dukahub/
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/dukahub.git
-cd dukahub
+git clone https://github.com/yourusername/dukarun.git
+cd dukarun
 ```
 
 **Next:** See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) for complete setup instructions.

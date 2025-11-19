@@ -20,9 +20,9 @@ COPY . .
 RUN npm run build -- --configuration production
 
 # Validate build output (verified via docker build inspection)
-# Angular CLI outputs to: /app/dist/dukahub/browser
+# Angular CLI outputs to: /app/dist/dukarun/browser
 RUN echo "🔍 Validating build output..." && \
-    BUILD_DIR="/app/dist/dukahub/browser" && \
+    BUILD_DIR="/app/dist/dukarun/browser" && \
     if [ ! -d "$BUILD_DIR" ]; then \
       echo "❌ ERROR: Build directory not found at $BUILD_DIR" && \
       echo "Available directories in /app/dist:" && \
@@ -51,8 +51,8 @@ RUN apk add --no-cache curl
 RUN rm -rf /etc/nginx/conf.d/default.conf /usr/share/nginx/html/*
 
 # Copy build output from builder stage (path verified via docker build inspection)
-# Angular CLI outputs to: /app/dist/dukahub/browser
-COPY --from=builder /app/dist/dukahub/browser /usr/share/nginx/html
+# Angular CLI outputs to: /app/dist/dukarun/browser
+COPY --from=builder /app/dist/dukarun/browser /usr/share/nginx/html
 
 # Verify copied files
 RUN echo "✅ Verifying copied build output..." && \

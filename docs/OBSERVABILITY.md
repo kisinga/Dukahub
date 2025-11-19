@@ -120,7 +120,7 @@ private readonly logger = new LoggingService(MyService.name);
 
 ## Querying in SigNoz
 
-**Traces:** Filter by service (`dukahub-backend`, `dukahub-frontend`), operation (`order.create`), attributes (`order.channel_id`), or errors
+**Traces:** Filter by service (`dukarun-backend`, `dukarun-frontend`), operation (`order.create`), attributes (`order.channel_id`), or errors
 
 **Metrics:** Select metric → Add filters → View time series
 
@@ -134,7 +134,7 @@ private readonly logger = new LoggingService(MyService.name);
 SIGNOZ_ENABLED=true
 SIGNOZ_HOST=signoz
 SIGNOZ_OTLP_GRPC_PORT=4317
-SIGNOZ_SERVICE_NAME=dukahub-backend
+SIGNOZ_SERVICE_NAME=dukarun-backend
 ```
 
 ### Frontend Environment

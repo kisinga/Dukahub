@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { metrics, Meter, Counter, Histogram, Gauge } from '@opentelemetry/api';
+import { Counter, Gauge, Histogram, Meter, metrics } from '@opentelemetry/api';
+import { BRAND_CONFIG } from '../../constants/brand.constants';
 import { env } from '../config/environment.config';
 
 /**
@@ -26,31 +27,31 @@ export class MetricsService {
             // Create a no-op meter if observability is disabled
             this.meter = {
                 createCounter: () => ({
-                    add: () => {},
+                    add: () => { },
                 }) as Counter,
                 createHistogram: () => ({
-                    record: () => {},
+                    record: () => { },
                 }) as Histogram,
                 createGauge: () => ({
-                    record: () => {},
+                    record: () => { },
                 }) as Gauge,
                 createUpDownCounter: () => ({
-                    add: () => {},
+                    add: () => { },
                 }) as any,
                 createObservableGauge: () => ({
-                    addCallback: () => {},
+                    addCallback: () => { },
                 }) as any,
                 createObservableCounter: () => ({
-                    addCallback: () => {},
+                    addCallback: () => { },
                 }) as any,
                 createObservableUpDownCounter: () => ({
-                    addCallback: () => {},
+                    addCallback: () => { },
                 }) as any,
             } as unknown as Meter;
             return;
         }
 
-        this.meter = metrics.getMeter('dukahub-metrics');
+        this.meter = metrics.getMeter(`${BRAND_CONFIG.servicePrefix}-metrics`);
         this.initializeMetrics();
     }
 

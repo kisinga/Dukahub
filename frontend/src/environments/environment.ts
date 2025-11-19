@@ -21,6 +21,8 @@ const getRuntimeConfig = () => {
 
 const runtimeConfig = getRuntimeConfig();
 
+import { BRAND_CONFIG } from '../app/core/constants/brand.constants';
+
 export const environment = {
   production: false,
   apiUrl: '/admin-api', // Proxied by dev server (see proxy.conf.json)
@@ -31,7 +33,7 @@ export const environment = {
   // - Use Docker Compose for testing observability features
   enableTracing: runtimeConfig.enableTracing ?? false,
   signozEndpoint: runtimeConfig.signozEndpoint ?? '/signoz/v1/traces',
-  serviceName: runtimeConfig.serviceName ?? 'dukahub-frontend',
+  serviceName: runtimeConfig.serviceName ?? `${BRAND_CONFIG.servicePrefix}-frontend`,
   serviceVersion: runtimeConfig.serviceVersion ?? '2.0.0',
 };
 

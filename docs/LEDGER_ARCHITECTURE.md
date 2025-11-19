@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Dukahub financial system uses a **double-entry ledger** as the single source of truth for all financial transactions. This ensures data integrity, auditability, and accurate financial reporting.
+The Dukarun financial system uses a **double-entry ledger** as the single source of truth for all financial transactions. This ensures data integrity, auditability, and accurate financial reporting.
 
 ## Core Principles
 

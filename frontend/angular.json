@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "dukahub": {
+    "dukarun": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -75,10 +75,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "dukahub:build:production"
+              "buildTarget": "dukarun:build:production"
             },
             "development": {
-              "buildTarget": "dukahub:build:development"
+              "buildTarget": "dukarun:build:development"
             }
           },
           "defaultConfiguration": "development"

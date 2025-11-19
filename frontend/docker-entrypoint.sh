@@ -14,7 +14,7 @@ export SIGNOZ_HOST="${SIGNOZ_HOST:-signoz}"
 export SIGNOZ_PORT="${SIGNOZ_PORT:-4318}"
 export ENABLE_TRACING="${ENABLE_TRACING:-false}"
 export SIGNOZ_ENDPOINT="${SIGNOZ_ENDPOINT:-/signoz/v1/traces}"
-export SERVICE_NAME="${SERVICE_NAME:-dukahub-frontend}"
+export SERVICE_NAME="${SERVICE_NAME:-dukarun-frontend}"
 export SERVICE_VERSION="${SERVICE_VERSION:-2.0.0}"
 
 echo "🔧 Configuring nginx for backend: ${BACKEND_HOST}:${BACKEND_PORT}"

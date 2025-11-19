@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RequestContext } from '@vendure/core';
 import * as webpush from 'web-push';
+import { BRAND_CONFIG } from '../../constants/brand.constants';
 import { NotificationService } from './notification.service';
 
 @Injectable()
@@ -9,7 +10,7 @@ export class PushNotificationService {
     private vapidKeys = {
         publicKey: process.env.VAPID_PUBLIC_KEY || '',
         privateKey: process.env.VAPID_PRIVATE_KEY || '',
-        subject: process.env.VAPID_EMAIL || 'mailto:admin@dukahub.com',
+        subject: process.env.VAPID_EMAIL || `mailto:admin@${BRAND_CONFIG.emailDomain}`,
     };
 
     constructor(private notificationService: NotificationService) {

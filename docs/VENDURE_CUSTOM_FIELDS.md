@@ -1,6 +1,6 @@
 # Vendure Custom Fields & Migration Playbook
 
-> Scope: Dukahub backend (`backend/`) on Vendure 3.4 / TypeORM 0.3. This doc captures the patterns that keep `npm run dev` happy locally and ensure migrations replay cleanly on the managed Postgres instance declared in root `.env`.
+> Scope: Dukarun backend (`backend/`) on Vendure 3.4 / TypeORM 0.3. This doc captures the patterns that keep `npm run dev` happy locally and ensure migrations replay cleanly on the managed Postgres instance declared in root `.env`.
 
 ---
 

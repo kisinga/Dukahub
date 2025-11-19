@@ -1,4 +1,4 @@
-# Dukahub Architecture
+# Dukarun Architecture
 
 > **Complete system design for V2 (Angular + Vendure)**
 
@@ -16,7 +16,7 @@
 
 ## Overview
 
-Dukahub V2 is a **headless, API-first** point-of-sale system built on modern, scalable technologies. The system uses **Vendure** (a TypeScript e-commerce framework) as the backend and **Angular** for the frontend.
+Dukarun V2 is a **headless, API-first** point-of-sale system built on modern, scalable technologies. The system uses **Vendure** (a TypeScript e-commerce framework) as the backend and **Angular** for the frontend.
 
 ### Design Principles
 
@@ -110,7 +110,7 @@ Our solution: An incredibly fast, intuitive POS system augmented with AI that ma
 
 ## Customer & Supplier Management
 
-Dukahub implements a unified customer and supplier management system using Vendure's native Customer entity with custom fields.
+Dukarun implements a unified customer and supplier management system using Vendure's native Customer entity with custom fields.
 
 ### System Design
 
@@ -145,7 +145,7 @@ Dukahub implements a unified customer and supplier management system using Vendu
 
 ## Financial Ledger System
 
-Dukahub uses a **double-entry ledger** as the single source of truth for all financial transactions. This ensures data integrity, auditability, and accurate financial reporting.
+Dukarun uses a **double-entry ledger** as the single source of truth for all financial transactions. This ensures data integrity, auditability, and accurate financial reporting.
 
 ### Core Principles
 
@@ -180,7 +180,7 @@ The system uses a layered architecture:
 
 ## Cashier Flow - Location-Based Two-Step Payment
 
-Dukahub implements a location-specific cashier flow that enables a two-step sales process:
+Dukarun implements a location-specific cashier flow that enables a two-step sales process:
 
 1. **Salesperson** adds items to cart and sends order to cashier (no customer required)
 2. **Cashier** receives order with PENDING_PAYMENT status and collects payment
@@ -228,7 +228,7 @@ Dukahub implements a location-specific cashier flow that enables a two-step sale
 
 ## Multi-tenancy Model
 
-Dukahub uses **Vendure Channels** for multi-tenancy, where each business is a separate channel.
+Dukarun uses **Vendure Channels** for multi-tenancy, where each business is a separate channel.
 
 ### Tenancy Structure
 
@@ -418,10 +418,10 @@ coverageReporter: {
 #### Coverage Badges
 
 ```markdown
-[![Tests](https://github.com/kisinga/Dukahub/actions/workflows/test.yml/badge.svg)](https://github.com/kisinga/Dukahub/actions/workflows/test.yml)
-[![Coverage](https://codecov.io/gh/kisinga/Dukahub/branch/main/graph/badge.svg)](https://codecov.io/gh/kisinga/Dukahub)
-[![Backend Coverage](https://codecov.io/gh/kisinga/Dukahub/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/kisinga/Dukahub)
-[![Frontend Coverage](https://codecov.io/gh/kisinga/Dukahub/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/kisinga/Dukahub)
+[![Tests](https://github.com/kisinga/Dukarun/actions/workflows/test.yml/badge.svg)](https://github.com/kisinga/Dukarun/actions/workflows/test.yml)
+[![Coverage](https://codecov.io/gh/kisinga/Dukarun/branch/main/graph/badge.svg)](https://codecov.io/gh/kisinga/Dukarun)
+[![Backend Coverage](https://codecov.io/gh/kisinga/Dukarun/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/kisinga/Dukarun)
+[![Frontend Coverage](https://codecov.io/gh/kisinga/Dukarun/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/kisinga/Dukarun)
 ```
 
 #### CI/CD Pipeline
@@ -501,7 +501,7 @@ npm run coverage:report
 
 ## Deployment
 
-Dukahub uses platform-agnostic container images for flexible deployment.
+Dukarun uses platform-agnostic container images for flexible deployment.
 
 ### Key Principles
 
@@ -548,7 +548,7 @@ Dukahub uses platform-agnostic container images for flexible deployment.
 
 ## Monitoring & Observability
 
-Dukahub uses **SigNoz** as a unified observability platform providing traces, metrics, and logs.
+Dukarun uses **SigNoz** as a unified observability platform providing traces, metrics, and logs.
 
 ### Architecture
 
@@ -566,9 +566,9 @@ Dukahub uses **SigNoz** as a unified observability platform providing traces, me
 
 ### Services Instrumented
 
-- **Backend Server**: `dukahub-backend-dukahub-server`
-- **Backend Worker**: `dukahub-backend-dukahub-worker`
-- **Frontend**: `dukahub-frontend`
+- **Backend Server**: `dukarun-backend-dukarun-server`
+- **Backend Worker**: `dukarun-backend-dukarun-worker`
+- **Frontend**: `dukarun-frontend`
 
 ### Configuration
 

@@ -1,6 +1,6 @@
 ## Inventory & Stock Management
 
-This guide explains how Dukahub helps you **track what you have, where it is, and how it moves**, in language that matches daily retail operations.
+This guide explains how Dukarun helps you **track what you have, where it is, and how it moves**, in language that matches daily retail operations.
 
 ---
 
@@ -22,19 +22,19 @@ This guide explains how Dukahub helps you **track what you have, where it is, an
   **Origin:** Vendure Core (stock locations) used in a POS-oriented way.
 
 - **POS-focused stock tracking** – Simple, location-based counts suitable for small retailers; shipping and fulfilment are simplified away.  
-  **Origin:** Dukahub-Enhanced (order process and UI).
+  **Origin:** Dukarun-Enhanced (order process and UI).
 
 - **Barcode-based products** – Packaged goods can be scanned and matched by barcode in both product creation and POS checkout.  
-  **Origin:** Dukahub-Enhanced (frontend barcode components on Vendure catalog).
+  **Origin:** Dukarun-Enhanced (frontend barcode components on Vendure catalog).
 
 - **Label-photo products (AI-ready)** – Fresh produce and services can be identified using price labels / service cards, not just barcodes.  
-  **Origin:** Dukahub-Exclusive (frontend ML + backend ML pipeline on top of Vendure assets).
+  **Origin:** Dukarun-Exclusive (frontend ML + backend ML pipeline on top of Vendure assets).
 
 - **Service products without stock** – Services (haircuts, repairs) are treated as products that never go out of stock.  
-  **Origin:** Vendure Core (trackInventory flag) configured by Dukahub.
+  **Origin:** Vendure Core (trackInventory flag) configured by Dukarun.
 
 - **Stock adjustments & conversion (emerging)** – The UI and ledger are prepared to support bulk-to-pack conversion (e.g. 100kg tomatoes → bag sizes) with proper audit trail.  
-  **Origin:** Dukahub-Exclusive (partially implemented & planned).
+  **Origin:** Dukarun-Exclusive (partially implemented & planned).
 
 ---
 
@@ -42,7 +42,7 @@ This guide explains how Dukahub helps you **track what you have, where it is, an
 
 ### 1. Product Structure
 
-In Dukahub:
+In Dukarun:
 
 - **Product** – The main item (“Tomatoes”, “Coca Cola”, “Haircut”).
 - **Variants / SKUs** – The different options:
@@ -66,34 +66,34 @@ Product: "Haircut"
     └── Premium @ 800/=
 ```
 
-**Origin:** Vendure Core for products/variants; Dukahub uses a simplified creation flow (see “Product Creation Flow” in `ARCHITECTURE.md`).
+**Origin:** Vendure Core for products/variants; Dukarun uses a simplified creation flow (see “Product Creation Flow” in `ARCHITECTURE.md`).
 
 ---
 
 ### 2. Product Types: Barcodes vs Label Photos vs Services
 
-Dukahub supports three main ways to identify items:
+Dukarun supports three main ways to identify items:
 
 - **Barcode products** (packaged goods)
 
   - Use the **Barcode Scanner** component in product creation.
   - Scan the barcode and link it to a product/variant.
-  - At POS, cashiers scan the barcode and Dukahub adds the right SKU to the cart.
-  - **Origin:** Dukahub-Enhanced (frontend, reusing Vendure SKUs).
+  - At POS, cashiers scan the barcode and Dukarun adds the right SKU to the cart.
+  - **Origin:** Dukarun-Enhanced (frontend, reusing Vendure SKUs).
 
 - **Label/photo products** (fresh produce, bulk items)
 
   - Instead of scanning barcodes, you **take multiple photos of the price label/tag**.
-  - Dukahub trains a per-business ML model to recognise these labels.
+  - Dukarun trains a per-business ML model to recognise these labels.
   - At POS, cashiers point the camera at the label; the model suggests the product and you choose the correct SKU (e.g. 2kg).
-  - **Origin:** Dukahub-Exclusive (ML pipeline described in `ARCHITECTURE.md` and `ML_TRAINING_SETUP.md`).
+  - **Origin:** Dukarun-Exclusive (ML pipeline described in `ARCHITECTURE.md` and `ML_TRAINING_SETUP.md`).
 
 - **Service products**
   - Use the same product/variant model but set **inventory tracking off**.
   - These never go “out of stock” and are ideal for services like haircuts.
-  - **Origin:** Vendure Core (`trackInventory` flag) + Dukahub UI guidance.
+  - **Origin:** Vendure Core (`trackInventory` flag) + Dukarun UI guidance.
 
-From a business perspective, you manage **all of these in the same “Products” section**, but Dukahub gives you different identification tools and defaults per type.
+From a business perspective, you manage **all of these in the same “Products” section**, but Dukarun gives you different identification tools and defaults per type.
 
 ---
 
@@ -106,12 +106,12 @@ For each business (channel), a **stock location** represents a:
 - Physical shop (e.g. “Main Store”, “Kawangware Branch”).
 - Warehouse or back room.
 
-Vendure provides stock locations; Dukahub uses them in a **POS-focused** way:
+Vendure provides stock locations; Dukarun uses them in a **POS-focused** way:
 
 - Orders are always tied to a location.
 - Inventory is tracked per location.
 
-**Origin:** Vendure Core (stock locations) + Dukahub-Enhanced provisioning (`CUSTOMER_PROVISIONING.md`).
+**Origin:** Vendure Core (stock locations) + Dukarun-Enhanced provisioning (`CUSTOMER_PROVISIONING.md`).
 
 ---
 
@@ -145,7 +145,7 @@ The frontend uses a **channel-first** model (see `frontend/ARCHITECTURE.md`). At
   - Fetching stock counts.
   - Applying cashier flow toggles.
 
-**Origin:** Dukahub-Enhanced (channel custom field + frontend services).
+**Origin:** Dukarun-Enhanced (channel custom field + frontend services).
 
 ---
 
@@ -153,7 +153,7 @@ The frontend uses a **channel-first** model (see `frontend/ARCHITECTURE.md`). At
 
 ### 1. Current Stock Behaviour
 
-Today, Dukahub supports:
+Today, Dukarun supports:
 
 - Viewing stock per product/variant at the active location.
 - Reducing stock when sales complete (via Vendure’s core inventory handling).
@@ -164,13 +164,13 @@ There is also a `stock-adjustments` component on the frontend, which is the basi
 - Manual corrections (e.g. stock takes, spoilage).
 - Future bulk-to-pack conversion workflows.
 
-**Origin:** Vendure Core for stock levels; Dukahub-Exclusive for UI and planned workflows.
+**Origin:** Vendure Core for stock levels; Dukarun-Exclusive for UI and planned workflows.
 
 ---
 
 ### 2. Bulk-to-Pack Conversion (Planned)
 
-Many Dukahub customers **buy in bulk and sell in smaller packs** (e.g. 100kg of tomatoes → 1kg, 2kg and 5kg bags). The future **Stock Conversion** module (outlined in `frontend/ARCHITECTURE.md`) aims to:
+Many Dukarun customers **buy in bulk and sell in smaller packs** (e.g. 100kg of tomatoes → 1kg, 2kg and 5kg bags). The future **Stock Conversion** module (outlined in `frontend/ARCHITECTURE.md`) aims to:
 
 - Let you record a bulk purchase.
 - Allocate the bulk into various SKUs.
@@ -184,7 +184,7 @@ While the architecture and ledger are already designed for this, the customer-fa
 - You can track stock per SKU.
 - Bulk-to-pack conversion requires manual adjustments plus business discipline.
 
-**Origin:** Dukahub-Exclusive (under active development).
+**Origin:** Dukarun-Exclusive (under active development).
 
 ---
 
@@ -194,14 +194,14 @@ Services (barbershops, salons, repair shops) are fully supported, using the same
 
 - Each service is a product (e.g. “Haircut”).
 - Each tier is a variant (e.g. Kids, Regular, Premium).
-- For services, Dukahub sets **`trackInventory = FALSE`**:
+- For services, Dukarun sets **`trackInventory = FALSE`**:
   - No stock counts.
   - No “out of stock” state.
   - Still fully integrated with sales and reporting.
 
 This leverages Vendure’s native fields and avoids custom service entities.
 
-**Origin:** Vendure Core + Dukahub-Enhanced UX and defaults.
+**Origin:** Vendure Core + Dukarun-Enhanced UX and defaults.
 
 ---
 
@@ -211,7 +211,7 @@ This leverages Vendure’s native fields and avoids custom service entities.
 
 **Who:** Owners, managers, stock controllers.
 
-1. In the Dukahub dashboard, go to **Products → Create**.
+1. In the Dukarun dashboard, go to **Products → Create**.
 2. Choose how you will identify this product:
    - Scan a **barcode** (for packaged goods), or
    - Plan to use **label photos** (for fresh produce / bulk).
@@ -245,7 +245,7 @@ This gives you clean revenue tracking for services without confusing stock numbe
 
 ### C. Working with Stock Locations
 
-**Who:** Dukahub provisioning team, advanced customers.
+**Who:** Dukarun provisioning team, advanced customers.
 
 1. In the Vendure Admin UI (`/admin`), go to **Settings → Stock Locations**.
 2. Create locations such as:
@@ -262,7 +262,7 @@ From the POS perspective, this determines where stock is drawn from and where in
 
 **Who:** Managers, stock controllers.
 
-Dukahub is converging on a pattern where:
+Dukarun is converging on a pattern where:
 
 - **Product edit forms** do not let you directly change stock.
 - All stock changes (other than sales) are done via a **stock adjustments screen** (e.g. recounts, damage, shrinkage).
@@ -275,9 +275,9 @@ Depending on the current implementation stage:
 4. Supply a reason (e.g. “Stock take correction”).
 5. Confirm.
 
-Behind the scenes, Dukahub’s ledger and inventory services can tie these adjustments into financial reporting.
+Behind the scenes, Dukarun’s ledger and inventory services can tie these adjustments into financial reporting.
 
-**Origin:** Dukahub-Exclusive UI on top of Vendure inventory.
+**Origin:** Dukarun-Exclusive UI on top of Vendure inventory.
 
 ---
 
@@ -289,7 +289,7 @@ Behind the scenes, Dukahub’s ledger and inventory services can tie these adjus
 
 ---
 
-## Vendure vs Dukahub: What’s What
+## Vendure vs Dukarun: What’s What
 
 - **Vendure Core**
 
@@ -297,13 +297,13 @@ Behind the scenes, Dukahub’s ledger and inventory services can tie these adjus
   - Stock locations and basic inventory tracking.
   - `trackInventory` flag for differentiating products vs services.
 
-- **Dukahub-Enhanced**
+- **Dukarun-Enhanced**
 
   - POS-centric product creation and edit flows.
   - Barcode scanner components reused across product creation, POS checkout and inventory actions.
   - Simplified order process with no shipping requirements.
 
-- **Dukahub-Exclusive**
+- **Dukarun-Exclusive**
   - Label-photo-based products and ML recognition.
   - Per-channel ML models and auto-extraction of product photos.
   - Planned stock conversion workflows with ledger integration.

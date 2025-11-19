@@ -1,6 +1,6 @@
 # Backend Infrastructure Patterns
 
-This document outlines the architectural patterns, organization principles, and best practices used in the Dukahub backend.
+This document outlines the architectural patterns, organization principles, and best practices used in the Dukarun backend.
 
 ## Table of Contents
 

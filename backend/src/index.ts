@@ -3,10 +3,11 @@ import { config } from './vendure-config';
 // Initialize environment configuration early
 import './infrastructure/config/environment.config';
 // Initialize OpenTelemetry telemetry before application bootstrap
+import { BRAND_CONFIG } from './constants/brand.constants';
 import { initializeTelemetry } from './infrastructure/observability/telemetry.init';
 
 // Initialize telemetry (must be done before any other application code)
-initializeTelemetry('dukahub-server');
+initializeTelemetry(`${BRAND_CONFIG.servicePrefix}-server`);
 
 // Run migrations first, then bootstrap the application
 runMigrations(config)

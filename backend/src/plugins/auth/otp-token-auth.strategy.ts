@@ -10,6 +10,7 @@ import {
 } from '@vendure/core';
 import { DocumentNode } from 'graphql';
 import gql from 'graphql-tag';
+import { BRAND_CONFIG } from '../../constants/brand.constants';
 import { OtpService } from '../../services/auth/otp.service';
 
 /**
@@ -21,8 +22,8 @@ import { OtpService } from '../../services/auth/otp.service';
 export class OtpTokenAuthStrategy implements AuthenticationStrategy<{ username: string; password: string }> {
     name = 'native';
 
-    private readonly tracer = trace.getTracer('dukahub-auth');
-    private readonly meter = metrics.getMeter('dukahub-auth');
+    private readonly tracer = trace.getTracer(`${BRAND_CONFIG.servicePrefix}-auth`);
+    private readonly meter = metrics.getMeter(`${BRAND_CONFIG.servicePrefix}-auth`);
     private readonly authAttemptsCounter = this.meter.createCounter('auth.admin.attempts', {
         description: 'Total number of admin authentication attempts',
     });
