@@ -20,17 +20,20 @@ export class MlExtractionQueueSubscriber implements OnModuleInit {
     ) { }
 
     onModuleInit(): void {
-        // Start processing queue every 30 seconds
-        // This is still needed to check for due extractions, but now it's
-        // in a dedicated subscriber rather than mixed with event handling
-        this.startQueueProcessor();
-
-        // Clean up old extractions on startup (with delay to ensure migrations complete)
+        // Delay queue processor start to ensure migrations complete
+        // The ml_extraction_queue table is created by migration 6000000000000
+        // This prevents "relation does not exist" errors during fresh setup
         setTimeout(() => {
-            this.cleanupOldExtractions();
-        }, 5000); // 5 second delay to allow migrations to complete
+            // Start processing queue every 30 seconds
+            // This is still needed to check for due extractions, but now it's
+            // in a dedicated subscriber rather than mixed with event handling
+            this.startQueueProcessor();
 
-        this.logger.log('Initialized');
+            // Clean up old extractions on startup (after migrations complete)
+            this.cleanupOldExtractions();
+        }, 10000); // 10 second delay to ensure migrations complete
+
+        this.logger.log('Initialized (queue processor will start after migrations)');
     }
 
     /**
