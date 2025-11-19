@@ -18,7 +18,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository_owner }}/dukahub
+  IMAGE_PREFIX: ${{ github.repository_owner }}/dukarun
 
 jobs:
   build-backend:
