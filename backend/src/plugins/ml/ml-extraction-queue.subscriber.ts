@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { RequestContext } from '@vendure/core';
 import { MlExtractionQueueService } from '../../services/ml/ml-extraction-queue.service';
 import { MlTrainingService } from '../../services/ml/ml-training.service';
@@ -10,7 +10,7 @@ import { MlTrainingService } from '../../services/ml/ml-training.service';
  * Replaces the polling mechanism with event-driven processing.
  */
 @Injectable()
-export class MlExtractionQueueSubscriber implements OnModuleInit {
+export class MlExtractionQueueSubscriber implements OnApplicationBootstrap {
   private readonly logger = new Logger(MlExtractionQueueSubscriber.name);
   private processingInterval: NodeJS.Timeout | null = null;
 
@@ -19,21 +19,18 @@ export class MlExtractionQueueSubscriber implements OnModuleInit {
     private mlTrainingService: MlTrainingService
   ) {}
 
-  onModuleInit(): void {
-    // Delay queue processor start to ensure migrations complete
-    // The ml_extraction_queue table is created by migration 6000000000000
-    // This prevents "relation does not exist" errors during fresh setup
-    setTimeout(() => {
-      // Start processing queue every 30 seconds
-      // This is still needed to check for due extractions, but now it's
-      // in a dedicated subscriber rather than mixed with event handling
-      this.startQueueProcessor();
+  onApplicationBootstrap(): void {
+    // OnApplicationBootstrap runs after all modules are initialized AND migrations are complete
+    // The ml_extraction_queue table is guaranteed to exist at this point
+    // Start processing queue every 30 seconds
+    // This is still needed to check for due extractions, but now it's
+    // in a dedicated subscriber rather than mixed with event handling
+    this.startQueueProcessor();
 
-      // Clean up old extractions on startup (after migrations complete)
-      this.cleanupOldExtractions();
-    }, 10000); // 10 second delay to ensure migrations complete
+    // Clean up old extractions on startup (migrations are guaranteed to be complete)
+    this.cleanupOldExtractions();
 
-    this.logger.log('Initialized (queue processor will start after migrations)');
+    this.logger.log('Queue processor initialized (migrations complete)');
   }
 
   /**
