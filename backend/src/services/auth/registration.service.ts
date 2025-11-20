@@ -8,6 +8,7 @@ import { PaymentProvisionerService } from './provisioning/payment-provisioner.se
 import { RegistrationErrorService } from './provisioning/registration-error.service';
 import { RegistrationValidatorService } from './provisioning/registration-validator.service';
 import { RoleProvisionerService } from './provisioning/role-provisioner.service';
+import { SellerProvisionerService } from './provisioning/seller-provisioner.service';
 import { StoreProvisionerService } from './provisioning/store-provisioner.service';
 
 /**
@@ -29,6 +30,7 @@ export interface RegistrationInput {
  * Provision Result
  */
 export interface ProvisionResult {
+  sellerId: string;
   channelId: string;
   stockLocationId: string;
   roleId: string;
@@ -65,6 +67,7 @@ export class RegistrationService {
 
   constructor(
     private readonly validator: RegistrationValidatorService,
+    private readonly sellerProvisioner: SellerProvisionerService,
     private readonly channelProvisioner: ChannelProvisionerService,
     private readonly storeProvisioner: StoreProvisionerService,
     private readonly paymentProvisioner: PaymentProvisionerService,
@@ -79,11 +82,12 @@ export class RegistrationService {
    *
    * Entity creation order (critical, must follow this sequence):
    * 1. Validate input (currency, channel code uniqueness, zones)
-   * 2. Create Channel (company workspace) - requires zones from default channel
-   * 3. Create Store (stock location) and assign to channel
-   * 4. Create Payment Methods (Cash + M-Pesa) and assign to channel
-   * 5. Create Role (access control) with all permissions and assign to channel
-   * 6. Create Access (user + administrator) with role assignment
+   * 2. Create Seller (vendor entity for channel isolation)
+   * 3. Create Channel (company workspace) - requires seller and zones
+   * 4. Create Store (stock location) and assign to channel
+   * 5. Create Payment Methods (Cash + M-Pesa) and assign to channel
+   * 6. Create Role (access control) with all permissions and assign to channel
+   * 7. Create Access (user + administrator) with role assignment
    *
    * All operations run within a transaction for atomicity.
    */
@@ -105,16 +109,27 @@ export class RegistrationService {
       // Step 1: Validate input (currency, channel code, zones)
       this.logger.log('Validating registration input');
       await this.validator.validateInput(ctx, registrationData);
-      const defaultChannel = await this.validator.getDefaultChannel(ctx);
+      const africaZone = await this.validator.getAfricaZone(ctx);
 
-      // Step 2: Create Channel (company workspace)
+      // Step 2: Create Seller (vendor entity for channel isolation)
+      this.logger.log(`Creating seller for: ${registrationData.companyName}`);
+      this.tracingService?.addEvent(span!, 'registration.seller.creating');
+      const seller = await this.sellerProvisioner.createSeller(ctx, registrationData);
+      this.logger.log(`Seller created: ${seller.id}`);
+      this.tracingService?.setAttributes(span!, {
+        'registration.seller_id': seller.id.toString(),
+      });
+      this.tracingService?.addEvent(span!, 'registration.seller.created');
+
+      // Step 3: Create Channel (company workspace)
       this.logger.log(`Creating channel: ${registrationData.companyCode}`);
       this.tracingService?.addEvent(span!, 'registration.channel.creating');
       const channel = await this.channelProvisioner.createChannel(
         ctx,
         registrationData,
-        defaultChannel,
-        formattedPhone
+        africaZone,
+        formattedPhone,
+        seller.id.toString()
       );
       this.logger.log(`Channel created: ${channel.id} Token: ${channel.token}`);
       this.tracingService?.setAttributes(span!, {
@@ -122,7 +137,7 @@ export class RegistrationService {
       });
       this.tracingService?.addEvent(span!, 'registration.channel.created');
 
-      // Step 3: Create Store (stock location) and assign to channel
+      // Step 4: Create Store (stock location) and assign to channel
       this.logger.log(`Creating store: ${registrationData.storeName}`);
       const stockLocation = await this.storeProvisioner.createAndAssignStore(
         ctx,
@@ -131,7 +146,7 @@ export class RegistrationService {
       );
       this.logger.log(`Store created and assigned: ${stockLocation.id}`);
 
-      // Step 4: Create Payment Methods and assign to channel
+      // Step 5: Create Payment Methods and assign to channel
       this.logger.log(`Creating payment methods for channel: ${channel.id}`);
       const paymentMethods = await this.paymentProvisioner.createAndAssignPaymentMethods(
         ctx,
@@ -140,12 +155,12 @@ export class RegistrationService {
       );
       this.logger.log(`Payment methods created and assigned: ${paymentMethods.length}`);
 
-      // Step 5: Create Role (access control) with all permissions
+      // Step 6: Create Role (access control) with all permissions
       this.logger.log(`Creating admin role for channel: ${channel.id}`);
       const role = await this.roleProvisioner.createAdminRole(ctx, registrationData, channel.id);
       this.logger.log(`Admin role created: ${role.id} Code: ${role.code}`);
 
-      // Step 6: Create Access (user + administrator) with role
+      // Step 7: Create Access (user + administrator) with role
       this.logger.log(`Creating administrator with role: ${role.id}`);
       const administrator = await this.accessProvisioner.createAdministrator(
         ctx,
@@ -165,6 +180,7 @@ export class RegistrationService {
       }
 
       const result = {
+        sellerId: seller.id.toString(),
         channelId: channel.id.toString(),
         stockLocationId: stockLocation.id.toString(),
         roleId: role.id.toString(),
@@ -173,6 +189,7 @@ export class RegistrationService {
       };
 
       this.tracingService?.setAttributes(span!, {
+        'registration.seller_id': seller.id.toString(),
         'registration.stock_location_id': stockLocation.id.toString(),
         'registration.role_id': role.id.toString(),
         'registration.admin_id': administrator.id.toString(),

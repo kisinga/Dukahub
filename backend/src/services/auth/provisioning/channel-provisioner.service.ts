@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Channel, ChannelService, CurrencyCode, LanguageCode, RequestContext } from '@vendure/core';
+import { Channel, ChannelService, CurrencyCode, LanguageCode, RequestContext, Zone } from '@vendure/core';
 import { RegistrationInput } from '../registration.service';
 import { RegistrationAuditorService } from './registration-auditor.service';
 import { RegistrationErrorService } from './registration-error.service';
@@ -24,8 +24,9 @@ export class ChannelProvisionerService {
   async createChannel(
     ctx: RequestContext,
     registrationData: RegistrationInput,
-    defaultChannel: Channel,
-    phoneNumber: string
+    africaZone: Zone,
+    phoneNumber: string,
+    sellerId: string
   ): Promise<Channel> {
     try {
       const channelResult = await this.channelService.create(ctx, {
@@ -33,9 +34,10 @@ export class ChannelProvisionerService {
         token: registrationData.companyCode,
         defaultCurrencyCode: registrationData.currency as CurrencyCode,
         defaultLanguageCode: LanguageCode.en,
-        pricesIncludeTax: false,
-        defaultShippingZoneId: defaultChannel.defaultShippingZone!.id,
-        defaultTaxZoneId: defaultChannel.defaultTaxZone!.id,
+        pricesIncludeTax: true,
+        sellerId: sellerId,
+        defaultShippingZoneId: africaZone.id,
+        defaultTaxZoneId: africaZone.id,
         customFields: {
           status: 'UNAPPROVED', // New channels start as unapproved
         },

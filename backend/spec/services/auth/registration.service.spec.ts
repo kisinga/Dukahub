@@ -23,11 +23,12 @@ describe('RegistrationService.provisionCustomer', () => {
   const buildService = () => {
     const validator = {
       validateInput: jest.fn(async () => undefined),
-      getDefaultChannel: jest.fn(async () => ({
-        id: 1,
-        defaultShippingZone: { id: 10 },
-        defaultTaxZone: { id: 11 },
-      })),
+      getAfricaZone: jest.fn(async () => ({ id: 10, name: 'Africa' })),
+    };
+
+    const seller = { id: 1, name: 'Test Company Seller' };
+    const sellerProvisioner = {
+      createSeller: jest.fn(async () => seller),
     };
 
     const channel = { id: 2, token: 'token-2' };
@@ -64,6 +65,7 @@ describe('RegistrationService.provisionCustomer', () => {
 
     const service = new RegistrationService(
       validator as any,
+      sellerProvisioner as any,
       channelProvisioner as any,
       storeProvisioner as any,
       paymentProvisioner as any,
@@ -75,12 +77,14 @@ describe('RegistrationService.provisionCustomer', () => {
     return {
       service,
       validator,
+      sellerProvisioner,
       channelProvisioner,
       storeProvisioner,
       paymentProvisioner,
       roleProvisioner,
       accessProvisioner,
       errorService,
+      seller,
       channel,
       stockLocation,
       role,
@@ -103,6 +107,7 @@ describe('RegistrationService.provisionCustomer', () => {
       harness.channel.id.toString()
     );
     expect(result).toEqual({
+      sellerId: harness.seller.id.toString(),
       channelId: harness.channel.id.toString(),
       stockLocationId: harness.stockLocation.id.toString(),
       roleId: harness.role.id.toString(),

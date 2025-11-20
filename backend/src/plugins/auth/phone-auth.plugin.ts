@@ -18,6 +18,7 @@ import { RegistrationAuditorService } from '../../services/auth/provisioning/reg
 import { RegistrationErrorService } from '../../services/auth/provisioning/registration-error.service';
 import { RegistrationValidatorService } from '../../services/auth/provisioning/registration-validator.service';
 import { RoleProvisionerService } from '../../services/auth/provisioning/role-provisioner.service';
+import { SellerProvisionerService } from '../../services/auth/provisioning/seller-provisioner.service';
 import { StoreProvisionerService } from '../../services/auth/provisioning/store-provisioner.service';
 
 @VendurePlugin({
@@ -33,6 +34,7 @@ import { StoreProvisionerService } from '../../services/auth/provisioning/store-
     RegistrationValidatorService,
     RegistrationErrorService,
     RegistrationAuditorService,
+    SellerProvisionerService,
     ChannelAssignmentService,
     ChannelProvisionerService,
     StoreProvisionerService,
