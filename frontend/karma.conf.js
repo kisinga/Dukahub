@@ -1,8 +1,10 @@
 // Karma configuration file for Angular testing
 // Standard Angular CI testing setup using ChromeHeadlessNoSandbox
 module.exports = function (config) {
-  // Detect CI/headless environment - check multiple indicators
-  // Priority: Explicit USE_HEADLESS flag, then CI detection, then display check
+  // Simplified headless detection:
+  // 1. Explicit USE_HEADLESS flag
+  // 2. CI environment (always headless in CI)
+  // 3. Allow override via KARMA_BROWSER for local debugging
   const useHeadlessExplicit =
     process.env.USE_HEADLESS === 'true' || process.env.USE_HEADLESS === '1';
   const isCI =
@@ -13,17 +15,14 @@ module.exports = function (config) {
     process.env.GITLAB_CI === 'true' ||
     process.env.JENKINS_URL !== undefined;
 
-  // Check if display is actually available (not just set)
-  // DISPLAY might be set to ':0' in CI but not actually available
-  const hasDisplay =
-    process.env.DISPLAY &&
-    process.env.DISPLAY !== '' &&
-    process.env.DISPLAY !== ':0' &&
-    process.env.DISPLAY !== ':99' &&
-    process.env.DISPLAY !== ':99.0';
+  // Allow explicit browser override for local debugging (e.g., KARMA_BROWSER=Chrome)
+  const browserOverride = process.env.KARMA_BROWSER;
 
-  // Use headless if explicitly requested, in CI (always), or no valid display available
-  const useHeadless = useHeadlessExplicit || isCI || !hasDisplay;
+  // Use headless if explicitly requested or in CI (CI always uses headless)
+  // Only use regular Chrome if explicitly overridden and not in CI
+  const useHeadless = useHeadlessExplicit || isCI;
+  const selectedBrowser =
+    browserOverride && !isCI ? browserOverride : useHeadless ? 'ChromeHeadlessNoSandbox' : 'Chrome';
 
   config.set({
     basePath: '',
@@ -33,7 +32,6 @@ module.exports = function (config) {
       require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter'),
       require('karma-coverage'),
-      require('@angular-devkit/build-angular/plugins/karma'),
     ],
     client: {
       jasmine: {
@@ -53,16 +51,17 @@ module.exports = function (config) {
       reporters: [{ type: 'html' }, { type: 'text-summary' }, { type: 'lcov' }],
     },
     reporters: ['progress', 'kjhtml', 'coverage'],
-    browsers: useHeadless ? ['ChromeHeadlessNoSandbox'] : ['Chrome'],
+    browsers: [selectedBrowser],
     restartOnFileChange: true,
     customLaunchers: {
       ChromeHeadlessNoSandbox: {
         base: 'ChromeHeadless',
         flags: [
-          '--no-sandbox',
+          '--headless=new', // Modern headless mode
+          '--no-sandbox', // Required for running in Docker/CI as root
           '--disable-gpu',
-          '--disable-dev-shm-usage',
-          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage', // Overcome limited resource problems
+          '--disable-setuid-sandbox', // Disable setuid sandbox
           '--disable-software-rasterizer',
           '--disable-extensions',
           '--remote-debugging-port=0',

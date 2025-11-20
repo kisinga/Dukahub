@@ -69,12 +69,28 @@ npm run codegen       # Generate GraphQL types
 - **Integration Tests:** Service integration, critical workflows, behavioral smoke tests
 - **Component Tests:** Minimal - only essential component tests (e.g., app initialization)
 
+**Test Commands:**
+
+```bash
+npm test              # Interactive mode (opens Chrome browser)
+npm run test:headless # Headless mode (no browser window, for local CI-like testing)
+npm run test:ci       # CI mode (headless + coverage, sets CI=true)
+npm run test:coverage # Coverage report (interactive mode with coverage)
+```
+
+**How It Works:**
+
+- **Local Development:** `npm test` uses regular Chrome (interactive mode)
+- **Headless Mode:** `npm run test:headless` or `USE_HEADLESS=true npm test` runs without opening a browser
+- **CI Environment:** Automatically detects CI environment variables and uses headless mode with `--no-sandbox` flags
+- **Browser Override:** Set `KARMA_BROWSER=Chrome` to force a specific browser (only works locally, not in CI)
+
 **Requirements:** Chrome must be installed to run tests.
 
 - **Local development:** Install Chrome on your system
   - Install with: `sudo apt-get install google-chrome-stable` (Debian/Ubuntu) or download from [Google Chrome](https://www.google.com/chrome/)
-  - If you see `ERROR [launcher]: No binary for ChromeHeadless browser on your platform`, Chrome is not installed
-- **CI:** Chrome is installed automatically in the GitHub Actions workflow
+  - Karma's chrome-launcher will automatically detect Chrome
+- **CI:** Ensure Chrome/Chromium is installed in your CI environment. The karma config automatically uses headless mode with proper flags for CI environments.
 
 ## Environment
 
