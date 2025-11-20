@@ -40,20 +40,20 @@
         title="Refresh purchases"
       >
         @if (!isLoading()) {
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 lg:h-5 lg:w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-          />
-        </svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 lg:h-5 lg:w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
         }
       </button>
       <button
@@ -87,160 +87,164 @@
 
   <!-- Error Alert -->
   @if (error()) {
-  <div role="alert" class="alert alert-error shadow-lg">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      class="h-6 w-6 shrink-0"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-    <span class="flex-1">{{ error() }}</span>
-    <button (click)="clearError()" class="btn btn-sm">Dismiss</button>
-  </div>
+    <div role="alert" class="alert alert-error shadow-lg">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-6 w-6 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span class="flex-1">{{ error() }}</span>
+      <button (click)="clearError()" class="btn btn-sm">Dismiss</button>
+    </div>
   }
 
   <!-- Loading State -->
   @if (isLoading()) {
-  <div class="card bg-base-100 shadow">
-    <div class="card-body">
-      <div class="flex flex-col items-center justify-center py-16">
-        <span class="loading loading-spinner loading-lg text-primary"></span>
-        <p class="text-sm text-base-content/60 mt-4">Loading purchases...</p>
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <div class="flex flex-col items-center justify-center py-16">
+          <span class="loading loading-spinner loading-lg text-primary"></span>
+          <p class="text-sm text-base-content/60 mt-4">Loading purchases...</p>
+        </div>
       </div>
     </div>
-  </div>
   }
 
   <!-- Empty State -->
   @else if (filteredPurchases().length === 0 && !error()) {
-  <div class="card bg-base-100 shadow">
-    <div class="card-body">
-      <div class="text-center py-12 lg:py-20 px-4">
-        <div
-          class="w-20 h-20 lg:w-24 lg:h-24 mx-auto mb-4 rounded-full bg-base-200 flex items-center justify-center"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-10 w-10 lg:h-12 lg:w-12 text-base-content/30"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <div class="text-center py-12 lg:py-20 px-4">
+          <div
+            class="w-20 h-20 lg:w-24 lg:h-24 mx-auto mb-4 rounded-full bg-base-200 flex items-center justify-center"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-            />
-          </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-10 w-10 lg:h-12 lg:w-12 text-base-content/30"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+              />
+            </svg>
+          </div>
+          <h3 class="text-lg lg:text-xl font-semibold">No purchases found</h3>
+          @if (searchQuery()) {
+            <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+              No purchases match "{{ searchQuery() }}". Try a different search term.
+            </p>
+            <button (click)="searchQuery.set('')" class="btn btn-outline btn-sm lg:btn-md mt-6">
+              Clear Search
+            </button>
+          } @else {
+            <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+              Start by recording your first purchase
+            </p>
+            <button
+              (click)="router.navigate(['/dashboard/purchases/create'])"
+              class="btn btn-primary btn-sm lg:btn-md mt-6"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              Create First Purchase
+            </button>
+          }
         </div>
-        <h3 class="text-lg lg:text-xl font-semibold">No purchases found</h3>
-        @if (searchQuery()) {
-        <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
-          No purchases match "{{ searchQuery() }}". Try a different search term.
-        </p>
-        <button (click)="searchQuery.set('')" class="btn btn-outline btn-sm lg:btn-md mt-6">
-          Clear Search
-        </button>
-        } @else {
-        <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
-          Start by recording your first purchase
-        </p>
-        <button
-          (click)="router.navigate(['/dashboard/purchases/create'])"
-          class="btn btn-primary btn-sm lg:btn-md mt-6"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-          Create First Purchase
-        </button>
-        }
       </div>
     </div>
-  </div>
   }
 
   <!-- Purchases List -->
   @else {
-  <!-- List Controls -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
-    <div class="text-sm text-base-content/60">
-      Showing {{ (currentPage() - 1) * itemsPerPage() + 1 }} to {{ endItem() }} of
-      {{ filteredPurchases().length }} purchases
-    </div>
+    <!-- List Controls -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
+      <div class="text-sm text-base-content/60">
+        Showing {{ (currentPage() - 1) * itemsPerPage() + 1 }} to {{ endItem() }} of
+        {{ filteredPurchases().length }} purchases
+      </div>
 
-    <div class="flex items-center gap-2">
-      <span class="text-sm text-base-content/60">Per page:</span>
-      <select
-        class="select select-sm select-bordered"
-        [value]="itemsPerPage()"
-        (change)="changeItemsPerPage(+$any($event.target).value)"
-      >
-        @for (option of pageOptions; track option) {
-        <option [value]="option">{{ option }}</option>
-        }
-      </select>
-    </div>
-  </div>
-
-  <!-- Mobile: Card View -->
-  <div class="lg:hidden space-y-4">
-    @for (purchase of paginatedPurchases(); track trackByPurchaseId($index, purchase)) {
-    <app-purchase-card [purchase]="purchase" (action)="onPurchaseAction($event)" />
-    }
-  </div>
-
-  <!-- Desktop: Table View -->
-  <div class="card bg-base-100 shadow hidden lg:block">
-    <div class="overflow-x-auto">
-      <table class="table table-zebra">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Supplier</th>
-            <th>Reference</th>
-            <th>Total Cost</th>
-            <th>Payment Status</th>
-            <th class="text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (purchase of paginatedPurchases(); track trackByPurchaseId($index, purchase)) {
-          <tr app-purchase-table-row [purchase]="purchase" (action)="onPurchaseAction($event)"></tr>
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-base-content/60">Per page:</span>
+        <select
+          class="select select-sm select-bordered"
+          [value]="itemsPerPage()"
+          (change)="changeItemsPerPage(+$any($event.target).value)"
+        >
+          @for (option of pageOptions; track option) {
+            <option [value]="option">{{ option }}</option>
           }
-        </tbody>
-      </table>
+        </select>
+      </div>
     </div>
-  </div>
 
-  <!-- Pagination -->
-  <app-pagination
-    [currentPage]="currentPage()"
-    [totalPages]="totalPages()"
-    [totalItems]="filteredPurchases().length"
-    [itemsPerPage]="itemsPerPage()"
-    [itemLabel]="'purchases'"
-    (pageChange)="goToPage($event)"
-  />
+    <!-- Mobile: Card View -->
+    <div class="lg:hidden space-y-4">
+      @for (purchase of paginatedPurchases(); track trackByPurchaseId($index, purchase)) {
+        <app-purchase-card [purchase]="purchase" (action)="onPurchaseAction($event)" />
+      }
+    </div>
+
+    <!-- Desktop: Table View -->
+    <div class="card bg-base-100 shadow hidden lg:block">
+      <div class="overflow-x-auto">
+        <table class="table table-zebra">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Supplier</th>
+              <th>Reference</th>
+              <th>Total Cost</th>
+              <th>Payment Status</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (purchase of paginatedPurchases(); track trackByPurchaseId($index, purchase)) {
+              <tr
+                app-purchase-table-row
+                [purchase]="purchase"
+                (action)="onPurchaseAction($event)"
+              ></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <app-pagination
+      [currentPage]="currentPage()"
+      [totalPages]="totalPages()"
+      [totalItems]="filteredPurchases().length"
+      [itemsPerPage]="itemsPerPage()"
+      [itemLabel]="'purchases'"
+      (pageChange)="goToPage($event)"
+    />
   }
 </div>

@@ -1,11 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
 import { CartService } from '../../../core/services/cart.service';
 import { CustomerService } from '../../../core/services/customer.service';
 import { CompanyService } from '../../../core/services/company.service';
 import { OrderService } from '../../../core/services/order.service';
-import { ProductSearchResult, ProductSearchService, ProductVariant } from '../../../core/services/product/product-search.service';
+import {
+  ProductSearchResult,
+  ProductSearchService,
+  ProductVariant,
+} from '../../../core/services/product/product-search.service';
 import { StockLocationService } from '../../../core/services/stock-location.service';
 import { CartComponent, CartItem } from './components/cart.component';
 import { CheckoutFabComponent } from './components/checkout-fab.component';
@@ -20,14 +31,14 @@ type PaymentMethodCode = string;
 
 /**
  * Main POS sell page - orchestrates child components
- * 
+ *
  * DETECTION FLOW:
  * 1. Product detected (barcode or ML) → handleProductDetected()
  * 2. Shows confirmation modal with variant selection
  * 3. User selects variant/quantity → handleVariantSelected()
  * 4. Item added to cart with visual feedback (FAB pulse)
  * 5. User proceeds to checkout via cart modal
- * 
+ *
  * STATE MANAGEMENT:
  * - Search: searchResults, isSearching
  * - Scanner: isScannerActive, canStartScanner
@@ -94,13 +105,13 @@ export class SellComponent implements OnInit {
   // Cart state
   readonly cartItems = signal<CartItem[]>([]);
   readonly cartSubtotal = computed(() =>
-    this.cartItems().reduce((sum, item) => sum + item.subtotal, 0)
+    this.cartItems().reduce((sum, item) => sum + item.subtotal, 0),
   );
   readonly cartTax = computed(() => this.cartSubtotal() * 0.0);
   readonly cartTotal = computed(() => this.cartSubtotal() + this.cartTax());
   readonly canOverridePrices = computed(() => this.authService.hasOverridePricePermission());
   readonly cartItemCount = computed(() =>
-    this.cartItems().reduce((sum, item) => sum + item.quantity, 0)
+    this.cartItems().reduce((sum, item) => sum + item.quantity, 0),
   );
 
   // Checkout state
@@ -189,7 +200,11 @@ export class SellComponent implements OnInit {
   }
 
   // Notifications
-  private showNotification(message: string, type: 'success' | 'warning' | 'error' = 'success', duration = 3000): void {
+  private showNotification(
+    message: string,
+    type: 'success' | 'warning' | 'error' = 'success',
+    duration = 3000,
+  ): void {
     this.notificationMessage.set(message);
     this.notificationType.set(type);
     setTimeout(() => this.notificationMessage.set(null), duration);
@@ -244,7 +259,11 @@ export class SellComponent implements OnInit {
     this.showClearCartConfirm.set(false);
   }
 
-  handlePriceOverrideChange(data: { variantId: string; customLinePrice?: number; reason?: string }): void {
+  handlePriceOverrideChange(data: {
+    variantId: string;
+    customLinePrice?: number;
+    reason?: string;
+  }): void {
     const items = this.cartItems();
     const item = items.find((i) => i.variant.id === data.variantId);
 
@@ -338,7 +357,7 @@ export class SellComponent implements OnInit {
       const { summary, error } = await this.customerService.validateCustomerCredit(
         customer.id,
         this.cartTotal(),
-        customer
+        customer,
       );
       this.selectedCustomer.set(summary);
       if (error) {
@@ -396,17 +415,17 @@ export class SellComponent implements OnInit {
 
     try {
       const order = await this.orderService.createOrder({
-        cartItems: this.cartItems().map(item => ({
+        cartItems: this.cartItems().map((item) => ({
           variantId: item.variant.id,
           quantity: item.quantity,
           customLinePrice: item.customLinePrice,
-          priceOverrideReason: item.priceOverrideReason
+          priceOverrideReason: item.priceOverrideReason,
         })),
         paymentMethodCode: 'cash-payment',
         isCashierFlow: true,
         metadata: {
-          requiresCashierApproval: true
-        }
+          requiresCashierApproval: true,
+        },
       });
 
       console.log('✅ Order sent to cashier:', order.code);
@@ -415,10 +434,7 @@ export class SellComponent implements OnInit {
       this.cartService.clearCart();
       this.cartItems.set([]);
       this.showCheckoutModal.set(false);
-      this.showNotification(
-        `Order ${order.code} sent to cashier`,
-        'success'
-      );
+      this.showNotification(`Order ${order.code} sent to cashier`, 'success');
     } catch (error) {
       console.error('❌ Cashier submission failed:', error);
       this.checkoutError.set('Failed to send to cashier. Please try again.');
@@ -447,7 +463,7 @@ export class SellComponent implements OnInit {
       const validation = await this.customerService.validateCustomerCredit(
         selected.id,
         this.cartTotal(),
-        selected
+        selected,
       );
       validatedCustomer = validation.summary;
       this.selectedCustomer.set(validation.summary);
@@ -468,11 +484,11 @@ export class SellComponent implements OnInit {
 
     try {
       const order = await this.orderService.createOrder({
-        cartItems: this.cartItems().map(item => ({
+        cartItems: this.cartItems().map((item) => ({
           variantId: item.variant.id,
           quantity: item.quantity,
           customLinePrice: item.customLinePrice,
-          priceOverrideReason: item.priceOverrideReason
+          priceOverrideReason: item.priceOverrideReason,
         })),
         paymentMethodCode: 'credit-payment',
         customerId: validatedCustomer.id,
@@ -480,8 +496,8 @@ export class SellComponent implements OnInit {
         metadata: {
           creditSale: true,
           customerId: validatedCustomer.id,
-          customerName
-        }
+          customerName,
+        },
       });
 
       console.log('✅ Credit sale created:', order.code);
@@ -502,9 +518,9 @@ export class SellComponent implements OnInit {
       this.showCheckoutModal.set(false);
       this.showNotification(
         `Credit sale created for ${customerName} - Order ${order.code}`,
-        'success'
+        'success',
       );
-      
+
       // Don't clear selected customer - keep it visible so user can see updated credit amounts
     } catch (error) {
       console.error('Credit sale failed:', error);
@@ -525,16 +541,16 @@ export class SellComponent implements OnInit {
 
     try {
       const order = await this.orderService.createOrder({
-        cartItems: this.cartItems().map(item => ({
+        cartItems: this.cartItems().map((item) => ({
           variantId: item.variant.id,
           quantity: item.quantity,
           customLinePrice: item.customLinePrice,
-          priceOverrideReason: item.priceOverrideReason
+          priceOverrideReason: item.priceOverrideReason,
         })),
         paymentMethodCode: this.selectedPaymentMethod()!,
         metadata: {
-          paymentMethod: this.selectedPaymentMethod()
-        }
+          paymentMethod: this.selectedPaymentMethod(),
+        },
       });
 
       console.log('✅ Order created:', order.code);
@@ -543,10 +559,7 @@ export class SellComponent implements OnInit {
       this.cartService.clearCart();
       this.cartItems.set([]);
       this.showCheckoutModal.set(false);
-      this.showNotification(
-        `Sale completed! Order ${order.code}`,
-        'success'
-      );
+      this.showNotification(`Sale completed! Order ${order.code}`, 'success');
     } catch (error) {
       console.error('❌ Cash sale failed:', error);
       this.checkoutError.set('Failed to complete sale. Please try again.');

@@ -4,49 +4,46 @@ import { StatusBadgeComponent } from '../../../components/shared/status-badge.co
 import { SupplierAction } from './supplier-card.component';
 
 @Component({
-    selector: 'tr[app-supplier-table-row]',
-    imports: [
-        EntityAvatarComponent,
-        StatusBadgeComponent
-    ],
-    templateUrl: './supplier-table-row.component.html',
-    styleUrl: './supplier-table-row.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    host: {
-        'class': 'hover cursor-pointer',
-        '(click)': 'onRowClick()'
-    }
+  selector: 'tr[app-supplier-table-row]',
+  imports: [EntityAvatarComponent, StatusBadgeComponent],
+  templateUrl: './supplier-table-row.component.html',
+  styleUrl: './supplier-table-row.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'hover cursor-pointer',
+    '(click)': 'onRowClick()',
+  },
 })
 export class SupplierTableRowComponent {
-    supplier = input.required<any>();
-    action = output<{ action: SupplierAction; supplierId: string }>();
+  supplier = input.required<any>();
+  action = output<{ action: SupplierAction; supplierId: string }>();
 
-    onAction(action: SupplierAction): void {
-        this.action.emit({ action, supplierId: this.supplier().id });
-    }
+  onAction(action: SupplierAction): void {
+    this.action.emit({ action, supplierId: this.supplier().id });
+  }
 
-    onRowClick(): void {
-        this.action.emit({ action: 'view', supplierId: this.supplier().id });
-    }
+  onRowClick(): void {
+    this.action.emit({ action: 'view', supplierId: this.supplier().id });
+  }
 
-    getFullName(): string {
-        const s = this.supplier();
-        return `${s.firstName || ''} ${s.lastName || ''}`.trim();
-    }
+  getFullName(): string {
+    const s = this.supplier();
+    return `${s.firstName || ''} ${s.lastName || ''}`.trim();
+  }
 
-    getAddressCount(): number {
-        return this.supplier().addresses?.length || 0;
-    }
+  getAddressCount(): number {
+    return this.supplier().addresses?.length || 0;
+  }
 
-    isVerified(): boolean {
-        return this.supplier().user?.verified || false;
-    }
+  isVerified(): boolean {
+    return this.supplier().user?.verified || false;
+  }
 
-    getSupplierCode(): string {
-        return this.supplier().customFields?.supplierCode || 'N/A';
-    }
+  getSupplierCode(): string {
+    return this.supplier().customFields?.supplierCode || 'N/A';
+  }
 
-    getSupplierType(): string {
-        return this.supplier().customFields?.supplierType || 'General';
-    }
+  getSupplierType(): string {
+    return this.supplier().customFields?.supplierType || 'General';
+  }
 }

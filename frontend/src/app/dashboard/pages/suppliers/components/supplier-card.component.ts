@@ -6,53 +6,49 @@ import { StatusBadgeComponent } from '../../../components/shared/status-badge.co
 export type SupplierAction = 'view' | 'edit' | 'delete';
 
 @Component({
-    selector: 'app-supplier-card',
-    imports: [
-        CommonModule,
-        EntityAvatarComponent,
-        StatusBadgeComponent
-    ],
-    templateUrl: './supplier-card.component.html',
-    styleUrl: './supplier-card.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-supplier-card',
+  imports: [CommonModule, EntityAvatarComponent, StatusBadgeComponent],
+  templateUrl: './supplier-card.component.html',
+  styleUrl: './supplier-card.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SupplierCardComponent {
-    supplier = input.required<any>();
-    action = output<{ action: SupplierAction; supplierId: string }>();
+  supplier = input.required<any>();
+  action = output<{ action: SupplierAction; supplierId: string }>();
 
-    onAction(action: SupplierAction): void {
-        this.action.emit({ action, supplierId: this.supplier().id });
-    }
+  onAction(action: SupplierAction): void {
+    this.action.emit({ action, supplierId: this.supplier().id });
+  }
 
-    getFullName(): string {
-        const s = this.supplier();
-        return `${s.firstName || ''} ${s.lastName || ''}`.trim();
-    }
+  getFullName(): string {
+    const s = this.supplier();
+    return `${s.firstName || ''} ${s.lastName || ''}`.trim();
+  }
 
-    getInitials(): string {
-        const s = this.supplier();
-        const first = s.firstName?.charAt(0) || '';
-        const last = s.lastName?.charAt(0) || '';
-        return (first + last).toUpperCase();
-    }
+  getInitials(): string {
+    const s = this.supplier();
+    const first = s.firstName?.charAt(0) || '';
+    const last = s.lastName?.charAt(0) || '';
+    return (first + last).toUpperCase();
+  }
 
-    getAddressCount(): number {
-        return this.supplier().addresses?.length || 0;
-    }
+  getAddressCount(): number {
+    return this.supplier().addresses?.length || 0;
+  }
 
-    isVerified(): boolean {
-        return this.supplier().user?.verified || false;
-    }
+  isVerified(): boolean {
+    return this.supplier().user?.verified || false;
+  }
 
-    getCreatedDate(): string {
-        return new Date(this.supplier().createdAt).toLocaleDateString();
-    }
+  getCreatedDate(): string {
+    return new Date(this.supplier().createdAt).toLocaleDateString();
+  }
 
-    getSupplierCode(): string {
-        return this.supplier().customFields?.supplierCode || 'N/A';
-    }
+  getSupplierCode(): string {
+    return this.supplier().customFields?.supplierCode || 'N/A';
+  }
 
-    getSupplierType(): string {
-        return this.supplier().customFields?.supplierType || 'General';
-    }
+  getSupplierType(): string {
+    return this.supplier().customFields?.supplierType || 'General';
+  }
 }

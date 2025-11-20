@@ -2,20 +2,20 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Create Notification Entity
- * 
+ *
  * Merges:
  * - 1761700000000-AddNotificationEntity.ts
- * 
+ *
  * Final state:
  * - notification table with createdAt (keeping functional timestamp)
  * - notification_type_enum type
  */
 export class CreateNotificationEntity5000000000000 implements MigrationInterface {
-    name = 'CreateNotificationEntity5000000000000';
+  name = 'CreateNotificationEntity5000000000000';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Create enum type
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Create enum type
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -26,8 +26,8 @@ export class CreateNotificationEntity5000000000000 implements MigrationInterface
             END $$;
         `);
 
-        // Create notification table
-        await queryRunner.query(`
+    // Create notification table
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -49,12 +49,10 @@ export class CreateNotificationEntity5000000000000 implements MigrationInterface
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP TABLE IF EXISTS "notification"`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."notification_type_enum"`);
-    }
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP TABLE IF EXISTS "notification"`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."notification_type_enum"`);
+  }
 }
-
-

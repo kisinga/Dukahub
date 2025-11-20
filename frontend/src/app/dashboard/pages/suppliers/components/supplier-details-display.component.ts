@@ -18,11 +18,10 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
       </div>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SupplierDetailsDisplayComponent {
   code = input<string>('');
   type = input<string>('General');
   addressCount = input<number>(0);
 }
-

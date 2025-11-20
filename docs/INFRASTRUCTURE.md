@@ -80,13 +80,13 @@ The nginx configuration supports both Docker internal DNS and public DNS resolut
 
 ### Optional Settings
 
-| Variable           | Example                   | Default       | Notes                             |
-| ------------------ | ------------------------- | ------------- | --------------------------------- |
-| `NODE_ENV`         | `production`              | `development` | Runtime mode                      |
-| `PORT`             | `3000`                    | `3000`        | Backend port                      |
-| `COOKIE_SECURE`    | `true` / `false`          | `false`       | HTTPS-only cookies                |
-| `FRONTEND_URL`     | `http://example.com`      | —             | CORS origins (comma-separated)    |
-| `ASSET_URL_PREFIX` | `https://cdn.example.com` | —             | CDN URL for assets                |
+| Variable           | Example                   | Default       | Notes                          |
+| ------------------ | ------------------------- | ------------- | ------------------------------ |
+| `NODE_ENV`         | `production`              | `development` | Runtime mode                   |
+| `PORT`             | `3000`                    | `3000`        | Backend port                   |
+| `COOKIE_SECURE`    | `true` / `false`          | `false`       | HTTPS-only cookies             |
+| `FRONTEND_URL`     | `http://example.com`      | —             | CORS origins (comma-separated) |
+| `ASSET_URL_PREFIX` | `https://cdn.example.com` | —             | CDN URL for assets             |
 
 ### Security
 
@@ -147,19 +147,16 @@ The issue has been fixed by implementing **automatic database detection and init
 ### What Happens During Automatic Initialization
 
 1. **Database Detection:**
-
    - System checks if database is completely empty (no tables)
    - Waits for database to be available (with retries)
    - Only proceeds with population if database is empty
 
 2. **Database Population (if empty):**
-
    - PostgreSQL starts and creates the database
    - Vendure creates the base schema using `synchronize: true`
    - Sample data is populated (channels, products, etc.)
 
 3. **Migration Application:**
-
    - Custom fields are added to existing tables
    - ML training fields are added to Channel
    - Customer/Supplier fields are added to Customer
@@ -464,15 +461,7 @@ query GetMlModelInfo($channelId: ID!) {
 #### GraphQL Mutations
 
 ```graphql
-mutation UploadMlModelFiles(
-  $channelId: ID!
-  $modelJson: Upload!
-  $metadata: Upload!
-) {
-  uploadMlModelFiles(
-    channelId: $channelId
-    modelJson: $modelJson
-    metadata: $metadata
-  )
+mutation UploadMlModelFiles($channelId: ID!, $modelJson: Upload!, $metadata: Upload!) {
+  uploadMlModelFiles(channelId: $channelId, modelJson: $modelJson, metadata: $metadata)
 }
 ```

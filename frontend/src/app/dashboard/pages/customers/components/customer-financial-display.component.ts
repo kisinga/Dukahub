@@ -19,7 +19,7 @@ import { CurrencyService } from '../../../../core/services/currency.service';
       }
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CustomerFinancialDisplayComponent {
   outstandingAmount = input<number>(0);
@@ -30,7 +30,7 @@ export class CustomerFinancialDisplayComponent {
   private readonly currencyService = inject(CurrencyService);
 
   outstandingAmountAbs = computed(() => Math.abs(this.outstandingAmount()));
-  
+
   hasBalance = computed(() => this.outstandingAmount() !== 0);
 
   balanceLabel = computed(() => {
@@ -48,4 +48,3 @@ export class CustomerFinancialDisplayComponent {
     return this.currencyService.format(amount * 100);
   }
 }
-

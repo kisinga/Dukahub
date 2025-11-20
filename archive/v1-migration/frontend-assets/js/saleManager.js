@@ -4,19 +4,19 @@
 class SaleManager {
   constructor(config) {
     this.config = {
-      tableBodySelector: config.tableBodySelector || "#sale-items",
-      noItemsRowSelector: config.noItemsRowSelector || "#no-items-row",
-      itemCountSelector: config.itemCountSelector || "#item-count",
-      subtotalSelector: config.subtotalSelector || "#subtotal",
-      taxSelector: config.taxSelector || "#tax",
-      totalSelector: config.totalSelector || "#total",
-      checkoutButtonSelector: config.checkoutButtonSelector || "#checkout-btn",
+      tableBodySelector: config.tableBodySelector || '#sale-items',
+      noItemsRowSelector: config.noItemsRowSelector || '#no-items-row',
+      itemCountSelector: config.itemCountSelector || '#item-count',
+      subtotalSelector: config.subtotalSelector || '#subtotal',
+      taxSelector: config.taxSelector || '#tax',
+      totalSelector: config.totalSelector || '#total',
+      checkoutButtonSelector: config.checkoutButtonSelector || '#checkout-btn',
       taxRate: config.taxRate || 0,
       currencyFormat:
         config.currencyFormat ||
-        new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "Ksh",
+        new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'Ksh',
         }),
     };
 
@@ -27,15 +27,13 @@ class SaleManager {
       subtotal: document.querySelector(this.config.subtotalSelector),
       tax: document.querySelector(this.config.taxSelector),
       total: document.querySelector(this.config.totalSelector),
-      checkoutButton: document.querySelector(
-        this.config.checkoutButtonSelector
-      ),
+      checkoutButton: document.querySelector(this.config.checkoutButtonSelector),
     };
 
     this.items = []; // Array to hold { product: {...}, quantity: N, price: M }
 
     if (!this.elements.tableBody) {
-      console.error("SaleManager: Table body element not found!");
+      console.error('SaleManager: Table body element not found!');
     }
 
     this._bindEvents();
@@ -44,21 +42,21 @@ class SaleManager {
 
   _bindEvents() {
     // Use event delegation for dynamically added elements
-    this.elements.tableBody?.addEventListener("click", (event) => {
-      const removeButton = event.target.closest(".remove-item-btn");
+    this.elements.tableBody?.addEventListener('click', event => {
+      const removeButton = event.target.closest('.remove-item-btn');
       if (removeButton) {
         const productId = removeButton.dataset.productId;
         this.removeItem(productId);
       }
     });
 
-    this.elements.tableBody?.addEventListener("change", (event) => {
-      const quantityInput = event.target.closest(".quantity-input");
+    this.elements.tableBody?.addEventListener('change', event => {
+      const quantityInput = event.target.closest('.quantity-input');
       if (quantityInput) {
         const productId = quantityInput.dataset.productId;
         const newQuantity = parseInt(quantityInput.value, 10);
         // Find the current price from the item data (don't rely on DOM)
-        const item = this.items.find((i) => i.product.id === productId);
+        const item = this.items.find(i => i.product.id === productId);
         if (item) {
           this.updateItem(productId, newQuantity, item.price); // Keep original price
         }
@@ -73,13 +71,8 @@ class SaleManager {
    * @param {number} price - The unit price to use for this item.
    */
   addItem(product, quantity = 1, price) {
-    if (
-      !product ||
-      !product.id ||
-      typeof quantity !== "number" ||
-      quantity <= 0
-    ) {
-      console.error("SaleManager: Invalid data for addItem", {
+    if (!product || !product.id || typeof quantity !== 'number' || quantity <= 0) {
+      console.error('SaleManager: Invalid data for addItem', {
         product,
         quantity,
         price,
@@ -87,9 +80,9 @@ class SaleManager {
       return;
     }
 
-    const unitPrice = typeof price === "number" ? price : product.price; // Use provided price or product default
+    const unitPrice = typeof price === 'number' ? price : product.price; // Use provided price or product default
     const existingItem = this.items.find(
-      (item) => item.product.id === product.id && item.price === unitPrice
+      item => item.product.id === product.id && item.price === unitPrice
     );
 
     if (existingItem) {
@@ -109,7 +102,7 @@ class SaleManager {
    * @param {string} productId - The ID of the product to remove.
    */
   removeItem(productId) {
-    this.items = this.items.filter((item) => item.product.id !== productId);
+    this.items = this.items.filter(item => item.product.id !== productId);
     this.renderTable();
   }
 
@@ -120,7 +113,7 @@ class SaleManager {
    * @param {number} newPrice - The new unit price.
    */
   updateItem(productId, newQuantity, newPrice) {
-    const item = this.items.find((i) => i.product.id === productId);
+    const item = this.items.find(i => i.product.id === productId);
     if (item) {
       if (newQuantity > 0) {
         item.quantity = newQuantity;
@@ -149,25 +142,21 @@ class SaleManager {
     if (!this.elements.tableBody) return;
 
     // Clear current content
-    this.elements.tableBody.innerHTML = "";
+    this.elements.tableBody.innerHTML = '';
 
     if (this.items.length === 0) {
       if (this.elements.noItemsRow) {
-        this.elements.tableBody.appendChild(
-          this.elements.noItemsRow.cloneNode(true)
-        );
+        this.elements.tableBody.appendChild(this.elements.noItemsRow.cloneNode(true));
       }
     } else {
-      this.items.forEach((item) => {
-        const row = document.createElement("tr");
+      this.items.forEach(item => {
+        const row = document.createElement('tr');
         const lineTotal = item.quantity * item.price;
         row.dataset.productId = item.product.id; // Add for potential future use
 
         row.innerHTML = `
-            <td>${item.product.name || "N/A"}</td>
-            <td class="text-end">${this.config.currencyFormat.format(
-              item.price
-            )}</td>
+            <td>${item.product.name || 'N/A'}</td>
+            <td class="text-end">${this.config.currencyFormat.format(item.price)}</td>
             <td class="text-center">
               <input
                 type="number"
@@ -180,9 +169,7 @@ class SaleManager {
                 aria-label="Quantity for ${item.product.name}"
               />
             </td>
-            <td class="text-end fw-medium">${this.config.currencyFormat.format(
-              lineTotal
-            )}</td>
+            <td class="text-end fw-medium">${this.config.currencyFormat.format(lineTotal)}</td>
             <td class="text-center">
               <button
                 class="btn btn-sm btn-outline-danger remove-item-btn border-0"
@@ -205,7 +192,7 @@ class SaleManager {
    */
   _updateTotals() {
     let subTotal = 0;
-    this.items.forEach((item) => {
+    this.items.forEach(item => {
       subTotal += item.quantity * item.price;
     });
 
@@ -219,16 +206,13 @@ class SaleManager {
       ); // Sum of quantities
     }
     if (this.elements.subtotal) {
-      this.elements.subtotal.textContent =
-        this.config.currencyFormat.format(subTotal);
+      this.elements.subtotal.textContent = this.config.currencyFormat.format(subTotal);
     }
     if (this.elements.tax) {
-      this.elements.tax.textContent =
-        this.config.currencyFormat.format(taxAmount);
+      this.elements.tax.textContent = this.config.currencyFormat.format(taxAmount);
     }
     if (this.elements.total) {
-      this.elements.total.textContent =
-        this.config.currencyFormat.format(totalAmount);
+      this.elements.total.textContent = this.config.currencyFormat.format(totalAmount);
     }
     if (this.elements.checkoutButton) {
       this.elements.checkoutButton.disabled = this.items.length === 0;
@@ -241,14 +225,14 @@ class SaleManager {
    */
   getSaleData() {
     let subTotal = 0;
-    this.items.forEach((item) => {
+    this.items.forEach(item => {
       subTotal += item.quantity * item.price;
     });
     const taxAmount = subTotal * this.config.taxRate;
     const totalAmount = subTotal + taxAmount;
 
     return {
-      items: this.items.map((item) => ({
+      items: this.items.map(item => ({
         productId: item.product.id,
         name: item.product.name, // Include name for reference on backend
         quantity: item.quantity,

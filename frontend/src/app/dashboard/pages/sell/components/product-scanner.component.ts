@@ -20,7 +20,10 @@ import {
 import { CameraService } from '../../../../core/services/camera.service';
 import type { MlModelService, ModelPrediction } from '../../../../core/services/ml-model.service';
 import { loadMlModelService } from '../../../../core/services/ml-model.loader';
-import { ProductSearchResult, ProductSearchService } from '../../../../core/services/product/product-search.service';
+import {
+  ProductSearchResult,
+  ProductSearchService,
+} from '../../../../core/services/product/product-search.service';
 
 type ScannerStatus =
   | 'idle'
@@ -39,33 +42,37 @@ type ScannerStatus =
   imports: [CommonModule],
   template: `
     @if (isScanning()) {
-    <div class="card bg-base-100 shadow-xl border-2 border-primary animate-in">
-      <div class="card-body p-3">
-        <!-- Scanner Header -->
-        <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-2">
-            <div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-            <span class="font-semibold text-sm">Scanning...</span>
+      <div class="card bg-base-100 shadow-xl border-2 border-primary animate-in">
+        <div class="card-body p-3">
+          <!-- Scanner Header -->
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+              <span class="font-semibold text-sm">Scanning...</span>
+            </div>
+            <button class="btn btn-sm btn-error" (click)="stopScanner()">Stop</button>
           </div>
-          <button class="btn btn-sm btn-error" (click)="stopScanner()">Stop</button>
-        </div>
 
-        <!-- Camera View -->
-        <div class="relative bg-black rounded-lg overflow-hidden" style="aspect-ratio: 4/3">
-          <video #cameraView class="w-full h-full object-cover" autoplay playsinline muted></video>
+          <!-- Camera View -->
+          <div class="relative bg-black rounded-lg overflow-hidden" style="aspect-ratio: 4/3">
+            <video
+              #cameraView
+              class="w-full h-full object-cover"
+              autoplay
+              playsinline
+              muted
+            ></video>
 
-          <!-- Scan Frame -->
-          <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div class="scan-frame"></div>
+            <!-- Scan Frame -->
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div class="scan-frame"></div>
+            </div>
           </div>
-        </div>
 
-        <!-- Status Footer -->
-        <div class="text-center text-xs opacity-60 mt-2">
-          Point camera at product or barcode
+          <!-- Status Footer -->
+          <div class="text-center text-xs opacity-60 mt-2">Point camera at product or barcode</div>
         </div>
       </div>
-    </div>
     }
   `,
   styles: `
@@ -81,7 +88,8 @@ type ScannerStatus =
     }
 
     @keyframes scan-pulse {
-      0%, 100% {
+      0%,
+      100% {
         opacity: 1;
         border-color: oklch(var(--p));
       }
@@ -218,7 +226,7 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
     this.scanningStateChange.emit(true);
 
     // Wait for next tick to ensure video element is rendered
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     const videoEl = this.videoElement()?.nativeElement;
     if (!videoEl) {
@@ -284,7 +292,7 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
       this.barcodeService.startScanning(
         videoElement,
         (result) => this.handleBarcodeDetection(result),
-        500
+        500,
       );
     }
 
@@ -327,7 +335,7 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
     try {
       // const product = await this.productSearchService.getProductById(productId);
       // HARDCODED PRODUCT ID FOR TESTING
-      const product = await this.productSearchService.getProductById("3");
+      const product = await this.productSearchService.getProductById('3');
 
       if (product) {
         this.stopScanner();
@@ -389,4 +397,3 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
     return service;
   }
 }
-

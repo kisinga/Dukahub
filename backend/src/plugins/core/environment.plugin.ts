@@ -4,15 +4,14 @@ import { EnvironmentConfig } from '../../infrastructure/config/environment.confi
 
 /**
  * Environment Configuration Plugin
- * 
+ *
  * Registers the EnvironmentConfig service to make it available
  * throughout the application via Dependency Injection.
  */
 @VendurePlugin({
-    imports: [PluginCommonModule],
-    providers: [EnvironmentConfig],
-    exports: [EnvironmentConfig],
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+  imports: [PluginCommonModule],
+  providers: [EnvironmentConfig],
+  exports: [EnvironmentConfig],
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class EnvironmentPlugin { }
-
+export class EnvironmentPlugin {}

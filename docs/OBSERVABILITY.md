@@ -5,6 +5,7 @@
 **Access:** `http://localhost:3301` (production) | **Production:** Use SSH tunnel or VPN
 
 **Enable:**
+
 - Backend: `SIGNOZ_ENABLED=true`
 - Frontend: `ENABLE_TRACING=true` (or via `window.__APP_CONFIG__`)
 
@@ -13,6 +14,7 @@
 **⚠️ SigNoz tracing is NOT available in development mode** (`ng serve`)
 
 **Reasons:**
+
 1. **Static Proxy Configuration**: Angular dev server uses `proxy.conf.json` which is a static file that cannot be dynamically configured
 2. **No Nginx Proxy**: The `/signoz/` proxy route is only available in production via nginx
 3. **Runtime Injection**: Frontend tracing relies on runtime config injection (`window.__APP_CONFIG__`) which only happens in Docker containers
@@ -54,18 +56,18 @@ async createOrder(ctx: RequestContext, input: CreateOrderInput): Promise<Order> 
 
     try {
         const order = await this.orderService.createDraft(ctx);
-        
+
         this.metricsService?.recordOrderCreated(
             ctx.channelId?.toString() || '',
             input.paymentMethodCode,
             order.totalWithTax
         );
-        
+
         this.tracingService?.setAttributes(span!, {
             'order.id': order.id.toString(),
             'order.code': order.code,
         });
-        
+
         this.tracingService?.endSpan(span!, true);
         return order;
     } catch (error) {
@@ -158,6 +160,7 @@ export const environment = {
 **A:** SigNoz tracing is not available in development mode. The Angular dev server's `proxy.conf.json` is static and cannot proxy `/signoz/` requests. Additionally, runtime config injection only works in Docker containers.
 
 **Solution:** Use Docker Compose for testing observability:
+
 ```bash
 docker compose up -d
 # Access frontend at http://localhost:4200
@@ -166,27 +169,32 @@ docker compose up -d
 ### Production Mode
 
 **No traces appearing:**
+
 1. Check `SIGNOZ_ENABLED=true` / `enableTracing: true`
 2. Verify SigNoz running: `docker compose ps signoz`
 3. Check logs for initialization: `[Telemetry] OpenTelemetry SDK initialized`
 4. Verify nginx proxy: Check browser network tab for `/signoz/v1/traces` requests
 
 **Traces not correlating (frontend → backend):**
+
 - Verify `propagation.inject()` in ApolloService
 - Check network tab for `traceparent` header
 
 **High performance impact:**
+
 - Disable in dev: `SIGNOZ_ENABLED=false`
 - Enable sampling for high-volume (future)
 
 ## Development vs Production
 
 ### Development Mode (`ng serve`)
+
 - ❌ **SigNoz tracing NOT available**
 - Reason: Angular dev server uses static `proxy.conf.json` which cannot proxy `/signoz/` requests
 - Workaround: Use Docker Compose for testing observability
 
 ### Production Mode (Docker)
+
 - ✅ **SigNoz tracing fully available**
 - Nginx proxy handles `/signoz/` requests
 - Runtime config injection via `window.__APP_CONFIG__`

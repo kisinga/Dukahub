@@ -111,6 +111,7 @@ npm run migration:run
 ```
 
 This will:
+
 - Create `subscription_tier` table
 - Add subscription custom fields to `channel` table
 - Seed default subscription tier (Basic Plan)
@@ -222,6 +223,7 @@ When subscription expires:
 The architecture supports multiple subscription tiers:
 
 1. Add new tiers via database:
+
    ```sql
    INSERT INTO subscription_tier (code, name, priceMonthly, priceYearly, features, isActive)
    VALUES ('pro-tier', 'Pro Plan', 10000, 100000, '{"features": [...]}', true);
@@ -268,9 +270,3 @@ Future enhancements:
 - [Customer Provisioning Guide](./CUSTOMER_PROVISIONING.md)
 - [Vendure Configuration](./VENDURE.md)
 - [Architecture Overview](./ARCHITECTURE.md)
-
-
-
-
-
-

@@ -36,4 +36,3 @@ export const environment = {
   serviceName: runtimeConfig.serviceName ?? `${BRAND_CONFIG.servicePrefix}-frontend`,
   serviceVersion: runtimeConfig.serviceVersion ?? '2.0.0',
 };
-

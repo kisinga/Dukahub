@@ -20,24 +20,6 @@ form {
 }
 
 /* OTP input styling */
-input[type="text"][inputmode="numeric"] {
+input[type='text'][inputmode='numeric'] {
   letter-spacing: 0.5rem;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

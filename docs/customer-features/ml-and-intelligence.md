@@ -241,5 +241,3 @@ If the model is not yet trained or fails:
   - Label-photo recognition design and UX.
   - Per-channel model storage, loading and offline caching.
   - ML Training Status UI and integration points for external ML services.
-
-

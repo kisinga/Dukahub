@@ -1,216 +1,217 @@
 <div class="space-y-4">
   @if (isLoading()) {
-  <div class="card bg-base-100 shadow">
-    <div class="card-body">
-      <div class="flex flex-col items-center justify-center py-16">
-        <span class="loading loading-spinner loading-lg text-primary"></span>
-        <p class="text-sm text-base-content/60 mt-4">Loading transactions...</p>
-      </div>
-    </div>
-  </div>
-  } @else if (entries().length === 0) {
-  <div class="card bg-base-100 shadow">
-    <div class="card-body">
-      <div class="text-center py-12 lg:py-20 px-4">
-        <div
-          class="w-20 h-20 lg:w-24 lg:h-24 mx-auto mb-4 rounded-full bg-base-200 flex items-center justify-center"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-10 w-10 lg:h-12 lg:w-12 text-base-content/30"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <div class="flex flex-col items-center justify-center py-16">
+          <span class="loading loading-spinner loading-lg text-primary"></span>
+          <p class="text-sm text-base-content/60 mt-4">Loading transactions...</p>
         </div>
-        <h3 class="text-lg lg:text-xl font-semibold">No transactions found</h3>
-        <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+      </div>
+    </div>
+  } @else if (entries().length === 0) {
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <div class="text-center py-12 lg:py-20 px-4">
+          <div
+            class="w-20 h-20 lg:w-24 lg:h-24 mx-auto mb-4 rounded-full bg-base-200 flex items-center justify-center"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-10 w-10 lg:h-12 lg:w-12 text-base-content/30"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+          <h3 class="text-lg lg:text-xl font-semibold">No transactions found</h3>
+          <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+            @if (hasActiveFilters()) {
+              No transactions match your current filters. Try adjusting your search criteria.
+            } @else {
+              No transactions have been recorded yet.
+            }
+          </p>
           @if (hasActiveFilters()) {
-          No transactions match your current filters. Try adjusting your search criteria.
-          } @else {
-          No transactions have been recorded yet.
+            <button (click)="clearFilters.emit()" class="btn btn-outline btn-sm lg:btn-md mt-6">
+              Clear Filters
+            </button>
           }
-        </p>
-        @if (hasActiveFilters()) {
-        <button (click)="clearFilters.emit()" class="btn btn-outline btn-sm lg:btn-md mt-6">
-          Clear Filters
-        </button>
-        }
+        </div>
       </div>
     </div>
-  </div>
   } @else {
-  <!-- Expand/Collapse Controls -->
-  <div class="flex justify-end gap-2">
-    <button class="btn btn-sm btn-ghost" (click)="expandAll.emit()">Expand All</button>
-    <button class="btn btn-sm btn-ghost" (click)="collapseAll.emit()">Collapse All</button>
-  </div>
-
-  <!-- Transactions Table -->
-  <div class="card bg-base-100 shadow">
-    <div class="card-body">
-      <div class="overflow-x-auto">
-        <table class="table table-zebra">
-          <thead>
-            <tr>
-              <th class="w-12"></th>
-              <th>Date</th>
-              <th>Source Type</th>
-              <th>Source ID</th>
-              <th>Memo</th>
-              <th class="text-right">Total Debit</th>
-              <th class="text-right">Total Credit</th>
-              <th class="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (entry of entries(); track entry.id) {
-            <tr>
-              <td>
-                <button class="btn btn-ghost btn-xs" (click)="onToggleEntry(entry.id)">
-                  @if (expandedEntries().has(entry.id)) {
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 15l7-7 7 7"
-                    />
-                  </svg>
-                  } @else {
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                  }
-                </button>
-              </td>
-              <td>{{ formatDate()(entry.entryDate) }}</td>
-              <td>
-                <div class="badge badge-outline">{{ entry.sourceType }}</div>
-              </td>
-              <td class="font-mono text-sm">{{ entry.sourceId }}</td>
-              <td>{{ entry.memo || '-' }}</td>
-              <td class="text-right">
-                <span class="text-success font-semibold">
-                  {{ formatCurrency()(getEntryTotalDebit()(entry)) }}
-                </span>
-              </td>
-              <td class="text-right">
-                <span class="text-error font-semibold">
-                  {{ formatCurrency()(getEntryTotalCredit()(entry)) }}
-                </span>
-              </td>
-              <td class="text-right">
-                <button class="btn btn-sm btn-ghost" (click)="onViewEntry(entry)">Details</button>
-              </td>
-            </tr>
-            <!-- Expanded Row: Journal Lines -->
-            @if (expandedEntries().has(entry.id)) {
-            <tr>
-              <td colspan="8" class="bg-base-200 p-0">
-                <div class="p-4">
-                  <h4 class="font-semibold mb-2">Journal Lines</h4>
-                  <div class="overflow-x-auto">
-                    <table class="table table-xs table-zebra">
-                      <thead>
-                        <tr>
-                          <th>Account Code</th>
-                          <th>Account Name</th>
-                          <th class="text-right">Debit</th>
-                          <th class="text-right">Credit</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (line of entry.lines; track line.id) {
-                        <tr>
-                          <td class="font-mono text-sm">{{ line.accountCode }}</td>
-                          <td>{{ line.accountName }}</td>
-                          <td class="text-right">
-                            @if (line.debit > 0) {
-                            <span class="text-success">
-                              {{ formatCurrency()(line.debit) }}
-                            </span>
-                            } @else {
-                            <span class="text-base-content/30">-</span>
-                            }
-                          </td>
-                          <td class="text-right">
-                            @if (line.credit > 0) {
-                            <span class="text-error">
-                              {{ formatCurrency()(line.credit) }}
-                            </span>
-                            } @else {
-                            <span class="text-base-content/30">-</span>
-                            }
-                          </td>
-                        </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </td>
-            </tr>
-            }
-            }
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination -->
-      @if (totalPages() > 1) {
-      <div class="join flex justify-center mt-4">
-        <button
-          class="join-item btn btn-sm"
-          [disabled]="currentPage() === 1"
-          (click)="onPageChange(currentPage() - 1)"
-        >
-          «
-        </button>
-        @for (page of [].constructor(totalPages()); track $index) {
-        <button
-          class="join-item btn btn-sm"
-          [class.btn-active]="currentPage() === $index + 1"
-          (click)="onPageChange($index + 1)"
-        >
-          {{ $index + 1 }}
-        </button>
-        }
-        <button
-          class="join-item btn btn-sm"
-          [disabled]="currentPage() === totalPages()"
-          (click)="onPageChange(currentPage() + 1)"
-        >
-          »
-        </button>
-      </div>
-      }
+    <!-- Expand/Collapse Controls -->
+    <div class="flex justify-end gap-2">
+      <button class="btn btn-sm btn-ghost" (click)="expandAll.emit()">Expand All</button>
+      <button class="btn btn-sm btn-ghost" (click)="collapseAll.emit()">Collapse All</button>
     </div>
-  </div>
+
+    <!-- Transactions Table -->
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra">
+            <thead>
+              <tr>
+                <th class="w-12"></th>
+                <th>Date</th>
+                <th>Source Type</th>
+                <th>Source ID</th>
+                <th>Memo</th>
+                <th class="text-right">Total Debit</th>
+                <th class="text-right">Total Credit</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of entries(); track entry.id) {
+                <tr>
+                  <td>
+                    <button class="btn btn-ghost btn-xs" (click)="onToggleEntry(entry.id)">
+                      @if (expandedEntries().has(entry.id)) {
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M5 15l7-7 7 7"
+                          />
+                        </svg>
+                      } @else {
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      }
+                    </button>
+                  </td>
+                  <td>{{ formatDate()(entry.entryDate) }}</td>
+                  <td>
+                    <div class="badge badge-outline">{{ entry.sourceType }}</div>
+                  </td>
+                  <td class="font-mono text-sm">{{ entry.sourceId }}</td>
+                  <td>{{ entry.memo || '-' }}</td>
+                  <td class="text-right">
+                    <span class="text-success font-semibold">
+                      {{ formatCurrency()(getEntryTotalDebit()(entry)) }}
+                    </span>
+                  </td>
+                  <td class="text-right">
+                    <span class="text-error font-semibold">
+                      {{ formatCurrency()(getEntryTotalCredit()(entry)) }}
+                    </span>
+                  </td>
+                  <td class="text-right">
+                    <button class="btn btn-sm btn-ghost" (click)="onViewEntry(entry)">
+                      Details
+                    </button>
+                  </td>
+                </tr>
+                <!-- Expanded Row: Journal Lines -->
+                @if (expandedEntries().has(entry.id)) {
+                  <tr>
+                    <td colspan="8" class="bg-base-200 p-0">
+                      <div class="p-4">
+                        <h4 class="font-semibold mb-2">Journal Lines</h4>
+                        <div class="overflow-x-auto">
+                          <table class="table table-xs table-zebra">
+                            <thead>
+                              <tr>
+                                <th>Account Code</th>
+                                <th>Account Name</th>
+                                <th class="text-right">Debit</th>
+                                <th class="text-right">Credit</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              @for (line of entry.lines; track line.id) {
+                                <tr>
+                                  <td class="font-mono text-sm">{{ line.accountCode }}</td>
+                                  <td>{{ line.accountName }}</td>
+                                  <td class="text-right">
+                                    @if (line.debit > 0) {
+                                      <span class="text-success">
+                                        {{ formatCurrency()(line.debit) }}
+                                      </span>
+                                    } @else {
+                                      <span class="text-base-content/30">-</span>
+                                    }
+                                  </td>
+                                  <td class="text-right">
+                                    @if (line.credit > 0) {
+                                      <span class="text-error">
+                                        {{ formatCurrency()(line.credit) }}
+                                      </span>
+                                    } @else {
+                                      <span class="text-base-content/30">-</span>
+                                    }
+                                  </td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (totalPages() > 1) {
+          <div class="join flex justify-center mt-4">
+            <button
+              class="join-item btn btn-sm"
+              [disabled]="currentPage() === 1"
+              (click)="onPageChange(currentPage() - 1)"
+            >
+              «
+            </button>
+            @for (page of [].constructor(totalPages()); track $index) {
+              <button
+                class="join-item btn btn-sm"
+                [class.btn-active]="currentPage() === $index + 1"
+                (click)="onPageChange($index + 1)"
+              >
+                {{ $index + 1 }}
+              </button>
+            }
+            <button
+              class="join-item btn btn-sm"
+              [disabled]="currentPage() === totalPages()"
+              (click)="onPageChange(currentPage() + 1)"
+            >
+              »
+            </button>
+          </div>
+        }
+      </div>
+    </div>
   }
 </div>
-

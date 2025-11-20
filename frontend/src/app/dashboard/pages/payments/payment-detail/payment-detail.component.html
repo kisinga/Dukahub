@@ -2,9 +2,7 @@
   <!-- Header -->
   <div class="flex items-center justify-between mb-6">
     <div>
-      <button (click)="goBack()" class="btn btn-ghost btn-sm mb-2">
-        ← Back to Payments
-      </button>
+      <button (click)="goBack()" class="btn btn-ghost btn-sm mb-2">← Back to Payments</button>
       <h1 class="text-3xl font-bold">Payment Details</h1>
     </div>
   </div>
@@ -48,7 +46,9 @@
     <div class="card bg-base-100 shadow">
       <div class="card-body">
         <!-- Payment Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b"
+        >
           <div>
             <div class="flex items-center gap-3 mb-2">
               <h2 class="text-2xl font-bold">Payment {{ payment()!.id.substring(0, 8) }}</h2>
@@ -70,16 +70,11 @@
           <h3 class="font-semibold mb-2">Order Information</h3>
           <div class="flex items-center gap-2">
             <span class="text-base-content/80">Order:</span>
-            <button
-              class="btn btn-link btn-sm p-0 h-auto min-h-0"
-              (click)="goToOrder()"
-            >
+            <button class="btn btn-link btn-sm p-0 h-auto min-h-0" (click)="goToOrder()">
               {{ order()!.code }}
             </button>
           </div>
-          <p class="text-sm text-base-content/60 mt-1">
-            Order Status: {{ order()!.state }}
-          </p>
+          <p class="text-sm text-base-content/60 mt-1">Order Status: {{ order()!.state }}</p>
         </div>
 
         <!-- Customer Information -->
@@ -142,7 +137,9 @@
         @if (payment()!.metadata) {
           <div class="mb-6">
             <h3 class="font-semibold mb-2">Metadata</h3>
-            <pre class="text-xs overflow-x-auto font-mono bg-base-200 p-3 rounded">{{ formatMetadata(payment()!.metadata) }}</pre>
+            <pre class="text-xs overflow-x-auto font-mono bg-base-200 p-3 rounded">{{
+              formatMetadata(payment()!.metadata)
+            }}</pre>
           </div>
         }
 
@@ -178,4 +175,3 @@
     </div>
   }
 </div>
-

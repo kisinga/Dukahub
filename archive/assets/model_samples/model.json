@@ -195,9 +195,7 @@
                         "name": "expanded_conv_depthwise_relu",
                         "trainable": true
                       },
-                      "inbound_nodes": [
-                        [["expanded_conv_depthwise_BN", 0, 0, {}]]
-                      ]
+                      "inbound_nodes": [[["expanded_conv_depthwise_BN", 0, 0, {}]]]
                     },
                     {
                       "name": "expanded_conv_project",
@@ -232,9 +230,7 @@
                         "name": "expanded_conv_project",
                         "trainable": true
                       },
-                      "inbound_nodes": [
-                        [["expanded_conv_depthwise_relu", 0, 0, {}]]
-                      ]
+                      "inbound_nodes": [[["expanded_conv_depthwise_relu", 0, 0, {}]]]
                     },
                     {
                       "name": "expanded_conv_project_BN",
@@ -303,9 +299,7 @@
                         "name": "block_1_expand",
                         "trainable": true
                       },
-                      "inbound_nodes": [
-                        [["expanded_conv_project_BN", 0, 0, {}]]
-                      ]
+                      "inbound_nodes": [[["expanded_conv_project_BN", 0, 0, {}]]]
                     },
                     {
                       "name": "block_1_expand_BN",

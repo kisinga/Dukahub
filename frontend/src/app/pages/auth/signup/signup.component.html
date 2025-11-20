@@ -36,320 +36,334 @@
 
       <!-- Error Alert -->
       @if (errorMessage()) {
-      <div role="alert" class="alert alert-error">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 shrink-0 stroke-current"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <span>{{ errorMessage() }}</span>
-      </div>
+        <div role="alert" class="alert alert-error">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 shrink-0 stroke-current"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>{{ errorMessage() }}</span>
+        </div>
       }
 
       <!-- Success Alert -->
       @if (successMessage()) {
-      <div role="alert" class="alert alert-success">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 shrink-0 stroke-current"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <span>{{ successMessage() }}</span>
-      </div>
+        <div role="alert" class="alert alert-success">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 shrink-0 stroke-current"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>{{ successMessage() }}</span>
+        </div>
       }
 
       <!-- Step 1: Company & Admin Information -->
       @if (currentStep() === 1) {
-      <form (ngSubmit)="onStep1Next()" class="space-y-4">
-        <div class="divider">
-          <span class="font-semibold">Company Information</span>
-        </div>
+        <form (ngSubmit)="onStep1Next()" class="space-y-4">
+          <div class="divider">
+            <span class="font-semibold">Company Information</span>
+          </div>
 
-        <!-- Company Name -->
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Company Name <span class="text-error">*</span></span>
-          </label>
-          <input
-            type="text"
-            placeholder="Your Company Name"
-            class="input input-bordered w-full"
-            [(ngModel)]="companyName"
-            (ngModelChange)="onCompanyNameChange()"
-            name="companyName"
-            required
-            [disabled]="isLoadingAny()"
-            autocomplete="organization"
-          />
-        </div>
+          <!-- Company Name -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Company Name <span class="text-error">*</span></span>
+            </label>
+            <input
+              type="text"
+              placeholder="Your Company Name"
+              class="input input-bordered w-full"
+              [(ngModel)]="companyName"
+              (ngModelChange)="onCompanyNameChange()"
+              name="companyName"
+              required
+              [disabled]="isLoadingAny()"
+              autocomplete="organization"
+            />
+          </div>
 
-        <!-- Company Code (Read-only, auto-generated) -->
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Company Code</span>
-          </label>
-          <input
-            type="text"
-            class="input input-bordered w-full bg-base-200"
-            [value]="companyCode"
-            name="companyCode"
-            readonly
-            [disabled]="true"
-          />
-          <label class="label">
-            <span class="label-text-alt text-base-content/60">
-              Auto-generated (cannot be changed)
-            </span>
-          </label>
-        </div>
+          <!-- Company Code (Read-only, auto-generated) -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Company Code</span>
+            </label>
+            <input
+              type="text"
+              class="input input-bordered w-full bg-base-200"
+              [value]="companyCode"
+              name="companyCode"
+              readonly
+              [disabled]="true"
+            />
+            <label class="label">
+              <span class="label-text-alt text-base-content/60">
+                Auto-generated (cannot be changed)
+              </span>
+            </label>
+          </div>
 
-        <div class="divider">
-          <span class="font-semibold">Admin Details</span>
-        </div>
+          <div class="divider">
+            <span class="font-semibold">Admin Details</span>
+          </div>
 
-        <!-- Admin First Name -->
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">First Name <span class="text-error">*</span></span>
-          </label>
-          <input
-            type="text"
-            placeholder="Your First Name"
-            class="input input-bordered w-full"
-            [(ngModel)]="adminFirstName"
-            name="adminFirstName"
-            required
-            [disabled]="isLoadingAny()"
-            autocomplete="given-name"
-          />
-        </div>
+          <!-- Admin First Name -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">First Name <span class="text-error">*</span></span>
+            </label>
+            <input
+              type="text"
+              placeholder="Your First Name"
+              class="input input-bordered w-full"
+              [(ngModel)]="adminFirstName"
+              name="adminFirstName"
+              required
+              [disabled]="isLoadingAny()"
+              autocomplete="given-name"
+            />
+          </div>
 
-        <!-- Admin Last Name -->
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Last Name <span class="text-error">*</span></span>
-          </label>
-          <input
-            type="text"
-            placeholder="Your Last Name"
-            class="input input-bordered w-full"
-            [(ngModel)]="adminLastName"
-            name="adminLastName"
-            required
-            [disabled]="isLoadingAny()"
-            autocomplete="family-name"
-          />
-        </div>
+          <!-- Admin Last Name -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Last Name <span class="text-error">*</span></span>
+            </label>
+            <input
+              type="text"
+              placeholder="Your Last Name"
+              class="input input-bordered w-full"
+              [(ngModel)]="adminLastName"
+              name="adminLastName"
+              required
+              [disabled]="isLoadingAny()"
+              autocomplete="family-name"
+            />
+          </div>
 
-        <!-- Phone Number -->
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Phone Number <span class="text-error">*</span></span>
-          </label>
-          <input
-            type="tel"
-            placeholder="07XXXXXXXXX"
-            class="input input-bordered w-full"
-            [(ngModel)]="adminPhone"
-            name="adminPhone"
-            required
-            [disabled]="isLoadingAny()"
-            autocomplete="tel"
-          />
-          <label class="label">
-            <span class="label-text-alt text-base-content/60">
-              Your phone number will be used for login
-            </span>
-          </label>
-        </div>
+          <!-- Phone Number -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Phone Number <span class="text-error">*</span></span>
+            </label>
+            <input
+              type="tel"
+              placeholder="07XXXXXXXXX"
+              class="input input-bordered w-full"
+              [(ngModel)]="adminPhone"
+              name="adminPhone"
+              required
+              [disabled]="isLoadingAny()"
+              autocomplete="tel"
+            />
+            <label class="label">
+              <span class="label-text-alt text-base-content/60">
+                Your phone number will be used for login
+              </span>
+            </label>
+          </div>
 
-        <!-- Email (Optional) -->
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Email (Optional)</span>
-          </label>
-          <input
-            type="email"
-            placeholder="your@email.com"
-            class="input input-bordered w-full"
-            [(ngModel)]="adminEmail"
-            name="adminEmail"
-            [disabled]="isLoadingAny()"
-            autocomplete="email"
-          />
-        </div>
+          <!-- Email (Optional) -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Email (Optional)</span>
+            </label>
+            <input
+              type="email"
+              placeholder="your@email.com"
+              class="input input-bordered w-full"
+              [(ngModel)]="adminEmail"
+              name="adminEmail"
+              [disabled]="isLoadingAny()"
+              autocomplete="email"
+            />
+          </div>
 
-        <!-- Next Button -->
-        <div class="form-control mt-6">
-          <button
-            type="submit"
-            class="btn btn-primary w-full"
-            [disabled]="isLoadingAny()"
-          >
-            @if (isLoadingAny()) {
-            <span class="loading loading-spinner"></span>
-            Processing... } @else { Continue }
-          </button>
-        </div>
-      </form>
+          <!-- Next Button -->
+          <div class="form-control mt-6">
+            <button type="submit" class="btn btn-primary w-full" [disabled]="isLoadingAny()">
+              @if (isLoadingAny()) {
+                <span class="loading loading-spinner"></span>
+                Processing...
+              } @else {
+                Continue
+              }
+            </button>
+          </div>
+        </form>
       }
 
       <!-- Step 2: Store Location -->
       @if (currentStep() === 2) {
-      <form (ngSubmit)="onStep2Next()" class="space-y-4">
-        <div class="divider">
-          <span class="font-semibold">Store Information</span>
-        </div>
+        <form (ngSubmit)="onStep2Next()" class="space-y-4">
+          <div class="divider">
+            <span class="font-semibold">Store Information</span>
+          </div>
 
-        <!-- Store Name -->
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Store Name <span class="text-error">*</span></span>
-          </label>
-          <input
-            type="text"
-            placeholder="Main Store"
-            class="input input-bordered w-full"
-            [(ngModel)]="storeName"
-            name="storeName"
-            required
-            [disabled]="isLoadingAny()"
-          />
-        </div>
+          <!-- Store Name -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Store Name <span class="text-error">*</span></span>
+            </label>
+            <input
+              type="text"
+              placeholder="Main Store"
+              class="input input-bordered w-full"
+              [(ngModel)]="storeName"
+              name="storeName"
+              required
+              [disabled]="isLoadingAny()"
+            />
+          </div>
 
-        <!-- Store Address -->
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Store Address (Optional)</span>
-          </label>
-          <textarea
-            class="textarea textarea-bordered w-full"
-            placeholder="Physical address of your store"
-            [(ngModel)]="storeAddress"
-            name="storeAddress"
-            rows="3"
-            [disabled]="isLoadingAny()"
-          ></textarea>
-        </div>
+          <!-- Store Address -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Store Address (Optional)</span>
+            </label>
+            <textarea
+              class="textarea textarea-bordered w-full"
+              placeholder="Physical address of your store"
+              [(ngModel)]="storeAddress"
+              name="storeAddress"
+              rows="3"
+              [disabled]="isLoadingAny()"
+            ></textarea>
+          </div>
 
-        <!-- Navigation Buttons -->
-        <div class="form-control mt-6 flex-row gap-2">
-          <button
-            type="button"
-            class="btn btn-outline flex-1"
-            (click)="goBack()"
-            [disabled]="isLoadingAny()"
-          >
-            Back
-          </button>
-          <button
-            type="submit"
-            class="btn btn-primary flex-1"
-            [disabled]="isLoadingAny()"
-          >
-            @if (isLoadingAny()) {
-            <span class="loading loading-spinner"></span>
-            Sending OTP... } @else { Send OTP }
-          </button>
-        </div>
-      </form>
+          <!-- Navigation Buttons -->
+          <div class="form-control mt-6 flex-row gap-2">
+            <button
+              type="button"
+              class="btn btn-outline flex-1"
+              (click)="goBack()"
+              [disabled]="isLoadingAny()"
+            >
+              Back
+            </button>
+            <button type="submit" class="btn btn-primary flex-1" [disabled]="isLoadingAny()">
+              @if (isLoadingAny()) {
+                <span class="loading loading-spinner"></span>
+                Sending OTP...
+              } @else {
+                Send OTP
+              }
+            </button>
+          </div>
+        </form>
       }
 
       <!-- Step 3: OTP Verification -->
       @if (currentStep() === 3) {
-      <div class="space-y-4">
-        <div class="text-center">
-          <p class="text-lg font-semibold mb-2">Verify Your Phone Number</p>
-          <p class="text-sm text-base-content/60 mb-2">OTP sent to</p>
-          <p class="font-semibold text-lg">{{ formattedPhone() }}</p>
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm mt-2"
-            (click)="goBack()"
-            [disabled]="isLoadingAny()"
-          >
-            Change phone number
-          </button>
-        </div>
-
-        <!-- Development Helper: Show where to find OTP -->
-        <div class="alert alert-info">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="h-6 w-6 shrink-0 stroke-current">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <div>
-            <p class="text-sm font-semibold">Development Mode</p>
-            <p class="text-xs">Check your browser console (F12) for the OTP code. Look for: <code class="bg-base-300 px-1 rounded">[MOCK OTP SERVICE] Sending OTP to...</code></p>
-          </div>
-        </div>
-
-        <!-- OTP Input -->
-        <div class="form-control">
-          <label class="label">
-            <span class="label-text">Enter OTP <span class="text-error">*</span></span>
-          </label>
-          <input
-            type="text"
-            inputmode="numeric"
-            placeholder="000000"
-            class="input input-bordered w-full text-center text-2xl tracking-widest font-mono"
-            [(ngModel)]="otpCode"
-            (input)="onOTPInput($event)"
-            name="otpCode"
-            maxlength="6"
-            required
-            [disabled]="isLoadingAny()"
-            autocomplete="one-time-code"
-            autofocus
-          />
-          <label class="label">
-            @if (canResendOTP()) {
+        <div class="space-y-4">
+          <div class="text-center">
+            <p class="text-lg font-semibold mb-2">Verify Your Phone Number</p>
+            <p class="text-sm text-base-content/60 mb-2">OTP sent to</p>
+            <p class="font-semibold text-lg">{{ formattedPhone() }}</p>
             <button
               type="button"
-              class="label-text-alt link link-hover"
-              (click)="onResendOTP()"
+              class="btn btn-ghost btn-sm mt-2"
+              (click)="goBack()"
               [disabled]="isLoadingAny()"
             >
-              Resend OTP
+              Change phone number
             </button>
-            } @else {
-            <span class="label-text-alt text-base-content/60">
-              Resend OTP in {{ resendCooldown() }}s
-            </span>
-            }
-          </label>
-        </div>
+          </div>
 
-        <!-- Submit Button -->
-        <div class="form-control mt-6">
-          <button
-            type="button"
-            class="btn btn-primary w-full"
-            (click)="onStep3Submit()"
-            [disabled]="otpCode().length !== 6 || isLoadingAny()"
-          >
-            @if (isLoadingAny()) {
-            <span class="loading loading-spinner"></span>
-            Verifying... } @else { Complete Registration }
-          </button>
+          <!-- Development Helper: Show where to find OTP -->
+          <div class="alert alert-info">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              class="h-6 w-6 shrink-0 stroke-current"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <div>
+              <p class="text-sm font-semibold">Development Mode</p>
+              <p class="text-xs">
+                Check your browser console (F12) for the OTP code. Look for:
+                <code class="bg-base-300 px-1 rounded">[MOCK OTP SERVICE] Sending OTP to...</code>
+              </p>
+            </div>
+          </div>
+
+          <!-- OTP Input -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Enter OTP <span class="text-error">*</span></span>
+            </label>
+            <input
+              type="text"
+              inputmode="numeric"
+              placeholder="000000"
+              class="input input-bordered w-full text-center text-2xl tracking-widest font-mono"
+              [(ngModel)]="otpCode"
+              (input)="onOTPInput($event)"
+              name="otpCode"
+              maxlength="6"
+              required
+              [disabled]="isLoadingAny()"
+              autocomplete="one-time-code"
+              autofocus
+            />
+            <label class="label">
+              @if (canResendOTP()) {
+                <button
+                  type="button"
+                  class="label-text-alt link link-hover"
+                  (click)="onResendOTP()"
+                  [disabled]="isLoadingAny()"
+                >
+                  Resend OTP
+                </button>
+              } @else {
+                <span class="label-text-alt text-base-content/60">
+                  Resend OTP in {{ resendCooldown() }}s
+                </span>
+              }
+            </label>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="form-control mt-6">
+            <button
+              type="button"
+              class="btn btn-primary w-full"
+              (click)="onStep3Submit()"
+              [disabled]="otpCode().length !== 6 || isLoadingAny()"
+            >
+              @if (isLoadingAny()) {
+                <span class="loading loading-spinner"></span>
+                Verifying...
+              } @else {
+                Complete Registration
+              }
+            </button>
+          </div>
         </div>
-      </div>
       }
 
       <!-- Login Link -->
@@ -383,4 +397,3 @@
     </div>
   </div>
 </div>
-

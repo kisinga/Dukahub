@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 /**
  * Force Migration to Run Again
- * 
+ *
  * Removes migration records from the database so they can be re-run.
  * Usage: ts-node scripts/force-migration.ts <migration-name>
  */
@@ -36,10 +36,9 @@ async function forceMigration() {
     console.log('Connected to database');
 
     // Check if migration exists
-    const result = await dataSource.query(
-      `SELECT * FROM migrations WHERE name = $1`,
-      [migrationName]
-    );
+    const result = await dataSource.query(`SELECT * FROM migrations WHERE name = $1`, [
+      migrationName,
+    ]);
 
     if (result.length === 0) {
       console.log(`Migration "${migrationName}" not found in migrations table.`);
@@ -51,10 +50,7 @@ async function forceMigration() {
     console.log(`Timestamp: ${result[0].timestamp}`);
 
     // Remove the migration record
-    await dataSource.query(
-      `DELETE FROM migrations WHERE name = $1`,
-      [migrationName]
-    );
+    await dataSource.query(`DELETE FROM migrations WHERE name = $1`, [migrationName]);
 
     console.log(`✅ Removed migration "${migrationName}" from migrations table.`);
     console.log('It will run again on next application startup.');
@@ -67,4 +63,3 @@ async function forceMigration() {
 }
 
 forceMigration();
-

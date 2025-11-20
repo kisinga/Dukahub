@@ -1,9 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
 import { calculateProductStats } from '../../../core/services/stats/product-stats.util';
-import { DeleteConfirmationData, DeleteConfirmationModalComponent } from './components/delete-confirmation-modal.component';
+import {
+  DeleteConfirmationData,
+  DeleteConfirmationModalComponent,
+} from './components/delete-confirmation-modal.component';
 import { PaginationComponent } from './components/pagination.component';
 import { ProductAction, ProductCardComponent } from './components/product-card.component';
 import { ProductSearchBarComponent } from './components/product-search-bar.component';
@@ -12,7 +23,7 @@ import { ProductTableRowComponent } from './components/product-table-row.compone
 
 /**
  * Products list page - refactored with composable components
- * 
+ *
  * ARCHITECTURE:
  * - Uses composable components for better maintainability
  * - Separates mobile (cards) and desktop (table) views
@@ -29,11 +40,11 @@ import { ProductTableRowComponent } from './components/product-table-row.compone
     ProductSearchBarComponent,
     ProductTableRowComponent,
     PaginationComponent,
-    DeleteConfirmationModalComponent
+    DeleteConfirmationModalComponent,
   ],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductsComponent implements OnInit {
   private readonly productService = inject(ProductService);
@@ -66,18 +77,19 @@ export class ProductsComponent implements OnInit {
 
     // Apply low stock filter first
     if (lowStockOnly) {
-      allProducts = allProducts.filter(product =>
-        product.variants?.some((v: any) => (v.stockOnHand || 0) < 10)
+      allProducts = allProducts.filter((product) =>
+        product.variants?.some((v: any) => (v.stockOnHand || 0) < 10),
       );
     }
 
     // Apply search query filter
     if (!query) return allProducts;
 
-    return allProducts.filter(product =>
-      product.name.toLowerCase().includes(query) ||
-      product.description?.toLowerCase().includes(query) ||
-      product.variants?.some((v: any) => v.sku.toLowerCase().includes(query))
+    return allProducts.filter(
+      (product) =>
+        product.name.toLowerCase().includes(query) ||
+        product.description?.toLowerCase().includes(query) ||
+        product.variants?.some((v: any) => v.sku.toLowerCase().includes(query)),
     );
   });
 
@@ -111,7 +123,7 @@ export class ProductsComponent implements OnInit {
 
   ngOnInit(): void {
     // Check for query params (e.g., ?lowStock=true)
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       const lowStockParam = params['lowStock'] === 'true';
       if (lowStockParam !== this.showLowStockOnly()) {
         this.showLowStockOnly.set(lowStockParam);
@@ -125,7 +137,7 @@ export class ProductsComponent implements OnInit {
   async loadProducts(): Promise<void> {
     await this.productService.fetchProducts({
       take: 100,
-      skip: 0
+      skip: 0,
     });
   }
 
@@ -151,12 +163,12 @@ export class ProductsComponent implements OnInit {
 
       case 'purchase':
         // Navigate to purchases page with prepopulated variant
-        const product = this.products().find(p => p.id === productId);
+        const product = this.products().find((p) => p.id === productId);
         if (product?.variants && product.variants.length > 0) {
           // Use first variant for prepopulation
           const variantId = product.variants[0].id;
           this.router.navigate(['/dashboard/purchases'], {
-            queryParams: { variantId }
+            queryParams: { variantId },
           });
         }
         break;
@@ -171,13 +183,13 @@ export class ProductsComponent implements OnInit {
    * Show delete confirmation modal
    */
   confirmDeleteProduct(productId: string): void {
-    const product = this.products().find(p => p.id === productId);
+    const product = this.products().find((p) => p.id === productId);
     if (!product) return;
 
     this.productToDelete.set(productId);
     this.deleteModalData.set({
       productName: product.name,
-      variantCount: product.variants?.length || 0
+      variantCount: product.variants?.length || 0,
     });
 
     // Show modal
@@ -252,7 +264,7 @@ export class ProductsComponent implements OnInit {
       relativeTo: this.route,
       queryParams: enabled ? { lowStock: 'true' } : {},
       queryParamsHandling: 'merge',
-      replaceUrl: true
+      replaceUrl: true,
     });
   }
 
@@ -275,4 +287,3 @@ export class ProductsComponent implements OnInit {
    */
   readonly Math = Math;
 }
-

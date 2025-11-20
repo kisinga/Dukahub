@@ -18,4 +18,3 @@ export class LedgerTabsComponent {
     this.tabChange.emit(tab);
   }
 }
-

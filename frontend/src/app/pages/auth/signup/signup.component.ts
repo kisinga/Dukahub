@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -40,8 +47,8 @@ export class SignupComponent implements OnDestroy {
     return phone ? formatPhoneNumber(phone) : '';
   });
 
-  protected readonly isLoadingAny = computed(() =>
-    this.isLoading() || this.authService.isLoading()
+  protected readonly isLoadingAny = computed(
+    () => this.isLoading() || this.authService.isLoading(),
   );
 
   // Step 1: Company & Admin Info
@@ -138,9 +145,11 @@ export class SignupComponent implements OnDestroy {
         if (!adminValidation.valid) errors.push(...adminValidation.errors);
         if (!storeValidation.valid) errors.push(...storeValidation.errors);
 
-        throw new Error(errors.length > 0
-          ? `Please complete all required fields: ${errors.join(', ')}`
-          : 'Invalid registration data. Please go back and complete all fields.');
+        throw new Error(
+          errors.length > 0
+            ? `Please complete all required fields: ${errors.join(', ')}`
+            : 'Invalid registration data. Please go back and complete all fields.',
+        );
       }
 
       const phoneNumber = this.formattedPhone();
@@ -163,7 +172,10 @@ export class SignupComponent implements OnDestroy {
 
       // NEW: Store registration data and request OTP
       // Backend will store data in Redis and return sessionId
-      const result = await this.authService.requestRegistrationOTP(phoneNumber, registrationPayload);
+      const result = await this.authService.requestRegistrationOTP(
+        phoneNumber,
+        registrationPayload,
+      );
 
       if (!result.sessionId) {
         throw new Error('Failed to create registration session. Please try again.');
@@ -181,11 +193,18 @@ export class SignupComponent implements OnDestroy {
       this.currentStep.set(3);
       this.startOTPResendCooldown();
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Failed to send OTP. Please try again.';
+      const errorMsg =
+        error instanceof Error ? error.message : 'Failed to send OTP. Please try again.';
 
       // Check if error indicates existing account
-      if (errorMsg.toLowerCase().includes('already') || errorMsg.toLowerCase().includes('exists') || errorMsg.toLowerCase().includes('registered')) {
-        this.errorMessage.set('An account with this phone number already exists. Please login instead.');
+      if (
+        errorMsg.toLowerCase().includes('already') ||
+        errorMsg.toLowerCase().includes('exists') ||
+        errorMsg.toLowerCase().includes('registered')
+      ) {
+        this.errorMessage.set(
+          'An account with this phone number already exists. Please login instead.',
+        );
       } else {
         this.errorMessage.set(errorMsg);
       }
@@ -224,11 +243,7 @@ export class SignupComponent implements OnDestroy {
 
       // NEW: Verify OTP using sessionId (registration data is retrieved from Redis)
       // This creates all entities in a transaction
-      const result = await this.authService.verifyRegistrationOTP(
-        phoneNumber,
-        otpValue,
-        sessionId
-      );
+      const result = await this.authService.verifyRegistrationOTP(phoneNumber, otpValue, sessionId);
 
       if (result.success) {
         // Get registration data for success message (from service)
@@ -250,7 +265,7 @@ export class SignupComponent implements OnDestroy {
         setTimeout(() => {
           this.registrationService.reset();
           this.router.navigate(['/login'], {
-            queryParams: { registered: 'true' }
+            queryParams: { registered: 'true' },
           });
         }, 2000);
       } else {
@@ -258,27 +273,38 @@ export class SignupComponent implements OnDestroy {
         this.successMessage.set(null);
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Registration failed. Please try again.';
+      const errorMsg =
+        error instanceof Error ? error.message : 'Registration failed. Please try again.';
 
       // Provide user-friendly error messages
       let displayMessage = errorMsg;
 
       // Check for specific error types
-      if (errorMsg.toLowerCase().includes('already') ||
+      if (
+        errorMsg.toLowerCase().includes('already') ||
         errorMsg.toLowerCase().includes('exists') ||
-        errorMsg.toLowerCase().includes('duplicate')) {
+        errorMsg.toLowerCase().includes('duplicate')
+      ) {
         displayMessage = 'An account with this phone number already exists. Please login instead.';
-      } else if (errorMsg.toLowerCase().includes('otp') ||
+      } else if (
+        errorMsg.toLowerCase().includes('otp') ||
         errorMsg.toLowerCase().includes('invalid') ||
-        errorMsg.toLowerCase().includes('expired')) {
+        errorMsg.toLowerCase().includes('expired')
+      ) {
         displayMessage = 'Invalid or expired OTP code. Please request a new OTP.';
-      } else if (errorMsg.toLowerCase().includes('network') ||
+      } else if (
+        errorMsg.toLowerCase().includes('network') ||
         errorMsg.toLowerCase().includes('connection') ||
-        errorMsg.toLowerCase().includes('fetch')) {
-        displayMessage = 'Unable to connect to server. Please check your internet connection and try again.';
-      } else if (errorMsg.toLowerCase().includes('company code') ||
-        errorMsg.toLowerCase().includes('channel')) {
-        displayMessage = 'Company code is already taken. Please go back and choose a different company name.';
+        errorMsg.toLowerCase().includes('fetch')
+      ) {
+        displayMessage =
+          'Unable to connect to server. Please check your internet connection and try again.';
+      } else if (
+        errorMsg.toLowerCase().includes('company code') ||
+        errorMsg.toLowerCase().includes('channel')
+      ) {
+        displayMessage =
+          'Company code is already taken. Please go back and choose a different company name.';
       }
 
       this.errorMessage.set(displayMessage);
@@ -322,7 +348,10 @@ export class SignupComponent implements OnDestroy {
       };
 
       // Resend OTP with registration data (gets new sessionId)
-      const result = await this.authService.requestRegistrationOTP(phoneNumber, registrationPayload);
+      const result = await this.authService.requestRegistrationOTP(
+        phoneNumber,
+        registrationPayload,
+      );
 
       if (!result.sessionId) {
         throw new Error('Failed to create registration session. Please try again.');
@@ -335,7 +364,7 @@ export class SignupComponent implements OnDestroy {
       this.startOTPResendCooldown();
     } catch (error) {
       this.errorMessage.set(
-        error instanceof Error ? error.message : 'Failed to resend OTP. Please try again.'
+        error instanceof Error ? error.message : 'Failed to resend OTP. Please try again.',
       );
     } finally {
       this.isLoading.set(false);

@@ -1,6 +1,6 @@
 /**
  * Behavioral Smoke Tests
- * 
+ *
  * High-level tests that verify core user workflows work end-to-end.
  * Designed to catch real-world problems without being overly specific.
  * These tests should remain stable even as implementation details change.
@@ -13,135 +13,130 @@ import { AuthService } from '../../services/auth.service';
 import { CompanyService } from '../../services/company.service';
 
 describe('Behavioral Smoke Tests', () => {
-    let authService: AuthService;
-    let companyService: CompanyService;
-    let apolloService: ApolloService;
+  let authService: AuthService;
+  let companyService: CompanyService;
+  let apolloService: ApolloService;
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            providers: [
-                provideZonelessChangeDetection(),
-                AuthService,
-                CompanyService,
-                ApolloService
-            ]
-        });
-
-        authService = TestBed.inject(AuthService);
-        companyService = TestBed.inject(CompanyService);
-        apolloService = TestBed.inject(ApolloService);
-
-        // Set up test companies data
-        const testCompanies = [
-            { id: 'company-1', code: 'COMP1', name: 'Test Company 1', token: 'token1' },
-            { id: 'company-2', code: 'COMP2', name: 'Test Company 2', token: 'token2' }
-        ];
-
-        // Use reflection to set private companies signal
-        (companyService as any).companiesSignal.set(testCompanies);
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), AuthService, CompanyService, ApolloService],
     });
 
-    describe('Core User Workflows', () => {
-        it('should support basic user authentication workflow', () => {
-            // Smoke test: Can user authenticate?
-            // This catches auth system failures early
+    authService = TestBed.inject(AuthService);
+    companyService = TestBed.inject(CompanyService);
+    apolloService = TestBed.inject(ApolloService);
 
-            expect(typeof authService.login).toBe('function');
-            expect(typeof authService.logout).toBe('function');
-            expect(typeof authService.isAuthenticated).toBe('function');
-        });
+    // Set up test companies data
+    const testCompanies = [
+      { id: 'company-1', code: 'COMP1', name: 'Test Company 1', token: 'token1' },
+      { id: 'company-2', code: 'COMP2', name: 'Test Company 2', token: 'token2' },
+    ];
 
-        it('should support company management workflow', () => {
-            // Smoke test: Can user manage companies?
-            // This catches company system failures early
+    // Use reflection to set private companies signal
+    (companyService as any).companiesSignal.set(testCompanies);
+  });
 
-            expect(typeof companyService.activateCompany).toBe('function');
-            expect(typeof companyService.companies).toBe('function');
-            expect(typeof companyService.activeCompanyId).toBe('function');
-        });
+  describe('Core User Workflows', () => {
+    it('should support basic user authentication workflow', () => {
+      // Smoke test: Can user authenticate?
+      // This catches auth system failures early
 
-        it('should support data access workflow', () => {
-            // Smoke test: Can user access data?
-            // This catches data access failures early
-
-            expect(typeof apolloService.query).toBe('function');
-            expect(typeof apolloService.mutate).toBe('function');
-        });
+      expect(typeof authService.login).toBe('function');
+      expect(typeof authService.logout).toBe('function');
+      expect(typeof authService.isAuthenticated).toBe('function');
     });
 
-    describe('State Management Resilience', () => {
-        it('should handle state transitions without errors', () => {
-            // Smoke test: Does state management work?
-            // This catches state management failures early
+    it('should support company management workflow', () => {
+      // Smoke test: Can user manage companies?
+      // This catches company system failures early
 
-            // Test company state changes
-            companyService.activateCompany('company-1');
-            expect(companyService.activeCompanyId()).toBe('company-1');
-
-            // Test state consistency
-            expect(companyService.activeCompany()).toBeDefined();
-        });
-
-        it('should handle concurrent operations gracefully', () => {
-            // Smoke test: Does the system handle concurrent operations?
-            // This catches race condition failures early
-
-            // Test rapid state changes
-            companyService.activateCompany('company-1');
-            companyService.activateCompany('company-2');
-
-            // Test final state consistency
-            expect(companyService.activeCompanyId()).toBe('company-2');
-        });
+      expect(typeof companyService.activateCompany).toBe('function');
+      expect(typeof companyService.companies).toBe('function');
+      expect(typeof companyService.activeCompanyId).toBe('function');
     });
 
-    describe('Error Boundary Testing', () => {
-        it('should handle service failures gracefully', () => {
-            // Smoke test: Does the app handle service failures?
-            // This catches error handling failures early
+    it('should support data access workflow', () => {
+      // Smoke test: Can user access data?
+      // This catches data access failures early
 
-            // Test that services exist and are callable
-            expect(authService).toBeDefined();
-            expect(companyService).toBeDefined();
-            expect(apolloService).toBeDefined();
-        });
+      expect(typeof apolloService.query).toBe('function');
+      expect(typeof apolloService.mutate).toBe('function');
+    });
+  });
 
-        it('should handle missing data gracefully', () => {
-            // Smoke test: Does the app handle missing data?
-            // This catches data handling failures early
+  describe('State Management Resilience', () => {
+    it('should handle state transitions without errors', () => {
+      // Smoke test: Does state management work?
+      // This catches state management failures early
 
-            // Test missing company data
-            companyService.activateCompany('non-existent');
-            expect(companyService.activeCompanyId()).toBeNull();
-            expect(companyService.activeCompany()).toBeNull();
-        });
+      // Test company state changes
+      companyService.activateCompany('company-1');
+      expect(companyService.activeCompanyId()).toBe('company-1');
+
+      // Test state consistency
+      expect(companyService.activeCompany()).toBeDefined();
     });
 
-    describe('Integration Health Checks', () => {
-        it('should maintain service integration integrity', () => {
-            // Smoke test: Do services integrate properly?
-            // This catches integration failures early
+    it('should handle concurrent operations gracefully', () => {
+      // Smoke test: Does the system handle concurrent operations?
+      // This catches race condition failures early
 
-            // Test service accessibility
-            expect(authService).toBeDefined();
-            expect(companyService).toBeDefined();
-            expect(apolloService).toBeDefined();
+      // Test rapid state changes
+      companyService.activateCompany('company-1');
+      companyService.activateCompany('company-2');
 
-            // Test core functionality
-            expect(typeof companyService.activateCompany).toBe('function');
-            expect(typeof companyService.companies).toBe('function');
-        });
-
-        it('should support end-to-end user scenarios', () => {
-            // Smoke test: Can a user complete basic workflows?
-            // This catches end-to-end failures early
-
-            // Test basic user journey
-            companyService.activateCompany('company-1');
-            expect(companyService.activeCompanyId()).toBe('company-1');
-
-            // Test data access
-            expect(companyService.activeCompany()).toBeDefined();
-        });
+      // Test final state consistency
+      expect(companyService.activeCompanyId()).toBe('company-2');
     });
+  });
+
+  describe('Error Boundary Testing', () => {
+    it('should handle service failures gracefully', () => {
+      // Smoke test: Does the app handle service failures?
+      // This catches error handling failures early
+
+      // Test that services exist and are callable
+      expect(authService).toBeDefined();
+      expect(companyService).toBeDefined();
+      expect(apolloService).toBeDefined();
+    });
+
+    it('should handle missing data gracefully', () => {
+      // Smoke test: Does the app handle missing data?
+      // This catches data handling failures early
+
+      // Test missing company data
+      companyService.activateCompany('non-existent');
+      expect(companyService.activeCompanyId()).toBeNull();
+      expect(companyService.activeCompany()).toBeNull();
+    });
+  });
+
+  describe('Integration Health Checks', () => {
+    it('should maintain service integration integrity', () => {
+      // Smoke test: Do services integrate properly?
+      // This catches integration failures early
+
+      // Test service accessibility
+      expect(authService).toBeDefined();
+      expect(companyService).toBeDefined();
+      expect(apolloService).toBeDefined();
+
+      // Test core functionality
+      expect(typeof companyService.activateCompany).toBe('function');
+      expect(typeof companyService.companies).toBe('function');
+    });
+
+    it('should support end-to-end user scenarios', () => {
+      // Smoke test: Can a user complete basic workflows?
+      // This catches end-to-end failures early
+
+      // Test basic user journey
+      companyService.activateCompany('company-1');
+      expect(companyService.activeCompanyId()).toBe('company-1');
+
+      // Test data access
+      expect(companyService.activeCompany()).toBeDefined();
+    });
+  });
 });

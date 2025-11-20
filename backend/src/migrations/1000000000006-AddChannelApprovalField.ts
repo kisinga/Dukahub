@@ -2,19 +2,19 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Add Channel Approval Field
- * 
+ *
  * Merges:
  * - 1766000700000-AddChannelApprovalField.ts
- * 
+ *
  * Final state:
  * - Channel: customFieldsStatus (character varying, NOT NULL, DEFAULT 'UNAPPROVED')
  * - Channel: NO customFieldsIsapproved (replaced by status)
  */
 export class AddChannelApprovalField1000000000006 implements MigrationInterface {
-    name = 'AddChannelApprovalField1000000000006';
+  name = 'AddChannelApprovalField1000000000006';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -68,10 +68,10 @@ export class AddChannelApprovalField1000000000006 implements MigrationInterface 
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -107,7 +107,5 @@ export class AddChannelApprovalField1000000000006 implements MigrationInterface 
                 END IF;
             END $$;
         `);
-    }
+  }
 }
-
-

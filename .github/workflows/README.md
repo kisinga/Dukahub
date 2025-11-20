@@ -5,6 +5,7 @@ This directory contains the CI/CD workflows for the Dukahub project.
 ## Workflow Overview
 
 ### 1. `backend-tests.yml`
+
 - **Purpose**: Runs backend-specific tests
 - **Triggers**: Changes to `backend/**` or the workflow file itself
 - **Branches**: `main`, `develop`
@@ -12,6 +13,7 @@ This directory contains the CI/CD workflows for the Dukahub project.
 - **Tests**: Backend build and test suite
 
 ### 2. `frontend-tests.yml`
+
 - **Purpose**: Runs frontend-specific tests
 - **Triggers**: Changes to `frontend/**` or the workflow file itself
 - **Branches**: `main`, `develop`
@@ -19,6 +21,7 @@ This directory contains the CI/CD workflows for the Dukahub project.
 - **Tests**: Frontend build and test suite
 
 ### 3. `ci.yml`
+
 - **Purpose**: Comprehensive CI that runs both backend and frontend tests
 - **Triggers**: All pushes and PRs to `main`/`develop` branches
 - **Branches**: `main`, `develop`
@@ -26,6 +29,7 @@ This directory contains the CI/CD workflows for the Dukahub project.
 - **Tests**: Both backend and frontend test suites
 
 ### 4. `build-and-push.yml`
+
 - **Purpose**: Builds and pushes Docker images
 - **Triggers**: Changes to backend/frontend code or Docker files
 - **Branches**: `main`, `master`

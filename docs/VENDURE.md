@@ -592,7 +592,7 @@ The refactoring maintains compatibility with the existing proxy setup:
 ```typescript
 // Helper function for proxy-compatible URLs
 const toProxyUrl = (source: string): string => {
-  if (source.startsWith("http://") || source.startsWith("https://")) {
+  if (source.startsWith('http://') || source.startsWith('https://')) {
     const url = new URL(source);
     return url.pathname; // Extract path for proxy compatibility
   }

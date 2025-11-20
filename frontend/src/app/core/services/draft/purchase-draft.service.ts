@@ -4,147 +4,147 @@ import { DraftBaseService } from './draft-base.service';
 
 /**
  * Purchase Draft Service
- * 
+ *
  * Manages purchase draft state with caching.
  * Separated from PurchaseService for single responsibility.
  */
 @Injectable({
-    providedIn: 'root',
+  providedIn: 'root',
 })
 export class PurchaseDraftService extends DraftBaseService<PurchaseDraft> {
-    constructor() {
-        super('purchase_draft');
+  constructor() {
+    super('purchase_draft');
+  }
+
+  /**
+   * Create new purchase draft
+   */
+  protected override createNew(): void {
+    const draft: PurchaseDraft = {
+      supplierId: null,
+      purchaseDate: new Date(),
+      referenceNumber: '',
+      paymentStatus: 'pending',
+      notes: '',
+      lines: [],
+    };
+    this.draftSignal.set(draft);
+    this.persist();
+  }
+
+  /**
+   * Prepopulate draft with items
+   * Useful when navigating from products table to purchases page
+   */
+  prepopulateItems(items: PurchaseLineItem[]): void {
+    const draft = this.draft();
+    if (!draft) {
+      this.createNewDraft();
+      return;
     }
 
-    /**
-     * Create new purchase draft
-     */
-    protected override createNew(): void {
-        const draft: PurchaseDraft = {
-            supplierId: null,
-            purchaseDate: new Date(),
-            referenceNumber: '',
-            paymentStatus: 'pending',
-            notes: '',
-            lines: [],
-        };
-        this.draftSignal.set(draft);
-        this.persist();
+    this.draftSignal.set({
+      ...draft,
+      lines: [...draft.lines, ...items],
+    });
+    this.persist();
+  }
+
+  /**
+   * Transform cached data (parse Date from string)
+   */
+  protected override transformCachedData(cached: PurchaseDraft): PurchaseDraft {
+    return {
+      ...cached,
+      purchaseDate:
+        cached.purchaseDate instanceof Date ? cached.purchaseDate : new Date(cached.purchaseDate),
+    };
+  }
+
+  /**
+   * Update draft field (public method)
+   */
+  override updateField<K extends keyof PurchaseDraft>(field: K, value: PurchaseDraft[K]): void {
+    const draft = this.draft();
+    if (!draft) {
+      this.createNewDraft();
+      return;
+    }
+    this.draftSignal.set({
+      ...draft,
+      [field]: value,
+    });
+    this.persist();
+  }
+
+  /**
+   * Add line item
+   */
+  addLineItem(item: PurchaseLineItem): void {
+    const draft = this.draft();
+    if (!draft) {
+      this.createNewDraft();
+      return;
     }
 
-    /**
-     * Prepopulate draft with items
-     * Useful when navigating from products table to purchases page
-     */
-    prepopulateItems(items: PurchaseLineItem[]): void {
-        const draft = this.draft();
-        if (!draft) {
-            this.createNewDraft();
-            return;
-        }
+    // Check if variant already exists, update quantity if so
+    const existingIndex = draft.lines.findIndex(
+      (line) => line.variantId === item.variantId && line.stockLocationId === item.stockLocationId,
+    );
 
-        this.draftSignal.set({
-            ...draft,
-            lines: [...draft.lines, ...items],
-        });
-        this.persist();
+    if (existingIndex >= 0) {
+      // Update existing line
+      const updatedLines = [...draft.lines];
+      updatedLines[existingIndex] = {
+        ...updatedLines[existingIndex],
+        quantity: updatedLines[existingIndex].quantity + item.quantity,
+      };
+      this.draftSignal.set({
+        ...draft,
+        lines: updatedLines,
+      });
+    } else {
+      // Add new line
+      this.draftSignal.set({
+        ...draft,
+        lines: [...draft.lines, item],
+      });
     }
 
-    /**
-     * Transform cached data (parse Date from string)
-     */
-    protected override transformCachedData(cached: PurchaseDraft): PurchaseDraft {
-        return {
-            ...cached,
-            purchaseDate: cached.purchaseDate instanceof Date ? cached.purchaseDate : new Date(cached.purchaseDate),
-        };
-    }
+    this.persist();
+  }
 
-    /**
-     * Update draft field (public method)
-     */
-    override updateField<K extends keyof PurchaseDraft>(field: K, value: PurchaseDraft[K]): void {
-        const draft = this.draft();
-        if (!draft) {
-            this.createNewDraft();
-            return;
-        }
-        this.draftSignal.set({
-            ...draft,
-            [field]: value,
-        });
-        this.persist();
-    }
+  /**
+   * Remove line item
+   */
+  removeLineItem(index: number): void {
+    const draft = this.draft();
+    if (!draft) return;
 
-    /**
-     * Add line item
-     */
-    addLineItem(item: PurchaseLineItem): void {
-        const draft = this.draft();
-        if (!draft) {
-            this.createNewDraft();
-            return;
-        }
+    const updatedLines = draft.lines.filter((_, i) => i !== index);
+    this.draftSignal.set({
+      ...draft,
+      lines: updatedLines,
+    });
+    this.persist();
+  }
 
-        // Check if variant already exists, update quantity if so
-        const existingIndex = draft.lines.findIndex(
-            line => line.variantId === item.variantId && line.stockLocationId === item.stockLocationId
-        );
+  /**
+   * Update line item
+   */
+  updateLineItem(index: number, updates: Partial<PurchaseLineItem>): void {
+    const draft = this.draft();
+    if (!draft) return;
 
-        if (existingIndex >= 0) {
-            // Update existing line
-            const updatedLines = [...draft.lines];
-            updatedLines[existingIndex] = {
-                ...updatedLines[existingIndex],
-                quantity: updatedLines[existingIndex].quantity + item.quantity,
-            };
-            this.draftSignal.set({
-                ...draft,
-                lines: updatedLines,
-            });
-        } else {
-            // Add new line
-            this.draftSignal.set({
-                ...draft,
-                lines: [...draft.lines, item],
-            });
-        }
-
-        this.persist();
-    }
-
-    /**
-     * Remove line item
-     */
-    removeLineItem(index: number): void {
-        const draft = this.draft();
-        if (!draft) return;
-
-        const updatedLines = draft.lines.filter((_, i) => i !== index);
-        this.draftSignal.set({
-            ...draft,
-            lines: updatedLines,
-        });
-        this.persist();
-    }
-
-    /**
-     * Update line item
-     */
-    updateLineItem(index: number, updates: Partial<PurchaseLineItem>): void {
-        const draft = this.draft();
-        if (!draft) return;
-
-        const updatedLines = [...draft.lines];
-        updatedLines[index] = {
-            ...updatedLines[index],
-            ...updates,
-        };
-        this.draftSignal.set({
-            ...draft,
-            lines: updatedLines,
-        });
-        this.persist();
-    }
+    const updatedLines = [...draft.lines];
+    updatedLines[index] = {
+      ...updatedLines[index],
+      ...updates,
+    };
+    this.draftSignal.set({
+      ...draft,
+      lines: updatedLines,
+    });
+    this.persist();
+  }
 }
-

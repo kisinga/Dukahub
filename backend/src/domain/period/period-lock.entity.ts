@@ -18,8 +18,3 @@ export class PeriodLock {
   @Column({ type: 'timestamp', nullable: true })
   lockedAt?: Date | null;
 }
-
-
-
-
-

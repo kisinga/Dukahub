@@ -220,10 +220,10 @@ Replace address-based stats with outstanding amount tracking:
 
 ```typescript
 const customerData = {
-  businessName: "ABC Company Ltd",
-  contactPerson: "John Smith",
-  emailAddress: "john@abccompany.com",
-  phoneNumber: "0123456789",
+  businessName: 'ABC Company Ltd',
+  contactPerson: 'John Smith',
+  emailAddress: 'john@abccompany.com',
+  phoneNumber: '0123456789',
 };
 
 const customerId = await customerService.createCustomer(customerData);
@@ -234,15 +234,15 @@ const customerId = await customerService.createCustomer(customerData);
 ```typescript
 const supplierData = {
   // Basic info (mapped to firstName/lastName)
-  businessName: "XYZ Suppliers",
-  contactPerson: "Jane Doe",
-  emailAddress: "jane@xyzsuppliers.com",
-  phoneNumber: "0987654321",
+  businessName: 'XYZ Suppliers',
+  contactPerson: 'Jane Doe',
+  emailAddress: 'jane@xyzsuppliers.com',
+  phoneNumber: '0987654321',
 
   // Supplier-specific fields
-  supplierType: "Manufacturer",
-  paymentTerms: "Net 30",
-  notes: "Reliable supplier for electronics",
+  supplierType: 'Manufacturer',
+  paymentTerms: 'Net 30',
+  notes: 'Reliable supplier for electronics',
 };
 
 const supplierId = await supplierService.createSupplier(supplierData);
@@ -349,7 +349,6 @@ ALTER TABLE customer ADD COLUMN IF NOT EXISTS "customFieldsOutstandingamount" DO
 **Recommended Solutions:**
 
 1. **Customer Groups Approach** (Vendure Recommended):
-
    - Create "Suppliers" customer group in Vendure backend
    - Assign suppliers to this group during creation
    - Filter by customer group instead of custom fields

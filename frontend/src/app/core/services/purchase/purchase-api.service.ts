@@ -5,47 +5,46 @@ import { PurchaseDraft } from '../purchase.service.types';
 
 /**
  * Purchase API Service
- * 
+ *
  * Handles API communication for purchases.
  * Separated for single responsibility and testability.
  */
 @Injectable({
-    providedIn: 'root',
+  providedIn: 'root',
 })
 export class PurchaseApiService {
-    private readonly apolloService = inject(ApolloService);
+  private readonly apolloService = inject(ApolloService);
 
-    /**
-     * Record purchase via GraphQL mutation
-     */
-    async recordPurchase(draft: PurchaseDraft): Promise<any> {
-        const client = this.apolloService.getClient();
+  /**
+   * Record purchase via GraphQL mutation
+   */
+  async recordPurchase(draft: PurchaseDraft): Promise<any> {
+    const client = this.apolloService.getClient();
 
-        // Convert unitCost to cents for backend
-        const input: any = {
-            supplierId: draft.supplierId!,
-            purchaseDate: draft.purchaseDate.toISOString(),
-            referenceNumber: draft.referenceNumber || null,
-            paymentStatus: draft.paymentStatus,
-            notes: draft.notes || null,
-            lines: draft.lines.map(line => ({
-                variantId: line.variantId,
-                quantity: line.quantity,
-                unitCost: Math.round(line.unitCost * 100), // Convert to cents
-                stockLocationId: line.stockLocationId,
-            })),
-        };
+    // Convert unitCost to cents for backend
+    const input: any = {
+      supplierId: draft.supplierId!,
+      purchaseDate: draft.purchaseDate.toISOString(),
+      referenceNumber: draft.referenceNumber || null,
+      paymentStatus: draft.paymentStatus,
+      notes: draft.notes || null,
+      lines: draft.lines.map((line) => ({
+        variantId: line.variantId,
+        quantity: line.quantity,
+        unitCost: Math.round(line.unitCost * 100), // Convert to cents
+        stockLocationId: line.stockLocationId,
+      })),
+    };
 
-        const result = await client.mutate({
-            mutation: RECORD_PURCHASE,
-            variables: { input },
-        });
+    const result = await client.mutate({
+      mutation: RECORD_PURCHASE,
+      variables: { input },
+    });
 
-        if (result.error) {
-            throw new Error(result.error.message || 'Failed to record purchase');
-        }
-
-        return result.data?.recordPurchase;
+    if (result.error) {
+      throw new Error(result.error.message || 'Failed to record purchase');
     }
-}
 
+    return result.data?.recordPurchase;
+  }
+}

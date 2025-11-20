@@ -35,7 +35,8 @@
 }
 
 .hero {
-  background: radial-gradient(circle at top right, oklch(var(--p) / 0.12), transparent 45%),
+  background:
+    radial-gradient(circle at top right, oklch(var(--p) / 0.12), transparent 45%),
     radial-gradient(circle at bottom left, oklch(var(--s) / 0.12), transparent 40%),
     oklch(var(--b1));
 }
@@ -327,8 +328,8 @@
 }
 
 .closing {
-  background: radial-gradient(circle at top, oklch(var(--p) / 0.12), transparent 55%),
-    oklch(var(--b1));
+  background:
+    radial-gradient(circle at top, oklch(var(--p) / 0.12), transparent 55%), oklch(var(--b1));
 }
 
 .closing-card {

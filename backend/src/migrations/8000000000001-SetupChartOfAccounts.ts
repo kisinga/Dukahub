@@ -2,18 +2,18 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Setup Chart of Accounts
- * 
+ *
  * Merges:
  * - 1766000000000-SetupChartOfAccounts.ts
- * 
+ *
  * Final state:
  * - All channels have required accounts
  */
 export class SetupChartOfAccounts8000000000001 implements MigrationInterface {
-    name = 'SetupChartOfAccounts8000000000001';
+  name = 'SetupChartOfAccounts8000000000001';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             DECLARE
                 channel_record RECORD;
@@ -49,10 +49,10 @@ export class SetupChartOfAccounts8000000000001 implements MigrationInterface {
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DELETE FROM ledger_account 
             WHERE code IN (
                 'CASH_ON_HAND', 'BANK_MAIN', 'CLEARING_MPESA', 'CLEARING_CREDIT', 'CLEARING_GENERIC',
@@ -61,7 +61,5 @@ export class SetupChartOfAccounts8000000000001 implements MigrationInterface {
                 'PURCHASES', 'EXPENSES', 'PROCESSOR_FEES', 'CASH_SHORT_OVER'
             )
         `);
-    }
+  }
 }
-
-

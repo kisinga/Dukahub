@@ -2,11 +2,11 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Add User Authorization Fields
- * 
+ *
  * Merges:
  * - 1761800000000-AddUserAuthorizationField.ts
  * - 1763047440205-AddAuditUserTrackingFields.ts
- * 
+ *
  * Final state:
  * - User: authorizationStatus
  * - Order: createdByUserId, lastModifiedByUserId, auditCreatedAt
@@ -15,11 +15,11 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - All FK constraints for user tracking fields
  */
 export class AddUserAuthorizationFields3000000000000 implements MigrationInterface {
-    name = 'AddUserAuthorizationFields3000000000000';
+  name = 'AddUserAuthorizationFields3000000000000';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Add user authorization status
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Add user authorization status
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -37,8 +37,8 @@ export class AddUserAuthorizationFields3000000000000 implements MigrationInterfa
             END $$;
         `);
 
-        // Add Order audit tracking fields
-        await queryRunner.query(`
+    // Add Order audit tracking fields
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -86,8 +86,8 @@ export class AddUserAuthorizationFields3000000000000 implements MigrationInterfa
             END $$;
         `);
 
-        // Add Payment audit tracking fields
-        await queryRunner.query(`
+    // Add Payment audit tracking fields
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -120,8 +120,8 @@ export class AddUserAuthorizationFields3000000000000 implements MigrationInterfa
             END $$;
         `);
 
-        // Add Customer credit approval tracking
-        await queryRunner.query(`
+    // Add Customer credit approval tracking
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -146,10 +146,10 @@ export class AddUserAuthorizationFields3000000000000 implements MigrationInterfa
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -199,7 +199,5 @@ export class AddUserAuthorizationFields3000000000000 implements MigrationInterfa
                 END IF;
             END $$;
         `);
-    }
+  }
 }
-
-

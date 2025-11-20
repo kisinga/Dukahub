@@ -50,7 +50,6 @@ Settings → Administrators → API Tokens → Create New Token
 ### What It Does
 
 1. **Uploads 3 files** to Assets with tags:
-
    - `ml-model` (category)
    - `channel-{id}` (permanent ownership)
    - `v{version}` (semantic version)
@@ -208,7 +207,7 @@ name: Deploy ML Model
 on:
   push:
     paths:
-      - "ml-models/**"
+      - 'ml-models/**'
 
 jobs:
   deploy:

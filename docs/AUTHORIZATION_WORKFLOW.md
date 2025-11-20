@@ -167,19 +167,16 @@ Add custom field to User entity:
 ### Service Methods
 
 1. **Get Pending Registrations**
-
    - Query users where `customFields.authorizationStatus === 'PENDING'`
    - Include administrator details
    - Sort by `createdAt` (newest first)
 
 2. **Approve User**
-
    - Update `customFields.authorizationStatus` to `APPROVED`
    - Optionally send notification to user
    - Return updated user
 
 3. **Reject User**
-
    - Update `customFields.authorizationStatus` to `REJECTED`
    - Store rejection reason (if provided)
    - Optionally send notification to user
@@ -226,7 +223,6 @@ The `ChannelAccessGuardService` enforces access on every request:
 ### Pending Registrations Page
 
 1. List view showing:
-
    - User identifier (phone number)
    - Admin name (firstName + lastName)
    - Company name
@@ -234,7 +230,6 @@ The `ChannelAccessGuardService` enforces access on every request:
    - Actions: Approve / Reject buttons
 
 2. Detail view showing:
-
    - All registration fields
    - Company information
    - Store information
@@ -272,4 +267,3 @@ When a user is approved or rejected, consider sending notifications:
 
 - `docs/CHANNEL_STATUS_AUTH.md` - Detailed channel status authorization system documentation
 - `docs/CHANNEL_LINKING_IMPLEMENTATION.md` - Channel-user linking implementation
-

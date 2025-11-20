@@ -286,5 +286,3 @@ For deeper technical details, refer to:
 - `docs/CHANNEL_STATUS_AUTH.md`
 - `docs/SUBSCRIPTION_INTEGRATION.md`
 - `docs/CUSTOMER_PROVISIONING.md`
-
-

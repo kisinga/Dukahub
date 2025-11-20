@@ -2,22 +2,22 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Add Price Override Fields
- * 
+ *
  * Merges:
  * - 1732360000000-fix-price-override-schema.ts
  * - 1732360000001-rename-custom-price-field.ts
- * 
+ *
  * Final state:
  * - Channel: No price override fields (removed in rename migration)
  * - OrderLine: customFieldsCustomlineprice (renamed from customFieldsCustomprice)
  * - OrderLine: customFieldsPriceoverridereason
  */
 export class AddPriceOverrideFields1000000000000 implements MigrationInterface {
-    name = 'AddPriceOverrideFields1000000000000';
+  name = 'AddPriceOverrideFields1000000000000';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Add order_line custom fields (with table existence check)
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Add order_line custom fields (with table existence check)
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -78,10 +78,10 @@ export class AddPriceOverrideFields1000000000000 implements MigrationInterface {
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -102,7 +102,5 @@ export class AddPriceOverrideFields1000000000000 implements MigrationInterface {
                 END IF;
             END $$;
         `);
-    }
+  }
 }
-
-

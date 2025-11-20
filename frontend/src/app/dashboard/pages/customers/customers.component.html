@@ -45,125 +45,129 @@
 
     <!-- Error Alert -->
     @if (error()) {
-    <div class="alert alert-error mb-6">
-      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-        <path
-          fill-rule="evenodd"
-          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-          clip-rule="evenodd"
-        ></path>
-      </svg>
-      <span>{{ error() }}</span>
-      <button class="btn btn-sm btn-ghost" (click)="clearError()">Dismiss</button>
-    </div>
+      <div class="alert alert-error mb-6">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd"
+          ></path>
+        </svg>
+        <span>{{ error() }}</span>
+        <button class="btn btn-sm btn-ghost" (click)="clearError()">Dismiss</button>
+      </div>
     }
 
     <!-- Loading State -->
     @if (isLoading()) {
-    <div class="flex justify-center items-center py-12">
-      <span class="loading loading-spinner loading-lg"></span>
-    </div>
+      <div class="flex justify-center items-center py-12">
+        <span class="loading loading-spinner loading-lg"></span>
+      </div>
     } @else {
-    <!-- Content -->
-    <div class="bg-base-100 rounded-lg border border-base-300">
-      <!-- Desktop Table View -->
-      <div class="hidden lg:block">
-        <table class="table table-pin-rows">
-          <colgroup>
-            <col style="width: 20%" />
-            <col style="width: 20%" />
-            <col style="width: 15%" />
-            <col style="width: 15%" />
-            <col style="width: 15%" />
-            <col style="width: 15%" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Contact</th>
-              <th>Status</th>
-              <th class="text-right">Balance</th>
-              <th class="text-right">Credit</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (customer of paginatedCustomers(); track trackByCustomerId($index, customer)) {
-            <tr
-              app-customer-table-row
-              [customer]="customer"
-              (action)="onCustomerAction($event)"
-            ></tr>
-            }
-          </tbody>
-        </table>
-      </div>
+      <!-- Content -->
+      <div class="bg-base-100 rounded-lg border border-base-300">
+        <!-- Desktop Table View -->
+        <div class="hidden lg:block">
+          <table class="table table-pin-rows">
+            <colgroup>
+              <col style="width: 20%" />
+              <col style="width: 20%" />
+              <col style="width: 15%" />
+              <col style="width: 15%" />
+              <col style="width: 15%" />
+              <col style="width: 15%" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Contact</th>
+                <th>Status</th>
+                <th class="text-right">Balance</th>
+                <th class="text-right">Credit</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (customer of paginatedCustomers(); track trackByCustomerId($index, customer)) {
+                <tr
+                  app-customer-table-row
+                  [customer]="customer"
+                  (action)="onCustomerAction($event)"
+                ></tr>
+              }
+            </tbody>
+          </table>
+        </div>
 
-      <!-- Mobile Card View -->
-      <div class="lg:hidden">
-        @for (customer of paginatedCustomers(); track trackByCustomerId($index, customer)) {
-        <app-customer-card [customer]="customer" (action)="onCustomerAction($event)" />
-        }
-      </div>
+        <!-- Mobile Card View -->
+        <div class="lg:hidden">
+          @for (customer of paginatedCustomers(); track trackByCustomerId($index, customer)) {
+            <app-customer-card [customer]="customer" (action)="onCustomerAction($event)" />
+          }
+        </div>
 
-      <!-- Empty State -->
-      @if (paginatedCustomers().length === 0 && !isLoading()) {
-      <div class="text-center py-12">
-        <svg
-          class="mx-auto h-12 w-12 text-base-content/40"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-          ></path>
-        </svg>
-        <h3 class="mt-2 text-sm font-medium text-base-content">No customers found</h3>
-        <p class="mt-1 text-sm text-base-content/60">
-          @if (searchQuery()) { Try adjusting your search terms. } @else { Get started by adding
-          your first customer. }
-        </p>
-        @if (!searchQuery()) {
-        <div class="mt-6">
-          <button
-            class="btn btn-primary"
-            (click)="router.navigate(['/dashboard/customers/create'])"
-          >
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Empty State -->
+        @if (paginatedCustomers().length === 0 && !isLoading()) {
+          <div class="text-center py-12">
+            <svg
+              class="mx-auto h-12 w-12 text-base-content/40"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M12 4v16m8-8H4"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
               ></path>
             </svg>
-            Add Customer
-          </button>
-        </div>
+            <h3 class="mt-2 text-sm font-medium text-base-content">No customers found</h3>
+            <p class="mt-1 text-sm text-base-content/60">
+              @if (searchQuery()) {
+                Try adjusting your search terms.
+              } @else {
+                Get started by adding your first customer.
+              }
+            </p>
+            @if (!searchQuery()) {
+              <div class="mt-6">
+                <button
+                  class="btn btn-primary"
+                  (click)="router.navigate(['/dashboard/customers/create'])"
+                >
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 4v16m8-8H4"
+                    ></path>
+                  </svg>
+                  Add Customer
+                </button>
+              </div>
+            }
+          </div>
         }
       </div>
-      }
-    </div>
 
-    <!-- Pagination -->
-    @if (paginatedCustomers().length > 0) {
-    <div class="mt-6">
-      <app-pagination
-        [currentPage]="currentPage()"
-        [totalPages]="totalPages()"
-        [itemsPerPage]="itemsPerPage()"
-        [pageOptions]="pageOptions"
-        [endItem]="endItem()"
-        [totalItems]="filteredCustomers().length"
-        (pageChange)="goToPage($event)"
-        (itemsPerPageChange)="changeItemsPerPage($event)"
-      />
-    </div>
-    } }
+      <!-- Pagination -->
+      @if (paginatedCustomers().length > 0) {
+        <div class="mt-6">
+          <app-pagination
+            [currentPage]="currentPage()"
+            [totalPages]="totalPages()"
+            [itemsPerPage]="itemsPerPage()"
+            [pageOptions]="pageOptions"
+            [endItem]="endItem()"
+            [totalItems]="filteredCustomers().length"
+            (pageChange)="goToPage($event)"
+            (itemsPerPageChange)="changeItemsPerPage($event)"
+          />
+        </div>
+      }
+    }
   </div>
 </div>
 
@@ -177,24 +181,24 @@
 
 <!-- Bulk Payment Modal -->
 @if (customerForPayment()) {
-<app-bulk-payment-modal
-  #bulkPaymentModal
-  [customerId]="customerForPayment()!.id"
-  [customerName]="customerForPayment()!.name"
-  [outstandingAmount]="customerForPayment()!.outstandingAmount"
-  [availableCredit]="customerForPayment()!.availableCredit"
-  (paymentRecorded)="onPaymentRecorded()"
-  (cancelled)="onPaymentCancelled()"
-/>
+  <app-bulk-payment-modal
+    #bulkPaymentModal
+    [customerId]="customerForPayment()!.id"
+    [customerName]="customerForPayment()!.name"
+    [outstandingAmount]="customerForPayment()!.outstandingAmount"
+    [availableCredit]="customerForPayment()!.availableCredit"
+    (paymentRecorded)="onPaymentRecorded()"
+    (cancelled)="onPaymentCancelled()"
+  />
 }
 
 <!-- Customer View Modal -->
 @if (customerToView()) {
-<app-customer-view-modal
-  #viewModal
-  [customer]="customerToView()!"
-  (editRequested)="onEditRequested($event)"
-  (recordPaymentRequested)="onRecordPaymentRequested($event)"
-  (viewOrdersRequested)="onViewOrdersRequested($event)"
-/>
+  <app-customer-view-modal
+    #viewModal
+    [customer]="customerToView()!"
+    (editRequested)="onEditRequested($event)"
+    (recordPaymentRequested)="onRecordPaymentRequested($event)"
+    (viewOrdersRequested)="onViewOrdersRequested($event)"
+  />
 }

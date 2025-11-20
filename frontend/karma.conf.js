@@ -1,5 +1,29 @@
 // Karma configuration file for Angular testing
+// Standard Angular CI testing setup using ChromeHeadlessNoSandbox
 module.exports = function (config) {
+  // Simplified headless detection:
+  // 1. Explicit USE_HEADLESS flag
+  // 2. CI environment (always headless in CI)
+  // 3. Allow override via KARMA_BROWSER for local debugging
+  const useHeadlessExplicit =
+    process.env.USE_HEADLESS === 'true' || process.env.USE_HEADLESS === '1';
+  const isCI =
+    process.env.CI === 'true' ||
+    process.env.CI === '1' ||
+    process.env.CONTINUOUS_INTEGRATION === 'true' ||
+    process.env.GITHUB_ACTIONS === 'true' ||
+    process.env.GITLAB_CI === 'true' ||
+    process.env.JENKINS_URL !== undefined;
+
+  // Allow explicit browser override for local debugging (e.g., KARMA_BROWSER=Chrome)
+  const browserOverride = process.env.KARMA_BROWSER;
+
+  // Use headless if explicitly requested or in CI (CI always uses headless)
+  // Only use regular Chrome if explicitly overridden and not in CI
+  const useHeadless = useHeadlessExplicit || isCI;
+  const selectedBrowser =
+    browserOverride && !isCI ? browserOverride : useHeadless ? 'ChromeHeadlessNoSandbox' : 'Chrome';
+
   config.set({
     basePath: '',
     frameworks: ['jasmine', '@angular-devkit/build-angular'],
@@ -8,7 +32,6 @@ module.exports = function (config) {
       require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter'),
       require('karma-coverage'),
-      require('@angular-devkit/build-angular/plugins/karma'),
     ],
     client: {
       jasmine: {
@@ -28,16 +51,20 @@ module.exports = function (config) {
       reporters: [{ type: 'html' }, { type: 'text-summary' }, { type: 'lcov' }],
     },
     reporters: ['progress', 'kjhtml', 'coverage'],
-    browsers: ['ChromeHeadless'],
+    browsers: [selectedBrowser],
     restartOnFileChange: true,
     customLaunchers: {
-      ChromeHeadlessCI: {
+      ChromeHeadlessNoSandbox: {
         base: 'ChromeHeadless',
         flags: [
-          '--no-sandbox',
-          '--disable-web-security',
+          '--headless=new', // Modern headless mode
+          '--no-sandbox', // Required for running in Docker/CI as root
           '--disable-gpu',
-          '--remote-debugging-port=9222',
+          '--disable-dev-shm-usage', // Overcome limited resource problems
+          '--disable-setuid-sandbox', // Disable setuid sandbox
+          '--disable-software-rasterizer',
+          '--disable-extensions',
+          '--remote-debugging-port=0',
         ],
       },
     },

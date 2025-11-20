@@ -64,4 +64,3 @@ export class LedgerFiltersComponent {
     this.quickFilterChange.emit(period);
   }
 }
-

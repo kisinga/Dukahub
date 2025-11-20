@@ -80,7 +80,7 @@ export class LedgerService {
         this.error.set(err.message || 'Failed to load accounts');
         this.isLoading.set(false);
         return of([]);
-      })
+      }),
     );
   }
 
@@ -112,7 +112,7 @@ export class LedgerService {
         this.error.set(err.message || 'Failed to load journal entries');
         this.isLoading.set(false);
         return of({ items: [], totalItems: 0 });
-      })
+      }),
     );
   }
 
@@ -129,8 +129,7 @@ export class LedgerService {
       catchError((err) => {
         this.error.set(err.message || 'Failed to load journal entry');
         return of(null);
-      })
+      }),
     );
   }
 }
-

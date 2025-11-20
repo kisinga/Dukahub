@@ -5,83 +5,82 @@ import { AuthSessionService } from './auth-session.service';
 
 /**
  * Auth Permissions Service
- * 
+ *
  * Handles permission checking logic.
  * Pure permission logic with computed signals.
  */
 @Injectable({
-    providedIn: 'root',
+  providedIn: 'root',
 })
 export class AuthPermissionsService {
-    private readonly sessionService = inject(AuthSessionService);
+  private readonly sessionService = inject(AuthSessionService);
 
-    readonly hasUpdateSettingsPermission = computed(() => {
-        const user = this.sessionService.user();
-        if (!user?.user?.roles) return false;
+  readonly hasUpdateSettingsPermission = computed(() => {
+    const user = this.sessionService.user();
+    if (!user?.user?.roles) return false;
 
-        // Check if user has UpdateSettings permission in ANY role
-        const hasPermission = user.user.roles.some(role =>
-            role.permissions.includes(Permission.UpdateSettings)
-        );
+    // Check if user has UpdateSettings permission in ANY role
+    const hasPermission = user.user.roles.some((role) =>
+      role.permissions.includes(Permission.UpdateSettings),
+    );
 
-        console.log('🔐 Permission check:', {
-            user: user?.firstName,
-            roles: user?.user?.roles?.map(r => ({ code: r.code, permissions: r.permissions })),
-            hasPermission
-        });
-
-        return hasPermission;
+    console.log('🔐 Permission check:', {
+      user: user?.firstName,
+      roles: user?.user?.roles?.map((r) => ({ code: r.code, permissions: r.permissions })),
+      hasPermission,
     });
 
-    readonly hasOverridePricePermission = computed(() => {
-        const user = this.sessionService.user();
-        if (!user?.user?.roles) return false;
+    return hasPermission;
+  });
 
-        // Check if user has OverridePrice permission in ANY role
-        const hasPermission = user.user.roles.some(role =>
-            role.permissions.includes(Permission.OverridePrice)
-        );
+  readonly hasOverridePricePermission = computed(() => {
+    const user = this.sessionService.user();
+    if (!user?.user?.roles) return false;
 
-        console.log('🔐 OverridePrice permission check:', {
-            user: user?.firstName,
-            roles: user?.user?.roles?.map(r => ({ code: r.code, permissions: r.permissions })),
-            hasPermission
-        });
+    // Check if user has OverridePrice permission in ANY role
+    const hasPermission = user.user.roles.some((role) =>
+      role.permissions.includes(Permission.OverridePrice),
+    );
 
-        return hasPermission;
+    console.log('🔐 OverridePrice permission check:', {
+      user: user?.firstName,
+      roles: user?.user?.roles?.map((r) => ({ code: r.code, permissions: r.permissions })),
+      hasPermission,
     });
 
-    readonly hasCreditManagementPermission = computed(() => {
-        const user = this.sessionService.user();
-        if (!user?.user?.roles) return false;
+    return hasPermission;
+  });
 
-        const hasPermission = user.user.roles.some(role =>
-            role.permissions.some(permission => {
-                const value = String(permission);
-                return value === 'ApproveCustomerCredit' || value === 'ManageCustomerCreditLimit';
-            })
-        );
+  readonly hasCreditManagementPermission = computed(() => {
+    const user = this.sessionService.user();
+    if (!user?.user?.roles) return false;
 
-        return hasPermission;
-    });
+    const hasPermission = user.user.roles.some((role) =>
+      role.permissions.some((permission) => {
+        const value = String(permission);
+        return value === 'ApproveCustomerCredit' || value === 'ManageCustomerCreditLimit';
+      }),
+    );
 
-    readonly hasManageStockAdjustmentsPermission = computed(() => {
-        const user = this.sessionService.user();
-        if (!user?.user?.roles) return false;
+    return hasPermission;
+  });
 
-        const hasPermission = user.user.roles.some(role =>
-            role.permissions.includes('ManageStockAdjustments' as any)
-        );
+  readonly hasManageStockAdjustmentsPermission = computed(() => {
+    const user = this.sessionService.user();
+    if (!user?.user?.roles) return false;
 
-        return hasPermission;
-    });
+    const hasPermission = user.user.roles.some((role) =>
+      role.permissions.includes('ManageStockAdjustments' as any),
+    );
 
-    /**
-     * Check if user has a specific role (extend as needed)
-     */
-    hasRole(role: string): boolean {
-        // Implement role checking logic based on your user model
-        return false;
-    }
+    return hasPermission;
+  });
+
+  /**
+   * Check if user has a specific role (extend as needed)
+   */
+  hasRole(role: string): boolean {
+    // Implement role checking logic based on your user model
+    return false;
+  }
 }
-

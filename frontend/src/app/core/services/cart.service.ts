@@ -12,8 +12,8 @@ export interface CartItem {
   variant: ProductVariant;
   quantity: number;
   subtotal: number;
-  customLinePrice?: number;  // Line price in cents
-  priceOverrideReason?: string;  // Reason code
+  customLinePrice?: number; // Line price in cents
+  priceOverrideReason?: string; // Reason code
 }
 
 /**
@@ -30,12 +30,12 @@ export interface CartSummary {
 
 /**
  * TODO: Implement admin-api order management
- * The shop-api cart operations (activeOrder, addItemToOrder, removeOrderLine) 
+ * The shop-api cart operations (activeOrder, addItemToOrder, removeOrderLine)
  * are not available in admin-api. For admin panel, we should use:
  * - createDraftOrder
  * - addItemToDraftOrder
  * - removeDraftOrderLine
- * 
+ *
  * For now, this service provides a stub implementation
  */
 
@@ -60,10 +60,10 @@ export class CartService {
   readonly cartItems = this.cartItemsSignal.asReadonly();
   readonly isLoading = this.isLoadingSignal.asReadonly();
   readonly totalItems = computed(() =>
-    this.cartItemsSignal().reduce((sum, item) => sum + item.quantity, 0)
+    this.cartItemsSignal().reduce((sum, item) => sum + item.quantity, 0),
   );
   readonly subtotal = computed(() =>
-    this.cartItemsSignal().reduce((sum, item) => sum + item.subtotal, 0)
+    this.cartItemsSignal().reduce((sum, item) => sum + item.subtotal, 0),
   );
   readonly isEmpty = computed(() => this.cartItemsSignal().length === 0);
 
@@ -249,4 +249,3 @@ export class CartService {
     this.persistCart();
   }
 }
-

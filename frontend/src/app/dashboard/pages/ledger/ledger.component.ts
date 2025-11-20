@@ -8,7 +8,11 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { LedgerService, LedgerAccount, JournalEntry } from '../../../core/services/ledger/ledger.service';
+import {
+  LedgerService,
+  LedgerAccount,
+  JournalEntry,
+} from '../../../core/services/ledger/ledger.service';
 import { TransactionDetailModalComponent } from './components/transaction-detail-modal.component';
 import { LedgerStatsComponent, LedgerStats } from './components/ledger-stats.component';
 import { LedgerFiltersComponent, LedgerFilters } from './components/ledger-filters.component';
@@ -97,7 +101,7 @@ export class LedgerComponent implements OnInit {
     // Filter by account
     if (account) {
       entries = entries.filter((entry) =>
-        entry.lines.some((line) => line.accountCode === account.code)
+        entry.lines.some((line) => line.accountCode === account.code),
       );
     }
 
@@ -116,8 +120,8 @@ export class LedgerComponent implements OnInit {
           entry.lines.some(
             (line) =>
               line.accountCode.toLowerCase().includes(search) ||
-              line.accountName.toLowerCase().includes(search)
-          )
+              line.accountName.toLowerCase().includes(search),
+          ),
       );
     }
 
@@ -435,4 +439,3 @@ export class LedgerComponent implements OnInit {
     this.setQuickFilter(period);
   }
 }
-

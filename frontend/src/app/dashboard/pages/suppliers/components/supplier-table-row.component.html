@@ -1,8 +1,8 @@
 <td>
   <div class="flex items-center gap-3">
-    <app-entity-avatar 
-      [firstName]="supplier().firstName" 
-      [lastName]="supplier().lastName" 
+    <app-entity-avatar
+      [firstName]="supplier().firstName"
+      [lastName]="supplier().lastName"
       size="sm"
     />
     <span class="font-medium">{{ getFullName() }}</span>
@@ -29,10 +29,17 @@
   <details class="dropdown dropdown-end">
     <summary class="btn btn-ghost btn-sm btn-square">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+        ></path>
       </svg>
     </summary>
-    <ul class="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-48 border border-base-300">
+    <ul
+      class="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-48 border border-base-300"
+    >
       <li><a (click)="onAction('view')">View</a></li>
       <li><a (click)="onAction('edit')">Edit</a></li>
       <li><a (click)="onAction('delete')" class="text-error">Delete</a></li>

@@ -2,23 +2,23 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Create Audit Log Table
- * 
+ *
  * Merges:
  * - 1764000000000-DropOldAuditLog.ts
  * - 1764000100000-CreateAuditLogTable.ts
  * - 1764000050000-DropFixRelationalCustomFields.ts (workaround columns already handled in Phase 3)
- * 
+ *
  * Final state:
  * - audit_log table created with proper schema
  * - All indexes created
  * - Old audit_log table dropped if exists
  */
 export class CreateAuditLogTable4000000000000 implements MigrationInterface {
-    name = 'CreateAuditLogTable4000000000000';
+  name = 'CreateAuditLogTable4000000000000';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Drop old audit_log table if it exists
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Drop old audit_log table if it exists
+    await queryRunner.query(`
             DO $$
             BEGIN
                 -- Drop hypertable if it exists (TimescaleDB)
@@ -39,8 +39,8 @@ export class CreateAuditLogTable4000000000000 implements MigrationInterface {
             END $$;
         `);
 
-        // Create audit_log table with proper schema
-        await queryRunner.query(`
+    // Create audit_log table with proper schema
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -63,29 +63,27 @@ export class CreateAuditLogTable4000000000000 implements MigrationInterface {
             END $$;
         `);
 
-        // Create indexes for efficient querying
-        await queryRunner.query(`
+    // Create indexes for efficient querying
+    await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "IDX_audit_log_channel_timestamp" 
             ON audit_log ("channelId", timestamp DESC)
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "IDX_audit_log_channel_entity" 
             ON audit_log ("channelId", "entityType", "entityId")
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "IDX_audit_log_channel_user" 
             ON audit_log ("channelId", "userId")
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_log_channel_user"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_log_channel_entity"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_log_channel_timestamp"`);
-        await queryRunner.query(`DROP TABLE IF EXISTS audit_log`);
-    }
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_log_channel_user"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_log_channel_entity"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_log_channel_timestamp"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS audit_log`);
+  }
 }
-
-

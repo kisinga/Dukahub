@@ -250,7 +250,7 @@
   z-index: 1;
   animation: ribbonAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: top center;
-  
+
   // Extend ribbon down to expanded card with fade
   &::after {
     content: '';
@@ -290,18 +290,18 @@
   // Desktop: Subtle connection without ribbon
   @media (min-width: 640px) {
     margin-top: 0.75rem;
-    
+
     // Add subtle top border accent when sales is expanded
     &.border-success {
       border-top-width: 3px;
       box-shadow: 0 -2px 8px oklch(var(--su) / 0.1);
     }
-    
+
     &.border-primary {
       border-top-width: 3px;
       box-shadow: 0 -2px 8px oklch(var(--p) / 0.1);
     }
-    
+
     &.border-error {
       border-top-width: 3px;
       box-shadow: 0 -2px 8px oklch(var(--er) / 0.1);

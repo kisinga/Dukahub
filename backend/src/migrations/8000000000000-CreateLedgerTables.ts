@@ -2,25 +2,25 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Create Ledger Tables
- * 
+ *
  * Merges:
  * - 1765000000000-CreateLedgerTables.ts
  * - 1765000000001-AlignStockConstraints.ts (only ledger-related parts)
  * - 1765000000002-FixLedgerSchemaDiff.ts
- * 
+ *
  * Final state:
  * - All ledger tables with correct constraints and indexes
  * - Legacy indexes/constraints dropped
  */
 export class CreateLedgerTables8000000000000 implements MigrationInterface {
-    name = 'CreateLedgerTables8000000000000';
+  name = 'CreateLedgerTables8000000000000';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Ensure pgcrypto extension
-        await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Ensure pgcrypto extension
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
 
-        // Create ledger_account table
-        await queryRunner.query(`
+    // Create ledger_account table
+    await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "ledger_account" (
                 "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
                 "channelId" integer NOT NULL,
@@ -31,14 +31,14 @@ export class CreateLedgerTables8000000000000 implements MigrationInterface {
             )
         `);
 
-        // Create unique index for ledger_account
-        await queryRunner.query(`
+    // Create unique index for ledger_account
+    await queryRunner.query(`
             CREATE UNIQUE INDEX IF NOT EXISTS "IDX_e9a270270815811eeca8b2ed5c" 
             ON "ledger_account" ("channelId","code")
         `);
 
-        // Create ledger_journal_entry table
-        await queryRunner.query(`
+    // Create ledger_journal_entry table
+    await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "ledger_journal_entry" (
                 "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
                 "channelId" integer NOT NULL,
@@ -52,8 +52,8 @@ export class CreateLedgerTables8000000000000 implements MigrationInterface {
             )
         `);
 
-        // Add unique constraint on journal_entry source
-        await queryRunner.query(`
+    // Add unique constraint on journal_entry source
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -65,8 +65,8 @@ export class CreateLedgerTables8000000000000 implements MigrationInterface {
             END $$;
         `);
 
-        // Create ledger_journal_line table
-        await queryRunner.query(`
+    // Create ledger_journal_line table
+    await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "ledger_journal_line" (
                 "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
                 "entryId" uuid NOT NULL,
@@ -78,14 +78,14 @@ export class CreateLedgerTables8000000000000 implements MigrationInterface {
             )
         `);
 
-        // Create index for journal_line
-        await queryRunner.query(`
+    // Create index for journal_line
+    await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "IDX_f9cd7e4e7ad494c04ac5fc2524" 
             ON "ledger_journal_line" ("entryId")
         `);
 
-        // Add FK constraints for journal_line
-        await queryRunner.query(`
+    // Add FK constraints for journal_line
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -99,7 +99,7 @@ export class CreateLedgerTables8000000000000 implements MigrationInterface {
             END $$;
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -113,8 +113,8 @@ export class CreateLedgerTables8000000000000 implements MigrationInterface {
             END $$;
         `);
 
-        // Create money_event table
-        await queryRunner.query(`
+    // Create money_event table
+    await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "money_event" (
                 "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
                 "channelId" integer NOT NULL,
@@ -132,8 +132,8 @@ export class CreateLedgerTables8000000000000 implements MigrationInterface {
             )
         `);
 
-        // Add unique constraint on money_event source
-        await queryRunner.query(`
+    // Add unique constraint on money_event source
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -145,8 +145,8 @@ export class CreateLedgerTables8000000000000 implements MigrationInterface {
             END $$;
         `);
 
-        // Create cashier_session table
-        await queryRunner.query(`
+    // Create cashier_session table
+    await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "cashier_session" (
                 "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
                 "channelId" integer NOT NULL,
@@ -159,13 +159,13 @@ export class CreateLedgerTables8000000000000 implements MigrationInterface {
             )
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "IDX_2bfa5e2744f391a3887f3d82c4" 
             ON "cashier_session" ("channelId","openedAt")
         `);
 
-        // Create reconciliation table
-        await queryRunner.query(`
+    // Create reconciliation table
+    await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "reconciliation" (
                 "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
                 "channelId" integer NOT NULL,
@@ -182,13 +182,13 @@ export class CreateLedgerTables8000000000000 implements MigrationInterface {
             )
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE INDEX IF NOT EXISTS "IDX_4baeb5137224fe3eef32c75b66" 
             ON "reconciliation" ("channelId","rangeStart","rangeEnd")
         `);
 
-        // Create period_lock table
-        await queryRunner.query(`
+    // Create period_lock table
+    await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "period_lock" (
                 "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
                 "channelId" integer NOT NULL,
@@ -198,8 +198,8 @@ export class CreateLedgerTables8000000000000 implements MigrationInterface {
             )
         `);
 
-        // Add unique constraint on period_lock
-        await queryRunner.query(`
+    // Add unique constraint on period_lock
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -211,19 +211,23 @@ export class CreateLedgerTables8000000000000 implements MigrationInterface {
             END $$;
         `);
 
-        // Drop legacy indexes/constraints if they exist
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_ledger_account_channel_code"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_journal_line_entry"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_journal_entry_source"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_period_lock_channel"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_money_event_source"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_cashier_session_opened"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_recon_range"`);
-        await queryRunner.query(`ALTER TABLE "ledger_journal_line" DROP CONSTRAINT IF EXISTS "FK_line_account"`);
-        await queryRunner.query(`ALTER TABLE "ledger_journal_line" DROP CONSTRAINT IF EXISTS "FK_line_entry"`);
+    // Drop legacy indexes/constraints if they exist
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_ledger_account_channel_code"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_journal_line_entry"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_journal_entry_source"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_period_lock_channel"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_money_event_source"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_cashier_session_opened"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_recon_range"`);
+    await queryRunner.query(
+      `ALTER TABLE "ledger_journal_line" DROP CONSTRAINT IF EXISTS "FK_line_account"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "ledger_journal_line" DROP CONSTRAINT IF EXISTS "FK_line_entry"`
+    );
 
-        // Seed minimal accounts for channel 1
-        await queryRunner.query(`
+    // Seed minimal accounts for channel 1
+    await queryRunner.query(`
             INSERT INTO "ledger_account" ("channelId","code","name","type","isActive") VALUES
                 (1,'CASH_ON_HAND','Cash on Hand','asset',true),
                 (1,'BANK_MAIN','Bank - Main','asset',true),
@@ -237,23 +241,29 @@ export class CreateLedgerTables8000000000000 implements MigrationInterface {
                 (1,'CASH_SHORT_OVER','Cash Short/Over','expense',true)
             ON CONFLICT ("channelId","code") DO NOTHING
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP TABLE IF EXISTS "period_lock"`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "reconciliation"`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "cashier_session"`);
-        await queryRunner.query(`ALTER TABLE IF EXISTS "money_event" DROP CONSTRAINT IF EXISTS "uq_money_event_source"`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "money_event"`);
-        await queryRunner.query(`ALTER TABLE IF EXISTS "ledger_journal_line" DROP CONSTRAINT IF EXISTS "FK_f9cd7e4e7ad494c04ac5fc25244"`);
-        await queryRunner.query(`ALTER TABLE IF EXISTS "ledger_journal_line" DROP CONSTRAINT IF EXISTS "FK_185fa35d92d3dc5aebc6c6e284c"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_f9cd7e4e7ad494c04ac5fc2524"`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "ledger_journal_line"`);
-        await queryRunner.query(`ALTER TABLE IF EXISTS "ledger_journal_entry" DROP CONSTRAINT IF EXISTS "uq_journal_entry_source"`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "ledger_journal_entry"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "IDX_e9a270270815811eeca8b2ed5c"`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "ledger_account"`);
-    }
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP TABLE IF EXISTS "period_lock"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "reconciliation"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "cashier_session"`);
+    await queryRunner.query(
+      `ALTER TABLE IF EXISTS "money_event" DROP CONSTRAINT IF EXISTS "uq_money_event_source"`
+    );
+    await queryRunner.query(`DROP TABLE IF EXISTS "money_event"`);
+    await queryRunner.query(
+      `ALTER TABLE IF EXISTS "ledger_journal_line" DROP CONSTRAINT IF EXISTS "FK_f9cd7e4e7ad494c04ac5fc25244"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE IF EXISTS "ledger_journal_line" DROP CONSTRAINT IF EXISTS "FK_185fa35d92d3dc5aebc6c6e284c"`
+    );
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_f9cd7e4e7ad494c04ac5fc2524"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "ledger_journal_line"`);
+    await queryRunner.query(
+      `ALTER TABLE IF EXISTS "ledger_journal_entry" DROP CONSTRAINT IF EXISTS "uq_journal_entry_source"`
+    );
+    await queryRunner.query(`DROP TABLE IF EXISTS "ledger_journal_entry"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_e9a270270815811eeca8b2ed5c"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "ledger_account"`);
+  }
 }
-
-

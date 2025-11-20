@@ -1,138 +1,138 @@
 /**
  * Print Template System
- * 
+ *
  * Composable and extensible print template architecture.
  * Each template defines its own rendering logic and styles.
  */
 
 export interface OrderData {
+  id: string;
+  code: string;
+  state: string;
+  createdAt: string;
+  updatedAt: string;
+  orderPlacedAt?: string | null;
+  total: number;
+  totalWithTax: number;
+  currencyCode: string;
+  customer?: {
     id: string;
-    code: string;
+    firstName: string;
+    lastName: string;
+    emailAddress?: string | null;
+    phoneNumber?: string | null;
+  } | null;
+  lines: Array<{
+    id: string;
+    quantity: number;
+    linePrice: number;
+    linePriceWithTax: number;
+    productVariant: {
+      id: string;
+      name: string;
+      sku: string;
+    };
+  }>;
+  payments?: Array<{
+    id: string;
     state: string;
+    amount: number;
+    method: string;
     createdAt: string;
-    updatedAt: string;
-    orderPlacedAt?: string | null;
-    total: number;
-    totalWithTax: number;
-    currencyCode: string;
-    customer?: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        emailAddress?: string | null;
-        phoneNumber?: string | null;
-    } | null;
-    lines: Array<{
-        id: string;
-        quantity: number;
-        linePrice: number;
-        linePriceWithTax: number;
-        productVariant: {
-            id: string;
-            name: string;
-            sku: string;
-        };
-    }>;
-    payments?: Array<{
-        id: string;
-        state: string;
-        amount: number;
-        method: string;
-        createdAt: string;
-        metadata?: any;
-    }>;
-    fulfillments?: Array<{
-        id: string;
-        state: string;
-        method: string;
-        trackingCode?: string | null;
-        createdAt: string;
-    }>;
-    billingAddress?: {
-        fullName?: string | null;
-        streetLine1: string;
-        streetLine2?: string | null;
-        city?: string | null;
-        postalCode?: string | null;
-        province?: string | null;
-        country: string;
-        phoneNumber?: string | null;
-    } | null;
-    shippingAddress?: {
-        fullName?: string | null;
-        streetLine1: string;
-        streetLine2?: string | null;
-        city?: string | null;
-        postalCode?: string | null;
-        province?: string | null;
-        country: string;
-        phoneNumber?: string | null;
-    } | null;
+    metadata?: any;
+  }>;
+  fulfillments?: Array<{
+    id: string;
+    state: string;
+    method: string;
+    trackingCode?: string | null;
+    createdAt: string;
+  }>;
+  billingAddress?: {
+    fullName?: string | null;
+    streetLine1: string;
+    streetLine2?: string | null;
+    city?: string | null;
+    postalCode?: string | null;
+    province?: string | null;
+    country: string;
+    phoneNumber?: string | null;
+  } | null;
+  shippingAddress?: {
+    fullName?: string | null;
+    streetLine1: string;
+    streetLine2?: string | null;
+    city?: string | null;
+    postalCode?: string | null;
+    province?: string | null;
+    country: string;
+    phoneNumber?: string | null;
+  } | null;
 }
 
 /**
  * Abstract base class for print templates
  */
 export abstract class PrintTemplate {
-    abstract name: string;
-    abstract width: string;
+  abstract name: string;
+  abstract width: string;
 
-    /**
-     * Render the order data into HTML
-     */
-    abstract render(order: OrderData, companyLogo?: string | null): string;
+  /**
+   * Render the order data into HTML
+   */
+  abstract render(order: OrderData, companyLogo?: string | null): string;
 
-    /**
-     * Get CSS styles for this template
-     */
-    abstract getStyles(): string;
+  /**
+   * Get CSS styles for this template
+   */
+  abstract getStyles(): string;
 
-    /**
-     * Format currency amount
-     */
-    protected formatCurrency(amount: number, currencyCode: string = 'KES'): string {
-        return new Intl.NumberFormat('en-KE', {
-            style: 'currency',
-            currency: currencyCode,
-            minimumFractionDigits: 2,
-        }).format(amount / 100); // Convert from cents
+  /**
+   * Format currency amount
+   */
+  protected formatCurrency(amount: number, currencyCode: string = 'KES'): string {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: currencyCode,
+      minimumFractionDigits: 2,
+    }).format(amount / 100); // Convert from cents
+  }
+
+  /**
+   * Format date
+   */
+  protected formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-KE', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  /**
+   * Get customer display name
+   */
+  protected getCustomerName(order: OrderData): string {
+    if (!order.customer) {
+      return 'Walk-in Customer';
     }
+    const firstName = order.customer.firstName || '';
+    const lastName = order.customer.lastName || '';
+    return `${firstName} ${lastName}`.trim() || 'Walk-in Customer';
+  }
 
-    /**
-     * Format date
-     */
-    protected formatDate(dateString: string): string {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-KE', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    }
-
-    /**
-     * Get customer display name
-     */
-    protected getCustomerName(order: OrderData): string {
-        if (!order.customer) {
-            return 'Walk-in Customer';
-        }
-        const firstName = order.customer.firstName || '';
-        const lastName = order.customer.lastName || '';
-        return `${firstName} ${lastName}`.trim() || 'Walk-in Customer';
-    }
-
-    /**
-     * Check if customer is walk-in
-     */
-    protected isWalkInCustomer(order: OrderData): boolean {
-        if (!order.customer) return true;
-        const email = order.customer.emailAddress?.toLowerCase() || '';
-        const firstName = order.customer.firstName?.toLowerCase() || '';
-        return email === 'walkin@pos.local' || firstName === 'walk-in';
-    }
+  /**
+   * Check if customer is walk-in
+   */
+  protected isWalkInCustomer(order: OrderData): boolean {
+    if (!order.customer) return true;
+    const email = order.customer.emailAddress?.toLowerCase() || '';
+    const firstName = order.customer.firstName?.toLowerCase() || '';
+    return email === 'walkin@pos.local' || firstName === 'walk-in';
+  }
 }
 
 /**
@@ -140,19 +140,21 @@ export abstract class PrintTemplate {
  * Compact format for thermal receipt printers
  */
 export class Receipt52mmTemplate extends PrintTemplate {
-    name = '52mm Receipt';
-    width = '52mm';
+  name = '52mm Receipt';
+  width = '52mm';
 
-    render(order: OrderData, companyLogo?: string | null): string {
-        const customerName = this.getCustomerName(order);
-        const isWalkIn = this.isWalkInCustomer(order);
-        const date = order.orderPlacedAt ? this.formatDate(order.orderPlacedAt) : this.formatDate(order.createdAt);
-        const subtotal = order.total;
-        const tax = order.totalWithTax - order.total;
-        const total = order.totalWithTax;
-        const paymentMethod = order.payments?.[0]?.method || 'N/A';
+  render(order: OrderData, companyLogo?: string | null): string {
+    const customerName = this.getCustomerName(order);
+    const isWalkIn = this.isWalkInCustomer(order);
+    const date = order.orderPlacedAt
+      ? this.formatDate(order.orderPlacedAt)
+      : this.formatDate(order.createdAt);
+    const subtotal = order.total;
+    const tax = order.totalWithTax - order.total;
+    const total = order.totalWithTax;
+    const paymentMethod = order.payments?.[0]?.method || 'N/A';
 
-        let html = `
+    let html = `
             <div class="print-template receipt-52mm">
                 <div class="receipt-header">
                     ${companyLogo ? `<img src="${companyLogo}" alt="Logo" class="company-logo" />` : ''}
@@ -175,20 +177,20 @@ export class Receipt52mmTemplate extends PrintTemplate {
                         <tbody>
         `;
 
-        order.lines.forEach((line) => {
-            const itemName = line.productVariant.name;
-            const quantity = line.quantity;
-            const price = this.formatCurrency(line.linePriceWithTax, order.currencyCode);
-            html += `
+    order.lines.forEach((line) => {
+      const itemName = line.productVariant.name;
+      const quantity = line.quantity;
+      const price = this.formatCurrency(line.linePriceWithTax, order.currencyCode);
+      html += `
                             <tr>
                                 <td>${itemName}</td>
                                 <td class="text-right">${quantity}</td>
                                 <td class="text-right">${price}</td>
                             </tr>
             `;
-        });
+    });
 
-        html += `
+    html += `
                         </tbody>
                     </table>
                 </div>
@@ -197,12 +199,16 @@ export class Receipt52mmTemplate extends PrintTemplate {
                         <span>Subtotal:</span>
                         <span>${this.formatCurrency(subtotal, order.currencyCode)}</span>
                     </div>
-                    ${tax > 0 ? `
+                    ${
+                      tax > 0
+                        ? `
                     <div class="total-row">
                         <span>Tax:</span>
                         <span>${this.formatCurrency(tax, order.currencyCode)}</span>
                     </div>
-                    ` : ''}
+                    `
+                        : ''
+                    }
                     <div class="total-row total-row-final">
                         <span><strong>Total:</strong></span>
                         <span><strong>${this.formatCurrency(total, order.currencyCode)}</strong></span>
@@ -217,11 +223,11 @@ export class Receipt52mmTemplate extends PrintTemplate {
             </div>
         `;
 
-        return html;
-    }
+    return html;
+  }
 
-    getStyles(): string {
-        return `
+  getStyles(): string {
+    return `
             @media print {
                 .print-template.receipt-52mm {
                     width: 52mm;
@@ -300,7 +306,7 @@ export class Receipt52mmTemplate extends PrintTemplate {
                 }
             }
         `;
-    }
+  }
 }
 
 /**
@@ -308,21 +314,23 @@ export class Receipt52mmTemplate extends PrintTemplate {
  * Full-size professional invoice format
  */
 export class A4Template extends PrintTemplate {
-    name = 'A4 Invoice';
-    width = '210mm';
+  name = 'A4 Invoice';
+  width = '210mm';
 
-    render(order: OrderData, companyLogo?: string | null): string {
-        const customerName = this.getCustomerName(order);
-        const isWalkIn = this.isWalkInCustomer(order);
-        const date = order.orderPlacedAt ? this.formatDate(order.orderPlacedAt) : this.formatDate(order.createdAt);
-        const subtotal = order.total;
-        const tax = order.totalWithTax - order.total;
-        const total = order.totalWithTax;
-        const paymentMethod = order.payments?.[0]?.method || 'N/A';
-        const hasFulfillment = order.fulfillments && order.fulfillments.length > 0;
-        const hasShipping = order.shippingAddress && !isWalkIn;
+  render(order: OrderData, companyLogo?: string | null): string {
+    const customerName = this.getCustomerName(order);
+    const isWalkIn = this.isWalkInCustomer(order);
+    const date = order.orderPlacedAt
+      ? this.formatDate(order.orderPlacedAt)
+      : this.formatDate(order.createdAt);
+    const subtotal = order.total;
+    const tax = order.totalWithTax - order.total;
+    const total = order.totalWithTax;
+    const paymentMethod = order.payments?.[0]?.method || 'N/A';
+    const hasFulfillment = order.fulfillments && order.fulfillments.length > 0;
+    const hasShipping = order.shippingAddress && !isWalkIn;
 
-        let html = `
+    let html = `
             <div class="print-template a4-invoice">
                 <div class="invoice-header">
                     <div class="company-info">
@@ -342,25 +350,37 @@ export class A4Template extends PrintTemplate {
                         <h3>Bill To:</h3>
                         <p><strong>${customerName}</strong></p>
                         ${order.customer?.emailAddress ? `<p>${order.customer.emailAddress}</p>` : ''}
-                        ${order.billingAddress ? `
+                        ${
+                          order.billingAddress
+                            ? `
                             <p>${order.billingAddress.streetLine1}</p>
                             ${order.billingAddress.streetLine2 ? `<p>${order.billingAddress.streetLine2}</p>` : ''}
                             <p>${order.billingAddress.city || ''} ${order.billingAddress.postalCode || ''}</p>
                             <p>${order.billingAddress.country}</p>
-                        ` : ''}
+                        `
+                            : ''
+                        }
                     </div>
-                    ${hasShipping ? `
+                    ${
+                      hasShipping
+                        ? `
                     <div class="shipping-section hidden-print">
                         <h3>Ship To:</h3>
                         <p><strong>${order.shippingAddress?.fullName || customerName}</strong></p>
-                        ${order.shippingAddress ? `
+                        ${
+                          order.shippingAddress
+                            ? `
                             <p>${order.shippingAddress.streetLine1}</p>
                             ${order.shippingAddress.streetLine2 ? `<p>${order.shippingAddress.streetLine2}</p>` : ''}
                             <p>${order.shippingAddress.city || ''} ${order.shippingAddress.postalCode || ''}</p>
                             <p>${order.shippingAddress.country}</p>
-                        ` : ''}
+                        `
+                            : ''
+                        }
                     </div>
-                    ` : ''}
+                    `
+                        : ''
+                    }
                     <div class="items-section">
                         <table class="items-table">
                             <thead>
@@ -375,13 +395,13 @@ export class A4Template extends PrintTemplate {
                             <tbody>
         `;
 
-        order.lines.forEach((line) => {
-            const itemName = line.productVariant.name;
-            const sku = line.productVariant.sku;
-            const quantity = line.quantity;
-            const unitPrice = line.linePriceWithTax / line.quantity;
-            const lineTotal = line.linePriceWithTax;
-            html += `
+    order.lines.forEach((line) => {
+      const itemName = line.productVariant.name;
+      const sku = line.productVariant.sku;
+      const quantity = line.quantity;
+      const unitPrice = line.linePriceWithTax / line.quantity;
+      const lineTotal = line.linePriceWithTax;
+      html += `
                                 <tr>
                                     <td>${itemName}</td>
                                     <td>${sku}</td>
@@ -390,9 +410,9 @@ export class A4Template extends PrintTemplate {
                                     <td class="text-right">${this.formatCurrency(lineTotal, order.currencyCode)}</td>
                                 </tr>
             `;
-        });
+    });
 
-        html += `
+    html += `
                             </tbody>
                         </table>
                     </div>
@@ -402,12 +422,16 @@ export class A4Template extends PrintTemplate {
                                 <span>Subtotal:</span>
                                 <span>${this.formatCurrency(subtotal, order.currencyCode)}</span>
                             </div>
-                            ${tax > 0 ? `
+                            ${
+                              tax > 0
+                                ? `
                             <div class="total-row">
                                 <span>Tax:</span>
                                 <span>${this.formatCurrency(tax, order.currencyCode)}</span>
                             </div>
-                            ` : ''}
+                            `
+                                : ''
+                            }
                             <div class="total-row total-row-final">
                                 <span><strong>Total:</strong></span>
                                 <span><strong>${this.formatCurrency(total, order.currencyCode)}</strong></span>
@@ -419,16 +443,24 @@ export class A4Template extends PrintTemplate {
                         <p><strong>Method:</strong> ${paymentMethod}</p>
                         <p><strong>Status:</strong> ${this.getPaymentStatus(order.payments?.[0]?.state || '')}</p>
                     </div>
-                    ${hasFulfillment ? `
+                    ${
+                      hasFulfillment
+                        ? `
                     <div class="fulfillment-section hidden-print">
                         <h3>Fulfillment Information</h3>
-                        ${order.fulfillments?.map(f => `
+                        ${order.fulfillments
+                          ?.map(
+                            (f) => `
                             <p><strong>Method:</strong> ${f.method}</p>
                             ${f.trackingCode ? `<p><strong>Tracking:</strong> ${f.trackingCode}</p>` : ''}
                             <p><strong>Status:</strong> ${f.state}</p>
-                        `).join('')}
+                        `,
+                          )
+                          .join('')}
                     </div>
-                    ` : ''}
+                    `
+                        : ''
+                    }
                 </div>
                 <div class="invoice-footer">
                     <p>Thank you for your business!</p>
@@ -436,11 +468,11 @@ export class A4Template extends PrintTemplate {
             </div>
         `;
 
-        return html;
-    }
+    return html;
+  }
 
-    getStyles(): string {
-        return `
+  getStyles(): string {
+    return `
             @media print {
                 .print-template.a4-invoice {
                     width: 210mm;
@@ -530,28 +562,25 @@ export class A4Template extends PrintTemplate {
                 }
             }
         `;
-    }
+  }
 
-    private getStatusLabel(state: string): string {
-        const statusMap: Record<string, string> = {
-            'Draft': 'Draft',
-            'ArrangingPayment': 'Unpaid',
-            'PaymentSettled': 'Paid (Unshipped)',
-            'Fulfilled': 'Paid (Shipped)',
-        };
-        return statusMap[state] || state;
-    }
+  private getStatusLabel(state: string): string {
+    const statusMap: Record<string, string> = {
+      Draft: 'Draft',
+      ArrangingPayment: 'Unpaid',
+      PaymentSettled: 'Paid (Unshipped)',
+      Fulfilled: 'Paid (Shipped)',
+    };
+    return statusMap[state] || state;
+  }
 
-    private getPaymentStatus(state: string): string {
-        const statusMap: Record<string, string> = {
-            'Created': 'Created',
-            'Authorized': 'Authorized',
-            'Settled': 'Settled',
-            'Declined': 'Declined',
-        };
-        return statusMap[state] || state;
-    }
+  private getPaymentStatus(state: string): string {
+    const statusMap: Record<string, string> = {
+      Created: 'Created',
+      Authorized: 'Authorized',
+      Settled: 'Settled',
+      Declined: 'Declined',
+    };
+    return statusMap[state] || state;
+  }
 }
-
-
-

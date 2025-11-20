@@ -2,19 +2,19 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Align Stock Constraints
- * 
+ *
  * Merges:
  * - 1765000000001-AlignStockConstraints.ts
- * 
+ *
  * Final state:
  * - All stock constraints aligned with correct names
  * - adjustedById column added if needed
  */
 export class AlignStockConstraints7000000000001 implements MigrationInterface {
-    name = 'AlignStockConstraints7000000000001';
+  name = 'AlignStockConstraints7000000000001';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 -- Ensure adjustedById column exists (alternative to adjustedByUserId)
@@ -63,11 +63,9 @@ export class AlignStockConstraints7000000000001 implements MigrationInterface {
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        // No-op: idempotent alignment migration
-    }
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    // No-op: idempotent alignment migration
+  }
 }
-
-

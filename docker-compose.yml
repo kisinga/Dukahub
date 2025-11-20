@@ -19,17 +19,13 @@ services:
       POSTGRES_DB: ${DB_NAME:-vendure}
       POSTGRES_USER: ${DB_USER:-vendure}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-vendure}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+      POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - '${POSTGRES_PORT:-5432}:5432'
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${DB_USER:-vendure} -d ${DB_NAME:-vendure}",
-        ]
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-vendure} -d ${DB_NAME:-vendure}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -45,17 +41,14 @@ services:
       POSTGRES_DB: ${AUDIT_DB_NAME:-audit_logs}
       POSTGRES_USER: ${AUDIT_DB_USER:-audit_user}
       POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD:-audit_password}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+      POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
     volumes:
       - timescaledb_audit_data:/var/lib/postgresql/data
     ports:
-      - "${AUDIT_DB_PORT:-5433}:5432"
+      - '${AUDIT_DB_PORT:-5433}:5432'
     healthcheck:
       test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${AUDIT_DB_USER:-audit_user} -d ${AUDIT_DB_NAME:-audit_logs}",
-        ]
+        ['CMD-SHELL', 'pg_isready -U ${AUDIT_DB_USER:-audit_user} -d ${AUDIT_DB_NAME:-audit_logs}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -78,9 +71,9 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - '${REDIS_PORT:-6379}:6379'
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 3s
       retries: 5
@@ -172,11 +165,10 @@ services:
     volumes:
       - backend_assets:/app/static/assets
       - backend_uploads:/app/static/uploads
-      # Mount .env file so EnvironmentConfig can load it (optional - works without it if env vars are passed directly)
-      # Note: In platforms like Coolify/Kubernetes, env vars are passed directly, so this mount is not needed
-      - ./.env:/usr/src/app/.env:ro
+      # Note: .env file mount removed - env vars are passed directly via environment section
+      # In platforms like Coolify/Kubernetes, env vars are passed directly, so file mount is not needed
     ports:
-      - "${BACKEND_PORT:-3000}:3000"
+      - '${BACKEND_PORT:-3000}:3000'
     depends_on:
       postgres_db:
         condition: service_healthy
@@ -185,15 +177,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost:3000/health",
-        ]
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000/health']
       interval: 30s
       timeout: 15s
       retries: 5
@@ -221,7 +205,7 @@ services:
       SERVICE_NAME: ${SIGNOZ_SERVICE_NAME:-dukarun-frontend}
       SERVICE_VERSION: ${SIGNOZ_SERVICE_VERSION:-2.0.0}
     ports:
-      - "${FRONTEND_PORT:-4200}:4200"
+      - '${FRONTEND_PORT:-4200}:4200'
     depends_on:
       backend:
         condition: service_healthy
@@ -259,11 +243,11 @@ services:
     ports:
       # UI port - ONLY expose if behind authenticated reverse proxy
       # Remove this line in production or use internal network only
-      - "${SIGNOZ_UI_PORT:-3301}:8080" # UI (SECURITY: Should be behind auth)
+      - '${SIGNOZ_UI_PORT:-3301}:8080' # UI (SECURITY: Should be behind auth)
       # OTLP ports - internal only, do not expose to host in production
       # These are used by backend/frontend services via Docker network
-      - "127.0.0.1:${SIGNOZ_OTLP_GRPC_PORT:-4317}:4317" # OTLP gRPC (localhost only)
-      - "127.0.0.1:${SIGNOZ_OTLP_HTTP_PORT:-4318}:4318" # OTLP HTTP (localhost only)
+      - '127.0.0.1:${SIGNOZ_OTLP_GRPC_PORT:-4317}:4317' # OTLP gRPC (localhost only)
+      - '127.0.0.1:${SIGNOZ_OTLP_HTTP_PORT:-4318}:4318' # OTLP HTTP (localhost only)
     volumes:
       - signoz_data:/var/lib/signoz
     depends_on:

@@ -7,13 +7,7 @@
       "installMode": "prefetch",
       "updateMode": "prefetch",
       "resources": {
-        "files": [
-          "/favicon.ico",
-          "/index.html",
-          "/manifest.webmanifest",
-          "/*.css",
-          "/*.js"
-        ]
+        "files": ["/favicon.ico", "/index.html", "/manifest.webmanifest", "/*.css", "/*.js"]
       }
     },
     {
@@ -21,20 +15,14 @@
       "installMode": "lazy",
       "updateMode": "prefetch",
       "resources": {
-        "files": [
-          "/assets/**",
-          "/*.(eot|svg|cur|jpg|png|webp|gif|otf|ttf|woff|woff2|ani)"
-        ]
+        "files": ["/assets/**", "/*.(eot|svg|cur|jpg|png|webp|gif|otf|ttf|woff|woff2|ani)"]
       }
     }
   ],
   "dataGroups": [
     {
       "name": "api-freshness",
-      "urls": [
-        "/admin-api/**",
-        "/shop-api/**"
-      ],
+      "urls": ["/admin-api/**", "/shop-api/**"],
       "cacheConfig": {
         "strategy": "freshness",
         "maxSize": 100,
@@ -44,9 +32,7 @@
     },
     {
       "name": "api-performance",
-      "urls": [
-        "/admin-api/assets/**"
-      ],
+      "urls": ["/admin-api/assets/**"],
       "cacheConfig": {
         "strategy": "performance",
         "maxSize": 100,
@@ -54,13 +40,6 @@
       }
     }
   ],
-  "navigationUrls": [
-    "/",
-    "/**",
-    "!**/admin-api/**",
-    "!**/shop-api/**",
-    "!**/*.*",
-    "!**/*__*"
-  ],
+  "navigationUrls": ["/", "/**", "!**/admin-api/**", "!**/shop-api/**", "!**/*.*", "!**/*__*"],
   "navigationRequestStrategy": "freshness"
 }

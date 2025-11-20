@@ -1,0 +1,17 @@
+node_modules/
+dist/
+coverage/
+*.log
+*.lock
+package-lock.json
+.DS_Store
+*.min.js
+*.min.css
+build/
+.next/
+.nuxt/
+.vscode/
+.idea/
+.angular/
+.cursor/
+

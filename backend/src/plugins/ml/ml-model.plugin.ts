@@ -9,10 +9,10 @@ import { MlWebhookService } from '../../services/ml/ml-webhook.service';
 
 /**
  * ML Model Plugin
- * 
+ *
  * Provides GraphQL API for managing ML models per channel.
  * ML model files are stored as Vendure Assets and linked to channels via custom fields.
- * 
+ *
  * Usage:
  * 1. Upload files via Admin UI (Catalog → Assets)
  * 2. Use linkMlModelAssets mutation to link them to channel
@@ -20,16 +20,23 @@ import { MlWebhookService } from '../../services/ml/ml-webhook.service';
  * 4. Model files are served automatically by AssetServerPlugin
  */
 @VendurePlugin({
-    imports: [PluginCommonModule],
-    providers: [MlModelResolver, MlTrainingService, MlAutoExtractService, MlWebhookService, MlExtractionQueueService, MlExtractionQueueSubscriber],
-    adminApiExtensions: {
-        schema: ML_MODEL_SCHEMA,
-        resolvers: [MlModelResolver],
-    },
-    shopApiExtensions: {
-        schema: ML_MODEL_SCHEMA,
-        resolvers: [MlModelResolver],
-    },
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+  imports: [PluginCommonModule],
+  providers: [
+    MlModelResolver,
+    MlTrainingService,
+    MlAutoExtractService,
+    MlWebhookService,
+    MlExtractionQueueService,
+    MlExtractionQueueSubscriber,
+  ],
+  adminApiExtensions: {
+    schema: ML_MODEL_SCHEMA,
+    resolvers: [MlModelResolver],
+  },
+  shopApiExtensions: {
+    schema: ML_MODEL_SCHEMA,
+    resolvers: [MlModelResolver],
+  },
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class MlModelPlugin { }
+export class MlModelPlugin {}

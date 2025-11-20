@@ -2,19 +2,19 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Add Supplier Credit Fields
- * 
+ *
  * Merges:
  * - 1764000400000-AddSupplierCreditFields.ts
- * 
+ *
  * Final state:
  * - Customer: Supplier credit fields
  * - StockPurchase: isCreditPurchase field
  */
 export class AddSupplierCreditFields2000000000002 implements MigrationInterface {
-    name = 'AddSupplierCreditFields2000000000002';
+  name = 'AddSupplierCreditFields2000000000002';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -46,10 +46,10 @@ export class AddSupplierCreditFields2000000000002 implements MigrationInterface 
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -81,7 +81,5 @@ export class AddSupplierCreditFields2000000000002 implements MigrationInterface 
                 END IF;
             END $$;
         `);
-    }
+  }
 }
-
-

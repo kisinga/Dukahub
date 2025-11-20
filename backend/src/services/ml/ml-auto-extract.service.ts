@@ -1,157 +1,159 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import {
-    AssetEvent,
-    ChannelService,
-    EventBus,
-    ProductEvent,
-    RequestContext,
-} from '@vendure/core';
+import { AssetEvent, ChannelService, EventBus, ProductEvent, RequestContext } from '@vendure/core';
 import { MlExtractionQueueService } from './ml-extraction-queue.service';
 import { MlTrainingService } from './ml-training.service';
 
 /**
  * ML Auto-Extract Service
- * 
+ *
  * Listens to product and asset events to automatically trigger photo extraction
  * when products are created or updated with new images.
  */
 @Injectable()
 export class MlAutoExtractService implements OnModuleInit {
-    private readonly logger = new Logger(MlAutoExtractService.name);
+  private readonly logger = new Logger(MlAutoExtractService.name);
 
-    constructor(
-        private eventBus: EventBus,
-        private channelService: ChannelService,
-        private extractionQueueService: MlExtractionQueueService,
-        private mlTrainingService: MlTrainingService,
-    ) { }
+  constructor(
+    private eventBus: EventBus,
+    private channelService: ChannelService,
+    private extractionQueueService: MlExtractionQueueService,
+    private mlTrainingService: MlTrainingService
+  ) {}
 
-    onModuleInit() {
-        // Listen to product events
-        this.eventBus.ofType(ProductEvent).subscribe(async (event) => {
-            if (event.type === 'created' || event.type === 'updated') {
-                await this.handleProductChange(event.ctx, event.entity);
-            }
-        });
+  onModuleInit() {
+    // Listen to product events
+    this.eventBus.ofType(ProductEvent).subscribe(async event => {
+      if (event.type === 'created' || event.type === 'updated') {
+        await this.handleProductChange(event.ctx, event.entity);
+      }
+    });
 
-        // Listen to asset events
-        this.eventBus.ofType(AssetEvent).subscribe(async (event) => {
-            if (event.type === 'created' || event.type === 'updated') {
-                await this.handleAssetChange(event.ctx, event.entity);
-            }
-        });
+    // Listen to asset events
+    this.eventBus.ofType(AssetEvent).subscribe(async event => {
+      if (event.type === 'created' || event.type === 'updated') {
+        await this.handleAssetChange(event.ctx, event.entity);
+      }
+    });
 
-        this.logger.log('Event listeners initialized');
+    this.logger.log('Event listeners initialized');
+  }
+
+  /**
+   * Handle product creation/update events
+   */
+  private async handleProductChange(ctx: RequestContext, product: any): Promise<void> {
+    try {
+      // Get all channels this product belongs to
+      const channels = await this.getProductChannels(ctx, product.id);
+
+      for (const channel of channels) {
+        await this.scheduleExtractionForChannel(ctx, channel.id);
+      }
+    } catch (error) {
+      this.logger.error('Error handling product change:', error);
     }
+  }
 
-    /**
-     * Handle product creation/update events
-     */
-    private async handleProductChange(ctx: RequestContext, product: any): Promise<void> {
-        try {
-            // Get all channels this product belongs to
-            const channels = await this.getProductChannels(ctx, product.id);
+  /**
+   * Handle asset creation/update events
+   */
+  private async handleAssetChange(ctx: RequestContext, asset: any): Promise<void> {
+    try {
+      // Check if asset is assigned to any products
+      const products = await this.getAssetProducts(ctx, asset.id);
 
-            for (const channel of channels) {
-                await this.scheduleExtractionForChannel(ctx, channel.id);
-            }
-        } catch (error) {
-            this.logger.error('Error handling product change:', error);
+      for (const product of products) {
+        const channels = await this.getProductChannels(ctx, product.id);
+
+        for (const channel of channels) {
+          await this.scheduleExtractionForChannel(ctx, channel.id);
         }
+      }
+    } catch (error) {
+      this.logger.error('Error handling asset change:', error);
     }
+  }
 
-    /**
-     * Handle asset creation/update events
-     */
-    private async handleAssetChange(ctx: RequestContext, asset: any): Promise<void> {
-        try {
-            // Check if asset is assigned to any products
-            const products = await this.getAssetProducts(ctx, asset.id);
+  /**
+   * Schedule extraction for a channel with database persistence
+   */
+  private async scheduleExtractionForChannel(
+    ctx: RequestContext,
+    channelId: string
+  ): Promise<void> {
+    try {
+      // Check if channel has ML enabled using shared utility
+      const hasMlEnabled = await this.mlTrainingService.isMlEnabled(ctx, channelId);
+      if (!hasMlEnabled) {
+        this.logger.log(`Channel ${channelId} does not have ML enabled, skipping`);
+        return;
+      }
 
-            for (const product of products) {
-                const channels = await this.getProductChannels(ctx, product.id);
+      // Check for recent pending extractions to prevent duplicates
+      const hasRecent = await this.extractionQueueService.hasRecentPendingExtraction(
+        ctx,
+        channelId
+      );
+      if (hasRecent) {
+        this.logger.log(
+          `Channel ${channelId} already has a recent pending extraction, skipping duplicate`
+        );
+        return;
+      }
 
-                for (const channel of channels) {
-                    await this.scheduleExtractionForChannel(ctx, channel.id);
-                }
-            }
-        } catch (error) {
-            this.logger.error('Error handling asset change:', error);
-        }
+      // Schedule extraction in database
+      await this.extractionQueueService.scheduleExtraction(ctx, channelId, 5);
+      this.logger.log(`Scheduled extraction for channel ${channelId} in database`);
+    } catch (error) {
+      this.logger.error(`Error scheduling extraction for channel ${channelId}:`, error);
     }
+  }
 
-    /**
-     * Schedule extraction for a channel with database persistence
-     */
-    private async scheduleExtractionForChannel(ctx: RequestContext, channelId: string): Promise<void> {
-        try {
-            // Check if channel has ML enabled using shared utility
-            const hasMlEnabled = await this.mlTrainingService.isMlEnabled(ctx, channelId);
-            if (!hasMlEnabled) {
-                this.logger.log(`Channel ${channelId} does not have ML enabled, skipping`);
-                return;
-            }
+  /**
+   * Get all channels a product belongs to
+   */
+  private async getProductChannels(ctx: RequestContext, productId: string): Promise<any[]> {
+    // This is a simplified implementation
+    // In a real scenario, you'd query the product's channels through Vendure's relations
+    const channels = await this.channelService.findAll(ctx);
+    return channels.items;
+  }
 
-            // Check for recent pending extractions to prevent duplicates
-            const hasRecent = await this.extractionQueueService.hasRecentPendingExtraction(ctx, channelId);
-            if (hasRecent) {
-                this.logger.log(`Channel ${channelId} already has a recent pending extraction, skipping duplicate`);
-                return;
-            }
+  /**
+   * Get all products an asset is assigned to
+   */
+  private async getAssetProducts(ctx: RequestContext, assetId: string): Promise<any[]> {
+    // This is a simplified implementation
+    // In a real scenario, you'd query the asset's products through Vendure's relations
+    return [];
+  }
 
-            // Schedule extraction in database
-            await this.extractionQueueService.scheduleExtraction(ctx, channelId, 5);
-            this.logger.log(`Scheduled extraction for channel ${channelId} in database`);
+  /**
+   * Manually trigger extraction for a channel (bypasses debouncing)
+   * This schedules an immediate extraction (0 delay) in the queue
+   */
+  async triggerExtraction(ctx: RequestContext, channelId: string): Promise<void> {
+    this.logger.log(`Manual trigger for channel ${channelId}`);
+    // Schedule with 0 delay for immediate processing
+    await this.extractionQueueService.scheduleExtraction(ctx, channelId, 0);
+  }
 
-        } catch (error) {
-            this.logger.error(`Error scheduling extraction for channel ${channelId}:`, error);
-        }
+  /**
+   * Clear all pending extractions
+   */
+  async clearAllPending(): Promise<void> {
+    try {
+      // Cancel all pending extractions in the database
+      const channels = await this.channelService.findAll(RequestContext.empty());
+      for (const channel of channels.items) {
+        await this.extractionQueueService.cancelPendingExtractions(
+          RequestContext.empty(),
+          channel.id.toString()
+        );
+      }
+      this.logger.log('Cleared all pending extractions from database');
+    } catch (error) {
+      this.logger.error('Error clearing pending extractions:', error);
     }
-
-
-    /**
-     * Get all channels a product belongs to
-     */
-    private async getProductChannels(ctx: RequestContext, productId: string): Promise<any[]> {
-        // This is a simplified implementation
-        // In a real scenario, you'd query the product's channels through Vendure's relations
-        const channels = await this.channelService.findAll(ctx);
-        return channels.items;
-    }
-
-    /**
-     * Get all products an asset is assigned to
-     */
-    private async getAssetProducts(ctx: RequestContext, assetId: string): Promise<any[]> {
-        // This is a simplified implementation
-        // In a real scenario, you'd query the asset's products through Vendure's relations
-        return [];
-    }
-
-    /**
-     * Manually trigger extraction for a channel (bypasses debouncing)
-     * This schedules an immediate extraction (0 delay) in the queue
-     */
-    async triggerExtraction(ctx: RequestContext, channelId: string): Promise<void> {
-        this.logger.log(`Manual trigger for channel ${channelId}`);
-        // Schedule with 0 delay for immediate processing
-        await this.extractionQueueService.scheduleExtraction(ctx, channelId, 0);
-    }
-
-    /**
-     * Clear all pending extractions
-     */
-    async clearAllPending(): Promise<void> {
-        try {
-            // Cancel all pending extractions in the database
-            const channels = await this.channelService.findAll(RequestContext.empty());
-            for (const channel of channels.items) {
-                await this.extractionQueueService.cancelPendingExtractions(RequestContext.empty(), channel.id.toString());
-            }
-            this.logger.log('Cleared all pending extractions from database');
-        } catch (error) {
-            this.logger.error('Error clearing pending extractions:', error);
-        }
-    }
+  }
 }
-

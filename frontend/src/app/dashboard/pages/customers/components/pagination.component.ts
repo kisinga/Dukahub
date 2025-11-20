@@ -6,7 +6,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
   imports: [CommonModule],
   templateUrl: './pagination.component.html',
   styleUrl: './pagination.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PaginationComponent {
   @Input({ required: true }) currentPage!: number;
@@ -36,11 +36,11 @@ export class PaginationComponent {
     const maxVisible = 5;
     const start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
     const end = Math.min(this.totalPages, start + maxVisible - 1);
-    
+
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-    
+
     return pages;
   }
 }

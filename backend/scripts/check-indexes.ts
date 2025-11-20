@@ -25,16 +25,15 @@ async function checkIndexes() {
     ORDER BY indexname;
   `);
   console.log('GIN Indexes:', JSON.stringify(indexes, null, 2));
-  
+
   const migrations = await ds.query(`
     SELECT name, timestamp FROM migrations 
     WHERE name LIKE '%1766000%' 
     ORDER BY timestamp DESC;
   `);
   console.log('\nRecent migrations:', JSON.stringify(migrations, null, 2));
-  
+
   await ds.destroy();
 }
 
 checkIndexes().catch(console.error);
-

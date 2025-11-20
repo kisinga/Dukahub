@@ -104,7 +104,7 @@
   margin: 0;
 }
 
-.quantity-controls input[type="number"] {
+.quantity-controls input[type='number'] {
   -moz-appearance: textfield;
 }
 

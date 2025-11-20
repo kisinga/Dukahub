@@ -169,7 +169,7 @@ services:
   dukahub:
     build: ./v1
     ports:
-      - "8090:8090"
+      - '8090:8090'
     volumes:
       - ./data:/root/pb_data # Persistent data
     environment:

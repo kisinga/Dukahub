@@ -7,17 +7,17 @@ import { FormsModule } from '@angular/forms';
  * Provides search input with clear button and filter drawer toggle
  */
 @Component({
-    selector: 'app-product-search-bar',
-    imports: [CommonModule, FormsModule],
-    templateUrl: './product-search-bar.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-product-search-bar',
+  imports: [CommonModule, FormsModule],
+  templateUrl: './product-search-bar.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductSearchBarComponent {
-    readonly placeholder = input<string>('Search by name, description, or SKU...');
-    readonly searchQuery = model<string>('');
-    readonly filterClick = output<void>();
+  readonly placeholder = input<string>('Search by name, description, or SKU...');
+  readonly searchQuery = model<string>('');
+  readonly filterClick = output<void>();
 
-    clearSearch(): void {
-        this.searchQuery.set('');
-    }
+  clearSearch(): void {
+    this.searchQuery.set('');
+  }
 }

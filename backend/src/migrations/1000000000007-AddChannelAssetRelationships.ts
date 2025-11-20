@@ -2,21 +2,21 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Add Channel Asset Relationships
- * 
+ *
  * Merges:
  * - 1760710000000-CleanAssetRelationshipsFinal.js
  * - 1760720000000-FixConstraintSyntax.js
- * 
+ *
  * Final state:
  * - Channel: ML model JSON/Bin/Metadata asset IDs, Company logo asset ID (all integer)
  * - PaymentMethod: Image asset ID (integer), isActive (boolean)
  * - All FK constraints with correct names and syntax
  */
 export class AddChannelAssetRelationships1000000000007 implements MigrationInterface {
-    name = 'AddChannelAssetRelationships1000000000007';
+  name = 'AddChannelAssetRelationships1000000000007';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 -- Channel asset relationships
@@ -127,10 +127,10 @@ export class AddChannelAssetRelationships1000000000007 implements MigrationInter
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -157,7 +157,5 @@ export class AddChannelAssetRelationships1000000000007 implements MigrationInter
                 END IF;
             END $$;
         `);
-    }
+  }
 }
-
-

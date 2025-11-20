@@ -6,35 +6,35 @@ import { PriceOverrideResolver } from './price-override.resolver';
 import { PriceOverrideService } from '../../services/orders/price-override.service';
 
 const schemaExtension = gql`
-    extend type Mutation {
-        setOrderLineCustomPrice(input: SetOrderLineCustomPriceInput!): SetOrderLineCustomPriceResult!
-    }
+  extend type Mutation {
+    setOrderLineCustomPrice(input: SetOrderLineCustomPriceInput!): SetOrderLineCustomPriceResult!
+  }
 
-    input SetOrderLineCustomPriceInput {
-        orderLineId: ID!
-        customLinePrice: Int!
-        reason: String
-    }
+  input SetOrderLineCustomPriceInput {
+    orderLineId: ID!
+    customLinePrice: Int!
+    reason: String
+  }
 
-    union SetOrderLineCustomPriceResult = OrderLine | Error
+  union SetOrderLineCustomPriceResult = OrderLine | Error
 
-    type Error {
-        errorCode: ErrorCode!
-        message: String!
-    }
+  type Error {
+    errorCode: ErrorCode!
+    message: String!
+  }
 `;
 
 @VendurePlugin({
-    imports: [PluginCommonModule],
-    providers: [PriceOverrideService, CustomPriceCalculationStrategy],
-    adminApiExtensions: {
-        schema: schemaExtension,
-        resolvers: [PriceOverrideResolver],
-    },
-    configuration: config => {
-        config.orderOptions.orderItemPriceCalculationStrategy = new CustomPriceCalculationStrategy();
-        return config;
-    },
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+  imports: [PluginCommonModule],
+  providers: [PriceOverrideService, CustomPriceCalculationStrategy],
+  adminApiExtensions: {
+    schema: schemaExtension,
+    resolvers: [PriceOverrideResolver],
+  },
+  configuration: config => {
+    config.orderOptions.orderItemPriceCalculationStrategy = new CustomPriceCalculationStrategy();
+    return config;
+  },
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class PriceOverridePlugin { }
+export class PriceOverridePlugin {}

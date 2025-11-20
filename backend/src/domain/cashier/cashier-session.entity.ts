@@ -27,8 +27,3 @@ export class CashierSession {
   @Column({ type: 'varchar', length: 16, default: 'open' })
   status!: 'open' | 'closed';
 }
-
-
-
-
-

@@ -4,9 +4,9 @@
     <!-- Header -->
     <div class="flex items-start justify-between mb-3">
       <div class="flex items-center gap-3">
-        <app-entity-avatar 
-          [firstName]="supplier().firstName" 
-          [lastName]="supplier().lastName" 
+        <app-entity-avatar
+          [firstName]="supplier().firstName"
+          [lastName]="supplier().lastName"
           size="lg"
         />
 
@@ -15,7 +15,7 @@
           <h3 class="font-semibold text-base truncate">{{ getFullName() }}</h3>
           <p class="text-sm text-base-content/70 truncate">{{ supplier().emailAddress }}</p>
           @if (supplier().phoneNumber) {
-          <p class="text-xs text-base-content/60">{{ supplier().phoneNumber }}</p>
+            <p class="text-xs text-base-content/60">{{ supplier().phoneNumber }}</p>
           }
         </div>
       </div>

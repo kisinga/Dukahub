@@ -1,4 +1,5 @@
 <!-- 27eed676-b8ab-4101-9549-3e44a68d5726 7a51536b-7e1e-4bda-a8b3-e137704f2e77 -->
+
 ## Composable FIFO Inventory & COGS Framework Plan
 
 ### 1. Define composable architecture boundaries

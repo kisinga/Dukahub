@@ -1,29 +1,30 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Allow, Ctx, Permission, RequestContext, Order } from '@vendure/core';
-import { PaymentAllocationService, PaymentAllocationInput, PaymentAllocationResult } from '../../services/payments/payment-allocation.service';
+import {
+  PaymentAllocationService,
+  PaymentAllocationInput,
+  PaymentAllocationResult,
+} from '../../services/payments/payment-allocation.service';
 
 @Resolver()
 export class PaymentAllocationResolver {
-    constructor(
-        private readonly paymentAllocationService: PaymentAllocationService,
-    ) {}
+  constructor(private readonly paymentAllocationService: PaymentAllocationService) {}
 
-    @Query()
-    @Allow(Permission.ReadOrder)
-    async unpaidOrdersForCustomer(
-        @Ctx() ctx: RequestContext,
-        @Args('customerId') customerId: string
-    ): Promise<Order[]> {
-        return this.paymentAllocationService.getUnpaidOrdersForCustomer(ctx, customerId);
-    }
+  @Query()
+  @Allow(Permission.ReadOrder)
+  async unpaidOrdersForCustomer(
+    @Ctx() ctx: RequestContext,
+    @Args('customerId') customerId: string
+  ): Promise<Order[]> {
+    return this.paymentAllocationService.getUnpaidOrdersForCustomer(ctx, customerId);
+  }
 
-    @Mutation()
-    @Allow(Permission.UpdateOrder)
-    async allocateBulkPayment(
-        @Ctx() ctx: RequestContext,
-        @Args('input') input: PaymentAllocationInput
-    ): Promise<PaymentAllocationResult> {
-        return this.paymentAllocationService.allocatePaymentToOrders(ctx, input);
-    }
+  @Mutation()
+  @Allow(Permission.UpdateOrder)
+  async allocateBulkPayment(
+    @Ctx() ctx: RequestContext,
+    @Args('input') input: PaymentAllocationInput
+  ): Promise<PaymentAllocationResult> {
+    return this.paymentAllocationService.allocatePaymentToOrders(ctx, input);
+  }
 }
-

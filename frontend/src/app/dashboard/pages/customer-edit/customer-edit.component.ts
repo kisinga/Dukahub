@@ -9,10 +9,10 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
 
 /**
  * Customer Edit Component
- * 
+ *
  * Mobile-optimized customer editing form.
  * Uses shared PersonEditFormComponent for consistent UX.
- * 
+ *
  * ARCHITECTURE: Reuses shared form component for maintainability.
  */
 @Component({
@@ -23,17 +23,19 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
       <!-- Header -->
       <div class="sticky top-0 z-10 bg-base-100 border-b border-base-200 px-4 py-3">
         <div class="flex items-center justify-between">
-          <button 
-            (click)="goBack()" 
-            class="btn btn-ghost btn-sm btn-circle"
-            aria-label="Go back"
-          >
+          <button (click)="goBack()" class="btn btn-ghost btn-sm btn-circle" aria-label="Go back">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              ></path>
             </svg>
           </button>
           <h1 class="text-lg font-semibold">Edit Customer</h1>
-          <div class="w-10"></div> <!-- Spacer for centering -->
+          <div class="w-10"></div>
+          <!-- Spacer for centering -->
         </div>
       </div>
 
@@ -42,17 +44,26 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
         @if (error()) {
           <div class="alert alert-warning mb-4" [class.alert-error]="!isWalkInCustomer()">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
             </svg>
             <div class="flex-1">
-              <div class="font-semibold">{{ isWalkInCustomer() ? 'Walk-in Customer' : 'Error' }}</div>
+              <div class="font-semibold">
+                {{ isWalkInCustomer() ? 'Walk-in Customer' : 'Error' }}
+              </div>
               <div>{{ error() }}</div>
               @if (isWalkInCustomer()) {
-              <div class="text-xs mt-2 opacity-80">Redirecting to customers list in 3 seconds...</div>
+                <div class="text-xs mt-2 opacity-80">
+                  Redirecting to customers list in 3 seconds...
+                </div>
               }
             </div>
             @if (!isWalkInCustomer()) {
-            <button (click)="clearError()" class="btn btn-ghost btn-sm">×</button>
+              <button (click)="clearError()" class="btn btn-ghost btn-sm">×</button>
             }
           </div>
         }
@@ -79,186 +90,226 @@ import { PersonEditFormComponent } from '../shared/components/person-edit-form.c
 
             <!-- Credit Settings -->
             @if (hasCreditPermission()) {
-            <div class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm">
-              <input type="checkbox" />
-              <div class="collapse-title text-lg font-semibold px-4 py-3">
-                💳 Credit Management
-              </div>
-              <div class="collapse-content px-4 pb-4">
-                <p class="text-sm text-base-content/70 mb-4">Manage customer credit approval, limits, and duration</p>
-                
-                @if (isLoadingCredit()) {
-                <div class="flex justify-center py-4">
-                  <span class="loading loading-spinner loading-md"></span>
+              <div class="collapse collapse-arrow bg-base-100 border border-base-300 shadow-sm">
+                <input type="checkbox" />
+                <div class="collapse-title text-lg font-semibold px-4 py-3">
+                  💳 Credit Management
                 </div>
-                } @else if (creditSummary()) {
-                <div class="space-y-4">
-                  <!-- Credit Approval Status -->
-                  <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
-                    <div class="flex-1 pr-3">
-                      <div class="font-semibold text-sm">Credit Approval</div>
-                      <div class="text-xs text-base-content/70 mt-0.5">Allow customer to make credit purchases</div>
-                    </div>
-                    <input 
-                      type="checkbox" 
-                      class="toggle toggle-primary"
-                      [checked]="creditSummary()?.isCreditApproved"
-                      (change)="onToggleCreditApproval($event)"
-                      [disabled]="isUpdatingCredit()"
-                    />
-                  </div>
+                <div class="collapse-content px-4 pb-4">
+                  <p class="text-sm text-base-content/70 mb-4">
+                    Manage customer credit approval, limits, and duration
+                  </p>
 
-                  <!-- Credit Limit -->
-                  <div class="space-y-2">
-                    <label class="label py-1">
-                      <span class="label-text font-semibold text-sm">Credit Limit</span>
-                      @if (!isEditingCreditLimit()) {
-                        <span class="label-text-alt text-xs">{{ currencyService.format((creditSummary()?.creditLimit ?? 0) * 100) }}</span>
-                      }
-                    </label>
-                    @if (isEditingCreditLimit()) {
-                    <div class="space-y-2">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        class="input input-bordered w-full"
-                        [value]="editCreditLimitValue()"
-                        (input)="editCreditLimitValue.set(($any($event.target).valueAsNumber ?? 0))"
-                        [disabled]="isUpdatingCredit()"
-                      />
-                      <div class="flex gap-2">
-                        <button 
-                          class="btn btn-primary btn-sm flex-1"
-                          (click)="saveCreditLimit()"
+                  @if (isLoadingCredit()) {
+                    <div class="flex justify-center py-4">
+                      <span class="loading loading-spinner loading-md"></span>
+                    </div>
+                  } @else if (creditSummary()) {
+                    <div class="space-y-4">
+                      <!-- Credit Approval Status -->
+                      <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                        <div class="flex-1 pr-3">
+                          <div class="font-semibold text-sm">Credit Approval</div>
+                          <div class="text-xs text-base-content/70 mt-0.5">
+                            Allow customer to make credit purchases
+                          </div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          class="toggle toggle-primary"
+                          [checked]="creditSummary()?.isCreditApproved"
+                          (change)="onToggleCreditApproval($event)"
                           [disabled]="isUpdatingCredit()"
-                        >
-                          @if (isUpdatingCredit()) {
-                            <span class="loading loading-spinner loading-xs"></span>
-                          } @else {
-                            Save
+                        />
+                      </div>
+
+                      <!-- Credit Limit -->
+                      <div class="space-y-2">
+                        <label class="label py-1">
+                          <span class="label-text font-semibold text-sm">Credit Limit</span>
+                          @if (!isEditingCreditLimit()) {
+                            <span class="label-text-alt text-xs">{{
+                              currencyService.format((creditSummary()?.creditLimit ?? 0) * 100)
+                            }}</span>
                           }
-                        </button>
-                        <button 
-                          class="btn btn-ghost btn-sm flex-1"
-                          (click)="stopEditingCreditLimit()"
-                          [disabled]="isUpdatingCredit()"
-                        >
-                          Cancel
-                        </button>
+                        </label>
+                        @if (isEditingCreditLimit()) {
+                          <div class="space-y-2">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              class="input input-bordered w-full"
+                              [value]="editCreditLimitValue()"
+                              (input)="
+                                editCreditLimitValue.set($any($event.target).valueAsNumber ?? 0)
+                              "
+                              [disabled]="isUpdatingCredit()"
+                            />
+                            <div class="flex gap-2">
+                              <button
+                                class="btn btn-primary btn-sm flex-1"
+                                (click)="saveCreditLimit()"
+                                [disabled]="isUpdatingCredit()"
+                              >
+                                @if (isUpdatingCredit()) {
+                                  <span class="loading loading-spinner loading-xs"></span>
+                                } @else {
+                                  Save
+                                }
+                              </button>
+                              <button
+                                class="btn btn-ghost btn-sm flex-1"
+                                (click)="stopEditingCreditLimit()"
+                                [disabled]="isUpdatingCredit()"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        } @else {
+                          <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                            <span class="text-base font-semibold">{{
+                              currencyService.format((creditSummary()?.creditLimit ?? 0) * 100)
+                            }}</span>
+                            <button
+                              class="btn btn-sm btn-ghost"
+                              (click)="startEditingCreditLimit()"
+                              [disabled]="!creditSummary()?.isCreditApproved"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        }
                       </div>
-                    </div>
-                    } @else {
-                    <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
-                      <span class="text-base font-semibold">{{ currencyService.format((creditSummary()?.creditLimit ?? 0) * 100) }}</span>
-                      <button 
-                        class="btn btn-sm btn-ghost"
-                        (click)="startEditingCreditLimit()"
-                        [disabled]="!creditSummary()?.isCreditApproved"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                    }
-                  </div>
 
-                  <!-- Credit Duration -->
-                  <div class="space-y-2">
-                    <label class="label py-1">
-                      <span class="label-text font-semibold text-sm">Credit Duration</span>
-                      @if (!isEditingCreditDuration()) {
-                        <span class="label-text-alt text-xs">{{ creditSummary()?.creditDuration ?? 30 }} days</span>
-                      }
-                    </label>
-                    @if (isEditingCreditDuration()) {
-                    <div class="space-y-2">
-                      <input
-                        type="number"
-                        min="1"
-                        class="input input-bordered w-full"
-                        [value]="editCreditDurationValue()"
-                        (input)="editCreditDurationValue.set(($any($event.target).valueAsNumber ?? 1))"
-                        [disabled]="isUpdatingCredit()"
-                      />
-                      <div class="flex gap-2">
-                        <button 
-                          class="btn btn-primary btn-sm flex-1"
-                          (click)="saveCreditDuration()"
-                          [disabled]="isUpdatingCredit()"
-                        >
-                          @if (isUpdatingCredit()) {
-                            <span class="loading loading-spinner loading-xs"></span>
-                          } @else {
-                            Save
+                      <!-- Credit Duration -->
+                      <div class="space-y-2">
+                        <label class="label py-1">
+                          <span class="label-text font-semibold text-sm">Credit Duration</span>
+                          @if (!isEditingCreditDuration()) {
+                            <span class="label-text-alt text-xs"
+                              >{{ creditSummary()?.creditDuration ?? 30 }} days</span
+                            >
                           }
-                        </button>
-                        <button 
-                          class="btn btn-ghost btn-sm flex-1"
-                          (click)="stopEditingCreditDuration()"
-                          [disabled]="isUpdatingCredit()"
-                        >
-                          Cancel
-                        </button>
+                        </label>
+                        @if (isEditingCreditDuration()) {
+                          <div class="space-y-2">
+                            <input
+                              type="number"
+                              min="1"
+                              class="input input-bordered w-full"
+                              [value]="editCreditDurationValue()"
+                              (input)="
+                                editCreditDurationValue.set($any($event.target).valueAsNumber ?? 1)
+                              "
+                              [disabled]="isUpdatingCredit()"
+                            />
+                            <div class="flex gap-2">
+                              <button
+                                class="btn btn-primary btn-sm flex-1"
+                                (click)="saveCreditDuration()"
+                                [disabled]="isUpdatingCredit()"
+                              >
+                                @if (isUpdatingCredit()) {
+                                  <span class="loading loading-spinner loading-xs"></span>
+                                } @else {
+                                  Save
+                                }
+                              </button>
+                              <button
+                                class="btn btn-ghost btn-sm flex-1"
+                                (click)="stopEditingCreditDuration()"
+                                [disabled]="isUpdatingCredit()"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        } @else {
+                          <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                            <span class="text-base font-semibold"
+                              >{{ creditSummary()?.creditDuration ?? 30 }} days</span
+                            >
+                            <button
+                              class="btn btn-sm btn-ghost"
+                              (click)="startEditingCreditDuration()"
+                              [disabled]="!creditSummary()?.isCreditApproved"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        }
                       </div>
-                    </div>
-                    } @else {
-                    <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
-                      <span class="text-base font-semibold">{{ creditSummary()?.creditDuration ?? 30 }} days</span>
-                      <button 
-                        class="btn btn-sm btn-ghost"
-                        (click)="startEditingCreditDuration()"
-                        [disabled]="!creditSummary()?.isCreditApproved"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                    }
-                  </div>
 
-                  <!-- Credit Summary -->
-                  <div class="divider my-4"></div>
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="stat bg-base-200 rounded-lg p-3">
-                      <div class="stat-title text-xs">Outstanding</div>
-                      <div class="stat-value text-base text-warning">
-                        {{ currencyService.format((creditSummary()?.outstandingAmount ?? 0) * 100) }}
+                      <!-- Credit Summary -->
+                      <div class="divider my-4"></div>
+                      <div class="grid grid-cols-2 gap-3">
+                        <div class="stat bg-base-200 rounded-lg p-3">
+                          <div class="stat-title text-xs">Outstanding</div>
+                          <div class="stat-value text-base text-warning">
+                            {{
+                              currencyService.format(
+                                (creditSummary()?.outstandingAmount ?? 0) * 100
+                              )
+                            }}
+                          </div>
+                        </div>
+                        <div class="stat bg-base-200 rounded-lg p-3">
+                          <div class="stat-title text-xs">Available</div>
+                          <div class="stat-value text-base text-success">
+                            {{
+                              currencyService.format((creditSummary()?.availableCredit ?? 0) * 100)
+                            }}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div class="stat bg-base-200 rounded-lg p-3">
-                      <div class="stat-title text-xs">Available</div>
-                      <div class="stat-value text-base text-success">
-                        {{ currencyService.format((creditSummary()?.availableCredit ?? 0) * 100) }}
-                      </div>
-                    </div>
-                  </div>
 
-                  <!-- Last Repayment Info -->
-                  @if (creditSummary()?.lastRepaymentDate) {
-                  <div class="alert alert-info mt-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div class="text-sm">
-                      <div class="font-semibold">Last Repayment</div>
-                      <div>{{ formatDate(creditSummary()?.lastRepaymentDate) }} - {{ currencyService.format((creditSummary()?.lastRepaymentAmount ?? 0) * 100) }}</div>
+                      <!-- Last Repayment Info -->
+                      @if (creditSummary()?.lastRepaymentDate) {
+                        <div class="alert alert-info mt-4">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <div class="text-sm">
+                            <div class="font-semibold">Last Repayment</div>
+                            <div>
+                              {{ formatDate(creditSummary()?.lastRepaymentDate) }} -
+                              {{
+                                currencyService.format(
+                                  (creditSummary()?.lastRepaymentAmount ?? 0) * 100
+                                )
+                              }}
+                            </div>
+                          </div>
+                        </div>
+                      }
                     </div>
-                  </div>
+                  } @else {
+                    <div class="text-center py-4 text-sm opacity-60">
+                      Failed to load credit information
+                    </div>
                   }
                 </div>
-                } @else {
-                <div class="text-center py-4 text-sm opacity-60">
-                  Failed to load credit information
-                </div>
-                }
               </div>
-            </div>
             }
           </div>
         }
       </div>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CustomerEditComponent {
   private readonly router = inject(Router);
@@ -313,7 +364,9 @@ export class CustomerEditComponent {
         // Check if customer is a walk-in customer
         if (this.isWalkIn(customer)) {
           this.isWalkInCustomer.set(true);
-          this.error.set('Walk-in customers cannot be edited. This is a system customer used for point-of-sale transactions.');
+          this.error.set(
+            'Walk-in customers cannot be edited. This is a system customer used for point-of-sale transactions.',
+          );
           // Redirect back to customers list after 3 seconds
           setTimeout(() => {
             this.router.navigate(['/dashboard/customers']);
@@ -325,7 +378,7 @@ export class CustomerEditComponent {
           businessName: customer.firstName || '',
           contactPerson: customer.lastName || '',
           emailAddress: customer.emailAddress || '',
-          phoneNumber: customer.phoneNumber || ''
+          phoneNumber: customer.phoneNumber || '',
         });
 
         // Load credit summary if user has permission
@@ -392,9 +445,9 @@ export class CustomerEditComponent {
       // Map form data to backend format
       const updateData = {
         firstName: formData.businessName, // Business Name -> firstName
-        lastName: formData.contactPerson,  // Contact Person -> lastName
+        lastName: formData.contactPerson, // Contact Person -> lastName
         emailAddress: formData.emailAddress || '', // Required by Vendure, use empty string if not provided
-        phoneNumber: formData.phoneNumber
+        phoneNumber: formData.phoneNumber,
       };
 
       const success = await this.customerService.updateCustomer(customerId, updateData);
@@ -480,7 +533,7 @@ export class CustomerEditComponent {
         approved,
         creditLimit,
         summary ?? undefined,
-        creditDuration
+        creditDuration,
       );
       this.creditSummary.set(updated);
       this.toastService.show(
@@ -488,7 +541,7 @@ export class CustomerEditComponent {
         approved
           ? 'Customer credit approval enabled successfully'
           : 'Customer credit approval disabled successfully',
-        'success'
+        'success',
       );
     } catch (err: any) {
       console.error('Failed to update credit approval:', err);
@@ -513,7 +566,7 @@ export class CustomerEditComponent {
         customerId,
         newLimit,
         summary ?? undefined,
-        summary?.creditDuration
+        summary?.creditDuration,
       );
       this.creditSummary.set(updated);
       this.stopEditingCreditLimit();
@@ -535,7 +588,7 @@ export class CustomerEditComponent {
       const updated = await this.customerService.updateCreditDuration(
         customerId,
         newDuration,
-        summary ?? undefined
+        summary ?? undefined,
       );
       this.creditSummary.set(updated);
       this.stopEditingCreditDuration();

@@ -18,47 +18,46 @@ import { UserContextResolver } from '../../infrastructure/audit/user-context.res
 
 /**
  * Channel Events Plugin
- * 
+ *
  * Provides a centralized, event-driven framework for channel-specific actions.
  * Handles SMS, email, push notifications, and in-app notifications with per-channel
  * configuration and user subscription preferences.
  */
 @VendurePlugin({
-    imports: [PluginCommonModule],
-    providers: [
-        // Audit dependencies (must be available for ChannelEventRouterService)
-        // AuditDbConnection uses singleton pattern to prevent duplicate initialization
-        AuditDbConnection,
-        UserContextResolver,
-        AuditService,
-        
-        // Core services
-        ChannelActionTrackingService,
-        ChannelEventRouterService,
-        SmsProviderFactory, // Required by SmsService
-        SmsService, // Required by ChannelSmsService
-        ChannelSmsService,
-        NotificationPreferenceService,
+  imports: [PluginCommonModule],
+  providers: [
+    // Audit dependencies (must be available for ChannelEventRouterService)
+    // AuditDbConnection uses singleton pattern to prevent duplicate initialization
+    AuditDbConnection,
+    UserContextResolver,
+    AuditService,
 
-        // Required services for action handlers
-        NotificationService, // Required by InAppActionHandler
-        PushNotificationService, // Required by PushActionHandler
+    // Core services
+    ChannelActionTrackingService,
+    ChannelEventRouterService,
+    SmsProviderFactory, // Required by SmsService
+    SmsService, // Required by ChannelSmsService
+    ChannelSmsService,
+    NotificationPreferenceService,
 
-        // Action handlers
-        InAppActionHandler,
-        PushActionHandler,
-        SmsActionHandler,
+    // Required services for action handlers
+    NotificationService, // Required by InAppActionHandler
+    PushNotificationService, // Required by PushActionHandler
 
-        // Communication services
-        ChannelCommunicationService,
-    ],
-    exports: [
-        ChannelEventRouterService,
-        ChannelActionTrackingService,
-        ChannelSmsService,
-        NotificationPreferenceService,
-    ],
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+    // Action handlers
+    InAppActionHandler,
+    PushActionHandler,
+    SmsActionHandler,
+
+    // Communication services
+    ChannelCommunicationService,
+  ],
+  exports: [
+    ChannelEventRouterService,
+    ChannelActionTrackingService,
+    ChannelSmsService,
+    NotificationPreferenceService,
+  ],
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class ChannelEventsPlugin { }
-
+export class ChannelEventsPlugin {}

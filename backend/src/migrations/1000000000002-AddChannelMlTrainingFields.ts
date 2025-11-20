@@ -2,18 +2,18 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Add Channel ML Training Fields
- * 
+ *
  * Merges:
  * - 1760540000002-FixMlTrainingFieldsConstraints.ts
- * 
+ *
  * Final state:
  * - Channel: ML training fields with NOT NULL constraints
  */
 export class AddChannelMlTrainingFields1000000000002 implements MigrationInterface {
-    name = 'AddChannelMlTrainingFields1000000000002';
+  name = 'AddChannelMlTrainingFields1000000000002';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -96,10 +96,10 @@ export class AddChannelMlTrainingFields1000000000002 implements MigrationInterfa
                 END IF;
             END $$;
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -120,7 +120,5 @@ export class AddChannelMlTrainingFields1000000000002 implements MigrationInterfa
                 END IF;
             END $$;
         `);
-    }
+  }
 }
-
-

@@ -28,6 +28,7 @@ The administrator is created with a role that has `channelIds: [channel.id]`, wh
 ### Login Flow (Fixed)
 
 As of the current implementation:
+
 - Users can login as long as their phone number is valid (OTP verified)
 - Authorization status is returned in the response but **does not block login**
 - The status is communicated to the frontend for UI purposes only
@@ -41,18 +42,18 @@ During registration, we need to ensure:
 ```typescript
 // After creating administrator with role
 const administrator = await this.administratorService.create(ctx, {
-    emailAddress: formattedPhone,
-    firstName: registrationData.adminFirstName,
-    lastName: registrationData.adminLastName,
-    password: this.generateSecurePassword(),
-    roleIds: [role.id], // Role has channelIds: [channel.id]
+  emailAddress: formattedPhone,
+  firstName: registrationData.adminFirstName,
+  lastName: registrationData.adminLastName,
+  password: this.generateSecurePassword(),
+  roleIds: [role.id], // Role has channelIds: [channel.id]
 });
 
 // VERIFY: Ensure administrator has access to the channel
 const adminChannels = await administratorService.getChannelsForAdministrator(ctx, administrator.id);
 if (!adminChannels.some(ch => ch.id === channel.id)) {
-    // Handle error: Channel not properly linked
-    throw new Error('Failed to link channel to user. Please contact support.');
+  // Handle error: Channel not properly linked
+  throw new Error('Failed to link channel to user. Please contact support.');
 }
 ```
 
@@ -61,6 +62,7 @@ if (!adminChannels.some(ch => ch.id === channel.id)) {
 Add channel validation status tracking:
 
 **Channel Custom Fields (to be added):**
+
 ```typescript
 // In channel custom fields schema
 channelValidationStatus: {
@@ -73,6 +75,7 @@ channelValidationStatus: {
 ```
 
 **Usage:**
+
 - Set `channelValidationStatus: 'PENDING'` during registration
 - Allow admin to update status through admin panel
 - Return status in user context/API responses
@@ -102,6 +105,7 @@ The channel validation status should be:
 ### 5. API Response Structure
 
 **User Context Response:**
+
 ```typescript
 {
     user: {
@@ -123,19 +127,19 @@ The channel validation status should be:
 ```typescript
 // Example: Show status but don't block
 if (user.channels[0]?.validationStatus === 'PENDING') {
-    // Show banner: "Your channel is pending validation"
-    // Allow full access, just inform user
+  // Show banner: "Your channel is pending validation"
+  // Allow full access, just inform user
 }
 
 if (user.channels[0]?.validationStatus === 'REJECTED') {
-    // Show warning: "Your channel validation was rejected. Contact support."
-    // Allow access but may restrict certain features
+  // Show warning: "Your channel validation was rejected. Contact support."
+  // Allow access but may restrict certain features
 }
 ```
 
 ## Important Notes
 
-1. **Authentication vs Authorization**: 
+1. **Authentication vs Authorization**:
    - Authentication (login) should only require valid phone number + OTP
    - Authorization/Validation status is for feature access, not login blocking
 
@@ -166,21 +170,3 @@ if (user.channels[0]?.validationStatus === 'REJECTED') {
 3. Add admin endpoints for status updates
 4. Update frontend to display status
 5. Remove any blocking checks based on status (already done for authorization status)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

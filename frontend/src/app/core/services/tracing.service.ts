@@ -13,11 +13,11 @@ import { environment } from '../../../environments/environment';
 
 /**
  * Tracing Service
- * 
+ *
  * Provides frontend tracing capabilities using OpenTelemetry.
  * Automatically traces HTTP requests and allows manual span creation
  * for user actions.
- * 
+ *
  * Example:
  * ```typescript
  * const span = this.tracingService.startSpan('createOrder', { orderId: '123' });
@@ -30,179 +30,174 @@ import { environment } from '../../../environments/environment';
  * ```
  */
 @Injectable({
-    providedIn: 'root',
+  providedIn: 'root',
 })
 export class TracingService {
-    private tracer = trace.getTracer(environment.serviceName || 'dukahub-frontend');
-    private initialized = false;
+  private tracer = trace.getTracer(environment.serviceName || 'dukahub-frontend');
+  private initialized = false;
 
-    /**
-     * Initialize OpenTelemetry tracing
-     * Call this in app.component.ts ngOnInit or app.config.ts
-     */
-    initialize(): void {
-        if (this.initialized) {
-            return;
-        }
-
-        // Only enable if configured
-        if (!environment.enableTracing) {
-            console.log('[Tracing] Tracing disabled in environment');
-            return;
-        }
-
-        if (!environment.signozEndpoint) {
-            console.warn('[Tracing] SigNoz endpoint not configured');
-            return;
-        }
-
-        try {
-            console.log('[Tracing] Initializing OpenTelemetry SDK...');
-            console.log(`[Tracing] Endpoint: ${environment.signozEndpoint}`);
-
-            // Export to SigNoz via OTLP HTTP
-            const traceExporter = new OTLPTraceExporter({
-                url: environment.signozEndpoint,
-            });
-
-            const serviceName = environment.serviceName || 'dukahub-frontend';
-            const serviceVersion = environment.serviceVersion || '2.0.0';
-
-            const provider = new WebTracerProvider({
-                resource: resourceFromAttributes({
-                    [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
-                    [SemanticResourceAttributes.SERVICE_VERSION]: serviceVersion,
-                }),
-                spanProcessors: [new BatchSpanProcessor(traceExporter)],
-            });
-
-            // Register automatic instrumentations
-            registerInstrumentations({
-                instrumentations: [
-                    new FetchInstrumentation({
-                        // Automatically trace all fetch/HTTP calls
-                        // SigNoz endpoint is proxied via nginx (same-origin), so no CORS needed
-                        propagateTraceHeaderCorsUrls: [
-                            new RegExp(window.location.origin),
-                        ],
-                    }),
-                    new XMLHttpRequestInstrumentation({
-                        // Automatically trace XMLHttpRequest calls
-                        // SigNoz endpoint is proxied via nginx (same-origin), so no CORS needed
-                        propagateTraceHeaderCorsUrls: [
-                            new RegExp(window.location.origin),
-                        ],
-                    }),
-                ],
-            });
-
-            // Register with Zone.js context manager (required for Angular)
-            provider.register({
-                contextManager: new ZoneContextManager(),
-            });
-
-            this.tracer = trace.getTracer(serviceName);
-            this.initialized = true;
-
-            console.log('[Tracing] OpenTelemetry SDK initialized successfully');
-        } catch (error) {
-            console.error('[Tracing] Failed to initialize OpenTelemetry SDK:', error);
-            // Don't throw - allow application to continue without tracing
-        }
+  /**
+   * Initialize OpenTelemetry tracing
+   * Call this in app.component.ts ngOnInit or app.config.ts
+   */
+  initialize(): void {
+    if (this.initialized) {
+      return;
     }
 
-    /**
-     * Start a new span for a user action
-     * 
-     * @param name - Span name (e.g., 'createOrder', 'addToCart')
-     * @param attributes - Optional attributes to add to the span
-     * @returns Span instance
-     */
-    startSpan(name: string, attributes?: Record<string, string | number | boolean>): Span {
-        if (!this.initialized) {
-            // Return a no-op span if not initialized
-            return {
-                spanContext: () => ({ traceId: '', spanId: '', traceFlags: 0 }),
-                setAttribute: () => { },
-                setAttributes: () => { },
-                addEvent: () => { },
-                addLink: () => { },
-                addLinks: () => { },
-                setStatus: () => { },
-                updateName: () => { },
-                end: () => { },
-                isRecording: () => false,
-                recordException: () => { },
-            } as unknown as Span;
-        }
-
-        const span = this.tracer.startSpan(name);
-
-        if (attributes) {
-            Object.entries(attributes).forEach(([key, value]) => {
-                span.setAttribute(key, value);
-            });
-        }
-
-        return span;
+    // Only enable if configured
+    if (!environment.enableTracing) {
+      console.log('[Tracing] Tracing disabled in environment');
+      return;
     }
 
-    /**
-     * End a span with success or error status
-     * 
-     * @param span - Span to end
-     * @param success - Whether the operation succeeded
-     * @param error - Optional error object if operation failed
-     */
-    endSpan(span: Span, success: boolean = true, error?: Error): void {
-        if (!this.initialized) {
-            return;
-        }
-
-        if (error) {
-            span.recordException(error);
-            span.setStatus({
-                code: SpanStatusCode.ERROR,
-                message: error.message,
-            });
-        } else {
-            span.setStatus({
-                code: success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
-            });
-        }
-
-        span.end();
+    if (!environment.signozEndpoint) {
+      console.warn('[Tracing] SigNoz endpoint not configured');
+      return;
     }
 
-    /**
-     * Add an event to a span
-     * 
-     * @param span - Span to add event to
-     * @param name - Event name
-     * @param attributes - Optional event attributes
-     */
-    addEvent(span: Span, name: string, attributes?: Record<string, string | number | boolean>): void {
-        if (!this.initialized) {
-            return;
-        }
+    try {
+      console.log('[Tracing] Initializing OpenTelemetry SDK...');
+      console.log(`[Tracing] Endpoint: ${environment.signozEndpoint}`);
 
-        span.addEvent(name, attributes);
+      // Export to SigNoz via OTLP HTTP
+      const traceExporter = new OTLPTraceExporter({
+        url: environment.signozEndpoint,
+      });
+
+      const serviceName = environment.serviceName || 'dukahub-frontend';
+      const serviceVersion = environment.serviceVersion || '2.0.0';
+
+      const provider = new WebTracerProvider({
+        resource: resourceFromAttributes({
+          [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
+          [SemanticResourceAttributes.SERVICE_VERSION]: serviceVersion,
+        }),
+        spanProcessors: [new BatchSpanProcessor(traceExporter)],
+      });
+
+      // Register automatic instrumentations
+      registerInstrumentations({
+        instrumentations: [
+          new FetchInstrumentation({
+            // Automatically trace all fetch/HTTP calls
+            // SigNoz endpoint is proxied via nginx (same-origin), so no CORS needed
+            propagateTraceHeaderCorsUrls: [new RegExp(window.location.origin)],
+          }),
+          new XMLHttpRequestInstrumentation({
+            // Automatically trace XMLHttpRequest calls
+            // SigNoz endpoint is proxied via nginx (same-origin), so no CORS needed
+            propagateTraceHeaderCorsUrls: [new RegExp(window.location.origin)],
+          }),
+        ],
+      });
+
+      // Register with Zone.js context manager (required for Angular)
+      provider.register({
+        contextManager: new ZoneContextManager(),
+      });
+
+      this.tracer = trace.getTracer(serviceName);
+      this.initialized = true;
+
+      console.log('[Tracing] OpenTelemetry SDK initialized successfully');
+    } catch (error) {
+      console.error('[Tracing] Failed to initialize OpenTelemetry SDK:', error);
+      // Don't throw - allow application to continue without tracing
+    }
+  }
+
+  /**
+   * Start a new span for a user action
+   *
+   * @param name - Span name (e.g., 'createOrder', 'addToCart')
+   * @param attributes - Optional attributes to add to the span
+   * @returns Span instance
+   */
+  startSpan(name: string, attributes?: Record<string, string | number | boolean>): Span {
+    if (!this.initialized) {
+      // Return a no-op span if not initialized
+      return {
+        spanContext: () => ({ traceId: '', spanId: '', traceFlags: 0 }),
+        setAttribute: () => {},
+        setAttributes: () => {},
+        addEvent: () => {},
+        addLink: () => {},
+        addLinks: () => {},
+        setStatus: () => {},
+        updateName: () => {},
+        end: () => {},
+        isRecording: () => false,
+        recordException: () => {},
+      } as unknown as Span;
     }
 
-    /**
-     * Set attributes on a span
-     * 
-     * @param span - Span to set attributes on
-     * @param attributes - Attributes to set
-     */
-    setAttributes(span: Span, attributes: Record<string, string | number | boolean>): void {
-        if (!this.initialized) {
-            return;
-        }
+    const span = this.tracer.startSpan(name);
 
-        Object.entries(attributes).forEach(([key, value]) => {
-            span.setAttribute(key, value);
-        });
+    if (attributes) {
+      Object.entries(attributes).forEach(([key, value]) => {
+        span.setAttribute(key, value);
+      });
     }
+
+    return span;
+  }
+
+  /**
+   * End a span with success or error status
+   *
+   * @param span - Span to end
+   * @param success - Whether the operation succeeded
+   * @param error - Optional error object if operation failed
+   */
+  endSpan(span: Span, success: boolean = true, error?: Error): void {
+    if (!this.initialized) {
+      return;
+    }
+
+    if (error) {
+      span.recordException(error);
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message,
+      });
+    } else {
+      span.setStatus({
+        code: success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
+      });
+    }
+
+    span.end();
+  }
+
+  /**
+   * Add an event to a span
+   *
+   * @param span - Span to add event to
+   * @param name - Event name
+   * @param attributes - Optional event attributes
+   */
+  addEvent(span: Span, name: string, attributes?: Record<string, string | number | boolean>): void {
+    if (!this.initialized) {
+      return;
+    }
+
+    span.addEvent(name, attributes);
+  }
+
+  /**
+   * Set attributes on a span
+   *
+   * @param span - Span to set attributes on
+   * @param attributes - Attributes to set
+   */
+  setAttributes(span: Span, attributes: Record<string, string | number | boolean>): void {
+    if (!this.initialized) {
+      return;
+    }
+
+    Object.entries(attributes).forEach(([key, value]) => {
+      span.setAttribute(key, value);
+    });
+  }
 }
-

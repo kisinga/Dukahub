@@ -49,8 +49,3 @@ export class MoneyEvent {
   @Column({ type: 'uuid', nullable: true })
   auditId?: string | null;
 }
-
-
-
-
-

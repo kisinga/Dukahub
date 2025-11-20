@@ -9,7 +9,7 @@
       class="select select-bordered select-sm w-20"
     >
       @for (option of pageOptions; track option) {
-      <option [value]="option">{{ option }}</option>
+        <option [value]="option">{{ option }}</option>
       }
     </select>
     <span class="text-sm text-base-content/70">per page</span>
@@ -40,13 +40,13 @@
 
     <!-- Page numbers -->
     @for (page of getPageNumbers(); track page) {
-    <button
-      class="join-item btn btn-sm"
-      [class.btn-active]="page === currentPage"
-      (click)="onPageChange(page)"
-    >
-      {{ page }}
-    </button>
+      <button
+        class="join-item btn btn-sm"
+        [class.btn-active]="page === currentPage"
+        (click)="onPageChange(page)"
+      >
+        {{ page }}
+      </button>
     }
 
     <!-- Next button -->

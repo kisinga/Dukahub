@@ -13,7 +13,7 @@ export interface CustomerStats {
   imports: [CommonModule],
   templateUrl: './customer-stats.component.html',
   styleUrl: './customer-stats.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CustomerStatsComponent {
   @Input({ required: true }) stats!: CustomerStats;

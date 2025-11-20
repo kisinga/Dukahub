@@ -46,7 +46,6 @@ interface JourneyStage {
   detail: string;
 }
 
-
 interface FAQItem {
   question: string;
   answer: string;
@@ -66,7 +65,7 @@ interface BusinessExample {
   imports: [RouterLink, NavbarComponent, FooterComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent {
   protected readonly isYearly = signal(false);
@@ -74,13 +73,13 @@ export class HomeComponent {
   protected readonly socialProof: SocialProof = {
     customerCount: 500,
     recentSignups: 50,
-    timeSaved: '2 hours daily'
+    timeSaved: '2 hours daily',
   };
 
   protected readonly heroHighlights: FeatureHighlight[] = [
     { icon: '⚡', text: 'Sell in 3 seconds' },
     { icon: '📡', text: 'Works without internet' },
-    { icon: '💳', text: 'Accept cash & M-Pesa' }
+    { icon: '💳', text: 'Accept cash & M-Pesa' },
   ];
 
   protected readonly corePillars: CorePillar[] = [
@@ -88,26 +87,26 @@ export class HomeComponent {
       icon: '📷',
       title: 'Faster selling',
       description: 'Point your phone at price labels or barcodes and ring up a sale instantly.',
-      bullets: ['Label-photo recognition', 'Barcode scanning', '3-second checkout']
+      bullets: ['Label-photo recognition', 'Barcode scanning', '3-second checkout'],
     },
     {
       icon: '📦',
       title: 'Clear inventory',
       description: 'Always know what is in stock across every shelf, stall, or warehouse.',
-      bullets: ['Real-time counts', 'Multi-location tracking', 'Low-stock nudges']
+      bullets: ['Real-time counts', 'Multi-location tracking', 'Low-stock nudges'],
     },
     {
       icon: '💰',
       title: 'Healthy cash flow',
       description: 'Stay on top of customer and supplier balances without extra spreadsheets.',
-      bullets: ['Credit limits & approvals', 'Automatic reminders', 'Ledger built in']
+      bullets: ['Credit limits & approvals', 'Automatic reminders', 'Ledger built in'],
     },
     {
       icon: '📈',
       title: 'Decisions with data',
       description: 'See daily trends, best sellers, and what needs attention at a glance.',
-      bullets: ['Dashboards & reports', 'Top product insights', 'Performance alerts']
-    }
+      bullets: ['Dashboards & reports', 'Top product insights', 'Performance alerts'],
+    },
   ];
 
   protected readonly journeyStages: JourneyStage[] = [
@@ -115,22 +114,21 @@ export class HomeComponent {
       number: '1',
       title: 'Capture your catalog',
       summary: 'Scan labels or take five quick photos per product.',
-      detail: 'Dukahub learns each item in under a minute — no spreadsheets required.'
+      detail: 'Dukahub learns each item in under a minute — no spreadsheets required.',
     },
     {
       number: '2',
       title: 'Sell from any device',
       summary: 'Point, confirm, and accept cash or M-Pesa in seconds.',
-      detail: 'No signal? Keep selling. Each sale syncs automatically when you reconnect.'
+      detail: 'No signal? Keep selling. Each sale syncs automatically when you reconnect.',
     },
     {
       number: '3',
       title: 'Stay in control',
       summary: 'Stock, cash, and credit update automatically after every sale.',
-      detail: 'Reminders and dashboards keep your whole team aligned and confident.'
-    }
+      detail: 'Reminders and dashboards keep your whole team aligned and confident.',
+    },
   ];
-
 
   protected readonly pricingPlans: PricingPlan[] = [
     {
@@ -144,64 +142,69 @@ export class HomeComponent {
         { text: 'Works offline and syncs when online', included: true },
         { text: 'Track customer & supplier credit', included: true },
         { text: 'Automatic payment reminders', included: true },
-        { text: 'Dashboards and product insights', included: true }
+        { text: 'Dashboards and product insights', included: true },
       ],
       ctaText: 'Start Free 30-Day Trial',
-      ctaLink: '/signup?plan=pro&trial=true'
+      ctaLink: '/signup?plan=pro&trial=true',
     },
     {
       name: 'Pro',
       monthlyPrice: 'KES 1,500',
       yearlyPrice: 'KES 14,400',
-      description: 'Everything a growing shop needs to stay organised, sell fast, and stay on top of cash flow.',
+      description:
+        'Everything a growing shop needs to stay organised, sell fast, and stay on top of cash flow.',
       features: [
         { text: 'Unlimited products and locations', included: true },
         { text: 'Camera recognition & barcode selling', included: true },
         { text: 'Offline-first POS with auto-sync', included: true },
         { text: 'Customer & supplier credit controls', included: true },
         { text: 'Payment reminders & MPesa integration', included: true },
-        { text: 'Dashboards, reports, and exports', included: true }
+        { text: 'Dashboards, reports, and exports', included: true },
       ],
       ctaText: 'Start Your Free 30-Day Trial',
       ctaLink: '/signup?plan=pro&trial=true',
-      popular: true
+      popular: true,
     },
     {
       name: 'Enterprise',
       monthlyPrice: 'Custom',
       yearlyPrice: 'Custom',
-      description: 'For larger teams that need custom integrations, locations, or dedicated support.',
+      description:
+        'For larger teams that need custom integrations, locations, or dedicated support.',
       features: [
         { text: 'Everything in Pro', included: true },
         { text: 'Unlimited users & locations', included: true },
         { text: 'Advanced API integrations', included: true },
         { text: 'Dedicated success manager', included: true },
-        { text: 'Custom onboarding & training', included: true }
+        { text: 'Custom onboarding & training', included: true },
       ],
       ctaText: 'Contact Sales',
-      ctaLink: '/contact'
-    }
+      ctaLink: '/contact',
+    },
   ];
 
   protected readonly testimonials: Testimonial[] = [
     {
-      quote: 'Dukahub is so easy! Pointing my phone is faster than typing. Finally know my stock levels accurately.',
+      quote:
+        'Dukahub is so easy! Pointing my phone is faster than typing. Finally know my stock levels accurately.',
       author: 'Amina K.',
       title: 'Mini Mart Owner, Nairobi',
-      metric: 'Saves 2 hours daily'
+      metric: 'Saves 2 hours daily',
     },
     {
-      quote: 'The offline mode is a lifesaver during power cuts. Sales are recorded, and sync perfectly later. Highly recommend!',
+      quote:
+        'The offline mode is a lifesaver during power cuts. Sales are recorded, and sync perfectly later. Highly recommend!',
       author: 'David M.',
       title: 'Agrovet Manager, Nakuru',
-      metric: 'Never lost a sale again'
+      metric: 'Never lost a sale again',
     },
     {
-      quote: 'We use it for our salon services with picture cards. Tracking popular services and sales is simple now.',
+      quote:
+        'We use it for our salon services with picture cards. Tracking popular services and sales is simple now.',
       author: 'Grace W.',
       title: 'Salon Owner, Mombasa',
-      metric: '30% more organized'
-    }
+      metric: '30% more organized',
+    },
   ];
 
   // Business examples representing 80% of Kenyan MSMEs that can afford Dukahub
@@ -211,73 +214,79 @@ export class HomeComponent {
       name: 'Retail Shops & Dukas',
       icon: '🏪',
       marketShare: '38.3% of small enterprises',
-      employeeRange: '1-9 employees'
+      employeeRange: '1-9 employees',
     },
     {
       name: 'Agrovets & Pharmacies',
       icon: '💊',
       marketShare: 'Critical for agricultural economy',
-      employeeRange: '1-9 employees'
+      employeeRange: '1-9 employees',
     },
     {
       name: 'Kinyozi & Salons',
       icon: '✂️',
       marketShare: 'Growing service sector',
-      employeeRange: '1-5 employees'
+      employeeRange: '1-5 employees',
     },
     {
       name: 'Food & Beverage',
       icon: '🍽️',
       marketShare: 'Significant service sector',
-      employeeRange: '1-9 employees'
+      employeeRange: '1-9 employees',
     },
     {
       name: 'Hardware & Construction',
       icon: '🔨',
       marketShare: '14.5% of micro enterprises',
-      employeeRange: '1-9 employees'
-    }
+      employeeRange: '1-9 employees',
+    },
   ];
 
   protected readonly faqItems = signal<FAQItem[]>([
     {
       question: 'What happens after my 30-day trial ends?',
-      answer: 'After your free 30-day trial, you can upgrade to Pro (KES 1,500/month) to keep using all features, or pause your account. You can upgrade anytime. No credit card needed to start.',
-      open: false
+      answer:
+        'After your free 30-day trial, you can upgrade to Pro (KES 1,500/month) to keep using all features, or pause your account. You can upgrade anytime. No credit card needed to start.',
+      open: false,
     },
     {
       question: 'How does the product recognition work?',
-      answer: 'Take a few photos of each product. When you sell, just point your camera at the product and it recognizes it in seconds. Works great for items without barcodes. Barcode scanning also works if available.',
-      open: false
+      answer:
+        'Take a few photos of each product. When you sell, just point your camera at the product and it recognizes it in seconds. Works great for items without barcodes. Barcode scanning also works if available.',
+      open: false,
     },
     {
       question: 'Does it work without internet?',
-      answer: 'Yes! You can record up to 30 sales without internet. Everything is stored safely on your device. When you reconnect, it syncs automatically. Perfect for areas with unreliable internet.',
-      open: false
+      answer:
+        'Yes! You can record up to 30 sales without internet. Everything is stored safely on your device. When you reconnect, it syncs automatically. Perfect for areas with unreliable internet.',
+      open: false,
     },
     {
       question: 'Is my data safe?',
-      answer: 'Yes. Your business data is encrypted and kept private. We never share your information. Security is a top priority.',
-      open: false
+      answer:
+        'Yes. Your business data is encrypted and kept private. We never share your information. Security is a top priority.',
+      open: false,
     },
     {
       question: 'How long does setup take?',
-      answer: 'Most businesses are set up in under an hour. Sign up, add products by scanning barcodes or taking photos, and you\'re ready to go. Simple and intuitive.',
-      open: false
+      answer:
+        "Most businesses are set up in under an hour. Sign up, add products by scanning barcodes or taking photos, and you're ready to go. Simple and intuitive.",
+      open: false,
     },
     {
       question: 'Can I track services too?',
-      answer: 'Yes! Create visual cards for services like haircuts or repairs. Track them just like products. Perfect for salons, barbers, and service businesses.',
-      open: false
-    }
+      answer:
+        'Yes! Create visual cards for services like haircuts or repairs. Track them just like products. Perfect for salons, barbers, and service businesses.',
+      open: false,
+    },
   ]);
 
   togglePricing(): void {
-    this.isYearly.update(value => !value);
+    this.isYearly.update((value) => !value);
   }
 
   toggleFAQ(index: number): void {
-    this.faqItems.update(items => {
+    this.faqItems.update((items) => {
       const updated = [...items];
       updated[index].open = !updated[index].open;
       return updated;
@@ -286,4 +295,3 @@ export class HomeComponent {
 
   protected readonly stars = [1, 2, 3, 4, 5];
 }
-

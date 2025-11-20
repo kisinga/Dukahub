@@ -11,8 +11,8 @@ Useful links:
 
 ## Directory structure
 
-* `/src` contains the source code of your Vendure server. All your custom code and plugins should reside here.
-* `/static` contains static (non-code) files such as assets (e.g. uploaded images) and email templates.
+- `/src` contains the source code of your Vendure server. All your custom code and plugins should reside here.
+- `/static` contains static (non-code) files such as assets (e.g. uploaded images) and email templates.
 
 ## Development
 
@@ -73,12 +73,12 @@ Here is a breakdown of the command used above:
 
 - `docker run` - run the image we created with `docker build`
 - `-dp 3000:3000` - the `-d` flag means to run in "detached" mode, so it runs in the background and does not take
-control of your terminal. `-p 3000:3000` means to expose port 3000 of the container (which is what Vendure listens
-on by default) as port 3000 on your host machine.
+  control of your terminal. `-p 3000:3000` means to expose port 3000 of the container (which is what Vendure listens
+  on by default) as port 3000 on your host machine.
 - `-e "DB_HOST=host.docker.internal"` - the `-e` option allows you to define environment variables. In this case we
-are setting the `DB_HOST` to point to a special DNS name that is created by Docker desktop which points to the IP of
-the host machine. Note that `host.docker.internal` only exists in a Docker Desktop environment and thus should only be
-used in development.
+  are setting the `DB_HOST` to point to a special DNS name that is created by Docker desktop which points to the IP of
+  the host machine. Note that `host.docker.internal` only exists in a Docker Desktop environment and thus should only be
+  used in development.
 - `--name vendure-server` - we give the container a human-readable name.
 - `vendure` - we are referencing the tag we set up during the build.
 - `npm run start:server` - this last part is the actual command that should be run inside the container.
@@ -148,4 +148,3 @@ You can also run any pending migrations manually, without starting the server vi
 - Make sure your Node version is ^18.17.0 || ^20.3.0 || >=21.0.0 to support the Sharp library.
 - Make sure your package manager is up to date.
 - **Not recommended**: if none of the above helps to resolve the issue, install sharp specifying your machines OS and Architecture. For example: `pnpm install sharp --config.platform=linux --config.architecture=x64` or `npm install sharp --os linux --cpu x64`
-

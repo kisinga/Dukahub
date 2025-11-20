@@ -12,41 +12,43 @@ import { StockValidationService } from '../../services/stock/stock-validation.se
 import { PurchaseCreditValidatorService } from '../../services/stock/purchase-credit-validator.service';
 import { SupplierCreditService } from '../../services/credit/supplier-credit.service';
 import { StockPurchase, StockPurchaseLine } from '../../services/stock/entities/purchase.entity';
-import { InventoryStockAdjustment, InventoryStockAdjustmentLine } from '../../services/stock/entities/stock-adjustment.entity';
+import {
+  InventoryStockAdjustment,
+  InventoryStockAdjustmentLine,
+} from '../../services/stock/entities/stock-adjustment.entity';
 import { CreditPlugin } from '../credit/credit.plugin';
 
 @VendurePlugin({
-    imports: [PluginCommonModule, CreditPlugin],
-    providers: [
-        StockValidationService,
-        StockMovementService,
-        PurchaseService,
-        StockAdjustmentService,
-        SupplierCreditService, // Required by PurchaseCreditValidatorService
-        PurchaseCreditValidatorService,
-        StockManagementService,
-        StockQueryService,
-        StockResolver,
-    ],
-    configuration: (config) => {
-        // Register custom permission
-        config.authOptions.customPermissions = [
-            ...(config.authOptions.customPermissions || []),
-            ManageStockAdjustmentsPermission,
-        ];
-        return config;
-    },
-    adminApiExtensions: {
-        schema: STOCK_ADMIN_SCHEMA,
-        resolvers: [StockResolver],
-    },
-    entities: [
-        StockPurchase,
-        StockPurchaseLine,
-        InventoryStockAdjustment,
-        InventoryStockAdjustmentLine,
-    ],
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+  imports: [PluginCommonModule, CreditPlugin],
+  providers: [
+    StockValidationService,
+    StockMovementService,
+    PurchaseService,
+    StockAdjustmentService,
+    SupplierCreditService, // Required by PurchaseCreditValidatorService
+    PurchaseCreditValidatorService,
+    StockManagementService,
+    StockQueryService,
+    StockResolver,
+  ],
+  configuration: config => {
+    // Register custom permission
+    config.authOptions.customPermissions = [
+      ...(config.authOptions.customPermissions || []),
+      ManageStockAdjustmentsPermission,
+    ];
+    return config;
+  },
+  adminApiExtensions: {
+    schema: STOCK_ADMIN_SCHEMA,
+    resolvers: [StockResolver],
+  },
+  entities: [
+    StockPurchase,
+    StockPurchaseLine,
+    InventoryStockAdjustment,
+    InventoryStockAdjustmentLine,
+  ],
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class StockPlugin { }
-
+export class StockPlugin {}

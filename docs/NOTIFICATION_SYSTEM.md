@@ -7,11 +7,13 @@ The notification system is built with a **server-side event-driven architecture*
 ## 🔧 Backend Components
 
 ### 1. **NotificationPlugin** (`/backend/src/plugins/notification.plugin.ts`)
+
 - **Purpose**: Core Vendure plugin that registers all notification services
 - **Components**: Integrates resolver, services, and test controller
 - **GraphQL Schema**: Exposes notification queries and mutations
 
 ### 2. **NotificationService** (`/backend/src/plugins/notification.service.ts`)
+
 - **Purpose**: CRUD operations for notifications
 - **Key Methods**:
   - `createNotification()` - Creates new notifications
@@ -20,6 +22,7 @@ The notification system is built with a **server-side event-driven architecture*
   - `getChannelUsers()` - Gets all users in a channel
 
 ### 3. **PushNotificationService** (`/backend/src/plugins/push-notification.service.ts`)
+
 - **Purpose**: Web Push API integration
 - **Features**:
   - VAPID key management
@@ -27,6 +30,7 @@ The notification system is built with a **server-side event-driven architecture*
   - Cross-platform push notifications
 
 ### 4. **NotificationHandlerService** (`/backend/src/plugins/notification-handler.service.ts`)
+
 - **Purpose**: Event-driven notification creation
 - **Event Listeners**:
   - `OrderStateTransitionEvent` - Order status changes
@@ -34,6 +38,7 @@ The notification system is built with a **server-side event-driven architecture*
   - `MLTrainingEvent` - ML model updates
 
 ### 5. **NotificationTestController** (`/backend/src/plugins/notification-test.controller.ts`)
+
 - **Purpose**: Testing and manual notification triggering
 - **Endpoints**:
   - `GET /test-notifications/status` - System status
@@ -43,6 +48,7 @@ The notification system is built with a **server-side event-driven architecture*
 ## 🎨 Frontend Components
 
 ### 1. **NotificationService** (`/frontend/src/app/core/services/notification.service.ts`)
+
 - **Purpose**: Frontend notification state management
 - **Features**:
   - Real-time GraphQL integration
@@ -51,6 +57,7 @@ The notification system is built with a **server-side event-driven architecture*
   - Development mode fallback
 
 ### 2. **ToastService** (`/frontend/src/app/core/services/toast.service.ts`)
+
 - **Purpose**: In-app toast notifications
 - **Features**:
   - Signal-based state management
@@ -58,6 +65,7 @@ The notification system is built with a **server-side event-driven architecture*
   - Multiple notification types
 
 ### 3. **ToastComponent** (`/frontend/src/app/core/layout/toast/toast.component.ts`)
+
 - **Purpose**: UI component for displaying toasts
 - **Features**:
   - DaisyUI styling
@@ -65,6 +73,7 @@ The notification system is built with a **server-side event-driven architecture*
   - Dismiss functionality
 
 ### 4. **NotificationTestComponent** (`/frontend/src/app/dashboard/pages/settings/components/notification-test.component.ts`)
+
 - **Purpose**: Testing interface for notifications
 - **Features**:
   - Server-side triggering
@@ -86,11 +95,13 @@ Service Worker → Toast Notification + Notification Bell Update
 ### **Quick Test Commands**
 
 #### 1. Trigger All Notification Types
+
 ```bash
 curl -X POST "http://localhost:3000/test-notifications/trigger-all"
 ```
 
 #### 2. Trigger Individual Notification Types
+
 ```bash
 # Order notifications
 curl "http://localhost:3000/test-notifications/trigger?type=ORDER"
@@ -106,11 +117,13 @@ curl "http://localhost:3000/test-notifications/trigger?type=PAYMENT"
 ```
 
 #### 3. Check System Status
+
 ```bash
 curl "http://localhost:3000/test-notifications/status"
 ```
 
 #### 4. Trigger with Custom Message
+
 ```bash
 curl "http://localhost:3000/test-notifications/trigger?type=ORDER&title=Custom%20Title&message=Custom%20Message"
 ```
@@ -133,12 +146,12 @@ curl "http://localhost:3000/test-notifications/trigger?type=ORDER&title=Custom%2
 
 ### **Notification Types**
 
-| Type | Description | Trigger Event | Example Message |
-|------|-------------|---------------|-----------------|
-| `ORDER` | Order status changes | Order state transitions | "Order #12345 has been placed" |
-| `STOCK` | Low stock alerts | Stock movement events | "Product 'X' is running low (3 remaining)" |
-| `ML_TRAINING` | ML model updates | Training completion | "Demand forecasting model updated" |
-| `PAYMENT` | Payment confirmations | Payment events | "Payment of KES 1,500 confirmed" |
+| Type          | Description           | Trigger Event           | Example Message                            |
+| ------------- | --------------------- | ----------------------- | ------------------------------------------ |
+| `ORDER`       | Order status changes  | Order state transitions | "Order #12345 has been placed"             |
+| `STOCK`       | Low stock alerts      | Stock movement events   | "Product 'X' is running low (3 remaining)" |
+| `ML_TRAINING` | ML model updates      | Training completion     | "Demand forecasting model updated"         |
+| `PAYMENT`     | Payment confirmations | Payment events          | "Payment of KES 1,500 confirmed"           |
 
 ## 🔧 Configuration
 
@@ -167,6 +180,7 @@ npx web-push generate-vapid-keys
 ### **Backend Setup**
 
 1. **Install Dependencies**:
+
    ```bash
    cd backend
    npm install web-push @types/web-push
@@ -184,6 +198,7 @@ npx web-push generate-vapid-keys
 ### **Frontend Setup**
 
 1. **Install Dependencies**:
+
    ```bash
    cd frontend
    npm install @angular/service-worker
@@ -201,11 +216,13 @@ npx web-push generate-vapid-keys
 ## 📱 PWA Features
 
 ### **Service Worker Configuration**
+
 - **Caching Strategy**: App shell with network-first for API calls
 - **Push Notifications**: Enabled with VAPID key support
 - **Offline Support**: Cached resources available offline
 
 ### **Web App Manifest**
+
 - **App Name**: DukaRun
 - **Theme Color**: #3b82f6
 - **Display Mode**: Standalone
@@ -251,7 +268,7 @@ cd frontend && npm run build
 ✅ **Type Safety**: Full TypeScript integration  
 ✅ **Scalable**: Event-driven architecture supports high volume  
 ✅ **Testable**: Comprehensive testing endpoints and UI  
-✅ **Production Ready**: Proper error handling and fallbacks  
+✅ **Production Ready**: Proper error handling and fallbacks
 
 ## 📊 Performance Considerations
 
@@ -263,5 +280,5 @@ cd frontend && npm run build
 
 ---
 
-*Last updated: October 28, 2025*
-*Version: 1.0.0*
+_Last updated: October 28, 2025_
+_Version: 1.0.0_

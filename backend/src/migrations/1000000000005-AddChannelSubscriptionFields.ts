@@ -2,7 +2,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Add Channel Subscription Fields
- * 
+ *
  * Merges:
  * - 1761900000000-AddSubscriptionFields.ts
  * - 1761900000001-RenameSubscriptionTierColumn.ts
@@ -10,7 +10,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - 1761900000003-NormalizeSubscriptionFieldsCasing.ts
  * - 1761900000004-AlignSubscriptionTierConstraints.ts
  * - 1761900000005-UpdateSubscriptionFkActions.ts
- * 
+ *
  * Final state:
  * - subscription_tier table with createdAt, updatedAt
  * - Channel: All subscription fields with normalized naming (customFieldsSubscriptiontierid)
@@ -18,11 +18,11 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - Unique constraint: UQ_f4afafa5c0e63ab4eb176ac22f8 on subscription_tier.code
  */
 export class AddChannelSubscriptionFields1000000000005 implements MigrationInterface {
-    name = 'AddChannelSubscriptionFields1000000000005';
+  name = 'AddChannelSubscriptionFields1000000000005';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Create subscription_tier table
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Create subscription_tier table
+    await queryRunner.query(`
             CREATE TABLE IF NOT EXISTS "subscription_tier" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "code" character varying NOT NULL,
@@ -38,8 +38,8 @@ export class AddChannelSubscriptionFields1000000000005 implements MigrationInter
             )
         `);
 
-        // Add unique constraint on code
-        await queryRunner.query(`
+    // Add unique constraint on code
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -52,8 +52,8 @@ export class AddChannelSubscriptionFields1000000000005 implements MigrationInter
             END $$;
         `);
 
-        // Add Channel subscription fields with table existence check
-        await queryRunner.query(`
+    // Add Channel subscription fields with table existence check
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -254,8 +254,8 @@ export class AddChannelSubscriptionFields1000000000005 implements MigrationInter
             END $$;
         `);
 
-        // Seed default subscription tier
-        await queryRunner.query(`
+    // Seed default subscription tier
+    await queryRunner.query(`
             INSERT INTO "subscription_tier" ("code", "name", "description", "priceMonthly", "priceYearly", "features", "isActive", "createdAt", "updatedAt")
             VALUES (
                 'basic-tier',
@@ -270,10 +270,10 @@ export class AddChannelSubscriptionFields1000000000005 implements MigrationInter
             )
             ON CONFLICT ("code") DO NOTHING
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             DO $$
             BEGIN
                 IF EXISTS (
@@ -316,8 +316,6 @@ export class AddChannelSubscriptionFields1000000000005 implements MigrationInter
             END $$;
         `);
 
-        await queryRunner.query(`DROP TABLE IF EXISTS "subscription_tier"`);
-    }
+    await queryRunner.query(`DROP TABLE IF EXISTS "subscription_tier"`);
+  }
 }
-
-

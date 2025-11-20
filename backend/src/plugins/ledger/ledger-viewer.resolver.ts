@@ -19,7 +19,7 @@ interface JournalEntriesOptions {
 export class LedgerViewerResolver {
   constructor(
     private readonly dataSource: DataSource,
-    private readonly ledgerQueryService: LedgerQueryService,
+    private readonly ledgerQueryService: LedgerQueryService
   ) {}
 
   @Query()
@@ -35,7 +35,7 @@ export class LedgerViewerResolver {
 
     // Get balances for each account
     const accountsWithBalances = await Promise.all(
-      accounts.map(async (account) => {
+      accounts.map(async account => {
         const balance = await this.ledgerQueryService.getAccountBalance({
           channelId,
           accountCode: account.code,
@@ -48,7 +48,7 @@ export class LedgerViewerResolver {
           isActive: account.isActive,
           balance: balance.balance / 100, // Convert from cents to base currency
         };
-      }),
+      })
     );
 
     return {
@@ -60,7 +60,7 @@ export class LedgerViewerResolver {
   @Allow(Permission.ReadOrder)
   async journalEntries(
     @Ctx() ctx: RequestContext,
-    @Args('options', { nullable: true }) options?: JournalEntriesOptions,
+    @Args('options', { nullable: true }) options?: JournalEntriesOptions
   ) {
     const channelId = ctx.channelId as number;
     const entryRepo = this.dataSource.getRepository(JournalEntry);
@@ -108,7 +108,7 @@ export class LedgerViewerResolver {
 
     // Load lines for each entry with account info
     const entriesWithLines = await Promise.all(
-      entries.map(async (entry) => {
+      entries.map(async entry => {
         let lineQuery = lineRepo
           .createQueryBuilder('line')
           .innerJoinAndSelect('line.account', 'account')
@@ -130,7 +130,7 @@ export class LedgerViewerResolver {
           sourceType: entry.sourceType,
           sourceId: entry.sourceId,
           memo: entry.memo,
-          lines: lines.map((line) => ({
+          lines: lines.map(line => ({
             id: line.id,
             accountCode: line.account.code,
             accountName: line.account.name,
@@ -139,7 +139,7 @@ export class LedgerViewerResolver {
             meta: line.meta,
           })),
         };
-      }),
+      })
     );
 
     return {
@@ -176,7 +176,7 @@ export class LedgerViewerResolver {
       sourceType: entry.sourceType,
       sourceId: entry.sourceId,
       memo: entry.memo,
-      lines: lines.map((line) => ({
+      lines: lines.map(line => ({
         id: line.id,
         accountCode: line.account.code,
         accountName: line.account.name,
@@ -187,4 +187,3 @@ export class LedgerViewerResolver {
     };
   }
 }
-

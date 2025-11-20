@@ -7,22 +7,21 @@ import { ChannelSettingsService } from '../../services/channels/channel-settings
 import { ChannelSettingsResolver, channelSettingsSchema } from './channel-settings.resolver';
 
 @VendurePlugin({
-    imports: [PluginCommonModule],
-    providers: [
-        // Audit dependencies (must be available for ChannelSettingsService)
-        // AuditDbConnection uses singleton pattern to prevent duplicate initialization
-        AuditDbConnection,
-        UserContextResolver,
-        AuditService,
-        // Channel settings
-        ChannelSettingsResolver,
-        ChannelSettingsService,
-    ],
-    adminApiExtensions: {
-        resolvers: [ChannelSettingsResolver],
-        schema: channelSettingsSchema,
-    },
-    compatibility: VENDURE_COMPATIBILITY_VERSION,
+  imports: [PluginCommonModule],
+  providers: [
+    // Audit dependencies (must be available for ChannelSettingsService)
+    // AuditDbConnection uses singleton pattern to prevent duplicate initialization
+    AuditDbConnection,
+    UserContextResolver,
+    AuditService,
+    // Channel settings
+    ChannelSettingsResolver,
+    ChannelSettingsService,
+  ],
+  adminApiExtensions: {
+    resolvers: [ChannelSettingsResolver],
+    schema: channelSettingsSchema,
+  },
+  compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class ChannelSettingsPlugin { }
-
+export class ChannelSettingsPlugin {}

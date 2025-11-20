@@ -7,13 +7,11 @@
 ## 1. Guiding Principles
 
 1. **Model + Migration must stay in lockstep**
-
    - Update TypeScript entity/custom-field definitions first (`src/vendure-config.ts`, plugin entities).
    - Author migrations that reflect the _final_ schema (proper casing, constraint names, FK actions).
    - Never rely on `synchronize` – `dbConnectionOptions.synchronize` is `false` for a reason.
 
 2. **Always build before running migrations**
-
    - Our migration script loads `./dist/src/vendure-config`.
    - Command sequence:
      ```bash
@@ -24,7 +22,6 @@
    - In CI / production containers we lean on `npm run migration:run` which wraps the same call.
 
 3. **Migrations must be idempotent and environment-agnostic**
-
    - Dev vs. cloud DBs may be at different intermediate states; use guarded SQL (`IF EXISTS`, `TRY/CATCH`) rather than blind renames.
    - Vendure auto-hashes constraint names (e.g. `FK_cfa828418e58de180707fd03e1a`). Guard for both legacy and hashed names when renaming.
 
@@ -140,11 +137,9 @@ Wrap in `IF EXISTS` to avoid failures on fresh DBs.
 ## 4. Local-to-Remote Migration Workflow
 
 1. **Kick off changes**
-
    - Update `vendure-config.ts`, entity files, services. Ensure non-relational custom fields exist.
 
 2. **Author migrations**
-
    - Place new files in `src/migrations/` with timestamped names.
    - Use the guard patterns above.
    - Reference hashed constraint names if Vendure already created them (check with `SELECT conname FROM pg_constraint ...`).
@@ -201,15 +196,12 @@ Wrap in `IF EXISTS` to avoid failures on fresh DBs.
 ## 6. Future-Proofing Tips
 
 1. **Centralize new migrations around helper snippets**
-
    - Reuse the guard blocks in recent migrations (`1761900000001`–`0005`) when dealing with case renames or FK swaps.
 
 2. **Document every schema touch**
-
    - Add comments inside migrations explaining why a guard exists (e.g. “Vendure 3.4 lowercases custom field columns”).
 
 3. **Verify both dev & prod**
-
    - Our dev Postgres (Docker) and remote Postgres (homelab) may diverge. Always run migrations against both before merging.
 
 4. **Regression tests**

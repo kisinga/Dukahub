@@ -9,387 +9,394 @@
     </div>
     <div class="flex items-center gap-3">
       @if (isLoading()) {
-      <span class="loading loading-spinner loading-md"></span>
-      } @if (cashierFlowEnabled() && cashierOpen()) {
-      <div class="badge badge-success badge-lg gap-2 font-semibold px-4 py-3">
-        <span class="w-2 h-2 bg-success-content rounded-full animate-pulse"></span>
-        Cash Register Open
-      </div>
-      } @if (cashierFlowEnabled() && !cashierOpen()) {
-      <div class="badge badge-neutral badge-lg gap-2 font-semibold px-4 py-3">
-        <span class="w-2 h-2 bg-neutral-content rounded-full"></span>
-        Cash Register Closed
-      </div>
+        <span class="loading loading-spinner loading-md"></span>
+      }
+      @if (cashierFlowEnabled() && cashierOpen()) {
+        <div class="badge badge-success badge-lg gap-2 font-semibold px-4 py-3">
+          <span class="w-2 h-2 bg-success-content rounded-full animate-pulse"></span>
+          Cash Register Open
+        </div>
+      }
+      @if (cashierFlowEnabled() && !cashierOpen()) {
+        <div class="badge badge-neutral badge-lg gap-2 font-semibold px-4 py-3">
+          <span class="w-2 h-2 bg-neutral-content rounded-full"></span>
+          Cash Register Closed
+        </div>
       }
     </div>
   </div>
 
   <!-- Error State - Enhanced -->
   @if (error()) {
-  <div role="alert" class="alert alert-error shadow-lg">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      class="stroke-current shrink-0 h-6 w-6"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-    <div class="flex-1">
-      <p class="font-semibold">Error loading dashboard</p>
-      <p class="text-sm opacity-80">{{ error() }}</p>
+    <div role="alert" class="alert alert-error shadow-lg">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="stroke-current shrink-0 h-6 w-6"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <div class="flex-1">
+        <p class="font-semibold">Error loading dashboard</p>
+        <p class="text-sm opacity-80">{{ error() }}</p>
+      </div>
+      <button class="btn btn-sm btn-ghost min-h-[2.5rem]" (click)="refresh()">Retry</button>
     </div>
-    <button class="btn btn-sm btn-ghost min-h-[2.5rem]" (click)="refresh()">Retry</button>
-  </div>
   }
 
   <!-- Stats Overview Cards - Ultra Compact for Mobile -->
   <div class="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
     @for (category of categories(); track category.type) {
-    <!-- Expenses Coming Soon Card -->
-    @if (category.type === 'expenses') {
-    <div
-      class="stat-card group relative overflow-hidden"
-      [class.stat-card-expenses]="category.type === 'expenses'"
-    >
-      <div class="absolute top-2 right-2 z-10">
-        <span class="badge badge-sm badge-warning">Coming Soon</span>
-      </div>
-      <!-- Mobile Compact View -->
-      <div class="stat-card-compact sm:hidden">
-        <!-- Header with Icon -->
-        <div class="flex items-center justify-between mb-2">
-          <div class="stat-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-full h-full"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-          </div>
-          <div class="stat-trend">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-3 h-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 10l7-7m0 0l7 7m-7-7v18"
-              />
-            </svg>
-          </div>
-        </div>
-
-        <!-- Category Label -->
-        <div class="stat-label">{{ category.name }}</div>
-
-        <!-- Today's Value (Primary) -->
-        <div class="stat-value">
-          {{ formatCompactValue(category.stats[0].amount) }}
-        </div>
-
-        <!-- Visual Bar Indicator -->
-        <div class="stat-bar-container">
-          <div class="stat-bar" [style.width]="getBarWidth(category.type) + '%'"></div>
-        </div>
-
-        <!-- Period Dots -->
-        <div class="stat-periods">
-          <div class="stat-period-dot"></div>
-          <div class="stat-period-dot stat-period-dot-week"></div>
-          <div class="stat-period-dot stat-period-dot-month"></div>
-        </div>
-      </div>
-
-      <!-- Tablet/Desktop View -->
-      <div class="stat-card-full hidden sm:block">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm lg:text-base font-bold uppercase tracking-wide">
-            {{ category.name }}
-          </h3>
-          <div class="badge badge-ghost badge-sm opacity-60">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-3 w-3 transition-transform duration-300"
-              [class.rotate-180]="expandedCategory() === category.type"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          @for (stat of category.stats; track stat.period) {
-          <div class="flex justify-between items-center">
-            <span class="text-xs lg:text-sm font-medium opacity-70">{{ stat.period }}</span>
-            <span class="text-base lg:text-lg font-bold tabular-nums">
-              {{ stat.amount.replace('KES ', '') }}
-            </span>
-          </div>
-          }
-        </div>
-
-        <div class="mt-3 pt-3 border-t border-current opacity-20 text-center">
-          <span class="text-xs font-semibold uppercase tracking-wider opacity-60">
-            {{ expandedCategory() === category.type ? 'Hide' : 'Details' }}
-          </span>
-        </div>
-      </div>
-    </div>
-    }
-    <!-- Regular Stats Cards (Purchases & Sales) -->
-    @if (category.type !== 'expenses') {
-    <button
-      class="stat-card group"
-      [class.stat-card-active]="expandedCategory() === category.type"
-      [class.stat-card-purchases]="category.type === 'purchases'"
-      [class.stat-card-sales]="category.type === 'sales'"
-      (click)="toggleCategory(category.type)"
-      [attr.aria-expanded]="expandedCategory() === category.type"
-      [attr.aria-label]="'Toggle ' + category.name + ' breakdown'"
-    >
-      <!-- Mobile Compact View -->
-      <div class="stat-card-compact sm:hidden">
-        <!-- Header with Icon -->
-        <div class="flex items-center justify-between mb-2">
-          <div class="stat-icon">
-            @if (category.type === 'purchases') {
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-full h-full"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            } @if (category.type === 'sales') {
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-full h-full"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            }
-          </div>
-          <div class="stat-trend">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-3 h-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 10l7-7m0 0l7 7m-7-7v18"
-              />
-            </svg>
-          </div>
-        </div>
-
-        <!-- Category Label -->
-        <div class="stat-label">{{ category.name }}</div>
-
-        <!-- Today's Value (Primary) -->
-        <div class="stat-value">
-          {{ formatCompactValue(category.stats[0].amount) }}
-        </div>
-
-        <!-- Visual Bar Indicator -->
-        <div class="stat-bar-container">
-          <div class="stat-bar" [style.width]="getBarWidth(category.type) + '%'"></div>
-        </div>
-
-        <!-- Period Dots -->
-        <div class="stat-periods">
-          <div class="stat-period-dot"></div>
-          <div class="stat-period-dot stat-period-dot-week"></div>
-          <div class="stat-period-dot stat-period-dot-month"></div>
-        </div>
-      </div>
-
-      <!-- Tablet/Desktop View -->
-      <div class="stat-card-full hidden sm:block">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm lg:text-base font-bold uppercase tracking-wide">
-            {{ category.name }}
-          </h3>
-          <div class="badge badge-ghost badge-sm opacity-60">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-3 w-3 transition-transform duration-300"
-              [class.rotate-180]="expandedCategory() === category.type"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          @for (stat of category.stats; track stat.period) {
-          <div class="flex justify-between items-center">
-            <span class="text-xs lg:text-sm font-medium opacity-70">{{ stat.period }}</span>
-            <span class="text-base lg:text-lg font-bold tabular-nums">
-              {{ stat.amount.replace('KES ', '') }}
-            </span>
-          </div>
-          }
-        </div>
-
-        <div class="mt-3 pt-3 border-t border-current opacity-20 text-center">
-          <span class="text-xs font-semibold uppercase tracking-wider opacity-60">
-            {{ expandedCategory() === category.type ? 'Hide' : 'Details' }}
-          </span>
-        </div>
-      </div>
-    </button>
-    } }
-  </div>
-
-  <!-- Expanded Details - Enhanced Card with Better Visibility -->
-  @if (expandedCategory(); as expanded) { @for (category of categories(); track category.type) { @if
-  (category.type === expanded) {
-  <div
-    class="card bg-base-100 shadow-xl border-2 animate-in"
-    [class.border-primary]="category.type === 'purchases'"
-    [class.border-success]="category.type === 'sales'"
-    [class.border-error]="category.type === 'expenses'"
-  >
-    <div class="card-body p-4 sm:p-6">
-      <!-- Header with Better Visual Hierarchy - Compact Mobile -->
-      <div class="flex items-center justify-between gap-3 mb-4 sm:mb-6">
-        <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-          <div
-            class="badge badge-lg gap-2 px-2 sm:px-3 py-1.5 sm:py-2 flex-shrink-0"
-            [class.badge-primary]="category.type === 'purchases'"
-            [class.badge-success]="category.type === 'sales'"
-            [class.badge-error]="category.type === 'expenses'"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-3 w-3 sm:h-4 sm:w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-              />
-            </svg>
-            <span class="text-xs sm:text-sm font-bold hidden xs:inline">Breakdown</span>
-          </div>
-          <h3
-            class="text-sm sm:text-base lg:text-lg font-bold truncate"
-            [class.text-primary]="category.type === 'purchases'"
-            [class.text-success]="category.type === 'sales'"
-            [class.text-error]="category.type === 'expenses'"
-          >
-            {{ category.name }}
-          </h3>
-        </div>
-        <button
-          class="btn btn-ghost btn-xs sm:btn-sm btn-circle flex-shrink-0"
-          (click)="toggleCategory(category.type); $event.stopPropagation()"
-          aria-label="Close breakdown"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4 sm:h-5 sm:w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
-      <!-- Breakdown Items - More Visible Grid -->
-      @if (category.accounts && category.accounts.length > 0) {
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-        @for (account of category.accounts; track account.label) {
+      <!-- Expenses Coming Soon Card -->
+      @if (category.type === 'expenses') {
         <div
-          class="card bg-base-200 border-2 border-base-300 hover:border-base-content/20 transition-all hover:shadow-md"
+          class="stat-card group relative overflow-hidden"
+          [class.stat-card-expenses]="category.type === 'expenses'"
         >
-          <div class="card-body p-3 sm:p-4 items-center text-center gap-2">
-            <div class="text-3xl sm:text-4xl">{{ account.icon }}</div>
-            <div class="space-y-1">
-              <div class="text-xs sm:text-sm font-semibold opacity-80 leading-tight">
-                {{ account.label }}
+          <div class="absolute top-2 right-2 z-10">
+            <span class="badge badge-sm badge-warning">Coming Soon</span>
+          </div>
+          <!-- Mobile Compact View -->
+          <div class="stat-card-compact sm:hidden">
+            <!-- Header with Icon -->
+            <div class="flex items-center justify-between mb-2">
+              <div class="stat-icon">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-full h-full"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
               </div>
-              <div class="text-base sm:text-lg font-bold tabular-nums">
-                {{ account.value.replace('KES ', '') }}
+              <div class="stat-trend">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-3 h-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 10l7-7m0 0l7 7m-7-7v18"
+                  />
+                </svg>
               </div>
+            </div>
+
+            <!-- Category Label -->
+            <div class="stat-label">{{ category.name }}</div>
+
+            <!-- Today's Value (Primary) -->
+            <div class="stat-value">
+              {{ formatCompactValue(category.stats[0].amount) }}
+            </div>
+
+            <!-- Visual Bar Indicator -->
+            <div class="stat-bar-container">
+              <div class="stat-bar" [style.width]="getBarWidth(category.type) + '%'"></div>
+            </div>
+
+            <!-- Period Dots -->
+            <div class="stat-periods">
+              <div class="stat-period-dot"></div>
+              <div class="stat-period-dot stat-period-dot-week"></div>
+              <div class="stat-period-dot stat-period-dot-month"></div>
+            </div>
+          </div>
+
+          <!-- Tablet/Desktop View -->
+          <div class="stat-card-full hidden sm:block">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm lg:text-base font-bold uppercase tracking-wide">
+                {{ category.name }}
+              </h3>
+              <div class="badge badge-ghost badge-sm opacity-60">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3 transition-transform duration-300"
+                  [class.rotate-180]="expandedCategory() === category.type"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              @for (stat of category.stats; track stat.period) {
+                <div class="flex justify-between items-center">
+                  <span class="text-xs lg:text-sm font-medium opacity-70">{{ stat.period }}</span>
+                  <span class="text-base lg:text-lg font-bold tabular-nums">
+                    {{ stat.amount.replace('KES ', '') }}
+                  </span>
+                </div>
+              }
+            </div>
+
+            <div class="mt-3 pt-3 border-t border-current opacity-20 text-center">
+              <span class="text-xs font-semibold uppercase tracking-wider opacity-60">
+                {{ expandedCategory() === category.type ? 'Hide' : 'Details' }}
+              </span>
             </div>
           </div>
         </div>
-        }
-      </div>
-      } @else {
-      <div class="text-center py-8 text-base-content/60">
-        <p class="text-sm">No breakdown data available</p>
-      </div>
       }
-    </div>
+      <!-- Regular Stats Cards (Purchases & Sales) -->
+      @if (category.type !== 'expenses') {
+        <button
+          class="stat-card group"
+          [class.stat-card-active]="expandedCategory() === category.type"
+          [class.stat-card-purchases]="category.type === 'purchases'"
+          [class.stat-card-sales]="category.type === 'sales'"
+          (click)="toggleCategory(category.type)"
+          [attr.aria-expanded]="expandedCategory() === category.type"
+          [attr.aria-label]="'Toggle ' + category.name + ' breakdown'"
+        >
+          <!-- Mobile Compact View -->
+          <div class="stat-card-compact sm:hidden">
+            <!-- Header with Icon -->
+            <div class="flex items-center justify-between mb-2">
+              <div class="stat-icon">
+                @if (category.type === 'purchases') {
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-full h-full"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                }
+                @if (category.type === 'sales') {
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-full h-full"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                }
+              </div>
+              <div class="stat-trend">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-3 h-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 10l7-7m0 0l7 7m-7-7v18"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <!-- Category Label -->
+            <div class="stat-label">{{ category.name }}</div>
+
+            <!-- Today's Value (Primary) -->
+            <div class="stat-value">
+              {{ formatCompactValue(category.stats[0].amount) }}
+            </div>
+
+            <!-- Visual Bar Indicator -->
+            <div class="stat-bar-container">
+              <div class="stat-bar" [style.width]="getBarWidth(category.type) + '%'"></div>
+            </div>
+
+            <!-- Period Dots -->
+            <div class="stat-periods">
+              <div class="stat-period-dot"></div>
+              <div class="stat-period-dot stat-period-dot-week"></div>
+              <div class="stat-period-dot stat-period-dot-month"></div>
+            </div>
+          </div>
+
+          <!-- Tablet/Desktop View -->
+          <div class="stat-card-full hidden sm:block">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm lg:text-base font-bold uppercase tracking-wide">
+                {{ category.name }}
+              </h3>
+              <div class="badge badge-ghost badge-sm opacity-60">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3 transition-transform duration-300"
+                  [class.rotate-180]="expandedCategory() === category.type"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              @for (stat of category.stats; track stat.period) {
+                <div class="flex justify-between items-center">
+                  <span class="text-xs lg:text-sm font-medium opacity-70">{{ stat.period }}</span>
+                  <span class="text-base lg:text-lg font-bold tabular-nums">
+                    {{ stat.amount.replace('KES ', '') }}
+                  </span>
+                </div>
+              }
+            </div>
+
+            <div class="mt-3 pt-3 border-t border-current opacity-20 text-center">
+              <span class="text-xs font-semibold uppercase tracking-wider opacity-60">
+                {{ expandedCategory() === category.type ? 'Hide' : 'Details' }}
+              </span>
+            </div>
+          </div>
+        </button>
+      }
+    }
   </div>
-  } } }
+
+  <!-- Expanded Details - Enhanced Card with Better Visibility -->
+  @if (expandedCategory(); as expanded) {
+    @for (category of categories(); track category.type) {
+      @if (category.type === expanded) {
+        <div
+          class="card bg-base-100 shadow-xl border-2 animate-in"
+          [class.border-primary]="category.type === 'purchases'"
+          [class.border-success]="category.type === 'sales'"
+          [class.border-error]="category.type === 'expenses'"
+        >
+          <div class="card-body p-4 sm:p-6">
+            <!-- Header with Better Visual Hierarchy - Compact Mobile -->
+            <div class="flex items-center justify-between gap-3 mb-4 sm:mb-6">
+              <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div
+                  class="badge badge-lg gap-2 px-2 sm:px-3 py-1.5 sm:py-2 flex-shrink-0"
+                  [class.badge-primary]="category.type === 'purchases'"
+                  [class.badge-success]="category.type === 'sales'"
+                  [class.badge-error]="category.type === 'expenses'"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-3 w-3 sm:h-4 sm:w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                  <span class="text-xs sm:text-sm font-bold hidden xs:inline">Breakdown</span>
+                </div>
+                <h3
+                  class="text-sm sm:text-base lg:text-lg font-bold truncate"
+                  [class.text-primary]="category.type === 'purchases'"
+                  [class.text-success]="category.type === 'sales'"
+                  [class.text-error]="category.type === 'expenses'"
+                >
+                  {{ category.name }}
+                </h3>
+              </div>
+              <button
+                class="btn btn-ghost btn-xs sm:btn-sm btn-circle flex-shrink-0"
+                (click)="toggleCategory(category.type); $event.stopPropagation()"
+                aria-label="Close breakdown"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 sm:h-5 sm:w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <!-- Breakdown Items - More Visible Grid -->
+            @if (category.accounts && category.accounts.length > 0) {
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                @for (account of category.accounts; track account.label) {
+                  <div
+                    class="card bg-base-200 border-2 border-base-300 hover:border-base-content/20 transition-all hover:shadow-md"
+                  >
+                    <div class="card-body p-3 sm:p-4 items-center text-center gap-2">
+                      <div class="text-3xl sm:text-4xl">{{ account.icon }}</div>
+                      <div class="space-y-1">
+                        <div class="text-xs sm:text-sm font-semibold opacity-80 leading-tight">
+                          {{ account.label }}
+                        </div>
+                        <div class="text-base sm:text-lg font-bold tabular-nums">
+                          {{ account.value.replace('KES ', '') }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-center py-8 text-base-content/60">
+                <p class="text-sm">No breakdown data available</p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+  }
 
   <!-- Recent Activity - Enhanced Collapsible -->
   <div class="card bg-base-100 shadow-lg border-2 border-base-300 overflow-hidden">
@@ -427,35 +434,35 @@
       <div class="collapse-content px-5 pb-5">
         <div class="space-y-3">
           @for (activity of recentActivity(); track activity.id) {
-          <button
-            class="w-full flex items-center justify-between p-4 rounded-lg bg-base-200 hover:bg-base-300 border-2 border-transparent hover:border-base-content/10 transition-all active:scale-98"
-          >
-            <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-              <div
-                class="badge badge-sm sm:badge-lg font-semibold flex-shrink-0"
-                [class.badge-primary]="activity.type === 'Purchase'"
-                [class.badge-success]="activity.type === 'Sale'"
-                [class.badge-error]="activity.type === 'Expense'"
-              >
-                {{ activity.type }}
-              </div>
-              <span class="text-xs sm:text-sm font-medium truncate">{{
-                activity.description
-              }}</span>
-            </div>
-            <div
-              class="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-3 flex-shrink-0"
+            <button
+              class="w-full flex items-center justify-between p-4 rounded-lg bg-base-200 hover:bg-base-300 border-2 border-transparent hover:border-base-content/10 transition-all active:scale-98"
             >
-              <span
-                class="text-sm sm:text-base font-bold tabular-nums"
-                [class.text-success]="activity.amount.startsWith('+')"
-                [class.text-error]="activity.amount.startsWith('-')"
+              <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div
+                  class="badge badge-sm sm:badge-lg font-semibold flex-shrink-0"
+                  [class.badge-primary]="activity.type === 'Purchase'"
+                  [class.badge-success]="activity.type === 'Sale'"
+                  [class.badge-error]="activity.type === 'Expense'"
+                >
+                  {{ activity.type }}
+                </div>
+                <span class="text-xs sm:text-sm font-medium truncate">{{
+                  activity.description
+                }}</span>
+              </div>
+              <div
+                class="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-3 flex-shrink-0"
               >
-                {{ activity.amount }}
-              </span>
-              <span class="text-[0.625rem] sm:text-xs opacity-60">{{ activity.time }}</span>
-            </div>
-          </button>
+                <span
+                  class="text-sm sm:text-base font-bold tabular-nums"
+                  [class.text-success]="activity.amount.startsWith('+')"
+                  [class.text-error]="activity.amount.startsWith('-')"
+                >
+                  {{ activity.amount }}
+                </span>
+                <span class="text-[0.625rem] sm:text-xs opacity-60">{{ activity.time }}</span>
+              </div>
+            </button>
           }
         </div>
       </div>
@@ -493,15 +500,15 @@
       <div class="collapse-content px-3 pb-3 sm:px-5 sm:pb-5">
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
           @for (action of quickActions; track action.action) {
-          <button
-            class="btn btn-lg btn-outline flex-col h-auto py-5 gap-2 hover:scale-105 active:scale-95 transition-transform border-2"
-            (click)="handleQuickAction(action.action)"
-          >
-            <span class="text-3xl sm:text-4xl">{{ action.icon }}</span>
-            <span class="text-xs sm:text-sm font-semibold text-center leading-tight">{{
-              action.label
-            }}</span>
-          </button>
+            <button
+              class="btn btn-lg btn-outline flex-col h-auto py-5 gap-2 hover:scale-105 active:scale-95 transition-transform border-2"
+              (click)="handleQuickAction(action.action)"
+            >
+              <span class="text-3xl sm:text-4xl">{{ action.icon }}</span>
+              <span class="text-xs sm:text-sm font-semibold text-center leading-tight">{{
+                action.label
+              }}</span>
+            </button>
           }
         </div>
       </div>
@@ -510,30 +517,30 @@
 
   <!-- Alerts - Enhanced -->
   @if (lowStockCount() > 0) {
-  <div class="alert alert-warning shadow-lg border-2 border-warning/30">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      class="h-6 w-6 shrink-0"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-      />
-    </svg>
-    <div class="flex-1">
-      <p class="font-bold">Low Stock Alert</p>
-      <p class="text-sm opacity-90">
-        {{ lowStockCount() }} {{ lowStockCount() === 1 ? 'item is' : 'items are' }} running low in
-        inventory
-      </p>
+    <div class="alert alert-warning shadow-lg border-2 border-warning/30">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-6 w-6 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+        />
+      </svg>
+      <div class="flex-1">
+        <p class="font-bold">Low Stock Alert</p>
+        <p class="text-sm opacity-90">
+          {{ lowStockCount() }} {{ lowStockCount() === 1 ? 'item is' : 'items are' }} running low in
+          inventory
+        </p>
+      </div>
+      <button class="btn btn-sm btn-warning" (click)="navigateToInventory()">View Items</button>
     </div>
-    <button class="btn btn-sm btn-warning" (click)="navigateToInventory()">View Items</button>
-  </div>
   }
 
   <!-- Secondary Stats - Enhanced Grid -->

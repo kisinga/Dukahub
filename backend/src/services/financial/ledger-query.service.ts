@@ -28,11 +28,11 @@ export class LedgerQueryService {
   private balanceCache = new Map<string, { balance: number; timestamp: number }>();
   private readonly CACHE_TTL = 60000; // 1 minute
 
-  constructor(private readonly dataSource: DataSource) { }
+  constructor(private readonly dataSource: DataSource) {}
 
   /**
    * Get account balance from ledger
-   * 
+   *
    * For assets/expenses: positive balance = debit (normal)
    * For liabilities/income: negative balance = credit (normal)
    */
@@ -50,14 +50,12 @@ export class LedgerQueryService {
       };
     }
 
-    const account = await this.dataSource
-      .getRepository(Account)
-      .findOne({
-        where: {
-          channelId: query.channelId,
-          code: query.accountCode,
-        },
-      });
+    const account = await this.dataSource.getRepository(Account).findOne({
+      where: {
+        channelId: query.channelId,
+        code: query.accountCode,
+      },
+    });
 
     if (!account) {
       throw new Error(`Account ${query.accountCode} not found for channel ${query.channelId}`);
@@ -162,11 +160,7 @@ export class LedgerQueryService {
   /**
    * Get sales total for a period
    */
-  async getSalesTotal(
-    channelId: number,
-    startDate?: string,
-    endDate?: string
-  ): Promise<number> {
+  async getSalesTotal(channelId: number, startDate?: string, endDate?: string): Promise<number> {
     const balance = await this.getAccountBalance({
       channelId,
       accountCode: ACCOUNT_CODES.SALES,
@@ -184,11 +178,7 @@ export class LedgerQueryService {
   /**
    * Get purchases total for a period
    */
-  async getPurchaseTotal(
-    channelId: number,
-    startDate?: string,
-    endDate?: string
-  ): Promise<number> {
+  async getPurchaseTotal(channelId: number, startDate?: string, endDate?: string): Promise<number> {
     const balance = await this.getAccountBalance({
       channelId,
       accountCode: ACCOUNT_CODES.PURCHASES,
@@ -202,11 +192,7 @@ export class LedgerQueryService {
   /**
    * Get expenses total for a period
    */
-  async getExpenseTotal(
-    channelId: number,
-    startDate?: string,
-    endDate?: string
-  ): Promise<number> {
+  async getExpenseTotal(channelId: number, startDate?: string, endDate?: string): Promise<number> {
     const balance = await this.getAccountBalance({
       channelId,
       accountCode: ACCOUNT_CODES.EXPENSES,
@@ -220,10 +206,10 @@ export class LedgerQueryService {
   /**
    * Get sales breakdown by payment method (cash vs credit)
    * Returns cash sales and credit sales totals for a period
-   * 
+   *
    * Cash sales = debits to CASH_ON_HAND and CLEARING_MPESA that are part of sales entries
    * Credit sales = debits to ACCOUNTS_RECEIVABLE that are part of sales entries
-   * 
+   *
    * We filter by entries that also have SALES credits to ensure we only count sales transactions
    */
   async getSalesBreakdown(
@@ -232,47 +218,39 @@ export class LedgerQueryService {
     endDate?: string
   ): Promise<{ cashSales: number; creditSales: number }> {
     // Get SALES account
-    const salesAccount = await this.dataSource
-      .getRepository(Account)
-      .findOne({
-        where: {
-          channelId,
-          code: ACCOUNT_CODES.SALES,
-        },
-      });
+    const salesAccount = await this.dataSource.getRepository(Account).findOne({
+      where: {
+        channelId,
+        code: ACCOUNT_CODES.SALES,
+      },
+    });
 
     if (!salesAccount) {
       return { cashSales: 0, creditSales: 0 };
     }
 
     // Get cash accounts
-    const cashOnHandAccount = await this.dataSource
-      .getRepository(Account)
-      .findOne({
-        where: {
-          channelId,
-          code: ACCOUNT_CODES.CASH_ON_HAND,
-        },
-      });
+    const cashOnHandAccount = await this.dataSource.getRepository(Account).findOne({
+      where: {
+        channelId,
+        code: ACCOUNT_CODES.CASH_ON_HAND,
+      },
+    });
 
-    const mpesaAccount = await this.dataSource
-      .getRepository(Account)
-      .findOne({
-        where: {
-          channelId,
-          code: ACCOUNT_CODES.CLEARING_MPESA,
-        },
-      });
+    const mpesaAccount = await this.dataSource.getRepository(Account).findOne({
+      where: {
+        channelId,
+        code: ACCOUNT_CODES.CLEARING_MPESA,
+      },
+    });
 
     // Get AR account
-    const arAccount = await this.dataSource
-      .getRepository(Account)
-      .findOne({
-        where: {
-          channelId,
-          code: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
-        },
-      });
+    const arAccount = await this.dataSource.getRepository(Account).findOne({
+      where: {
+        channelId,
+        code: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
+      },
+    });
 
     if (!cashOnHandAccount || !mpesaAccount || !arAccount) {
       return { cashSales: 0, creditSales: 0 };
@@ -396,4 +374,3 @@ export class LedgerQueryService {
     return `${query.channelId}:${query.accountCode}:${query.startDate || ''}:${query.endDate || ''}:${query.customerId || ''}:${query.supplierId || ''}:${query.orderId || ''}`;
   }
 }
-

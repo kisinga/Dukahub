@@ -1,6 +1,6 @@
 /**
  * Posting Policy
- * 
+ *
  * Maps business domain events to accounting journal entry templates.
  * This abstracts accounting terminology from business logic.
  */
@@ -60,13 +60,13 @@ export interface RefundPostingContext {
 
 /**
  * Generate journal entry template for customer payment settlement
- * 
+ *
  * Debits: Cash/Clearing account (asset increase)
  * Credits: Sales account (income increase)
  */
 export function createPaymentEntry(context: PaymentPostingContext): JournalEntryTemplate {
   const clearingAccount = mapPaymentMethodToAccount(context.method);
-  
+
   return {
     lines: [
       {
@@ -95,7 +95,7 @@ export function createPaymentEntry(context: PaymentPostingContext): JournalEntry
 
 /**
  * Generate journal entry template for credit sale (order fulfilled without payment)
- * 
+ *
  * Debits: Accounts Receivable (asset increase - customer owes us)
  * Credits: Sales account (income increase)
  */
@@ -131,13 +131,13 @@ export function createCreditSaleEntry(context: SalePostingContext): JournalEntry
 
 /**
  * Generate journal entry template for customer payment allocation (paying off credit)
- * 
+ *
  * Debits: Clearing account (asset increase - cash received)
  * Credits: Accounts Receivable (asset decrease - customer debt reduced)
  */
 export function createPaymentAllocationEntry(context: PaymentPostingContext): JournalEntryTemplate {
   const clearingAccount = mapPaymentMethodToAccount(context.method);
-  
+
   return {
     lines: [
       {
@@ -166,7 +166,7 @@ export function createPaymentAllocationEntry(context: PaymentPostingContext): Jo
 
 /**
  * Generate journal entry template for supplier credit purchase
- * 
+ *
  * Debits: Purchases account (expense increase)
  * Credits: Accounts Payable (liability increase - we owe supplier)
  */
@@ -202,13 +202,15 @@ export function createSupplierPurchaseEntry(context: PurchasePostingContext): Jo
 
 /**
  * Generate journal entry template for supplier payment
- * 
+ *
  * Debits: Accounts Payable (liability decrease - debt paid)
  * Credits: Cash account (asset decrease - cash paid out)
  */
-export function createSupplierPaymentEntry(context: SupplierPaymentPostingContext): JournalEntryTemplate {
+export function createSupplierPaymentEntry(
+  context: SupplierPaymentPostingContext
+): JournalEntryTemplate {
   const cashAccount = mapPaymentMethodToAccount(context.method);
-  
+
   return {
     lines: [
       {
@@ -237,14 +239,14 @@ export function createSupplierPaymentEntry(context: SupplierPaymentPostingContex
 
 /**
  * Generate journal entry template for refund
- * 
+ *
  * Reverses the original payment entry
  * Debits: Sales Returns (income decrease)
  * Credits: Cash/Clearing account (asset decrease - money returned)
  */
 export function createRefundEntry(context: RefundPostingContext): JournalEntryTemplate {
   const clearingAccount = mapPaymentMethodToAccount(context.method);
-  
+
   return {
     lines: [
       {
@@ -270,4 +272,3 @@ export function createRefundEntry(context: RefundPostingContext): JournalEntryTe
     memo: `Refund for order ${context.orderCode}`,
   };
 }
-

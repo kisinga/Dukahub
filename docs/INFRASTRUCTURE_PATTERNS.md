@@ -57,11 +57,13 @@ backend/src/
 ### Service Types
 
 #### Domain Services (`services/`)
+
 - Contain business logic for a specific domain
 - Examples: `CreditService`, `OrderCreationService`, `SubscriptionService`
 - Should not depend on other domain services directly (use events for cross-domain communication)
 
 #### Infrastructure Services (`infrastructure/`)
+
 - Provide technical capabilities (SMS, events, storage)
 - Can be used by multiple domain services
 - Examples: `SmsService`, `ChannelEventRouterService`, `RegistrationStorageService`
@@ -79,10 +81,10 @@ backend/src/
 ```typescript
 @Injectable()
 export class CreditService {
-    constructor(
-        private readonly connection: TransactionalConnection,
-        private readonly communicationService: ChannelCommunicationService,
-    ) {}
+  constructor(
+    private readonly connection: TransactionalConnection,
+    private readonly communicationService: ChannelCommunicationService
+  ) {}
 }
 ```
 
@@ -97,7 +99,7 @@ export class CreditService {
         private readonly connection: TransactionalConnection,
         @Optional() private readonly communicationService?: ChannelCommunicationService,
     ) {}
-    
+
     // Always check if optional service exists before using
     if (this.communicationService) {
         await this.communicationService.sendBalanceChangeNotification(...);
@@ -106,11 +108,13 @@ export class CreditService {
 ```
 
 **When to use `@Optional()`:**
+
 - When there's a potential circular dependency
 - When the service can function without the dependency
 - When the dependency is provided conditionally
 
 **Best Practices:**
+
 - Always check for existence before using optional dependencies
 - Log warnings when optional dependencies are missing (if critical)
 - Document why the dependency is optional
@@ -124,20 +128,21 @@ For cases where DI is not possible (e.g., payment handlers), use a service locat
 let creditServiceRef: any | null = null;
 
 export function setPaymentHandlerCreditService(creditService: any): void {
-    creditServiceRef = creditService;
+  creditServiceRef = creditService;
 }
 
 // In credit plugin
 @Injectable()
 class PaymentHandlerInitializer implements OnModuleInit {
-    constructor(private creditService: CreditService) {}
-    onModuleInit() {
-        setPaymentHandlerCreditService(this.creditService);
-    }
+  constructor(private creditService: CreditService) {}
+  onModuleInit() {
+    setPaymentHandlerCreditService(this.creditService);
+  }
 }
 ```
 
 **When to use Service Locator:**
+
 - When DI is not available (e.g., in PaymentMethodHandler)
 - As a last resort - prefer DI when possible
 
@@ -161,6 +166,7 @@ Service A → ChannelEventRouterService → Action Handlers → Service B
 ### Event Types
 
 Events are defined in `infrastructure/events/types/event-type.enum.ts`:
+
 - `CUSTOMER_CREATED`
 - `CUSTOMER_CREDIT_APPROVED`
 - `ORDER_PAYMENT_SETTLED`
@@ -170,6 +176,7 @@ Events are defined in `infrastructure/events/types/event-type.enum.ts`:
 ### Action Handlers
 
 Handlers implement `IChannelActionHandler` interface:
+
 - `InAppActionHandler` - Creates in-app notifications
 - `PushActionHandler` - Sends push notifications
 - `SmsActionHandler` - Sends SMS messages
@@ -179,12 +186,12 @@ Handlers implement `IChannelActionHandler` interface:
 ```typescript
 // In a service
 await this.eventRouter.routeEvent({
-    type: ChannelEventType.CUSTOMER_CREDIT_APPROVED,
-    channelId,
-    category: ActionCategory.CUSTOMER_COMMUNICATION,
-    context: ctx,
-    data: { customerId, creditLimit },
-    targetCustomerId: customerId,
+  type: ChannelEventType.CUSTOMER_CREDIT_APPROVED,
+  channelId,
+  category: ActionCategory.CUSTOMER_COMMUNICATION,
+  context: ctx,
+  data: { customerId, creditLimit },
+  targetCustomerId: customerId,
 });
 ```
 
@@ -215,12 +222,12 @@ plugins/{domain}/
 
 ```typescript
 @VendurePlugin({
-    imports: [PluginCommonModule],
-    providers: [Service1, Service2, Resolver],
-    adminApiExtensions: {
-        schema: SCHEMA,
-        resolvers: [Resolver],
-    },
+  imports: [PluginCommonModule],
+  providers: [Service1, Service2, Resolver],
+  adminApiExtensions: {
+    schema: SCHEMA,
+    resolvers: [Resolver],
+  },
 })
 export class DomainPlugin {}
 ```
@@ -228,6 +235,7 @@ export class DomainPlugin {}
 ### Service Exposure
 
 Services are provided in the plugin's `providers` array. They can be:
+
 - Used within the plugin
 - Exported for use by other plugins
 - Injected into resolvers, subscribers, etc.
@@ -252,7 +260,7 @@ Services should throw appropriate errors:
 
 ```typescript
 if (!customer) {
-    throw new UserInputError(`Customer ${customerId} not found`);
+  throw new UserInputError(`Customer ${customerId} not found`);
 }
 ```
 
@@ -314,4 +322,3 @@ async createOrder(ctx: RequestContext, input: CreateOrderInput): Promise<Order> 
 - Plugins reorganized into domain folders
 - Circular dependencies handled with `@Optional()` pattern
 - Service locator pattern maintained for payment handlers
-
