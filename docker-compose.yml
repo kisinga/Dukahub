@@ -36,6 +36,7 @@ services:
   # ========================================
   timescaledb_audit:
     image: timescale/timescaledb:latest-pg17
+    platform: linux/amd64
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${AUDIT_DB_NAME:-audit_logs}
@@ -84,6 +85,7 @@ services:
   # ========================================
   backend:
     image: ghcr.io/kisinga/dukarun/backend:latest
+    platform: linux/amd64
     restart: unless-stopped
     environment:
       # Database configuration
@@ -188,6 +190,7 @@ services:
   # ========================================
   frontend:
     image: ghcr.io/kisinga/dukarun/frontend:latest
+    platform: linux/amd64
     restart: unless-stopped
     environment:
       # Backend connection - using service name for reliable discovery
@@ -228,6 +231,7 @@ services:
   # Only expose OTLP ports (4317, 4318) to internal Docker network
   signoz:
     image: signoz/signoz:latest
+    platform: linux/amd64
     restart: unless-stopped
     environment:
       # SigNoz configuration
@@ -272,6 +276,7 @@ services:
   # Only accessible within Docker network for SigNoz
   clickhouse:
     image: clickhouse/clickhouse-server:latest
+    platform: linux/amd64
     restart: unless-stopped
     environment:
       # ClickHouse configuration
