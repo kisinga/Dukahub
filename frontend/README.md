@@ -55,7 +55,7 @@ src/app/
 ```bash
 npm start             # Dev server
 npm run build         # Production build
-npm test              # Run tests (requires Chrome/Chromium)
+npm test              # Run tests (requires Chrome)
 npm run test:ci       # Run tests with coverage (CI mode)
 npm run codegen       # Generate GraphQL types
 ```
@@ -69,12 +69,12 @@ npm run codegen       # Generate GraphQL types
 - **Integration Tests:** Service integration, critical workflows, behavioral smoke tests
 - **Component Tests:** Minimal - only essential component tests (e.g., app initialization)
 
-**Requirements:** Chromium must be installed to run tests.
+**Requirements:** Chrome must be installed to run tests.
 
-- **Local development:** Install Chromium on your system
-  - Install with: `sudo apt-get install chromium-browser` (Debian/Ubuntu) or `sudo dnf install chromium` (Fedora)
-  - If you see `ERROR [launcher]: No binary for ChromeHeadless browser on your platform`, Chromium is not installed
-- **CI:** Chromium is installed automatically in the GitHub Actions workflow
+- **Local development:** Install Chrome on your system
+  - Install with: `sudo apt-get install google-chrome-stable` (Debian/Ubuntu) or download from [Google Chrome](https://www.google.com/chrome/)
+  - If you see `ERROR [launcher]: No binary for ChromeHeadless browser on your platform`, Chrome is not installed
+- **CI:** Chrome is installed automatically in the GitHub Actions workflow
 
 ## Environment
 

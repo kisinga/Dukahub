@@ -1,39 +1,29 @@
 // Karma configuration file for Angular testing
-// Configured to use Chromium for consistent testing across local and CI environments
-const { execSync } = require('child_process');
-
-// Detect Chromium binary and set CHROME_BIN environment variable
-// This must be done before karma-chrome-launcher initializes
-let chromiumPath = null;
-try {
-  const possiblePaths = ['chromium-browser', 'chromium'];
-  for (const cmd of possiblePaths) {
-    try {
-      const path = execSync(`which ${cmd} 2>/dev/null`, { encoding: 'utf8' }).trim();
-      if (path) {
-        chromiumPath = path;
-        process.env.CHROME_BIN = path;
-        break;
-      }
-    } catch (e) {
-      // Continue to next option
-    }
-  }
-} catch (e) {
-  // Chromium not found - will use system default if available
-}
-
+// Standard Angular CI testing setup using ChromeHeadlessNoSandbox
 module.exports = function (config) {
-  // Headless flags required for running without display server (CI/local headless)
-  const headlessFlags = [
-    '--headless=new',
-    '--no-sandbox',
-    '--disable-gpu',
-    '--disable-dev-shm-usage',
-    '--disable-software-rasterizer',
-    '--disable-setuid-sandbox',
-    '--remote-debugging-port=9222',
-  ];
+  // Detect CI/headless environment - check multiple indicators
+  // Priority: Explicit USE_HEADLESS flag, then CI detection, then display check
+  const useHeadlessExplicit =
+    process.env.USE_HEADLESS === 'true' || process.env.USE_HEADLESS === '1';
+  const isCI =
+    process.env.CI === 'true' ||
+    process.env.CI === '1' ||
+    process.env.CONTINUOUS_INTEGRATION === 'true' ||
+    process.env.GITHUB_ACTIONS === 'true' ||
+    process.env.GITLAB_CI === 'true' ||
+    process.env.JENKINS_URL !== undefined;
+
+  // Check if display is actually available (not just set)
+  // DISPLAY might be set to ':0' in CI but not actually available
+  const hasDisplay =
+    process.env.DISPLAY &&
+    process.env.DISPLAY !== '' &&
+    process.env.DISPLAY !== ':0' &&
+    process.env.DISPLAY !== ':99' &&
+    process.env.DISPLAY !== ':99.0';
+
+  // Use headless if explicitly requested, in CI (always), or no valid display available
+  const useHeadless = useHeadlessExplicit || isCI || !hasDisplay;
 
   config.set({
     basePath: '',
@@ -63,22 +53,21 @@ module.exports = function (config) {
       reporters: [{ type: 'html' }, { type: 'text-summary' }, { type: 'lcov' }],
     },
     reporters: ['progress', 'kjhtml', 'coverage'],
-    browsers: ['ChromeHeadless'],
+    browsers: useHeadless ? ['ChromeHeadlessNoSandbox'] : ['Chrome'],
     restartOnFileChange: true,
     customLaunchers: {
-      ChromeHeadless: chromiumPath
-        ? {
-            // Use Chrome base launcher with Chromium executable
-            // karma-chrome-launcher works with both Chrome and Chromium
-            base: 'Chrome',
-            flags: headlessFlags,
-            executablePath: chromiumPath,
-          }
-        : {
-            // Fallback: use default ChromeHeadless if Chromium not found
-            base: 'ChromeHeadless',
-            flags: headlessFlags,
-          },
+      ChromeHeadlessNoSandbox: {
+        base: 'ChromeHeadless',
+        flags: [
+          '--no-sandbox',
+          '--disable-gpu',
+          '--disable-dev-shm-usage',
+          '--disable-setuid-sandbox',
+          '--disable-software-rasterizer',
+          '--disable-extensions',
+          '--remote-debugging-port=0',
+        ],
+      },
     },
     // Fallback configuration for when browsers aren't available
     failOnEmptyTestSuite: false,

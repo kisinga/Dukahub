@@ -57,10 +57,17 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'frontend/package-lock.json'
 
+      - name: Install Google Chrome
+        run: |
+          wget -q -O /tmp/google-chrome-stable_current_amd64.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt-get update
+          sudo apt-get install -y /tmp/google-chrome-stable_current_amd64.deb
+
       - name: Install and test frontend
         run: |
           cd frontend
           npm ci
+          export CHROME_BIN=/usr/bin/google-chrome-stable
           npm run test:ci
         timeout-minutes: 10
 
