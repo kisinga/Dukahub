@@ -1,7 +1,22 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/spec', '<rootDir>/src'],
+  roots: ['<rootDir>/spec'],
+  setupFiles: ['<rootDir>/spec/helpers/setup-test-env.ts'],
+  setupFilesAfterEnv: ['<rootDir>/spec/helpers/setup-env-vars.ts'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',
+    '/build/',
+    '/src/migrations/',
+    '/src/index.ts',
+    '/src/index-worker.ts',
+    '/src/vendure-config.ts',
+    '/src/environment.d.ts',
+    '/src/entrypoint.ts',
+    '/src/.*\\.spec\\.ts',
+    '/src/.*\\.test\\.ts',
+  ],
   testMatch: ['**/*.spec.ts'],
   transform: {
     '^.+\\.ts$': 'ts-jest',
@@ -29,6 +44,5 @@ module.exports = {
   },
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  setupFilesAfterEnv: [],
   testTimeout: 30000, // 30 seconds for migration tests
 };
