@@ -9,7 +9,16 @@ import { initializeTelemetry } from './infrastructure/observability/telemetry.in
 // Initialize telemetry (must be done before any other application code)
 initializeTelemetry(`${BRAND_CONFIG.servicePrefix}-worker`);
 
-bootstrapWorker(config)
+const workerRuntimeConfig = {
+  ...config,
+  dbConnectionOptions: {
+    ...config.dbConnectionOptions,
+    migrationsRun: false,
+    synchronize: false,
+  },
+};
+
+bootstrapWorker(workerRuntimeConfig)
   .then(worker => worker.startJobQueue())
   .catch(err => {
     // Use console.error for bootstrap failures (logger not yet initialized)

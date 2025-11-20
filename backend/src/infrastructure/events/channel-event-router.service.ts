@@ -7,14 +7,13 @@ import {
   StockMovementEvent,
   UserService,
 } from '@vendure/core';
-import * as fs from 'fs';
-import * as path from 'path';
 import { ChannelActionTrackingService } from './channel-action-tracking.service';
 import { IChannelActionHandler } from './handlers/action-handler.interface';
 import { InAppActionHandler } from './handlers/in-app-action.handler';
 import { PushActionHandler } from './handlers/push-action.handler';
 import { SmsActionHandler } from './handlers/sms-action.handler';
 import { NotificationPreferenceService } from './notification-preference.service';
+import { EVENT_METADATA_MAP } from './config/event-metadata';
 import { ActionCategory } from './types/action-category.enum';
 import { ChannelActionType } from './types/action-type.enum';
 import { ActionConfig, ChannelEvent, ChannelEventConfig } from './types/channel-event.interface';
@@ -366,20 +365,6 @@ export class ChannelEventRouterService implements OnModuleInit {
    * Load event metadata from JSON file
    */
   private loadEventMetadata(): void {
-    try {
-      const metadataPath = path.join(__dirname, 'config/event-metadata.json');
-      const metadataContent = fs.readFileSync(metadataPath, 'utf-8');
-      const metadata = JSON.parse(metadataContent);
-
-      this.eventMetadataCache = new Map();
-      for (const [eventType, meta] of Object.entries(metadata)) {
-        this.eventMetadataCache.set(eventType, meta);
-      }
-    } catch (error) {
-      this.logger.error(
-        `Failed to load event metadata: ${error instanceof Error ? error.message : String(error)}`
-      );
-      this.eventMetadataCache = new Map();
-    }
+    this.eventMetadataCache = new Map(EVENT_METADATA_MAP);
   }
 }

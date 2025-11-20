@@ -10,7 +10,6 @@
     "start:server": "node ./dist/src/index.js",
     "start:worker": "node ./dist/src/index-worker.js",
     "start": "concurrently npm:start:*",
-    "populate": "node ./dist/src/populate.js",
     "migration:run": "node -e \"require('@vendure/core').runMigrations(require('./dist/src/vendure-config').config).then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); })\"",
     "entrypoint": "ts-node ./src/entrypoint.ts",
     "test": "jest",

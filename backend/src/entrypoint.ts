@@ -6,14 +6,16 @@
  * This module contains the core initialization logic used by both
  * the Docker entrypoint and the test suite to ensure identical behavior.
  *
- * Automatically detects empty databases and populates them, then runs
- * migrations and starts the application.
+ * Detects database state, runs migrations, and starts the application.
+ * Superadmin is created automatically by Vendure during bootstrap.
  */
 
 import { execSync, spawn } from 'child_process';
 // Initialize environment configuration early (before database detection)
 import { BRAND_CONFIG } from './constants/brand.constants';
 import './infrastructure/config/environment.config';
+import { config } from './vendure-config';
+import { initializeVendureBootstrap } from './utils/bootstrap-init';
 import { isDatabaseEmpty, verifyTablesExist, waitForDatabase } from './utils/database-detection';
 
 export interface EntrypointOptions {
@@ -33,10 +35,10 @@ export class DukarunEntrypoint {
   }
 
   /**
-   * Detect if database is empty and populate if needed
-   * Only populates if database is completely empty (no tables exist)
+   * Detect database state
+   * Checks if database is empty (no tables exist yet)
    */
-  async detectAndPopulate(): Promise<void> {
+  async detectDatabaseState(): Promise<void> {
     console.log('🔍 Checking database state...');
 
     try {
@@ -50,29 +52,20 @@ export class DukarunEntrypoint {
       const isEmpty = await isDatabaseEmpty();
 
       if (isEmpty) {
-        console.log('📦 Database is empty, populating with sample data...');
-
-        try {
-          // Run the populate script
-          execSync('npm run populate', {
-            stdio: 'inherit',
-            cwd: process.cwd(),
-          });
-
-          console.log('✅ Population complete');
-        } catch (error) {
-          console.error('❌ Population failed!');
-          throw error;
-        }
+        console.log(
+          '📦 Database is empty - superadmin will be created automatically during bootstrap'
+        );
+        // Superadmin is created automatically by Vendure during bootstrap
+        // via AdministratorService.ensureSuperAdminExists() which uses config.authOptions.superadminCredentials
       } else {
-        console.log('✅ Database already contains data, skipping population');
+        console.log('✅ Database already contains data');
       }
     } catch (error) {
       // If we can't check the database state, log and continue
       // This allows the system to start even if detection fails
       // (migrations will handle any missing schema)
       console.warn(
-        '⚠️  Could not determine database state, skipping population:',
+        '⚠️  Could not determine database state:',
         error instanceof Error ? error.message : String(error)
       );
       console.warn('⚠️  Continuing with migrations...');
@@ -96,7 +89,6 @@ export class DukarunEntrypoint {
 
       // Verify critical custom tables exist after migrations
       // This ensures our custom migrations actually completed successfully
-      // Core Vendure tables (channel, user, etc.) are verified during populate step
       const criticalCustomTables = [
         'ml_extraction_queue', // ML extraction queue (created by our custom migration)
       ];
@@ -213,21 +205,29 @@ export class DukarunEntrypoint {
    * Main entrypoint logic
    *
    * Flow:
-   * 1. Detect if database is empty and populate if needed
-   * 2. Run migrations (only pending ones will run, idempotent)
-   * 3. Start the application
+   * 1. Detect database state
+   * 2. Start the application (which handles core table creation and migrations)
+   *
+   * Note: Migrations are now handled in index.ts to ensure Vendure core tables
+   * are created BEFORE custom migrations run (for FK constraints).
    */
   async run(): Promise<void> {
     console.log(`🚀 ${BRAND_CONFIG.displayName} Entrypoint starting...`);
 
     try {
-      // Step 1: Detect and populate if database is empty
-      await this.detectAndPopulate();
+      // Step 1: Detect database state
+      await this.detectDatabaseState();
 
-      // Step 2: Always run migrations (Vendure's runMigrations only runs pending ones)
-      await this.runMigrations();
+      // Step 2: Initialize Vendure core tables and run migrations once before
+      // starting the server/worker processes. Child processes will skip this step
+      // via SKIP_BOOTSTRAP_INIT.
+      console.log('🧱 Running centralized bootstrap initialization...');
+      await initializeVendureBootstrap(config);
+      console.log('✅ Bootstrap initialization complete');
+      process.env.SKIP_BOOTSTRAP_INIT = '1';
 
       // Step 3: Start the application
+      // Child processes only bootstrap runtime; initialization already done.
       await this.startApplication();
     } catch (error) {
       console.error('❌ Entrypoint failed:', error);

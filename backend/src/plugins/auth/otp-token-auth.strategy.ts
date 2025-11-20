@@ -40,22 +40,38 @@ export class OtpTokenAuthStrategy
   private userService?: UserService;
   private otpService?: OtpService;
 
-  constructor(private readonly otpServiceInject?: OtpService) {
+  constructor(
+    private readonly otpServiceInject?: OtpService,
+    nativeStrategy?: NativeAuthenticationStrategy
+  ) {
     // OtpService will be injected via DI if provided, otherwise we'll get it later via init()
     if (otpServiceInject) {
       this.otpService = otpServiceInject;
     }
+    // Native strategy can be provided via constructor (preferred) or resolved via DI (fallback)
+    if (nativeStrategy) {
+      this.nativeStrategy = nativeStrategy;
+    }
   }
 
   init(injector: Injector): void {
-    try {
-      this.nativeStrategy = injector.get(NativeAuthenticationStrategy);
+    // If native strategy wasn't provided via constructor, try to resolve it via DI
+    if (!this.nativeStrategy) {
+      try {
+        this.nativeStrategy = injector.get(NativeAuthenticationStrategy);
+        const maybeInit = (this.nativeStrategy as any)?.init;
+        if (typeof maybeInit === 'function') {
+          maybeInit.call(this.nativeStrategy, injector);
+        }
+      } catch (error: any) {
+        // If native strategy cannot be resolved, non-OTP logins will fail fast in authenticate().
+      }
+    } else {
+      // If native strategy was provided via constructor, ensure it's initialized
       const maybeInit = (this.nativeStrategy as any)?.init;
       if (typeof maybeInit === 'function') {
         maybeInit.call(this.nativeStrategy, injector);
       }
-    } catch (error: any) {
-      // If native strategy cannot be resolved, non-OTP logins will fail fast in authenticate().
     }
 
     // Resolve supporting services used for OTP logins

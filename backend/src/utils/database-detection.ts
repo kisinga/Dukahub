@@ -5,7 +5,7 @@ import { env } from '../infrastructure/config/environment.config';
  * Database Detection Utility
  *
  * Provides functions to detect database state, particularly to determine
- * if a database is empty and needs to be populated.
+ * if a database is empty (has no tables yet).
  */
 
 interface DatabaseConnectionConfig {
@@ -54,7 +54,7 @@ export async function isDatabaseEmpty(): Promise<boolean> {
   try {
     // Check for Vendure core tables to determine if database is initialized
     // We check for key Vendure tables like 'channel', 'user', 'customer' which are
-    // created during the populate step. If these don't exist, the database needs population.
+    // created by Vendure's bootstrap. If these don't exist, the database is empty.
     const query = `
             SELECT COUNT(*) as vendure_table_count
             FROM information_schema.tables
@@ -70,7 +70,6 @@ export async function isDatabaseEmpty(): Promise<boolean> {
     return vendureTableCount === 0;
   } catch (error) {
     // If we can't connect or query, assume database is not ready
-    // This will cause populate to be skipped, which is safer
     console.error('❌ Error checking database state:', error);
     throw new Error(
       `Failed to check database state: ${error instanceof Error ? error.message : String(error)}`

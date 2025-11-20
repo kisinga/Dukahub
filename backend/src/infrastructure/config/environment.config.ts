@@ -242,6 +242,8 @@ export class EnvironmentConfig implements OnModuleInit {
     // Legacy endpoint support (for backward compatibility)
     this.observability.endpoint =
       process.env.SIGNOZ_ENDPOINT || this.observability.otlpGrpcEndpoint;
+
+    this.validate();
   }
 
   /**
@@ -254,6 +256,9 @@ export class EnvironmentConfig implements OnModuleInit {
     if (!this.db.name) required.push('DB_NAME');
     if (!this.db.username) required.push('DB_USERNAME');
     if (!this.db.password) required.push('DB_PASSWORD');
+
+    if (!this.superadmin.username) required.push('SUPERADMIN_USERNAME');
+    if (!this.superadmin.password) required.push('SUPERADMIN_PASSWORD');
 
     if (required.length > 0) {
       throw new Error(`Missing required environment variables: ${required.join(', ')}`);
