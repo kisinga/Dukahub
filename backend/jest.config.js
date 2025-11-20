@@ -13,7 +13,6 @@ module.exports = {
     '!src/migrations/**/*.ts',
     '!src/index.ts',
     '!src/index-worker.ts',
-    '!src/populate.ts',
     '!src/vendure-config.ts',
     '!src/environment.d.ts',
     '!src/entrypoint.ts',

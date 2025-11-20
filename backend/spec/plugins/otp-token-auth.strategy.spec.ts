@@ -9,8 +9,7 @@ describe('OtpTokenAuthStrategy', () => {
       authenticate: jest.fn().mockResolvedValue({ id: 1 } as unknown as User),
     } as unknown as NativeAuthenticationStrategy;
 
-    const strategy = new OtpTokenAuthStrategy();
-    (strategy as any).nativeStrategy = native;
+    const strategy = new OtpTokenAuthStrategy(undefined, native);
 
     const result = await strategy.authenticate(ctx, {
       username: 'superadmin',
@@ -58,10 +57,8 @@ describe('OtpTokenAuthStrategy', () => {
       },
     };
 
-    const strategy = new OtpTokenAuthStrategy();
-    (strategy as any).otpService = otpService;
+    const strategy = new OtpTokenAuthStrategy(otpService as any, native);
     (strategy as any).userService = userService;
-    (strategy as any).nativeStrategy = native;
 
     const result = await strategy.authenticate(ctx, {
       username: '0712345678',

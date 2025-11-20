@@ -59,15 +59,23 @@ import { StoreProvisionerService } from '../../services/auth/provisioning/store-
 
     const strategies: any[] = [];
 
+    // Create a single NativeAuthenticationStrategy instance that will be shared
+    // between OtpTokenAuthStrategy (for delegation) and the strategy array (for direct use)
+    const nativeStrategy = hasNative
+      ? existingStrategies.find((strategy: any) => strategy instanceof NativeAuthenticationStrategy)
+      : new NativeAuthenticationStrategy();
+
     // OtpTokenAuthStrategy wraps native auth and logs both OTP and non-OTP admin logins.
     // It must appear before the plain NativeAuthenticationStrategy so it can inspect the
     // password and delegate appropriately.
+    // Pass the native strategy instance to the OTP wrapper so it can delegate non-OTP logins.
     if (!hasOtp) {
-      strategies.push(new OtpTokenAuthStrategy());
+      strategies.push(new OtpTokenAuthStrategy(undefined, nativeStrategy));
     }
 
+    // Add the native strategy to the array if it doesn't already exist
     if (!hasNative) {
-      strategies.push(new NativeAuthenticationStrategy());
+      strategies.push(nativeStrategy);
     }
 
     config.authOptions.adminAuthenticationStrategy = [...strategies, ...existingStrategies];
