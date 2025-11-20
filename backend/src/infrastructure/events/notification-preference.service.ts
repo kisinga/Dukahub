@@ -6,9 +6,8 @@ import {
   User,
   UserService,
 } from '@vendure/core';
-import * as fs from 'fs';
-import * as path from 'path';
 import { ChannelEventConfig, UserNotificationPreferences } from './types/channel-event.interface';
+import { EVENT_METADATA_MAP } from './config/event-metadata';
 import { ChannelEventType } from './types/event-type.enum';
 
 /**
@@ -207,21 +206,7 @@ export class NotificationPreferenceService {
    * Load event metadata from JSON file
    */
   private loadEventMetadata(): void {
-    try {
-      const metadataPath = path.join(__dirname, 'config/event-metadata.json');
-      const metadataContent = fs.readFileSync(metadataPath, 'utf-8');
-      const metadata = JSON.parse(metadataContent);
-
-      this.eventMetadataCache = new Map();
-      for (const [eventType, meta] of Object.entries(metadata)) {
-        this.eventMetadataCache.set(eventType, meta);
-      }
-    } catch (error) {
-      this.logger.error(
-        `Failed to load event metadata: ${error instanceof Error ? error.message : String(error)}`
-      );
-      this.eventMetadataCache = new Map();
-    }
+    this.eventMetadataCache = new Map(EVENT_METADATA_MAP);
   }
 
   /**
