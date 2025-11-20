@@ -14,6 +14,8 @@ import { execSync, spawn } from 'child_process';
 // Initialize environment configuration early (before database detection)
 import { BRAND_CONFIG } from './constants/brand.constants';
 import './infrastructure/config/environment.config';
+import { config } from './vendure-config';
+import { initializeVendureBootstrap } from './utils/bootstrap-init';
 import { isDatabaseEmpty, verifyTablesExist, waitForDatabase } from './utils/database-detection';
 
 export interface EntrypointOptions {
@@ -204,8 +206,10 @@ export class DukarunEntrypoint {
    *
    * Flow:
    * 1. Detect database state
-   * 2. Run migrations (only pending ones will run, idempotent)
-   * 3. Start the application
+   * 2. Start the application (which handles core table creation and migrations)
+   *
+   * Note: Migrations are now handled in index.ts to ensure Vendure core tables
+   * are created BEFORE custom migrations run (for FK constraints).
    */
   async run(): Promise<void> {
     console.log(`🚀 ${BRAND_CONFIG.displayName} Entrypoint starting...`);
@@ -214,10 +218,16 @@ export class DukarunEntrypoint {
       // Step 1: Detect database state
       await this.detectDatabaseState();
 
-      // Step 2: Always run migrations (Vendure's runMigrations only runs pending ones)
-      await this.runMigrations();
+      // Step 2: Initialize Vendure core tables and run migrations once before
+      // starting the server/worker processes. Child processes will skip this step
+      // via SKIP_BOOTSTRAP_INIT.
+      console.log('🧱 Running centralized bootstrap initialization...');
+      await initializeVendureBootstrap(config);
+      console.log('✅ Bootstrap initialization complete');
+      process.env.SKIP_BOOTSTRAP_INIT = '1';
 
       // Step 3: Start the application
+      // Child processes only bootstrap runtime; initialization already done.
       await this.startApplication();
     } catch (error) {
       console.error('❌ Entrypoint failed:', error);

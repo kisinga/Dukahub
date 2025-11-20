@@ -102,6 +102,10 @@ docker-compose up postgres_db
 docker-compose up redis
 ```
 
+## Environment requirements
+
+The backend validates critical environment variables during startup. In particular, both `SUPERADMIN_USERNAME` and `SUPERADMIN_PASSWORD` **must** be provided (via `.env`, `docker-compose`, or your deployment platform). Startup will fail if either one is missing so that the Vendure superadmin account is always provisioned with an explicit credential set.
+
 ## Plugins
 
 In Vendure, your custom functionality will live in [plugins](https://www.vendure.io/docs/plugins/).

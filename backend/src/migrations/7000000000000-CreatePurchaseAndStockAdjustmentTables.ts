@@ -99,10 +99,16 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
         `);
 
     // Add foreign key constraints with integer types
+    // Note: Vendure core tables (customer, user, product_variant, stock_location) are created during bootstrap,
+    // which happens AFTER migrations run. We check table existence before creating FKs.
     await queryRunner.query(`
             DO $$
             BEGIN
-                IF NOT EXISTS (
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'customer'
+                ) AND NOT EXISTS (
                     SELECT 1 FROM pg_constraint WHERE conname = 'FK_33172b0d5e3965cc4da584ec283'
                 ) THEN
                     ALTER TABLE "stock_purchase" 
@@ -132,7 +138,11 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
     await queryRunner.query(`
             DO $$
             BEGIN
-                IF NOT EXISTS (
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'product_variant'
+                ) AND NOT EXISTS (
                     SELECT 1 FROM pg_constraint WHERE conname = 'FK_5af2795406d6b50c46d8637f142'
                 ) THEN
                     ALTER TABLE "stock_purchase_line" 
@@ -146,7 +156,11 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
     await queryRunner.query(`
             DO $$
             BEGIN
-                IF NOT EXISTS (
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'stock_location'
+                ) AND NOT EXISTS (
                     SELECT 1 FROM pg_constraint WHERE conname = 'FK_1731b607155cfe9708292d395b6'
                 ) THEN
                     ALTER TABLE "stock_purchase_line" 
@@ -160,7 +174,11 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
     await queryRunner.query(`
             DO $$
             BEGIN
-                IF NOT EXISTS (
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'user'
+                ) AND NOT EXISTS (
                     SELECT 1 FROM pg_constraint WHERE conname = 'FK_d15129d2bd69da018d184c08db9'
                 ) THEN
                     ALTER TABLE "inventory_stock_adjustment" 
@@ -190,7 +208,11 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
     await queryRunner.query(`
             DO $$
             BEGIN
-                IF NOT EXISTS (
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'product_variant'
+                ) AND NOT EXISTS (
                     SELECT 1 FROM pg_constraint WHERE conname = 'FK_65ea54109f7b83cd6184ab6b8fc'
                 ) THEN
                     ALTER TABLE "inventory_stock_adjustment_line" 
@@ -204,7 +226,11 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
     await queryRunner.query(`
             DO $$
             BEGIN
-                IF NOT EXISTS (
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'stock_location'
+                ) AND NOT EXISTS (
                     SELECT 1 FROM pg_constraint WHERE conname = 'FK_e9aa675a33c73c4a95823b2ceab'
                 ) THEN
                     ALTER TABLE "inventory_stock_adjustment_line" 
