@@ -24,6 +24,9 @@ export class ChannelAssignmentService {
   /**
    * Assign stock location to channel
    * Verifies assignment after saving
+   * 
+   * Uses repository.save() to persist the many-to-many relationship.
+   * The relationship is managed through TypeORM's many-to-many decorator.
    */
   async assignStockLocationToChannel(
     ctx: RequestContext,

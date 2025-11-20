@@ -5,6 +5,8 @@ import {
   CurrencyCode,
   RequestContext,
   TransactionalConnection,
+  Zone,
+  ZoneService,
 } from '@vendure/core';
 import { RegistrationInput } from '../registration.service';
 
@@ -20,7 +22,8 @@ import { RegistrationInput } from '../registration.service';
 export class RegistrationValidatorService {
   constructor(
     private readonly channelService: ChannelService,
-    private readonly connection: TransactionalConnection
+    private readonly connection: TransactionalConnection,
+    private readonly zoneService: ZoneService
   ) {}
 
   /**
@@ -93,5 +96,25 @@ export class RegistrationValidatorService {
           `Navigate to Settings → Channels → Default Channel and configure defaultShippingZone and defaultTaxZone.`
       );
     }
+  }
+
+  /**
+   * Get Africa zone by name
+   * Used for setting default shipping and tax zones for new channels
+   */
+  async getAfricaZone(ctx: RequestContext): Promise<Zone> {
+    const zoneRepo = this.connection.getRepository(ctx, Zone);
+    const africaZone = await zoneRepo.findOne({
+      where: { name: 'Africa' },
+    });
+
+    if (!africaZone) {
+      throw new Error(
+        `REGISTRATION_AFRICA_ZONE_MISSING: Africa zone not found. ` +
+          `Please create a zone named "Africa" in Settings → Zones.`
+      );
+    }
+
+    return africaZone;
   }
 }
