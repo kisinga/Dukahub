@@ -50,22 +50,15 @@ export class DukarunEntrypoint {
       const isEmpty = await isDatabaseEmpty();
 
       if (isEmpty) {
-        console.log('📦 Database is empty, populating with sample data...');
-
-        try {
-          // Run the populate script
-          execSync('npm run populate', {
-            stdio: 'inherit',
-            cwd: process.cwd(),
-          });
-
-          console.log('✅ Population complete');
-        } catch (error) {
-          console.error('❌ Population failed!');
-          throw error;
-        }
+        console.log('📦 Database is empty...');
+        console.log(
+          'ℹ️  Populate is COMPLETELY DISABLED - superadmin will be created automatically during bootstrap'
+        );
+        // POPULATE COMPLETELY DISABLED
+        // Superadmin is created automatically by Vendure during bootstrap
+        // via AdministratorService.ensureSuperAdminExists() which uses config.authOptions.superadminCredentials
       } else {
-        console.log('✅ Database already contains data, skipping population');
+        console.log('✅ Database already contains data');
       }
     } catch (error) {
       // If we can't check the database state, log and continue
