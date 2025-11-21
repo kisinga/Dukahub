@@ -4,15 +4,22 @@ import { NotificationResolver, notificationSchema } from './notification.resolve
 import {
   NotificationService,
   Notification,
+  PushSubscription,
 } from '../../services/notifications/notification.service';
 import { NotificationTestController } from './notification-test.controller';
 import { PushNotificationService } from '../../services/notifications/push-notification.service';
+import { ChannelUserService } from '../../services/auth/channel-user.service';
 
 @VendurePlugin({
   imports: [PluginCommonModule],
-  providers: [NotificationResolver, NotificationService, PushNotificationService],
+  providers: [
+    NotificationResolver,
+    NotificationService,
+    PushNotificationService,
+    ChannelUserService,
+  ],
   controllers: [NotificationTestController],
-  entities: [Notification],
+  entities: [Notification, PushSubscription],
   adminApiExtensions: {
     resolvers: [NotificationResolver],
     schema: notificationSchema,

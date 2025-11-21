@@ -16,9 +16,12 @@ export ENABLE_TRACING="${ENABLE_TRACING:-false}"
 export SIGNOZ_ENDPOINT="${SIGNOZ_ENDPOINT:-/signoz/v1/traces}"
 export SERVICE_NAME="${SERVICE_NAME:-dukarun-frontend}"
 export SERVICE_VERSION="${SERVICE_VERSION:-2.0.0}"
+# Web Push VAPID Public Key
+export VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY:-}"
 
 echo "🔧 Configuring nginx for backend: ${BACKEND_HOST}:${BACKEND_PORT}"
 echo "📊 Observability: Tracing=${ENABLE_TRACING}, Endpoint=${SIGNOZ_ENDPOINT}, SigNoz=${SIGNOZ_HOST}:${SIGNOZ_PORT}"
+echo "🔔 Push Notifications: VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:0:10}..."
 
 # Verify the nginx template exists
 if [ ! -f /etc/nginx/conf.d/default.conf.template ]; then
@@ -30,7 +33,7 @@ fi
 echo "📝 Injecting runtime configuration into index.html..."
 if [ -f /usr/share/nginx/html/index.html ]; then
   # Create config script with service metadata
-  CONFIG_SCRIPT="<script>window.__APP_CONFIG__={enableTracing:${ENABLE_TRACING},signozEndpoint:'${SIGNOZ_ENDPOINT}',serviceName:'${SERVICE_NAME}',serviceVersion:'${SERVICE_VERSION}'};</script>"
+  CONFIG_SCRIPT="<script>window.__APP_CONFIG__={enableTracing:${ENABLE_TRACING},signozEndpoint:'${SIGNOZ_ENDPOINT}',serviceName:'${SERVICE_NAME}',serviceVersion:'${SERVICE_VERSION}',vapidPublicKey:'${VAPID_PUBLIC_KEY}'};</script>"
   
   # Inject before closing </head> tag
   sed -i "s|</head>|${CONFIG_SCRIPT}</head>|" /usr/share/nginx/html/index.html

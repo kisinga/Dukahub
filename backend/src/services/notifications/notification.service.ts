@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { RequestContext, TransactionalConnection } from '@vendure/core';
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Administrator, RequestContext, Role, TransactionalConnection, User } from '@vendure/core';
+import { Column, CreateDateColumn, Entity, In, PrimaryGeneratedColumn } from 'typeorm';
+import { ChannelUserService } from '../auth/channel-user.service';
 
 export interface NotificationData {
   [key: string]: any;
@@ -55,21 +56,36 @@ export class Notification {
   createdAt: Date;
 }
 
+@Entity()
 export class PushSubscription {
+  @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column()
   userId: string;
+
+  @Column()
   channelId: string;
+
+  @Column({ type: 'text' })
   endpoint: string;
+
+  @Column('jsonb')
   keys: {
     p256dh: string;
     auth: string;
   };
+
+  @CreateDateColumn()
   createdAt: Date;
 }
 
 @Injectable()
 export class NotificationService {
-  constructor(private connection: TransactionalConnection) {}
+  constructor(
+    private connection: TransactionalConnection,
+    private channelUserService: ChannelUserService
+  ) {}
 
   async createNotification(
     ctx: RequestContext,
@@ -97,18 +113,24 @@ export class NotificationService {
     ctx: RequestContext,
     userId: string,
     channelId: string,
-    options: { skip?: number; take?: number } = {}
+    options: { skip?: number; take?: number; type?: NotificationType } = {}
   ): Promise<{ items: Notification[]; totalItems: number }> {
     const skip = options.skip || 0;
     const take = options.take || 20;
 
+    const where: any = {
+      userId,
+      channelId,
+    };
+
+    if (options.type) {
+      where.type = options.type;
+    }
+
     const [items, totalItems] = await this.connection.rawConnection
       .getRepository(Notification)
       .findAndCount({
-        where: {
-          userId,
-          channelId,
-        },
+        where,
         order: {
           createdAt: 'DESC',
         },
@@ -135,26 +157,43 @@ export class NotificationService {
   }
 
   async markAsRead(ctx: RequestContext, notificationId: string): Promise<boolean> {
-    // In a real implementation, you would update the notification
-    return true;
+    const result = await this.connection.rawConnection
+      .getRepository(Notification)
+      .update({ id: notificationId }, { read: true });
+
+    return (result.affected || 0) > 0;
   }
 
   async markAllAsRead(ctx: RequestContext, userId: string, channelId: string): Promise<number> {
-    // In a real implementation, you would mark all notifications as read
-    return 0;
+    const result = await this.connection.rawConnection.getRepository(Notification).update(
+      {
+        userId,
+        channelId,
+        read: false,
+      },
+      { read: true }
+    );
+
+    return result.affected || 0;
   }
 
   async deleteOldNotifications(daysOld: number = 30): Promise<number> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
-    // In a real implementation, you would delete old notifications
-    return 0;
+    const result = await this.connection.rawConnection
+      .getRepository(Notification)
+      .createQueryBuilder()
+      .delete()
+      .where('createdAt < :cutoffDate', { cutoffDate })
+      .execute();
+
+    return result.affected || 0;
   }
 
   async getChannelUsers(channelId: string): Promise<string[]> {
-    // In a real implementation, you would get all users for a channel
-    // For now, return empty array
-    return [];
+    // Delegate to centralized ChannelUserService to ensure consistent access logic
+    // Pass empty RequestContext as we are likely in a background process or system context
+    return this.channelUserService.getChannelAdminUserIds(RequestContext.empty(), channelId);
   }
 }

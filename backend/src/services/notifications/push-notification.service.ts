@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RequestContext } from '@vendure/core';
+import { RequestContext, TransactionalConnection } from '@vendure/core';
 import * as webpush from 'web-push';
 import { BRAND_CONFIG } from '../../constants/brand.constants';
-import { NotificationService } from './notification.service';
+import { NotificationService, PushSubscription } from './notification.service';
 
 @Injectable()
 export class PushNotificationService {
@@ -13,7 +13,10 @@ export class PushNotificationService {
     subject: process.env.VAPID_EMAIL || `mailto:admin@${BRAND_CONFIG.emailDomain}`,
   };
 
-  constructor(private notificationService: NotificationService) {
+  constructor(
+    private notificationService: NotificationService,
+    private connection: TransactionalConnection
+  ) {
     // Configure web-push with VAPID keys only if they are provided
     if (this.vapidKeys.publicKey && this.vapidKeys.privateKey) {
       try {
@@ -43,7 +46,33 @@ export class PushNotificationService {
     subscription: any
   ): Promise<boolean> {
     try {
-      // In a real implementation, you would save the subscription to database
+      // Check if subscription already exists
+      const existing = await this.connection.rawConnection.getRepository(PushSubscription).findOne({
+        where: {
+          endpoint: subscription.endpoint,
+        },
+      });
+
+      if (existing) {
+        // Update keys/user if changed (though endpoint usually uniquely identifies subscription)
+        if (existing.userId !== userId) {
+          existing.userId = userId;
+          existing.channelId = channelId;
+          existing.keys = subscription.keys;
+          await this.connection.rawConnection.getRepository(PushSubscription).save(existing);
+        }
+        return true;
+      }
+
+      const newSubscription = new PushSubscription();
+      newSubscription.userId = userId;
+      newSubscription.channelId = channelId;
+      newSubscription.endpoint = subscription.endpoint;
+      newSubscription.keys = subscription.keys;
+      newSubscription.createdAt = new Date();
+
+      await this.connection.rawConnection.getRepository(PushSubscription).save(newSubscription);
+
       this.logger.log(`Push subscription saved for user: ${userId} channel: ${channelId}`);
       return true;
     } catch (error) {
@@ -54,8 +83,14 @@ export class PushNotificationService {
 
   async unsubscribeFromPush(ctx: RequestContext, userId: string): Promise<boolean> {
     try {
-      // In a real implementation, you would remove the subscription from database
-      this.logger.log(`Push subscription removed for user: ${userId}`);
+      // Remove all subscriptions for this user
+      // Ideally we should unsubscribe only the current device, but the current API
+      // doesn't pass the subscription endpoint to unsubscribe.
+      const result = await this.connection.rawConnection
+        .getRepository(PushSubscription)
+        .delete({ userId });
+
+      this.logger.log(`Removed ${result.affected} push subscriptions for user: ${userId}`);
       return true;
     } catch (error) {
       this.logger.error('Failed to remove push subscription:', error);
@@ -76,11 +111,50 @@ export class PushNotificationService {
     }
 
     try {
-      // In a real implementation, you would:
-      // 1. Get user's push subscription from database
-      // 2. Send push notification using web-push
-      this.logger.log(`Push notification sent to user: ${userId} title: ${title}`);
-      return true;
+      const subscriptions = await this.connection.rawConnection
+        .getRepository(PushSubscription)
+        .find({
+          where: { userId },
+        });
+
+      if (subscriptions.length === 0) {
+        return false;
+      }
+
+      const payload = this.createNotificationPayload(title, message, data);
+      let sentCount = 0;
+
+      const promises = subscriptions.map(async sub => {
+        try {
+          await webpush.sendNotification(
+            {
+              endpoint: sub.endpoint,
+              keys: sub.keys,
+            },
+            payload
+          );
+          sentCount++;
+        } catch (error: any) {
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            // Subscription is no longer valid, delete it
+            await this.connection.rawConnection
+              .getRepository(PushSubscription)
+              .delete({ id: sub.id });
+            this.logger.debug(`Removed invalid subscription for user ${userId}`);
+          } else {
+            this.logger.error(`Failed to send push to subscription ${sub.id}:`, error);
+          }
+        }
+      });
+
+      await Promise.all(promises);
+
+      if (sentCount > 0) {
+        this.logger.log(`Push notification sent to ${sentCount} devices for user: ${userId}`);
+        return true;
+      }
+
+      return false;
     } catch (error) {
       this.logger.error('Failed to send push notification:', error);
       return false;
@@ -104,7 +178,9 @@ export class PushNotificationService {
       );
 
       const results = await Promise.allSettled(promises);
-      const successCount = results.filter(result => result.status === 'fulfilled').length;
+      const successCount = results.filter(
+        result => result.status === 'fulfilled' && result.value === true
+      ).length;
 
       this.logger.log(
         `Push notifications sent to ${successCount}/${userIds.length} users in channel ${channelId}`
@@ -118,21 +194,17 @@ export class PushNotificationService {
 
   private createNotificationPayload(title: string, message: string, data?: any) {
     return JSON.stringify({
-      title,
-      body: message,
-      icon: '/web-app-manifest-192x192.png',
-      badge: '/web-app-manifest-192x192.png',
-      data: data || {},
-      actions: [
-        {
-          action: 'view',
-          title: 'View',
+      notification: {
+        title,
+        body: message,
+        icon: '/assets/icons/icon-192x192.png',
+        badge: '/assets/icons/icon-96x96.png',
+        vibrate: [100, 50, 100],
+        data: {
+          ...data,
+          url: '/', // Default open URL
         },
-        {
-          action: 'dismiss',
-          title: 'Dismiss',
-        },
-      ],
+      },
     });
   }
 }
