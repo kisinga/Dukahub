@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
+  Channel,
   ChannelService,
   ID,
   Permission,
@@ -7,7 +8,9 @@ import {
   Role,
   RoleService,
   TransactionalConnection,
+  UserService
 } from '@vendure/core';
+import { env } from '../../../infrastructure/config/environment.config';
 import { RegistrationInput } from '../registration.service';
 import { RegistrationAuditorService } from './registration-auditor.service';
 import { RegistrationErrorService } from './registration-error.service';
@@ -66,8 +69,9 @@ export class RoleProvisionerService {
     private readonly channelService: ChannelService,
     private readonly connection: TransactionalConnection,
     private readonly auditor: RegistrationAuditorService,
-    private readonly errorService: RegistrationErrorService
-  ) {}
+    private readonly errorService: RegistrationErrorService,
+    private readonly userService: UserService
+  ) { }
 
   /**
    * Create admin role with all required permissions and assign to channel
@@ -130,18 +134,22 @@ export class RoleProvisionerService {
 
   /**
    * Try to create role via RoleService (preferred)
+   * Uses system context with superadmin user to bypass permission checks
    */
   private async createRoleViaService(
     ctx: RequestContext,
     roleCode: string,
     registrationData: RegistrationInput,
     channelId: ID,
-    channel: any
+    channel: Channel
   ): Promise<Role | null> {
     try {
-      // Use existing context which should have proper channel setup
+      // Create system context with superadmin user for role creation
+      const systemCtx = await this.createSystemContext(ctx, channel);
+
+      // Use system context which has admin permissions
       // The channelIds parameter in create() is sufficient for channel assignment
-      const roleResult = await this.roleService.create(ctx, {
+      const roleResult = await this.roleService.create(systemCtx, {
         code: roleCode,
         description: `Full admin access for ${registrationData.companyName}`,
         channelIds: [channelId],
@@ -159,6 +167,66 @@ export class RoleProvisionerService {
     } catch (error: any) {
       this.logger.warn(`RoleService.create() failed, falling back to repository: ${error.message}`);
       return null;
+    }
+  }
+
+  /**
+   * Create system RequestContext with superadmin user
+   * This context has admin permissions needed for RoleService.create()
+   */
+  private async createSystemContext(
+    ctx: RequestContext,
+    channel: Channel
+  ): Promise<RequestContext> {
+    try {
+      // Get superadmin user by identifier from config
+      const superadminIdentifier = env.superadmin.username;
+      if (!superadminIdentifier) {
+        throw new Error('Superadmin username not configured');
+      }
+
+      // Create empty context first for getting superadmin user
+      const emptyCtxForUser = RequestContext.empty();
+
+      // Get superadmin user
+      const superadminUser = await this.userService.getUserByEmailAddress(
+        emptyCtxForUser,
+        superadminIdentifier
+      );
+
+      if (!superadminUser) {
+        throw new Error(`Superadmin user not found: ${superadminIdentifier}`);
+      }
+
+      // Create system context with superadmin user and channel
+      // RequestContext constructor requires specific properties
+      // Note: RequestContext.activeUserId is a getter that reads from user.id
+      const systemCtx = new RequestContext({
+        req: ctx.req,
+        apiType: 'admin',
+        languageCode: ctx.languageCode || 'en',
+        channel: channel,
+        isAuthorized: true,
+        authorizedAsOwnerOnly: false,
+      });
+
+      // Set user property - RequestContext.activeUserId getter will read from user.id
+      Object.defineProperty(systemCtx, 'user', {
+        value: superadminUser,
+        writable: true,
+        enumerable: true,
+        configurable: true,
+      });
+
+      this.logger.debug(
+        `Created system context with superadmin user: ${superadminUser.id} for channel: ${channel.id}`
+      );
+
+      return systemCtx;
+    } catch (error: any) {
+      this.logger.warn(`Failed to create system context: ${error.message}`);
+      // Fall back to original context if system context creation fails
+      return ctx;
     }
   }
 
@@ -233,4 +301,11 @@ export class RoleProvisionerService {
       );
     }
   }
+}
+
+/**
+ * Helper to convert channel ID to string for RequestContext
+ */
+function channelIdToString(id: ID): string {
+  return typeof id === 'string' ? id : id.toString();
 }
