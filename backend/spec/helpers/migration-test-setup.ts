@@ -1,43 +1,30 @@
 /**
  * Migration Test Setup
  *
- * Provides utilities for testing migration idempotence using mocked database
+ * Provides utilities for testing migration idempotence using the shared MockDb.
  */
 
-import { createDatabaseMock } from './database-mock';
+import { MockDb } from '../support/mock-db';
 
 export class MigrationTestHelper {
-  private mock: any;
-  private mockDataSource: any;
+  private readonly db = new MockDb();
 
-  constructor() {
-    this.mock = createDatabaseMock();
-    this.mockDataSource = this.mock.getDataSource();
-  }
-
-  async createTestDatabase(databaseName: string): Promise<any> {
-    // Mock database creation
+  async createTestDatabase(databaseName: string): Promise<MockDb> {
     console.log(`Creating mock test database: ${databaseName}`);
-    this.mock.mockDatabaseInitialization();
-
-    return this.mockDataSource;
+    return this.db;
   }
 
   async cleanupTestDatabase(): Promise<void> {
-    // Mock database cleanup
     console.log('Cleaning up mock test database');
-    this.mock.mockDatabaseCleanup();
+    this.db.dropTable('ml_extraction_queue');
   }
 
   async runMigrations(): Promise<void> {
-    // Mock running migrations
     console.log('Running mock migrations');
-    this.mock.mockSuccessfulMigration();
-    await this.mockDataSource.runMigrations();
+    this.db.useMlExtractionQueue();
   }
 
   async getTableColumns(tableName: string): Promise<string[]> {
-    // Mock table column query
     const mockColumns = {
       channel: [
         'id',
@@ -78,12 +65,11 @@ export class MigrationTestHelper {
   }
 
   async verifyMigrationResults(): Promise<boolean> {
-    // Mock migration verification
-    const migrations = await this.mockDataSource.query('SELECT * FROM migrations');
-    return migrations.length > 0;
+    const exists = this.db.hasTable('ml_extraction_queue');
+    return exists;
   }
 
   async cleanup(): Promise<void> {
-    // No cleanup needed since each test gets its own instance
+    // No-op for now; each test owns its own helper.
   }
 }
