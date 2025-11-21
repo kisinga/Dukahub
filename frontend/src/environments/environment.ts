@@ -7,6 +7,7 @@ declare global {
       signozEndpoint?: string;
       serviceName?: string;
       serviceVersion?: string;
+      vapidPublicKey?: string;
     };
   }
 }
@@ -35,4 +36,5 @@ export const environment = {
   signozEndpoint: runtimeConfig.signozEndpoint ?? '/signoz/v1/traces',
   serviceName: runtimeConfig.serviceName ?? `${BRAND_CONFIG.servicePrefix}-frontend`,
   serviceVersion: runtimeConfig.serviceVersion ?? '2.0.0',
+  vapidPublicKey: runtimeConfig.vapidPublicKey ?? '',
 };

@@ -219,7 +219,14 @@ export class NotificationSettingsComponent {
       if (this.isPushEnabled()) {
         await this.notificationService.unsubscribeToPush();
       } else {
-        await this.notificationService.subscribeToPush();
+        // If permission is denied, we can't programmatically enable it.
+        // But if it's default or granted, we can try.
+        // requestPushPermission handles both permission request (if needed) and subscription.
+        if (this.permission() === 'default') {
+          await this.notificationService.requestPushPermission();
+        } else {
+          await this.notificationService.subscribeToPush();
+        }
       }
     } catch (error) {
       console.error('Failed to toggle push notifications:', error);

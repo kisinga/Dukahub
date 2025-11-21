@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { RequestContext, TransactionalConnection } from '@vendure/core';
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Administrator, RequestContext, Role, TransactionalConnection, User } from '@vendure/core';
+import { Column, CreateDateColumn, Entity, In, PrimaryGeneratedColumn } from 'typeorm';
 
 export interface NotificationData {
   [key: string]: any;
@@ -55,15 +55,27 @@ export class Notification {
   createdAt: Date;
 }
 
+@Entity()
 export class PushSubscription {
+  @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column()
   userId: string;
+
+  @Column()
   channelId: string;
+
+  @Column({ type: 'text' })
   endpoint: string;
+
+  @Column('jsonb')
   keys: {
     p256dh: string;
     auth: string;
   };
+
+  @CreateDateColumn()
   createdAt: Date;
 }
 
@@ -97,18 +109,24 @@ export class NotificationService {
     ctx: RequestContext,
     userId: string,
     channelId: string,
-    options: { skip?: number; take?: number } = {}
+    options: { skip?: number; take?: number; type?: NotificationType } = {}
   ): Promise<{ items: Notification[]; totalItems: number }> {
     const skip = options.skip || 0;
     const take = options.take || 20;
 
+    const where: any = {
+      userId,
+      channelId,
+    };
+
+    if (options.type) {
+      where.type = options.type;
+    }
+
     const [items, totalItems] = await this.connection.rawConnection
       .getRepository(Notification)
       .findAndCount({
-        where: {
-          userId,
-          channelId,
-        },
+        where,
         order: {
           createdAt: 'DESC',
         },
@@ -135,26 +153,100 @@ export class NotificationService {
   }
 
   async markAsRead(ctx: RequestContext, notificationId: string): Promise<boolean> {
-    // In a real implementation, you would update the notification
-    return true;
+    const result = await this.connection.rawConnection
+      .getRepository(Notification)
+      .update({ id: notificationId }, { read: true });
+
+    return (result.affected || 0) > 0;
   }
 
   async markAllAsRead(ctx: RequestContext, userId: string, channelId: string): Promise<number> {
-    // In a real implementation, you would mark all notifications as read
-    return 0;
+    const result = await this.connection.rawConnection.getRepository(Notification).update(
+      {
+        userId,
+        channelId,
+        read: false,
+      },
+      { read: true }
+    );
+
+    return result.affected || 0;
   }
 
   async deleteOldNotifications(daysOld: number = 30): Promise<number> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
-    // In a real implementation, you would delete old notifications
-    return 0;
+    const result = await this.connection.rawConnection
+      .getRepository(Notification)
+      .createQueryBuilder()
+      .delete()
+      .where('createdAt < :cutoffDate', { cutoffDate })
+      .execute();
+
+    return result.affected || 0;
   }
 
   async getChannelUsers(channelId: string): Promise<string[]> {
-    // In a real implementation, you would get all users for a channel
-    // For now, return empty array
-    return [];
+    // Find roles associated with this channel
+    const roles = await this.connection.rawConnection
+      .getRepository(Role)
+      .createQueryBuilder('role')
+      .leftJoinAndSelect('role.channels', 'channel')
+      .where('channel.id = :channelId', { channelId })
+      .getMany();
+
+    const roleIds = roles.map(r => r.id);
+
+    if (roleIds.length === 0) {
+      return [];
+    }
+
+    // Find administrators with these roles
+    const administrators = await this.connection.rawConnection
+      .getRepository(Administrator)
+      .createQueryBuilder('admin')
+      .leftJoinAndSelect('admin.user', 'user')
+      .leftJoin('admin.user', 'u') // Join user to access roles relation in user if needed, but Administrator usually links to User
+      .where('admin.deletedAt IS NULL')
+      .getMany();
+
+    // We need to check user roles manually or via query if the relation is standard Vendure User -> Roles
+    // In Vendure, User has Roles. Administrator is linked to User.
+
+    // Better query: Find Users who have Roles for this Channel
+    // But Vendure's User-Role relation is Many-to-Many.
+
+    const users = await this.connection.rawConnection
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin('user.roles', 'role')
+      .innerJoin('role.channels', 'channel')
+      .where('channel.id = :channelId', { channelId })
+      .andWhere('user.deletedAt IS NULL')
+      .getMany();
+
+    // Also need to include SuperAdmins who might not be explicitly assigned to the channel but have access
+    // SuperAdmins usually have a role with no channel restrictions (empty channels list)
+    // But for notifications, we usually target channel admins.
+    // If we want to include SuperAdmins, we'd check for roles with empty channels list.
+
+    // Let's stick to explicit channel assignment + SuperAdmins
+
+    const superAdmins = await this.connection.rawConnection
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin('user.roles', 'role')
+      .leftJoin('role.channels', 'channel')
+      .where('channel.id IS NULL') // SuperAdmin role usually has no specific channel
+      .andWhere('user.deletedAt IS NULL')
+      .getMany();
+
+    const allUserIds = new Set([
+      ...users.map(u => u.id.toString()),
+      ...superAdmins.map(u => u.id.toString()),
+    ]);
+
+    return Array.from(allUserIds);
   }
 }

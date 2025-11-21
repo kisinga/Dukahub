@@ -12,32 +12,37 @@ The notification system is built with a **server-side event-driven architecture*
 - **Components**: Integrates resolver, services, and test controller
 - **GraphQL Schema**: Exposes notification queries and mutations
 
-### 2. **NotificationService** (`/backend/src/plugins/notification.service.ts`)
+### 2. **NotificationService** (`/backend/src/services/notifications/notification.service.ts`)
 
-- **Purpose**: CRUD operations for notifications
+- **Purpose**: CRUD operations for notifications and channel user resolution
 - **Key Methods**:
   - `createNotification()` - Creates new notifications
-  - `getUserNotifications()` - Fetches user's notifications
-  - `markAsRead()` - Marks notifications as read
-  - `getChannelUsers()` - Gets all users in a channel
+  - `getUserNotifications()` - Fetches user's notifications with optional type filtering
+  - `markAsRead()` - Marks individual notification as read
+  - `markAllAsRead()` - Marks all user's notifications as read
+  - `getChannelUsers()` - Resolves all admins and users for a channel
+  - `deleteOldNotifications()` - Prunes old notifications (default 30 days)
 
-### 3. **PushNotificationService** (`/backend/src/plugins/push-notification.service.ts`)
+### 3. **PushNotificationService** (`/backend/src/services/notifications/push-notification.service.ts`)
 
-- **Purpose**: Web Push API integration
+- **Purpose**: Web Push API integration with persistence
 - **Features**:
   - VAPID key management
-  - Push subscription handling
+  - **Persistent Subscriptions**: Stores user subscriptions in database
+  - **Multi-Device Support**: Supports multiple subscriptions per user
+  - **Automatic Cleanup**: Removes invalid/expired subscriptions on send failure
   - Cross-platform push notifications
 
-### 4. **NotificationHandlerService** (`/backend/src/plugins/notification-handler.service.ts`)
+### 4. **ChannelEventRouterService** (`/backend/src/infrastructure/events/channel-event-router.service.ts`)
 
-- **Purpose**: Event-driven notification creation
-- **Event Listeners**:
-  - `OrderStateTransitionEvent` - Order status changes
-  - `StockMovementEvent` - Low stock alerts
-  - `MLTrainingEvent` - ML model updates
+- **Purpose**: Central routing for system events
+- **Features**:
+  - Listens to Vendure events (Order, Stock)
+  - Resolves channel users via `NotificationService`
+  - Routes to appropriate handlers (In-App, Push, SMS)
+  - Respects user notification preferences
 
-### 5. **NotificationTestController** (`/backend/src/plugins/notification-test.controller.ts`)
+### 5. **NotificationTestController** (`/backend/src/plugins/notifications/notification-test.controller.ts`)
 
 - **Purpose**: Testing and manual notification triggering
 - **Endpoints**:
@@ -51,43 +56,38 @@ The notification system is built with a **server-side event-driven architecture*
 
 - **Purpose**: Frontend notification state management
 - **Features**:
-  - Real-time GraphQL integration
-  - Push subscription management
-  - Toast notification handling
-  - Development mode fallback
+  - **Auto-Permission**: Automatically prompts/checks permission on dashboard load
+  - **Real-Time Sync**: Polls and updates unread counts from backend
+  - **Push Management**: Handles subscription syncing with backend
+  - **Signal-Based**: Exposes reactive signals for UI components
 
 ### 2. **ToastService** (`/frontend/src/app/core/services/toast.service.ts`)
 
-- **Purpose**: In-app toast notifications
+- **Purpose**: In-app toast notifications for immediate feedback
 - **Features**:
   - Signal-based state management
   - Auto-dismiss timers
-  - Multiple notification types
+  - Foreground push notification display
 
-### 3. **ToastComponent** (`/frontend/src/app/core/layout/toast/toast.component.ts`)
+### 3. **NotificationSettingsComponent** (`/frontend/src/app/dashboard/pages/settings/components/notification-settings.component.ts`)
 
-- **Purpose**: UI component for displaying toasts
+- **Purpose**: User interface for managing notifications
 - **Features**:
-  - DaisyUI styling
-  - Responsive design
-  - Dismiss functionality
-
-### 4. **NotificationTestComponent** (`/frontend/src/app/dashboard/pages/settings/components/notification-test.component.ts`)
-
-- **Purpose**: Testing interface for notifications
-- **Features**:
-  - Server-side triggering
-  - System status monitoring
-  - Activity logging
+  - Toggle push notifications
+  - View and filter notification history
+  - Permission status indicators
 
 ## 🔄 Notification Flow
 
 ```
-Vendure Event → NotificationHandlerService → NotificationService.createNotification
-                                                      ↓
-Database Storage ← PushNotificationService → Web Push API → Client Browser
-                                                      ↓
-Service Worker → Toast Notification + Notification Bell Update
+Vendure Event (Order/Stock) 
+       ↓
+ChannelEventRouterService
+       ↓
+NotificationService.getChannelUsers (Admins + SuperAdmins)
+       ↓
+1. In-App Handler → NotificationService.createNotification → DB
+2. Push Handler → PushNotificationService.sendPushNotification → DB Lookup → Web Push API → Service Worker
 ```
 
 ## 🧪 Testing the Notification System
@@ -108,24 +108,6 @@ curl "http://localhost:3000/test-notifications/trigger?type=ORDER"
 
 # Stock alerts
 curl "http://localhost:3000/test-notifications/trigger?type=STOCK"
-
-# ML training updates
-curl "http://localhost:3000/test-notifications/trigger?type=ML_TRAINING"
-
-# Payment confirmations
-curl "http://localhost:3000/test-notifications/trigger?type=PAYMENT"
-```
-
-#### 3. Check System Status
-
-```bash
-curl "http://localhost:3000/test-notifications/status"
-```
-
-#### 4. Trigger with Custom Message
-
-```bash
-curl "http://localhost:3000/test-notifications/trigger?type=ORDER&title=Custom%20Title&message=Custom%20Message"
 ```
 
 ### **Frontend Testing Interface**
@@ -140,24 +122,15 @@ curl "http://localhost:3000/test-notifications/trigger?type=ORDER&title=Custom%2
    - Monitor the activity log
 
 3. **Test Push Notifications**:
-   - Click "📱 Test Push" to enable push notifications
-   - Grant browser permission when prompted
-   - Notifications will appear even when the tab is not active
-
-### **Notification Types**
-
-| Type          | Description           | Trigger Event           | Example Message                            |
-| ------------- | --------------------- | ----------------------- | ------------------------------------------ |
-| `ORDER`       | Order status changes  | Order state transitions | "Order #12345 has been placed"             |
-| `STOCK`       | Low stock alerts      | Stock movement events   | "Product 'X' is running low (3 remaining)" |
-| `ML_TRAINING` | ML model updates      | Training completion     | "Demand forecasting model updated"         |
-| `PAYMENT`     | Payment confirmations | Payment events          | "Payment of KES 1,500 confirmed"           |
+   - Ensure "Push Status" is enabled (or click "Enable")
+   - Click "📱 Test Push"
+   - Notifications should appear even when the tab is backgrounded
 
 ## 🔧 Configuration
 
 ### **Environment Variables**
 
-Add these to your `.env` file:
+Add these to your `.env` file (Backend):
 
 ```bash
 # Web Push Notifications (VAPID Keys)
@@ -166,52 +139,27 @@ VAPID_PRIVATE_KEY=your_private_key_here
 VAPID_EMAIL=mailto:admin@dukarun.com
 ```
 
+Frontend Config (`frontend/src/environments/environment.ts`):
+- `vapidPublicKey`: Must match the backend's public key.
+
 ### **VAPID Key Generation**
 
 ```bash
 # Generate VAPID keys
 npx web-push generate-vapid-keys
-
-# Add the generated keys to your .env file
 ```
 
 ## 🚀 Deployment
 
 ### **Backend Setup**
 
-1. **Install Dependencies**:
-
-   ```bash
-   cd backend
-   npm install web-push @types/web-push
-   ```
-
-2. **Configure Environment**:
-   - Add VAPID keys to `.env` file
-   - Ensure database is running
-
-3. **Start Backend**:
-   ```bash
-   npm run dev
-   ```
+1. **Migrations**: Run migrations to create `notification` and `push_subscription` tables.
+2. **Env Vars**: Set VAPID keys.
 
 ### **Frontend Setup**
 
-1. **Install Dependencies**:
-
-   ```bash
-   cd frontend
-   npm install @angular/service-worker
-   ```
-
-2. **Configure PWA**:
-   - Service worker is configured in `ngsw-config.json`
-   - Manifest is in `public/manifest.webmanifest`
-
-3. **Start Frontend**:
-   ```bash
-   npm run start
-   ```
+1. **Service Worker**: Ensure `ngsw-config.json` is valid.
+2. **PWA**: App must be served over HTTPS (or localhost) for Service Worker and Push API to work.
 
 ## 📱 PWA Features
 
@@ -221,64 +169,22 @@ npx web-push generate-vapid-keys
 - **Push Notifications**: Enabled with VAPID key support
 - **Offline Support**: Cached resources available offline
 
-### **Web App Manifest**
-
-- **App Name**: DukaRun
-- **Theme Color**: #3b82f6
-- **Display Mode**: Standalone
-- **Shortcuts**: Quick access to Sell, Inventory, Products
-
 ## 🔍 Troubleshooting
 
 ### **Common Issues**
 
-1. **"You must wrap the query string in a 'gql' tag"**
-   - **Solution**: Use `apolloService.getClient().query()` instead of `apolloService.query()`
-   - **Cause**: Incorrect Apollo Client usage pattern
+1. **"Permission denied" for Push**:
+   - User blocked notifications. Reset permissions in browser address bar.
 
-2. **Push notifications not working**
-   - **Check**: VAPID keys are configured in environment
-   - **Check**: Service worker is registered
-   - **Check**: Browser permissions are granted
+2. **Notifications not appearing**:
+   - Check backend logs for "Push notification sent"
+   - Check Service Worker registration in DevTools > Application
+   - Verify VAPID keys match between Frontend and Backend
 
-3. **GraphQL type errors**
-   - **Solution**: Run `npm run codegen` to generate types
-   - **Check**: Backend is running when generating types
-
-### **Debug Commands**
-
-```bash
-# Check backend status
-curl "http://localhost:3000/test-notifications/status"
-
-# Test GraphQL endpoint
-curl -X POST "http://localhost:3000/admin-api" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "query { getUnreadCount }"}'
-
-# Check frontend build
-cd frontend && npm run build
-```
-
-## 🏆 System Benefits
-
-✅ **Real-time Updates**: GraphQL subscriptions for instant notifications  
-✅ **Cross-platform**: Works on desktop, mobile, and PWA  
-✅ **Offline Support**: Service worker caches notifications  
-✅ **Type Safety**: Full TypeScript integration  
-✅ **Scalable**: Event-driven architecture supports high volume  
-✅ **Testable**: Comprehensive testing endpoints and UI  
-✅ **Production Ready**: Proper error handling and fallbacks
-
-## 📊 Performance Considerations
-
-- **Notification Persistence**: 30 days retention
-- **Push Subscription**: Automatic cleanup of invalid subscriptions
-- **Rate Limiting**: Built-in throttling for high-volume events
-- **Caching**: Service worker caches for offline access
-- **Type Safety**: Compile-time type checking prevents runtime errors
+3. **Phantom Unread Counts**:
+   - The system now uses real database counts. If counts persist, check `NotificationService.markAsRead` logic.
 
 ---
 
-_Last updated: October 28, 2025_
-_Version: 1.0.0_
+_Last updated: November 2025_
+_Version: 1.1.0_

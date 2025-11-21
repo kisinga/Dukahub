@@ -4,6 +4,7 @@ import { NotificationResolver, notificationSchema } from './notification.resolve
 import {
   NotificationService,
   Notification,
+  PushSubscription,
 } from '../../services/notifications/notification.service';
 import { NotificationTestController } from './notification-test.controller';
 import { PushNotificationService } from '../../services/notifications/push-notification.service';
@@ -12,7 +13,7 @@ import { PushNotificationService } from '../../services/notifications/push-notif
   imports: [PluginCommonModule],
   providers: [NotificationResolver, NotificationService, PushNotificationService],
   controllers: [NotificationTestController],
-  entities: [Notification],
+  entities: [Notification, PushSubscription],
   adminApiExtensions: {
     resolvers: [NotificationResolver],
     schema: notificationSchema,
