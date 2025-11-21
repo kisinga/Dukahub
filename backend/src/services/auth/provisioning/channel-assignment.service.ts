@@ -19,7 +19,7 @@ import {
  */
 @Injectable()
 export class ChannelAssignmentService {
-  constructor(private readonly connection: TransactionalConnection) {}
+  constructor(private readonly connection: TransactionalConnection) { }
 
   /**
    * Assign stock location to channel
@@ -43,22 +43,39 @@ export class ChannelAssignmentService {
     });
     const stockLocation = await stockLocationRepo.findOne({
       where: { id: stockLocationId },
+      relations: ['channels'],
     });
 
     if (!channel || !stockLocation) {
       throw new Error(
         `REGISTRATION_STOCK_LOCATION_ASSIGN_FAILED: ` +
-          `Channel ${channelId} or stock location ${stockLocationId} not found`
+        `Channel ${channelId} or stock location ${stockLocationId} not found`
       );
     }
 
-    // Assign if not already assigned
-    if (!channel.stockLocations?.some(sl => sl.id === stockLocation.id)) {
+    // Check if already assigned (check both sides)
+    const channelHasLocation = channel.stockLocations?.some(sl => sl.id === stockLocation.id);
+    const locationHasChannel = stockLocation.channels?.some(ch => ch.id === channel.id);
+
+    // Assign if not already assigned (bidirectional relationship)
+    if (!channelHasLocation || !locationHasChannel) {
+      // Update channel side
       if (!channel.stockLocations) {
         channel.stockLocations = [];
       }
-      channel.stockLocations.push(stockLocation);
-      await channelRepo.save(channel);
+      if (!channelHasLocation) {
+        channel.stockLocations.push(stockLocation);
+        await channelRepo.save(channel);
+      }
+
+      // Update stock location side for bidirectional consistency
+      if (!stockLocation.channels) {
+        stockLocation.channels = [];
+      }
+      if (!locationHasChannel) {
+        stockLocation.channels.push(channel);
+        await stockLocationRepo.save(stockLocation);
+      }
     }
 
     // Verify assignment
@@ -90,7 +107,7 @@ export class ChannelAssignmentService {
     if (!channel || !paymentMethod) {
       throw new Error(
         `REGISTRATION_PAYMENT_METHOD_ASSIGN_FAILED: ` +
-          `Channel ${channelId} or payment method ${paymentMethodId} not found`
+        `Channel ${channelId} or payment method ${paymentMethodId} not found`
       );
     }
 
@@ -127,7 +144,7 @@ export class ChannelAssignmentService {
     ) {
       throw new Error(
         `REGISTRATION_STOCK_LOCATION_ASSIGN_FAILED: ` +
-          `Failed to verify stock location assignment to channel`
+        `Failed to verify stock location assignment to channel`
       );
     }
   }
@@ -152,7 +169,7 @@ export class ChannelAssignmentService {
     ) {
       throw new Error(
         `REGISTRATION_PAYMENT_METHOD_ASSIGN_FAILED: ` +
-          `Failed to verify payment method assignment to channel`
+        `Failed to verify payment method assignment to channel`
       );
     }
   }
@@ -174,8 +191,8 @@ export class ChannelAssignmentService {
     if (!channel || !channel.paymentMethods || channel.paymentMethods.length < minimumCount) {
       throw new Error(
         `REGISTRATION_PAYMENT_METHOD_ASSIGN_FAILED: ` +
-          `Channel should have at least ${minimumCount} payment methods assigned, ` +
-          `but found ${channel?.paymentMethods?.length || 0}`
+        `Channel should have at least ${minimumCount} payment methods assigned, ` +
+        `but found ${channel?.paymentMethods?.length || 0}`
       );
     }
   }
