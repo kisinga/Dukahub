@@ -62,9 +62,6 @@ export class NotificationService {
             'Service worker not enabled in development mode - push notifications will use polling fallback',
           );
         }
-
-        // Auto-prompt if not prompted before
-        this.autoPromptPermission();
       }
 
       // Load initial notifications
@@ -78,7 +75,11 @@ export class NotificationService {
     }
   }
 
-  private async autoPromptPermission(): Promise<void> {
+  /**
+   * Prompt for notification permission if not already prompted.
+   * Should be called when user navigates to dashboard.
+   */
+  async promptPermissionIfNeeded(): Promise<void> {
     if (!this.hasPrompted()) {
       // We can only request permission on user gesture or page load if browser allows.
       // But modern browsers block auto-request on load.
@@ -229,13 +230,43 @@ export class NotificationService {
         serverPublicKey: environment.vapidPublicKey,
       });
 
+      console.log('Push subscription obtained from service worker:', subscription);
+
       // Send subscription to backend
       const client = this.apolloService.getClient();
-      const subscriptionJSON = subscription.toJSON();
+
+      // Convert PushSubscription to JSON format
+      // PushSubscription has toJSON() method that returns the standard format
+      let subscriptionJSON: any;
+      try {
+        subscriptionJSON = subscription.toJSON();
+      } catch (e) {
+        // Fallback: manually extract if toJSON() fails
+        const p256dhKey = subscription.getKey('p256dh');
+        const authKey = subscription.getKey('auth');
+
+        if (!p256dhKey || !authKey) {
+          throw new Error('Failed to extract subscription keys');
+        }
+
+        subscriptionJSON = {
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: this.arrayBufferToBase64(p256dhKey),
+            auth: this.arrayBufferToBase64(authKey),
+          },
+        };
+      }
+
+      console.log('Subscription JSON:', subscriptionJSON);
 
       // Ensure endpoint is defined and a string (JSON value can be null/undefined but GraphQL expects String!)
       if (!subscriptionJSON.endpoint) {
         throw new Error('Invalid subscription: endpoint is missing');
+      }
+
+      if (!subscriptionJSON.keys || !subscriptionJSON.keys.p256dh || !subscriptionJSON.keys.auth) {
+        throw new Error('Invalid subscription: keys are missing or incomplete');
       }
 
       const input = {
@@ -243,12 +274,20 @@ export class NotificationService {
         keys: subscriptionJSON.keys,
       };
 
+      console.log('Sending subscription to backend:', input);
+
       const result = await client.mutate({
         mutation: SubscribeToPushDocument,
         variables: {
           subscription: input,
         },
       });
+
+      // Check for Apollo Client errors
+      if (result.error) {
+        console.error('Apollo Client error:', result.error);
+        throw new Error(`GraphQL error: ${result.error.message || 'Unknown error'}`);
+      }
 
       if (result.data?.subscribeToPush) {
         console.log('Push subscription created and synced to backend');
@@ -266,21 +305,41 @@ export class NotificationService {
     } catch (error) {
       console.error('Failed to subscribe to push notifications:', error);
 
-      if (error instanceof Error && error.message.includes('user dismissed')) {
-        this.toastService.show(
-          'Push Notifications',
-          'Permission request was dismissed.',
-          'info',
-          5000,
-        );
-      } else {
-        this.toastService.show(
-          'Push Notifications',
-          'Failed to enable push notifications. Please try again.',
-          'error',
-          5000,
-        );
+      // Log full error details for debugging
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
       }
+
+      // Check for specific error types
+      if (error instanceof Error) {
+        if (error.message.includes('user dismissed')) {
+          this.toastService.show(
+            'Push Notifications',
+            'Permission request was dismissed.',
+            'info',
+            5000,
+          );
+          return false;
+        }
+
+        if (error.message.includes('GraphQL error')) {
+          this.toastService.show(
+            'Push Notifications',
+            `Failed to enable: ${error.message}`,
+            'error',
+            5000,
+          );
+          return false;
+        }
+      }
+
+      this.toastService.show(
+        'Push Notifications',
+        `Failed to enable push notifications: ${error instanceof Error ? error.message : 'Unknown error'}. Please check the console for details.`,
+        'error',
+        5000,
+      );
 
       return false;
     }
@@ -463,5 +522,15 @@ export class NotificationService {
 
   private setPrompted(): void {
     localStorage.setItem(this.HAS_PROMPTED_KEY, 'true');
+  }
+
+  // Helper to convert ArrayBuffer to base64 (fallback if toJSON() doesn't work)
+  private arrayBufferToBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
   }
 }

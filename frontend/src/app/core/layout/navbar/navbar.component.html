@@ -1,57 +1,121 @@
-<div class="navbar bg-base-100 border-b border-base-300">
-  <div class="navbar-start">
-    <!-- Mobile dropdown -->
-    <div class="dropdown lg:hidden">
-      <div tabindex="0" role="button" class="btn btn-ghost btn-circle" (click)="toggleMenu()">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+<div class="drawer">
+  <input
+    id="mobile-drawer"
+    type="checkbox"
+    class="drawer-toggle"
+    [checked]="menuOpen()"
+    (change)="toggleMenu()"
+  />
+  <div class="drawer-content flex flex-col">
+    <!-- Navbar -->
+    <div
+      class="navbar bg-base-100 border-b border-base-300 w-full sticky top-0 z-30 backdrop-blur-md bg-base-100/90"
+    >
+      <div class="navbar-start">
+        <label
+          for="mobile-drawer"
+          class="btn btn-ghost btn-circle lg:hidden"
+          aria-label="Open menu"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 6h16M4 12h8m-8 6h16"
-          />
-        </svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h8m-8 6h16"
+            />
+          </svg>
+        </label>
+        <a routerLink="/" class="btn btn-ghost text-xl">
+          <span class="font-bold text-primary">Dukahub</span>
+        </a>
       </div>
-      @if (menuOpen()) {
-        <ul
-          tabindex="0"
-          class="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-52 p-2 shadow-xl border border-base-300"
-        >
-          <li><a href="#how-it-works" (click)="closeMenu()">How It Works</a></li>
-          <li><a routerLink="/features" (click)="closeMenu()">Features</a></li>
-          <li><a href="#pricing" (click)="closeMenu()">Pricing</a></li>
-          <li><a href="#faq" (click)="closeMenu()">FAQ</a></li>
-          <div class="divider my-1"></div>
-          <li><a routerLink="/login" (click)="closeMenu()">Login</a></li>
-          <li><a routerLink="/signup" (click)="closeMenu()">Get Started</a></li>
+
+      <div class="navbar-center hidden lg:flex">
+        <ul class="menu menu-horizontal px-1 gap-2">
+          <li>
+            <a href="/#journey" class="font-medium hover:text-primary transition-colors"
+              >How It Works</a
+            >
+          </li>
+          <li>
+            <a routerLink="/features" class="font-medium hover:text-primary transition-colors"
+              >Features</a
+            >
+          </li>
+          <li>
+            <a href="/#pricing-preview" class="font-medium hover:text-primary transition-colors"
+              >Pricing</a
+            >
+          </li>
+          <li><a href="/#faq" class="font-medium hover:text-primary transition-colors">FAQ</a></li>
         </ul>
-      }
+      </div>
+
+      <div class="navbar-end gap-2">
+        <a routerLink="/login" class="btn btn-ghost btn-sm hidden sm:inline-flex">Log in</a>
+        <a routerLink="/signup" class="btn btn-primary btn-sm">Get Started</a>
+      </div>
     </div>
-
-    <!-- Logo -->
-    <a routerLink="/" class="btn btn-ghost text-xl">
-      <span class="font-bold">Dukahub</span>
-    </a>
   </div>
 
-  <!-- Desktop menu -->
-  <div class="navbar-center hidden lg:flex">
-    <ul class="menu menu-horizontal px-1">
-      <li><a href="#how-it-works">How It Works</a></li>
-      <li><a routerLink="/features">Features</a></li>
-      <li><a href="#pricing">Pricing</a></li>
-      <li><a href="#faq">FAQ</a></li>
+  <div class="drawer-side z-40">
+    <label for="mobile-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+    <ul
+      class="menu bg-base-100 min-h-full w-80 p-4 gap-2 text-base-content border-r border-base-300"
+    >
+      <!-- Sidebar Header -->
+      <li class="mb-4">
+        <div class="flex items-center justify-between p-0 hover:bg-transparent">
+          <span class="text-xl font-bold text-primary">Dukahub</span>
+          <label for="mobile-drawer" class="btn btn-ghost btn-circle btn-sm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </label>
+        </div>
+      </li>
+
+      <li>
+        <a href="/#journey" (click)="closeMenu()" class="py-3 text-lg font-medium">How It Works</a>
+      </li>
+      <li>
+        <a routerLink="/features" (click)="closeMenu()" class="py-3 text-lg font-medium"
+          >Features</a
+        >
+      </li>
+      <li>
+        <a href="/#pricing-preview" (click)="closeMenu()" class="py-3 text-lg font-medium"
+          >Pricing</a
+        >
+      </li>
+      <li><a href="/#faq" (click)="closeMenu()" class="py-3 text-lg font-medium">FAQ</a></li>
+
+      <div class="divider my-2"></div>
+
+      <div class="flex flex-col gap-3 mt-2">
+        <a routerLink="/login" (click)="closeMenu()" class="btn btn-outline btn-block">Log in</a>
+        <a routerLink="/signup" (click)="closeMenu()" class="btn btn-primary btn-block"
+          >Get Started</a
+        >
+      </div>
     </ul>
-  </div>
-
-  <div class="navbar-end gap-2">
-    <a routerLink="/login" class="btn btn-ghost btn-sm">Login</a>
-    <a routerLink="/signup" class="btn btn-primary btn-sm">Get Started</a>
   </div>
 </div>

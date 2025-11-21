@@ -77,9 +77,9 @@ export class HomeComponent {
   };
 
   protected readonly heroHighlights: FeatureHighlight[] = [
-    { icon: '⚡', text: 'Sell in 3 seconds' },
-    { icon: '📡', text: 'Works without internet' },
-    { icon: '💳', text: 'Accept cash & M-Pesa' },
+    { icon: '📱', text: 'Start on your phone' },
+    { icon: '🖥️', text: 'Grow to any size' },
+    { icon: '🤝', text: 'Trust in every sale' },
   ];
 
   protected readonly corePillars: CorePillar[] = [
@@ -132,37 +132,38 @@ export class HomeComponent {
 
   protected readonly pricingPlans: PricingPlan[] = [
     {
-      name: 'Pro Trial',
-      monthlyPrice: 'KES 0',
-      yearlyPrice: 'KES 0',
-      description: 'Try every Dukahub feature free for 30 days. No credit card required.',
+      name: 'Pro',
+      monthlyPrice: 'KES 1,500',
+      yearlyPrice: 'KES 14,400',
+      description:
+        'Essential Shop Operations. Everything you need to sell fast, track stock, and stay organized.',
       features: [
-        { text: 'Full Pro access for 30 days', included: true },
-        { text: 'Sell with camera, barcode, or quick search', included: true },
-        { text: 'Works offline and syncs when online', included: true },
-        { text: 'Track customer & supplier credit', included: true },
-        { text: 'Automatic payment reminders', included: true },
-        { text: 'Dashboards and product insights', included: true },
+        { text: 'Sell with camera, barcode, or search', included: true },
+        { text: 'Offline-first POS with auto-sync', included: true },
+        { text: 'Real-time inventory tracking', included: true },
+        { text: 'Customer credit tracking', included: true },
+        { text: 'Basic Sales Reports', included: true },
+        { text: 'Unlimited products', included: true },
       ],
       ctaText: 'Start Free 30-Day Trial',
       ctaLink: '/signup?plan=pro&trial=true',
     },
     {
-      name: 'Pro',
-      monthlyPrice: 'KES 1,500',
-      yearlyPrice: 'KES 14,400',
+      name: 'Business',
+      monthlyPrice: 'KES 2,500',
+      yearlyPrice: 'KES 24,000',
       description:
-        'Everything a growing shop needs to stay organised, sell fast, and stay on top of cash flow.',
+        'Financial Control & Growth. For shops that need rigorous accounting, FIFO profit tracking, and deeper insights.',
       features: [
-        { text: 'Unlimited products and locations', included: true },
-        { text: 'Camera recognition & barcode selling', included: true },
-        { text: 'Offline-first POS with auto-sync', included: true },
-        { text: 'Customer & supplier credit controls', included: true },
-        { text: 'Payment reminders & MPesa integration', included: true },
-        { text: 'Dashboards, reports, and exports', included: true },
+        { text: 'Everything in Pro', included: true },
+        { text: 'True Profit Tracking (FIFO)', included: true },
+        { text: 'Daily & Randomized Reconciliation', included: true },
+        { text: 'Full Double-Entry Ledger', included: true },
+        { text: 'Multi-store Management', included: true },
+        { text: 'Advanced Financial Reports', included: true },
       ],
-      ctaText: 'Start Your Free 30-Day Trial',
-      ctaLink: '/signup?plan=pro&trial=true',
+      ctaText: 'Start Free Business Trial',
+      ctaLink: '/signup?plan=business&trial=true',
       popular: true,
     },
     {
@@ -170,9 +171,9 @@ export class HomeComponent {
       monthlyPrice: 'Custom',
       yearlyPrice: 'Custom',
       description:
-        'For larger teams that need custom integrations, locations, or dedicated support.',
+        'Scale & Customization. For larger retail chains needing custom integrations and dedicated support.',
       features: [
-        { text: 'Everything in Pro', included: true },
+        { text: 'Everything in Business', included: true },
         { text: 'Unlimited users & locations', included: true },
         { text: 'Advanced API integrations', included: true },
         { text: 'Dedicated success manager', included: true },

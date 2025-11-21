@@ -12,10 +12,11 @@
           Join {{ socialProof.customerCount }}+ Kenyan businesses
         </span>
         <h1 class="max-w-xl text-4xl font-bold leading-tight md:text-5xl lg:text-6xl">
-          Run your shop with calm confidence
+          Run your shop with calm confidence—from your phone or counter
         </h1>
         <p class="max-w-xl text-lg text-base-content/70">
-          Dukahub keeps sales fast, stock clear, and cash flow safe, even when the network drops.
+          Dukahub brings professional retail power to the device you already own. No expensive
+          hardware required, but ready for it when you are.
         </p>
         <div class="flex flex-col gap-3 sm:max-w-md sm:flex-row sm:items-center">
           <a
@@ -235,41 +236,74 @@
   </section>
 
   <section class="section scroll-mt-28 bg-base-100" id="pricing-preview">
-    <div
-      class="container-app grid gap-8 rounded-3xl border border-base-300 bg-base-100 p-8 shadow-2xl lg:grid-cols-[1.1fr,0.9fr] lg:items-center"
-    >
-      <div class="space-y-4">
+    <div class="container-app">
+      <div class="text-center mb-10 space-y-4">
         <span
           class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80"
         >
           Simple pricing
         </span>
-        <h2 class="text-3xl font-bold md:text-4xl">KES 1,500 per month after your free trial</h2>
-        <p class="text-base-content/70">
-          That’s about KES 50 per day — less than one lost sale. Pause anytime, keep your data, and
-          upgrade when you’re ready.
+        <h2 class="text-3xl font-bold md:text-4xl">One platform, right-sized for you</h2>
+        <p class="mx-auto max-w-2xl text-base text-base-content/70">
+          Pause anytime, keep your data, and upgrade when you’re ready.
         </p>
-        <a
-          routerLink="/signup"
-          [queryParams]="{ plan: 'pro', trial: 'true' }"
-          class="btn btn-primary btn-lg shadow-lg shadow-primary/20 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl w-fit"
-        >
-          Start free trial
-        </a>
       </div>
-      <div class="grid gap-4 text-base-content/70">
-        <div class="flex items-start gap-3">
-          <span class="text-xl">✅</span>
-          <p>Cancel anytime – no contracts</p>
-        </div>
-        <div class="flex items-start gap-3">
-          <span class="text-xl">📦</span>
-          <p>Unlimited products & locations</p>
-        </div>
-        <div class="flex items-start gap-3">
-          <span class="text-xl">🤝</span>
-          <p>Team onboarding support included</p>
-        </div>
+
+      <div class="grid gap-6 lg:grid-cols-3 lg:items-start">
+        @for (plan of pricingPlans; track plan.name) {
+          <div
+            class="group relative flex flex-col rounded-3xl border p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+            [class.border-primary]="plan.popular"
+            [class.bg-base-100]="!plan.popular"
+            [class.bg-base-200/30]="plan.popular"
+            [class.shadow-lg]="plan.popular"
+            [class.border-base-300]="!plan.popular"
+          >
+            @if (plan.popular) {
+              <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span class="badge badge-primary badge-sm font-semibold uppercase tracking-wider">
+                  Most Popular
+                </span>
+              </div>
+            }
+
+            <div class="mb-6 space-y-2">
+              <h3 class="text-xl font-bold">{{ plan.name }}</h3>
+              <div class="flex items-baseline gap-1">
+                <span class="text-3xl font-bold">{{ plan.monthlyPrice }}</span>
+                @if (plan.monthlyPrice !== 'Custom') {
+                  <span class="text-sm text-base-content/70">/month</span>
+                }
+              </div>
+              <p class="text-sm text-base-content/70">{{ plan.description }}</p>
+            </div>
+
+            <ul class="mb-8 flex-1 space-y-3 text-sm">
+              @for (feature of plan.features; track feature.text) {
+                <li class="flex items-start gap-3">
+                  <span class="text-success text-lg leading-none">✓</span>
+                  <span [class.text-base-content]="feature.included" class="text-base-content/80">
+                    {{ feature.text }}
+                  </span>
+                </li>
+              }
+            </ul>
+
+            <a
+              [routerLink]="plan.ctaLink.split('?')[0]"
+              [queryParams]="
+                plan.ctaLink.includes('?')
+                  ? { plan: plan.ctaLink.split('=')[1].split('&')[0], trial: 'true' }
+                  : null
+              "
+              class="btn w-full transition-transform duration-200 hover:-translate-y-0.5"
+              [class.btn-primary]="plan.popular"
+              [class.btn-outline]="!plan.popular"
+            >
+              {{ plan.ctaText }}
+            </a>
+          </div>
+        }
       </div>
     </div>
   </section>

@@ -3,7 +3,7 @@
  *
  * Validates that the business registration flow actually works end-to-end:
  * - Seller creation per channel
- * - Channel configuration (Africa zones, pricesIncludeTax, seller assignment)
+ * - Channel configuration (Kenya zones, pricesIncludeTax, seller assignment)
  * - Stock location creation and linking
  *
  * Tests the right thing - actual behavior and outcomes, not implementation details.
@@ -40,9 +40,9 @@ describe('Registration Flow Integration', () => {
    */
   const buildRegistrationHarness = () => {
     // Mock entities
-    const mockAfricaZone: Zone = {
+    const mockKenyaZone: Zone = {
       id: 10,
-      name: 'Africa',
+      name: 'Kenya',
     } as Zone;
 
     const mockSeller: Seller = {
@@ -56,8 +56,8 @@ describe('Registration Flow Integration', () => {
       code: 'test-company',
       pricesIncludeTax: true,
       seller: mockSeller,
-      defaultShippingZone: mockAfricaZone,
-      defaultTaxZone: mockAfricaZone,
+      defaultShippingZone: mockKenyaZone,
+      defaultTaxZone: mockKenyaZone,
     } as Channel;
 
     const mockStockLocation: StockLocation = {
@@ -87,7 +87,7 @@ describe('Registration Flow Integration', () => {
     // Mock validator service
     const validator = {
       validateInput: jest.fn(async () => undefined),
-      getAfricaZone: jest.fn(async () => mockAfricaZone),
+      getKenyaZone: jest.fn(async () => mockKenyaZone),
     };
 
     // Mock seller provisioner - creates seller and returns it
@@ -107,7 +107,7 @@ describe('Registration Flow Integration', () => {
         async (
           ctx: RequestContext,
           registrationData: RegistrationInput,
-          africaZone: Zone,
+          kenyaZone: Zone,
           phoneNumber: string,
           sellerId: string
         ) => {
@@ -116,8 +116,8 @@ describe('Registration Flow Integration', () => {
             ...mockChannel,
             id: mockChannel.id,
             seller: { ...mockSeller, id: parseInt(sellerId) } as Seller,
-            defaultShippingZone: africaZone,
-            defaultTaxZone: africaZone,
+            defaultShippingZone: kenyaZone,
+            defaultTaxZone: kenyaZone,
             pricesIncludeTax: true,
           } as Channel;
         }
@@ -152,9 +152,7 @@ describe('Registration Flow Integration', () => {
     const errorService = {
       logError: jest.fn(),
       wrapError: jest.fn((error: any) => error),
-      createError: jest.fn(
-        (code: string, message: string) => new Error(`${code}: ${message}`)
-      ),
+      createError: jest.fn((code: string, message: string) => new Error(`${code}: ${message}`)),
     };
 
     // Build registration service with mocked provisioners
@@ -183,7 +181,7 @@ describe('Registration Flow Integration', () => {
         errorService,
       },
       entities: {
-        mockAfricaZone,
+        mockKenyaZone,
         mockSeller,
         mockChannel,
         mockStockLocation,
@@ -202,10 +200,7 @@ describe('Registration Flow Integration', () => {
     it('creates all entities correctly with proper relationships', async () => {
       const harness = buildRegistrationHarness();
 
-      const result = await harness.registrationService.provisionCustomer(
-        ctx,
-        registrationData
-      );
+      const result = await harness.registrationService.provisionCustomer(ctx, registrationData);
 
       // Verify seller was created
       expect(harness.mocks.sellerProvisioner.createSeller).toHaveBeenCalledWith(
@@ -217,7 +212,7 @@ describe('Registration Flow Integration', () => {
       expect(harness.mocks.channelProvisioner.createChannel).toHaveBeenCalledWith(
         ctx,
         registrationData,
-        harness.entities.mockAfricaZone,
+        harness.entities.mockKenyaZone,
         '0712345678', // formatted phone
         '1' // seller ID as string
       );
@@ -251,8 +246,7 @@ describe('Registration Flow Integration', () => {
       });
 
       // Verify seller name format in the provisioner call
-      const sellerCall = harness.mocks.sellerProvisioner.createSeller.mock
-        .calls[0];
+      const sellerCall = harness.mocks.sellerProvisioner.createSeller.mock.calls[0];
       expect(sellerCall[1].companyName).toBe('Acme Corporation');
 
       // Verify seller created before channel (check call order)
@@ -315,21 +309,20 @@ describe('Registration Flow Integration', () => {
       );
     });
 
-    it('creates channel with Africa zone for both shipping and tax', async () => {
+    it('creates channel with Kenya zone for both shipping and tax', async () => {
       const harness = buildRegistrationHarness();
 
       await harness.registrationService.provisionCustomer(ctx, registrationData);
 
-      // Verify channel provisioner called with Africa zone
-      const channelCall = harness.mocks.channelProvisioner.createChannel.mock
-        .calls[0];
-      const africaZoneParam = channelCall[2]; // third parameter is africaZone
+      // Verify channel provisioner called with Kenya zone
+      const channelCall = harness.mocks.channelProvisioner.createChannel.mock.calls[0];
+      const kenyaZoneParam = channelCall[2]; // third parameter is kenyaZone
 
-      expect(africaZoneParam).toEqual(harness.entities.mockAfricaZone);
-      expect(africaZoneParam.id).toBe(10); // Africa zone ID
+      expect(kenyaZoneParam).toEqual(harness.entities.mockKenyaZone);
+      expect(kenyaZoneParam.id).toBe(10); // Kenya zone ID
 
       // Verify zone lookup was called
-      expect(harness.mocks.validator.getAfricaZone).toHaveBeenCalledWith(ctx);
+      expect(harness.mocks.validator.getKenyaZone).toHaveBeenCalledWith(ctx);
     });
 
     it('creates channel with pricesIncludeTax set to true', async () => {
@@ -357,7 +350,7 @@ describe('Registration Flow Integration', () => {
         expect.objectContaining({
           currency: 'KES',
         }),
-        expect.any(Object), // africaZone
+        expect.any(Object), // kenyaZone
         expect.any(String), // phone
         expect.any(String) // sellerId
       );
@@ -396,37 +389,36 @@ describe('Registration Flow Integration', () => {
     });
   });
 
-  describe('Africa Zone Lookup Validation', () => {
-    it('finds Africa zone by name and uses it for both shipping and tax', async () => {
+  describe('Kenya Zone Lookup Validation', () => {
+    it('finds Kenya zone by name and uses it for both shipping and tax', async () => {
       const harness = buildRegistrationHarness();
 
       await harness.registrationService.provisionCustomer(ctx, registrationData);
 
       // Verify zone lookup was called
-      expect(harness.mocks.validator.getAfricaZone).toHaveBeenCalledWith(ctx);
+      expect(harness.mocks.validator.getKenyaZone).toHaveBeenCalledWith(ctx);
 
       // Verify zone lookup was called
-      expect(harness.mocks.validator.getAfricaZone).toHaveBeenCalledWith(ctx);
+      expect(harness.mocks.validator.getKenyaZone).toHaveBeenCalledWith(ctx);
 
-      // Verify Africa zone passed to channel provisioner
-      const channelCall = harness.mocks.channelProvisioner.createChannel.mock
-        .calls[0];
-      expect(channelCall[2]).toEqual(harness.entities.mockAfricaZone);
+      // Verify Kenya zone passed to channel provisioner
+      const channelCall = harness.mocks.channelProvisioner.createChannel.mock.calls[0];
+      expect(channelCall[2]).toEqual(harness.entities.mockKenyaZone);
     });
 
-    it('throws clear error when Africa zone does not exist', async () => {
+    it('throws clear error when Kenya zone does not exist', async () => {
       const harness = buildRegistrationHarness();
 
       // Mock zone not found
-      harness.mocks.validator.getAfricaZone.mockRejectedValue(
+      harness.mocks.validator.getKenyaZone.mockRejectedValue(
         new Error(
-          'REGISTRATION_AFRICA_ZONE_MISSING: Africa zone not found. Please create a zone named "Africa" in Settings → Zones.'
+          'REGISTRATION_KENYA_ZONE_MISSING: Kenya zone not found. Please create a zone named "Kenya" in Settings → Zones.'
         )
       );
 
       await expect(
         harness.registrationService.provisionCustomer(ctx, registrationData)
-      ).rejects.toThrow('REGISTRATION_AFRICA_ZONE_MISSING');
+      ).rejects.toThrow('REGISTRATION_KENYA_ZONE_MISSING');
 
       // Verify channel was not created when zone is missing
       expect(harness.mocks.channelProvisioner.createChannel).not.toHaveBeenCalled();
@@ -435,16 +427,16 @@ describe('Registration Flow Integration', () => {
   });
 
   describe('Error Handling', () => {
-    it('handles missing Africa zone gracefully', async () => {
+    it('handles missing Kenya zone gracefully', async () => {
       const harness = buildRegistrationHarness();
 
-      harness.mocks.validator.getAfricaZone.mockRejectedValue(
-        new Error('REGISTRATION_AFRICA_ZONE_MISSING: Africa zone not found')
+      harness.mocks.validator.getKenyaZone.mockRejectedValue(
+        new Error('REGISTRATION_KENYA_ZONE_MISSING: Kenya zone not found')
       );
 
       await expect(
         harness.registrationService.provisionCustomer(ctx, registrationData)
-      ).rejects.toThrow('REGISTRATION_AFRICA_ZONE_MISSING');
+      ).rejects.toThrow('REGISTRATION_KENYA_ZONE_MISSING');
 
       // Verify no entities were created
       expect(harness.mocks.sellerProvisioner.createSeller).not.toHaveBeenCalled();
@@ -482,4 +474,3 @@ describe('Registration Flow Integration', () => {
     });
   });
 });
-

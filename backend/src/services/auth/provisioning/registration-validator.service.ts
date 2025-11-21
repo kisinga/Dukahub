@@ -141,22 +141,22 @@ export class RegistrationValidatorService {
   }
 
   /**
-   * Get Africa zone by name
+   * Get Kenya zone by name
    * Used for setting default shipping and tax zones for new channels
    */
-  async getAfricaZone(ctx: RequestContext): Promise<Zone> {
+  async getKenyaZone(ctx: RequestContext): Promise<Zone> {
     const zoneRepo = this.connection.getRepository(ctx, Zone);
-    const africaZone = await zoneRepo.findOne({
-      where: { name: 'Africa' },
+    const kenyaZone = await zoneRepo.findOne({
+      where: { name: 'Kenya' },
     });
 
-    if (!africaZone) {
+    if (!kenyaZone) {
       throw new Error(
-        `REGISTRATION_AFRICA_ZONE_MISSING: Africa zone not found. ` +
-          `Please create a zone named "Africa" in Settings → Zones.`
+        `REGISTRATION_KENYA_ZONE_MISSING: Kenya zone not found. ` +
+          `Please create a zone named "Kenya" in Settings → Zones.`
       );
     }
 
-    return africaZone;
+    return kenyaZone;
   }
 }
