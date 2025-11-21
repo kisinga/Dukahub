@@ -229,13 +229,36 @@ export class NotificationService {
         serverPublicKey: environment.vapidPublicKey,
       });
 
+      console.log('Push subscription obtained from service worker:', subscription);
+
       // Send subscription to backend
       const client = this.apolloService.getClient();
-      const subscriptionJSON = subscription.toJSON();
+
+      // Convert PushSubscription to JSON format
+      // PushSubscription has toJSON() method that returns the standard format
+      let subscriptionJSON: any;
+      try {
+        subscriptionJSON = subscription.toJSON();
+      } catch (e) {
+        // Fallback: manually extract if toJSON() fails
+        subscriptionJSON = {
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: this.arrayBufferToBase64(subscription.getKey('p256dh')),
+            auth: this.arrayBufferToBase64(subscription.getKey('auth')),
+          },
+        };
+      }
+
+      console.log('Subscription JSON:', subscriptionJSON);
 
       // Ensure endpoint is defined and a string (JSON value can be null/undefined but GraphQL expects String!)
       if (!subscriptionJSON.endpoint) {
         throw new Error('Invalid subscription: endpoint is missing');
+      }
+
+      if (!subscriptionJSON.keys || !subscriptionJSON.keys.p256dh || !subscriptionJSON.keys.auth) {
+        throw new Error('Invalid subscription: keys are missing or incomplete');
       }
 
       const input = {
@@ -243,12 +266,21 @@ export class NotificationService {
         keys: subscriptionJSON.keys,
       };
 
+      console.log('Sending subscription to backend:', input);
+
       const result = await client.mutate({
         mutation: SubscribeToPushDocument,
         variables: {
           subscription: input,
         },
       });
+
+      // Check for GraphQL errors
+      if (result.errors && result.errors.length > 0) {
+        const errorMessage = result.errors.map((e) => e.message).join(', ');
+        console.error('GraphQL errors:', result.errors);
+        throw new Error(`GraphQL error: ${errorMessage}`);
+      }
 
       if (result.data?.subscribeToPush) {
         console.log('Push subscription created and synced to backend');
@@ -266,21 +298,41 @@ export class NotificationService {
     } catch (error) {
       console.error('Failed to subscribe to push notifications:', error);
 
-      if (error instanceof Error && error.message.includes('user dismissed')) {
-        this.toastService.show(
-          'Push Notifications',
-          'Permission request was dismissed.',
-          'info',
-          5000,
-        );
-      } else {
-        this.toastService.show(
-          'Push Notifications',
-          'Failed to enable push notifications. Please try again.',
-          'error',
-          5000,
-        );
+      // Log full error details for debugging
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
       }
+
+      // Check for specific error types
+      if (error instanceof Error) {
+        if (error.message.includes('user dismissed')) {
+          this.toastService.show(
+            'Push Notifications',
+            'Permission request was dismissed.',
+            'info',
+            5000,
+          );
+          return false;
+        }
+
+        if (error.message.includes('GraphQL error')) {
+          this.toastService.show(
+            'Push Notifications',
+            `Failed to enable: ${error.message}`,
+            'error',
+            5000,
+          );
+          return false;
+        }
+      }
+
+      this.toastService.show(
+        'Push Notifications',
+        `Failed to enable push notifications: ${error instanceof Error ? error.message : 'Unknown error'}. Please check the console for details.`,
+        'error',
+        5000,
+      );
 
       return false;
     }
@@ -463,5 +515,15 @@ export class NotificationService {
 
   private setPrompted(): void {
     localStorage.setItem(this.HAS_PROMPTED_KEY, 'true');
+  }
+
+  // Helper to convert ArrayBuffer to base64 (fallback if toJSON() doesn't work)
+  private arrayBufferToBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
   }
 }
