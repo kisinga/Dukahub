@@ -109,7 +109,7 @@ export class RegistrationService {
       // Step 1: Validate input (currency, channel code, zones)
       this.logger.log('Validating registration input');
       await this.validator.validateInput(ctx, registrationData);
-      const africaZone = await this.validator.getAfricaZone(ctx);
+      const kenyaZone = await this.validator.getKenyaZone(ctx);
 
       // Step 2: Create Seller (vendor entity for channel isolation)
       this.logger.log(`Creating seller for: ${registrationData.companyName}`);
@@ -127,7 +127,7 @@ export class RegistrationService {
       const channel = await this.channelProvisioner.createChannel(
         ctx,
         registrationData,
-        africaZone,
+        kenyaZone,
         formattedPhone,
         seller.id.toString()
       );

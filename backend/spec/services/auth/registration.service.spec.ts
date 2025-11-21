@@ -23,7 +23,7 @@ describe('RegistrationService.provisionCustomer', () => {
   const buildService = () => {
     const validator = {
       validateInput: jest.fn(async () => undefined),
-      getAfricaZone: jest.fn(async () => ({ id: 10, name: 'Africa' })),
+      getKenyaZone: jest.fn(async () => ({ id: 10, name: 'Kenya' })),
     };
 
     const seller = { id: 1, name: 'Test Company Seller' };
