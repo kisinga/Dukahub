@@ -122,6 +122,9 @@ export class DashboardLayoutComponent implements OnInit {
     // Load notifications
     this.notificationService.loadNotifications();
     this.notificationService.loadUnreadCount();
+
+    // Prompt for notification permission on dashboard navigation
+    this.notificationService.promptPermissionIfNeeded();
   }
 
   closeDrawer(): void {

@@ -62,9 +62,6 @@ export class NotificationService {
             'Service worker not enabled in development mode - push notifications will use polling fallback',
           );
         }
-
-        // Auto-prompt if not prompted before
-        this.autoPromptPermission();
       }
 
       // Load initial notifications
@@ -78,7 +75,11 @@ export class NotificationService {
     }
   }
 
-  private async autoPromptPermission(): Promise<void> {
+  /**
+   * Prompt for notification permission if not already prompted.
+   * Should be called when user navigates to dashboard.
+   */
+  async promptPermissionIfNeeded(): Promise<void> {
     if (!this.hasPrompted()) {
       // We can only request permission on user gesture or page load if browser allows.
       // But modern browsers block auto-request on load.
@@ -241,11 +242,18 @@ export class NotificationService {
         subscriptionJSON = subscription.toJSON();
       } catch (e) {
         // Fallback: manually extract if toJSON() fails
+        const p256dhKey = subscription.getKey('p256dh');
+        const authKey = subscription.getKey('auth');
+
+        if (!p256dhKey || !authKey) {
+          throw new Error('Failed to extract subscription keys');
+        }
+
         subscriptionJSON = {
           endpoint: subscription.endpoint,
           keys: {
-            p256dh: this.arrayBufferToBase64(subscription.getKey('p256dh')),
-            auth: this.arrayBufferToBase64(subscription.getKey('auth')),
+            p256dh: this.arrayBufferToBase64(p256dhKey),
+            auth: this.arrayBufferToBase64(authKey),
           },
         };
       }
@@ -275,11 +283,10 @@ export class NotificationService {
         },
       });
 
-      // Check for GraphQL errors
-      if (result.errors && result.errors.length > 0) {
-        const errorMessage = result.errors.map((e) => e.message).join(', ');
-        console.error('GraphQL errors:', result.errors);
-        throw new Error(`GraphQL error: ${errorMessage}`);
+      // Check for Apollo Client errors
+      if (result.error) {
+        console.error('Apollo Client error:', result.error);
+        throw new Error(`GraphQL error: ${result.error.message || 'Unknown error'}`);
       }
 
       if (result.data?.subscribeToPush) {

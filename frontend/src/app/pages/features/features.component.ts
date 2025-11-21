@@ -239,7 +239,7 @@ export class FeaturesComponent {
         {
           title: 'M-Pesa Integration',
           description:
-            'Accept M-Pesa payments directly. Everything is tracked automatically. No need to manually reconcile payments.',
+            'Accept M-Pesa on your existing Till. We track the confirmation, you keep the money. No manual reconciliation needed.',
           icon: '📲',
           origin: 'Dukahub-Exclusive',
           useCase: 'Essential for Kenyan businesses accepting mobile money',
@@ -294,32 +294,32 @@ export class FeaturesComponent {
 
   protected readonly comingSoonFeatures: ComingSoonFeature[] = [
     {
-      icon: '📊',
-      title: 'Ledger control',
+      icon: '🔐',
+      title: 'Spot leaks instantly',
       description:
-        'Full control over your accounting ledger with detailed transaction tracking and reconciliation.',
+        'Daily & Randomized Reconciliation. Catch cash or stock leaks the moment they happen with surprise audit tools.',
+      category: 'Financial Control',
+    },
+    {
+      icon: '📈',
+      title: 'Protect your margins',
+      description:
+        'True Profit Tracking (FIFO). Know exactly how much you made on every single item, even when supplier prices change.',
+      category: 'Profitability',
+    },
+    {
+      icon: '🏛️',
+      title: 'Audit-proof records',
+      description:
+        'Financial Integrity. A full double-entry ledger that works in the background to keep your accountant happy and your tax compliant.',
       category: 'Accounting',
     },
     {
-      icon: '📦',
-      title: 'COGS via FIFO tracking',
+      icon: '🤝',
+      title: 'Seamless Returns',
       description:
-        'Track cost of goods sold using FIFO method with batch tracking for expiry management and automated reminders.',
-      category: 'Accounting',
-    },
-    {
-      icon: '💼',
-      title: 'Expenses management',
-      description:
-        'Comprehensive ERP features for tracking and managing business expenses with categorization and reporting.',
-      category: 'Accounting',
-    },
-    {
-      icon: '🔒',
-      title: 'Period end closing',
-      description:
-        'Enforce reconciliation of payment accounts before closing periods, ensuring ledger accuracy with inter-account transfer support.',
-      category: 'Accounting',
+        'Handle customer returns and exchanges without messing up your inventory counts or cash balance.',
+      category: 'Operations',
     },
   ];
 }
