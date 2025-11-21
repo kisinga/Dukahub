@@ -11,6 +11,7 @@ import { ChannelStatus, getChannelStatus } from '../../domain/channel-custom-fie
 import { RegistrationStorageService } from '../../infrastructure/storage/registration-storage.service';
 import { formatPhoneNumber } from '../../utils/phone.utils';
 import { OtpService } from './otp.service';
+import { RegistrationValidatorService } from './provisioning/registration-validator.service';
 import { RegistrationInput, RegistrationService } from './registration.service';
 
 // Re-export RegistrationInput for backward compatibility with resolver
@@ -39,6 +40,7 @@ export class PhoneAuthService {
     private readonly userService: UserService,
     private readonly channelService: ChannelService,
     private readonly registrationService: RegistrationService,
+    private readonly registrationValidator: RegistrationValidatorService,
     private readonly registrationStorageService: RegistrationStorageService,
     private readonly connection: TransactionalConnection
   ) {}
@@ -64,6 +66,20 @@ export class PhoneAuthService {
   }> {
     // Normalize phone number to 07XXXXXXXX format
     const formattedPhone = formatPhoneNumber(phoneNumber);
+
+    // Validate email uniqueness if provided
+    // This check happens BEFORE OTP to improve UX (fail fast)
+    if (registrationData.adminEmail) {
+      // We create a system context because requestRegistrationOTP is public/unauthenticated
+      // and doesn't have a full RequestContext. The validator needs context for DB access.
+      const ctx = RequestContext.empty();
+      await this.registrationValidator.validateAdminEmailUniqueness(
+        ctx,
+        registrationData.adminEmail,
+        undefined, // existingUser not known yet
+        formattedPhone // check against this phone number
+      );
+    }
 
     // Step 1: Store registration data temporarily
     const { sessionId, expiresAt } = await this.registrationStorageService.storeRegistrationData(

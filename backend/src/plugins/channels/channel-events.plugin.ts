@@ -15,6 +15,7 @@ import { NotificationPreferenceService } from '../../infrastructure/events/notif
 import { AuditService } from '../../infrastructure/audit/audit.service';
 import { AuditDbConnection } from '../../infrastructure/audit/audit-db.connection';
 import { UserContextResolver } from '../../infrastructure/audit/user-context.resolver';
+import { ChannelUserService } from '../../services/auth/channel-user.service';
 
 /**
  * Channel Events Plugin
@@ -33,6 +34,7 @@ import { UserContextResolver } from '../../infrastructure/audit/user-context.res
     AuditService,
 
     // Core services
+    ChannelUserService,
     ChannelActionTrackingService,
     ChannelEventRouterService,
     SmsProviderFactory, // Required by SmsService

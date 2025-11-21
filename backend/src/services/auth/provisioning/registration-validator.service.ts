@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import {
+  Administrator,
   Channel,
   ChannelService,
   CurrencyCode,
   RequestContext,
   TransactionalConnection,
+  User,
   Zone,
   ZoneService,
 } from '@vendure/core';
@@ -30,7 +32,11 @@ export class RegistrationValidatorService {
    * Validate registration input before provisioning
    * Throws errors with REGISTRATION_ prefix if validation fails
    */
-  async validateInput(ctx: RequestContext, registrationData: RegistrationInput): Promise<void> {
+  async validateInput(
+    ctx: RequestContext,
+    registrationData: RegistrationInput,
+    existingUser?: User
+  ): Promise<void> {
     // Validate currency code
     if (!Object.values(CurrencyCode).includes(registrationData.currency as CurrencyCode)) {
       throw new Error(
@@ -43,6 +49,11 @@ export class RegistrationValidatorService {
 
     // Validate default zones are configured
     await this.validateDefaultZones(ctx);
+
+    // Validate admin email uniqueness if provided
+    if (registrationData.adminEmail) {
+      await this.validateAdminEmailUniqueness(ctx, registrationData.adminEmail, existingUser);
+    }
   }
 
   /**
@@ -94,6 +105,37 @@ export class RegistrationValidatorService {
         `REGISTRATION_ZONES_MISSING: Default zones not configured. ` +
           `Please set up shipping and tax zones in the default channel first. ` +
           `Navigate to Settings → Channels → Default Channel and configure defaultShippingZone and defaultTaxZone.`
+      );
+    }
+  }
+
+  async validateAdminEmailUniqueness(
+    ctx: RequestContext,
+    email: string,
+    existingUser?: User,
+    phoneNumber?: string
+  ): Promise<void> {
+    const adminRepo = this.connection.getRepository(ctx, Administrator);
+    const existingAdmin = await adminRepo.findOne({
+      where: { emailAddress: email },
+      relations: ['user'],
+    });
+
+    if (existingAdmin) {
+      // If admin exists, check if it belongs to the same user
+      // Case 1: We have the existing user entity (from provisionCustomer)
+      if (existingUser && existingAdmin.user && existingAdmin.user.id === existingUser.id) {
+        return; // Same user, allow using same email
+      }
+
+      // Case 2: We have the phone number (from requestRegistrationOTP)
+      // Check if the existing admin is linked to a user with this phone number
+      if (phoneNumber && existingAdmin.user && existingAdmin.user.identifier === phoneNumber) {
+        return; // Same user (by phone), allow using same email
+      }
+
+      throw new Error(
+        `REGISTRATION_EMAIL_EXISTS: An administrator with email "${email}" already exists. Please use a different email address.`
       );
     }
   }

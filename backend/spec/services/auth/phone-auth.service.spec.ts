@@ -52,7 +52,8 @@ describe('PhoneAuthService.verifyLoginOTP', () => {
       { getUserByEmailAddress: jest.fn() } as any,
       channelService as any,
       {} as any,
-      {} as any,
+      {} as any, // registrationValidator
+      {} as any, // registrationStorageService
       connection as any
     );
 

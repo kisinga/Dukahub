@@ -158,6 +158,8 @@ export class AccessProvisionerService {
     user: User
   ): Promise<{ administrator: Administrator; created: boolean }> {
     const adminRepo = this.connection.getRepository(ctx, Administrator);
+    // Use provided email or fallback to phone number as identifier
+    const emailToUse = registrationData.adminEmail || phoneNumber;
 
     let administrator = await adminRepo.findOne({
       where: { user: { id: user.id } },
@@ -166,7 +168,7 @@ export class AccessProvisionerService {
 
     if (!administrator) {
       const newAdmin = new Administrator();
-      newAdmin.emailAddress = phoneNumber; // Use phone as identifier
+      newAdmin.emailAddress = emailToUse;
       newAdmin.firstName = registrationData.adminFirstName;
       newAdmin.lastName = registrationData.adminLastName;
       (newAdmin as any).user = user; // Use verified user passed from caller
@@ -200,8 +202,8 @@ export class AccessProvisionerService {
       requiresUpdate = true;
     }
 
-    if (administrator.emailAddress !== phoneNumber) {
-      administrator.emailAddress = phoneNumber;
+    if (administrator.emailAddress !== emailToUse) {
+      administrator.emailAddress = emailToUse;
       requiresUpdate = true;
     }
 

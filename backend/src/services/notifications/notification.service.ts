@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Administrator, RequestContext, Role, TransactionalConnection, User } from '@vendure/core';
 import { Column, CreateDateColumn, Entity, In, PrimaryGeneratedColumn } from 'typeorm';
+import { ChannelUserService } from '../auth/channel-user.service';
 
 export interface NotificationData {
   [key: string]: any;
@@ -81,7 +82,10 @@ export class PushSubscription {
 
 @Injectable()
 export class NotificationService {
-  constructor(private connection: TransactionalConnection) {}
+  constructor(
+    private connection: TransactionalConnection,
+    private channelUserService: ChannelUserService
+  ) {}
 
   async createNotification(
     ctx: RequestContext,
@@ -188,65 +192,8 @@ export class NotificationService {
   }
 
   async getChannelUsers(channelId: string): Promise<string[]> {
-    // Find roles associated with this channel
-    const roles = await this.connection.rawConnection
-      .getRepository(Role)
-      .createQueryBuilder('role')
-      .leftJoinAndSelect('role.channels', 'channel')
-      .where('channel.id = :channelId', { channelId })
-      .getMany();
-
-    const roleIds = roles.map(r => r.id);
-
-    if (roleIds.length === 0) {
-      return [];
-    }
-
-    // Find administrators with these roles
-    const administrators = await this.connection.rawConnection
-      .getRepository(Administrator)
-      .createQueryBuilder('admin')
-      .leftJoinAndSelect('admin.user', 'user')
-      .leftJoin('admin.user', 'u') // Join user to access roles relation in user if needed, but Administrator usually links to User
-      .where('admin.deletedAt IS NULL')
-      .getMany();
-
-    // We need to check user roles manually or via query if the relation is standard Vendure User -> Roles
-    // In Vendure, User has Roles. Administrator is linked to User.
-
-    // Better query: Find Users who have Roles for this Channel
-    // But Vendure's User-Role relation is Many-to-Many.
-
-    const users = await this.connection.rawConnection
-      .getRepository(User)
-      .createQueryBuilder('user')
-      .innerJoin('user.roles', 'role')
-      .innerJoin('role.channels', 'channel')
-      .where('channel.id = :channelId', { channelId })
-      .andWhere('user.deletedAt IS NULL')
-      .getMany();
-
-    // Also need to include SuperAdmins who might not be explicitly assigned to the channel but have access
-    // SuperAdmins usually have a role with no channel restrictions (empty channels list)
-    // But for notifications, we usually target channel admins.
-    // If we want to include SuperAdmins, we'd check for roles with empty channels list.
-
-    // Let's stick to explicit channel assignment + SuperAdmins
-
-    const superAdmins = await this.connection.rawConnection
-      .getRepository(User)
-      .createQueryBuilder('user')
-      .innerJoin('user.roles', 'role')
-      .leftJoin('role.channels', 'channel')
-      .where('channel.id IS NULL') // SuperAdmin role usually has no specific channel
-      .andWhere('user.deletedAt IS NULL')
-      .getMany();
-
-    const allUserIds = new Set([
-      ...users.map(u => u.id.toString()),
-      ...superAdmins.map(u => u.id.toString()),
-    ]);
-
-    return Array.from(allUserIds);
+    // Delegate to centralized ChannelUserService to ensure consistent access logic
+    // Pass empty RequestContext as we are likely in a background process or system context
+    return this.channelUserService.getChannelAdminUserIds(RequestContext.empty(), channelId);
   }
 }

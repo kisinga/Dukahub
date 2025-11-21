@@ -280,7 +280,10 @@ export class SignupComponent implements OnDestroy {
       let displayMessage = errorMsg;
 
       // Check for specific error types
-      if (
+      if (errorMsg.toLowerCase().includes('email')) {
+        displayMessage =
+          'An administrator with this email address already exists. Please use a different email.';
+      } else if (
         errorMsg.toLowerCase().includes('already') ||
         errorMsg.toLowerCase().includes('exists') ||
         errorMsg.toLowerCase().includes('duplicate')

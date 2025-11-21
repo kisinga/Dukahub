@@ -6,6 +6,9 @@ import {
   RequestContext,
   StockMovementEvent,
   UserService,
+  TransactionalConnection,
+  Role,
+  User,
 } from '@vendure/core';
 import { ChannelActionTrackingService } from './channel-action-tracking.service';
 import { IChannelActionHandler } from './handlers/action-handler.interface';
@@ -20,6 +23,7 @@ import { ActionConfig, ChannelEvent, ChannelEventConfig } from './types/channel-
 import { ChannelEventType } from './types/event-type.enum';
 import { AuditService } from '../audit/audit.service';
 import { UserContextResolver } from '../audit/user-context.resolver';
+import { ChannelUserService } from '../../services/auth/channel-user.service';
 
 /**
  * Channel Event Router Service
@@ -43,7 +47,9 @@ export class ChannelEventRouterService implements OnModuleInit {
     private readonly pushHandler: PushActionHandler,
     private readonly smsHandler: SmsActionHandler,
     private readonly auditService: AuditService,
-    private readonly userContextResolver: UserContextResolver
+    private readonly userContextResolver: UserContextResolver,
+    private readonly connection: TransactionalConnection,
+    private readonly channelUserService: ChannelUserService
   ) {
     // Register handlers
     this.handlers.set(ChannelActionType.IN_APP_NOTIFICATION, inAppHandler);
@@ -345,10 +351,10 @@ export class ChannelEventRouterService implements OnModuleInit {
    * Get channel admin user IDs
    */
   private async getChannelAdminUserIds(ctx: RequestContext, channelId: string): Promise<string[]> {
-    // TODO: Implement getting channel admin users
-    // For now, return empty array
-    this.logger.debug(`Getting channel admin users for channel ${channelId} (not yet implemented)`);
-    return [];
+    // Use centralized service to get admin users (includes SuperAdmins)
+    return this.channelUserService.getChannelAdminUserIds(ctx, channelId, {
+      includeSuperAdmins: true,
+    });
   }
 
   /**
