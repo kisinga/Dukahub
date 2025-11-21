@@ -231,10 +231,22 @@ export class NotificationService {
 
       // Send subscription to backend
       const client = this.apolloService.getClient();
+      const subscriptionJSON = subscription.toJSON();
+
+      // Ensure endpoint is defined and a string (JSON value can be null/undefined but GraphQL expects String!)
+      if (!subscriptionJSON.endpoint) {
+        throw new Error('Invalid subscription: endpoint is missing');
+      }
+
+      const input = {
+        endpoint: subscriptionJSON.endpoint,
+        keys: subscriptionJSON.keys,
+      };
+
       const result = await client.mutate({
         mutation: SubscribeToPushDocument,
         variables: {
-          subscription: subscription.toJSON(),
+          subscription: input,
         },
       });
 
