@@ -75,9 +75,12 @@ Dukarun uses a two-file Docker Compose structure for flexible deployment:
 - **`docker-compose.services.yml`** - Infrastructure services (PostgreSQL, Redis, TimescaleDB, SigNoz, ClickHouse)
 - **`docker-compose.yml`** - Application services (Backend, Frontend)
 
+**Required:** Create a `.env` file in the project root with `COMPOSE_PROJECT_NAME=dukarun`. Docker Compose automatically reads this file to ensure consistent network naming across both compose files.
+
 ### Local Development
 
 **Option 1: Full Docker (Production-like)**
+
 ```bash
 # Start infrastructure services
 docker compose -f docker-compose.services.yml up -d
@@ -87,6 +90,7 @@ docker compose up -d
 ```
 
 **Option 2: Hybrid (Services in Docker, App Direct)**
+
 ```bash
 # Start infrastructure services
 docker compose -f docker-compose.services.yml up -d
@@ -98,10 +102,26 @@ cd backend && npm run dev
 cd frontend && npm start
 ```
 
+### Environment Expectations
+
+The `.env` file in the project root must contain `COMPOSE_PROJECT_NAME=dukarun`. This ensures:
+
+- Network names are consistent between both compose files
+- Network is created as `dukarun_services_network` (project name "dukarun" + network name "dukarun_services_network")
+- Works regardless of directory name (without this, Docker Compose would prefix network names with the directory name)
+
+**Alternative:** You can set the project name manually:
+
+- Export: `export COMPOSE_PROJECT_NAME=dukarun`
+- Inline: `COMPOSE_PROJECT_NAME=dukarun docker compose ...`
+
+However, using `.env` is recommended as it's automatic and consistent.
+
 ### Network Architecture
 
-- **Services compose** creates named network `dukarun_services`
-- **App compose** joins `dukarun_services` network (external: true)
+- **Project name** is set via `.env` file (`COMPOSE_PROJECT_NAME=dukarun`)
+- **Services compose** creates named network `dukarun_services_network` (project name + network name)
+- **App compose** joins `dukarun_services_network` network (external: true)
 - Backend **always uses service names** in Docker: `postgres_db`, `redis`, `timescaledb_audit`, `signoz`
 - Frontend connects to backend via service name: `backend`
 - Never uses localhost in Docker compose files (production-ready, scalable)

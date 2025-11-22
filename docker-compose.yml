@@ -22,7 +22,7 @@ services:
     platform: linux/amd64
     restart: unless-stopped
     networks:
-      - dukarun_services
+      - dukarun_services_network
     environment:
       # Database configuration - uses service name from shared network
       DB_HOST: postgres_db
@@ -124,7 +124,7 @@ services:
     platform: linux/amd64
     restart: unless-stopped
     networks:
-      - dukarun_services
+      - dukarun_services_network
     environment:
       # Backend connection - using service name from shared network
       BACKEND_HOST: backend
@@ -160,7 +160,7 @@ services:
 # Networks
 # ========================================
 networks:
-  dukarun_services:
+  dukarun_services_network:
     external: true
 
 # ========================================
