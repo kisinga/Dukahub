@@ -1,85 +1,19 @@
 # =====================================
-# Dukarun Production Docker Compose
+# Dukarun Application Services
 # =====================================
 #
+# This file contains only application services (backend, frontend)
+# Infrastructure services (databases, cache, observability) are in docker-compose.services.yml
 #
 # Usage:
+#   # Start infrastructure first:
+#   docker compose -f docker-compose.services.yml up -d
+#   # Then start applications:
 #   docker compose up -d
 #   docker compose logs -f
 #   docker compose down
 
 services:
-  # ========================================
-  # Database Service
-  # ========================================
-  postgres_db:
-    image: postgres:17
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${DB_NAME:-vendure}
-      POSTGRES_USER: ${DB_USER:-vendure}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-vendure}
-      POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - '${POSTGRES_PORT:-5432}:5432'
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-vendure} -d ${DB_NAME:-vendure}']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  # ========================================
-  # Audit Log Database (TimescaleDB)
-  # ========================================
-  timescaledb_audit:
-    image: timescale/timescaledb:latest-pg17
-    platform: linux/amd64
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${AUDIT_DB_NAME:-audit_logs}
-      POSTGRES_USER: ${AUDIT_DB_USER:-audit_user}
-      POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD:-audit_password}
-      POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
-    volumes:
-      - timescaledb_audit_data:/var/lib/postgresql/data
-    ports:
-      - '${AUDIT_DB_PORT:-5433}:5432'
-    healthcheck:
-      test:
-        ['CMD-SHELL', 'pg_isready -U ${AUDIT_DB_USER:-audit_user} -d ${AUDIT_DB_NAME:-audit_logs}']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  # ========================================
-  # Redis Cache Service
-  # ========================================
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    command: >
-      redis-server 
-      --appendonly yes 
-      --maxmemory 512mb 
-      --maxmemory-policy allkeys-lru
-      --save 900 1
-      --save 300 10
-      --save 60 10000
-    volumes:
-      - redis_data:/data
-    ports:
-      - '${REDIS_PORT:-6379}:6379'
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 3s
-      retries: 5
-      start_period: 10s
-
   # ========================================
   # Backend Service (Vendure)
   # ========================================
@@ -87,8 +21,10 @@ services:
     image: ghcr.io/kisinga/dukarun/backend:latest
     platform: linux/amd64
     restart: unless-stopped
+    networks:
+      - dukarun_services
     environment:
-      # Database configuration
+      # Database configuration - uses service name from shared network
       DB_HOST: postgres_db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-vendure}
@@ -96,14 +32,14 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-vendure}
       DB_SCHEMA: ${DB_SCHEMA:-public}
 
-      # Audit Log Database configuration (TimescaleDB)
+      # Audit Log Database configuration (TimescaleDB) - uses service name
       AUDIT_DB_HOST: timescaledb_audit
       AUDIT_DB_PORT: 5432
       AUDIT_DB_NAME: ${AUDIT_DB_NAME:-audit_logs}
       AUDIT_DB_USERNAME: ${AUDIT_DB_USER:-audit_user}
       AUDIT_DB_PASSWORD: ${AUDIT_DB_PASSWORD:-audit_password}
 
-      # Redis configuration
+      # Redis configuration - uses service name
       REDIS_HOST: redis
       REDIS_PORT: 6379
 
@@ -152,7 +88,7 @@ services:
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-info}
 
-      # SigNoz Observability Configuration (Backend)
+      # SigNoz Observability Configuration (Backend) - uses service name
       # All values can be overridden via environment variables
       SIGNOZ_ENABLED: ${SIGNOZ_ENABLED:-false}
       SIGNOZ_HOST: ${SIGNOZ_HOST:-signoz}
@@ -171,13 +107,8 @@ services:
       # In platforms like Coolify/Kubernetes, env vars are passed directly, so file mount is not needed
     ports:
       - '${BACKEND_PORT:-3000}:3000'
-    depends_on:
-      postgres_db:
-        condition: service_healthy
-      timescaledb_audit:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+    # Note: depends_on removed for external services (postgres_db, redis, timescaledb_audit)
+    # Backend will retry connections gracefully if services are not yet ready
     healthcheck:
       test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000/health']
       interval: 30s
@@ -192,8 +123,10 @@ services:
     image: ghcr.io/kisinga/dukarun/frontend:latest
     platform: linux/amd64
     restart: unless-stopped
+    networks:
+      - dukarun_services
     environment:
-      # Backend connection - using service name for reliable discovery
+      # Backend connection - using service name from shared network
       BACKEND_HOST: backend
       BACKEND_PORT: ${BACKEND_PORT:-3000}
 
@@ -223,111 +156,19 @@ services:
       retries: 3
       start_period: 30s
 
-  # ========================================
-  # SigNoz Observability Platform
-  # ========================================
-  # SECURITY WARNING: Do NOT expose SigNoz UI (port 3301) directly to the internet!
-  # Use a reverse proxy with authentication (e.g., nginx with basic auth, OAuth)
-  # Only expose OTLP ports (4317, 4318) to internal Docker network
-  signoz:
-    image: signoz/signoz:latest
-    platform: linux/amd64
-    restart: unless-stopped
-    environment:
-      # SigNoz configuration
-      # All values can be overridden via environment variables
-      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.name=dukarun,service.version=2.0.0}
-      SIGNOZ_TELEMETRYSTORE_PROVIDER: ${SIGNOZ_TELEMETRYSTORE_PROVIDER:-clickhouse}
-      # ClickHouse DSN: Use TCP port 9000 (not HTTP port 8123)
-      # Format: tcp://[user]:[password]@[host]:[port]
-      # If no password, use: tcp://default@clickhouse:9000
-      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN:-tcp://default@clickhouse:9000}
-      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER:-cluster}
-      SIGNOZ_SQLSTORE_SQLITE_PATH: ${SIGNOZ_SQLSTORE_SQLITE_PATH:-/var/lib/signoz/signoz.db}
-    ports:
-      # UI port - ONLY expose if behind authenticated reverse proxy
-      # Remove this line in production or use internal network only
-      - '${SIGNOZ_UI_PORT:-3301}:8080' # UI (SECURITY: Should be behind auth)
-      # OTLP ports - internal only, do not expose to host in production
-      # These are used by backend/frontend services via Docker network
-      - '127.0.0.1:${SIGNOZ_OTLP_GRPC_PORT:-4317}:4317' # OTLP gRPC (localhost only)
-      - '127.0.0.1:${SIGNOZ_OTLP_HTTP_PORT:-4318}:4318' # OTLP HTTP (localhost only)
-    volumes:
-      - signoz_data:/var/lib/signoz
-    depends_on:
-      - clickhouse
-    healthcheck:
-      test:
-        - CMD
-        - wget
-        - --no-verbose
-        - --tries=1
-        - --spider
-        - http://localhost:8080/api/v1/health
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-
-  # ========================================
-  # ClickHouse (SigNoz Storage)
-  # ========================================
-  # SECURITY: ClickHouse should NOT be exposed to the internet
-  # Only accessible within Docker network for SigNoz
-  clickhouse:
-    image: clickhouse/clickhouse-server:latest
-    platform: linux/amd64
-    restart: unless-stopped
-    environment:
-      # ClickHouse configuration
-      # All values can be overridden via environment variables
-      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-signoz}
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
-      # CLICKHOUSE_PASSWORD: Empty by default (no auth). Set in production!
-      # If password is set, SigNoz DSN must include it: tcp://default:password@clickhouse:9000
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
-      # Skip user setup to allow default user without password (set to 1 for no-auth setup)
-      CLICKHOUSE_SKIP_USER_SETUP: ${CLICKHOUSE_SKIP_USER_SETUP:-1}
-    volumes:
-      - clickhouse_data:/var/lib/clickhouse
-    # Do not expose ports to host - internal network only
-    # ports:
-    #   - "${CLICKHOUSE_PORT:-8123}:8123"  # HTTP interface (internal only)
-    #   - "${CLICKHOUSE_NATIVE_PORT:-9000}:9000"  # Native interface (internal only)
-    healthcheck:
-      test:
-        - CMD
-        - wget
-        - --no-verbose
-        - --tries=1
-        - --spider
-        - http://localhost:8123/ping
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+# ========================================
+# Networks
+# ========================================
+networks:
+  dukarun_services:
+    external: true
 
 # ========================================
 # Volumes
 # ========================================
 volumes:
-  postgres_data:
-    driver: local
-
-  redis_data:
-    driver: local
-
   backend_assets:
     driver: local
 
   backend_uploads:
-    driver: local
-
-  timescaledb_audit_data:
-    driver: local
-
-  signoz_data:
-    driver: local
-
-  clickhouse_data:
     driver: local
