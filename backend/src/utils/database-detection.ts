@@ -53,21 +53,48 @@ export async function isDatabaseEmpty(): Promise<boolean> {
 
   try {
     // Check for Vendure core tables to determine if database is initialized
-    // We check for key Vendure tables like 'channel', 'user', 'customer' which are
-    // created by Vendure's bootstrap. If these don't exist, the database is empty.
+    // We check for ALL key Vendure tables. If ANY of these are missing,
+    // we consider the database "empty" (or incomplete) so that bootstrap
+    // triggers synchronize:true to create them.
+    const criticalCoreTables = [
+      'channel',
+      'user',
+      'customer',
+      'product',
+      'order',
+      'country',
+      'zone',
+      'tax_category',
+      'tax_rate',
+      'asset',
+      'payment_method',
+    ];
+
+    const placeholders = criticalCoreTables.map((_, i) => `$${i + 1}`).join(', ');
     const query = `
-            SELECT COUNT(*) as vendure_table_count
+            SELECT table_name
             FROM information_schema.tables
-            WHERE table_schema = $1
+            WHERE table_schema = $${criticalCoreTables.length + 1}
             AND table_type = 'BASE TABLE'
-            AND table_name IN ('channel', 'user', 'customer', 'product', 'order')
+            AND table_name IN (${placeholders})
         `;
 
-    const result = await pool.query(query, [schema]);
-    const vendureTableCount = parseInt(result.rows[0].vendure_table_count, 10);
+    const result = await pool.query(query, [...criticalCoreTables, schema]);
+    const existingTables = result.rows.map(row => row.table_name);
+    const missingTables = criticalCoreTables.filter(table => !existingTables.includes(table));
 
-    // Database is empty if no Vendure core tables exist
-    return vendureTableCount === 0;
+    if (missingTables.length > 0) {
+      if (existingTables.length > 0) {
+        console.log(
+          `⚠️  Database is partial/incomplete. Missing core tables: ${missingTables.join(', ')}`
+        );
+      }
+      // Treat as empty if ANY critical table is missing
+      return true;
+    }
+
+    // All critical tables exist
+    return false;
   } catch (error) {
     // If we can't connect or query, assume database is not ready
     console.error('❌ Error checking database state:', error);
@@ -108,7 +135,7 @@ export async function waitForDatabase(
       await pool.end();
       return true;
     } catch (error) {
-      await pool.end().catch(() => {}); // Ignore cleanup errors
+      await pool.end().catch(() => { }); // Ignore cleanup errors
       if (attempt < maxRetries) {
         console.log(`⏳ Waiting for database... (attempt ${attempt}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, retryDelayMs));
@@ -180,7 +207,7 @@ export async function verifyTablesExist(
         }
       }
     } catch (error) {
-      await pool.end().catch(() => {}); // Ignore cleanup errors
+      await pool.end().catch(() => { }); // Ignore cleanup errors
       if (attempt < maxRetries) {
         console.log(`⏳ Error verifying tables, retrying... (attempt ${attempt}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, retryDelayMs));
