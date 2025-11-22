@@ -34,6 +34,12 @@ The default channel serves as the template for creating new channels during regi
 These requirements are automatically seeded by the migration:
 `9000000000001-SeedKenyaContext.ts`
 
+> **Bootstrap safeguard:** `initializeVendureBootstrap()` now re-verifies the Vendure core tables
+> immediately before custom migrations run. If any of the required tables above are missing
+> (e.g., `country` on a brand-new database), the bootstrap phase re-runs Vendure's schema
+> synchronization to materialize them and logs the missing list. This prevents the seed migration
+> from failing on fresh installations where the core schema has not fully materialized yet.
+
 If this migration fails or needs to be run manually, ensure the above entities exist in the database.
 
 ## Validation

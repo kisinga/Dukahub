@@ -17,6 +17,26 @@ interface DatabaseConnectionConfig {
   schema?: string;
 }
 
+interface TableCheckResult {
+  schema: string;
+  existingTables: string[];
+  missingTables: string[];
+}
+
+export const CORE_VENDURE_TABLES = [
+  'channel',
+  'user',
+  'customer',
+  'product',
+  'order',
+  'country',
+  'zone',
+  'tax_category',
+  'tax_rate',
+  'asset',
+  'payment_method',
+] as const;
+
 /**
  * Get database connection configuration from environment
  */
@@ -31,13 +51,7 @@ function getDbConfig(): DatabaseConnectionConfig {
   };
 }
 
-/**
- * Check if the database is completely empty (no tables exist)
- *
- * @returns true if database is empty (no tables), false if tables exist
- * @throws Error if database connection fails
- */
-export async function isDatabaseEmpty(): Promise<boolean> {
+async function checkTablesExist(tableNames: string[]): Promise<TableCheckResult> {
   const config = getDbConfig();
   const schema = config.schema || 'public';
 
@@ -47,56 +61,29 @@ export async function isDatabaseEmpty(): Promise<boolean> {
     database: config.database,
     user: config.user,
     password: config.password,
-    // Use a short connection timeout to fail fast
     connectionTimeoutMillis: 5000,
   });
 
   try {
-    // Check for Vendure core tables to determine if database is initialized
-    // We check for ALL key Vendure tables. If ANY of these are missing,
-    // we consider the database "empty" (or incomplete) so that bootstrap
-    // triggers synchronize:true to create them.
-    const criticalCoreTables = [
-      'channel',
-      'user',
-      'customer',
-      'product',
-      'order',
-      'country',
-      'zone',
-      'tax_category',
-      'tax_rate',
-      'asset',
-      'payment_method',
-    ];
+    if (tableNames.length === 0) {
+      return { schema, existingTables: [], missingTables: [] };
+    }
 
-    const placeholders = criticalCoreTables.map((_, i) => `$${i + 1}`).join(', ');
+    const placeholders = tableNames.map((_, i) => `$${i + 1}`).join(', ');
     const query = `
             SELECT table_name
             FROM information_schema.tables
-            WHERE table_schema = $${criticalCoreTables.length + 1}
+            WHERE table_schema = $${tableNames.length + 1}
             AND table_type = 'BASE TABLE'
             AND table_name IN (${placeholders})
         `;
 
-    const result = await pool.query(query, [...criticalCoreTables, schema]);
+    const result = await pool.query(query, [...tableNames, schema]);
     const existingTables = result.rows.map(row => row.table_name);
-    const missingTables = criticalCoreTables.filter(table => !existingTables.includes(table));
+    const missingTables = tableNames.filter(table => !existingTables.includes(table));
 
-    if (missingTables.length > 0) {
-      if (existingTables.length > 0) {
-        console.log(
-          `⚠️  Database is partial/incomplete. Missing core tables: ${missingTables.join(', ')}`
-        );
-      }
-      // Treat as empty if ANY critical table is missing
-      return true;
-    }
-
-    // All critical tables exist
-    return false;
+    return { schema, existingTables, missingTables };
   } catch (error) {
-    // If we can't connect or query, assume database is not ready
     console.error('❌ Error checking database state:', error);
     throw new Error(
       `Failed to check database state: ${error instanceof Error ? error.message : String(error)}`
@@ -104,6 +91,36 @@ export async function isDatabaseEmpty(): Promise<boolean> {
   } finally {
     await pool.end();
   }
+}
+
+/**
+ * Ensure Vendure core tables exist (does not create them, only reports state)
+ */
+export async function ensureCoreTables(): Promise<TableCheckResult> {
+  return checkTablesExist([...CORE_VENDURE_TABLES]);
+}
+
+/**
+ * Check if the database is completely empty (no tables exist)
+ *
+ * @returns true if database is empty (no tables), false if tables exist
+ * @throws Error if database connection fails
+ */
+export async function isDatabaseEmpty(): Promise<boolean> {
+  const { existingTables, missingTables } = await ensureCoreTables();
+
+  if (missingTables.length > 0) {
+    if (existingTables.length > 0) {
+      console.log(
+        `⚠️  Database is partial/incomplete. Missing core tables: ${missingTables.join(', ')}`
+      );
+    }
+    // Treat as empty if ANY critical table is missing
+    return true;
+  }
+
+  // All critical tables exist
+  return false;
 }
 
 /**
