@@ -1,8 +1,29 @@
 import { bootstrap, runMigrations, VendureConfig } from '@vendure/core';
 import { BRAND_CONFIG } from '../constants/brand.constants';
-import { isDatabaseEmpty, waitForDatabase, verifyTablesExist } from './database-detection';
+import {
+  ensureCoreTables,
+  isDatabaseEmpty,
+  waitForDatabase,
+  verifyTablesExist,
+} from './database-detection';
 
 const CRITICAL_CUSTOM_TABLES = ['ml_extraction_queue'];
+
+async function runSchemaBootstrap(config: VendureConfig, reason: string): Promise<void> {
+  console.log(`📦 ${reason} - creating Vendure core tables via synchronize`);
+  const schemaBootstrapConfig: VendureConfig = {
+    ...config,
+    dbConnectionOptions: {
+      ...config.dbConnectionOptions,
+      synchronize: true,
+      migrationsRun: false,
+    },
+  };
+
+  const schemaApp = await bootstrap(schemaBootstrapConfig);
+  await schemaApp.close();
+  console.log('✅ Vendure core tables created');
+}
 
 /**
  * Shared bootstrap initializer for both server and worker processes.
@@ -21,21 +42,30 @@ export async function initializeVendureBootstrap(config: VendureConfig): Promise
   const databaseEmpty = await isDatabaseEmpty();
 
   if (databaseEmpty) {
-    console.log('📦 Database is empty - creating Vendure core tables via synchronize');
-    const schemaBootstrapConfig: VendureConfig = {
-      ...config,
-      dbConnectionOptions: {
-        ...config.dbConnectionOptions,
-        synchronize: true,
-        migrationsRun: false,
-      },
-    };
-
-    const schemaApp = await bootstrap(schemaBootstrapConfig);
-    await schemaApp.close();
-    console.log('✅ Vendure core tables created');
+    await runSchemaBootstrap(config, 'Database is empty');
   } else {
     console.log('✅ Vendure core tables already exist');
+  }
+
+  // Re-check before migrations in case the database was partially initialized
+  const coreTableStatus = await ensureCoreTables();
+  if (coreTableStatus.missingTables.length > 0) {
+    console.warn(
+      `⚠️  Missing core tables before migrations (${coreTableStatus.schema} schema): ${coreTableStatus.missingTables.join(
+        ', '
+      )}`
+    );
+    await runSchemaBootstrap(config, 'Core table recheck');
+
+    const postBootstrapStatus = await ensureCoreTables();
+    if (postBootstrapStatus.missingTables.length > 0) {
+      throw new Error(
+        `Core tables still missing after bootstrap: ${postBootstrapStatus.missingTables.join(', ')}`
+      );
+    }
+    console.log('✅ Core tables verified after repair bootstrap');
+  } else {
+    console.log('✅ Vendure core tables verified before migrations');
   }
 
   console.log('🧱 Running pending Vendure migrations...');
