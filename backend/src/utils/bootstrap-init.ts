@@ -3,8 +3,8 @@ import { BRAND_CONFIG } from '../constants/brand.constants';
 import {
   ensureCoreTables,
   isDatabaseEmpty,
-  waitForDatabase,
   verifyTablesExist,
+  waitForDatabase,
 } from './database-detection';
 
 const CRITICAL_CUSTOM_TABLES = ['ml_extraction_queue'];
@@ -22,6 +22,11 @@ async function runSchemaBootstrap(config: VendureConfig, reason: string): Promis
 
   const schemaApp = await bootstrap(schemaBootstrapConfig);
   await schemaApp.close();
+
+  // Wait for database to flush schema changes (PostgreSQL may need time to commit DDL)
+  console.log('⏳ Waiting for database to flush schema changes...');
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
   console.log('✅ Vendure core tables created');
 }
 
@@ -57,10 +62,28 @@ export async function initializeVendureBootstrap(config: VendureConfig): Promise
     );
     await runSchemaBootstrap(config, 'Core table recheck');
 
-    const postBootstrapStatus = await ensureCoreTables();
-    if (postBootstrapStatus.missingTables.length > 0) {
+    // Use retry logic to verify tables exist (with up to 10 attempts over 5 seconds)
+    console.log('🔍 Verifying core tables with retry logic...');
+    const CORE_TABLE_NAMES = [
+      'channel',
+      'user',
+      'customer',
+      'product',
+      'order',
+      'country',
+      'zone',
+      'tax_category',
+      'tax_rate',
+      'asset',
+      'payment_method',
+    ];
+
+    const tablesVerified = await verifyTablesExist(CORE_TABLE_NAMES, 10, 500);
+    if (!tablesVerified) {
+      // Final check to report which tables are still missing
+      const finalStatus = await ensureCoreTables();
       throw new Error(
-        `Core tables still missing after bootstrap: ${postBootstrapStatus.missingTables.join(', ')}`
+        `Core tables still missing after bootstrap: ${finalStatus.missingTables.join(', ')}`
       );
     }
     console.log('✅ Core tables verified after repair bootstrap');
