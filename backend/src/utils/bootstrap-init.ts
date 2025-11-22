@@ -6,7 +6,6 @@ import {
   verifyTablesExist,
   waitForDatabase,
 } from './database-detection';
-import { ensureKenyaContext } from './kenya-context.seed';
 
 const CRITICAL_CUSTOM_TABLES = ['ml_extraction_queue'];
 
@@ -102,9 +101,6 @@ export async function initializeVendureBootstrap(config: VendureConfig): Promise
     );
   }
   console.log('✅ All core tables verified');
-
-  console.log('🌍 Ensuring Kenya regional defaults via Vendure Populator...');
-  await ensureKenyaContext(config);
 
   if (CRITICAL_CUSTOM_TABLES.length > 0) {
     console.log('🔍 Verifying custom migration tables exist...');

@@ -1,6 +1,6 @@
+import { INestApplicationContext } from '@nestjs/common';
 import { CurrencyCode } from '@vendure/common/lib/generated-types';
 import {
-  bootstrap,
   Channel,
   ChannelService,
   CountryService,
@@ -10,7 +10,6 @@ import {
   Populator,
   RequestContext,
   RequestContextService,
-  VendureConfig,
 } from '@vendure/core';
 
 const LOGGER_CTX = 'KenyaSeed';
@@ -25,25 +24,14 @@ const DEFAULT_CURRENCY_CODE = CurrencyCode.KES;
  *
  * This mirrors Vendure's populate helper so we stay aligned with upstream schema changes.
  */
-export async function ensureKenyaContext(config: VendureConfig): Promise<void> {
+export async function ensureKenyaContext(app: INestApplicationContext): Promise<void> {
   // Allow operators to skip seeding explicitly
   if (process.env.AUTO_SEED_KENYA === 'false') {
     Logger.info('AUTO_SEED_KENYA=false detected. Skipping Kenya context seed.', LOGGER_CTX);
     return;
   }
 
-  let app: Awaited<ReturnType<typeof bootstrap>> | undefined;
-
   try {
-    app = await bootstrap({
-      ...config,
-      dbConnectionOptions: {
-        ...config.dbConnectionOptions,
-        synchronize: false,
-        migrationsRun: false,
-      },
-    });
-
     const requestContextService = app.get(RequestContextService);
     const channelService = app.get(ChannelService);
     const countryService = app.get(CountryService);
@@ -101,10 +89,6 @@ export async function ensureKenyaContext(config: VendureConfig): Promise<void> {
       LOGGER_CTX
     );
     throw error;
-  } finally {
-    if (app) {
-      await app.close();
-    }
   }
 }
 

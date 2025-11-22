@@ -6,6 +6,7 @@ import './infrastructure/config/environment.config';
 import { BRAND_CONFIG } from './constants/brand.constants';
 import { initializeTelemetry } from './infrastructure/observability/telemetry.init';
 import { initializeVendureBootstrap } from './utils/bootstrap-init';
+import { ensureKenyaContext } from './utils/kenya-context.seed';
 
 // Initialize telemetry (must be done before any other application code)
 initializeTelemetry(`${BRAND_CONFIG.servicePrefix}-server`);
@@ -31,7 +32,11 @@ const shouldRunBootstrapInit = process.env.SKIP_BOOTSTRAP_INIT !== '1';
     };
 
     console.log('🚀 Starting Vendure server...');
-    return bootstrap(runtimeConfig);
+    const app = await bootstrap(runtimeConfig);
+
+    await ensureKenyaContext(app);
+
+    return app;
   })
   .catch(err => {
     // Use console.error for bootstrap failures (logger not yet initialized)
