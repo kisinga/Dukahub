@@ -29,7 +29,7 @@ export const CORE_VENDURE_TABLES = [
   'customer',
   'product',
   'order',
-  'country',
+  'region',
   'zone',
   'tax_category',
   'tax_rate',
@@ -152,7 +152,7 @@ export async function waitForDatabase(
       await pool.end();
       return true;
     } catch (error) {
-      await pool.end().catch(() => { }); // Ignore cleanup errors
+      await pool.end().catch(() => {}); // Ignore cleanup errors
       if (attempt < maxRetries) {
         console.log(`⏳ Waiting for database... (attempt ${attempt}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, retryDelayMs));
@@ -224,7 +224,7 @@ export async function verifyTablesExist(
         }
       }
     } catch (error) {
-      await pool.end().catch(() => { }); // Ignore cleanup errors
+      await pool.end().catch(() => {}); // Ignore cleanup errors
       if (attempt < maxRetries) {
         console.log(`⏳ Error verifying tables, retrying... (attempt ${attempt}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, retryDelayMs));

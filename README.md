@@ -11,16 +11,15 @@ Dukarun helps shopkeepers ditch manual data entry and expensive barcode scanners
 
 ## Quick Links
 
-- 🚀 **[Setup & Deployment](./INFRASTRUCTURE.md)** - Get started, deploy anywhere
-- 🆕 **[Fresh Setup](./INFRASTRUCTURE.md#fresh-setup)** - First-time installation guide
-- 🏗️ **[Architecture](./ARCHITECTURE.md)** - System design and decisions
-- 🤖 **[ML Guide](./ML_TRAINING_SETUP.md)** - AI model training
+- 🚀 **[Setup & Deployment](./docs/INFRASTRUCTURE.md)** - Get started, deploy anywhere
+- 🆕 **[Fresh Setup](./docs/INFRASTRUCTURE.md#fresh-setup)** - First-time installation guide
+- 🏗️ **[Architecture](./docs/ARCHITECTURE.md)** - System design and decisions
+- 🤖 **[ML Guide](./docs/ML_TRAINING_SETUP.md)** - AI model training
 - 🗺️ **[Roadmap](./ROADMAP.md)** - Planned features
-- **[Vendure Setup](../VENDURE_SETUP.md)** - Vendure setup, limitations and workarounds
 
-- **[Frontend Architecture](../frontend/ARCHITECTURE.md)** - Angular app structure
-- **[Design System](../frontend/DESIGN-SYSTEM.md)** - UI components and patterns
-- **[POS Guide](../frontend/POS_README.md)** - Point-of-sale workflow
+- **[Frontend Architecture](./frontend/ARCHITECTURE.md)** - Angular app structure
+- **[Design System](./frontend/DESIGN-SYSTEM.md)** - UI components and patterns
+- **[POS Guide](./frontend/POS_README.md)** - Point-of-sale workflow
 
 ## Current Status
 
@@ -66,51 +65,7 @@ git clone https://github.com/yourusername/dukarun.git
 cd dukarun
 ```
 
-**Next:** See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) for complete setup instructions.
-
-## Docker Compose Setup
-
-Dukarun uses a two-file Docker Compose structure for flexible deployment:
-
-- **`docker-compose.services.yml`** - Infrastructure services (PostgreSQL, Redis, TimescaleDB, SigNoz, ClickHouse)
-- **`docker-compose.yml`** - Application services (Backend, Frontend)
-
-### Local Development
-
-**Option 1: Full Docker (Production-like)**
-```bash
-# Start infrastructure services
-docker compose -f docker-compose.services.yml up -d
-
-# Start application services (uses service names via shared network)
-docker compose up -d
-```
-
-**Option 2: Hybrid (Services in Docker, App Direct)**
-```bash
-# Start infrastructure services
-docker compose -f docker-compose.services.yml up -d
-
-# Run backend directly (override .env: DB_HOST=localhost, REDIS_HOST=localhost)
-cd backend && npm run dev
-
-# Run frontend directly (uses proxy to localhost:3000)
-cd frontend && npm start
-```
-
-### Network Architecture
-
-- **Services compose** creates named network `dukarun_services`
-- **App compose** joins `dukarun_services` network (external: true)
-- Backend **always uses service names** in Docker: `postgres_db`, `redis`, `timescaledb_audit`, `signoz`
-- Frontend connects to backend via service name: `backend`
-- Never uses localhost in Docker compose files (production-ready, scalable)
-
-### Deployment to Coolify
-
-- **Services compose** can be pasted directly into Coolify for managed resources with backups
-- **App compose** stays in git for version control and rollback
-- Services communicate via Docker service discovery (service names)
+**Next:** See [INFRASTRUCTURE.md](./docs/INFRASTRUCTURE.md) for complete setup instructions, including Docker Compose configuration, network architecture, and deployment guides.
 
 ## Contributing
 

@@ -16,25 +16,111 @@ Complete guide for local development and production deployment.
 
 ---
 
+## Docker Network Architecture
+
+Dukarun uses a shared Docker network to enable service discovery and secure communication between containers.
+
+### Network Configuration
+
+**Network Name:** `dukarun_services_network`
+
+**How it works:**
+
+1. **Project Name:** Set via `.env` file: `COMPOSE_PROJECT_NAME=dukarun`
+2. **Services Compose** (`docker-compose.services.yml`):
+   - Creates network `services_network`
+   - When `COMPOSE_PROJECT_NAME=dukarun` is set, Docker Compose prefixes it: `dukarun_services_network`
+3. **App Compose** (`docker-compose.yml`):
+   - Joins `dukarun_services_network` as an external network
+   - All application services connect to this network
+
+**Why this matters:**
+
+- Ensures consistent network naming regardless of directory name
+- Enables service discovery via service names (not IPs)
+- Allows services to communicate securely within the network
+- Required for proper service-to-service communication
+
+### Service Communication
+
+All services communicate using Docker service names (not `localhost`):
+
+| Service         | Hostname            | Port      | Notes                          |
+| --------------- | ------------------- | --------- | ------------------------------ |
+| **PostgreSQL**  | `postgres_db`       | 5432      | Main database                  |
+| **TimescaleDB** | `timescaledb_audit` | 5432      | Audit logs database            |
+| **Redis**       | `redis`             | 6379      | Cache and OTP storage          |
+| **Backend**     | `backend`           | 3000      | Vendure API server             |
+| **SigNoz**      | `signoz`            | 4317/4318 | Observability platform         |
+| **ClickHouse**  | `clickhouse`        | 9000      | SigNoz storage (internal only) |
+
+**Example:** Backend connects to database using `DB_HOST=postgres_db` (not `localhost`)
+
+### Coolify Deployment
+
+For Coolify deployments, the network setup differs:
+
+**Option 1: Use Coolify's Predefined Network (Recommended)**
+
+- Change network name from `dukarun_services_network` to `coolify` in `docker-compose.yml`
+- Enable "Connect to Predefined Network" in Coolify UI
+- Services can communicate across stacks via the `coolify` network
+
+**Option 2: Let Coolify Manage Networks**
+
+- Remove `networks:` section from `docker-compose.yml`
+- Deploy all services in the same Coolify resource
+- Services communicate via service names within the same stack
+
+### Local Development
+
+- Uses `dukarun_services_network` (created by `COMPOSE_PROJECT_NAME=dukarun`)
+- Network is created by `docker-compose.services.yml` and joined by `docker-compose.yml`
+- Services can communicate via service names or `localhost` (depending on context)
+
+---
+
 ## Environment Variables
 
-All configuration is managed via environment variables.
+All configuration is managed via environment variables. See `.env.example` in the project root for a complete template.
+
+### Docker Compose Configuration
+
+| Variable               | Example   | Default | Notes                                                             |
+| ---------------------- | --------- | ------- | ----------------------------------------------------------------- |
+| `COMPOSE_PROJECT_NAME` | `dukarun` | —       | **Required:** Sets consistent network naming across compose files |
 
 ### Backend & Database
 
-| Variable              | Example           | Default   | Notes                                             |
-| --------------------- | ----------------- | --------- | ------------------------------------------------- |
-| `DB_NAME`             | `vendure`         | `vendure` | Database name                                     |
-| `DB_USER`             | `vendure`         | `vendure` | Database user (used in Docker Compose)            |
-| `DB_USERNAME`         | `vendure`         | `vendure` | Database username (used by backend)               |
-| `DB_PASSWORD`         | `secure-password` | `vendure` | Database password **[CHANGE IN PRODUCTION]**      |
-| `DB_SCHEMA`           | `public`          | `public`  | PostgreSQL schema                                 |
-| `POSTGRES_PORT`       | `5432`            | `5432`    | Database port (exposed to host)                   |
-| `REDIS_HOST`          | `redis`           | —         | Redis hostname                                    |
-| `REDIS_PORT`          | `6379`            | —         | Redis port                                        |
-| `SUPERADMIN_USERNAME` | `superadmin`      | —         | Initial admin login                               |
-| `SUPERADMIN_PASSWORD` | `secure-password` | —         | Initial admin password **[CHANGE IN PRODUCTION]** |
-| `COOKIE_SECRET`       | `random-32-chars` | —         | Session encryption key **[CHANGE IN PRODUCTION]** |
+| Variable              | Example           | Default     | Notes                                             |
+| --------------------- | ----------------- | ----------- | ------------------------------------------------- |
+| `DB_NAME`             | `vendure`         | `vendure`   | Database name                                     |
+| `DB_USER`             | `vendure`         | `vendure`   | Database user (used in Docker Compose)            |
+| `DB_USERNAME`         | `vendure`         | `vendure`   | Database username (used by backend)               |
+| `DB_PASSWORD`         | `secure-password` | `vendure`   | Database password **[CHANGE IN PRODUCTION]**      |
+| `DB_SCHEMA`           | `public`          | `public`    | PostgreSQL schema                                 |
+| `DB_HOST`             | `postgres_db`     | `localhost` | Database hostname (use service name in Docker)    |
+| `DB_PORT`             | `5432`            | `5432`      | Database port                                     |
+| `POSTGRES_PORT`       | `5432`            | `5432`      | Database port (exposed to host)                   |
+| `REDIS_HOST`          | `redis`           | `localhost` | Redis hostname (use service name in Docker)       |
+| `REDIS_PORT`          | `6379`            | `6379`      | Redis port                                        |
+| `REDIS_PASSWORD`      | `secure-password` | —           | Redis password (optional)                         |
+| `SUPERADMIN_USERNAME` | `superadmin`      | —           | Initial admin login                               |
+| `SUPERADMIN_PASSWORD` | `secure-password` | —           | Initial admin password **[CHANGE IN PRODUCTION]** |
+| `COOKIE_SECRET`       | `random-32-chars` | —           | Session encryption key **[CHANGE IN PRODUCTION]** |
+| `COOKIE_SECURE`       | `true` / `false`  | `false`     | HTTPS-only cookies                                |
+
+### Audit Database (TimescaleDB)
+
+| Variable               | Example             | Default             | Notes                                 |
+| ---------------------- | ------------------- | ------------------- | ------------------------------------- |
+| `AUDIT_DB_NAME`        | `audit_logs`        | `audit_logs`        | Audit database name                   |
+| `AUDIT_DB_USER`        | `audit_user`        | `audit_user`        | Audit database user (Docker Compose)  |
+| `AUDIT_DB_USERNAME`    | `audit_user`        | `audit_user`        | Audit database username (backend)     |
+| `AUDIT_DB_PASSWORD`    | `secure-password`   | `audit_password`    | Audit database password **[CHANGE]**  |
+| `AUDIT_DB_HOST`        | `timescaledb_audit` | `timescaledb_audit` | Audit DB hostname (service name)      |
+| `AUDIT_DB_PORT`        | `5432`              | `5432`              | Audit database port                   |
+| `AUDIT_DB_PORT` (host) | `5433`              | `5433`              | Audit database port (exposed to host) |
 
 ### Frontend (Docker Only)
 
@@ -78,15 +164,67 @@ All configuration is managed via environment variables.
 
 The nginx configuration supports both Docker internal DNS and public DNS resolution.
 
+### SMS Provider Configuration
+
+| Variable                     | Example           | Default      | Notes                                  |
+| ---------------------------- | ----------------- | ------------ | -------------------------------------- |
+| `SMS_PROVIDER`               | `textsms`         | `textsms`    | Provider: 'textsms', 'africastalking'  |
+| `TEXTSMS_API_KEY`            | `your-api-key`    | —            | TextSMS API key (required)             |
+| `TEXTSMS_PARTNER_ID`         | `your-partner-id` | —            | TextSMS Partner ID (required)          |
+| `TEXTSMS_SHORTCODE`          | `YOURCODE`        | —            | TextSMS Sender ID/Shortcode (required) |
+| `TEXTSMS_SENDER_ID`          | `YOURCODE`        | —            | TextSMS Sender ID (alternative)        |
+| `AFRICASTALKING_USERNAME`    | `your-username`   | —            | AfricasTalking username                |
+| `AFRICASTALKING_API_KEY`     | `your-api-key`    | —            | AfricasTalking API key                 |
+| `AFRICASTALKING_SENDER_ID`   | `YOURCODE`        | —            | AfricasTalking Sender ID               |
+| `AFRICASTALKING_ENVIRONMENT` | `production`      | `production` | Environment: 'sandbox' or 'production' |
+
+### Push Notification Configuration (VAPID)
+
+| Variable            | Example                    | Default                    | Notes                                      |
+| ------------------- | -------------------------- | -------------------------- | ------------------------------------------ |
+| `VAPID_PUBLIC_KEY`  | `your-public-key`          | —                          | VAPID public key (generate with web-push)  |
+| `VAPID_PRIVATE_KEY` | `your-private-key`         | —                          | VAPID private key (generate with web-push) |
+| `VAPID_EMAIL`       | `mailto:admin@dukarun.com` | `mailto:admin@dukarun.com` | VAPID subject/email                        |
+| `VAPID_SUBJECT`     | `mailto:admin@dukarun.com` | —                          | VAPID subject (alternative)                |
+
+### Payment Provider Configuration
+
+| Variable              | Example       | Default | Notes               |
+| --------------------- | ------------- | ------- | ------------------- |
+| `PAYSTACK_SECRET_KEY` | `sk_live_...` | —       | Paystack secret key |
+| `PAYSTACK_PUBLIC_KEY` | `pk_live_...` | —       | Paystack public key |
+
+### Email Configuration (Optional)
+
+| Variable         | Example               | Default | Notes                  |
+| ---------------- | --------------------- | ------- | ---------------------- |
+| `MAIL_TRANSPORT` | `SMTP`                | `SMTP`  | Email transport method |
+| `SMTP_HOST`      | `smtp.example.com`    | —       | SMTP server hostname   |
+| `SMTP_PORT`      | `587`                 | `587`   | SMTP server port       |
+| `SMTP_USER`      | `user@example.com`    | —       | SMTP username          |
+| `SMTP_PASS`      | `secure-password`     | —       | SMTP password          |
+| `SMTP_FROM`      | `noreply@example.com` | —       | From email address     |
+
+### Asset Storage Configuration
+
+| Variable                 | Example                     | Default                     | Notes                         |
+| ------------------------ | --------------------------- | --------------------------- | ----------------------------- |
+| `ASSET_STORAGE_STRATEGY` | `LocalAssetStorageStrategy` | `LocalAssetStorageStrategy` | Storage strategy              |
+| `ASSET_UPLOAD_DIR`       | `/app/static/assets`        | `/app/static/assets`        | Asset upload directory        |
+| `ASSET_URL_PREFIX`       | `https://cdn.example.com`   | —                           | CDN URL for assets (optional) |
+
 ### Optional Settings
 
-| Variable           | Example                   | Default       | Notes                          |
-| ------------------ | ------------------------- | ------------- | ------------------------------ |
-| `NODE_ENV`         | `production`              | `development` | Runtime mode                   |
-| `PORT`             | `3000`                    | `3000`        | Backend port                   |
-| `COOKIE_SECURE`    | `true` / `false`          | `false`       | HTTPS-only cookies             |
-| `FRONTEND_URL`     | `http://example.com`      | —             | CORS origins (comma-separated) |
-| `ASSET_URL_PREFIX` | `https://cdn.example.com` | —             | CDN URL for assets             |
+| Variable            | Example                 | Default                 | Notes                           |
+| ------------------- | ----------------------- | ----------------------- | ------------------------------- |
+| `NODE_ENV`          | `production`            | `development`           | Runtime mode                    |
+| `PORT`              | `3000`                  | `3000`                  | Backend port                    |
+| `BACKEND_PORT`      | `3000`                  | `3000`                  | Backend port (exposed to host)  |
+| `FRONTEND_PORT`     | `4200`                  | `4200`                  | Frontend port (exposed to host) |
+| `FRONTEND_URL`      | `http://example.com`    | —                       | CORS origins (comma-separated)  |
+| `CORS_ORIGIN`       | `http://localhost:4200` | `http://localhost:4200` | CORS allowed origin             |
+| `LOG_LEVEL`         | `info`                  | `info`                  | Logging level                   |
+| `ML_WEBHOOK_SECRET` | `secure-secret`         | —                       | ML webhook secret (optional)    |
 
 ### Security
 
@@ -115,6 +253,33 @@ openssl rand -base64 24 | tr -d "=+/" | cut -c1-20
 - Backend requires all database/Redis variables
 - Frontend only needs `BACKEND_HOST` and `BACKEND_PORT`
 - All configuration at container runtime
+- Use service names for hostnames (e.g., `postgres_db`, `redis`, `backend`)
+- Network: Services communicate via `dukarun_services_network` (created by `COMPOSE_PROJECT_NAME`)
+
+**Creating .env File:**
+
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Edit with your values
+nano .env
+```
+
+**Required for Docker Compose:**
+
+- `COMPOSE_PROJECT_NAME=dukarun` - Sets consistent network naming
+- All database credentials
+- Superadmin credentials
+- Cookie secret
+
+**Service Hostnames in Docker:**
+
+- Database: `postgres_db` (not `localhost`)
+- Redis: `redis` (not `localhost`)
+- Backend: `backend` (not `localhost`)
+- TimescaleDB: `timescaledb_audit`
+- SigNoz: `signoz`
 
 ---
 
@@ -147,16 +312,19 @@ The issue has been fixed by implementing **automatic database detection and init
 ### What Happens During Automatic Initialization
 
 1. **Database Detection:**
+
    - System checks if database is completely empty (no tables)
    - Waits for database to be available (with retries)
    - Only proceeds with population if database is empty
 
 2. **Database Population (if empty):**
+
    - PostgreSQL starts and creates the database
    - Vendure creates the base schema using `synchronize: true`
    - Sample data is populated (channels, products, etc.)
 
 3. **Migration Application:**
+
    - Custom fields are added to existing tables
    - ML training fields are added to Channel
    - Customer/Supplier fields are added to Customer
@@ -321,6 +489,13 @@ docker compose -f docker-compose.dev.yml down -v
 
 Deploy using Docker Compose with hosted images for a complete, self-contained setup.
 
+**Note:** Dukarun uses a two-file Docker Compose structure:
+
+- **`docker-compose.services.yml`** - Infrastructure services (PostgreSQL, Redis, TimescaleDB, SigNoz, ClickHouse)
+- **`docker-compose.yml`** - Application services (Backend, Frontend)
+
+Start infrastructure services first, then application services. See [Docker Network Architecture](#docker-network-architecture) for details.
+
 ### Architecture
 
 | Service      | Image/Version                             | Port | Requirements         |
@@ -366,6 +541,10 @@ FRONTEND_URL=https://yourdomain.com
 3. **Deploy:**
 
 ```bash
+# Start infrastructure services first
+docker compose -f docker-compose.services.yml up -d
+
+# Then start application services
 docker compose up -d
 ```
 
@@ -394,14 +573,31 @@ docker compose exec backend npm run populate    # populate with sample data
 docker compose exec postgres_db pg_dump -U vendure vendure > backup.sql  # backup
 ```
 
-#### Service Discovery
+#### Service Discovery & Network Architecture
 
-The Docker Compose setup automatically handles service discovery:
+The Docker Compose setup automatically handles service discovery via a shared Docker network:
+
+**Network Configuration:**
+
+- **Project Name:** Set via `.env` file: `COMPOSE_PROJECT_NAME=dukarun`
+- **Network Name:** `dukarun_services_network` (project name + network name from `docker-compose.services.yml`)
+- **Services Compose:** Creates network `services_network` which becomes `dukarun_services_network` when project name is set
+- **App Compose:** Joins `dukarun_services_network` as external network
+
+**Service Communication:**
 
 - Frontend connects to backend using service name `backend`
 - Backend connects to database using service name `postgres_db`
 - Backend connects to Redis using service name `redis`
-- All services are on the same Docker network for secure communication
+- Backend connects to TimescaleDB using service name `timescaledb_audit`
+- Backend connects to SigNoz using service name `signoz`
+- All services communicate via service names on the shared network (never use `localhost` in Docker)
+
+**Coolify Deployment:**
+
+- Change network name from `dukarun_services_network` to `coolify` in `docker-compose.yml`
+- Enable "Connect to Predefined Network" in Coolify UI
+- Services can communicate across stacks via the `coolify` network
 
 ### New Components
 

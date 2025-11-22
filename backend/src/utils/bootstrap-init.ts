@@ -48,47 +48,16 @@ export async function initializeVendureBootstrap(config: VendureConfig): Promise
 
   if (databaseEmpty) {
     await runSchemaBootstrap(config, 'Database is empty');
-  } else {
-    console.log('✅ Vendure core tables already exist');
-  }
 
-  // Re-check before migrations in case the database was partially initialized
-  const coreTableStatus = await ensureCoreTables();
-  if (coreTableStatus.missingTables.length > 0) {
-    console.warn(
-      `⚠️  Missing core tables before migrations (${coreTableStatus.schema} schema): ${coreTableStatus.missingTables.join(
-        ', '
-      )}`
-    );
-    await runSchemaBootstrap(config, 'Core table recheck');
-
-    // Use retry logic to verify tables exist (with up to 10 attempts over 5 seconds)
-    console.log('🔍 Verifying core tables with retry logic...');
-    const CORE_TABLE_NAMES = [
-      'channel',
-      'user',
-      'customer',
-      'product',
-      'order',
-      'country',
-      'zone',
-      'tax_category',
-      'tax_rate',
-      'asset',
-      'payment_method',
-    ];
-
-    const tablesVerified = await verifyTablesExist(CORE_TABLE_NAMES, 10, 500);
-    if (!tablesVerified) {
-      // Final check to report which tables are still missing
-      const finalStatus = await ensureCoreTables();
-      throw new Error(
-        `Core tables still missing after bootstrap: ${finalStatus.missingTables.join(', ')}`
+    // Debug: Check what tables were actually created by synchronize
+    const postSyncStatus = await ensureCoreTables();
+    if (postSyncStatus.missingTables.length > 0) {
+      console.log(
+        `ℹ️  After synchronize, missing tables: ${postSyncStatus.missingTables.join(', ')} (these may be created by migrations)`
       );
     }
-    console.log('✅ Core tables verified after repair bootstrap');
   } else {
-    console.log('✅ Vendure core tables verified before migrations');
+    console.log('✅ Vendure core tables already exist');
   }
 
   console.log('🧱 Running pending Vendure migrations...');
@@ -101,6 +70,37 @@ export async function initializeVendureBootstrap(config: VendureConfig): Promise
     },
   });
   console.log('✅ Vendure migrations complete');
+
+  // Wait for database to flush migration changes (PostgreSQL may need time to commit DDL)
+  console.log('⏳ Waiting for database to flush migration changes...');
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // Verify core tables exist after migrations (some tables like 'country' may be created by migrations)
+  // Use retry logic to handle timing issues with table visibility
+  console.log('🔍 Verifying core tables exist after migrations...');
+  const CORE_TABLE_NAMES = [
+    'channel',
+    'user',
+    'customer',
+    'product',
+    'order',
+    'region',
+    'zone',
+    'tax_category',
+    'tax_rate',
+    'asset',
+    'payment_method',
+  ];
+
+  const tablesVerified = await verifyTablesExist(CORE_TABLE_NAMES, 10, 500);
+  if (!tablesVerified) {
+    // Final check to report which tables are still missing
+    const finalStatus = await ensureCoreTables();
+    throw new Error(
+      `Core tables still missing after migrations: ${finalStatus.missingTables.join(', ')}`
+    );
+  }
+  console.log('✅ All core tables verified');
 
   if (CRITICAL_CUSTOM_TABLES.length > 0) {
     console.log('🔍 Verifying custom migration tables exist...');

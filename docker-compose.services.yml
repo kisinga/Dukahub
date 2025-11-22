@@ -20,7 +20,7 @@ services:
     image: postgres:17
     restart: unless-stopped
     networks:
-      - dukarun_services
+      - services_network
     environment:
       POSTGRES_DB: ${DB_NAME:-vendure}
       POSTGRES_USER: ${DB_USER:-vendure}
@@ -45,7 +45,7 @@ services:
     platform: linux/amd64
     restart: unless-stopped
     networks:
-      - dukarun_services
+      - services_network
     environment:
       POSTGRES_DB: ${AUDIT_DB_NAME:-audit_logs}
       POSTGRES_USER: ${AUDIT_DB_USER:-audit_user}
@@ -70,7 +70,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     networks:
-      - dukarun_services
+      - services_network
     command: >
       redis-server 
       --appendonly yes 
@@ -101,7 +101,7 @@ services:
     platform: linux/amd64
     restart: unless-stopped
     networks:
-      - dukarun_services
+      - services_network
     environment:
       # SigNoz configuration
       # All values can be overridden via environment variables
@@ -147,7 +147,7 @@ services:
     platform: linux/amd64
     restart: unless-stopped
     networks:
-      - dukarun_services
+      - services_network
     environment:
       # ClickHouse configuration
       # All values can be overridden via environment variables
@@ -181,7 +181,7 @@ services:
 # Networks
 # ========================================
 networks:
-  dukarun_services:
+  services_network:
     driver: bridge
 
 # ========================================
@@ -202,4 +202,3 @@ volumes:
 
   clickhouse_data:
     driver: local
-
