@@ -1,0 +1,205 @@
+# =====================================
+# Dukarun Infrastructure Services
+# =====================================
+#
+# This file contains only infrastructure services (databases, cache, observability)
+# Application services (backend, frontend) are in docker-compose.yml
+#
+# Usage:
+#   docker compose -f docker-compose.services.yml up -d
+#   docker compose -f docker-compose.services.yml logs -f
+#   docker compose -f docker-compose.services.yml down
+#
+# This file can be pasted directly into Coolify for managed resources with backups
+
+services:
+  # ========================================
+  # Database Service
+  # ========================================
+  postgres_db:
+    image: postgres:17
+    restart: unless-stopped
+    networks:
+      - dukarun_services
+    environment:
+      POSTGRES_DB: ${DB_NAME:-vendure}
+      POSTGRES_USER: ${DB_USER:-vendure}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-vendure}
+      POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-vendure} -d ${DB_NAME:-vendure}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ========================================
+  # Audit Log Database (TimescaleDB)
+  # ========================================
+  timescaledb_audit:
+    image: timescale/timescaledb:latest-pg17
+    platform: linux/amd64
+    restart: unless-stopped
+    networks:
+      - dukarun_services
+    environment:
+      POSTGRES_DB: ${AUDIT_DB_NAME:-audit_logs}
+      POSTGRES_USER: ${AUDIT_DB_USER:-audit_user}
+      POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD:-audit_password}
+      POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
+    volumes:
+      - timescaledb_audit_data:/var/lib/postgresql/data
+    ports:
+      - '${AUDIT_DB_PORT:-5433}:5432'
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -U ${AUDIT_DB_USER:-audit_user} -d ${AUDIT_DB_NAME:-audit_logs}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ========================================
+  # Redis Cache Service
+  # ========================================
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - dukarun_services
+    command: >
+      redis-server 
+      --appendonly yes 
+      --maxmemory 512mb 
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    volumes:
+      - redis_data:/data
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  # ========================================
+  # SigNoz Observability Platform
+  # ========================================
+  # SECURITY WARNING: Do NOT expose SigNoz UI (port 3301) directly to the internet!
+  # Use a reverse proxy with authentication (e.g., nginx with basic auth, OAuth)
+  # Only expose OTLP ports (4317, 4318) to internal Docker network
+  signoz:
+    image: signoz/signoz:latest
+    platform: linux/amd64
+    restart: unless-stopped
+    networks:
+      - dukarun_services
+    environment:
+      # SigNoz configuration
+      # All values can be overridden via environment variables
+      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.name=dukarun,service.version=2.0.0}
+      SIGNOZ_TELEMETRYSTORE_PROVIDER: ${SIGNOZ_TELEMETRYSTORE_PROVIDER:-clickhouse}
+      # ClickHouse DSN: Use TCP port 9000 (not HTTP port 8123)
+      # Format: tcp://[user]:[password]@[host]:[port]
+      # If no password, use: tcp://default@clickhouse:9000
+      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN:-tcp://default@clickhouse:9000}
+      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER:-cluster}
+      SIGNOZ_SQLSTORE_SQLITE_PATH: ${SIGNOZ_SQLSTORE_SQLITE_PATH:-/var/lib/signoz/signoz.db}
+    ports:
+      # UI port - ONLY expose if behind authenticated reverse proxy
+      # Remove this line in production or use internal network only
+      - '${SIGNOZ_UI_PORT:-3301}:8080' # UI (SECURITY: Should be behind auth)
+      # OTLP ports - exposed for local dev access
+      - '${SIGNOZ_OTLP_GRPC_PORT:-4317}:4317' # OTLP gRPC
+      - '${SIGNOZ_OTLP_HTTP_PORT:-4318}:4318' # OTLP HTTP
+    volumes:
+      - signoz_data:/var/lib/signoz
+    depends_on:
+      - clickhouse
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --no-verbose
+        - --tries=1
+        - --spider
+        - http://localhost:8080/api/v1/health
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ========================================
+  # ClickHouse (SigNoz Storage)
+  # ========================================
+  # SECURITY: ClickHouse should NOT be exposed to the internet
+  # Only accessible within Docker network for SigNoz
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    platform: linux/amd64
+    restart: unless-stopped
+    networks:
+      - dukarun_services
+    environment:
+      # ClickHouse configuration
+      # All values can be overridden via environment variables
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-signoz}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      # CLICKHOUSE_PASSWORD: Empty by default (no auth). Set in production!
+      # If password is set, SigNoz DSN must include it: tcp://default:password@clickhouse:9000
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
+      # Skip user setup to allow default user without password (set to 1 for no-auth setup)
+      CLICKHOUSE_SKIP_USER_SETUP: ${CLICKHOUSE_SKIP_USER_SETUP:-1}
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    # Do not expose ports to host - internal network only
+    # ports:
+    #   - "${CLICKHOUSE_PORT:-8123}:8123"  # HTTP interface (internal only)
+    #   - "${CLICKHOUSE_NATIVE_PORT:-9000}:9000"  # Native interface (internal only)
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --no-verbose
+        - --tries=1
+        - --spider
+        - http://localhost:8123/ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+# ========================================
+# Networks
+# ========================================
+networks:
+  dukarun_services:
+    driver: bridge
+
+# ========================================
+# Volumes
+# ========================================
+volumes:
+  postgres_data:
+    driver: local
+
+  redis_data:
+    driver: local
+
+  timescaledb_audit_data:
+    driver: local
+
+  signoz_data:
+    driver: local
+
+  clickhouse_data:
+    driver: local
+
