@@ -20,6 +20,7 @@ import { RegistrationValidatorService } from '../../services/auth/provisioning/r
 import { RoleProvisionerService } from '../../services/auth/provisioning/role-provisioner.service';
 import { SellerProvisionerService } from '../../services/auth/provisioning/seller-provisioner.service';
 import { StoreProvisionerService } from '../../services/auth/provisioning/store-provisioner.service';
+import { ChartOfAccountsService } from '../../services/financial/chart-of-accounts.service';
 
 @VendurePlugin({
   imports: [PluginCommonModule],
@@ -41,6 +42,7 @@ import { StoreProvisionerService } from '../../services/auth/provisioning/store-
     PaymentProvisionerService,
     RoleProvisionerService,
     AccessProvisionerService,
+    ChartOfAccountsService,
     // Phone Auth Infrastructure
     PhoneAuthResolver,
     PhoneAuthService,

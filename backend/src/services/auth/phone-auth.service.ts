@@ -332,7 +332,7 @@ export class PhoneAuthService {
       return {
         success: false,
         message:
-          'Your business is pending approval. Please contact support once an admin has approved your account.',
+          'Your business is pending approval. login once an admin has approved your account.',
         authorizationStatus,
       };
     }

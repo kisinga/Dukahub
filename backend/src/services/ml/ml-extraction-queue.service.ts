@@ -46,9 +46,14 @@ export class MlExtractionQueueService {
     }
 
     if (!this.tableCheckPromise) {
-      this.tableCheckPromise = this.connection.rawConnection
-        .query(
-          `
+      this.tableCheckPromise = this.ensureDriverConnected()
+        .then(isReady => {
+          if (!isReady) {
+            return false;
+          }
+          return this.connection.rawConnection
+            .query(
+              `
                 SELECT EXISTS (
                     SELECT 1
                     FROM information_schema.tables
@@ -56,17 +61,18 @@ export class MlExtractionQueueService {
                     AND table_name = $1
                 ) AS exists
             `,
-          ['ml_extraction_queue']
-        )
-        .then(result => {
-          const exists = Boolean(result.rows?.[0]?.exists);
-          if (!exists) {
-            this.logger.debug(
-              'ml_extraction_queue table not found yet; ML queue operations will be skipped until migrations finish'
-            );
-          }
-          this.queueTableReady = exists;
-          return exists;
+              ['ml_extraction_queue']
+            )
+            .then(result => {
+              const exists = Boolean(result.rows?.[0]?.exists);
+              if (!exists) {
+                this.logger.debug(
+                  'ml_extraction_queue table not found yet; ML queue operations will be skipped until migrations finish'
+                );
+              }
+              this.queueTableReady = exists;
+              return exists;
+            });
         })
         .catch(error => {
           this.logger.warn('Failed to verify ml_extraction_queue table existence:', error);
@@ -78,6 +84,21 @@ export class MlExtractionQueueService {
     }
 
     return this.tableCheckPromise;
+  }
+
+  private async ensureDriverConnected(): Promise<boolean> {
+    const dataSource = this.connection.rawConnection;
+    if (dataSource.isInitialized) {
+      return true;
+    }
+
+    try {
+      await dataSource.initialize();
+      return true;
+    } catch (error) {
+      this.logger.warn('Failed to initialize database driver for ML queue:', error);
+      return false;
+    }
   }
 
   private handleMissingTable(error: unknown): boolean {

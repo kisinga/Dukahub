@@ -172,7 +172,6 @@ The nginx configuration supports both Docker internal DNS and public DNS resolut
 | `TEXTSMS_API_KEY`            | `your-api-key`    | —            | TextSMS API key (required)             |
 | `TEXTSMS_PARTNER_ID`         | `your-partner-id` | —            | TextSMS Partner ID (required)          |
 | `TEXTSMS_SHORTCODE`          | `YOURCODE`        | —            | TextSMS Sender ID/Shortcode (required) |
-| `TEXTSMS_SENDER_ID`          | `YOURCODE`        | —            | TextSMS Sender ID (alternative)        |
 | `AFRICASTALKING_USERNAME`    | `your-username`   | —            | AfricasTalking username                |
 | `AFRICASTALKING_API_KEY`     | `your-api-key`    | —            | AfricasTalking API key                 |
 | `AFRICASTALKING_SENDER_ID`   | `YOURCODE`        | —            | AfricasTalking Sender ID               |
