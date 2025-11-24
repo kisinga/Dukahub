@@ -61,6 +61,16 @@ export class PostingService {
         throw new Error(`Missing accounts for codes: ${missing.join(', ')}`);
       }
 
+      // Validate cannot post to parent accounts
+      const parentAccounts = accounts.filter(a => a.isParent);
+      if (parentAccounts.length > 0) {
+        const parentCodes = parentAccounts.map(a => a.code);
+        throw new Error(
+          `Cannot post to parent accounts: ${parentCodes.join(', ')}. ` +
+            `Parent accounts are computed via rollup from sub-accounts.`
+        );
+      }
+
       // Validate debits == credits
       let debitTotal = 0;
       let creditTotal = 0;

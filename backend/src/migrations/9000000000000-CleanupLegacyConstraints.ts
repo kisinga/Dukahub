@@ -1,14 +1,26 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Drops legacy foreign-key constraints and indexes that are no longer needed.
- * This keeps the runtime schema aligned with current configuration and avoids
- * Vendure complaining about extra artifacts on startup.
+ * Cleanup Legacy Constraints
+ *
+ * DEPRECATED: This migration is no longer needed for fresh setups.
+ * The constraints and indexes it drops are no longer created in the first place:
+ * - FK constraints removed from AddUserAuthorizationFields migration
+ * - Indexes removed from CreatePurchaseAndStockAdjustmentTables migration
+ *
+ * This migration is kept for backward compatibility with existing databases that may
+ * have these legacy constraints/indexes from older schema versions.
+ *
+ * For fresh setups, this migration will run but do nothing (all operations use IF EXISTS).
  */
 export class CleanupLegacyConstraints9000000000000 implements MigrationInterface {
   name = 'CleanupLegacyConstraints9000000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // These constraints/indexes are no longer created in migrations, so they won't exist
+    // on fresh setups. Keeping this migration for backward compatibility only.
+
+    // Drop legacy foreign key constraints (only if they exist - won't exist on fresh DB)
     await queryRunner.query(
       `ALTER TABLE "payment" DROP CONSTRAINT IF EXISTS "FK_payment_added_by_user"`
     );
@@ -22,6 +34,7 @@ export class CleanupLegacyConstraints9000000000000 implements MigrationInterface
       `ALTER TABLE "customer" DROP CONSTRAINT IF EXISTS "FK_customer_credit_approved_by_user"`
     );
 
+    // Drop legacy indexes (only if they exist - won't exist on fresh DB)
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_stock_purchase_supplier"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_stock_purchase_date"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_stock_purchase_line_purchase"`);

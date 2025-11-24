@@ -13,6 +13,7 @@
  * Asset Account Codes
  */
 export const ASSET_ACCOUNTS = {
+  CASH: 'CASH', // Parent account for cash-based payment methods
   CASH_ON_HAND: 'CASH_ON_HAND',
   BANK_MAIN: 'BANK_MAIN',
   CLEARING_MPESA: 'CLEARING_MPESA',

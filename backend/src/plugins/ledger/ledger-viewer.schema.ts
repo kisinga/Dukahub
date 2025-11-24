@@ -21,10 +21,12 @@ export const LEDGER_VIEWER_SCHEMA = gql`
 
   type JournalEntry {
     id: ID!
+    channelId: Int!
     entryDate: String!
     postedAt: DateTime!
     sourceType: String!
     sourceId: String!
+    status: String!
     memo: String
     lines: [JournalLine!]!
   }

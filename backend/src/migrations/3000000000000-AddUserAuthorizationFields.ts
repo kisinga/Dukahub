@@ -58,30 +58,9 @@ export class AddUserAuthorizationFields3000000000000 implements MigrationInterfa
                     ALTER TABLE "order" 
                     DROP COLUMN IF EXISTS "customFields__fix_relational_custom_fields__";
 
-                    -- Add FK constraints
-                    IF NOT EXISTS (
-                        SELECT 1 FROM pg_constraint 
-                        WHERE conname = 'FK_order_created_by_user'
-                    ) THEN
-                        ALTER TABLE "order"
-                        ADD CONSTRAINT "FK_order_created_by_user"
-                        FOREIGN KEY ("customFieldsCreatedbyuseridid")
-                        REFERENCES "user"("id")
-                        ON DELETE SET NULL
-                        ON UPDATE NO ACTION;
-                    END IF;
-
-                    IF NOT EXISTS (
-                        SELECT 1 FROM pg_constraint 
-                        WHERE conname = 'FK_order_last_modified_by_user'
-                    ) THEN
-                        ALTER TABLE "order"
-                        ADD CONSTRAINT "FK_order_last_modified_by_user"
-                        FOREIGN KEY ("customFieldsLastmodifiedbyuseridid")
-                        REFERENCES "user"("id")
-                        ON DELETE SET NULL
-                        ON UPDATE NO ACTION;
-                    END IF;
+                    -- FK constraints are not created here - they should be defined in entities
+                    -- with @ManyToOne decorator if needed. TypeORM will create them automatically.
+                    -- This prevents schema mismatches and avoids needing CleanupLegacyConstraints.
                 END IF;
             END $$;
         `);
@@ -104,18 +83,9 @@ export class AddUserAuthorizationFields3000000000000 implements MigrationInterfa
                     ALTER TABLE "payment" 
                     DROP COLUMN IF EXISTS "customFields__fix_relational_custom_fields__";
 
-                    -- Add FK constraint
-                    IF NOT EXISTS (
-                        SELECT 1 FROM pg_constraint 
-                        WHERE conname = 'FK_payment_added_by_user'
-                    ) THEN
-                        ALTER TABLE "payment"
-                        ADD CONSTRAINT "FK_payment_added_by_user"
-                        FOREIGN KEY ("customFieldsAddedbyuseridid")
-                        REFERENCES "user"("id")
-                        ON DELETE SET NULL
-                        ON UPDATE NO ACTION;
-                    END IF;
+                    -- FK constraint is not created here - should be defined in entity with @ManyToOne
+                    -- if needed. TypeORM will create it automatically.
+                    -- This prevents schema mismatches and avoids needing CleanupLegacyConstraints.
                 END IF;
             END $$;
         `);
@@ -131,18 +101,9 @@ export class AddUserAuthorizationFields3000000000000 implements MigrationInterfa
                     ALTER TABLE "customer" 
                     ADD COLUMN IF NOT EXISTS "customFieldsCreditapprovedbyuseridid" integer;
 
-                    -- Add FK constraint
-                    IF NOT EXISTS (
-                        SELECT 1 FROM pg_constraint 
-                        WHERE conname = 'FK_customer_credit_approved_by_user'
-                    ) THEN
-                        ALTER TABLE "customer"
-                        ADD CONSTRAINT "FK_customer_credit_approved_by_user"
-                        FOREIGN KEY ("customFieldsCreditapprovedbyuseridid")
-                        REFERENCES "user"("id")
-                        ON DELETE SET NULL
-                        ON UPDATE NO ACTION;
-                    END IF;
+                    -- FK constraint is not created here - should be defined in entity with @ManyToOne
+                    -- if needed. TypeORM will create it automatically.
+                    -- This prevents schema mismatches and avoids needing CleanupLegacyConstraints.
                 END IF;
             END $$;
         `);

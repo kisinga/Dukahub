@@ -36,23 +36,107 @@ export class ChartOfAccountsService {
   async initializeForChannel(channelId: number): Promise<void> {
     const accountRepo = this.dataSource.getRepository(Account);
 
+    // First, create parent accounts
+    const parentAccounts = [
+      { code: ACCOUNT_CODES.CASH, name: 'Cash', type: 'asset' as const, isParent: true },
+    ];
+
+    for (const account of parentAccounts) {
+      const existing = await accountRepo.findOne({
+        where: {
+          channelId,
+          code: account.code,
+        },
+      });
+
+      if (!existing) {
+        try {
+          await accountRepo.save({
+            channelId,
+            code: account.code,
+            name: account.name,
+            type: account.type,
+            isActive: true,
+            isParent: account.isParent,
+          });
+          this.logger.log(
+            `Created parent account ${account.code} (${account.type}) for channel ${channelId}`
+          );
+        } catch (error: any) {
+          if (error.code === '23505' || error.message?.includes('unique constraint')) {
+            this.logger.warn(
+              `Parent account ${account.code} already exists for channel ${channelId}`
+            );
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        // Update existing account to be a parent if needed
+        if (!existing.isParent) {
+          await accountRepo.update(existing.id, { isParent: true });
+        }
+      }
+    }
+
+    // Get CASH parent account ID
+    const cashParent = await accountRepo.findOne({
+      where: {
+        channelId,
+        code: ACCOUNT_CODES.CASH,
+      },
+    });
+
+    if (!cashParent) {
+      throw new Error(`CASH parent account not found for channel ${channelId}`);
+    }
+
     const requiredAccounts = [
       // Asset Accounts - Resources owned by the business
-      { code: ACCOUNT_CODES.CASH_ON_HAND, name: 'Cash on Hand', type: 'asset' as const },
-      { code: ACCOUNT_CODES.BANK_MAIN, name: 'Bank - Main', type: 'asset' as const },
-      { code: ACCOUNT_CODES.CLEARING_MPESA, name: 'Clearing - M-Pesa', type: 'asset' as const },
+      // Cash-based payment method accounts (sub-accounts under CASH)
+      {
+        code: ACCOUNT_CODES.CASH_ON_HAND,
+        name: 'Cash on Hand',
+        type: 'asset' as const,
+        parentAccountId: cashParent.id,
+      },
+      {
+        code: ACCOUNT_CODES.BANK_MAIN,
+        name: 'Bank - Main',
+        type: 'asset' as const,
+        parentAccountId: cashParent.id,
+      },
+      {
+        code: ACCOUNT_CODES.CLEARING_MPESA,
+        name: 'Clearing - M-Pesa',
+        type: 'asset' as const,
+        parentAccountId: cashParent.id,
+      },
+      // Standalone asset accounts (not sub-accounts)
       {
         code: ACCOUNT_CODES.CLEARING_CREDIT,
         name: 'Clearing - Customer Credit',
         type: 'asset' as const,
+        parentAccountId: undefined,
       },
-      { code: ACCOUNT_CODES.CLEARING_GENERIC, name: 'Clearing - Generic', type: 'asset' as const },
+      {
+        code: ACCOUNT_CODES.CLEARING_GENERIC,
+        name: 'Clearing - Generic',
+        type: 'asset' as const,
+        parentAccountId: undefined,
+      },
       {
         code: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
         name: 'Accounts Receivable',
         type: 'asset' as const,
+        parentAccountId: undefined,
       },
-      { code: ACCOUNT_CODES.INVENTORY, name: 'Inventory', type: 'asset' as const },
+      {
+        code: ACCOUNT_CODES.INVENTORY,
+        name: 'Inventory',
+        type: 'asset' as const,
+        parentAccountId: undefined,
+      },
       // Income Accounts - Revenue from business operations
       { code: ACCOUNT_CODES.SALES, name: 'Sales Revenue', type: 'income' as const },
       {
@@ -104,6 +188,8 @@ export class ChartOfAccountsService {
             name: account.name,
             type: account.type,
             isActive: true,
+            parentAccountId: (account as any).parentAccountId,
+            isParent: false,
           });
           createdCount++;
           this.logger.log(
@@ -126,6 +212,12 @@ export class ChartOfAccountsService {
         }
       } else {
         existingCount++;
+        // Update parentAccountId if not set
+        if ((account as any).parentAccountId && !existing.parentAccountId) {
+          await accountRepo.update(existing.id, {
+            parentAccountId: (account as any).parentAccountId,
+          });
+        }
         // Verify existing account has correct type (data integrity check)
         if (existing.type !== account.type) {
           this.logger.warn(
@@ -150,6 +242,7 @@ export class ChartOfAccountsService {
     const accountRepo = this.dataSource.getRepository(Account);
     // Use constants from single source of truth
     const requiredCodes = [
+      ACCOUNT_CODES.CASH, // Parent account
       ACCOUNT_CODES.CASH_ON_HAND,
       ACCOUNT_CODES.BANK_MAIN,
       ACCOUNT_CODES.CLEARING_MPESA,

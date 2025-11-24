@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { RequestContext } from '@vendure/core';
 import { ACCOUNT_CODES } from '../../ledger/account-codes.constants';
 import { Account } from '../../ledger/account.entity';
 import { JournalLine } from '../../ledger/journal-line.entity';
+import { AccountBalanceService } from './account-balance.service';
 
 export interface BalanceQuery {
   channelId: number;
@@ -22,34 +24,88 @@ export interface AccountBalance {
   creditTotal: number;
 }
 
+/**
+ * Ledger Query Service
+ *
+ * IMPORTANT: The ledger is the SINGLE SOURCE OF TRUTH for all financial figures.
+ * All balances, totals, and financial calculations MUST come from the ledger (journal lines).
+ * Do NOT calculate financial figures by aggregating orders, payments, or other entities directly.
+ *
+ * This service provides:
+ * - Account balance queries (delegates to AccountBalanceService for consistency)
+ * - Period-based totals (sales, purchases, expenses) from ledger accounts
+ * - Customer/supplier balance queries with filtering
+ */
 @Injectable()
 export class LedgerQueryService {
   private readonly logger = new Logger(LedgerQueryService.name);
   private balanceCache = new Map<string, { balance: number; timestamp: number }>();
   private readonly CACHE_TTL = 60000; // 1 minute
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly accountBalanceService: AccountBalanceService
+  ) {}
 
   /**
    * Get account balance from ledger
+   *
+   * IMPORTANT: This queries the ledger (journal lines) as the single source of truth.
+   * For basic balance queries, delegates to AccountBalanceService for consistency and parent account rollup support.
+   * For queries with customer/supplier/order filtering, uses direct journal line queries.
    *
    * For assets/expenses: positive balance = debit (normal)
    * For liabilities/income: negative balance = credit (normal)
    */
   async getAccountBalance(query: BalanceQuery): Promise<AccountBalance> {
-    const cacheKey = this.getCacheKey(query);
-    const cached = this.balanceCache.get(cacheKey);
+    // If no special filtering (customer/supplier/order), use AccountBalanceService for consistency
+    if (!query.customerId && !query.supplierId && !query.orderId) {
+      // Check cache first
+      const cacheKey = this.getCacheKey(query);
+      const cached = this.balanceCache.get(cacheKey);
 
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      return {
-        accountCode: query.accountCode,
-        accountName: '',
-        balance: cached.balance,
-        debitTotal: 0,
-        creditTotal: 0,
-      };
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        // Need to get account name, but use cached balance
+        const account = await this.dataSource.getRepository(Account).findOne({
+          where: {
+            channelId: query.channelId,
+            code: query.accountCode,
+          },
+        });
+
+        return {
+          accountCode: query.accountCode,
+          accountName: account?.name || '',
+          balance: cached.balance,
+          debitTotal: 0,
+          creditTotal: 0,
+        };
+      }
+
+      // Use AccountBalanceService for consistency and parent account rollup support
+      // Create a minimal RequestContext for AccountBalanceService
+      const ctx = {
+        channelId: query.channelId,
+      } as RequestContext;
+
+      const balance = await this.accountBalanceService.getAccountBalance(
+        ctx,
+        query.accountCode,
+        query.channelId,
+        query.endDate
+      );
+
+      // Cache the result
+      this.balanceCache.set(cacheKey, {
+        balance: balance.balance,
+        timestamp: Date.now(),
+      });
+
+      return balance;
     }
 
+    // For queries with customer/supplier/order filtering, use direct journal line queries
+    // (AccountBalanceService doesn't support these filters)
     const account = await this.dataSource.getRepository(Account).findOne({
       where: {
         channelId: query.channelId,
@@ -109,6 +165,7 @@ export class LedgerQueryService {
     const balance = debitTotal - creditTotal;
 
     // Cache the result
+    const cacheKey = this.getCacheKey(query);
     this.balanceCache.set(cacheKey, {
       balance,
       timestamp: Date.now(),
@@ -177,6 +234,9 @@ export class LedgerQueryService {
 
   /**
    * Get purchases total for a period
+   *
+   * IMPORTANT: This queries the PURCHASES account from the ledger as the single source of truth.
+   * Do NOT calculate purchases by aggregating purchase records directly - use this method instead.
    */
   async getPurchaseTotal(channelId: number, startDate?: string, endDate?: string): Promise<number> {
     const balance = await this.getAccountBalance({
@@ -191,6 +251,9 @@ export class LedgerQueryService {
 
   /**
    * Get expenses total for a period
+   *
+   * IMPORTANT: This queries the EXPENSES account from the ledger as the single source of truth.
+   * Do NOT calculate expenses by aggregating expense records directly - use this method instead.
    */
   async getExpenseTotal(channelId: number, startDate?: string, endDate?: string): Promise<number> {
     const balance = await this.getAccountBalance({

@@ -22,4 +22,12 @@ export class Account {
 
   @Column({ type: 'boolean', default: true })
   isActive!: boolean;
+
+  // Hierarchy support
+  @Column({ type: 'uuid', nullable: true })
+  @Index('IDX_ledger_account_parentAccountId', { where: '"parentAccountId" IS NOT NULL' })
+  parentAccountId?: string; // FK to parent account (self-referencing)
+
+  @Column({ type: 'boolean', default: false })
+  isParent!: boolean; // True if account can have children
 }
