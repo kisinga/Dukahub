@@ -62,8 +62,10 @@ export class MockDb {
     this.connection = {
       rawConnection: {
         query: (sql: string, params?: any[]) => this.execute(sql, params),
+        isInitialized: true,
+        initialize: jest.fn().mockResolvedValue(undefined),
       },
-    } as TransactionalConnection;
+    } as unknown as TransactionalConnection;
   }
 
   /**

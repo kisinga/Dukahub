@@ -116,4 +116,9 @@ describe('ChannelAssignmentService', () => {
 
   // Note: assignStockLocationToChannel was moved to StoreProvisionerService
   // Tests for stock location assignment should be in store-provisioner.service.spec.ts
+
+  it('should be instantiated', () => {
+    const { service } = buildService();
+    expect(service).toBeDefined();
+  });
 });

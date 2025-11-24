@@ -23,7 +23,8 @@ describe('entity-relation.util', () => {
 
     channelRepo = {
       createQueryBuilder: jest.fn(() => queryBuilder),
-      findOne: jest.fn(),
+      findOne: jest.fn<() => Promise<Channel | null>>().mockResolvedValue({ id: '1' } as Channel),
+      save: jest.fn<() => Promise<Channel>>().mockResolvedValue({ id: '1' } as Channel),
     };
 
     mockConnection = {

@@ -176,6 +176,10 @@ const buildService = () => {
     createError: jest.fn((code: string, message: string) => new Error(`${code}: ${message}`)),
   };
 
+  const eventBus = {
+    publish: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+  };
+
   const contextAdapter = {
     withSellerScope: jest.fn(
       async (ctx: RequestContext, channelId: any, fn: any, options?: any) => {
@@ -194,7 +198,7 @@ const buildService = () => {
 
   const service = new RoleProvisionerService(
     connection as any,
-    roleService as any,
+    eventBus as any,
     auditor as any,
     errorService as any,
     contextAdapter as any
@@ -209,6 +213,7 @@ const buildService = () => {
     userService,
     auditor,
     errorService,
+    eventBus,
     contextAdapter,
     superadminUser,
   };
@@ -237,70 +242,56 @@ describe('RoleProvisionerService', () => {
   };
 
   describe('createAdminRole', () => {
-    it('should use RoleService.create() with seller set on RequestContext', async () => {
+    it('should create role using repository directly (Repository Bootstrap pattern)', async () => {
       const harness = buildService();
 
       const result = await harness.service.createAdminRole(publicCtx, registrationData, 2);
 
-      // Verify RoleService.create was called
-      expect(harness.roleService.create).toHaveBeenCalled();
-      const createCall = harness.roleService.create.mock.calls[0];
-      const contextUsed = createCall[0] as RequestContext;
+      // Verify repository.save was called (Repository Bootstrap pattern)
+      expect(harness.roleRepository.save).toHaveBeenCalled();
 
-      // Verify context has seller set (from withSellerFromChannel)
-      expect((contextUsed as any).seller).toBeDefined();
-      expect((contextUsed as any).seller.id).toBe('seller-1');
-
-      // Verify the input parameters
-      expect(createCall[1]).toMatchObject({
-        code: 'test-company-admin',
-        channelIds: [2],
-        permissions: expect.arrayContaining([Permission.CreateAsset]),
-      });
-
-      // Verify role was created successfully
+      // Verify role was created with correct properties
       expect(result.id).toBe(6);
       expect(result.code).toBe('test-company-admin');
+      expect(result.description).toContain('Test Company');
+      expect(result.permissions).toContain(Permission.CreateAsset);
+      expect(result.channels).toBeDefined();
+      expect(result.channels?.length).toBe(1);
+      expect(result.channels?.[0].id).toBe(2);
+
+      // Verify event was published
+      expect(harness.eventBus.publish).toHaveBeenCalled();
     });
 
     it('should create role with all admin permissions', async () => {
       const harness = buildService();
 
-      await harness.service.createAdminRole(publicCtx, registrationData, 2);
+      const result = await harness.service.createAdminRole(publicCtx, registrationData, 2);
 
-      // Verify RoleService.create was called
-      expect(harness.roleService.create).toHaveBeenCalled();
-      const createCall = harness.roleService.create.mock.calls[0];
-
-      // Verify the call has the expected structure
-      expect(createCall).toBeDefined();
-      expect(createCall.length).toBeGreaterThanOrEqual(2);
-
-      const permissions = createCall[1]?.permissions;
-      expect(permissions).toBeDefined();
-      expect(Array.isArray(permissions)).toBe(true);
+      // Verify repository.save was called
+      expect(harness.roleRepository.save).toHaveBeenCalled();
 
       // Verify all required permissions are included
-      expect(permissions).toContain(Permission.CreateAsset);
-      expect(permissions).toContain(Permission.ReadAsset);
-      expect(permissions).toContain(Permission.UpdateAsset);
-      expect(permissions).toContain(Permission.DeleteAsset);
-      expect(permissions).toContain(Permission.CreateOrder);
-      expect(permissions).toContain(Permission.ReadOrder);
-      expect(permissions).toContain(Permission.CreateStockLocation);
-      expect(permissions).toContain(Permission.ReadStockLocation);
-      expect(permissions).toContain(Permission.UpdateStockLocation);
+      expect(result.permissions).toContain(Permission.CreateAsset);
+      expect(result.permissions).toContain(Permission.ReadAsset);
+      expect(result.permissions).toContain(Permission.UpdateAsset);
+      expect(result.permissions).toContain(Permission.DeleteAsset);
+      expect(result.permissions).toContain(Permission.CreateOrder);
+      expect(result.permissions).toContain(Permission.ReadOrder);
+      expect(result.permissions).toContain(Permission.CreateStockLocation);
+      expect(result.permissions).toContain(Permission.ReadStockLocation);
+      expect(result.permissions).toContain(Permission.UpdateStockLocation);
     });
 
-    it('should assign role to channel via channelIds parameter', async () => {
+    it('should assign role to channel via channels array', async () => {
       const harness = buildService();
 
-      await harness.service.createAdminRole(publicCtx, registrationData, 2);
+      const result = await harness.service.createAdminRole(publicCtx, registrationData, 2);
 
-      const createCall = harness.roleService.create.mock.calls[0];
-      const input = createCall[1];
-
-      expect(input.channelIds).toEqual([2]);
+      // Verify role has channel assigned
+      expect(result.channels).toBeDefined();
+      expect(result.channels?.length).toBe(1);
+      expect(result.channels?.[0].id).toBe(2);
     });
 
     it('should verify role-channel linkage after creation', async () => {
@@ -324,22 +315,22 @@ describe('RoleProvisionerService', () => {
       }
     });
 
-    it('should throw error if RoleService.create() fails', async () => {
+    it('should throw error if repository.save() fails', async () => {
       const harness = buildService();
 
-      // Mock RoleService.create to return error (simulating permission failure)
-      harness.roleService.create.mockResolvedValueOnce({
-        errorCode: 'error.forbidden',
-        message: 'Forbidden',
-      });
+      // Make repository.save throw an error
+      const dbError = new Error('Database error');
+      harness.roleRepository.save.mockRejectedValueOnce(dbError);
 
-      // Should throw error (no repository fallback in new implementation)
+      // Should throw error (wrapped by errorService.wrapError)
       await expect(
         harness.service.createAdminRole(publicCtx, registrationData, 2)
       ).rejects.toThrow();
 
-      // Verify RoleService.create was attempted
-      expect(harness.roleService.create).toHaveBeenCalled();
+      // Verify repository.save was attempted
+      expect(harness.roleRepository.save).toHaveBeenCalled();
+      // Verify error was logged
+      expect(harness.errorService.logError).toHaveBeenCalled();
     });
 
     it('should audit log role creation', async () => {

@@ -56,6 +56,7 @@ describe('RoleProvisionerService - ForbiddenError Scenario', () => {
   let roleService: jest.Mocked<RoleService>;
   let contextAdapter: jest.Mocked<ProvisioningContextAdapter>;
   let connection: jest.Mocked<TransactionalConnection>;
+  let roleRepo: any;
 
   const mockSeller: Seller = {
     id: 'seller-1',
@@ -192,12 +193,16 @@ describe('RoleProvisionerService - ForbiddenError Scenario', () => {
       getContextInfo: jest.fn(),
     } as any;
 
-    const roleRepo = {
+    roleRepo = {
       findOne: (jest.fn() as any).mockResolvedValue({
         id: 6,
         code: 'test-company-admin',
         channels: [{ id: '2' }],
       }),
+      create: jest.fn((data: any) => ({ ...data, id: 6 })),
+      save: jest
+        .fn()
+        .mockImplementation(async (entity: any) => ({ ...entity, id: entity.id || 6 })),
     };
 
     connection = {
@@ -227,35 +232,36 @@ describe('RoleProvisionerService - ForbiddenError Scenario', () => {
     );
   });
 
-  describe('ForbiddenError when user cannot access channels with seller', () => {
-    it('should fail with ForbiddenError when superadmin user has no roles with channels matching seller', async () => {
-      // This reproduces the actual failure scenario
-      // Superadmin user exists but has no roles that give access to channels with this seller
+  describe('Repository Bootstrap pattern (bypasses RoleService permission checks)', () => {
+    it('should succeed even when superadmin user has no roles with channels matching seller', async () => {
+      // With Repository Bootstrap pattern, we bypass RoleService permission checks
+      // So the service should succeed regardless of user's role-channel access
       const ctxWithSuperadminButNoMatchingRoles = {
         ...mockCtx,
         user: {
           ...mockSuperadminUser,
-          roles: [], // No roles = cannot access any channels
+          roles: [], // No roles = would fail with RoleService, but succeeds with repository
           getNativeAuthenticationMethod: jest.fn(),
         } as unknown as User,
       } as unknown as RequestContext;
 
-      await expect(
-        service.createAdminRole(ctxWithSuperadminButNoMatchingRoles, registrationData, '2')
-      ).rejects.toThrow('ROLE_CREATE_FAILED');
+      const result = await service.createAdminRole(
+        ctxWithSuperadminButNoMatchingRoles,
+        registrationData,
+        '2'
+      );
 
-      // Verify RoleService.create was called
-      expect(roleService.create).toHaveBeenCalled();
-
-      // Verify it failed with ForbiddenError
-      expect(roleService.create).toHaveBeenCalled();
-      // The service should have thrown an error, which means roleService.create returned an error result
-      // Check that the error service was called with the right error
-      // The actual error will be in the catch block of createAdminRole
+      // Should succeed because we use repository directly
+      expect(result).toBeDefined();
+      expect(result.id).toBe(6);
+      expect(result.code).toBe('test-company-admin');
+      // Verify repository.save was called (not RoleService.create)
+      expect(roleRepo.save).toHaveBeenCalled();
     });
 
-    it('should fail when context has seller but user roles do not include channels with that seller', async () => {
-      // User has roles, but those roles don't have channels with the seller we're trying to use
+    it('should succeed even when context has seller but user roles do not include channels with that seller', async () => {
+      // With Repository Bootstrap pattern, we bypass RoleService permission checks
+      // So the service should succeed regardless of user's role-channel access
       const ctxWithWrongSeller = {
         ...mockCtx,
         user: {
@@ -275,9 +281,12 @@ describe('RoleProvisionerService - ForbiddenError Scenario', () => {
         } as unknown as User,
       } as unknown as RequestContext;
 
-      await expect(
-        service.createAdminRole(ctxWithWrongSeller, registrationData, '2')
-      ).rejects.toThrow('ROLE_CREATE_FAILED');
+      const result = await service.createAdminRole(ctxWithWrongSeller, registrationData, '2');
+
+      // Should succeed because we use repository directly
+      expect(result).toBeDefined();
+      expect(result.id).toBe(6);
+      expect(roleRepo.save).toHaveBeenCalled();
     });
 
     it('should succeed when user has roles with channels matching the seller', async () => {
@@ -305,7 +314,8 @@ describe('RoleProvisionerService - ForbiddenError Scenario', () => {
 
       expect(result).toBeDefined();
       expect(result.id).toBe(6);
-      expect(roleService.create).toHaveBeenCalled();
+      // Verify repository.save was called (not RoleService.create)
+      expect(roleRepo.save).toHaveBeenCalled();
     });
   });
 });

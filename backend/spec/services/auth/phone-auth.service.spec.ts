@@ -1,4 +1,5 @@
 import { describe, expect, it, jest } from '@jest/globals';
+import { Channel } from '@vendure/core';
 import { ChannelStatus } from '../../../src/domain/channel-custom-fields';
 import {
   AccessLevel,
@@ -27,6 +28,13 @@ describe('PhoneAuthService.verifyLoginOTP', () => {
       })),
     };
 
+    const channelRepo = {
+      findOne: jest.fn(async () => ({
+        id: 42,
+        customFields: { status: channelStatus },
+      })),
+    };
+
     const userRepo = {
       findOne: jest.fn(async () => ({
         id: 7,
@@ -44,7 +52,13 @@ describe('PhoneAuthService.verifyLoginOTP', () => {
     };
 
     const connection = {
-      getRepository: jest.fn(() => userRepo),
+      getRepository: jest.fn((ctx: any, entity: any) => {
+        // Check if entity is Channel class
+        if (entity === Channel || (entity && entity.name === 'Channel')) {
+          return channelRepo;
+        }
+        return userRepo;
+      }),
     };
 
     const service = new PhoneAuthService(
@@ -57,7 +71,7 @@ describe('PhoneAuthService.verifyLoginOTP', () => {
       connection as any
     );
 
-    return { service, redisMock, otpService, channelService, userRepo };
+    return { service, redisMock, otpService, channelService, channelRepo, userRepo };
   };
 
   it('blocks login when every channel is UNAPPROVED', async () => {
@@ -71,7 +85,7 @@ describe('PhoneAuthService.verifyLoginOTP', () => {
   });
 
   it('allows login when at least one channel is APPROVED', async () => {
-    const { service, redisMock, channelService } = buildService({
+    const { service, redisMock, channelRepo } = buildService({
       channelStatus: ChannelStatus.APPROVED,
     });
 
@@ -81,6 +95,7 @@ describe('PhoneAuthService.verifyLoginOTP', () => {
     expect(result.accessLevel).toBe(AccessLevel.FULL);
     expect(result.message).toBe('OTP verified successfully.');
     expect(redisMock.setex).toHaveBeenCalledTimes(1);
-    expect(channelService.findOne).toHaveBeenCalled();
+    // findChannelById uses repository when bypassSellerFilter=true, not channelService
+    expect(channelRepo.findOne).toHaveBeenCalled();
   });
 });
