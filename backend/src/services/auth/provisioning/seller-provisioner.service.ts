@@ -12,6 +12,15 @@ import { RegistrationErrorService } from './registration-error.service';
  *
  * Creates one seller per channel to ensure proper separation of concerns
  * and prepare for any features that rely on seller-channel relationships.
+ *
+ * **Repository Usage (Documented Exception per PROVISIONING_PRINCIPLES.md):**
+ * This service uses TypeORM repository directly because Vendure v3.4.3 does not provide
+ * a SellerService. All Seller entity operations require repository access as there
+ * is no Vendure service abstraction available for this entity.
+ *
+ * Exception documented: "No Service Exists" - SellerService is not available in Vendure v3.4.3.
+ * If SellerService becomes available in future Vendure versions, this should be refactored
+ * to use SellerService.create() with ProvisioningContextAdapter for seller-scoped context.
  */
 @Injectable()
 export class SellerProvisionerService {
@@ -25,10 +34,7 @@ export class SellerProvisionerService {
    * Create seller for new company registration
    * Each channel gets its own isolated seller entity
    */
-  async createSeller(
-    ctx: RequestContext,
-    registrationData: RegistrationInput
-  ): Promise<Seller> {
+  async createSeller(ctx: RequestContext, registrationData: RegistrationInput): Promise<Seller> {
     try {
       const sellerName = `${registrationData.companyName} Seller`;
       const sellerRepo = this.connection.getRepository(ctx, Seller);
@@ -63,4 +69,3 @@ export class SellerProvisionerService {
     }
   }
 }
-

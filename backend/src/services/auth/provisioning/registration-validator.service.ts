@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   Administrator,
+  AdministratorService,
   Channel,
   ChannelService,
   CurrencyCode,
@@ -24,6 +25,7 @@ import { RegistrationInput } from '../registration.service';
 export class RegistrationValidatorService {
   constructor(
     private readonly channelService: ChannelService,
+    private readonly administratorService: AdministratorService,
     private readonly connection: TransactionalConnection,
     private readonly zoneService: ZoneService
   ) {}
@@ -81,14 +83,17 @@ export class RegistrationValidatorService {
     return defaultChannel;
   }
 
+  /**
+   * Validate channel code uniqueness using ChannelService
+   */
   private async validateChannelCodeUniqueness(
     ctx: RequestContext,
     companyCode: string
   ): Promise<void> {
-    const channelRepo = this.connection.getRepository(ctx, Channel);
-    const existingChannel = await channelRepo.findOne({
-      where: { code: companyCode },
-    });
+    // Use ChannelService.findAll() to check for existing channel with same code
+    // Note: ChannelService doesn't provide findOne by code, so we use findAll and filter
+    const channels = await this.channelService.findAll(ctx);
+    const existingChannel = channels.items.find(ch => ch.code === companyCode);
 
     if (existingChannel) {
       throw new Error(
@@ -109,12 +114,18 @@ export class RegistrationValidatorService {
     }
   }
 
+  /**
+   * Validate admin email uniqueness using AdministratorService
+   * Uses repository for loading with relations (AdministratorService limitation)
+   */
   async validateAdminEmailUniqueness(
     ctx: RequestContext,
     email: string,
     existingUser?: User,
     phoneNumber?: string
   ): Promise<void> {
+    // Note: AdministratorService doesn't provide findOne by email with relations,
+    // so we use repository for this lookup (documented limitation)
     const adminRepo = this.connection.getRepository(ctx, Administrator);
     const existingAdmin = await adminRepo.findOne({
       where: { emailAddress: email },
@@ -141,14 +152,14 @@ export class RegistrationValidatorService {
   }
 
   /**
-   * Get Kenya zone by name
-   * Used for setting default shipping and tax zones for new channels
+   * Get Kenya zone by name using ZoneService
+   * Uses ZoneService.findAll() and filters by name (ZoneService doesn't provide findByName)
    */
   async getKenyaZone(ctx: RequestContext): Promise<Zone> {
-    const zoneRepo = this.connection.getRepository(ctx, Zone);
-    const kenyaZone = await zoneRepo.findOne({
-      where: { name: 'Kenya' },
-    });
+    // Use ZoneService.findAll() to get all zones, then filter by name
+    // Note: ZoneService doesn't provide findOne by name, so we use findAll and filter
+    const zones = await this.zoneService.findAll(ctx);
+    const kenyaZone = zones.items.find(z => z.name === 'Kenya');
 
     if (!kenyaZone) {
       throw new Error(

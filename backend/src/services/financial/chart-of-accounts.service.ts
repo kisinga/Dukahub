@@ -17,13 +17,27 @@ export class ChartOfAccountsService {
 
   /**
    * Initialize Chart of Accounts for a channel
-   * Creates all required accounts if they don't exist
+   * Creates all required accounts if they don't exist.
+   *
+   * Account Type Classifications:
+   * - Assets: Resources owned by the business (cash, bank, receivables, clearing accounts)
+   * - Liabilities: Obligations owed by the business (payables, tax obligations)
+   * - Income: Revenue from business operations (sales, contra-revenue like returns)
+   * - Expenses: Costs incurred in business operations (purchases, fees, general expenses)
+   *
+   * Note: SALES_RETURNS is classified as income (contra-revenue account) where returns
+   * reduce revenue through negative balances. This follows standard accounting practice
+   * for contra-revenue accounts.
+   *
+   * Note: CLEARING_CREDIT is a temporary clearing account for customer credit/store credit
+   * transactions. It's classified as an asset because it represents funds temporarily held
+   * before allocation, similar to other clearing accounts.
    */
   async initializeForChannel(channelId: number): Promise<void> {
     const accountRepo = this.dataSource.getRepository(Account);
 
     const requiredAccounts = [
-      // Assets
+      // Asset Accounts - Resources owned by the business
       { code: ACCOUNT_CODES.CASH_ON_HAND, name: 'Cash on Hand', type: 'asset' as const },
       { code: ACCOUNT_CODES.BANK_MAIN, name: 'Bank - Main', type: 'asset' as const },
       { code: ACCOUNT_CODES.CLEARING_MPESA, name: 'Clearing - M-Pesa', type: 'asset' as const },
@@ -33,23 +47,26 @@ export class ChartOfAccountsService {
         type: 'asset' as const,
       },
       { code: ACCOUNT_CODES.CLEARING_GENERIC, name: 'Clearing - Generic', type: 'asset' as const },
-      // Income
-      { code: ACCOUNT_CODES.SALES, name: 'Sales Revenue', type: 'income' as const },
-      { code: ACCOUNT_CODES.SALES_RETURNS, name: 'Sales Returns', type: 'income' as const },
-      // Assets (continued - AR is an asset)
       {
         code: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
         name: 'Accounts Receivable',
         type: 'asset' as const,
       },
-      // Liabilities
+      // Income Accounts - Revenue from business operations
+      { code: ACCOUNT_CODES.SALES, name: 'Sales Revenue', type: 'income' as const },
+      {
+        code: ACCOUNT_CODES.SALES_RETURNS,
+        name: 'Sales Returns',
+        type: 'income' as const, // Contra-revenue account (reduces revenue)
+      },
+      // Liability Accounts - Obligations owed by the business
       {
         code: ACCOUNT_CODES.ACCOUNTS_PAYABLE,
         name: 'Accounts Payable',
         type: 'liability' as const,
       },
       { code: ACCOUNT_CODES.TAX_PAYABLE, name: 'Taxes Payable', type: 'liability' as const },
-      // Expenses
+      // Expense Accounts - Costs incurred in business operations
       { code: ACCOUNT_CODES.PURCHASES, name: 'Inventory Purchases', type: 'expense' as const },
       { code: ACCOUNT_CODES.EXPENSES, name: 'General Expenses', type: 'expense' as const },
       {
@@ -60,6 +77,9 @@ export class ChartOfAccountsService {
       { code: ACCOUNT_CODES.CASH_SHORT_OVER, name: 'Cash Short/Over', type: 'expense' as const },
     ];
 
+    let createdCount = 0;
+    let existingCount = 0;
+
     for (const account of requiredAccounts) {
       const existing = await accountRepo.findOne({
         where: {
@@ -69,18 +89,49 @@ export class ChartOfAccountsService {
       });
 
       if (!existing) {
-        await accountRepo.save({
-          channelId,
-          code: account.code,
-          name: account.name,
-          type: account.type,
-          isActive: true,
-        });
-        this.logger.log(`Created account ${account.code} for channel ${channelId}`);
+        try {
+          await accountRepo.save({
+            channelId,
+            code: account.code,
+            name: account.name,
+            type: account.type,
+            isActive: true,
+          });
+          createdCount++;
+          this.logger.log(
+            `Created account ${account.code} (${account.type}) for channel ${channelId}`
+          );
+        } catch (error: any) {
+          // Handle unique constraint violations gracefully
+          if (error.code === '23505' || error.message?.includes('unique constraint')) {
+            this.logger.warn(
+              `Account ${account.code} already exists for channel ${channelId} (race condition handled)`
+            );
+            existingCount++;
+          } else {
+            this.logger.error(
+              `Failed to create account ${account.code} for channel ${channelId}: ${error.message}`,
+              error.stack
+            );
+            throw error;
+          }
+        }
+      } else {
+        existingCount++;
+        // Verify existing account has correct type (data integrity check)
+        if (existing.type !== account.type) {
+          this.logger.warn(
+            `Account ${account.code} for channel ${channelId} has incorrect type: ` +
+              `expected ${account.type}, found ${existing.type}. Consider manual correction.`
+          );
+        }
       }
     }
 
-    this.logger.log(`Chart of Accounts initialized for channel ${channelId}`);
+    this.logger.log(
+      `Chart of Accounts initialized for channel ${channelId}: ` +
+        `${createdCount} created, ${existingCount} already existed`
+    );
   }
 
   /**

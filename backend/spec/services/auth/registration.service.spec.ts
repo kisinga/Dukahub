@@ -63,6 +63,10 @@ describe('RegistrationService.provisionCustomer', () => {
       createError: jest.fn((code: string, message: string) => new Error(`${code}: ${message}`)),
     };
 
+    const chartOfAccountsService = {
+      initializeForChannel: jest.fn(async () => undefined),
+    };
+
     const service = new RegistrationService(
       validator as any,
       sellerProvisioner as any,
@@ -71,7 +75,9 @@ describe('RegistrationService.provisionCustomer', () => {
       paymentProvisioner as any,
       roleProvisioner as any,
       accessProvisioner as any,
-      errorService as any
+      errorService as any,
+      chartOfAccountsService as any,
+      undefined // tracingService
     );
 
     return {

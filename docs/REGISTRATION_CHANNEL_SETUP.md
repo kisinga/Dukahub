@@ -25,12 +25,13 @@ When a new business is registered, the following entities are automatically crea
 
 ### Zone Configuration
 
-- **Default Shipping Zone**: Africa zone (looked up by name "Africa")
-- **Default Tax Zone**: Africa zone (same zone for both shipping and tax)
+- **Default Shipping Zone**: Kenya zone (looked up by name "Kenya")
+- **Default Tax Zone**: Kenya zone (same zone for both shipping and tax)
 
 **Prerequisites:**
-- An "Africa" zone must exist in the system before registration
-- Zone can be created in Vendure admin: Settings → Zones
+- The "Kenya" zone must exist in the system before registration
+- This zone is automatically created during bootstrap via `ensureKenyaContext` (see [INFRASTRUCTURE.md](./INFRASTRUCTURE.md#required-database-state))
+- If automatic seeding is disabled (`AUTO_SEED_KENYA=false`), the zone must be created manually in Vendure admin: Settings → Zones
 
 ### Tax Settings
 
@@ -42,47 +43,30 @@ When a new business is registered, the following entities are automatically crea
 - Location is automatically assigned to the channel via many-to-many relationship
 - Assignment is verified after save to ensure proper linking
 
+**Implementation Details**: See [PROVISIONING_PRINCIPLES.md](./PROVISIONING_PRINCIPLES.md) for:
+- Hybrid Strategy Pattern
+- Many-to-Many Assignment Pattern
+- Assignment Verification Pattern
+
 ## Implementation Details
 
 ### Services
 
-- **SellerProvisionerService** - Creates seller per channel
-- **ChannelProvisionerService** - Creates channel with seller, zones, and tax settings
-- **StoreProvisionerService** - Creates stock location and assigns to channel
-- **ChannelAssignmentService** - Handles stock location to channel assignment
+- **SellerProvisionerService** - Creates seller per channel (uses repository - no service exists)
+- **ChannelProvisionerService** - Creates channel with seller, zones, and tax settings (uses ChannelService)
+- **StoreProvisionerService** - Creates stock location and assigns to channel (uses Hybrid Strategy)
+- **PaymentProvisionerService** - Creates payment methods and assigns to channel (uses Hybrid Strategy)
+- **RoleProvisionerService** - Creates admin role (uses Repository Bootstrap)
+- **AccessProvisionerService** - Creates administrator and user (uses Repository Bootstrap)
 
-### Files Modified
+**For detailed patterns and principles, see [PROVISIONING_PRINCIPLES.md](./PROVISIONING_PRINCIPLES.md)**.
 
-- `backend/src/services/auth/provisioning/seller-provisioner.service.ts` - Seller creation
-- `backend/src/services/auth/provisioning/channel-provisioner.service.ts` - Channel creation with all settings
-- `backend/src/services/auth/provisioning/registration-validator.service.ts` - Africa zone lookup
-- `backend/src/services/auth/provisioning/channel-assignment.service.ts` - Stock location assignment
-- `backend/src/services/auth/registration.service.ts` - Orchestrates the flow
-- `backend/src/plugins/auth/phone-auth.plugin.ts` - Service registration
-
-## Known Issues
-
-### Channel Visibility in Admin UI
-
-**Issue**: When attempting to link a stock location to a channel in the Vendure admin UI, only one channel ("001 test") appears in the dropdown, despite multiple channels existing.
-
-**Investigation Needed:**
-- Check GraphQL queries that fetch channels for dropdowns
-- Verify permissions/scoping that might filter channels
-- Check if seller assignment affects channel visibility
-- Review channel filtering logic in admin UI
-
-**Possible Causes:**
-- Channel filtering based on seller
-- Permission-based filtering
-- Query not including all channels
-- Admin UI bug with channel listing
 
 ## Testing
 
-See test suite in `backend/spec/services/auth/registration.service.spec.ts` (to be created) for:
+See test suite in `backend/spec/services/auth/registration.service.spec.ts` and `backend/spec/services/auth/registration-flow.integration.spec.ts` for:
 - Seller creation per channel
-- Africa zone assignment
+- Kenya zone assignment
 - pricesIncludeTax = true
 - Stock location linking
 - Complete registration flow validation

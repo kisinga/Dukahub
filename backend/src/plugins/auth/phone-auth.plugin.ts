@@ -21,6 +21,7 @@ import { RoleProvisionerService } from '../../services/auth/provisioning/role-pr
 import { SellerProvisionerService } from '../../services/auth/provisioning/seller-provisioner.service';
 import { StoreProvisionerService } from '../../services/auth/provisioning/store-provisioner.service';
 import { ChartOfAccountsService } from '../../services/financial/chart-of-accounts.service';
+import { ProvisioningContextAdapter } from '../../services/provisioning/context-adapter.service';
 
 @VendurePlugin({
   imports: [PluginCommonModule],
@@ -31,6 +32,8 @@ import { ChartOfAccountsService } from '../../services/financial/chart-of-accoun
     // Registration Infrastructure
     RegistrationService,
     RegistrationStorageService,
+    // Provisioning Context Adapter (shared utility for context management)
+    ProvisioningContextAdapter,
     // Registration Provisioning Services (composable)
     RegistrationValidatorService,
     RegistrationErrorService,

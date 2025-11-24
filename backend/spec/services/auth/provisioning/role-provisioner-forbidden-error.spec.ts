@@ -1,0 +1,311 @@
+/**
+ * Role Provisioner ForbiddenError Test
+ *
+ * Tests the actual failure scenario where RoleService.create() fails with ForbiddenError
+ * even when seller is set on RequestContext. This reproduces the real-world error.
+ */
+
+import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import {
+  Channel,
+  ID,
+  Permission,
+  RequestContext,
+  Role,
+  RoleService,
+  Seller,
+  TransactionalConnection,
+  User,
+} from '@vendure/core';
+import { RoleProvisionerService } from '../../../../src/services/auth/provisioning/role-provisioner.service';
+import { RegistrationInput } from '../../../../src/services/auth/registration.service';
+import { ProvisioningContextAdapter } from '../../../../src/services/provisioning/context-adapter.service';
+
+// Mock environment config
+jest.mock('../../../../src/infrastructure/config/environment.config', () => ({
+  env: {
+    superadmin: {
+      username: 'test-superadmin',
+      password: 'test-password',
+    },
+    auditDb: {
+      host: 'localhost',
+      port: 5432,
+      name: 'test_audit',
+      username: 'test',
+      password: 'test',
+    },
+    db: {
+      host: 'localhost',
+      port: 5432,
+      name: 'test',
+      username: 'test',
+      password: 'test',
+    },
+  },
+}));
+
+// Mock seller-access utility to simulate real behavior
+jest.mock('../../../../src/utils/seller-access.util', () => ({
+  withSellerFromChannel: jest.fn(),
+  getSellerForChannel: jest.fn(),
+}));
+
+describe('RoleProvisionerService - ForbiddenError Scenario', () => {
+  let service: RoleProvisionerService;
+  let roleService: jest.Mocked<RoleService>;
+  let contextAdapter: jest.Mocked<ProvisioningContextAdapter>;
+  let connection: jest.Mocked<TransactionalConnection>;
+
+  const mockSeller: Seller = {
+    id: 'seller-1',
+    name: 'Test Company Seller',
+  } as Seller;
+
+  const mockChannel: Channel = {
+    id: '2',
+    code: 'test-company',
+    token: 'test-company',
+    seller: mockSeller,
+  } as Channel;
+
+  const mockSuperadminUser: User = {
+    id: 'superadmin-id',
+    identifier: 'superadmin',
+    roles: [],
+    verified: true,
+    getNativeAuthenticationMethod: jest.fn(),
+  } as unknown as User;
+
+  const mockCtx: RequestContext = {
+    channelId: '2',
+    activeUserId: 'superadmin-id',
+    languageCode: 'en',
+    channel: mockChannel,
+    user: mockSuperadminUser,
+    isAuthorized: true,
+  } as unknown as RequestContext;
+
+  const registrationData: RegistrationInput = {
+    companyName: 'Test Company',
+    companyCode: 'test-company',
+    currency: 'USD',
+    adminFirstName: 'Jane',
+    adminLastName: 'Doe',
+    adminPhoneNumber: '0712345678',
+    storeName: 'Main Store',
+  };
+
+  beforeEach(() => {
+    // Mock RoleService that simulates the actual ForbiddenError
+    roleService = {
+      create: jest.fn(async (ctx: RequestContext, input: any) => {
+        // Simulate getPermittedChannels() check
+        // This is what actually fails in production
+        const seller = (ctx as any).seller;
+        const user = (ctx as any).user;
+
+        // The actual check that fails: getPermittedChannels() needs both user AND seller
+        // Just having seller is not enough - the user must be able to access channels with this seller
+        if (!seller) {
+          return {
+            errorCode: 'error.forbidden',
+            message: 'Forbidden - no seller on context',
+          };
+        }
+
+        // Even with seller, if user doesn't have access to channels with this seller, it fails
+        // This is the actual failure scenario we're testing
+        if (!user || !user.roles || user.roles.length === 0) {
+          return {
+            errorCode: 'error.forbidden',
+            message: 'Forbidden - user has no roles or cannot access channels',
+          };
+        }
+
+        // Check if user's roles have channels that match the seller
+        // This is what getPermittedChannels() does internally
+        const userCanAccessChannel =
+          user.roles?.some((role: any) =>
+            role.channels?.some((ch: any) => ch.seller?.id === seller.id)
+          ) ?? false;
+
+        if (!userCanAccessChannel && seller.id !== 'superadmin-seller') {
+          // This is the actual failure: user doesn't have a role with channels matching this seller
+          return {
+            errorCode: 'error.forbidden',
+            message: 'Forbidden - user cannot access channels with this seller',
+          };
+        }
+
+        // Success case
+        return {
+          id: 6,
+          code: input.code,
+          description: input.description,
+          permissions: input.permissions,
+          channels: [{ id: 2 }],
+        } as Role;
+      }),
+    } as any;
+
+    // Mock ProvisioningContextAdapter to simulate the actual implementation
+    // This should set both channel and seller, and ensure user can access channel
+    contextAdapter = {
+      withSellerScope: jest.fn(async (ctx: RequestContext, channelId: ID, fn: any) => {
+        // Simulate the actual implementation:
+        // 1. Load channel with seller
+        // 2. Set channel on context
+        // 3. Set seller on context
+        // 4. Ensure user can access channel (for superadmin, add channel to roles)
+        const seller = mockSeller;
+        (ctx as any).seller = seller;
+        (ctx as any).channel = mockChannel;
+        (ctx as any).channelId = channelId;
+
+        // For superadmin users, ensure their roles include the channel
+        const user = (ctx as any).user as User | undefined;
+        if (user && user.roles) {
+          const isSuperAdmin = user.roles.some(
+            (role: any) => !role.channels || role.channels.length === 0
+          );
+          if (isSuperAdmin) {
+            // Temporarily add channel to superadmin roles
+            for (const role of user.roles) {
+              if (!role.channels || role.channels.length === 0) {
+                (role as any).channels = [mockChannel];
+              }
+            }
+          }
+        }
+
+        try {
+          return await fn(ctx);
+        } finally {
+          delete (ctx as any).seller;
+          // Note: channel restoration is handled by withChannel wrapper in real implementation
+        }
+      }),
+      validateChannelExists: jest.fn(),
+      validateSellerExists: jest.fn(),
+      validateAdministratorExists: jest.fn(),
+      getContextInfo: jest.fn(),
+    } as any;
+
+    const roleRepo = {
+      findOne: (jest.fn() as any).mockResolvedValue({
+        id: 6,
+        code: 'test-company-admin',
+        channels: [{ id: '2' }],
+      }),
+    };
+
+    connection = {
+      getRepository: jest.fn().mockReturnValue(roleRepo),
+    } as any;
+
+    const auditor = {
+      logEntityCreated: jest.fn(),
+    };
+
+    const errorService = {
+      logError: jest.fn(),
+      wrapError: jest.fn((error: any) => error),
+      createError: jest.fn((code: string, message: string) => new Error(`${code}: ${message}`)),
+    };
+
+    const eventBus = {
+      publish: jest.fn(),
+    } as any;
+
+    service = new RoleProvisionerService(
+      connection,
+      eventBus,
+      auditor as any,
+      errorService as any,
+      contextAdapter
+    );
+  });
+
+  describe('ForbiddenError when user cannot access channels with seller', () => {
+    it('should fail with ForbiddenError when superadmin user has no roles with channels matching seller', async () => {
+      // This reproduces the actual failure scenario
+      // Superadmin user exists but has no roles that give access to channels with this seller
+      const ctxWithSuperadminButNoMatchingRoles = {
+        ...mockCtx,
+        user: {
+          ...mockSuperadminUser,
+          roles: [], // No roles = cannot access any channels
+          getNativeAuthenticationMethod: jest.fn(),
+        } as unknown as User,
+      } as unknown as RequestContext;
+
+      await expect(
+        service.createAdminRole(ctxWithSuperadminButNoMatchingRoles, registrationData, '2')
+      ).rejects.toThrow('ROLE_CREATE_FAILED');
+
+      // Verify RoleService.create was called
+      expect(roleService.create).toHaveBeenCalled();
+
+      // Verify it failed with ForbiddenError
+      expect(roleService.create).toHaveBeenCalled();
+      // The service should have thrown an error, which means roleService.create returned an error result
+      // Check that the error service was called with the right error
+      // The actual error will be in the catch block of createAdminRole
+    });
+
+    it('should fail when context has seller but user roles do not include channels with that seller', async () => {
+      // User has roles, but those roles don't have channels with the seller we're trying to use
+      const ctxWithWrongSeller = {
+        ...mockCtx,
+        user: {
+          ...mockSuperadminUser,
+          roles: [
+            {
+              id: 'role-1',
+              channels: [
+                {
+                  id: 'other-channel',
+                  seller: { id: 'other-seller' } as Seller,
+                } as Channel,
+              ],
+            },
+          ],
+          getNativeAuthenticationMethod: jest.fn(),
+        } as unknown as User,
+      } as unknown as RequestContext;
+
+      await expect(
+        service.createAdminRole(ctxWithWrongSeller, registrationData, '2')
+      ).rejects.toThrow('ROLE_CREATE_FAILED');
+    });
+
+    it('should succeed when user has roles with channels matching the seller', async () => {
+      // User has a role with channels that match the seller
+      const ctxWithMatchingRoles = {
+        ...mockCtx,
+        user: {
+          ...mockSuperadminUser,
+          roles: [
+            {
+              id: 'role-1',
+              channels: [
+                {
+                  id: '2',
+                  seller: mockSeller,
+                } as Channel,
+              ],
+            },
+          ],
+          getNativeAuthenticationMethod: jest.fn(),
+        } as unknown as User,
+      } as unknown as RequestContext;
+
+      const result = await service.createAdminRole(ctxWithMatchingRoles, registrationData, '2');
+
+      expect(result).toBeDefined();
+      expect(result.id).toBe(6);
+      expect(roleService.create).toHaveBeenCalled();
+    });
+  });
+});

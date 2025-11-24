@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import {
+  ChangeChannelEvent,
   Channel,
+  ChannelService,
+  EventBus,
   ID,
   PaymentMethod,
   RequestContext,
-  StockLocation,
   TransactionalConnection,
 } from '@vendure/core';
 
@@ -12,151 +14,87 @@ import {
  * Channel Assignment Service
  *
  * Handles many-to-many relationship assignments to channels:
- * - Stock locations → channels
  * - Payment methods → channels
  *
- * Follows pattern: Load → Check → Assign → Save → Verify
+ * **Vendure Service Usage:**
+ * - Uses ChannelService.findOne() for channel lookups
+ *
+ * **Repository Usage (Documented Exceptions per PROVISIONING_PRINCIPLES.md):**
+ * - M2M assignments: TypeORM relation manager is used for many-to-many updates.
+ *   This is Vendure's internal pattern and there are no service methods for M2M assignments.
+ *   Exception documented: "No Service Exists" - Vendure doesn't provide service methods for
+ *   M2M relationship assignments, so TypeORM relation manager is the standard approach.
+ * - Payment method lookups: PaymentMethodService doesn't provide findOne()
+ * - Verification methods: ChannelService.findOne() doesn't support relations parameter,
+ *   so repository is used to load channels with relations for verification (read-only operation)
  */
 @Injectable()
 export class ChannelAssignmentService {
-  constructor(private readonly connection: TransactionalConnection) { }
-
-  /**
-   * Assign stock location to channel
-   * Verifies assignment after saving
-   * 
-   * Uses repository.save() to persist the many-to-many relationship.
-   * The relationship is managed through TypeORM's many-to-many decorator.
-   */
-  async assignStockLocationToChannel(
-    ctx: RequestContext,
-    stockLocationId: ID,
-    channelId: ID
-  ): Promise<void> {
-    const channelRepo = this.connection.getRepository(ctx, Channel);
-    const stockLocationRepo = this.connection.getRepository(ctx, StockLocation);
-
-    // Load entities with relations
-    const channel = await channelRepo.findOne({
-      where: { id: channelId },
-      relations: ['stockLocations'],
-    });
-    const stockLocation = await stockLocationRepo.findOne({
-      where: { id: stockLocationId },
-      relations: ['channels'],
-    });
-
-    if (!channel || !stockLocation) {
-      throw new Error(
-        `REGISTRATION_STOCK_LOCATION_ASSIGN_FAILED: ` +
-        `Channel ${channelId} or stock location ${stockLocationId} not found`
-      );
-    }
-
-    // Check if already assigned (check both sides)
-    const channelHasLocation = channel.stockLocations?.some(sl => sl.id === stockLocation.id);
-    const locationHasChannel = stockLocation.channels?.some(ch => ch.id === channel.id);
-
-    // Assign if not already assigned (bidirectional relationship)
-    if (!channelHasLocation || !locationHasChannel) {
-      // Update channel side
-      if (!channel.stockLocations) {
-        channel.stockLocations = [];
-      }
-      if (!channelHasLocation) {
-        channel.stockLocations.push(stockLocation);
-        await channelRepo.save(channel);
-      }
-
-      // Update stock location side for bidirectional consistency
-      if (!stockLocation.channels) {
-        stockLocation.channels = [];
-      }
-      if (!locationHasChannel) {
-        stockLocation.channels.push(channel);
-        await stockLocationRepo.save(stockLocation);
-      }
-    }
-
-    // Verify assignment
-    await this.verifyStockLocationAssignment(ctx, stockLocationId, channelId);
-  }
+  constructor(
+    private readonly connection: TransactionalConnection,
+    private readonly channelService: ChannelService,
+    private readonly eventBus: EventBus
+  ) {}
 
   /**
    * Assign payment method to channel
    * Verifies assignment after saving
+   *
+   * Uses Vendure ChannelService to load channel and TypeORM relation manager
+   * to update many-to-many relationship. Changes are persisted when transaction commits.
    */
   async assignPaymentMethodToChannel(
     ctx: RequestContext,
     paymentMethodId: ID,
     channelId: ID
   ): Promise<void> {
-    const channelRepo = this.connection.getRepository(ctx, Channel);
-    const paymentMethodRepo = this.connection.getRepository(ctx, PaymentMethod);
-
-    // Load entities with relations
-    const channel = await channelRepo.findOne({
-      where: { id: channelId },
-      relations: ['paymentMethods'],
-    });
-    const paymentMethod = await paymentMethodRepo.findOne({
-      where: { id: paymentMethodId },
-      relations: ['channels'],
-    });
-
-    if (!channel || !paymentMethod) {
+    // Verify entities exist using Vendure services
+    const channel = await this.channelService.findOne(ctx, channelId);
+    if (!channel) {
       throw new Error(
-        `REGISTRATION_PAYMENT_METHOD_ASSIGN_FAILED: ` +
-        `Channel ${channelId} or payment method ${paymentMethodId} not found`
+        `REGISTRATION_PAYMENT_METHOD_ASSIGN_FAILED: ` + `Channel ${channelId} not found`
       );
     }
 
-    // Assign if not already assigned
-    if (!channel.paymentMethods?.some(pm => pm.id === paymentMethod.id)) {
-      if (!channel.paymentMethods) {
-        channel.paymentMethods = [];
-      }
-      channel.paymentMethods.push(paymentMethod);
-      await channelRepo.save(channel);
+    // Verify payment method exists
+    const paymentMethodRepo = this.connection.getRepository(ctx, PaymentMethod);
+    const paymentMethod = await paymentMethodRepo.findOne({ where: { id: paymentMethodId } });
+    if (!paymentMethod) {
+      throw new Error(
+        `REGISTRATION_PAYMENT_METHOD_ASSIGN_FAILED: ` +
+          `Payment method ${paymentMethodId} not found`
+      );
     }
 
-    // Verify assignment
+    // Use TypeORM relation manager to assign M2M relationship
+    const channelRepo = this.connection.getRepository(ctx, Channel);
+    await channelRepo
+      .createQueryBuilder()
+      .relation(Channel, 'paymentMethods')
+      .of(channelId)
+      .add(paymentMethodId);
+
+    // Publish ChangeChannelEvent (Good Citizen)
+    await this.eventBus.publish(
+      new ChangeChannelEvent(ctx, paymentMethod, [channelId], 'assigned', PaymentMethod)
+    );
+
+    // Verify assignment (relation manager changes are visible within transaction)
     await this.verifyPaymentMethodAssignment(ctx, paymentMethodId, channelId);
   }
 
   /**
-   * Verify stock location is assigned to channel
-   */
-  private async verifyStockLocationAssignment(
-    ctx: RequestContext,
-    stockLocationId: ID,
-    channelId: ID
-  ): Promise<void> {
-    const channelRepo = this.connection.getRepository(ctx, Channel);
-    const verifiedChannel = await channelRepo.findOne({
-      where: { id: channelId },
-      relations: ['stockLocations'],
-    });
-
-    if (
-      !verifiedChannel ||
-      !verifiedChannel.stockLocations?.some(sl => sl.id === stockLocationId)
-    ) {
-      throw new Error(
-        `REGISTRATION_STOCK_LOCATION_ASSIGN_FAILED: ` +
-        `Failed to verify stock location assignment to channel`
-      );
-    }
-  }
-
-  /**
    * Verify payment method is assigned to channel
+   * Uses repository to load channel with relations (ChannelService limitation)
    */
   private async verifyPaymentMethodAssignment(
     ctx: RequestContext,
     paymentMethodId: ID,
     channelId: ID
   ): Promise<void> {
+    // Use repository to load channel with payment methods relation
+    // Note: ChannelService.findOne doesn't support relations parameter,
+    // so we use repository with relations for verification (Vendure limitation)
     const channelRepo = this.connection.getRepository(ctx, Channel);
     const verifiedChannel = await channelRepo.findOne({
       where: { id: channelId },
@@ -169,19 +107,23 @@ export class ChannelAssignmentService {
     ) {
       throw new Error(
         `REGISTRATION_PAYMENT_METHOD_ASSIGN_FAILED: ` +
-        `Failed to verify payment method assignment to channel`
+          `Failed to verify payment method assignment to channel`
       );
     }
   }
 
   /**
    * Verify channel has minimum number of payment methods
+   * Uses repository to load channel with relations (ChannelService limitation)
    */
   async verifyPaymentMethodCount(
     ctx: RequestContext,
     channelId: ID,
     minimumCount: number = 2
   ): Promise<void> {
+    // Use repository to load channel with payment methods relation
+    // Note: ChannelService.findOne doesn't support relations parameter,
+    // so we use repository with relations for verification (Vendure limitation)
     const channelRepo = this.connection.getRepository(ctx, Channel);
     const channel = await channelRepo.findOne({
       where: { id: channelId },
@@ -191,8 +133,8 @@ export class ChannelAssignmentService {
     if (!channel || !channel.paymentMethods || channel.paymentMethods.length < minimumCount) {
       throw new Error(
         `REGISTRATION_PAYMENT_METHOD_ASSIGN_FAILED: ` +
-        `Channel should have at least ${minimumCount} payment methods assigned, ` +
-        `but found ${channel?.paymentMethods?.length || 0}`
+          `Channel should have at least ${minimumCount} payment methods assigned, ` +
+          `but found ${channel?.paymentMethods?.length || 0}`
       );
     }
   }

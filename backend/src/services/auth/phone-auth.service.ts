@@ -9,7 +9,9 @@ import {
 } from '@vendure/core';
 import { ChannelStatus, getChannelStatus } from '../../domain/channel-custom-fields';
 import { RegistrationStorageService } from '../../infrastructure/storage/registration-storage.service';
+import { findChannelById } from '../../utils/channel-access.util';
 import { formatPhoneNumber } from '../../utils/phone.utils';
+import { withSuperadminUser } from '../../utils/request-context.util';
 import { OtpService } from './otp.service';
 import { RegistrationValidatorService } from './provisioning/registration-validator.service';
 import { RegistrationInput, RegistrationService } from './registration.service';
@@ -182,11 +184,19 @@ export class PhoneAuthService {
     // Step 5: Create entities in transaction
     // This creates: Channel, Stock Location, Payment Methods, Role, and Administrator
     // All operations are wrapped in a transaction for atomicity
+    // Run entire registration with superadmin user to ensure RoleService.create() can access transaction entities
     const provisionResult = await this.connection.withTransaction(ctx, async transactionCtx => {
-      return await this.registrationService.provisionCustomer(
+      return await withSuperadminUser(
         transactionCtx,
-        registrationData,
-        existingUser
+        this.userService,
+        this.connection,
+        async adminCtx => {
+          return await this.registrationService.provisionCustomer(
+            adminCtx,
+            registrationData,
+            existingUser
+          );
+        }
       );
     });
 
@@ -300,9 +310,17 @@ export class PhoneAuthService {
     }
 
     // Load full channel data to get status
+    // Use channel access utility with bypassSellerFilter=true to avoid CHANNEL_NOT_FOUND errors
+    // when RequestContext doesn't have seller association
     const channelsWithStatus: Array<{ channel: Channel; status: ChannelStatus }> = [];
     for (const channel of userChannels) {
-      const fullChannel = await this.channelService.findOne(ctx, channel.id);
+      const fullChannel = await findChannelById(
+        ctx,
+        channel.id,
+        this.connection,
+        this.channelService,
+        true // bypassSellerFilter - RequestContext may not have seller association
+      );
       if (fullChannel) {
         // Get channel status from customFields - status field is the single source of truth
         const status = getChannelStatus(fullChannel.customFields);

@@ -40,14 +40,28 @@ This guide covers the technical setup, configuration, and advanced features of t
 
 #### 1. Tax Configuration (Required)
 
-All prices are tax-inclusive in the POS system:
+All prices are tax-inclusive in the POS system.
+
+**Automatic Setup (Recommended):**
+
+The Kenya zone, tax category, and tax rate are automatically created during bootstrap via `ensureKenyaContext`. This includes:
+- Kenya zone with Kenya (`KE`) as a member
+- "Standard Tax" category
+- "Kenya VAT" tax rate (16%)
+- Default channel configured with Kenya zone and KES currency
+
+See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md#required-database-state) for details.
+
+**Manual Setup (If Automatic Seeding is Disabled):**
+
+If `AUTO_SEED_KENYA=false` is set, you must manually configure:
 
 1. Navigate: Settings → Zones
-2. Create: Zone for your country/region
+2. Create: Zone for your country/region (e.g., "Kenya")
 3. Navigate: Settings → Tax Categories
 4. Create: "Standard Tax" category
 5. Navigate: Settings → Tax Rates
-6. Create: Tax rate (e.g., "VAT 0%" or appropriate rate)
+6. Create: Tax rate (e.g., "Kenya VAT" at 16%)
 7. Set: "Tax included in price" = YES
 8. Assign: Tax rate to zone
 
