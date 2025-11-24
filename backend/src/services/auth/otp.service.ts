@@ -3,6 +3,7 @@ import { RequestContext } from '@vendure/core';
 import Redis from 'ioredis';
 import { BRAND_CONFIG } from '../../constants/brand.constants';
 import { ChannelSmsService } from '../../infrastructure/events/channel-sms.service';
+import { env } from '../../infrastructure/config/environment.config';
 import { SmsService } from '../../infrastructure/sms/sms.service';
 import { formatPhoneNumber } from '../../utils/phone.utils';
 
@@ -21,16 +22,19 @@ export class OtpService implements OnModuleInit, OnModuleDestroy {
   private readonly OTP_EXPIRY_SECONDS = 5 * 60; // 5 minutes
   private readonly MAX_ATTEMPTS = 3;
   // Rate limiting - relaxed in development (default to dev if not explicitly production)
-  // Check both NODE_ENV and explicit env vars for production mode
-  private readonly IS_PRODUCTION =
-    process.env.NODE_ENV === 'production' || process.env.ENVIRONMENT === 'production';
-  private readonly RATE_LIMIT_COUNT = this.IS_PRODUCTION ? 10 : 30;
-  private readonly RATE_LIMIT_WINDOW_SECONDS = this.IS_PRODUCTION ? 15 * 60 : 30; // 15 min prod, 30 sec dev
+  private readonly IS_PRODUCTION: boolean;
+  private readonly RATE_LIMIT_COUNT: number;
+  private readonly RATE_LIMIT_WINDOW_SECONDS: number;
 
   constructor(
     private readonly smsService: SmsService,
     @Optional() private readonly channelSmsService?: ChannelSmsService // Optional to avoid circular dependency
-  ) {}
+  ) {
+    // Initialize production mode check using EnvironmentConfig
+    this.IS_PRODUCTION = env.isProduction();
+    this.RATE_LIMIT_COUNT = this.IS_PRODUCTION ? 10 : 30;
+    this.RATE_LIMIT_WINDOW_SECONDS = this.IS_PRODUCTION ? 15 * 60 : 30; // 15 min prod, 30 sec dev
+  }
 
   async onModuleInit() {
     // Initialize Redis connection (non-blocking - don't wait for connection)

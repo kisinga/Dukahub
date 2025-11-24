@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { formatPhoneNumber } from '../../utils/phone.utils';
 import { ISmsProvider, SmsResult } from './interfaces/sms-provider.interface';
 import { SmsProviderFactory } from './sms-provider.factory';
+import { env } from '../config/environment.config';
 
 /**
  * SMS Service
@@ -29,8 +30,7 @@ export class SmsService {
   async sendSms(phoneNumber: string, message: string): Promise<SmsResult> {
     try {
       // In development mode, print SMS to console instead of sending
-      const isDevMode = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
-      if (isDevMode) {
+      if (env.isDevelopment()) {
         const normalizedPhone = formatPhoneNumber(phoneNumber);
         this.logger.log('📱 [DEV MODE] SMS would be sent:');
         this.logger.log(`   To: ${normalizedPhone}`);

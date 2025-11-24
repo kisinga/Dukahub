@@ -14,6 +14,7 @@ import { execSync, spawn } from 'child_process';
 // Initialize environment configuration early (before database detection)
 import { BRAND_CONFIG } from './constants/brand.constants';
 import './infrastructure/config/environment.config';
+import { env } from './infrastructure/config/environment.config';
 import { config } from './vendure-config';
 import { initializeVendureBootstrap } from './utils/bootstrap-init';
 import { isDatabaseEmpty, verifyTablesExist, waitForDatabase } from './utils/database-detection';
@@ -240,7 +241,7 @@ export class DukarunEntrypoint {
  * CLI entrypoint for Docker
  */
 if (require.main === module) {
-  const testMode = process.env.NODE_ENV === 'test';
+  const testMode = env.app.nodeEnv === 'test';
 
   const entrypoint = new DukarunEntrypoint({
     testMode,

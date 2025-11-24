@@ -47,7 +47,7 @@ function getDbConfig(): DatabaseConnectionConfig {
     database: env.db.name,
     user: env.db.username,
     password: env.db.password,
-    schema: process.env.DB_SCHEMA || 'public',
+    schema: env.db.schema,
   };
 }
 
