@@ -1,16 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
   Channel,
-  ChannelService,
+  EventBus,
   ID,
   Permission,
   RequestContext,
   Role,
-  RoleService,
+  RoleEvent,
   TransactionalConnection,
-  UserService
 } from '@vendure/core';
-import { env } from '../../../infrastructure/config/environment.config';
+import { ProvisioningContextAdapter } from '../../provisioning/context-adapter.service';
 import { RegistrationInput } from '../registration.service';
 import { RegistrationAuditorService } from './registration-auditor.service';
 import { RegistrationErrorService } from './registration-error.service';
@@ -65,16 +64,24 @@ export class RoleProvisionerService {
   ];
 
   constructor(
-    private readonly roleService: RoleService,
-    private readonly channelService: ChannelService,
     private readonly connection: TransactionalConnection,
+    private readonly eventBus: EventBus,
     private readonly auditor: RegistrationAuditorService,
     private readonly errorService: RegistrationErrorService,
-    private readonly userService: UserService
-  ) { }
+    private readonly contextAdapter: ProvisioningContextAdapter
+  ) {}
 
   /**
    * Create admin role with all required permissions and assign to channel
+   *
+   * **Provisioning Bootstrap Strategy:**
+   * Uses direct Repository access to bypass RoleService permission checks.
+   * This is necessary because RoleService.create() enforces permissions that the
+   * SuperAdmin may not consistently have visibility of for a brand-new channel
+   * in the same transaction due to cache/IdentityMap latency.
+   *
+   * We treat this as a system-level provisioning operation where we manually
+   * construct the entity and publish the event.
    */
   async createAdminRole(
     ctx: RequestContext,
@@ -83,42 +90,52 @@ export class RoleProvisionerService {
   ): Promise<Role> {
     try {
       const roleCode = `${registrationData.companyCode}-admin`;
-      const channel = await this.channelService.findOne(ctx, channelId);
+
+      // Load channel for assignment
+      const channel = await this.connection.getRepository(ctx, Channel).findOne({
+        where: { id: channelId },
+      });
 
       if (!channel) {
         throw this.errorService.createError('ROLE_CREATE_FAILED', `Channel ${channelId} not found`);
       }
 
-      // Try RoleService.create() first, fall back to repository if needed
-      let role = await this.createRoleViaService(
-        ctx,
-        roleCode,
-        registrationData,
-        channelId,
-        channel
+      // Manually construct Role entity (Repository Bootstrap)
+      const role = new Role({
+        code: roleCode,
+        description: `Full admin access for ${registrationData.companyName}`,
+        permissions: RoleProvisionerService.ALL_ADMIN_PERMISSIONS,
+        channels: [channel],
+      });
+
+      // Save directly to repository
+      const savedRole = await this.connection.getRepository(ctx, Role).save(role);
+
+      // Publish event to ensure system consistency
+      await this.eventBus.publish(
+        new RoleEvent(ctx, savedRole, 'created', {
+          code: roleCode,
+          description: role.description,
+          permissions: role.permissions,
+          channelIds: [channelId],
+        })
       );
 
-      if (!role) {
-        role = await this.createRoleViaRepository(
-          ctx,
-          roleCode,
-          registrationData,
-          channelId,
-          channel
-        );
-      }
+      this.logger.log(
+        `Role created via Repository Bootstrap: ${savedRole.id} Code: ${savedRole.code}`
+      );
 
       // Verify role-channel linkage
-      await this.verifyRoleChannelLinkage(ctx, role.id, channelId);
+      await this.verifyRoleChannelLinkage(ctx, savedRole.id, channelId);
 
       // Audit log
-      await this.auditor.logEntityCreated(ctx, 'Role', role.id.toString(), role, {
+      await this.auditor.logEntityCreated(ctx, 'Role', savedRole.id.toString(), savedRole, {
         channelId: channelId.toString(),
         companyCode: registrationData.companyCode,
         companyName: registrationData.companyName,
       });
 
-      return role;
+      return savedRole;
     } catch (error: any) {
       this.errorService.logError('RoleProvisioner', error, 'Role creation');
       throw this.errorService.wrapError(error, 'ROLE_CREATE_FAILED');
@@ -133,154 +150,16 @@ export class RoleProvisionerService {
   }
 
   /**
-   * Try to create role via RoleService (preferred)
-   * Uses system context with superadmin user to bypass permission checks
-   */
-  private async createRoleViaService(
-    ctx: RequestContext,
-    roleCode: string,
-    registrationData: RegistrationInput,
-    channelId: ID,
-    channel: Channel
-  ): Promise<Role | null> {
-    try {
-      // Create system context with superadmin user for role creation
-      const systemCtx = await this.createSystemContext(ctx, channel);
-
-      // Use system context which has admin permissions
-      // The channelIds parameter in create() is sufficient for channel assignment
-      const roleResult = await this.roleService.create(systemCtx, {
-        code: roleCode,
-        description: `Full admin access for ${registrationData.companyName}`,
-        channelIds: [channelId],
-        permissions: RoleProvisionerService.ALL_ADMIN_PERMISSIONS,
-      });
-
-      // Check if result is an error (Vendure returns error objects with errorCode)
-      if (roleResult && typeof roleResult === 'object' && 'errorCode' in roleResult) {
-        const errorMessage = (roleResult as any).message || 'RoleService.create() failed';
-        throw new Error(errorMessage);
-      }
-
-      this.logger.log(`Role created via RoleService: ${roleResult.id} Code: ${roleResult.code}`);
-      return roleResult as Role;
-    } catch (error: any) {
-      this.logger.warn(`RoleService.create() failed, falling back to repository: ${error.message}`);
-      return null;
-    }
-  }
-
-  /**
-   * Create system RequestContext with superadmin user
-   * This context has admin permissions needed for RoleService.create()
-   */
-  private async createSystemContext(
-    ctx: RequestContext,
-    channel: Channel
-  ): Promise<RequestContext> {
-    try {
-      // Get superadmin user by identifier from config
-      const superadminIdentifier = env.superadmin.username;
-      if (!superadminIdentifier) {
-        throw new Error('Superadmin username not configured');
-      }
-
-      // Create empty context first for getting superadmin user
-      const emptyCtxForUser = RequestContext.empty();
-
-      // Get superadmin user
-      const superadminUser = await this.userService.getUserByEmailAddress(
-        emptyCtxForUser,
-        superadminIdentifier
-      );
-
-      if (!superadminUser) {
-        throw new Error(`Superadmin user not found: ${superadminIdentifier}`);
-      }
-
-      // Create system context with superadmin user and channel
-      // RequestContext constructor requires specific properties
-      // Note: RequestContext.activeUserId is a getter that reads from user.id
-      const systemCtx = new RequestContext({
-        req: ctx.req,
-        apiType: 'admin',
-        languageCode: ctx.languageCode || 'en',
-        channel: channel,
-        isAuthorized: true,
-        authorizedAsOwnerOnly: false,
-      });
-
-      // Set user property - RequestContext.activeUserId getter will read from user.id
-      Object.defineProperty(systemCtx, 'user', {
-        value: superadminUser,
-        writable: true,
-        enumerable: true,
-        configurable: true,
-      });
-
-      this.logger.debug(
-        `Created system context with superadmin user: ${superadminUser.id} for channel: ${channel.id}`
-      );
-
-      return systemCtx;
-    } catch (error: any) {
-      this.logger.warn(`Failed to create system context: ${error.message}`);
-      // Fall back to original context if system context creation fails
-      return ctx;
-    }
-  }
-
-  /**
-   * Create role via repository (fallback)
-   */
-  private async createRoleViaRepository(
-    ctx: RequestContext,
-    roleCode: string,
-    registrationData: RegistrationInput,
-    channelId: ID,
-    channel: any
-  ): Promise<Role> {
-    const roleRepo = this.connection.getRepository(ctx, Role);
-
-    const newRole = roleRepo.create({
-      code: roleCode,
-      description: `Full admin access for ${registrationData.companyName}`,
-      permissions: RoleProvisionerService.ALL_ADMIN_PERMISSIONS,
-    });
-
-    const savedRole = await roleRepo.save(newRole);
-
-    // Assign channel via many-to-many relationship
-    const roleWithChannels = await roleRepo.findOne({
-      where: { id: savedRole.id },
-      relations: ['channels'],
-    });
-
-    if (!roleWithChannels) {
-      throw this.errorService.createError(
-        'ROLE_CREATE_FAILED',
-        'Failed to load role after creation'
-      );
-    }
-
-    if (!roleWithChannels.channels) {
-      roleWithChannels.channels = [];
-    }
-    roleWithChannels.channels.push(channel);
-
-    const role = await roleRepo.save(roleWithChannels);
-    this.logger.log(`Role created via repository: ${role.id} Code: ${role.code}`);
-    return role;
-  }
-
-  /**
    * Verify role is properly linked to channel
+   * Uses repository to load role with relations (RoleService limitation - no relations parameter support)
    */
   private async verifyRoleChannelLinkage(
     ctx: RequestContext,
     roleId: ID,
     channelId: ID
   ): Promise<void> {
+    // Note: RoleService doesn't support loading with relations parameter,
+    // so we use repository for verification (documented limitation)
     const roleRepo = this.connection.getRepository(ctx, Role);
     const verifiedRole = await roleRepo.findOne({
       where: { id: roleId },
@@ -301,11 +180,4 @@ export class RoleProvisionerService {
       );
     }
   }
-}
-
-/**
- * Helper to convert channel ID to string for RequestContext
- */
-function channelIdToString(id: ID): string {
-  return typeof id === 'string' ? id : id.toString();
 }

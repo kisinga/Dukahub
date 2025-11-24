@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { ChannelService, RequestContext } from '@vendure/core';
+import { Channel, ChannelService, RequestContext, TransactionalConnection } from '@vendure/core';
+import { findChannelById } from '../../utils/channel-access.util';
 import { ChannelStatus, getChannelStatus } from '../../domain/channel-custom-fields';
 import { AccessLevel } from './phone-auth.service';
 
@@ -18,7 +19,10 @@ import { AccessLevel } from './phone-auth.service';
 export class ChannelAccessGuardService implements CanActivate {
   private readonly logger = new Logger(ChannelAccessGuardService.name);
 
-  constructor(private readonly channelService: ChannelService) {}
+  constructor(
+    private readonly channelService: ChannelService,
+    private readonly connection: TransactionalConnection
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Get GraphQL context
@@ -35,7 +39,15 @@ export class ChannelAccessGuardService implements CanActivate {
 
     try {
       // Load channel to check current status
-      const channel = await this.channelService.findOne(ctx, channelId);
+      // Use channel access utility with bypassSellerFilter=true to avoid CHANNEL_NOT_FOUND errors
+      // when RequestContext doesn't have seller association (common in guards)
+      const channel = await findChannelById(
+        ctx,
+        channelId,
+        this.connection,
+        this.channelService,
+        true // bypassSellerFilter - guards may not have seller association
+      );
       if (!channel) {
         this.logger.warn(`Channel ${channelId} not found`);
         return false;
@@ -102,7 +114,14 @@ export class ChannelAccessGuardService implements CanActivate {
     message?: string;
   }> {
     try {
-      const channel = await this.channelService.findOne(ctx, channelId);
+      // Use channel access utility with bypassSellerFilter=true to avoid CHANNEL_NOT_FOUND errors
+      const channel = await findChannelById(
+        ctx,
+        channelId,
+        this.connection,
+        this.channelService,
+        true // bypassSellerFilter - may not have seller association
+      );
       if (!channel) {
         return {
           allowed: false,

@@ -2,6 +2,8 @@
 
 This document outlines the architectural patterns, organization principles, and best practices used in the Dukarun backend.
 
+**Scope**: This document covers general infrastructure patterns applicable across the entire backend. For provisioning-specific patterns (Hybrid Strategy, Repository Bootstrap, M2M assignment verification), see [PROVISIONING_PRINCIPLES.md](./PROVISIONING_PRINCIPLES.md).
+
 ## Table of Contents
 
 1. [Service Organization](#service-organization)
@@ -10,6 +12,7 @@ This document outlines the architectural patterns, organization principles, and 
 4. [Plugin Architecture](#plugin-architecture)
 5. [Error Handling](#error-handling)
 6. [Transaction Management](#transaction-management)
+7. [Entity Relationship Patterns](#entity-relationship-patterns)
 
 ## Service Organization
 
@@ -303,6 +306,26 @@ async createOrder(ctx: RequestContext, input: CreateOrderInput): Promise<Order> 
 - Multiple related database operations
 - Operations that must succeed or fail together
 - Complex business logic with multiple steps
+
+## Entity Relationship Patterns
+
+### Many-to-Many Relationships
+
+For M2M relationships (entity ↔ channel), use TypeORM relation manager (Vendure's standard approach).
+
+**Why**: Vendure doesn't provide service methods for M2M assignments. TypeORM relation manager is the framework-standard approach.
+
+**Generic Utility**: Use `assignEntityToChannel()` from `backend/src/utils/entity-relation.util.ts` for consistency.
+
+**Example**:
+
+```typescript
+import { assignEntityToChannel } from '../../utils/entity-relation.util';
+
+await assignEntityToChannel(connection, ctx, channelId, 'stockLocations', stockLocationId);
+```
+
+**Note**: For provisioning-specific patterns (Hybrid Strategy, verification patterns, etc.), see **[PROVISIONING_PRINCIPLES.md](./PROVISIONING_PRINCIPLES.md)**.
 
 ## Best Practices Summary
 

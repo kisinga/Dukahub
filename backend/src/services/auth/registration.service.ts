@@ -9,6 +9,7 @@ import { RegistrationErrorService } from './provisioning/registration-error.serv
 import { RegistrationValidatorService } from './provisioning/registration-validator.service';
 import { RoleProvisionerService } from './provisioning/role-provisioner.service';
 import { SellerProvisionerService } from './provisioning/seller-provisioner.service';
+import { ChartOfAccountsService } from '../financial/chart-of-accounts.service';
 import { StoreProvisionerService } from './provisioning/store-provisioner.service';
 
 /**
@@ -74,6 +75,7 @@ export class RegistrationService {
     private readonly roleProvisioner: RoleProvisionerService,
     private readonly accessProvisioner: AccessProvisionerService,
     private readonly errorService: RegistrationErrorService,
+    private readonly chartOfAccountsService: ChartOfAccountsService,
     @Optional() private readonly tracingService?: TracingService
   ) {}
 
@@ -136,6 +138,9 @@ export class RegistrationService {
         'registration.channel_id': channel.id.toString(),
       });
       this.tracingService?.addEvent(span!, 'registration.channel.created');
+
+      await this.chartOfAccountsService.initializeForChannel(Number(channel.id));
+      this.logger.log(`Chart of accounts initialized for channel ${channel.id}`);
 
       // Step 4: Create Store (stock location) and assign to channel
       this.logger.log(`Creating store: ${registrationData.storeName}`);

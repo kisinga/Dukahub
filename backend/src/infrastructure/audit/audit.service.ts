@@ -67,7 +67,10 @@ export class AuditService {
         return;
       }
 
-      const userId = options.userId || this.userContextResolver.getUserId(ctx);
+      // If userId is explicitly undefined (not just omitted), treat as system event with no user
+      // Otherwise, fall back to context lookup
+      const userId =
+        options.userId !== undefined ? options.userId : this.userContextResolver.getUserId(ctx);
 
       if (!this.auditDbConnection.isAvailable()) {
         this.logger.warn('Audit database not available, skipping log');

@@ -1,350 +1,369 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import {
-    Channel,
-    Permission,
-    RequestContext,
-    Role,
-    User
+  Channel,
+  Permission,
+  RequestContext,
+  Role,
+  RoleService,
+  Seller,
+  User,
 } from '@vendure/core';
 import { RoleProvisionerService } from '../../../../src/services/auth/provisioning/role-provisioner.service';
 import { RegistrationInput } from '../../../../src/services/auth/registration.service';
 
 // Mock environment config
 jest.mock('../../../../src/infrastructure/config/environment.config', () => ({
-    env: {
-        superadmin: {
-            username: 'test-superadmin',
-            password: 'test-password',
-        },
-        auditDb: {
-            host: 'localhost',
-            port: 5432,
-            name: 'test_audit',
-            username: 'test',
-            password: 'test',
-        },
-        db: {
-            host: 'localhost',
-            port: 5432,
-            name: 'test',
-            username: 'test',
-            password: 'test',
-        },
+  env: {
+    superadmin: {
+      username: 'test-superadmin',
+      password: 'test-password',
     },
+    auditDb: {
+      host: 'localhost',
+      port: 5432,
+      name: 'test_audit',
+      username: 'test',
+      password: 'test',
+    },
+    db: {
+      host: 'localhost',
+      port: 5432,
+      name: 'test',
+      username: 'test',
+      password: 'test',
+    },
+  },
+}));
+
+// Mock seller-access utility
+jest.mock('../../../../src/utils/seller-access.util', () => ({
+  withSellerFromChannel: jest.fn(
+    async (
+      ctx: RequestContext,
+      channelId: any,
+      connection: any,
+      fn: (ctx: RequestContext) => Promise<any>
+    ) => {
+      // Mock seller for channel
+      const mockSeller = { id: 'seller-1', name: 'Test Seller' } as Seller;
+      // Set seller on context
+      (ctx as any).seller = mockSeller;
+      try {
+        return await fn(ctx);
+      } finally {
+        delete (ctx as any).seller;
+      }
+    }
+  ),
 }));
 
 const buildService = () => {
-    const roleService = {
-        create: jest.fn(async (ctx: RequestContext, input: any) => {
-            // Simulate permission check - will fail with public context (no user)
-            // System context should have user set with id 'superadmin-id'
-            // RequestContext.activeUserId is a getter that reads from user.id
-            const userId = (ctx as any).user?.id || ctx.activeUserId;
-            if (!userId || String(userId) !== 'superadmin-id') {
-                return { errorCode: 'error.forbidden', message: 'Forbidden' };
-            }
-            return {
-                id: 6,
-                code: input.code,
-                description: input.description,
-                permissions: input.permissions,
-                channels: [{ id: 2 }],
-            } as Role;
-        }),
-    };
+  const roleService = {
+    create: jest.fn(async (ctx: RequestContext, input: any) => {
+      // Simulate permission check - will pass if seller is set on context
+      const seller = (ctx as any).seller;
+      if (!seller) {
+        return { errorCode: 'error.forbidden', message: 'Forbidden - no seller' };
+      }
+      return {
+        id: 6,
+        code: input.code,
+        description: input.description,
+        permissions: input.permissions,
+        channels: [{ id: 2 }],
+      } as Role;
+    }),
+  };
 
-    const channelService = {
-        findOne: jest.fn(async (ctx: RequestContext, id: any) => {
-            return { id: 2, token: 'channel-token' } as Channel;
-        }),
-    };
+  const channelService = {
+    findOne: jest.fn(async (ctx: RequestContext, id: any) => {
+      return { id: 2, token: 'channel-token' } as Channel;
+    }),
+  };
 
-    // Track created roles for repository fallback - shared across all repository instances
-    const createdRoles = new Map<any, any>();
-    
-    // Create a single repository instance that will be reused
-    const roleRepository = {
-        create: jest.fn((data: any) => {
-            const role = { ...data, id: 6 };
-            createdRoles.set(6, role);
-            return role;
-        }),
-        save: jest.fn(async (entity: any) => {
-            const saved = { ...entity, id: entity.id || 6 };
-            // If channels are being added, preserve them
-            if (entity.channels) {
-                saved.channels = entity.channels;
-            }
-            createdRoles.set(saved.id, saved);
-            return saved;
-        }),
-        findOne: jest.fn(async (options: any) => {
-            const roleId = options.where?.id || options.where?.id;
-            if (roleId === 6 || createdRoles.has(6)) {
-                const role = createdRoles.get(6) || { id: 6, code: 'test-company-admin', permissions: [] };
-                const result = { ...role };
-                if (options.relations?.includes('channels')) {
-                    result.channels = role.channels || [{ id: 2 }];
-                }
-                return result;
-            }
-            return null;
-        }),
-    };
-    
-    const connection = {
-        getRepository: jest.fn((ctx: RequestContext, entity: any) => {
-            if (entity === Role) {
-                return roleRepository;
-            }
-            return {
-                create: jest.fn((data: any) => data),
-                save: jest.fn(async (entity: any) => entity),
-                findOne: jest.fn(async () => null),
-            };
-        }),
-    };
+  // Track created roles for repository fallback - shared across all repository instances
+  const createdRoles = new Map<any, any>();
 
-    const superadminUser = {
-        id: 'superadmin-id',
-        identifier: 'superadmin',
-        roles: [],
-        deletedAt: null,
-        authenticationMethods: [],
-        verified: true,
-        lastLogin: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        customFields: {},
-        sessions: [],
-        getNativeAuthenticationMethod: jest.fn(),
-    } as unknown as User;
+  // Create a single repository instance that will be reused
+  const roleRepository = {
+    create: jest.fn((data: any) => {
+      const role = { ...data, id: 6 };
+      createdRoles.set(6, role);
+      return role;
+    }),
+    save: jest.fn(async (entity: any) => {
+      const saved = { ...entity, id: entity.id || 6 };
+      // If channels are being added, preserve them
+      if (entity.channels) {
+        saved.channels = entity.channels;
+      }
+      createdRoles.set(saved.id, saved);
+      return saved;
+    }),
+    findOne: jest.fn(async (options: any) => {
+      const roleId = options.where?.id || options.where?.id;
+      if (roleId === 6 || createdRoles.has(6)) {
+        const role = createdRoles.get(6) || { id: 6, code: 'test-company-admin', permissions: [] };
+        const result = { ...role };
+        if (options.relations?.includes('channels')) {
+          result.channels = role.channels || [{ id: 2 }];
+        }
+        return result;
+      }
+      return null;
+    }),
+  };
 
-    const userService = {
-        getUserByEmailAddress: jest.fn(async (ctx: RequestContext, email: string) => {
-            // Support both 'superadmin' and 'test-superadmin' for flexibility
-            if (email === 'superadmin' || email === 'test-superadmin') {
-                return superadminUser;
+  const connection = {
+    getRepository: jest.fn((ctx: RequestContext, entity: any) => {
+      if (entity === Role) {
+        return roleRepository;
+      }
+      if (entity === Channel) {
+        return {
+          findOne: jest.fn(async (options: any) => {
+            if (options.where?.id === 2) {
+              return {
+                id: 2,
+                token: 'channel-token',
+                seller: { id: 'seller-1', name: 'Test Seller' },
+              } as Channel;
             }
             return null;
-        }),
-    };
+          }),
+        };
+      }
+      return {
+        create: jest.fn((data: any) => data),
+        save: jest.fn(async (entity: any) => entity),
+        findOne: jest.fn(async () => null),
+      };
+    }),
+  };
 
-    const auditor = {
-        logEntityCreated: jest.fn(async () => undefined),
-    };
+  const superadminUser = {
+    id: 'superadmin-id',
+    identifier: 'superadmin',
+    roles: [],
+    deletedAt: null,
+    authenticationMethods: [],
+    verified: true,
+    lastLogin: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    customFields: {},
+    sessions: [],
+    getNativeAuthenticationMethod: jest.fn(),
+  } as unknown as User;
 
-    const errorService = {
-        logError: jest.fn(),
-        wrapError: jest.fn((error: any) => error),
-        createError: jest.fn((code: string, message: string) => new Error(`${code}: ${message}`)),
-    };
+  const userService = {
+    getUserByEmailAddress: jest.fn(async (ctx: RequestContext, email: string) => {
+      // Support both 'superadmin' and 'test-superadmin' for flexibility
+      if (email === 'superadmin' || email === 'test-superadmin') {
+        return superadminUser;
+      }
+      return null;
+    }),
+  };
 
-    const service = new RoleProvisionerService(
-        roleService as any,
-        channelService as any,
-        connection as any,
-        auditor as any,
-        errorService as any,
-        userService as any
-    );
+  const auditor = {
+    logEntityCreated: jest.fn(async () => undefined),
+  };
 
-    return {
-        service,
-        roleService,
-        channelService,
-        connection,
-        roleRepository, // Expose roleRepository for test assertions
-        userService,
-        auditor,
-        errorService,
-        superadminUser,
-    };
+  const errorService = {
+    logError: jest.fn(),
+    wrapError: jest.fn((error: any) => error),
+    createError: jest.fn((code: string, message: string) => new Error(`${code}: ${message}`)),
+  };
+
+  const eventBus = {
+    publish: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+  };
+
+  const contextAdapter = {
+    withSellerScope: jest.fn(
+      async (ctx: RequestContext, channelId: any, fn: any, options?: any) => {
+        // Use the existing withSellerFromChannel mock behavior
+        // This ensures compatibility with existing test expectations
+        const mockSeller = { id: 'seller-1', name: 'Test Seller' } as Seller;
+        (ctx as any).seller = mockSeller;
+        try {
+          return await fn(ctx);
+        } finally {
+          delete (ctx as any).seller;
+        }
+      }
+    ),
+  };
+
+  const service = new RoleProvisionerService(
+    connection as any,
+    eventBus as any,
+    auditor as any,
+    errorService as any,
+    contextAdapter as any
+  );
+
+  return {
+    service,
+    roleService,
+    channelService,
+    connection,
+    roleRepository, // Expose roleRepository for test assertions
+    userService,
+    auditor,
+    errorService,
+    eventBus,
+    contextAdapter,
+    superadminUser,
+  };
 };
 
 describe('RoleProvisionerService', () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const publicCtx = {
+    activeUserId: undefined,
+    channelId: 2,
+    languageCode: 'en',
+    channel: { id: 2, token: 'channel-token' },
+  } as unknown as RequestContext;
+
+  const registrationData: RegistrationInput = {
+    companyName: 'Test Company',
+    companyCode: 'test-company',
+    currency: 'USD',
+    adminFirstName: 'Jane',
+    adminLastName: 'Doe',
+    adminPhoneNumber: '0712345678',
+    storeName: 'Main Store',
+  };
+
+  describe('createAdminRole', () => {
+    it('should create role using repository directly (Repository Bootstrap pattern)', async () => {
+      const harness = buildService();
+
+      const result = await harness.service.createAdminRole(publicCtx, registrationData, 2);
+
+      // Verify repository.save was called (Repository Bootstrap pattern)
+      expect(harness.roleRepository.save).toHaveBeenCalled();
+
+      // Verify role was created with correct properties
+      expect(result.id).toBe(6);
+      expect(result.code).toBe('test-company-admin');
+      expect(result.description).toContain('Test Company');
+      expect(result.permissions).toContain(Permission.CreateAsset);
+      expect(result.channels).toBeDefined();
+      expect(result.channels?.length).toBe(1);
+      expect(result.channels?.[0].id).toBe(2);
+
+      // Verify event was published
+      expect(harness.eventBus.publish).toHaveBeenCalled();
     });
 
-    const publicCtx = {
-        activeUserId: undefined,
-        channelId: 2,
-        languageCode: 'en',
-        channel: { id: 2, token: 'channel-token' },
-    } as unknown as RequestContext;
+    it('should create role with all admin permissions', async () => {
+      const harness = buildService();
 
-    const registrationData: RegistrationInput = {
-        companyName: 'Test Company',
-        companyCode: 'test-company',
-        currency: 'USD',
-        adminFirstName: 'Jane',
-        adminLastName: 'Doe',
-        adminPhoneNumber: '0712345678',
-        storeName: 'Main Store',
-    };
+      const result = await harness.service.createAdminRole(publicCtx, registrationData, 2);
 
-    describe('createAdminRole', () => {
-        it('should create system context with superadmin and use it for RoleService.create()', async () => {
-            const harness = buildService();
+      // Verify repository.save was called
+      expect(harness.roleRepository.save).toHaveBeenCalled();
 
-            const result = await harness.service.createAdminRole(
-                publicCtx,
-                registrationData,
-                2
-            );
-
-            // Verify that UserService was called to get superadmin
-            // Note: The actual email comes from env.superadmin.username which may vary
-            expect(harness.userService.getUserByEmailAddress).toHaveBeenCalled();
-            const getUserCall = harness.userService.getUserByEmailAddress.mock.calls[0];
-            expect(getUserCall[0]).toBeInstanceOf(Object); // RequestContext
-            expect(typeof getUserCall[1]).toBe('string'); // email/username
-
-            // Verify RoleService.create was called with a context that has superadmin user
-            // Note: activeUserId is a getter that reads from user.id, so we check for user property
-            const createCall = harness.roleService.create.mock.calls[0];
-            const contextUsed = createCall[0] as RequestContext;
-            
-            // Verify context has user set (activeUserId is computed from user.id)
-            expect((contextUsed as any).user?.id).toBe('superadmin-id');
-            expect(contextUsed.channel?.id).toBe(2);
-            
-            // Verify the input parameters
-            expect(createCall[1]).toMatchObject({
-                code: 'test-company-admin',
-                channelIds: [2],
-                permissions: expect.arrayContaining([Permission.CreateAsset]),
-            });
-
-            // Verify role was created successfully (not via repository fallback)
-            expect(result.id).toBe(6);
-            expect(result.code).toBe('test-company-admin');
-        });
-
-        it('should create role with all admin permissions', async () => {
-            const harness = buildService();
-
-            await harness.service.createAdminRole(publicCtx, registrationData, 2);
-
-            // Verify RoleService.create was called
-            expect(harness.roleService.create).toHaveBeenCalled();
-            const createCall = harness.roleService.create.mock.calls[0];
-            
-            // Verify the call has the expected structure
-            expect(createCall).toBeDefined();
-            expect(createCall.length).toBeGreaterThanOrEqual(2);
-            
-            const permissions = createCall[1]?.permissions;
-            expect(permissions).toBeDefined();
-            expect(Array.isArray(permissions)).toBe(true);
-
-            // Verify all required permissions are included
-            expect(permissions).toContain(Permission.CreateAsset);
-            expect(permissions).toContain(Permission.ReadAsset);
-            expect(permissions).toContain(Permission.UpdateAsset);
-            expect(permissions).toContain(Permission.DeleteAsset);
-            expect(permissions).toContain(Permission.CreateOrder);
-            expect(permissions).toContain(Permission.ReadOrder);
-            expect(permissions).toContain(Permission.CreateStockLocation);
-            expect(permissions).toContain(Permission.ReadStockLocation);
-            expect(permissions).toContain(Permission.UpdateStockLocation);
-        });
-
-        it('should assign role to channel via channelIds parameter', async () => {
-            const harness = buildService();
-
-            await harness.service.createAdminRole(publicCtx, registrationData, 2);
-
-            const createCall = harness.roleService.create.mock.calls[0];
-            const input = createCall[1];
-
-            expect(input.channelIds).toEqual([2]);
-        });
-
-        it('should verify role-channel linkage after creation', async () => {
-            const harness = buildService();
-            
-            await harness.service.createAdminRole(publicCtx, registrationData, 2);
-
-            // Verify that verification was called (should call findOne with relations)
-            // The verification happens in verifyRoleChannelLinkage
-            const findOneCalls = harness.roleRepository.findOne.mock.calls;
-            const verificationCall = findOneCalls.find(call => 
-                call[0]?.relations?.includes('channels') && call[0]?.where?.id === 6
-            );
-            
-            expect(verificationCall).toBeDefined();
-            if (verificationCall) {
-                expect(verificationCall[0]).toMatchObject({
-                    where: { id: 6 },
-                    relations: ['channels'],
-                });
-            }
-        });
-
-        it('should fall back to repository method if system context creation fails', async () => {
-            const harness = buildService();
-            // Mock UserService to fail to find superadmin (returns null)
-            harness.userService.getUserByEmailAddress.mockResolvedValueOnce(null);
-            
-            // Mock RoleService.create to return error (simulating permission failure)
-            harness.roleService.create.mockResolvedValueOnce({
-                errorCode: 'error.forbidden',
-                message: 'Forbidden'
-            });
-
-            const result = await harness.service.createAdminRole(
-                publicCtx,
-                registrationData,
-                2
-            );
-
-            // Should still create role via repository fallback
-            expect(result).toBeDefined();
-            expect(result.id).toBe(6);
-            // Verify repository method was used (save was called)
-            expect(harness.roleRepository.save).toHaveBeenCalled();
-            // Verify RoleService.create was attempted (but failed)
-            expect(harness.roleService.create).toHaveBeenCalled();
-        });
-
-        it('should audit log role creation', async () => {
-            const harness = buildService();
-
-            const result = await harness.service.createAdminRole(
-                publicCtx,
-                registrationData,
-                2
-            );
-
-            expect(harness.auditor.logEntityCreated).toHaveBeenCalledWith(
-                publicCtx,
-                'Role',
-                '6',
-                result,
-                expect.objectContaining({
-                    channelId: '2',
-                    companyCode: 'test-company',
-                    companyName: 'Test Company',
-                })
-            );
-        });
+      // Verify all required permissions are included
+      expect(result.permissions).toContain(Permission.CreateAsset);
+      expect(result.permissions).toContain(Permission.ReadAsset);
+      expect(result.permissions).toContain(Permission.UpdateAsset);
+      expect(result.permissions).toContain(Permission.DeleteAsset);
+      expect(result.permissions).toContain(Permission.CreateOrder);
+      expect(result.permissions).toContain(Permission.ReadOrder);
+      expect(result.permissions).toContain(Permission.CreateStockLocation);
+      expect(result.permissions).toContain(Permission.ReadStockLocation);
+      expect(result.permissions).toContain(Permission.UpdateStockLocation);
     });
 
-    describe('getAdminPermissions', () => {
-        it('should return all required admin permissions', () => {
-            const harness = buildService();
-            const permissions = harness.service.getAdminPermissions();
+    it('should assign role to channel via channels array', async () => {
+      const harness = buildService();
 
-            expect(permissions).toContain(Permission.CreateAsset);
-            expect(permissions).toContain(Permission.ReadAsset);
-            expect(permissions).toContain(Permission.UpdateAsset);
-            expect(permissions).toContain(Permission.DeleteAsset);
-            expect(permissions).toContain(Permission.CreateOrder);
-            expect(permissions).toContain(Permission.ReadOrder);
-            expect(permissions.length).toBeGreaterThan(20);
-        });
+      const result = await harness.service.createAdminRole(publicCtx, registrationData, 2);
+
+      // Verify role has channel assigned
+      expect(result.channels).toBeDefined();
+      expect(result.channels?.length).toBe(1);
+      expect(result.channels?.[0].id).toBe(2);
     });
+
+    it('should verify role-channel linkage after creation', async () => {
+      const harness = buildService();
+
+      await harness.service.createAdminRole(publicCtx, registrationData, 2);
+
+      // Verify that verification was called (should call findOne with relations)
+      // The verification happens in verifyRoleChannelLinkage
+      const findOneCalls = harness.roleRepository.findOne.mock.calls;
+      const verificationCall = findOneCalls.find(
+        call => call[0]?.relations?.includes('channels') && call[0]?.where?.id === 6
+      );
+
+      expect(verificationCall).toBeDefined();
+      if (verificationCall) {
+        expect(verificationCall[0]).toMatchObject({
+          where: { id: 6 },
+          relations: ['channels'],
+        });
+      }
+    });
+
+    it('should throw error if repository.save() fails', async () => {
+      const harness = buildService();
+
+      // Make repository.save throw an error
+      const dbError = new Error('Database error');
+      harness.roleRepository.save.mockRejectedValueOnce(dbError);
+
+      // Should throw error (wrapped by errorService.wrapError)
+      await expect(
+        harness.service.createAdminRole(publicCtx, registrationData, 2)
+      ).rejects.toThrow();
+
+      // Verify repository.save was attempted
+      expect(harness.roleRepository.save).toHaveBeenCalled();
+      // Verify error was logged
+      expect(harness.errorService.logError).toHaveBeenCalled();
+    });
+
+    it('should audit log role creation', async () => {
+      const harness = buildService();
+
+      const result = await harness.service.createAdminRole(publicCtx, registrationData, 2);
+
+      expect(harness.auditor.logEntityCreated).toHaveBeenCalledWith(
+        publicCtx,
+        'Role',
+        '6',
+        result,
+        expect.objectContaining({
+          channelId: '2',
+          companyCode: 'test-company',
+          companyName: 'Test Company',
+        })
+      );
+    });
+  });
+
+  describe('getAdminPermissions', () => {
+    it('should return all required admin permissions', () => {
+      const harness = buildService();
+      const permissions = harness.service.getAdminPermissions();
+
+      expect(permissions).toContain(Permission.CreateAsset);
+      expect(permissions).toContain(Permission.ReadAsset);
+      expect(permissions).toContain(Permission.UpdateAsset);
+      expect(permissions).toContain(Permission.DeleteAsset);
+      expect(permissions).toContain(Permission.CreateOrder);
+      expect(permissions).toContain(Permission.ReadOrder);
+      expect(permissions.length).toBeGreaterThan(20);
+    });
+  });
 });
-

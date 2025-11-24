@@ -62,6 +62,43 @@ Our solution: An incredibly fast, intuitive POS system augmented with AI that ma
 
 ## System Architecture
 
+### Trunk → Branches → Leaves Architecture
+
+This system follows a hierarchical architecture pattern where components are classified by their impact and coupling:
+
+**Trunk: Core Services & Flows**
+- Critical infrastructure that affects all features
+- **Provisioning Services**: Customer registration, channel setup, entity creation
+- **Auth Guards**: Channel access control, permission checks
+- **Ledger System**: Financial transactions, double-entry accounting
+- **RequestContext Management**: Transaction-aware context handling
+- **Impact**: Changes here affect all features. Must be thoroughly tested.
+
+**Branches: Major Feature Areas**
+- Feature domains with significant business logic
+- **Catalog**: Products, variants, assets, categories
+- **Credit**: Customer/supplier credit management, outstanding balances
+- **Suppliers**: Supplier management, purchase orders
+- **POS**: Point-of-sale operations, order creation, payments
+- **Impact**: Changes affect specific feature areas. Integration tests required.
+
+**Leaves: UI & Feature-Specific Glue**
+- User-facing features and integration points
+- **Barcode Scanner**: Browser BarcodeDetector API integration
+- **AI Image Recognition**: TensorFlow.js model loading and inference
+- **Dashboard UI**: Angular components, routing, state management
+- **ML Model Training**: Background jobs, model file generation
+- **Impact**: Changes are isolated. Unit tests sufficient.
+
+**Criteria for "Core" Classification:**
+A component is "core" (trunk) if:
+1. **Behavioral Impact**: Changes affect multiple features or system behavior
+2. **Code Surface**: Used by many other components (high coupling)
+3. **Data Integrity**: Handles critical data flows (provisioning, financial)
+4. **Transaction Safety**: Must maintain consistency across operations
+
+See [Provisioning Principles](./docs/PROVISIONING_PRINCIPLES.md) for detailed provisioning architecture.
+
 ### Component Diagram
 
 ```

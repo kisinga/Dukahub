@@ -200,7 +200,6 @@ export class EnvironmentConfig implements OnModuleInit {
     this.sms.africastalkingApiKey = process.env.AFRICASTALKING_API_KEY || '';
     this.sms.africastalkingUsername = process.env.AFRICASTALKING_USERNAME || '';
     this.sms.textsmsApiKey = process.env.TEXTSMS_API_KEY || '';
-    this.sms.textsmsSenderId = process.env.TEXTSMS_SENDER_ID || '';
 
     // Load ML/Webhook configuration
     this.ml.webhookSecret = process.env.ML_WEBHOOK_SECRET || '';

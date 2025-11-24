@@ -155,6 +155,11 @@ describe('Registration Flow Integration', () => {
       createError: jest.fn((code: string, message: string) => new Error(`${code}: ${message}`)),
     };
 
+    // Mock chart of accounts service
+    const chartOfAccountsService = {
+      initializeForChannel: jest.fn(async () => undefined),
+    };
+
     // Build registration service with mocked provisioners
     const registrationService = new RegistrationService(
       validator as any,
@@ -165,6 +170,7 @@ describe('Registration Flow Integration', () => {
       roleProvisioner as any,
       accessProvisioner as any,
       errorService as any,
+      chartOfAccountsService as any,
       undefined // tracingService
     );
 
@@ -179,6 +185,7 @@ describe('Registration Flow Integration', () => {
         roleProvisioner,
         accessProvisioner,
         errorService,
+        chartOfAccountsService,
       },
       entities: {
         mockKenyaZone,
@@ -386,6 +393,20 @@ describe('Registration Flow Integration', () => {
         expect.any(Object),
         '2' // channel ID as string
       );
+    });
+
+    it('verifies stock location assignment to channel during provisioning', async () => {
+      const harness = buildRegistrationHarness();
+
+      await harness.registrationService.provisionCustomer(ctx, registrationData);
+
+      // Verify store provisioner was called (which includes assignment verification)
+      expect(harness.mocks.storeProvisioner.createAndAssignStore).toHaveBeenCalled();
+
+      // The verification happens inside createAndAssignStore
+      // This test ensures the full flow includes verification step
+      const callArgs = harness.mocks.storeProvisioner.createAndAssignStore.mock.calls[0];
+      expect(callArgs[2]).toBe('2'); // channel ID
     });
   });
 

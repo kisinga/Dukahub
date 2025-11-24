@@ -172,7 +172,6 @@ The nginx configuration supports both Docker internal DNS and public DNS resolut
 | `TEXTSMS_API_KEY`            | `your-api-key`    | —            | TextSMS API key (required)             |
 | `TEXTSMS_PARTNER_ID`         | `your-partner-id` | —            | TextSMS Partner ID (required)          |
 | `TEXTSMS_SHORTCODE`          | `YOURCODE`        | —            | TextSMS Sender ID/Shortcode (required) |
-| `TEXTSMS_SENDER_ID`          | `YOURCODE`        | —            | TextSMS Sender ID (alternative)        |
 | `AFRICASTALKING_USERNAME`    | `your-username`   | —            | AfricasTalking username                |
 | `AFRICASTALKING_API_KEY`     | `your-api-key`    | —            | AfricasTalking API key                 |
 | `AFRICASTALKING_SENDER_ID`   | `YOURCODE`        | —            | AfricasTalking Sender ID               |
@@ -370,6 +369,52 @@ After setup, verify everything is working:
    - Open http://localhost:3000/admin
    - Login with credentials from .env file
 
+### Required Database State
+
+For user registration and core functionality to work, the following database state must be present:
+
+#### 1. Zones & Countries
+
+Registration requires a specific zone for setting default shipping and tax configurations for new channels.
+
+- **Country**: Kenya (`KE`)
+- **Zone**: "Kenya"
+- **Zone Members**: Kenya (`KE`) must be a member of the "Kenya" zone.
+
+#### 2. Tax Configuration
+
+A default tax structure is required for accurate pricing and tax calculations.
+
+- **Tax Category**: "Standard Tax"
+- **Tax Rate**: "Kenya VAT" (16%)
+  - **Category**: Standard Tax
+  - **Zone**: Kenya
+  - **Value**: 16%
+
+#### 3. Default Channel
+
+The default channel serves as the template for creating new channels during registration.
+
+- **Default Shipping Zone**: Must be set to "Kenya".
+- **Default Tax Zone**: Must be set to "Kenya".
+- **Default Currency**: Must be set to `KES` (Kenya Shilling).
+- **Currency Code**: Must be set to `KES`.
+
+#### Automatic Seeding
+
+These requirements are automatically provisioned during bootstrap by the Kenya seeding utility (`ensureKenyaContext`) which reuses Vendure's official `Populator` flow.
+
+> **Bootstrap safeguard:** `initializeVendureBootstrap()` verifies Vendure core tables before running migrations. Once migrations finish, `ensureKenyaContext` bootstraps a lightweight Vendure instance, seeds the Kenya country/zone/tax configuration via Vendure services, and updates the default channel currency to `KES`.
+
+If seeding needs to be skipped (e.g., for alternative regions), set `AUTO_SEED_KENYA=false` in the environment and create the required entities manually.
+
+#### Validation
+
+The `RegistrationValidatorService` checks for these requirements before allowing a new user to register:
+
+- `getKenyaZone()` ensures the "Kenya" zone exists.
+- `validateDefaultZones()` ensures the default channel has shipping and tax zones configured.
+
 ### Fresh Setup Troubleshooting
 
 #### Database Connection Issues
@@ -401,6 +446,18 @@ docker compose logs backend | grep -E "(populate|error|✅|❌)"
 
 # Force re-populate
 docker compose exec backend npm run populate
+```
+
+#### Missing Zone/Country Configuration
+
+If registration fails with zone-related errors:
+
+```bash
+# Check if Kenya zone exists
+docker compose exec backend npm run populate
+
+# Verify zone configuration
+docker compose exec postgres_db psql -U vendure -d vendure -c "SELECT name FROM zone WHERE name = 'Kenya';"
 ```
 
 ---

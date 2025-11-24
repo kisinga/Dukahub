@@ -7,6 +7,7 @@ import { BRAND_CONFIG } from './constants/brand.constants';
 import { initializeTelemetry } from './infrastructure/observability/telemetry.init';
 import { initializeVendureBootstrap } from './utils/bootstrap-init';
 import { ensureKenyaContext } from './utils/kenya-context.seed';
+import { ensureChannelFinancialDefaults } from './utils/financial-bootstrap';
 
 // Initialize telemetry (must be done before any other application code)
 initializeTelemetry(`${BRAND_CONFIG.servicePrefix}-server`);
@@ -35,6 +36,7 @@ const shouldRunBootstrapInit = process.env.SKIP_BOOTSTRAP_INIT !== '1';
     const app = await bootstrap(runtimeConfig);
 
     await ensureKenyaContext(app);
+    await ensureChannelFinancialDefaults(app);
 
     return app;
   })

@@ -17,6 +17,9 @@ export class RegistrationAuditorService {
   /**
    * Log entity creation audit event
    * Non-blocking: failures are logged as warnings but don't throw
+   *
+   * Registration is a system event, not a user action, so userId is omitted.
+   * This ensures audit logs correctly show system events even when context has superadmin user.
    */
   async logEntityCreated<T extends { id: string | number }>(
     ctx: RequestContext,
@@ -29,15 +32,25 @@ export class RegistrationAuditorService {
       return;
     }
 
+    // Construct options explicitly - userId must be undefined to override context lookup
+    // Registration is a system event, not a user action
+    const auditOptions: {
+      entityType: string;
+      entityId: string;
+      userId?: string;
+      data?: Record<string, any>;
+    } = {
+      entityType,
+      entityId: entityId.toString(),
+      userId: undefined, // Explicitly undefined to prevent context lookup
+      data: {
+        ...this.extractEntityFields(entity),
+        ...additionalData,
+      },
+    };
+
     await this.auditService
-      .log(ctx, `${entityType.toLowerCase()}.created`, {
-        entityType,
-        entityId: entityId.toString(),
-        data: {
-          ...this.extractEntityFields(entity),
-          ...additionalData,
-        },
-      })
+      .log(ctx, `${entityType.toLowerCase()}.created`, auditOptions)
       .catch((err: unknown) => {
         this.logger.warn(
           `Failed to log ${entityType} created audit: ` +

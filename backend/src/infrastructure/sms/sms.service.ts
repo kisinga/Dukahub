@@ -28,6 +28,24 @@ export class SmsService {
    */
   async sendSms(phoneNumber: string, message: string): Promise<SmsResult> {
     try {
+      // In development mode, print SMS to console instead of sending
+      const isDevMode = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+      if (isDevMode) {
+        const normalizedPhone = formatPhoneNumber(phoneNumber);
+        this.logger.log('📱 [DEV MODE] SMS would be sent:');
+        this.logger.log(`   To: ${normalizedPhone}`);
+        this.logger.log(`   Message: ${message}`);
+        return {
+          success: true,
+          messageId: 'dev-mode-mock',
+          metadata: {
+            devMode: true,
+            phoneNumber: normalizedPhone,
+            message,
+          },
+        };
+      }
+
       // Normalize phone number to standard format (07XXXXXXXX)
       const normalizedPhone = formatPhoneNumber(phoneNumber);
 

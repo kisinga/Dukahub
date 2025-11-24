@@ -51,10 +51,9 @@ export class ChannelProvisionerService {
       });
 
       if ('errorCode' in channelResult) {
-        throw this.errorService.createError(
-          'CHANNEL_CREATE_FAILED',
-          channelResult.message || 'Failed to create channel'
-        );
+        const error = channelResult as any;
+        const errorMsg = error.message || 'Failed to create channel';
+        throw this.errorService.createError('CHANNEL_CREATE_FAILED', errorMsg);
       }
 
       const channel = channelResult as Channel;

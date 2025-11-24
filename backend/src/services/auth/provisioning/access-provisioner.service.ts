@@ -1,7 +1,10 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
   Administrator,
+  AdministratorEvent,
+  EventBus,
   ID,
+  NativeAuthenticationMethod,
   PasswordCipher,
   RequestContext,
   Role,
@@ -28,6 +31,7 @@ export class AccessProvisionerService {
   constructor(
     private readonly connection: TransactionalConnection,
     private readonly passwordCipher: PasswordCipher,
+    private readonly eventBus: EventBus,
     private readonly auditor: RegistrationAuditorService,
     private readonly errorService: RegistrationErrorService,
     @Optional() private readonly eventRouter?: ChannelEventRouterService
@@ -50,7 +54,7 @@ export class AccessProvisionerService {
       if (existingUser) {
         user = await this.attachRoleToExistingUser(ctx, existingUser, role);
       } else {
-        user = await this.createUser(ctx, phoneNumber, role);
+        user = await this.createUser(ctx, phoneNumber, role, registrationData);
         userCreated = true;
       }
 
@@ -78,27 +82,44 @@ export class AccessProvisionerService {
     }
   }
 
-  private async createUser(ctx: RequestContext, phoneNumber: string, role: Role): Promise<User> {
+  /**
+   * Create user and administrator using Repository Bootstrap
+   * Bypasses AdministratorService.create() to avoid permission issues.
+   */
+  private async createUser(
+    ctx: RequestContext,
+    phoneNumber: string,
+    role: Role,
+    registrationData: RegistrationInput
+  ): Promise<User> {
     const password = this.generateSecurePassword();
-    const hashedPassword = await this.passwordCipher.hash(password);
+    const emailToUse = registrationData.adminEmail || phoneNumber;
 
-    const userRepo = this.connection.getRepository(ctx, User);
+    // Create User entity
+    const user = new User({
+      identifier: phoneNumber,
+      verified: true,
+      roles: [role],
+    });
 
-    const newUser = new User();
-    newUser.identifier = phoneNumber;
-    (newUser as any).passwordHash = hashedPassword;
-    (newUser as any).verified = true; // Phone verified via OTP
-    (newUser as any).roles = [role];
+    const savedUser = await this.connection.getRepository(ctx, User).save(user);
 
-    const savedUser = await userRepo.save(newUser);
+    // Create Authentication Method
+    const passwordHash = await this.passwordCipher.hash(password);
+    const authMethod = new NativeAuthenticationMethod({
+      identifier: phoneNumber,
+      passwordHash,
+      user: savedUser,
+    });
 
-    if (!savedUser || !savedUser.id) {
-      throw this.errorService.createError('USER_CREATE_FAILED', 'Failed to create user');
-    }
+    await this.connection.getRepository(ctx, NativeAuthenticationMethod).save(authMethod);
 
     return savedUser;
   }
 
+  /**
+   * Attach role to existing user via Repository
+   */
   private async attachRoleToExistingUser(
     ctx: RequestContext,
     existingUser: User,
@@ -117,12 +138,14 @@ export class AccessProvisionerService {
       );
     }
 
-    userWithRoles.roles = userWithRoles.roles || [];
-
-    if (!userWithRoles.roles.some(r => r.id === role.id)) {
-      userWithRoles.roles.push(role);
-      await userRepo.save(userWithRoles);
+    // Check if role is already assigned
+    if (userWithRoles.roles?.some(r => r.id === role.id)) {
+      return userWithRoles;
     }
+
+    // Attach role directly
+    userWithRoles.roles = [...(userWithRoles.roles || []), role];
+    await userRepo.save(userWithRoles);
 
     return userWithRoles;
   }
@@ -151,15 +174,17 @@ export class AccessProvisionerService {
     return verifiedUser;
   }
 
+  /**
+   * Ensure administrator entity exists via Repository
+   */
   private async ensureAdministratorEntity(
     ctx: RequestContext,
     registrationData: RegistrationInput,
     phoneNumber: string,
     user: User
   ): Promise<{ administrator: Administrator; created: boolean }> {
-    const adminRepo = this.connection.getRepository(ctx, Administrator);
-    // Use provided email or fallback to phone number as identifier
     const emailToUse = registrationData.adminEmail || phoneNumber;
+    const adminRepo = this.connection.getRepository(ctx, Administrator);
 
     let administrator = await adminRepo.findOne({
       where: { user: { id: user.id } },
@@ -167,41 +192,32 @@ export class AccessProvisionerService {
     });
 
     if (!administrator) {
-      const newAdmin = new Administrator();
-      newAdmin.emailAddress = emailToUse;
-      newAdmin.firstName = registrationData.adminFirstName;
-      newAdmin.lastName = registrationData.adminLastName;
-      (newAdmin as any).user = user; // Use verified user passed from caller
+      // Create new Administrator
+      const newAdmin = new Administrator({
+        emailAddress: emailToUse,
+        firstName: registrationData.adminFirstName,
+        lastName: registrationData.adminLastName,
+        user: user,
+      });
 
-      const finalAdmin = await adminRepo.save(newAdmin);
+      administrator = await adminRepo.save(newAdmin);
 
-      if (
-        !finalAdmin ||
-        !finalAdmin.id ||
-        !(finalAdmin as any).user ||
-        !(finalAdmin as any).user.id
-      ) {
-        throw this.errorService.createError(
-          'ADMIN_CREATE_FAILED',
-          'Administrator creation returned invalid result'
-        );
-      }
+      // Publish AdministratorEvent
+      await this.eventBus.publish(new AdministratorEvent(ctx, administrator, 'created'));
 
-      return { administrator: finalAdmin, created: true };
+      return { administrator, created: true };
     }
 
+    // Update existing Administrator if needed
     let requiresUpdate = false;
-
     if (administrator.firstName !== registrationData.adminFirstName) {
       administrator.firstName = registrationData.adminFirstName;
       requiresUpdate = true;
     }
-
     if (administrator.lastName !== registrationData.adminLastName) {
       administrator.lastName = registrationData.adminLastName;
       requiresUpdate = true;
     }
-
     if (administrator.emailAddress !== emailToUse) {
       administrator.emailAddress = emailToUse;
       requiresUpdate = true;
@@ -209,6 +225,7 @@ export class AccessProvisionerService {
 
     if (requiresUpdate) {
       administrator = await adminRepo.save(administrator);
+      await this.eventBus.publish(new AdministratorEvent(ctx, administrator, 'updated'));
     }
 
     return { administrator, created: false };
