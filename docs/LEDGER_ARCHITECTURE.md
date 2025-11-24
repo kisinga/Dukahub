@@ -170,6 +170,7 @@ Each channel requires these accounts:
 - `CLEARING_MPESA` - M-Pesa clearing account
 - `CLEARING_CREDIT` - Credit clearing account
 - `ACCOUNTS_RECEIVABLE` - Customer outstanding amounts (AR)
+- `INVENTORY` - Current inventory value (FIFO/COGS framework)
 
 ### Liability Accounts
 
@@ -184,6 +185,9 @@ Each channel requires these accounts:
 - `PURCHASES` - Purchase costs
 - `DISCOUNTS` - Discounts given
 - `RETURNS` - Returns/refunds
+- `COGS` - Cost of goods sold (FIFO/COGS framework)
+- `INVENTORY_WRITE_OFF` - Inventory losses (damage, theft, etc.)
+- `EXPIRY_LOSS` - Expired inventory losses
 
 ### Setup
 
@@ -239,6 +243,39 @@ Accounts are initialized per channel via:
            └─> PostingService.post()
                ├─> Debit: ACCOUNTS_PAYABLE (-amount)
                └─> Credit: CASH_ON_HAND (+amount)
+```
+
+### Inventory Purchase (FIFO Framework)
+
+```
+1. InventoryService.recordPurchase()
+   └─> Creates inventory batches
+   └─> LedgerPostingService.postInventoryPurchase()
+       └─> PostingService.post()
+           ├─> Debit: INVENTORY (+totalCost)
+           └─> Credit: ACCOUNTS_PAYABLE or CASH_ON_HAND (+totalCost)
+```
+
+### Inventory Sale COGS (FIFO Framework)
+
+```
+1. InventoryService.recordSale()
+   └─> Allocates costs using FIFO strategy
+   └─> LedgerPostingService.postInventorySaleCogs()
+       └─> PostingService.post()
+           ├─> Debit: COGS (+totalCogs)
+           └─> Credit: INVENTORY (-totalCogs)
+```
+
+### Inventory Write-Off (FIFO Framework)
+
+```
+1. InventoryService.recordWriteOff()
+   └─> Allocates costs for write-off
+   └─> LedgerPostingService.postInventoryWriteOff()
+       └─> PostingService.post()
+           ├─> Debit: INVENTORY_WRITE_OFF or EXPIRY_LOSS (+totalLoss)
+           └─> Credit: INVENTORY (-totalLoss)
 ```
 
 ## Balance Calculation

@@ -7,12 +7,18 @@ import { Account } from '../../ledger/account.entity';
 import { JournalLine } from '../../ledger/journal-line.entity';
 import { PostingPayload, PostingService } from '../../ledger/posting.service';
 import {
+  InventoryPurchasePostingContext,
+  InventorySalePostingContext,
+  InventoryWriteOffPostingContext,
   PaymentPostingContext,
   PurchasePostingContext,
   RefundPostingContext,
   SalePostingContext,
   SupplierPaymentPostingContext,
   createCreditSaleEntry,
+  createInventoryPurchaseEntry,
+  createInventorySaleCogsEntry,
+  createInventoryWriteOffEntry,
   createPaymentAllocationEntry,
   createPaymentEntry,
   createRefundEntry,
@@ -227,6 +233,162 @@ export class LedgerPostingService {
 
     await this.postingService.post(ctx, 'Refund', sourceId, payload);
     this.logger.log(`Posted refund entry for refund ${sourceId}, order ${context.orderCode}`);
+  }
+
+  /**
+   * Post an inventory purchase entry
+   */
+  async postInventoryPurchase(
+    ctx: RequestContext,
+    sourceId: string,
+    context: InventoryPurchasePostingContext
+  ): Promise<void> {
+    const span = this.tracingService?.startSpan('ledger.postInventoryPurchase', {
+      'ledger.type': 'InventoryPurchase',
+      'ledger.source_id': sourceId,
+      'ledger.channel_id': ctx.channelId?.toString() || '',
+      'ledger.purchase_id': context.purchaseId,
+    });
+
+    try {
+      const template = createInventoryPurchaseEntry(context);
+      const accountCodes = template.lines.map(l => l.accountCode);
+
+      await this.ensureAccountsExist(ctx, accountCodes);
+
+      const payload: PostingPayload = {
+        channelId: ctx.channelId as number,
+        entryDate: new Date().toISOString().slice(0, 10),
+        memo: template.memo,
+        lines: template.lines,
+      };
+
+      await this.postingService.post(ctx, 'InventoryPurchase', sourceId, payload);
+
+      this.metricsService?.recordLedgerPosting(
+        'InventoryPurchase',
+        ctx.channelId?.toString() || ''
+      );
+      this.tracingService?.addEvent(span!, 'ledger.posted', {
+        'ledger.source_id': sourceId,
+      });
+
+      this.logger.log(
+        `Posted inventory purchase entry for purchase ${context.purchaseReference}, total cost: ${context.totalCost}`
+      );
+      this.tracingService?.endSpan(span!, true);
+    } catch (error) {
+      this.tracingService?.endSpan(
+        span!,
+        false,
+        error instanceof Error ? error : new Error(String(error))
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Post an inventory sale COGS entry
+   */
+  async postInventorySaleCogs(
+    ctx: RequestContext,
+    sourceId: string,
+    context: InventorySalePostingContext
+  ): Promise<void> {
+    const span = this.tracingService?.startSpan('ledger.postInventorySaleCogs', {
+      'ledger.type': 'InventorySaleCogs',
+      'ledger.source_id': sourceId,
+      'ledger.channel_id': ctx.channelId?.toString() || '',
+      'ledger.order_code': context.orderCode,
+    });
+
+    try {
+      const template = createInventorySaleCogsEntry(context);
+      const accountCodes = template.lines.map(l => l.accountCode);
+
+      await this.ensureAccountsExist(ctx, accountCodes);
+
+      const payload: PostingPayload = {
+        channelId: ctx.channelId as number,
+        entryDate: new Date().toISOString().slice(0, 10),
+        memo: template.memo,
+        lines: template.lines,
+      };
+
+      await this.postingService.post(ctx, 'InventorySaleCogs', sourceId, payload);
+
+      this.metricsService?.recordLedgerPosting(
+        'InventorySaleCogs',
+        ctx.channelId?.toString() || ''
+      );
+      this.tracingService?.addEvent(span!, 'ledger.posted', {
+        'ledger.source_id': sourceId,
+      });
+
+      this.logger.log(
+        `Posted inventory sale COGS entry for order ${context.orderCode}, total COGS: ${context.totalCogs}`
+      );
+      this.tracingService?.endSpan(span!, true);
+    } catch (error) {
+      this.tracingService?.endSpan(
+        span!,
+        false,
+        error instanceof Error ? error : new Error(String(error))
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Post an inventory write-off entry
+   */
+  async postInventoryWriteOff(
+    ctx: RequestContext,
+    sourceId: string,
+    context: InventoryWriteOffPostingContext
+  ): Promise<void> {
+    const span = this.tracingService?.startSpan('ledger.postInventoryWriteOff', {
+      'ledger.type': 'InventoryWriteOff',
+      'ledger.source_id': sourceId,
+      'ledger.channel_id': ctx.channelId?.toString() || '',
+      'ledger.adjustment_id': context.adjustmentId,
+    });
+
+    try {
+      const template = createInventoryWriteOffEntry(context);
+      const accountCodes = template.lines.map(l => l.accountCode);
+
+      await this.ensureAccountsExist(ctx, accountCodes);
+
+      const payload: PostingPayload = {
+        channelId: ctx.channelId as number,
+        entryDate: new Date().toISOString().slice(0, 10),
+        memo: template.memo,
+        lines: template.lines,
+      };
+
+      await this.postingService.post(ctx, 'InventoryWriteOff', sourceId, payload);
+
+      this.metricsService?.recordLedgerPosting(
+        'InventoryWriteOff',
+        ctx.channelId?.toString() || ''
+      );
+      this.tracingService?.addEvent(span!, 'ledger.posted', {
+        'ledger.source_id': sourceId,
+      });
+
+      this.logger.log(
+        `Posted inventory write-off entry for adjustment ${context.adjustmentId}, total loss: ${context.totalLoss}, reason: ${context.reason}`
+      );
+      this.tracingService?.endSpan(span!, true);
+    } catch (error) {
+      this.tracingService?.endSpan(
+        span!,
+        false,
+        error instanceof Error ? error : new Error(String(error))
+      );
+      throw error;
+    }
   }
 
   /**

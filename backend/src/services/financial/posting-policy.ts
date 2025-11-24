@@ -58,6 +58,40 @@ export interface RefundPostingContext {
   method: string; // original payment method
 }
 
+export interface InventoryPurchasePostingContext {
+  purchaseId: string;
+  purchaseReference: string;
+  supplierId: string;
+  totalCost: number; // in cents
+  isCreditPurchase: boolean;
+  batchAllocations: Array<{ batchId: string; quantity: number; unitCost: number }>;
+}
+
+export interface InventorySalePostingContext {
+  orderId: string;
+  orderCode: string;
+  customerId: string;
+  cogsAllocations: Array<{
+    batchId: string;
+    quantity: number;
+    unitCost: number;
+    totalCost: number;
+  }>;
+  totalCogs: number; // in cents
+}
+
+export interface InventoryWriteOffPostingContext {
+  adjustmentId: string;
+  reason: string;
+  batchAllocations: Array<{
+    batchId: string;
+    quantity: number;
+    unitCost: number;
+    totalCost: number;
+  }>;
+  totalLoss: number; // in cents
+}
+
 /**
  * Generate journal entry template for customer payment settlement
  *
@@ -270,5 +304,124 @@ export function createRefundEntry(context: RefundPostingContext): JournalEntryTe
       },
     ],
     memo: `Refund for order ${context.orderCode}`,
+  };
+}
+
+/**
+ * Generate journal entry template for inventory purchase
+ *
+ * Debits: Inventory (asset increase)
+ * Credits: Accounts Payable (if credit) or Cash (if cash purchase)
+ */
+export function createInventoryPurchaseEntry(
+  context: InventoryPurchasePostingContext
+): JournalEntryTemplate {
+  const creditAccount = context.isCreditPurchase
+    ? ACCOUNT_CODES.ACCOUNTS_PAYABLE
+    : ACCOUNT_CODES.CASH_ON_HAND;
+
+  return {
+    lines: [
+      {
+        accountCode: ACCOUNT_CODES.INVENTORY,
+        debit: context.totalCost,
+        meta: {
+          purchaseId: context.purchaseId,
+          purchaseReference: context.purchaseReference,
+          supplierId: context.supplierId,
+          batchCount: context.batchAllocations.length,
+          batchAllocations: context.batchAllocations,
+        },
+      },
+      {
+        accountCode: creditAccount,
+        credit: context.totalCost,
+        meta: {
+          purchaseId: context.purchaseId,
+          purchaseReference: context.purchaseReference,
+          supplierId: context.supplierId,
+          isCreditPurchase: context.isCreditPurchase,
+        },
+      },
+    ],
+    memo: `Inventory purchase ${context.purchaseReference}`,
+  };
+}
+
+/**
+ * Generate journal entry template for inventory sale COGS
+ *
+ * Debits: COGS (expense increase)
+ * Credits: Inventory (asset decrease)
+ */
+export function createInventorySaleCogsEntry(
+  context: InventorySalePostingContext
+): JournalEntryTemplate {
+  return {
+    lines: [
+      {
+        accountCode: ACCOUNT_CODES.COGS,
+        debit: context.totalCogs,
+        meta: {
+          orderId: context.orderId,
+          orderCode: context.orderCode,
+          customerId: context.customerId,
+          batchCount: context.cogsAllocations.length,
+          cogsAllocations: context.cogsAllocations,
+        },
+      },
+      {
+        accountCode: ACCOUNT_CODES.INVENTORY,
+        credit: context.totalCogs,
+        meta: {
+          orderId: context.orderId,
+          orderCode: context.orderCode,
+          customerId: context.customerId,
+          batchCount: context.cogsAllocations.length,
+        },
+      },
+    ],
+    memo: `COGS for order ${context.orderCode}`,
+  };
+}
+
+/**
+ * Generate journal entry template for inventory write-off
+ *
+ * Debits: Inventory Write-Off or Expiry Loss (expense increase)
+ * Credits: Inventory (asset decrease)
+ */
+export function createInventoryWriteOffEntry(
+  context: InventoryWriteOffPostingContext
+): JournalEntryTemplate {
+  // Determine if this is an expiry loss or general write-off
+  const isExpiry =
+    context.reason.toLowerCase().includes('expir') ||
+    context.reason.toLowerCase().includes('expired');
+  const expenseAccount = isExpiry ? ACCOUNT_CODES.EXPIRY_LOSS : ACCOUNT_CODES.INVENTORY_WRITE_OFF;
+
+  return {
+    lines: [
+      {
+        accountCode: expenseAccount,
+        debit: context.totalLoss,
+        meta: {
+          adjustmentId: context.adjustmentId,
+          reason: context.reason,
+          batchCount: context.batchAllocations.length,
+          batchAllocations: context.batchAllocations,
+        },
+      },
+      {
+        accountCode: ACCOUNT_CODES.INVENTORY,
+        credit: context.totalLoss,
+        meta: {
+          adjustmentId: context.adjustmentId,
+          reason: context.reason,
+          batchCount: context.batchAllocations.length,
+        },
+      },
+    ],
+    memo: `Inventory write-off: ${context.reason}`,
   };
 }

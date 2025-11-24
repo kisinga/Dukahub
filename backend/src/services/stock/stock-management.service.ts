@@ -1,6 +1,9 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ID, RequestContext, TransactionalConnection } from '@vendure/core';
 import { AuditService } from '../../infrastructure/audit/audit.service';
+import { InventoryService } from '../inventory/inventory.service';
+import { InventoryReconciliationService } from '../inventory/inventory-reconciliation.service';
+import { InventoryConfigurationService } from '../inventory/inventory-configuration.service';
 import { StockPurchase } from './entities/purchase.entity';
 import { InventoryStockAdjustment } from './entities/stock-adjustment.entity';
 import { PurchaseService, RecordPurchaseInput } from './purchase.service';
@@ -14,6 +17,14 @@ import { PurchaseCreditValidatorService } from './purchase-credit-validator.serv
  *
  * Orchestrates purchase and adjustment operations.
  * Similar to OrderCreationService pattern - composes focused services.
+ *
+ * FUTURE: Integration with InventoryService (FIFO/COGS framework)
+ * - Phase 1 (Shadow Mode): Run InventoryService alongside existing flows for validation
+ * - Phase 2 (Gradual Migration): Route operations through InventoryService for selected channels
+ * - Phase 3 (Authoritative Mode): Use InventoryService as primary, deprecate old flows
+ *
+ * To enable shadow mode, inject InventoryService and InventoryConfigurationService,
+ * then call inventoryService.recordPurchase() after existing purchase recording.
  */
 @Injectable()
 export class StockManagementService {
@@ -26,7 +37,10 @@ export class StockManagementService {
     private readonly stockMovementService: StockMovementService,
     private readonly validationService: StockValidationService,
     @Optional() private readonly purchaseCreditValidator?: PurchaseCreditValidatorService,
-    @Optional() private readonly auditService?: AuditService
+    @Optional() private readonly auditService?: AuditService,
+    @Optional() private readonly inventoryService?: InventoryService,
+    @Optional() private readonly inventoryConfig?: InventoryConfigurationService,
+    @Optional() private readonly reconciliationService?: InventoryReconciliationService
   ) {}
 
   /**
@@ -83,6 +97,59 @@ export class StockManagementService {
 
         // 7. Log audit event
         await this.logPurchaseAudit(transactionCtx, purchase, stockMovements);
+
+        // 8. Shadow mode: Record purchase in InventoryService if enabled
+        if (this.inventoryService && this.inventoryConfig) {
+          try {
+            const isValuationEnabled = await this.inventoryConfig.isValuationEnabled(
+              transactionCtx,
+              ctx.channelId!
+            );
+
+            if (isValuationEnabled) {
+              await this.inventoryService.recordPurchase(transactionCtx, {
+                purchaseId: purchase.id,
+                channelId: ctx.channelId!,
+                stockLocationId: input.lines[0]?.stockLocationId || 0,
+                supplierId: String(input.supplierId),
+                purchaseReference: purchase.referenceNumber || purchase.id,
+                isCreditPurchase: input.isCreditPurchase ?? false,
+                lines: input.lines.map(line => ({
+                  productVariantId: line.variantId,
+                  quantity: line.quantity,
+                  unitCost: line.unitCost,
+                  expiryDate: null, // TODO: Add expiry date to purchase input if needed
+                })),
+              });
+
+              this.logger.log(
+                `Shadow mode: Purchase ${purchase.id} also recorded in InventoryService`
+              );
+
+              // Run reconciliation if service is available
+              if (this.reconciliationService) {
+                try {
+                  const reconciliation =
+                    await this.reconciliationService.getInventoryValuationVsLedger(transactionCtx);
+                  if (!reconciliation.isBalanced) {
+                    this.logger.warn(
+                      `Inventory valuation mismatch detected: difference=${reconciliation.difference}`
+                    );
+                  }
+                } catch (reconError) {
+                  this.logger.warn(
+                    `Reconciliation check failed: ${reconError instanceof Error ? reconError.message : String(reconError)}`
+                  );
+                }
+              }
+            }
+          } catch (inventoryError) {
+            // Don't fail the main operation if shadow mode fails
+            this.logger.error(
+              `Shadow mode: Failed to record purchase in InventoryService: ${inventoryError instanceof Error ? inventoryError.message : String(inventoryError)}`
+            );
+          }
+        }
 
         this.logger.log(`Purchase recorded successfully: ${purchase.id}`);
         return purchase;

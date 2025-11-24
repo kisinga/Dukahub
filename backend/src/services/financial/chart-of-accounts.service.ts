@@ -52,6 +52,7 @@ export class ChartOfAccountsService {
         name: 'Accounts Receivable',
         type: 'asset' as const,
       },
+      { code: ACCOUNT_CODES.INVENTORY, name: 'Inventory', type: 'asset' as const },
       // Income Accounts - Revenue from business operations
       { code: ACCOUNT_CODES.SALES, name: 'Sales Revenue', type: 'income' as const },
       {
@@ -75,6 +76,13 @@ export class ChartOfAccountsService {
         type: 'expense' as const,
       },
       { code: ACCOUNT_CODES.CASH_SHORT_OVER, name: 'Cash Short/Over', type: 'expense' as const },
+      { code: ACCOUNT_CODES.COGS, name: 'Cost of Goods Sold', type: 'expense' as const },
+      {
+        code: ACCOUNT_CODES.INVENTORY_WRITE_OFF,
+        name: 'Inventory Write-Off',
+        type: 'expense' as const,
+      },
+      { code: ACCOUNT_CODES.EXPIRY_LOSS, name: 'Expiry Loss', type: 'expense' as const },
     ];
 
     let createdCount = 0;
@@ -150,12 +158,16 @@ export class ChartOfAccountsService {
       ACCOUNT_CODES.SALES,
       ACCOUNT_CODES.SALES_RETURNS,
       ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
+      ACCOUNT_CODES.INVENTORY,
       ACCOUNT_CODES.ACCOUNTS_PAYABLE,
       ACCOUNT_CODES.TAX_PAYABLE,
       ACCOUNT_CODES.PURCHASES,
       ACCOUNT_CODES.EXPENSES,
       ACCOUNT_CODES.PROCESSOR_FEES,
       ACCOUNT_CODES.CASH_SHORT_OVER,
+      ACCOUNT_CODES.COGS,
+      ACCOUNT_CODES.INVENTORY_WRITE_OFF,
+      ACCOUNT_CODES.EXPIRY_LOSS,
     ];
 
     const existing = await accountRepo.find({
