@@ -115,15 +115,42 @@ export class NotificationService {
       const permission = await Notification.requestPermission();
       this.permissionSignal.set(permission);
       const granted = permission === 'granted';
-      this.isPushEnabledSignal.set(granted);
 
       if (granted) {
-        await this.subscribeToPush();
-      }
+        // Only set isPushEnabledSignal after successful subscription
+        // Check if service worker is enabled before attempting subscription
+        if (!this.swPush.isEnabled) {
+          // Permission granted but service worker not available
+          this.isPushEnabledSignal.set(false);
+          if (this.isDevMode()) {
+            this.toastService.show(
+              'Push Notifications',
+              'Permission granted, but service worker is not available in development mode. Notifications will use polling fallback.',
+              'info',
+              5000,
+            );
+          } else {
+            this.toastService.show(
+              'Push Notifications',
+              'Permission granted, but service worker is not available. Please ensure the app is installed or refresh the page.',
+              'warning',
+              5000,
+            );
+          }
+          return false;
+        }
 
-      return granted;
+        // Attempt subscription - this will set isPushEnabledSignal on success
+        const subscribed = await this.subscribeToPush();
+        return subscribed;
+      } else {
+        // Permission denied or dismissed
+        this.isPushEnabledSignal.set(false);
+        return false;
+      }
     } catch (error) {
       console.error('Failed to request push permission:', error);
+      this.isPushEnabledSignal.set(false);
       return false;
     }
   }
@@ -132,11 +159,15 @@ export class NotificationService {
     if ('Notification' in window) {
       this.permissionSignal.set(Notification.permission);
       if (Notification.permission === 'granted') {
-        this.isPushEnabledSignal.set(true);
-        // Ensure we are subscribed if granted
+        // Only set enabled if we actually have a subscription
+        // Don't set to true just based on permission - check subscription status
         if (this.swPush.isEnabled) {
           // We don't await here to not block init
+          // This will check subscription and update isPushEnabledSignal accordingly
           this.ensureSubscription();
+        } else {
+          // Permission granted but no service worker - not actually enabled
+          this.isPushEnabledSignal.set(false);
         }
       } else {
         this.isPushEnabledSignal.set(false);
@@ -148,12 +179,19 @@ export class NotificationService {
     // Check if we have an active subscription in SW
     try {
       const sub = await this.swPush.subscription.toPromise();
-      if (!sub) {
+      if (sub) {
+        // We have a subscription, verify it's synced with backend
+        // Set enabled state based on actual subscription presence
+        this.isPushEnabledSignal.set(true);
+      } else {
         // Permission granted but no subscription, try to subscribe
+        // This will update isPushEnabledSignal on success
         await this.subscribeToPush();
       }
     } catch (e) {
       console.error('Error checking subscription', e);
+      // If we can't check subscription, assume not enabled
+      this.isPushEnabledSignal.set(false);
     }
   }
 
@@ -203,25 +241,52 @@ export class NotificationService {
 
   async subscribeToPush(): Promise<boolean> {
     try {
-      if (!this.swPush.isEnabled) {
-        console.warn('Service worker not enabled');
-        if (this.isDevMode()) {
-          // Don't show error in dev mode if not supported, just warn
-          console.log('Service worker not available in development mode.');
-        }
-        return false;
-      }
-
-      // Check current permission status
+      // Check current permission status first
       const permission = await this.getNotificationPermission();
+      this.permissionSignal.set(permission);
 
       if (permission === 'denied') {
+        this.isPushEnabledSignal.set(false);
         this.toastService.show(
           'Push Notifications',
           'Notifications are blocked. Please enable them in your browser settings.',
           'error',
           5000,
         );
+        return false;
+      }
+
+      if (permission !== 'granted') {
+        this.isPushEnabledSignal.set(false);
+        this.toastService.show(
+          'Push Notifications',
+          'Notification permission is required. Please grant permission to enable push notifications.',
+          'warning',
+          5000,
+        );
+        return false;
+      }
+
+      if (!this.swPush.isEnabled) {
+        this.isPushEnabledSignal.set(false);
+        console.warn('Service worker not enabled');
+        if (this.isDevMode()) {
+          // Don't show error in dev mode if not supported, just warn
+          console.log('Service worker not available in development mode.');
+          this.toastService.show(
+            'Push Notifications',
+            'Service worker not available in development mode. Notifications will use polling fallback.',
+            'info',
+            5000,
+          );
+        } else {
+          this.toastService.show(
+            'Push Notifications',
+            'Service worker is not available. Please refresh the page or ensure the app is properly installed.',
+            'error',
+            5000,
+          );
+        }
         return false;
       }
 
@@ -311,22 +376,45 @@ export class NotificationService {
         console.error('Error stack:', error.stack);
       }
 
-      // Check for specific error types
+      // Ensure signal reflects failure
+      this.isPushEnabledSignal.set(false);
+
+      // Check for specific error types and provide helpful messages
       if (error instanceof Error) {
-        if (error.message.includes('user dismissed')) {
+        if (error.message.includes('user dismissed') || error.message.includes('dismissed')) {
           this.toastService.show(
             'Push Notifications',
-            'Permission request was dismissed.',
+            'Permission request was dismissed. You can enable notifications later in settings.',
             'info',
             5000,
           );
           return false;
         }
 
-        if (error.message.includes('GraphQL error')) {
+        if (error.message.includes('GraphQL error') || error.message.includes('Backend rejected')) {
           this.toastService.show(
             'Push Notifications',
-            `Failed to enable: ${error.message}`,
+            'Failed to sync subscription with server. Please try again later.',
+            'error',
+            5000,
+          );
+          return false;
+        }
+
+        if (error.message.includes('Invalid subscription') || error.message.includes('endpoint is missing')) {
+          this.toastService.show(
+            'Push Notifications',
+            'Failed to create subscription. Please refresh the page and try again.',
+            'error',
+            5000,
+          );
+          return false;
+        }
+
+        if (error.message.includes('VAPID') || error.message.includes('public key')) {
+          this.toastService.show(
+            'Push Notifications',
+            'Push notification configuration error. Please contact support.',
             'error',
             5000,
           );
@@ -334,9 +422,12 @@ export class NotificationService {
         }
       }
 
+      // Generic error message for unknown errors
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Subscription error details:', errorMessage);
       this.toastService.show(
         'Push Notifications',
-        `Failed to enable push notifications: ${error instanceof Error ? error.message : 'Unknown error'}. Please check the console for details.`,
+        `Failed to enable push notifications. ${errorMessage}. Please check the console for details or try again later.`,
         'error',
         5000,
       );
@@ -429,12 +520,9 @@ export class NotificationService {
     const permission = await this.getNotificationPermission();
     this.permissionSignal.set(permission);
 
-    // Update push enabled status based on permission
-    if (permission === 'granted') {
-      this.isPushEnabledSignal.set(true);
-    } else {
-      this.isPushEnabledSignal.set(false);
-    }
+    // Don't set isPushEnabledSignal based on permission alone
+    // It should reflect actual subscription status, which is checked in checkPushPermission
+    // This method just updates the permission signal
   }
 
   async markAsRead(notificationId: string): Promise<boolean> {

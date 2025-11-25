@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -209,11 +210,9 @@ export class BarcodeScannerComponent implements OnDestroy {
     this.isScanning.set(true);
     this.scanningStateChange.emit(true);
 
-    // Wait for DOM to update so video element is rendered
-    // Using setTimeout to allow Angular's change detection to run
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    const videoEl = this.cameraVideo()?.nativeElement;
+    // Wait for Angular's change detection to render the video element
+    // Use afterNextRender to wait for the view to be updated
+    const videoEl = await this.waitForVideoElement();
 
     if (!videoEl) {
       // Cleanup and error handling
@@ -317,5 +316,46 @@ export class BarcodeScannerComponent implements OnDestroy {
    */
   clearError(): void {
     this.error.set(null);
+  }
+
+  /**
+   * Wait for video element to be available in the DOM
+   * Uses afterNextRender to wait for Angular's change detection
+   * with retry logic and timeout fallback
+   */
+  private async waitForVideoElement(): Promise<HTMLVideoElement | null> {
+    return new Promise<HTMLVideoElement | null>((resolve) => {
+      const maxRetries = 10;
+      const retryDelay = 50; // 50ms between retries
+      let retries = 0;
+
+      const checkForElement = () => {
+        const videoEl = this.cameraVideo()?.nativeElement;
+        if (videoEl) {
+          resolve(videoEl);
+          return;
+        }
+
+        retries++;
+        if (retries >= maxRetries) {
+          // Timeout after max retries
+          console.warn(
+            `Video element not found after ${maxRetries} retries (${maxRetries * retryDelay}ms)`,
+          );
+          resolve(null);
+          return;
+        }
+
+        // Retry after a short delay
+        setTimeout(checkForElement, retryDelay);
+      };
+
+      // Use afterNextRender to wait for the view to be updated
+      afterNextRender(() => {
+        // Start checking for the element after the next render
+        // Use a small delay to ensure the view child is fully initialized
+        setTimeout(checkForElement, 10);
+      });
+    });
   }
 }
