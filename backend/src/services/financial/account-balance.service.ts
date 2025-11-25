@@ -29,7 +29,7 @@ export class AccountBalanceService {
     channelId: number,
     asOfDate?: string
   ): Promise<AccountBalance> {
-    const accountRepo = this.connection.getRepository(ctx, Account);
+    const accountRepo = this.connection.rawConnection.getRepository(Account);
     const account = await accountRepo.findOne({
       where: {
         channelId,
@@ -59,7 +59,7 @@ export class AccountBalanceService {
     parentAccountId: string,
     asOfDate?: string
   ): Promise<AccountBalance> {
-    const accountRepo = this.connection.getRepository(ctx, Account);
+    const accountRepo = this.connection.rawConnection.getRepository(Account);
     const parentAccount = await accountRepo.findOne({
       where: { id: parentAccountId },
     });
@@ -116,8 +116,8 @@ export class AccountBalanceService {
     accountId: string,
     asOfDate?: string
   ): Promise<AccountBalance> {
-    const journalLineRepo = this.connection.getRepository(ctx, JournalLine);
-    const accountRepo = this.connection.getRepository(ctx, Account);
+    const journalLineRepo = this.connection.rawConnection.getRepository(JournalLine);
+    const accountRepo = this.connection.rawConnection.getRepository(Account);
 
     const account = await accountRepo.findOne({
       where: { id: accountId },
@@ -165,7 +165,7 @@ export class AccountBalanceService {
     channelId: number,
     parentAccountId: string
   ): Promise<Account[]> {
-    const accountRepo = this.connection.getRepository(ctx, Account);
+    const accountRepo = this.connection.rawConnection.getRepository(Account);
     return accountRepo.find({
       where: {
         channelId,
@@ -182,7 +182,7 @@ export class AccountBalanceService {
     channelId: number,
     accountCode: string
   ): Promise<boolean> {
-    const accountRepo = this.connection.getRepository(ctx, Account);
+    const accountRepo = this.connection.rawConnection.getRepository(Account);
     const account = await accountRepo.findOne({
       where: {
         channelId,

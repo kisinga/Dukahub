@@ -117,12 +117,9 @@ describe('StoreProvisionerService', () => {
       // 2. Verify repository assignment (Hybrid Strategy step 2)
       expect(harness.connection.getRepository).toHaveBeenCalledWith(ctx, expect.anything());
       expect(harness.channelRepo.createQueryBuilder).toHaveBeenCalled();
-      expect(harness.relationManager.of).toHaveBeenCalledWith('2');
-      expect(harness.relationManager.add).toHaveBeenCalledWith('5');
-
-      // 2a. Verify channel was saved to persist the assignment
-      expect(harness.channelRepo.findOne).toHaveBeenCalledWith({ where: { id: '2' } });
-      expect(harness.channelRepo.save).toHaveBeenCalled();
+      // IDs are normalized to numbers for database operations
+      expect(harness.relationManager.of).toHaveBeenCalledWith(2);
+      expect(harness.relationManager.add).toHaveBeenCalledWith(5);
 
       // 2b. Verify assignment was verified
       expect(entityRelationUtil.verifyEntityChannelAssignment).toHaveBeenCalledWith(

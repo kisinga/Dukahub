@@ -383,6 +383,6 @@ export class CompanyService {
     this.activeChannelDataSignal.set(null);
     this.companiesSignal.set([]);
     localStorage.removeItem(this.SESSION_KEY);
-    this.apolloService.setChannelToken('');
+    this.apolloService.clearChannelToken();
   }
 }

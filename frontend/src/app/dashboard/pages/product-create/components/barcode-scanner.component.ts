@@ -46,6 +46,25 @@ import { CameraService } from '../../../../core/services/camera.service';
         } @else {
           <div class="text-center text-xs opacity-60 py-2">Ready to scan barcode</div>
         }
+        @if (error()) {
+          <div role="alert" class="alert alert-error alert-sm py-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span class="text-xs">{{ error() }}</span>
+          </div>
+        }
         @if (lastScannedCode()) {
           <div role="alert" class="alert alert-success alert-sm py-1">
             <svg
@@ -109,6 +128,30 @@ import { CameraService } from '../../../../core/services/camera.service';
             </div>
           }
 
+          <!-- Error message -->
+          @if (error()) {
+            <div role="alert" class="alert alert-error">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <div>
+                <h3 class="font-bold">Barcode scanning not available</h3>
+                <div class="text-xs">{{ error() }}</div>
+              </div>
+            </div>
+          }
+
           <!-- Success message after scan -->
           @if (lastScannedCode()) {
             <div role="alert" class="alert alert-success">
@@ -147,23 +190,39 @@ export class BarcodeScannerComponent implements OnDestroy {
   // State
   readonly isScanning = signal(false);
   readonly lastScannedCode = signal<string | null>(null);
+  readonly error = signal<string | null>(null);
 
   // Outputs
   readonly barcodeScanned = output<string>();
   readonly scanningStateChange = output<boolean>();
+  readonly errorOccurred = output<string>();
 
   /**
    * Start barcode scanning
    * Called by parent component when user clicks "Scan with camera" button
    */
   async startScanning(): Promise<void> {
-    // Wait for next tick to ensure video element is rendered
+    // Clear any previous errors
+    this.error.set(null);
+
+    // CRITICAL: Set isScanning FIRST so video element renders in DOM
+    this.isScanning.set(true);
+    this.scanningStateChange.emit(true);
+
+    // Wait for DOM to update so video element is rendered
+    // Using setTimeout to allow Angular's change detection to run
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     const videoEl = this.cameraVideo()?.nativeElement;
 
     if (!videoEl) {
-      console.error('Video element not found');
+      // Cleanup and error handling
+      const errorMsg = 'Video element not found. Please try again.';
+      this.error.set(errorMsg);
+      this.errorOccurred.emit(errorMsg);
+      this.isScanning.set(false);
+      this.scanningStateChange.emit(false);
+      console.error(errorMsg);
       return;
     }
 
@@ -171,31 +230,53 @@ export class BarcodeScannerComponent implements OnDestroy {
       // Start camera
       const started = await this.cameraService.startCamera(videoEl);
       if (!started) {
-        console.error('Failed to start camera:', this.cameraService.error());
+        const errorMsg = this.cameraService.error() || 'Failed to start camera';
+        this.error.set(errorMsg);
+        this.errorOccurred.emit(errorMsg);
+        this.isScanning.set(false);
+        this.scanningStateChange.emit(false);
+        console.error('Failed to start camera:', errorMsg);
         return;
       }
 
-      this.isScanning.set(true);
-      this.scanningStateChange.emit(true);
+      // Check if barcode scanning is supported
+      if (!this.barcodeService.isSupported()) {
+        const errorMsg =
+          'BarcodeDetector API is not available in this browser. Please use a supported browser (Chrome, Edge, or Safari) or enter the barcode manually.';
+        this.error.set(errorMsg);
+        this.errorOccurred.emit(errorMsg);
+        this.stopScanning();
+        console.warn('Barcode scanner not supported');
+        return;
+      }
+
+      // Initialize barcode scanner
+      const initialized = await this.barcodeService.initialize();
+      if (!initialized) {
+        const errorMsg =
+          'Failed to initialize barcode scanner. Please try again or enter the barcode manually.';
+        this.error.set(errorMsg);
+        this.errorOccurred.emit(errorMsg);
+        this.stopScanning();
+        console.error(errorMsg);
+        return;
+      }
 
       // Start barcode scanning
-      if (this.barcodeService.isSupported()) {
-        await this.barcodeService.initialize();
-        this.barcodeService.startScanning(
-          videoEl,
-          (result) => {
-            // Barcode detected
-            this.lastScannedCode.set(result.rawValue);
-            this.barcodeScanned.emit(result.rawValue);
-            this.stopScanning();
-          },
-          500,
-        );
-      } else {
-        console.warn('Barcode scanner not supported');
-        this.stopScanning();
-      }
-    } catch (error) {
+      this.barcodeService.startScanning(
+        videoEl,
+        (result) => {
+          // Barcode detected
+          this.lastScannedCode.set(result.rawValue);
+          this.barcodeScanned.emit(result.rawValue);
+          this.stopScanning();
+        },
+        500,
+      );
+    } catch (error: any) {
+      const errorMsg = error?.message || 'Failed to start barcode scanner. Please try again.';
+      this.error.set(errorMsg);
+      this.errorOccurred.emit(errorMsg);
       console.error('Failed to start barcode scanner:', error);
       this.stopScanning();
     }
@@ -214,6 +295,7 @@ export class BarcodeScannerComponent implements OnDestroy {
 
     this.isScanning.set(false);
     this.scanningStateChange.emit(false);
+    // Don't clear error on stop - let user see what went wrong
   }
 
   /**
@@ -228,5 +310,12 @@ export class BarcodeScannerComponent implements OnDestroy {
    */
   clearLastScan(): void {
     this.lastScannedCode.set(null);
+  }
+
+  /**
+   * Clear error message
+   */
+  clearError(): void {
+    this.error.set(null);
   }
 }

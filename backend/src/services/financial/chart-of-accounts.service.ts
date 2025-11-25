@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { RequestContext, TransactionalConnection } from '@vendure/core';
 import { ACCOUNT_CODES } from '../../ledger/account-codes.constants';
 import { Account } from '../../ledger/account.entity';
 
@@ -8,16 +8,23 @@ import { Account } from '../../ledger/account.entity';
  *
  * Manages initialization of required accounts for channels.
  * Should be called when a new channel is created.
+ *
+ * IMPORTANT: This service must be called within a transaction context to ensure
+ * account creation participates in the transaction (e.g., registration rollback).
  */
 @Injectable()
 export class ChartOfAccountsService {
   private readonly logger = new Logger(ChartOfAccountsService.name);
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(private readonly connection: TransactionalConnection) {}
 
   /**
    * Initialize Chart of Accounts for a channel
    * Creates all required accounts if they don't exist.
+   *
+   * IMPORTANT: Must be called within a transaction context (RequestContext) to ensure
+   * account creation participates in the transaction. This prevents orphaned accounts
+   * if the transaction is rolled back (e.g., registration failure).
    *
    * Account Type Classifications:
    * - Assets: Resources owned by the business (cash, bank, receivables, clearing accounts)
@@ -33,8 +40,13 @@ export class ChartOfAccountsService {
    * transactions. It's classified as an asset because it represents funds temporarily held
    * before allocation, similar to other clearing accounts.
    */
-  async initializeForChannel(channelId: number): Promise<void> {
-    const accountRepo = this.dataSource.getRepository(Account);
+  async initializeForChannel(
+    ctx: RequestContext,
+    channelId: number
+  ): Promise<{ created: string[]; existing: string[] }> {
+    const accountRepo = this.connection.getRepository(ctx, Account);
+    const createdCodes: string[] = [];
+    const existingCodes: string[] = [];
 
     // First, create parent accounts
     const parentAccounts = [
@@ -51,7 +63,8 @@ export class ChartOfAccountsService {
 
       if (!existing) {
         try {
-          await accountRepo.save({
+          // Create entity instance first to ensure it's tracked in the entity manager
+          const parentEntity = accountRepo.create({
             channelId,
             code: account.code,
             name: account.name,
@@ -59,6 +72,8 @@ export class ChartOfAccountsService {
             isActive: true,
             isParent: account.isParent,
           });
+          await accountRepo.save(parentEntity);
+          createdCodes.push(account.code);
           this.logger.log(
             `Created parent account ${account.code} (${account.type}) for channel ${channelId}`
           );
@@ -72,6 +87,7 @@ export class ChartOfAccountsService {
           }
         }
       } else {
+        existingCodes.push(account.code);
         // Update existing account to be a parent if needed
         if (!existing.isParent) {
           await accountRepo.update(existing.id, { isParent: true });
@@ -182,7 +198,9 @@ export class ChartOfAccountsService {
 
       if (!existing) {
         try {
-          await accountRepo.save({
+          // Create entity instance first to ensure it's tracked in the entity manager
+          // This ensures the entity is visible to subsequent queries in the same transaction
+          const accountEntity = accountRepo.create({
             channelId,
             code: account.code,
             name: account.name,
@@ -191,7 +209,9 @@ export class ChartOfAccountsService {
             parentAccountId: (account as any).parentAccountId,
             isParent: false,
           });
+          await accountRepo.save(accountEntity);
           createdCount++;
+          createdCodes.push(account.code);
           this.logger.log(
             `Created account ${account.code} (${account.type}) for channel ${channelId}`
           );
@@ -232,14 +252,22 @@ export class ChartOfAccountsService {
       `Chart of Accounts initialized for channel ${channelId}: ` +
         `${createdCount} created, ${existingCount} already existed`
     );
+
+    return {
+      created: createdCodes,
+      existing: existingCodes,
+    };
   }
 
   /**
    * Verify all required accounts exist for a channel
    * Throws if any are missing
+   *
+   * IMPORTANT: Must be called within a transaction context (RequestContext) to ensure
+   * queries participate in the transaction.
    */
-  async verifyChannelAccounts(channelId: number): Promise<void> {
-    const accountRepo = this.dataSource.getRepository(Account);
+  async verifyChannelAccounts(ctx: RequestContext, channelId: number): Promise<void> {
+    const accountRepo = this.connection.getRepository(ctx, Account);
     // Use constants from single source of truth
     const requiredCodes = [
       ACCOUNT_CODES.CASH, // Parent account
@@ -263,20 +291,30 @@ export class ChartOfAccountsService {
       ACCOUNT_CODES.EXPIRY_LOSS,
     ];
 
-    const existing = await accountRepo.find({
-      where: {
-        channelId,
-        code: requiredCodes as any,
-      },
-    });
+    // Query accounts individually to ensure we see uncommitted changes within the transaction.
+    // TypeORM's identity map should include all entities created in the current transaction,
+    // but querying individually ensures we can see them even if batch queries have issues.
+    const found = new Set<string>();
+    const missing: string[] = [];
 
-    const found = new Set(existing.map(a => a.code));
-    const missing = requiredCodes.filter(code => !found.has(code));
+    for (const code of requiredCodes) {
+      const account = await accountRepo.findOne({
+        where: {
+          channelId,
+          code,
+        },
+      });
+      if (account) {
+        found.add(account.code);
+      } else {
+        missing.push(code);
+      }
+    }
 
     if (missing.length > 0) {
       throw new Error(
         `Missing required accounts for channel ${channelId}: ${missing.join(', ')}. ` +
-          `Please run ChartOfAccountsService.initializeForChannel(${channelId})`
+          `Please run ChartOfAccountsService.initializeForChannel(ctx, ${channelId})`
       );
     }
   }

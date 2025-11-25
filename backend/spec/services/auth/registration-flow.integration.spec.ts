@@ -11,7 +11,7 @@
  */
 
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { RequestContext, Zone, Seller, Channel, StockLocation } from '@vendure/core';
+import { RequestContext, Zone, Seller, Channel, StockLocation, ID } from '@vendure/core';
 import {
   RegistrationInput,
   RegistrationService,
@@ -127,7 +127,7 @@ describe('Registration Flow Integration', () => {
     // Mock store provisioner - creates stock location and assigns to channel
     const storeProvisioner = {
       createAndAssignStore: jest.fn(
-        async (ctx: RequestContext, registrationData: RegistrationInput, channelId: string) => {
+        async (ctx: RequestContext, registrationData: RegistrationInput, channelId: ID) => {
           return mockStockLocation as StockLocation;
         }
       ),
@@ -157,7 +157,31 @@ describe('Registration Flow Integration', () => {
 
     // Mock chart of accounts service
     const chartOfAccountsService = {
-      initializeForChannel: jest.fn(async () => undefined),
+      initializeForChannel: jest.fn(async () => ({
+        created: [
+          'CASH',
+          'CASH_ON_HAND',
+          'BANK_MAIN',
+          'CLEARING_MPESA',
+          'CLEARING_CREDIT',
+          'CLEARING_GENERIC',
+          'SALES',
+          'SALES_RETURNS',
+          'ACCOUNTS_RECEIVABLE',
+          'INVENTORY',
+          'ACCOUNTS_PAYABLE',
+          'TAX_PAYABLE',
+          'PURCHASES',
+          'EXPENSES',
+          'PROCESSOR_FEES',
+          'CASH_SHORT_OVER',
+          'COGS',
+          'INVENTORY_WRITE_OFF',
+          'EXPIRY_LOSS',
+        ],
+        existing: [],
+      })),
+      verifyChannelAccounts: jest.fn(async () => undefined),
     };
 
     // Build registration service with mocked provisioners
@@ -228,7 +252,7 @@ describe('Registration Flow Integration', () => {
       expect(harness.mocks.storeProvisioner.createAndAssignStore).toHaveBeenCalledWith(
         ctx,
         registrationData,
-        '2' // channel ID
+        2 // channel ID (normalized to number)
       );
 
       // Verify all entity IDs are returned including sellerId
@@ -377,7 +401,7 @@ describe('Registration Flow Integration', () => {
           storeName: 'Main Store',
           storeAddress: '123 Market Street',
         }),
-        '2' // channel ID
+        2 // channel ID (normalized to number)
       );
     });
 
@@ -391,7 +415,7 @@ describe('Registration Flow Integration', () => {
       expect(harness.mocks.storeProvisioner.createAndAssignStore).toHaveBeenCalledWith(
         ctx,
         expect.any(Object),
-        '2' // channel ID as string
+        2 // channel ID (normalized to number)
       );
     });
 
@@ -406,7 +430,7 @@ describe('Registration Flow Integration', () => {
       // The verification happens inside createAndAssignStore
       // This test ensures the full flow includes verification step
       const callArgs = harness.mocks.storeProvisioner.createAndAssignStore.mock.calls[0];
-      expect(callArgs[2]).toBe('2'); // channel ID
+      expect(callArgs[2]).toBe(2); // channel ID (normalized to number)
     });
   });
 

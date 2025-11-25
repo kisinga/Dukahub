@@ -43,21 +43,22 @@ export async function assignEntityToChannel(
 ): Promise<void> {
   const channelRepo = connection.getRepository(ctx, Channel);
 
+  // Normalize IDs to numbers for database operations
+  // TypeORM's relation manager works best with numeric IDs for internal database operations
+  const normalizedChannelId = typeof channelId === 'string' ? parseInt(channelId, 10) : channelId;
+  const normalizedEntityId = typeof entityId === 'string' ? parseInt(entityId, 10) : entityId;
+
   // Use relation manager to add the entity to channel
   const relationManager = channelRepo
     .createQueryBuilder()
     .relation(Channel, relationName)
-    .of(channelId);
+    .of(normalizedChannelId);
 
-  await relationManager.add(entityId);
+  await relationManager.add(normalizedEntityId);
 
-  // Load and save the channel entity to ensure changes are persisted within the transaction
-  // This makes the assignment immediately visible for verification
-  const channel = await channelRepo.findOne({ where: { id: channelId } });
-  if (!channel) {
-    throw new Error(`Channel ${channelId} not found when persisting assignment`);
-  }
-  await channelRepo.save(channel);
+  // Relation manager changes are persisted when the transaction commits.
+  // No need to save the channel entity - the join table is updated directly by the relation manager.
+  // This matches the pattern used in channel-assignment.service.ts for payment methods.
 }
 
 /**
@@ -107,5 +108,7 @@ export async function verifyEntityChannelAssignment(
     return false;
   }
 
-  return relation.some((item: any) => item.id === entityId);
+  // Normalize IDs for comparison - database may return numbers while input might be string
+  const normalizedEntityId = typeof entityId === 'string' ? parseInt(entityId, 10) : entityId;
+  return relation.some((item: any) => Number(item.id) === Number(normalizedEntityId));
 }

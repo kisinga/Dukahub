@@ -33,11 +33,14 @@ describe('AccountBalanceService', () => {
     };
 
     mockConnection = {
-      getRepository: jest.fn((ctx, entity) => {
-        if (entity === Account) return mockAccountRepo;
-        if (entity === JournalLine) return mockJournalLineRepo;
-        return {};
-      }),
+      getRepository: jest.fn(),
+      rawConnection: {
+        getRepository: jest.fn(entity => {
+          if (entity === Account) return mockAccountRepo;
+          if (entity === JournalLine) return mockJournalLineRepo;
+          return {};
+        }),
+      },
     } as any;
 
     service = new AccountBalanceService(mockConnection);

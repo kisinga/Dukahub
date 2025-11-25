@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   ChangeChannelEvent,
   EventBus,
+  ID,
   RequestContext,
   StockLocation,
   StockLocationService,
@@ -46,7 +47,7 @@ export class StoreProvisionerService {
   async createAndAssignStore(
     ctx: RequestContext,
     registrationData: RegistrationInput,
-    channelId: string
+    channelId: ID
   ): Promise<StockLocation> {
     try {
       // 1. Create stock location (Standard Service)

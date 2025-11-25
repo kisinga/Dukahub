@@ -49,8 +49,9 @@ describe('entity-relation.util', () => {
 
       expect(mockConnection.getRepository).toHaveBeenCalledWith(mockCtx, Channel);
       expect(channelRepo.createQueryBuilder).toHaveBeenCalled();
-      expect(relationManager.of).toHaveBeenCalledWith(channelId);
-      expect(relationManager.add).toHaveBeenCalledWith(entityId);
+      // IDs are normalized to numbers for database operations
+      expect(relationManager.of).toHaveBeenCalledWith(1);
+      expect(relationManager.add).toHaveBeenCalledWith(2);
     });
 
     it('should work with different relation names', async () => {
@@ -59,8 +60,9 @@ describe('entity-relation.util', () => {
 
       await assignEntityToChannel(mockConnection, mockCtx, channelId, 'paymentMethods', entityId);
 
-      expect(relationManager.of).toHaveBeenCalledWith(channelId);
-      expect(relationManager.add).toHaveBeenCalledWith(entityId);
+      // IDs are normalized to numbers for database operations
+      expect(relationManager.of).toHaveBeenCalledWith(1);
+      expect(relationManager.add).toHaveBeenCalledWith(2);
     });
   });
 
