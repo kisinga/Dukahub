@@ -58,19 +58,41 @@ All services communicate using Docker service names (not `localhost`):
 
 ### Coolify Deployment
 
-For Coolify deployments, the network setup differs:
+For Coolify deployments using **Raw Docker Compose**, you need to create the network manually and update both compose files:
 
-**Option 1: Use Coolify's Predefined Network (Recommended)**
+**Step 1: Create the external network on your Coolify server**
 
-- Change network name from `dukarun_services_network` to `coolify` in `docker-compose.yml`
-- Enable "Connect to Predefined Network" in Coolify UI
-- Services can communicate across stacks via the `coolify` network
+```bash
+# SSH into your Coolify server and run:
+docker network create dukarun_services_network
+```
 
-**Option 2: Let Coolify Manage Networks**
+**Step 2: Update `docker-compose.yml`**
 
-- Remove `networks:` section from `docker-compose.yml`
-- Deploy all services in the same Coolify resource
-- Services communicate via service names within the same stack
+Change the network definition to use external network:
+
+```yaml
+networks:
+  dukarun_services_network:
+    external: true # Already set, but ensure this is present
+```
+
+**Step 3: Update `docker-compose.services.yml`**
+
+Change all service network references from `services_network` to `dukarun_services_network`, and update the network definition:
+
+```yaml
+# In each service (postgres_db, timescaledb_audit, redis, signoz, clickhouse):
+networks:
+  - dukarun_services_network  # Changed from services_network
+
+# At the bottom of the file:
+networks:
+  dukarun_services_network:
+    external: true  # Changed from driver: bridge
+```
+
+**Note:** Since you're using Raw Docker Compose in Coolify, the "Connect to Predefined Network" toggle is not available. The external network must be created manually.
 
 ### Local Development
 

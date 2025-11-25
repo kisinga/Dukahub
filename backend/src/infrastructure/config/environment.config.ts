@@ -61,8 +61,12 @@ export class EnvironmentConfig implements OnModuleInit {
     provider: '',
     africastalkingApiKey: '',
     africastalkingUsername: '',
+    africastalkingSenderId: '',
+    africastalkingEnvironment: '',
+    africastalkingApiUrl: '',
     textsmsApiKey: '',
-    textsmsSenderId: '',
+    textsmsPartnerId: '',
+    textsmsShortcode: '',
   };
 
   // ML/Webhook configuration
@@ -199,7 +203,12 @@ export class EnvironmentConfig implements OnModuleInit {
     this.sms.provider = process.env.SMS_PROVIDER || 'textsms';
     this.sms.africastalkingApiKey = process.env.AFRICASTALKING_API_KEY || '';
     this.sms.africastalkingUsername = process.env.AFRICASTALKING_USERNAME || '';
+    this.sms.africastalkingSenderId = process.env.AFRICASTALKING_SENDER_ID || '';
+    this.sms.africastalkingEnvironment = process.env.AFRICASTALKING_ENVIRONMENT || 'production';
+    this.sms.africastalkingApiUrl = process.env.AFRICASTALKING_API_URL || '';
     this.sms.textsmsApiKey = process.env.TEXTSMS_API_KEY || '';
+    this.sms.textsmsPartnerId = process.env.TEXTSMS_PARTNER_ID || '';
+    this.sms.textsmsShortcode = process.env.TEXTSMS_SHORTCODE || '';
 
     // Load ML/Webhook configuration
     this.ml.webhookSecret = process.env.ML_WEBHOOK_SECRET || '';
@@ -243,6 +252,22 @@ export class EnvironmentConfig implements OnModuleInit {
       process.env.SIGNOZ_ENDPOINT || this.observability.otlpGrpcEndpoint;
 
     this.validate();
+  }
+
+  /**
+   * Check if the application is running in development mode
+   * Returns true for 'development' or 'dev' environments
+   */
+  isDevelopment(): boolean {
+    const nodeEnv = this.app.nodeEnv?.toLowerCase() || '';
+    return nodeEnv === 'development' || nodeEnv === 'dev' || !nodeEnv;
+  }
+
+  /**
+   * Check if the application is running in production mode
+   */
+  isProduction(): boolean {
+    return this.app.nodeEnv?.toLowerCase() === 'production';
   }
 
   /**

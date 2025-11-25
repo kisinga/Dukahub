@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ISmsProvider, SmsResult } from '../interfaces/sms-provider.interface';
+import { env } from '../../config/environment.config';
 
 /**
  * AfricasTalking SMS Provider
@@ -56,24 +57,24 @@ export class AfricasTalkingProvider implements ISmsProvider {
    */
   private getConfig() {
     if (this.apiUrl === null) {
-      // Load configuration from environment variables (lazy load to ensure .env is loaded)
-      this.environment = (process.env.AFRICASTALKING_ENVIRONMENT || 'production').toLowerCase();
-      this.username = (process.env.AFRICASTALKING_USERNAME || '').trim();
-      this.apiKey = (process.env.AFRICASTALKING_API_KEY || '').trim();
-      this.senderId = (process.env.AFRICASTALKING_SENDER_ID || '').trim();
+      // Load configuration from EnvironmentConfig (centralized environment management)
+      this.environment = (env.sms.africastalkingEnvironment || 'production').toLowerCase();
+      this.username = (env.sms.africastalkingUsername || '').trim();
+      this.apiKey = (env.sms.africastalkingApiKey || '').trim();
+      this.senderId = (env.sms.africastalkingSenderId || '').trim();
 
       // Set API URL based on environment
       if (this.environment === 'sandbox') {
         this.apiUrl =
-          process.env.AFRICASTALKING_API_URL ||
+          env.sms.africastalkingApiUrl ||
           'https://api.sandbox.africastalking.com/version1/messaging';
       } else {
         this.apiUrl =
-          process.env.AFRICASTALKING_API_URL || 'https://api.africastalking.com/version1/messaging';
+          env.sms.africastalkingApiUrl || 'https://api.africastalking.com/version1/messaging';
       }
 
       // Debug logging to help diagnose configuration issues
-      if (process.env.NODE_ENV !== 'production') {
+      if (env.isDevelopment()) {
         this.logger.debug('Configuration loaded:', {
           environment: this.environment,
           apiUrl: this.apiUrl,

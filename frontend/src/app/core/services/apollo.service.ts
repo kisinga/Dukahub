@@ -78,6 +78,13 @@ export class ApolloService {
   }
 
   /**
+   * Clear channel token
+   */
+  clearChannelToken(): void {
+    localStorage.removeItem(this.CHANNEL_TOKEN_KEY);
+  }
+
+  /**
    * Set language code for localized results
    */
   setLanguageCode(code: string): void {
@@ -205,6 +212,7 @@ export class ApolloService {
   private handleSessionExpired(): void {
     // Clear local storage
     this.clearAuthToken();
+    this.clearChannelToken();
 
     // Notify AuthService to clean up its state
     if (this.sessionExpiredCallback) {

@@ -28,7 +28,7 @@ export async function ensureChannelFinancialDefaults(app: INestApplicationContex
     });
 
     for (const channel of items) {
-      await chartService.initializeForChannel(Number(channel.id));
+      await chartService.initializeForChannel(adminCtx, Number(channel.id));
     }
     processed += items.length;
 

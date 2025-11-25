@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ISmsProvider } from './interfaces/sms-provider.interface';
 import { AfricasTalkingProvider } from './providers/africastalking.provider';
 import { TextsmsProvider } from './providers/textsms.provider';
+import { env } from '../config/environment.config';
 
 /**
  * SMS Provider Factory
@@ -19,7 +20,7 @@ export class SmsProviderFactory {
    * Uses singleton pattern to ensure only one instance per provider type
    */
   getProvider(): ISmsProvider {
-    const providerName = (process.env.SMS_PROVIDER || 'textsms').toLowerCase();
+    const providerName = (env.sms.provider || 'textsms').toLowerCase();
 
     // Return cached instance if available
     if (this.providerCache.has(providerName)) {

@@ -64,7 +64,31 @@ describe('RegistrationService.provisionCustomer', () => {
     };
 
     const chartOfAccountsService = {
-      initializeForChannel: jest.fn(async () => undefined),
+      initializeForChannel: jest.fn(async () => ({
+        created: [
+          'CASH',
+          'CASH_ON_HAND',
+          'BANK_MAIN',
+          'CLEARING_MPESA',
+          'CLEARING_CREDIT',
+          'CLEARING_GENERIC',
+          'SALES',
+          'SALES_RETURNS',
+          'ACCOUNTS_RECEIVABLE',
+          'INVENTORY',
+          'ACCOUNTS_PAYABLE',
+          'TAX_PAYABLE',
+          'PURCHASES',
+          'EXPENSES',
+          'PROCESSOR_FEES',
+          'CASH_SHORT_OVER',
+          'COGS',
+          'INVENTORY_WRITE_OFF',
+          'EXPIRY_LOSS',
+        ],
+        existing: [],
+      })),
+      verifyChannelAccounts: jest.fn(async () => undefined),
     };
 
     const service = new RegistrationService(
@@ -90,6 +114,7 @@ describe('RegistrationService.provisionCustomer', () => {
       roleProvisioner,
       accessProvisioner,
       errorService,
+      chartOfAccountsService,
       seller,
       channel,
       stockLocation,
@@ -110,8 +135,17 @@ describe('RegistrationService.provisionCustomer', () => {
     expect(harness.storeProvisioner.createAndAssignStore).toHaveBeenCalledWith(
       ctx,
       expect.objectContaining({ storeName: '  Test Store  ' }),
-      harness.channel.id.toString()
+      harness.channel.id
     );
+
+    // Verify chart of accounts initialization
+    expect(harness.chartOfAccountsService.initializeForChannel).toHaveBeenCalledWith(
+      ctx,
+      harness.channel.id
+    );
+    // Note: verifyChannelAccounts is no longer called directly - verification
+    // is done using the return value from initializeForChannel
+
     expect(result).toEqual({
       sellerId: harness.seller.id.toString(),
       channelId: harness.channel.id.toString(),

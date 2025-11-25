@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ISmsProvider, SmsResult } from '../interfaces/sms-provider.interface';
+import { env } from '../../config/environment.config';
 
 /**
  * TextSMS SMS Provider
@@ -48,13 +49,13 @@ export class TextsmsProvider implements ISmsProvider {
    */
   private getConfig() {
     if (this.apiKey === null) {
-      // Load configuration from environment variables (lazy load to ensure .env is loaded)
-      this.apiKey = (process.env.TEXTSMS_API_KEY || '').trim();
-      this.partnerId = (process.env.TEXTSMS_PARTNER_ID || '').trim();
-      this.shortcode = (process.env.TEXTSMS_SHORTCODE || '').trim();
+      // Load configuration from EnvironmentConfig (centralized environment management)
+      this.apiKey = (env.sms.textsmsApiKey || '').trim();
+      this.partnerId = (env.sms.textsmsPartnerId || '').trim();
+      this.shortcode = (env.sms.textsmsShortcode || '').trim();
 
       // Debug logging to help diagnose configuration issues
-      if (process.env.NODE_ENV !== 'production') {
+      if (env.isDevelopment()) {
         this.logger.debug('Configuration loaded:', {
           apiUrl: this.apiUrl,
           apiKey: this.apiKey ? '***' + this.apiKey.slice(-4) : 'NOT SET',

@@ -2,6 +2,7 @@ import { Injectable, Logger, Optional } from '@nestjs/common';
 import { RequestContext, User } from '@vendure/core';
 import { formatPhoneNumber } from '../../utils/phone.utils';
 import { TracingService } from '../../infrastructure/observability/tracing.service';
+import { ACCOUNT_CODES } from '../../ledger/account-codes.constants';
 import { AccessProvisionerService } from './provisioning/access-provisioner.service';
 import { ChannelProvisionerService } from './provisioning/channel-provisioner.service';
 import { PaymentProvisionerService } from './provisioning/payment-provisioner.service';
@@ -139,15 +140,56 @@ export class RegistrationService {
       });
       this.tracingService?.addEvent(span!, 'registration.channel.created');
 
-      await this.chartOfAccountsService.initializeForChannel(Number(channel.id));
+      const initResult = await this.chartOfAccountsService.initializeForChannel(
+        ctx,
+        Number(channel.id)
+      );
       this.logger.log(`Chart of accounts initialized for channel ${channel.id}`);
+
+      // Verify all required accounts exist (created or already existed)
+      // Use the result from initialization to verify, avoiding transaction visibility issues
+      // This approach tracks accounts during creation rather than querying, which avoids
+      // transaction isolation issues where queries might not see uncommitted changes
+      const allAccountCodes = [...initResult.created, ...initResult.existing];
+      const requiredCodes = [
+        ACCOUNT_CODES.CASH, // Parent account
+        ACCOUNT_CODES.CASH_ON_HAND,
+        ACCOUNT_CODES.BANK_MAIN,
+        ACCOUNT_CODES.CLEARING_MPESA,
+        ACCOUNT_CODES.CLEARING_CREDIT,
+        ACCOUNT_CODES.CLEARING_GENERIC,
+        ACCOUNT_CODES.SALES,
+        ACCOUNT_CODES.SALES_RETURNS,
+        ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
+        ACCOUNT_CODES.INVENTORY,
+        ACCOUNT_CODES.ACCOUNTS_PAYABLE,
+        ACCOUNT_CODES.TAX_PAYABLE,
+        ACCOUNT_CODES.PURCHASES,
+        ACCOUNT_CODES.EXPENSES,
+        ACCOUNT_CODES.PROCESSOR_FEES,
+        ACCOUNT_CODES.CASH_SHORT_OVER,
+        ACCOUNT_CODES.COGS,
+        ACCOUNT_CODES.INVENTORY_WRITE_OFF,
+        ACCOUNT_CODES.EXPIRY_LOSS,
+      ];
+      const found = new Set(allAccountCodes);
+      const missing = requiredCodes.filter(code => !found.has(code));
+
+      if (missing.length > 0) {
+        throw this.errorService.createError(
+          'PROVISIONING_FAILED',
+          `Missing required accounts for channel ${channel.id}: ${missing.join(', ')}`
+        );
+      }
+
+      this.logger.log(`Chart of accounts verified for channel ${channel.id}`);
 
       // Step 4: Create Store (stock location) and assign to channel
       this.logger.log(`Creating store: ${registrationData.storeName}`);
       const stockLocation = await this.storeProvisioner.createAndAssignStore(
         ctx,
         registrationData,
-        channel.id.toString()
+        channel.id
       );
       this.logger.log(`Store created and assigned: ${stockLocation.id}`);
 

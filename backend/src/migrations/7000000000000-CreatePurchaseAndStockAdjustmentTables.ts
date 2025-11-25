@@ -77,26 +77,9 @@ export class CreatePurchaseAndStockAdjustmentTables7000000000000 implements Migr
             )
         `);
 
-    // Create indexes
-    await queryRunner.query(`
-            CREATE INDEX IF NOT EXISTS "IDX_stock_purchase_supplier" ON "stock_purchase" ("supplierId")
-        `);
-
-    await queryRunner.query(`
-            CREATE INDEX IF NOT EXISTS "IDX_stock_purchase_date" ON "stock_purchase" ("purchaseDate")
-        `);
-
-    await queryRunner.query(`
-            CREATE INDEX IF NOT EXISTS "IDX_stock_purchase_line_purchase" ON "stock_purchase_line" ("purchaseId")
-        `);
-
-    await queryRunner.query(`
-            CREATE INDEX IF NOT EXISTS "IDX_inventory_stock_adjustment_created" ON "inventory_stock_adjustment" ("createdAt")
-        `);
-
-    await queryRunner.query(`
-            CREATE INDEX IF NOT EXISTS "IDX_inventory_stock_adjustment_line_adjustment" ON "inventory_stock_adjustment_line" ("adjustmentId")
-        `);
+    // Indexes are not created here - they should be defined in entities with @Index decorator
+    // if needed. TypeORM will create them automatically from entity definitions.
+    // This prevents schema mismatches and avoids needing CleanupLegacyConstraints.
 
     // Add foreign key constraints with integer types
     // Note: Vendure core tables (customer, user, product_variant, stock_location) are created during bootstrap,

@@ -148,6 +148,7 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
 
   // Detection loop
   private detectionInterval: any = null;
+  private detectionInProgress = false; // Track if a detection is already being processed
 
   readonly canStart = computed(() => {
     const status = this.scannerStatus();
@@ -276,6 +277,7 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
 
     this.isScanning.set(false);
     this.scannerStatus.set('ready');
+    this.detectionInProgress = false; // Reset detection flag
     this.scanningStateChange.emit(false);
   }
 
@@ -329,6 +331,13 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
   }
 
   private async handleMLDetection(prediction: ModelPrediction): Promise<void> {
+    // Check if barcode detection is already in progress (barcode takes priority)
+    if (this.detectionInProgress) {
+      console.log('ML detection skipped: barcode detection in progress');
+      return;
+    }
+
+    this.detectionInProgress = true;
     const mlModelService = await this.ensureMlModelService();
     const productId = mlModelService.getProductIdFromLabel(prediction.className);
 
@@ -343,16 +352,21 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
       } else {
         // Product not in database - log and continue scanning
         console.warn(`⚠️ ML detected "${prediction.className}" but product not found in system`);
+        this.detectionInProgress = false; // Reset flag to allow future detections
         // Don't stop scanner, just continue looking
       }
     } catch (error) {
       console.error('Product lookup failed:', error);
+      this.detectionInProgress = false; // Reset flag on error
       // Don't stop scanner on lookup errors
     }
   }
 
   private async handleBarcodeDetection(result: BarcodeResult): Promise<void> {
     console.log('Barcode detected:', result);
+
+    // Barcode takes priority - set flag immediately to prevent ML detection
+    this.detectionInProgress = true;
 
     try {
       const variant = await this.productSearchService.searchByBarcode(result.rawValue);
@@ -369,10 +383,12 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
       } else {
         // Barcode not in database - log and continue scanning
         console.warn(`⚠️ Barcode "${result.rawValue}" not found in system`);
+        this.detectionInProgress = false; // Reset flag to allow future detections
         // Don't stop scanner, just continue looking
       }
     } catch (error) {
       console.error('Barcode lookup failed:', error);
+      this.detectionInProgress = false; // Reset flag on error
       // Don't stop scanner on lookup errors
     }
   }

@@ -41,4 +41,10 @@ export class Reconciliation {
 
   @Column({ type: 'int', nullable: true })
   reviewedBy?: number | null;
+
+  @Column({ type: 'bigint', nullable: true })
+  expectedBalance?: string | null; // Expected balance from ledger/inventory (smallest currency unit)
+
+  @Column({ type: 'bigint', nullable: true })
+  actualBalance?: string | null; // Actual balance from reconciliation (smallest currency unit)
 }

@@ -133,7 +133,7 @@ export const config: VendureConfig = {
     migrationsRun: true, // Auto-run pending migrations on startup
     logging: false,
     database: env.db.name,
-    schema: process.env.DB_SCHEMA || 'public', // Keep DB_SCHEMA as process.env since it's rarely used
+    schema: env.db.schema,
     host: env.db.host,
     port: env.db.port,
     username: env.db.username,
