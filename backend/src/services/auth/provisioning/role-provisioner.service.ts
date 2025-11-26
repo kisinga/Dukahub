@@ -14,6 +14,19 @@ import { RegistrationInput } from '../registration.service';
 import { RegistrationAuditorService } from './registration-auditor.service';
 import { RegistrationErrorService } from './registration-error.service';
 
+// Import custom permission definitions
+import { OverridePricePermission } from '../../../plugins/pricing/price-override.permission';
+import {
+  ApproveCustomerCreditPermission,
+  ManageCustomerCreditLimitPermission,
+} from '../../../plugins/credit/permissions';
+import { ManageStockAdjustmentsPermission } from '../../../plugins/stock/permissions';
+import {
+  ManageReconciliationPermission,
+  CloseAccountingPeriodPermission,
+} from '../../../plugins/ledger/permissions';
+import { ManageSupplierCreditPurchasesPermission } from '../../../plugins/credit/supplier-credit.permissions';
+
 /**
  * Role Provisioner Service
  *
@@ -61,6 +74,14 @@ export class RoleProvisionerService {
     // Settings permissions
     Permission.ReadSettings,
     Permission.UpdateSettings,
+    // Custom permissions for channel admin
+    OverridePricePermission.Permission as Permission,
+    ApproveCustomerCreditPermission.Permission as Permission,
+    ManageCustomerCreditLimitPermission.Permission as Permission,
+    ManageStockAdjustmentsPermission.Permission as Permission,
+    ManageReconciliationPermission.Permission as Permission,
+    CloseAccountingPeriodPermission.Permission as Permission,
+    ManageSupplierCreditPurchasesPermission.Permission as Permission,
   ];
 
   constructor(
@@ -91,7 +112,7 @@ export class RoleProvisionerService {
     try {
       const roleCode = `${registrationData.companyCode}-admin`;
 
-      // Load channel for assignment
+      // Load the new channel for assignment
       const channel = await this.connection.getRepository(ctx, Channel).findOne({
         where: { id: channelId },
       });
@@ -101,6 +122,7 @@ export class RoleProvisionerService {
       }
 
       // Manually construct Role entity (Repository Bootstrap)
+      // Role is scoped to only the new channel - maintains channel isolation
       const role = new Role({
         code: roleCode,
         description: `Full admin access for ${registrationData.companyName}`,
