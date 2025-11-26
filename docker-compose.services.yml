@@ -6,6 +6,9 @@
 # Application services (backend, frontend) are in docker-compose.yml
 #
 # Usage:
+#   # First, create the external network (one-time):
+#   docker network create dukarun_services_network
+#   # Then start services:
 #   docker compose -f docker-compose.services.yml up -d
 #   docker compose -f docker-compose.services.yml logs -f
 #   docker compose -f docker-compose.services.yml down
@@ -20,7 +23,7 @@ services:
     image: postgres:17
     restart: unless-stopped
     networks:
-      - services_network
+      - dukarun_services_network
     environment:
       POSTGRES_DB: ${DB_NAME:-vendure}
       POSTGRES_USER: ${DB_USER:-vendure}
@@ -45,7 +48,7 @@ services:
     platform: linux/amd64
     restart: unless-stopped
     networks:
-      - services_network
+      - dukarun_services_network
     environment:
       POSTGRES_DB: ${AUDIT_DB_NAME:-audit_logs}
       POSTGRES_USER: ${AUDIT_DB_USER:-audit_user}
@@ -70,7 +73,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     networks:
-      - services_network
+      - dukarun_services_network
     command: >
       redis-server 
       --appendonly yes 
@@ -91,98 +94,78 @@ services:
       start_period: 10s
 
   # ========================================
-  # SigNoz Observability Platform
+  # OpenTelemetry Collector
   # ========================================
-  # SECURITY WARNING: Do NOT expose SigNoz UI (port 3301) directly to the internet!
-  # Use a reverse proxy with authentication (e.g., nginx with basic auth, OAuth)
-  # Only expose OTLP ports (4317, 4318) to internal Docker network
+  # Receives traces via OTLP and logs to console (for debugging)
+  # Named 'signoz' for backwards compatibility - apps connect to signoz:4317/4318
   signoz:
-    image: signoz/signoz:latest
+    image: otel/opentelemetry-collector-contrib:latest
     platform: linux/amd64
     restart: unless-stopped
     networks:
-      - services_network
-    environment:
-      # SigNoz configuration
-      # All values can be overridden via environment variables
-      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.name=dukarun,service.version=2.0.0}
-      SIGNOZ_TELEMETRYSTORE_PROVIDER: ${SIGNOZ_TELEMETRYSTORE_PROVIDER:-clickhouse}
-      # ClickHouse DSN: Use TCP port 9000 (not HTTP port 8123)
-      # Format: tcp://[user]:[password]@[host]:[port]
-      # If no password, use: tcp://default@clickhouse:9000
-      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN:-tcp://default@clickhouse:9000}
-      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER: ${SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_CLUSTER:-cluster}
-      SIGNOZ_SQLSTORE_SQLITE_PATH: ${SIGNOZ_SQLSTORE_SQLITE_PATH:-/var/lib/signoz/signoz.db}
+      - dukarun_services_network
+    command: ['--config=/etc/otelcol/config.yaml']
+    configs:
+      - source: otel_config
+        target: /etc/otelcol/config.yaml
     ports:
-      # UI port - ONLY expose if behind authenticated reverse proxy
-      # Remove this line in production or use internal network only
-      - '${SIGNOZ_UI_PORT:-3301}:8080' # UI (SECURITY: Should be behind auth)
-      # OTLP ports - exposed for local dev access
+      # OTLP ports - exposed for receiving traces
       - '${SIGNOZ_OTLP_GRPC_PORT:-4317}:4317' # OTLP gRPC
       - '${SIGNOZ_OTLP_HTTP_PORT:-4318}:4318' # OTLP HTTP
-    volumes:
-      - signoz_data:/var/lib/signoz
-    depends_on:
-      - clickhouse
+      - '13133:13133' # Health check
     healthcheck:
-      test:
-        - CMD
-        - wget
-        - --no-verbose
-        - --tries=1
-        - --spider
-        - http://localhost:8080/api/v1/health
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-
-  # ========================================
-  # ClickHouse (SigNoz Storage)
-  # ========================================
-  # SECURITY: ClickHouse should NOT be exposed to the internet
-  # Only accessible within Docker network for SigNoz
-  clickhouse:
-    image: clickhouse/clickhouse-server:latest
-    platform: linux/amd64
-    restart: unless-stopped
-    networks:
-      - services_network
-    environment:
-      # ClickHouse configuration
-      # All values can be overridden via environment variables
-      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-signoz}
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
-      # CLICKHOUSE_PASSWORD: Empty by default (no auth). Set in production!
-      # If password is set, SigNoz DSN must include it: tcp://default:password@clickhouse:9000
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
-      # Skip user setup to allow default user without password (set to 1 for no-auth setup)
-      CLICKHOUSE_SKIP_USER_SETUP: ${CLICKHOUSE_SKIP_USER_SETUP:-1}
-    volumes:
-      - clickhouse_data:/var/lib/clickhouse
-    # Do not expose ports to host - internal network only
-    # ports:
-    #   - "${CLICKHOUSE_PORT:-8123}:8123"  # HTTP interface (internal only)
-    #   - "${CLICKHOUSE_NATIVE_PORT:-9000}:9000"  # Native interface (internal only)
-    healthcheck:
-      test:
-        - CMD
-        - wget
-        - --no-verbose
-        - --tries=1
-        - --spider
-        - http://localhost:8123/ping
+      test: ['CMD-SHELL', 'wget -q --spider http://localhost:13133/ || exit 1']
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 10s
+
+# ========================================
+# Configs (inline - no external files needed)
+# ========================================
+configs:
+  otel_config:
+    content: |
+      # OpenTelemetry Collector Configuration
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+      processors:
+        batch:
+          timeout: 1s
+          send_batch_size: 1024
+      exporters:
+        debug:
+          verbosity: basic
+      extensions:
+        health_check:
+          endpoint: 0.0.0.0:13133
+      service:
+        extensions: [health_check]
+        pipelines:
+          traces:
+            receivers: [otlp]
+            processors: [batch]
+            exporters: [debug]
+          metrics:
+            receivers: [otlp]
+            processors: [batch]
+            exporters: [debug]
+          logs:
+            receivers: [otlp]
+            processors: [batch]
+            exporters: [debug]
 
 # ========================================
 # Networks
 # ========================================
 networks:
-  services_network:
-    driver: bridge
+  dukarun_services_network:
+    external: true
 
 # ========================================
 # Volumes
@@ -195,10 +178,4 @@ volumes:
     driver: local
 
   timescaledb_audit_data:
-    driver: local
-
-  signoz_data:
-    driver: local
-
-  clickhouse_data:
     driver: local

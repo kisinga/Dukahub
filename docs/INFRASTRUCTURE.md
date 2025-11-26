@@ -26,20 +26,24 @@ Dukarun uses a shared Docker network to enable service discovery and secure comm
 
 **How it works:**
 
-1. **Project Name:** Set via `.env` file: `COMPOSE_PROJECT_NAME=dukarun`
+1. **Manual Network Creation:** Create the external network before starting services:
+   ```bash
+   docker network create dukarun_services_network
+   ```
 2. **Services Compose** (`docker-compose.services.yml`):
-   - Creates network `services_network`
-   - When `COMPOSE_PROJECT_NAME=dukarun` is set, Docker Compose prefixes it: `dukarun_services_network`
+   - Uses `dukarun_services_network` as an external network
+   - All infrastructure services connect to this network
 3. **App Compose** (`docker-compose.yml`):
    - Joins `dukarun_services_network` as an external network
    - All application services connect to this network
 
 **Why this matters:**
 
-- Ensures consistent network naming regardless of directory name
+- Consistent network naming for both local development and production
 - Enables service discovery via service names (not IPs)
 - Allows services to communicate securely within the network
 - Required for proper service-to-service communication
+- Works identically in local Docker and Coolify deployments
 
 ### Service Communication
 
@@ -56,61 +60,35 @@ All services communicate using Docker service names (not `localhost`):
 
 **Example:** Backend connects to database using `DB_HOST=postgres_db` (not `localhost`)
 
-### Coolify Deployment
+### Network Setup (Required for All Deployments)
 
-For Coolify deployments using **Raw Docker Compose**, you need to create the network manually and update both compose files:
-
-**Step 1: Create the external network on your Coolify server**
+**Step 1: Create the external network (one-time)**
 
 ```bash
-# SSH into your Coolify server and run:
 docker network create dukarun_services_network
 ```
 
-**Step 2: Update `docker-compose.yml`**
+**Step 2: Start infrastructure services**
 
-Change the network definition to use external network:
-
-```yaml
-networks:
-  dukarun_services_network:
-    external: true # Already set, but ensure this is present
+```bash
+docker compose -f docker-compose.services.yml up -d
 ```
 
-**Step 3: Update `docker-compose.services.yml`**
+**Step 3: Start application services**
 
-Change all service network references from `services_network` to `dukarun_services_network`, and update the network definition:
-
-```yaml
-# In each service (postgres_db, timescaledb_audit, redis, signoz, clickhouse):
-networks:
-  - dukarun_services_network  # Changed from services_network
-
-# At the bottom of the file:
-networks:
-  dukarun_services_network:
-    external: true  # Changed from driver: bridge
+```bash
+docker compose up -d
 ```
 
-**Note:** Since you're using Raw Docker Compose in Coolify, the "Connect to Predefined Network" toggle is not available. The external network must be created manually.
+**Note:** Both compose files are already configured to use `dukarun_services_network` as an external network. The network must be created manually before starting services.
 
-### Local Development
-
-- Uses `dukarun_services_network` (created by `COMPOSE_PROJECT_NAME=dukarun`)
-- Network is created by `docker-compose.services.yml` and joined by `docker-compose.yml`
-- Services can communicate via service names or `localhost` (depending on context)
+**For Coolify Deployments:** Follow the same network setup steps above. Create the network via SSH or Coolify terminal before deploying services. If using Coolify's "Connect to Predefined Network" feature, change the network name from `dukarun_services_network` to `coolify` in both compose files.
 
 ---
 
 ## Environment Variables
 
 All configuration is managed via environment variables. See `.env.example` in the project root for a complete template.
-
-### Docker Compose Configuration
-
-| Variable               | Example   | Default | Notes                                                             |
-| ---------------------- | --------- | ------- | ----------------------------------------------------------------- |
-| `COMPOSE_PROJECT_NAME` | `dukarun` | —       | **Required:** Sets consistent network naming across compose files |
 
 ### Backend & Database
 
@@ -273,9 +251,9 @@ openssl rand -base64 24 | tr -d "=+/" | cut -c1-20
 
 - Backend requires all database/Redis variables
 - Frontend only needs `BACKEND_HOST` and `BACKEND_PORT`
-- All configuration at container runtime
+- All configuration at container runtime via environment variables
 - Use service names for hostnames (e.g., `postgres_db`, `redis`, `backend`)
-- Network: Services communicate via `dukarun_services_network` (created by `COMPOSE_PROJECT_NAME`)
+- Network: Services communicate via `dukarun_services_network` (must be created manually)
 
 **Creating .env File:**
 
@@ -289,16 +267,18 @@ nano .env
 
 **Required for Docker Compose:**
 
-- `COMPOSE_PROJECT_NAME=dukarun` - Sets consistent network naming
-- All database credentials
-- Superadmin credentials
-- Cookie secret
+1. Create network: `docker network create dukarun_services_network` (one-time)
+2. All database credentials
+3. Superadmin credentials
+4. Cookie secret
 
 **Service Hostnames in Docker:**
 
-- Database: `postgres_db` (not `localhost`)
-- Redis: `redis` (not `localhost`)
-- Backend: `backend` (not `localhost`)
+Always use service names (not `localhost`):
+
+- Database: `postgres_db`
+- Redis: `redis`
+- Backend: `backend`
 - TimescaleDB: `timescaledb_audit`
 - SigNoz: `signoz`
 
@@ -568,23 +548,23 @@ docker compose -f docker-compose.dev.yml down -v
 
 Deploy using Docker Compose with hosted images for a complete, self-contained setup.
 
-**Note:** Dukarun uses a two-file Docker Compose structure:
+**Architecture:** Dukarun uses a two-file Docker Compose structure:
 
 - **`docker-compose.services.yml`** - Infrastructure services (PostgreSQL, Redis, TimescaleDB, SigNoz, ClickHouse)
 - **`docker-compose.yml`** - Application services (Backend, Frontend)
 
-Start infrastructure services first, then application services. See [Docker Network Architecture](#docker-network-architecture) for details.
+**Deployment Order:** Create network → Start infrastructure services → Start application services. See [Docker Network Architecture](#docker-network-architecture) for details.
 
-### Architecture
+### Service Overview
 
-| Service      | Image/Version                             | Port | Requirements         |
-| ------------ | ----------------------------------------- | ---- | -------------------- |
-| **Frontend** | `ghcr.io/kisinga/dukarun/frontend:latest` | 4200 | Backend API          |
-| **Backend**  | `ghcr.io/kisinga/dukarun/backend:latest`  | 3000 | Postgres 17, Redis 7 |
-| **Postgres** | `postgres:17-alpine`                      | 5432 | Persistent storage   |
-| **Redis**    | `redis:7-alpine`                          | 6379 | Persistent storage   |
-
-### Quick Start
+| Service        | Image/Version                             | Port | Requirements         |
+| -------------- | ----------------------------------------- | ---- | -------------------- |
+| **Frontend**   | `ghcr.io/kisinga/dukarun/frontend:latest` | 4200 | Backend API          |
+| **Backend**    | `ghcr.io/kisinga/dukarun/backend:latest`  | 3000 | Postgres 17, Redis 7 |
+| **Postgres**   | `postgres:17`                             | 5432 | Persistent storage   |
+| **Redis**      | `redis:7-alpine`                          | 6379 | Persistent storage   |
+| **SigNoz**     | `signoz/signoz:latest`                    | 3301 | ClickHouse           |
+| **ClickHouse** | `clickhouse/clickhouse-server:latest`     | —    | Internal only        |
 
 ### Docker Compose Deployment
 
@@ -598,13 +578,19 @@ This is the recommended deployment method for production environments.
 
 #### Configuration
 
-1. **Environment Setup:**
+1. **Create the external network (one-time):**
 
 ```bash
-cp env.example .env
+docker network create dukarun_services_network
 ```
 
-2. **Edit `.env` file with your production values:**
+2. **Environment Setup:**
+
+```bash
+cp .env.example .env
+```
+
+3. **Edit `.env` file with your production values:**
 
 ```bash
 # Database
@@ -617,7 +603,7 @@ CORS_ORIGIN=https://yourdomain.com
 FRONTEND_URL=https://yourdomain.com
 ```
 
-3. **Deploy:**
+4. **Deploy:**
 
 ```bash
 # Start infrastructure services first
@@ -652,31 +638,18 @@ docker compose exec backend npm run populate    # populate with sample data
 docker compose exec postgres_db pg_dump -U vendure vendure > backup.sql  # backup
 ```
 
-#### Service Discovery & Network Architecture
+#### Service Discovery
 
-The Docker Compose setup automatically handles service discovery via a shared Docker network:
+All services communicate via Docker service names on the shared `dukarun_services_network`:
 
-**Network Configuration:**
+- Frontend → Backend: `backend:3000`
+- Backend → PostgreSQL: `postgres_db:5432`
+- Backend → Redis: `redis:6379`
+- Backend → TimescaleDB: `timescaledb_audit:5432`
+- Backend → SigNoz: `signoz:4317` (gRPC) or `signoz:4318` (HTTP)
+- Frontend → SigNoz: `signoz:4318` (via nginx proxy at `/signoz/`)
 
-- **Project Name:** Set via `.env` file: `COMPOSE_PROJECT_NAME=dukarun`
-- **Network Name:** `dukarun_services_network` (project name + network name from `docker-compose.services.yml`)
-- **Services Compose:** Creates network `services_network` which becomes `dukarun_services_network` when project name is set
-- **App Compose:** Joins `dukarun_services_network` as external network
-
-**Service Communication:**
-
-- Frontend connects to backend using service name `backend`
-- Backend connects to database using service name `postgres_db`
-- Backend connects to Redis using service name `redis`
-- Backend connects to TimescaleDB using service name `timescaledb_audit`
-- Backend connects to SigNoz using service name `signoz`
-- All services communicate via service names on the shared network (never use `localhost` in Docker)
-
-**Coolify Deployment:**
-
-- Change network name from `dukarun_services_network` to `coolify` in `docker-compose.yml`
-- Enable "Connect to Predefined Network" in Coolify UI
-- Services can communicate across stacks via the `coolify` network
+**Important:** Never use `localhost` in Docker containers. Always use service names for inter-container communication.
 
 ### New Components
 

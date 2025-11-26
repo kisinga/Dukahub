@@ -1,530 +1,63 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { SwPush } from '@angular/service-worker';
-import { environment } from '../../../environments/environment';
+import { Injectable, inject } from '@angular/core';
 import {
-  GetUnreadCountDocument,
-  GetUserNotificationsDocument,
   MarkAllAsReadDocument,
   MarkNotificationAsReadDocument,
   NotificationType,
-  SubscribeToPushDocument,
-  UnsubscribeToPushDocument,
 } from '../graphql/generated/graphql';
-import type { Notification } from '../graphql/notification.types';
 import { ApolloService } from './apollo.service';
+import { NotificationPollingService } from './notification/notification-polling.service';
+import { NotificationPushService } from './notification/notification-push.service';
+import { NotificationStateService } from './notification/notification-state.service';
 import { ToastService } from './toast.service';
 
+/**
+ * Notification Service (Facade)
+ *
+ * Composable facade that delegates to specialized services:
+ * - NotificationStateService: State management
+ * - NotificationPollingService: Auth-aware polling
+ * - NotificationPushService: Push subscription handling
+ *
+ * Maintains backward compatibility with existing public API.
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class NotificationService {
   private readonly apolloService = inject(ApolloService);
-  private readonly swPush = inject(SwPush);
+  private readonly stateService = inject(NotificationStateService);
+  private readonly pollingService = inject(NotificationPollingService);
+  private readonly pushService = inject(NotificationPushService);
   private readonly toastService = inject(ToastService);
 
-  // State signals
-  private readonly notificationsSignal = signal<Notification[]>([]);
-  private readonly unreadCountSignal = signal<number>(0);
-  private readonly isPushEnabledSignal = signal<boolean>(false);
-  private readonly isLoadingSignal = signal<boolean>(false);
+  // Delegate state signals from state service
+  readonly notifications = this.stateService.notifications;
+  readonly unreadCount = this.stateService.unreadCount;
+  readonly isLoading = this.stateService.isLoading;
 
-  // Public computed signals
-  readonly notifications = this.notificationsSignal.asReadonly();
-  readonly unreadCount = this.unreadCountSignal.asReadonly();
-  readonly isPushEnabled = this.isPushEnabledSignal.asReadonly();
-  readonly isLoading = this.isLoadingSignal.asReadonly();
-
-  // Permission status signal
-  private readonly permissionSignal = signal<NotificationPermission>('default');
-  readonly permission = this.permissionSignal.asReadonly();
-
-  // Polling interval for fallback
-  private pollingInterval?: number;
-
-  private readonly HAS_PROMPTED_KEY = 'notification_permission_prompted';
-
-  constructor() {
-    this.initializeNotifications();
-  }
-
-  private async initializeNotifications(): Promise<void> {
-    try {
-      // Check if push notifications are supported
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
-        await this.checkPermissionStatus();
-        await this.checkPushPermission();
-
-        // Only setup push subscription if service worker is enabled
-        if (this.swPush.isEnabled) {
-          await this.setupPushSubscription();
-        } else if (this.isDevMode()) {
-          console.log(
-            'Service worker not enabled in development mode - push notifications will use polling fallback',
-          );
-        }
-      }
-
-      // Load initial notifications
-      await this.loadNotifications();
-      await this.loadUnreadCount();
-
-      // Start polling as fallback (every 30 seconds)
-      this.startPolling();
-    } catch (error) {
-      console.error('Failed to initialize notifications:', error);
-    }
-  }
+  // Delegate push signals from push service
+  readonly isPushEnabled = this.pushService.isPushEnabled;
+  readonly permission = this.pushService.permission;
 
   /**
-   * Prompt for notification permission if not already prompted.
-   * Should be called when user navigates to dashboard.
+   * Load notifications list
    */
-  async promptPermissionIfNeeded(): Promise<void> {
-    if (!this.hasPrompted()) {
-      // We can only request permission on user gesture or page load if browser allows.
-      // But modern browsers block auto-request on load.
-      // Instead of forcing requestPermission(), let's check if we SHOULD prompt via UI or logic.
-      // Actually, best practice is to NOT auto-prompt with the native dialog immediately,
-      // but we can check permission status.
-      // If 'default', we can decide to show our own UI prompt or wait.
-      // The requirement says "Automatically prompt for permission on first dashboard load".
-      // Let's try it, but catch errors if blocked.
-
-      // Note: Many browsers block this unless handling a user event.
-      // If blocked, we just mark as prompted so we don't retry endlessly.
-
-      // However, for better UX, we should probably just let the user know.
-      // But adhering to the plan: "automatically prompt for permission on first dashboard load"
-
-      // Since we can't guarantee it works without gesture, maybe we just call requestPushPermission()
-      // and let the browser decide.
-
-      // We'll mark as prompted to avoid spamming on every reload.
-      this.setPrompted();
-
-      if (Notification.permission === 'default') {
-        // Some browsers allow this on load, others don't.
-        // We'll try.
-        await this.requestPushPermission();
-      }
-    }
-  }
-
-  async requestPushPermission(): Promise<boolean> {
-    try {
-      const permission = await Notification.requestPermission();
-      this.permissionSignal.set(permission);
-      const granted = permission === 'granted';
-
-      if (granted) {
-        // Only set isPushEnabledSignal after successful subscription
-        // Check if service worker is enabled before attempting subscription
-        if (!this.swPush.isEnabled) {
-          // Permission granted but service worker not available
-          this.isPushEnabledSignal.set(false);
-          if (this.isDevMode()) {
-            this.toastService.show(
-              'Push Notifications',
-              'Permission granted, but service worker is not available in development mode. Notifications will use polling fallback.',
-              'info',
-              5000,
-            );
-          } else {
-            this.toastService.show(
-              'Push Notifications',
-              'Permission granted, but service worker is not available. Please ensure the app is installed or refresh the page.',
-              'warning',
-              5000,
-            );
-          }
-          return false;
-        }
-
-        // Attempt subscription - this will set isPushEnabledSignal on success
-        const subscribed = await this.subscribeToPush();
-        return subscribed;
-      } else {
-        // Permission denied or dismissed
-        this.isPushEnabledSignal.set(false);
-        return false;
-      }
-    } catch (error) {
-      console.error('Failed to request push permission:', error);
-      this.isPushEnabledSignal.set(false);
-      return false;
-    }
-  }
-
-  private async checkPushPermission(): Promise<void> {
-    if ('Notification' in window) {
-      this.permissionSignal.set(Notification.permission);
-      if (Notification.permission === 'granted') {
-        // Only set enabled if we actually have a subscription
-        // Don't set to true just based on permission - check subscription status
-        if (this.swPush.isEnabled) {
-          // We don't await here to not block init
-          // This will check subscription and update isPushEnabledSignal accordingly
-          this.ensureSubscription();
-        } else {
-          // Permission granted but no service worker - not actually enabled
-          this.isPushEnabledSignal.set(false);
-        }
-      } else {
-        this.isPushEnabledSignal.set(false);
-      }
-    }
-  }
-
-  private async ensureSubscription(): Promise<void> {
-    // Check if we have an active subscription in SW
-    try {
-      const sub = await this.swPush.subscription.toPromise();
-      if (sub) {
-        // We have a subscription, verify it's synced with backend
-        // Set enabled state based on actual subscription presence
-        this.isPushEnabledSignal.set(true);
-      } else {
-        // Permission granted but no subscription, try to subscribe
-        // This will update isPushEnabledSignal on success
-        await this.subscribeToPush();
-      }
-    } catch (e) {
-      console.error('Error checking subscription', e);
-      // If we can't check subscription, assume not enabled
-      this.isPushEnabledSignal.set(false);
-    }
-  }
-
-  private async setupPushSubscription(): Promise<void> {
-    try {
-      if (this.swPush.isEnabled) {
-        this.swPush.messages.subscribe((message) => {
-          this.handlePushMessage(message);
-        });
-
-        this.swPush.notificationClicks.subscribe((event) => {
-          this.handleNotificationClick(event);
-        });
-      }
-    } catch (error) {
-      console.error('Failed to setup push subscription:', error);
-    }
-  }
-
-  private handlePushMessage(message: any): void {
-    // Handle incoming push message
-    console.log('Received push message:', message);
-
-    // Refresh notifications
-    this.loadNotifications();
-    this.loadUnreadCount();
-
-    // Show toast for foreground notification if payload has title/body
-    if (message?.notification?.title) {
-      this.toastService.show(message.notification.title, message.notification.body, 'info', 5000);
-    }
-  }
-
-  private handleNotificationClick(event: any): void {
-    // Handle notification click
-    console.log('Notification clicked:', event);
-
-    // Focus the app window
-    window.focus();
-
-    // Navigate if URL present
-    if (event.notification.data.url) {
-      // We'd need Router here, but window.location works for now or assume root
-      // window.location.href = event.notification.data.url;
-    }
-  }
-
-  async subscribeToPush(): Promise<boolean> {
-    try {
-      // Check current permission status first
-      const permission = await this.getNotificationPermission();
-      this.permissionSignal.set(permission);
-
-      if (permission === 'denied') {
-        this.isPushEnabledSignal.set(false);
-        this.toastService.show(
-          'Push Notifications',
-          'Notifications are blocked. Please enable them in your browser settings.',
-          'error',
-          5000,
-        );
-        return false;
-      }
-
-      if (permission !== 'granted') {
-        this.isPushEnabledSignal.set(false);
-        this.toastService.show(
-          'Push Notifications',
-          'Notification permission is required. Please grant permission to enable push notifications.',
-          'warning',
-          5000,
-        );
-        return false;
-      }
-
-      if (!this.swPush.isEnabled) {
-        this.isPushEnabledSignal.set(false);
-        console.warn('Service worker not enabled');
-        if (this.isDevMode()) {
-          // Don't show error in dev mode if not supported, just warn
-          console.log('Service worker not available in development mode.');
-          this.toastService.show(
-            'Push Notifications',
-            'Service worker not available in development mode. Notifications will use polling fallback.',
-            'info',
-            5000,
-          );
-        } else {
-          this.toastService.show(
-            'Push Notifications',
-            'Service worker is not available. Please refresh the page or ensure the app is properly installed.',
-            'error',
-            5000,
-          );
-        }
-        return false;
-      }
-
-      // Request subscription from SW
-      const subscription = await this.swPush.requestSubscription({
-        serverPublicKey: environment.vapidPublicKey,
-      });
-
-      console.log('Push subscription obtained from service worker:', subscription);
-
-      // Send subscription to backend
-      const client = this.apolloService.getClient();
-
-      // Convert PushSubscription to JSON format
-      // PushSubscription has toJSON() method that returns the standard format
-      let subscriptionJSON: any;
-      try {
-        subscriptionJSON = subscription.toJSON();
-      } catch (e) {
-        // Fallback: manually extract if toJSON() fails
-        const p256dhKey = subscription.getKey('p256dh');
-        const authKey = subscription.getKey('auth');
-
-        if (!p256dhKey || !authKey) {
-          throw new Error('Failed to extract subscription keys');
-        }
-
-        subscriptionJSON = {
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: this.arrayBufferToBase64(p256dhKey),
-            auth: this.arrayBufferToBase64(authKey),
-          },
-        };
-      }
-
-      console.log('Subscription JSON:', subscriptionJSON);
-
-      // Ensure endpoint is defined and a string (JSON value can be null/undefined but GraphQL expects String!)
-      if (!subscriptionJSON.endpoint) {
-        throw new Error('Invalid subscription: endpoint is missing');
-      }
-
-      if (!subscriptionJSON.keys || !subscriptionJSON.keys.p256dh || !subscriptionJSON.keys.auth) {
-        throw new Error('Invalid subscription: keys are missing or incomplete');
-      }
-
-      const input = {
-        endpoint: subscriptionJSON.endpoint,
-        keys: subscriptionJSON.keys,
-      };
-
-      console.log('Sending subscription to backend:', input);
-
-      const result = await client.mutate({
-        mutation: SubscribeToPushDocument,
-        variables: {
-          subscription: input,
-        },
-      });
-
-      // Check for Apollo Client errors
-      if (result.error) {
-        console.error('Apollo Client error:', result.error);
-        throw new Error(`GraphQL error: ${result.error.message || 'Unknown error'}`);
-      }
-
-      if (result.data?.subscribeToPush) {
-        console.log('Push subscription created and synced to backend');
-        this.isPushEnabledSignal.set(true);
-        this.toastService.show(
-          'Push Notifications',
-          'Successfully subscribed to push notifications',
-          'success',
-          5000,
-        );
-        return true;
-      } else {
-        throw new Error('Backend rejected subscription');
-      }
-    } catch (error) {
-      console.error('Failed to subscribe to push notifications:', error);
-
-      // Log full error details for debugging
-      if (error instanceof Error) {
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-      }
-
-      // Ensure signal reflects failure
-      this.isPushEnabledSignal.set(false);
-
-      // Check for specific error types and provide helpful messages
-      if (error instanceof Error) {
-        if (error.message.includes('user dismissed') || error.message.includes('dismissed')) {
-          this.toastService.show(
-            'Push Notifications',
-            'Permission request was dismissed. You can enable notifications later in settings.',
-            'info',
-            5000,
-          );
-          return false;
-        }
-
-        if (error.message.includes('GraphQL error') || error.message.includes('Backend rejected')) {
-          this.toastService.show(
-            'Push Notifications',
-            'Failed to sync subscription with server. Please try again later.',
-            'error',
-            5000,
-          );
-          return false;
-        }
-
-        if (error.message.includes('Invalid subscription') || error.message.includes('endpoint is missing')) {
-          this.toastService.show(
-            'Push Notifications',
-            'Failed to create subscription. Please refresh the page and try again.',
-            'error',
-            5000,
-          );
-          return false;
-        }
-
-        if (error.message.includes('VAPID') || error.message.includes('public key')) {
-          this.toastService.show(
-            'Push Notifications',
-            'Push notification configuration error. Please contact support.',
-            'error',
-            5000,
-          );
-          return false;
-        }
-      }
-
-      // Generic error message for unknown errors
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Subscription error details:', errorMessage);
-      this.toastService.show(
-        'Push Notifications',
-        `Failed to enable push notifications. ${errorMessage}. Please check the console for details or try again later.`,
-        'error',
-        5000,
-      );
-
-      return false;
-    }
-  }
-
-  async unsubscribeToPush(): Promise<boolean> {
-    try {
-      // Unsubscribe from SW
-      if (this.swPush.isEnabled) {
-        await this.swPush.unsubscribe();
-      }
-
-      // Notify backend
-      const client = this.apolloService.getClient();
-      await client.mutate({
-        mutation: UnsubscribeToPushDocument,
-      });
-
-      this.isPushEnabledSignal.set(false);
-
-      this.toastService.show(
-        'Push Notifications',
-        'Successfully unsubscribed from push notifications',
-        'info',
-        3000,
-      );
-
-      return true;
-    } catch (error) {
-      console.error('Failed to unsubscribe from push notifications:', error);
-      return false;
-    }
-  }
-
   async loadNotifications(
     options: { skip?: number; take?: number; type?: NotificationType } = {},
   ): Promise<void> {
-    try {
-      this.isLoadingSignal.set(true);
-
-      const client = this.apolloService.getClient();
-      const result = await client.query({
-        query: GetUserNotificationsDocument,
-        variables: { options },
-        fetchPolicy: 'network-only', // Ensure fresh data
-      });
-
-      if (result?.data?.getUserNotifications?.items) {
-        this.notificationsSignal.set(result.data.getUserNotifications.items);
-      }
-    } catch (error) {
-      console.error('Failed to load notifications:', error);
-      // No mock fallback in production/dev anymore, reflect real state
-    } finally {
-      this.isLoadingSignal.set(false);
-    }
+    return this.pollingService.loadNotifications(options);
   }
 
+  /**
+   * Load unread count
+   */
   async loadUnreadCount(): Promise<void> {
-    try {
-      const client = this.apolloService.getClient();
-      const result = await client.query({
-        query: GetUnreadCountDocument,
-        fetchPolicy: 'network-only',
-      });
-
-      if (typeof result?.data?.getUnreadCount === 'number') {
-        this.unreadCountSignal.set(result.data.getUnreadCount);
-      }
-    } catch (error) {
-      console.error('Failed to load unread count:', error);
-    }
+    return this.pollingService.loadUnreadCount();
   }
 
-  private isDevMode(): boolean {
-    return !environment.production;
-  }
-
-  private async getNotificationPermission(): Promise<NotificationPermission> {
-    if (!('Notification' in window)) {
-      return 'denied';
-    }
-    return Notification.permission;
-  }
-
-  private async checkPermissionStatus(): Promise<void> {
-    const permission = await this.getNotificationPermission();
-    this.permissionSignal.set(permission);
-
-    // Don't set isPushEnabledSignal based on permission alone
-    // It should reflect actual subscription status, which is checked in checkPushPermission
-    // This method just updates the permission signal
-  }
-
+  /**
+   * Mark a notification as read
+   */
   async markAsRead(notificationId: string): Promise<boolean> {
     try {
       const client = this.apolloService.getClient();
@@ -535,10 +68,9 @@ export class NotificationService {
 
       if (result.data?.markNotificationAsRead) {
         // Update local state
-        this.notificationsSignal.update((notifications) =>
-          notifications.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
-        );
-        this.loadUnreadCount(); // Sync count
+        this.stateService.markAsRead(notificationId);
+        // Refresh unread count
+        await this.loadUnreadCount();
         this.toastService.show('Notification', 'Marked as read', 'success', 3000);
         return true;
       }
@@ -550,6 +82,9 @@ export class NotificationService {
     }
   }
 
+  /**
+   * Mark all notifications as read
+   */
   async markAllAsRead(): Promise<number> {
     try {
       const client = this.apolloService.getClient();
@@ -561,11 +96,7 @@ export class NotificationService {
 
       if (markedCount > 0) {
         // Update local state
-        this.notificationsSignal.update((notifications) =>
-          notifications.map((n) => ({ ...n, read: true })),
-        );
-        this.unreadCountSignal.set(0);
-
+        this.stateService.markAllAsRead();
         this.toastService.show(
           'Notifications',
           `Marked ${markedCount} notifications as read`,
@@ -584,41 +115,38 @@ export class NotificationService {
     }
   }
 
-  private startPolling(): void {
-    // Poll every 30 seconds as fallback
-    this.pollingInterval = window.setInterval(() => {
-      this.loadNotifications();
-      this.loadUnreadCount();
-    }, 30000);
+  /**
+   * Subscribe to push notifications
+   */
+  async subscribeToPush(): Promise<boolean> {
+    return this.pushService.subscribeToPush();
   }
 
-  private stopPolling(): void {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = undefined;
-    }
+  /**
+   * Unsubscribe from push notifications
+   */
+  async unsubscribeToPush(): Promise<boolean> {
+    return this.pushService.unsubscribeToPush();
   }
 
-  ngOnDestroy(): void {
-    this.stopPolling();
+  /**
+   * Request push notification permission
+   */
+  async requestPushPermission(): Promise<boolean> {
+    return this.pushService.requestPushPermission();
   }
 
-  // Helper for prompt persistence
-  private hasPrompted(): boolean {
-    return localStorage.getItem(this.HAS_PROMPTED_KEY) === 'true';
+  /**
+   * Prompt for notification permission if not already prompted
+   */
+  async promptPermissionIfNeeded(): Promise<void> {
+    return this.pushService.promptPermissionIfNeeded();
   }
 
-  private setPrompted(): void {
-    localStorage.setItem(this.HAS_PROMPTED_KEY, 'true');
-  }
-
-  // Helper to convert ArrayBuffer to base64 (fallback if toJSON() doesn't work)
-  private arrayBufferToBase64(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
+  /**
+   * Refresh notifications (manual trigger)
+   */
+  async refresh(): Promise<void> {
+    return this.pollingService.refresh();
   }
 }
