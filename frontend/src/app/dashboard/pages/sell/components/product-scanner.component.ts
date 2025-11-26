@@ -149,6 +149,7 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
   // Detection loop
   private detectionInterval: any = null;
   private detectionInProgress = false; // Track if a detection is already being processed
+  private cameraCleanup: (() => void) | null = null;
 
   readonly canStart = computed(() => {
     const status = this.scannerStatus();
@@ -226,8 +227,8 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
     this.isScanning.set(true);
     this.scanningStateChange.emit(true);
 
-    // Wait for next tick to ensure video element is rendered
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    // Wait for Angular change detection + DOM paint (double RAF ensures paint complete)
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     const videoEl = this.videoElement()?.nativeElement;
     if (!videoEl) {
@@ -240,15 +241,11 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const started = await this.cameraService.startCamera(videoEl);
-      if (!started) {
-        const error = this.cameraService.error() || 'Failed to access camera';
-        this.scannerStatus.set('error');
-        this.scannerError.emit(error);
-        this.isScanning.set(false);
-        this.scanningStateChange.emit(false);
-        throw new Error(error);
-      }
+      // Start camera with mobile optimization
+      this.cameraCleanup = await this.cameraService.startCamera(videoEl, {
+        facingMode: 'environment',
+        optimizeForMobile: true,
+      });
 
       this.scannerStatus.set('scanning');
       this.startDetectionLoops(videoEl);
@@ -270,9 +267,15 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
 
     this.barcodeService.stopScanning();
 
-    const videoEl = this.videoElement()?.nativeElement;
-    if (videoEl) {
-      this.cameraService.stopCamera(videoEl);
+    // Use cleanup function if available, otherwise fallback to manual stop
+    if (this.cameraCleanup) {
+      this.cameraCleanup();
+      this.cameraCleanup = null;
+    } else {
+      const videoEl = this.videoElement()?.nativeElement;
+      if (videoEl) {
+        this.cameraService.stopCamera(videoEl);
+      }
     }
 
     this.isScanning.set(false);
@@ -291,10 +294,11 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
 
   private startDetectionLoops(videoElement: HTMLVideoElement): void {
     if (this.enableBarcodeScanning() && this.barcodeService.isSupported()) {
+      // Barcode scanning with timeout and visibility handling
       this.barcodeService.startScanning(
         videoElement,
         (result) => this.handleBarcodeDetection(result),
-        500,
+        { timeoutMs: 30000, pauseOnHidden: true },
       );
     }
 

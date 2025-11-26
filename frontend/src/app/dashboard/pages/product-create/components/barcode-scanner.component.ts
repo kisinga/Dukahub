@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import {
-  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -13,6 +12,7 @@ import {
 } from '@angular/core';
 import { BarcodeScannerService } from '../../../../core/services/barcode-scanner.service';
 import { CameraService } from '../../../../core/services/camera.service';
+import { TracingService } from '../../../../core/services/tracing.service';
 
 /**
  * Barcode Scanner Component
@@ -181,6 +181,7 @@ import { CameraService } from '../../../../core/services/camera.service';
 export class BarcodeScannerComponent implements OnDestroy {
   private readonly cameraService = inject(CameraService);
   private readonly barcodeService = inject(BarcodeScannerService);
+  private readonly tracingService = inject(TracingService, { optional: true });
 
   // View reference
   readonly cameraVideo = viewChild<ElementRef<HTMLVideoElement>>('cameraVideo');
@@ -193,6 +194,10 @@ export class BarcodeScannerComponent implements OnDestroy {
   readonly lastScannedCode = signal<string | null>(null);
   readonly error = signal<string | null>(null);
 
+  // Cleanup function from camera service
+  private cameraCleanup: (() => void) | null = null;
+  private scannerSpan: any = null; // Span for scanner session
+
   // Outputs
   readonly barcodeScanned = output<string>();
   readonly scanningStateChange = output<boolean>();
@@ -203,15 +208,69 @@ export class BarcodeScannerComponent implements OnDestroy {
    * Called by parent component when user clicks "Scan with camera" button
    */
   async startScanning(): Promise<void> {
+    // Start telemetry span for scanner session
+    const span = this.tracingService?.startSpan('barcode.scanner.start', {
+      'barcode.scanner.mode': this.compact() ? 'compact' : 'full',
+    });
+    this.scannerSpan = span || null;
+
     // Clear any previous errors
     this.error.set(null);
+
+    // Check if barcode scanning is supported BEFORE starting camera
+    // This prevents wasting resources and shows error immediately
+    if (!this.barcodeService.isSupported()) {
+      // Provide more helpful error message with diagnostics
+      const diagnostics = this.barcodeService.getDiagnostics();
+      const userAgent = navigator.userAgent;
+      const isChrome = /Chrome/.test(userAgent) && !/Edge|Edg/.test(userAgent);
+      const isEdge = /Edge|Edg/.test(userAgent);
+      const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+      const isSecureContext = window.isSecureContext;
+
+      let errorMsg = 'BarcodeDetector API is not available. ';
+
+      if (!isSecureContext) {
+        errorMsg += 'This feature requires HTTPS or localhost. ';
+      } else if (isChrome || isEdge || isSafari) {
+        errorMsg +=
+          'Your browser may not support this feature yet. Please ensure you are using Chrome 88+, Edge 88+, or Safari 16.4+. ';
+      } else {
+        errorMsg += 'Please use a supported browser (Chrome 88+, Edge 88+, or Safari 16.4+). ';
+      }
+
+      errorMsg += 'You can still enter the barcode manually.';
+
+      this.error.set(errorMsg);
+      this.errorOccurred.emit(errorMsg);
+      console.warn('Barcode scanner not supported', diagnostics);
+
+      // Log to telemetry
+      if (this.scannerSpan) {
+        this.tracingService?.setAttributes(this.scannerSpan, {
+          'barcode.scanner.result': 'not_supported',
+          'barcode.scanner.error': 'barcode_detector_not_available',
+          'barcode.scanner.secure_context': diagnostics.isSecureContext.toString(),
+          'barcode.scanner.has_detector': diagnostics.hasBarcodeDetector.toString(),
+          'barcode.scanner.browser': isChrome
+            ? 'chrome'
+            : isEdge
+              ? 'edge'
+              : isSafari
+                ? 'safari'
+                : 'other',
+        });
+        this.tracingService?.endSpan(this.scannerSpan, false);
+      }
+      this.scannerSpan = null;
+      return;
+    }
 
     // CRITICAL: Set isScanning FIRST so video element renders in DOM
     this.isScanning.set(true);
     this.scanningStateChange.emit(true);
 
     // Wait for Angular's change detection to render the video element
-    // Use afterNextRender to wait for the view to be updated
     const videoEl = await this.waitForVideoElement();
 
     if (!videoEl) {
@@ -222,31 +281,31 @@ export class BarcodeScannerComponent implements OnDestroy {
       this.isScanning.set(false);
       this.scanningStateChange.emit(false);
       console.error(errorMsg);
+
+      // Log to telemetry
+      if (this.scannerSpan) {
+        this.tracingService?.setAttributes(this.scannerSpan, {
+          'barcode.scanner.result': 'error',
+          'barcode.scanner.error': 'video_element_not_found',
+        });
+        this.tracingService?.endSpan(this.scannerSpan, false);
+      }
+      this.scannerSpan = null;
       return;
     }
 
     try {
-      // Start camera
-      const started = await this.cameraService.startCamera(videoEl);
-      if (!started) {
-        const errorMsg = this.cameraService.error() || 'Failed to start camera';
-        this.error.set(errorMsg);
-        this.errorOccurred.emit(errorMsg);
-        this.isScanning.set(false);
-        this.scanningStateChange.emit(false);
-        console.error('Failed to start camera:', errorMsg);
-        return;
-      }
+      // Start camera with mobile optimization
+      this.cameraCleanup = await this.cameraService.startCamera(videoEl, {
+        facingMode: 'environment',
+        optimizeForMobile: true,
+      });
 
-      // Check if barcode scanning is supported
-      if (!this.barcodeService.isSupported()) {
-        const errorMsg =
-          'BarcodeDetector API is not available in this browser. Please use a supported browser (Chrome, Edge, or Safari) or enter the barcode manually.';
-        this.error.set(errorMsg);
-        this.errorOccurred.emit(errorMsg);
-        this.stopScanning();
-        console.warn('Barcode scanner not supported');
-        return;
+      if (this.scannerSpan) {
+        this.tracingService?.addEvent(this.scannerSpan, 'barcode.scanner.camera_started', {
+          'barcode.scanner.video_width': videoEl.videoWidth || 0,
+          'barcode.scanner.video_height': videoEl.videoHeight || 0,
+        });
       }
 
       // Initialize barcode scanner
@@ -256,27 +315,53 @@ export class BarcodeScannerComponent implements OnDestroy {
           'Failed to initialize barcode scanner. Please try again or enter the barcode manually.';
         this.error.set(errorMsg);
         this.errorOccurred.emit(errorMsg);
+        if (this.scannerSpan) {
+          this.tracingService?.setAttributes(this.scannerSpan, {
+            'barcode.scanner.result': 'error',
+            'barcode.scanner.error': 'initialization_failed',
+          });
+          this.tracingService?.endSpan(this.scannerSpan, false);
+        }
+        this.scannerSpan = null;
         this.stopScanning();
         console.error(errorMsg);
         return;
       }
 
-      // Start barcode scanning
+      // Start barcode scanning with timeout and visibility handling
       this.barcodeService.startScanning(
         videoEl,
         (result) => {
           // Barcode detected
           this.lastScannedCode.set(result.rawValue);
           this.barcodeScanned.emit(result.rawValue);
+          if (this.scannerSpan) {
+            this.tracingService?.setAttributes(this.scannerSpan, {
+              'barcode.scanner.result': 'success',
+              'barcode.scanner.barcode_format': result.format,
+              'barcode.scanner.barcode_length': result.rawValue.length,
+            });
+            this.tracingService?.endSpan(this.scannerSpan, true);
+          }
+          this.scannerSpan = null;
           this.stopScanning();
         },
-        500,
+        { timeoutMs: 30000, pauseOnHidden: true },
       );
     } catch (error: any) {
       const errorMsg = error?.message || 'Failed to start barcode scanner. Please try again.';
       this.error.set(errorMsg);
       this.errorOccurred.emit(errorMsg);
       console.error('Failed to start barcode scanner:', error);
+      if (this.scannerSpan) {
+        this.tracingService?.setAttributes(this.scannerSpan, {
+          'barcode.scanner.result': 'error',
+          'barcode.scanner.error': error?.name || 'unknown_error',
+          'barcode.scanner.error_message': errorMsg,
+        });
+        this.tracingService?.endSpan(this.scannerSpan, false, error);
+      }
+      this.scannerSpan = null;
       this.stopScanning();
     }
   }
@@ -287,9 +372,25 @@ export class BarcodeScannerComponent implements OnDestroy {
   stopScanning(): void {
     this.barcodeService.stopScanning();
 
-    const videoEl = this.cameraVideo()?.nativeElement;
-    if (videoEl) {
-      this.cameraService.stopCamera(videoEl);
+    // Use cleanup function if available, otherwise fallback to manual stop
+    if (this.cameraCleanup) {
+      this.cameraCleanup();
+      this.cameraCleanup = null;
+    } else {
+      const videoEl = this.cameraVideo()?.nativeElement;
+      if (videoEl) {
+        this.cameraService.stopCamera(videoEl);
+      }
+    }
+
+    // End scanner span if still active (user cancelled)
+    const span = this.scannerSpan;
+    if (span) {
+      this.tracingService?.setAttributes(span, {
+        'barcode.scanner.result': 'cancelled',
+      });
+      this.tracingService?.endSpan(span, true);
+      this.scannerSpan = null;
     }
 
     this.isScanning.set(false);
@@ -320,15 +421,18 @@ export class BarcodeScannerComponent implements OnDestroy {
 
   /**
    * Wait for video element to be available in the DOM
-   * Uses afterNextRender to wait for Angular's change detection
-   * with retry logic and timeout fallback
+   * Uses double-RAF pattern to wait for Angular change detection + DOM paint
    */
   private async waitForVideoElement(): Promise<HTMLVideoElement | null> {
-    return new Promise<HTMLVideoElement | null>((resolve) => {
-      const maxRetries = 10;
-      const retryDelay = 50; // 50ms between retries
-      let retries = 0;
+    // Wait for Angular change detection + DOM paint (double RAF ensures paint complete)
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
+    // Poll for element with timeout
+    const maxRetries = 10;
+    const retryDelay = 50; // 50ms between retries
+    let retries = 0;
+
+    return new Promise<HTMLVideoElement | null>((resolve) => {
       const checkForElement = () => {
         const videoEl = this.cameraVideo()?.nativeElement;
         if (videoEl) {
@@ -350,12 +454,8 @@ export class BarcodeScannerComponent implements OnDestroy {
         setTimeout(checkForElement, retryDelay);
       };
 
-      // Use afterNextRender to wait for the view to be updated
-      afterNextRender(() => {
-        // Start checking for the element after the next render
-        // Use a small delay to ensure the view child is fully initialized
-        setTimeout(checkForElement, 10);
-      });
+      // Start checking immediately after RAF
+      checkForElement();
     });
   }
 }
