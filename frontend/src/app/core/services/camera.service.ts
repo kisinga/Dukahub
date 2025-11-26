@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { TracingService } from './tracing.service';
 
 /**
  * Camera stream configuration
@@ -7,6 +8,7 @@ export interface CameraConfig {
   facingMode: 'user' | 'environment';
   width?: number;
   height?: number;
+  optimizeForMobile?: boolean; // Lower res, framerate when true
 }
 
 /**
@@ -16,70 +18,168 @@ export interface CameraConfig {
   providedIn: 'root',
 })
 export class CameraService {
+  private readonly tracingService = inject(TracingService, { optional: true });
   private stream: MediaStream | null = null;
   private readonly isActiveSignal = signal<boolean>(false);
   private readonly errorSignal = signal<string | null>(null);
+  private currentSpan: any = null; // Span for current camera session
 
   readonly isActive = this.isActiveSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
 
   /**
    * Start camera stream and attach to video element
+   * Returns a cleanup function for easy lifecycle management
    */
   async startCamera(
     videoElement: HTMLVideoElement,
     config: CameraConfig = { facingMode: 'environment' },
-  ): Promise<boolean> {
+  ): Promise<() => void> {
     if (this.stream) {
       console.log('Camera already active');
-      return true;
+      return () => this.stopCamera(videoElement);
     }
+
+    // Start telemetry span for camera session
+    const span = this.tracingService?.startSpan('camera.start', {
+      'camera.facing_mode': config.facingMode,
+      'camera.optimize_mobile': (config.optimizeForMobile ?? false).toString(),
+    });
+    this.currentSpan = span || null;
 
     this.errorSignal.set(null);
 
     try {
       // Check if mediaDevices API is available
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera API not available. Please use HTTPS or localhost.');
+        const error = new Error('Camera API not available. Please use HTTPS or localhost.');
+        if (this.currentSpan) {
+          this.tracingService?.setAttributes(this.currentSpan, {
+            'camera.result': 'error',
+            'camera.error': 'api_not_available',
+          });
+          this.tracingService?.endSpan(this.currentSpan, false, error);
+        }
+        this.currentSpan = null;
+        throw error;
       }
 
-      // Request camera access
-      const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode: config.facingMode,
-          width: config.width,
-          height: config.height,
-        },
-        audio: false,
-      };
+      // Build constraints with mobile optimization if requested
+      const constraints = this.buildConstraints(config);
 
       console.log('Requesting camera access...');
+      if (this.currentSpan) {
+        this.tracingService?.addEvent(this.currentSpan, 'camera.requesting_access');
+      }
       this.stream = await navigator.mediaDevices.getUserMedia(constraints);
 
       // Attach stream to video element
       videoElement.srcObject = this.stream;
 
-      // Wait for video to be ready
-      await new Promise<void>((resolve, reject) => {
-        videoElement.onloadedmetadata = () => {
-          videoElement
-            .play()
-            .then(() => resolve())
-            .catch(reject);
-        };
-        videoElement.onerror = () => reject(new Error('Video element error'));
-      });
+      // CRITICAL: Wait until video can actually play (fixes black screen)
+      if (this.currentSpan) {
+        this.tracingService?.addEvent(this.currentSpan, 'camera.waiting_for_ready');
+      }
+      await this.waitForVideoReady(videoElement);
 
       this.isActiveSignal.set(true);
       console.log('Camera started successfully');
-      return true;
+
+      // Log successful camera start
+      if (this.currentSpan) {
+        this.tracingService?.setAttributes(this.currentSpan, {
+          'camera.result': 'success',
+          'camera.video_width': videoElement.videoWidth || 0,
+          'camera.video_height': videoElement.videoHeight || 0,
+        });
+        this.tracingService?.addEvent(this.currentSpan, 'camera.ready');
+      }
+
+      // Return cleanup function for easy lifecycle management
+      return () => this.stopCamera(videoElement);
     } catch (error: any) {
       console.error('Failed to start camera:', error);
       const errorMessage = this.getUserFriendlyError(error);
       this.errorSignal.set(errorMessage);
+      if (this.currentSpan) {
+        this.tracingService?.setAttributes(this.currentSpan, {
+          'camera.result': 'error',
+          'camera.error': error?.name || 'unknown_error',
+          'camera.error_message': errorMessage,
+        });
+        this.tracingService?.endSpan(this.currentSpan, false, error);
+      }
+      this.currentSpan = null;
       this.stopCamera(videoElement);
-      return false;
+      throw error;
     }
+  }
+
+  /**
+   * Build media stream constraints from config
+   */
+  private buildConstraints(config: CameraConfig): MediaStreamConstraints {
+    const videoConstraints: MediaTrackConstraints = {
+      facingMode: config.facingMode,
+    };
+
+    if (config.optimizeForMobile) {
+      // Mobile-optimized: lower resolution and framerate to save battery
+      videoConstraints.width = { ideal: 640, max: 1280 };
+      videoConstraints.height = { ideal: 480, max: 720 };
+      videoConstraints.frameRate = { ideal: 15, max: 30 };
+    } else {
+      // Use explicit dimensions if provided
+      if (config.width) videoConstraints.width = config.width;
+      if (config.height) videoConstraints.height = config.height;
+    }
+
+    return {
+      video: videoConstraints,
+      audio: false,
+    };
+  }
+
+  /**
+   * Wait for video element to be ready to play
+   * Uses canplay event which fires when video can actually render frames
+   */
+  private waitForVideoReady(video: HTMLVideoElement): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      // If already ready, resolve immediately
+      if (video.readyState >= 3) {
+        // HAVE_FUTURE_DATA or HAVE_ENOUGH_DATA
+        video
+          .play()
+          .then(() => resolve())
+          .catch(reject);
+        return;
+      }
+
+      // Wait for canplay event (video can actually play)
+      const onCanPlay = () => {
+        video.removeEventListener('canplay', onCanPlay);
+        video.removeEventListener('error', onError);
+        video
+          .play()
+          .then(() => resolve())
+          .catch(reject);
+      };
+
+      const onError = () => {
+        video.removeEventListener('canplay', onCanPlay);
+        video.removeEventListener('error', onError);
+        reject(new Error('Video element error'));
+      };
+
+      video.addEventListener('canplay', onCanPlay);
+      video.addEventListener('error', onError);
+
+      // Also try to play immediately in case event already fired
+      video.play().catch(() => {
+        // Ignore - will be handled by canplay event
+      });
+    });
   }
 
   /**
@@ -95,6 +195,16 @@ export class CameraService {
       videoElement.srcObject = null;
     }
 
+    // End telemetry span if active
+    const span = this.currentSpan;
+    if (span) {
+      this.tracingService?.setAttributes(span, {
+        'camera.result': 'stopped',
+      });
+      this.tracingService?.endSpan(span, true);
+      this.currentSpan = null;
+    }
+
     this.isActiveSignal.set(false);
     console.log('Camera stopped');
   }
@@ -105,7 +215,7 @@ export class CameraService {
   async switchCamera(
     videoElement: HTMLVideoElement,
     currentFacingMode: 'user' | 'environment',
-  ): Promise<boolean> {
+  ): Promise<() => void> {
     const newFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
     this.stopCamera(videoElement);
     return await this.startCamera(videoElement, { facingMode: newFacingMode });
