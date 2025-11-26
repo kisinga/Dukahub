@@ -6,6 +6,9 @@
 # Application services (backend, frontend) are in docker-compose.yml
 #
 # Usage:
+#   # First, create the external network (one-time):
+#   docker network create dukarun_services_network
+#   # Then start services:
 #   docker compose -f docker-compose.services.yml up -d
 #   docker compose -f docker-compose.services.yml logs -f
 #   docker compose -f docker-compose.services.yml down
@@ -20,7 +23,7 @@ services:
     image: postgres:17
     restart: unless-stopped
     networks:
-      - services_network
+      - dukarun_services_network
     environment:
       POSTGRES_DB: ${DB_NAME:-vendure}
       POSTGRES_USER: ${DB_USER:-vendure}
@@ -45,7 +48,7 @@ services:
     platform: linux/amd64
     restart: unless-stopped
     networks:
-      - services_network
+      - dukarun_services_network
     environment:
       POSTGRES_DB: ${AUDIT_DB_NAME:-audit_logs}
       POSTGRES_USER: ${AUDIT_DB_USER:-audit_user}
@@ -70,7 +73,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     networks:
-      - services_network
+      - dukarun_services_network
     command: >
       redis-server 
       --appendonly yes 
@@ -101,7 +104,7 @@ services:
     platform: linux/amd64
     restart: unless-stopped
     networks:
-      - services_network
+      - dukarun_services_network
     environment:
       # SigNoz configuration
       # All values can be overridden via environment variables
@@ -147,7 +150,7 @@ services:
     platform: linux/amd64
     restart: unless-stopped
     networks:
-      - services_network
+      - dukarun_services_network
     environment:
       # ClickHouse configuration
       # All values can be overridden via environment variables
@@ -181,8 +184,8 @@ services:
 # Networks
 # ========================================
 networks:
-  services_network:
-    driver: bridge
+  dukarun_services_network:
+    external: true
 
 # ========================================
 # Volumes
