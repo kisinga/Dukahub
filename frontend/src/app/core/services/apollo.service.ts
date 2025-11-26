@@ -159,27 +159,46 @@ export class ApolloService {
 
     // Global error handling for authentication errors
     const errorLink = onError((errorResponse) => {
-      const { error } = errorResponse;
+      // Access error properties with type assertion since TypeScript types may not expose them
+      const graphQLErrors = (errorResponse as any).graphQLErrors;
+      const networkError = (errorResponse as any).networkError;
 
-      // Check if error has extensions indicating auth issues
-      if (error && typeof error === 'object' && 'extensions' in error) {
-        const extensions = (error as any).extensions;
-        if (extensions?.code === 'FORBIDDEN' || extensions?.code === 'UNAUTHORIZED') {
-          console.warn('Session expired or unauthorized access detected');
-          this.handleSessionExpired();
-          return;
+      // Check GraphQL errors first
+      if (graphQLErrors && graphQLErrors.length > 0) {
+        for (const gqlError of graphQLErrors) {
+          const errorCode = gqlError.extensions?.code;
+          const errorMessage = gqlError.message || '';
+
+          // Handle CHANNEL_NOT_FOUND - clear stale channel token
+          if (
+            errorCode === 'CHANNEL_NOT_FOUND' ||
+            errorMessage.includes('CHANNEL_NOT_FOUND') ||
+            errorMessage.includes('channel-not-found')
+          ) {
+            console.warn('Channel not found - clearing stale channel token');
+            this.clearChannelToken();
+            // Don't redirect - just clear the token and let polling stop
+            return;
+          }
+
+          // Handle auth errors
+          if (errorCode === 'FORBIDDEN' || errorCode === 'UNAUTHORIZED') {
+            console.warn('Session expired or unauthorized access detected');
+            this.handleSessionExpired();
+            return;
+          }
         }
       }
 
-      // Check error message for auth-related content
-      if (error && typeof error === 'object' && 'message' in error) {
-        const message = (error as any).message;
+      // Check network errors
+      if (networkError) {
+        const errorMessage = (networkError as any)?.message || '';
         if (
-          message?.includes('not authorized') ||
-          message?.includes('not authenticated') ||
-          message?.includes('Unauthorized')
+          errorMessage.includes('not authorized') ||
+          errorMessage.includes('not authenticated') ||
+          errorMessage.includes('Unauthorized')
         ) {
-          console.warn('Session expired based on error message');
+          console.warn('Session expired based on network error message');
           this.handleSessionExpired();
           return;
         }
