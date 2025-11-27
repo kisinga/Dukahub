@@ -7,13 +7,12 @@
  * - Scheduler finds expiring channels
  */
 
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { RequestContext, Channel } from '@vendure/core';
-import { SubscriptionService } from '../../../src/services/subscriptions/subscription.service';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { Channel, ChannelService, RequestContext } from '@vendure/core';
 import { ChannelEventRouterService } from '../../../src/infrastructure/events/channel-event-router.service';
 import { ChannelEventType } from '../../../src/infrastructure/events/types/event-type.enum';
 import { PaystackService } from '../../../src/services/payments/paystack.service';
-import { ChannelService } from '@vendure/core';
+import { SubscriptionService } from '../../../src/services/subscriptions/subscription.service';
 
 describe('Subscription Flow Integration', () => {
   const ctx = {} as RequestContext;
@@ -40,7 +39,7 @@ describe('Subscription Flow Integration', () => {
 
     // Mock EventRouter
     mockEventRouter = {
-      routeEvent: jest.fn(async () => {}),
+      routeEvent: jest.fn(async () => { }),
     } as any;
 
     // Mock TransactionalConnection
@@ -78,6 +77,10 @@ describe('Subscription Flow Integration', () => {
       const currentExpiry = new Date('2024-02-15');
       const now = new Date('2024-02-01'); // 14 days before expiry
 
+      // Use fake timers to mock Date constructor
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
+
       const mockChannel: Channel = {
         id: channelId,
         customFields: {
@@ -104,12 +107,19 @@ describe('Subscription Flow Integration', () => {
       // Should extend from current expiry (Feb 15) + 1 month = March 15
       expect(newExpiry.getMonth()).toBe(2); // March (0-indexed)
       expect(newExpiry.getDate()).toBe(15);
+
+      // Restore real timers
+      jest.useRealTimers();
     });
 
     it('should extend from now when renewing after expiry', async () => {
       const channelId = '1';
       const expiredDate = new Date('2024-01-01');
       const now = new Date('2024-02-15'); // 45 days after expiry
+
+      // Use fake timers to mock Date constructor
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
 
       const mockChannel: Channel = {
         id: channelId,
@@ -123,10 +133,6 @@ describe('Subscription Flow Integration', () => {
 
       mockChannelService.findOne.mockResolvedValue(mockChannel);
       mockChannelService.update.mockResolvedValue(mockChannel);
-
-      // Mock Date.now to return fixed time
-      const originalNow = Date.now;
-      Date.now = jest.fn(() => now.getTime());
 
       await subscriptionService.processSuccessfulPayment(ctx, channelId, {
         reference: 'ref-123',
@@ -142,13 +148,18 @@ describe('Subscription Flow Integration', () => {
       expect(newExpiry.getMonth()).toBe(2); // March
       expect(newExpiry.getDate()).toBe(15);
 
-      Date.now = originalNow;
+      // Restore real timers
+      jest.useRealTimers();
     });
 
     it('should extend from trial end when renewing during trial', async () => {
       const channelId = '1';
       const trialEnd = new Date('2024-03-01');
       const now = new Date('2024-02-15'); // During trial
+
+      // Use fake timers to mock Date constructor
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
 
       const mockChannel: Channel = {
         id: channelId,
@@ -162,10 +173,6 @@ describe('Subscription Flow Integration', () => {
 
       mockChannelService.findOne.mockResolvedValue(mockChannel);
       mockChannelService.update.mockResolvedValue(mockChannel);
-
-      // Mock Date.now
-      const originalNow = Date.now;
-      Date.now = jest.fn(() => now.getTime());
 
       await subscriptionService.processSuccessfulPayment(ctx, channelId, {
         reference: 'ref-123',
@@ -181,7 +188,8 @@ describe('Subscription Flow Integration', () => {
       expect(newExpiry.getMonth()).toBe(3); // April
       expect(newExpiry.getDate()).toBe(1);
 
-      Date.now = originalNow;
+      // Restore real timers
+      jest.useRealTimers();
     });
   });
 
@@ -305,6 +313,12 @@ describe('Subscription Flow Integration', () => {
 
     it('should handle prepaid extension with blank expiry dates', async () => {
       const channelId = '1';
+      const now = new Date('2024-02-15');
+
+      // Use fake timers to mock Date constructor
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
+
       const mockChannel: Channel = {
         id: channelId,
         customFields: {
@@ -317,11 +331,6 @@ describe('Subscription Flow Integration', () => {
 
       mockChannelService.findOne.mockResolvedValue(mockChannel);
       mockChannelService.update.mockResolvedValue(mockChannel);
-
-      // Mock Date.now to return fixed time
-      const now = new Date('2024-02-15');
-      const originalNow = Date.now;
-      Date.now = jest.fn(() => now.getTime());
 
       await subscriptionService.processSuccessfulPayment(ctx, channelId, {
         reference: 'ref-123',
@@ -337,7 +346,8 @@ describe('Subscription Flow Integration', () => {
       expect(newExpiry.getMonth()).toBe(2); // March
       expect(newExpiry.getDate()).toBe(15);
 
-      Date.now = originalNow;
+      // Restore real timers
+      jest.useRealTimers();
     });
   });
 
@@ -347,9 +357,9 @@ describe('Subscription Flow Integration', () => {
       const now = new Date('2024-02-15');
       const trialEnd = new Date('2024-02-25'); // 10 days from now
 
-      // Mock Date.now
-      const originalNow = Date.now;
-      Date.now = jest.fn(() => now.getTime());
+      // Use fake timers to mock Date constructor
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
 
       const mockChannel: Channel = {
         id: channelId,
@@ -370,7 +380,8 @@ describe('Subscription Flow Integration', () => {
       expect(status.daysRemaining).toBeGreaterThan(0);
       expect(status.daysRemaining).toBeLessThanOrEqual(10);
 
-      Date.now = originalNow;
+      // Restore real timers
+      jest.useRealTimers();
     });
 
     it('should return expired status for trial past expiry', async () => {
@@ -378,9 +389,9 @@ describe('Subscription Flow Integration', () => {
       const now = new Date('2024-02-15');
       const expiredDate = new Date('2024-02-10'); // Expired 5 days ago
 
-      // Mock Date.now
-      const originalNow = Date.now;
-      Date.now = jest.fn(() => now.getTime());
+      // Use fake timers to mock Date constructor
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
 
       const mockChannel: Channel = {
         id: channelId,
@@ -400,7 +411,8 @@ describe('Subscription Flow Integration', () => {
       expect(status.canPerformAction).toBe(false);
       expect(status.isEarlyTester).toBe(false);
 
-      Date.now = originalNow;
+      // Restore real timers
+      jest.useRealTimers();
     });
 
     it('should return valid status for active subscription with expiry', async () => {
@@ -408,9 +420,9 @@ describe('Subscription Flow Integration', () => {
       const now = new Date('2024-02-15');
       const expiresAt = new Date('2024-03-07'); // 20 days from now
 
-      // Mock Date.now
-      const originalNow = Date.now;
-      Date.now = jest.fn(() => now.getTime());
+      // Use fake timers to mock Date constructor
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
 
       const mockChannel: Channel = {
         id: channelId,
@@ -431,7 +443,8 @@ describe('Subscription Flow Integration', () => {
       expect(status.daysRemaining).toBeGreaterThan(0);
       expect(status.daysRemaining).toBeLessThanOrEqual(21); // Allow some margin for date calculation
 
-      Date.now = originalNow;
+      // Restore real timers
+      jest.useRealTimers();
     });
 
     it('should return expired status for active subscription past expiry', async () => {
@@ -439,9 +452,9 @@ describe('Subscription Flow Integration', () => {
       const now = new Date('2024-02-15');
       const expiredDate = new Date('2024-02-05'); // Expired 10 days ago
 
-      // Mock Date.now
-      const originalNow = Date.now;
-      Date.now = jest.fn(() => now.getTime());
+      // Use fake timers to mock Date constructor
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
 
       const mockChannel: Channel = {
         id: channelId,
@@ -461,7 +474,8 @@ describe('Subscription Flow Integration', () => {
       expect(status.canPerformAction).toBe(false);
       expect(status.isEarlyTester).toBe(false);
 
-      Date.now = originalNow;
+      // Restore real timers
+      jest.useRealTimers();
     });
   });
 });
