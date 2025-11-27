@@ -1,13 +1,13 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
 import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
-import { SubscriptionResolver, SUBSCRIPTION_SCHEMA } from './subscription.resolver';
-import { SubscriptionService } from '../../services/subscriptions/subscription.service';
 import { PaystackService } from '../../services/payments/paystack.service';
+import { SubscriptionService } from '../../services/subscriptions/subscription.service';
+import { ChannelEventsPlugin } from '../channels/channel-events.plugin';
+import { SubscriptionExpirySubscriber } from './subscription-expiry.subscriber';
 import { SubscriptionWebhookController } from './subscription-webhook.controller';
 import { SubscriptionTier } from './subscription.entity';
 import { SubscriptionGuard } from './subscription.guard';
-import { SubscriptionExpirySubscriber } from './subscription-expiry.subscriber';
-import { ChannelEventsPlugin } from '../channels/channel-events.plugin';
+import { SUBSCRIPTION_SCHEMA, SubscriptionResolver } from './subscription.resolver';
 
 /**
  * Subscription Plugin
@@ -18,6 +18,10 @@ import { ChannelEventsPlugin } from '../channels/channel-events.plugin';
  * - Paystack STK push payment integration
  * - Webhook handling for payment events
  * - Read-only mode enforcement for expired subscriptions
+ * - GraphQL API for managing subscription tiers (CRUD operations)
+ *
+ * Note: Admin UI components are available in admin-ui/ directory but require
+ * separate compilation using Vendure's UI extension compiler for integration.
  */
 @VendurePlugin({
   imports: [PluginCommonModule, ChannelEventsPlugin],
@@ -42,4 +46,4 @@ import { ChannelEventsPlugin } from '../channels/channel-events.plugin';
   },
   compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class SubscriptionPlugin {}
+export class SubscriptionPlugin { }

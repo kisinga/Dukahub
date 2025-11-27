@@ -49,11 +49,37 @@ export const SUBSCRIPTION_SCHEMA = gql`
     message: String
   }
 
+  input CreateSubscriptionTierInput {
+    code: String!
+    name: String!
+    description: String
+    priceMonthly: Int!
+    priceYearly: Int!
+    features: JSON
+    isActive: Boolean
+  }
+
+  input UpdateSubscriptionTierInput {
+    id: ID!
+    code: String
+    name: String
+    description: String
+    priceMonthly: Int
+    priceYearly: Int
+    features: JSON
+    isActive: Boolean
+  }
+
   extend type Query {
     """
-    Get all active subscription tiers
+    Get all subscription tiers (active and inactive)
     """
     getSubscriptionTiers: [SubscriptionTier!]!
+
+    """
+    Get a single subscription tier by ID
+    """
+    getSubscriptionTier(id: ID!): SubscriptionTier
 
     """
     Get current channel's subscription details
@@ -67,6 +93,21 @@ export const SUBSCRIPTION_SCHEMA = gql`
   }
 
   extend type Mutation {
+    """
+    Create a new subscription tier
+    """
+    createSubscriptionTier(input: CreateSubscriptionTierInput!): SubscriptionTier!
+
+    """
+    Update an existing subscription tier
+    """
+    updateSubscriptionTier(input: UpdateSubscriptionTierInput!): SubscriptionTier!
+
+    """
+    Delete a subscription tier (soft delete by setting isActive=false)
+    """
+    deleteSubscriptionTier(id: ID!): Boolean!
+
     """
     Initiate subscription purchase
     """
@@ -101,6 +142,15 @@ export class SubscriptionResolver {
   @Allow(Permission.ReadSettings)
   async getSubscriptionTiers(@Ctx() ctx: RequestContext): Promise<SubscriptionTier[]> {
     return this.subscriptionService.getAllSubscriptionTiers();
+  }
+
+  @Query()
+  @Allow(Permission.ReadSettings)
+  async getSubscriptionTier(
+    @Ctx() ctx: RequestContext,
+    @Args() args: { id: ID }
+  ): Promise<SubscriptionTier | null> {
+    return this.subscriptionService.getSubscriptionTier(String(args.id));
   }
 
   @Query()
@@ -228,5 +278,32 @@ export class SubscriptionResolver {
     // This would require updating the channel and potentially calling Paystack
     // Simplified for now
     return true;
+  }
+
+  @Mutation()
+  @Allow(Permission.CreateSettings)
+  async createSubscriptionTier(
+    @Ctx() ctx: RequestContext,
+    @Args() args: { input: any }
+  ): Promise<SubscriptionTier> {
+    return this.subscriptionService.createSubscriptionTier(ctx, args.input);
+  }
+
+  @Mutation()
+  @Allow(Permission.UpdateSettings)
+  async updateSubscriptionTier(
+    @Ctx() ctx: RequestContext,
+    @Args() args: { input: any }
+  ): Promise<SubscriptionTier> {
+    return this.subscriptionService.updateSubscriptionTier(ctx, args.input);
+  }
+
+  @Mutation()
+  @Allow(Permission.DeleteSettings)
+  async deleteSubscriptionTier(
+    @Ctx() ctx: RequestContext,
+    @Args() args: { id: ID }
+  ): Promise<boolean> {
+    return this.subscriptionService.deleteSubscriptionTier(ctx, String(args.id));
   }
 }

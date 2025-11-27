@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Channel, ChannelService, RequestContext, TransactionalConnection } from '@vendure/core';
-import { PaystackService } from '../payments/paystack.service';
-import { SubscriptionTier } from '../../plugins/subscriptions/subscription.entity';
 import { ChannelEventRouterService } from '../../infrastructure/events/channel-event-router.service';
-import { ChannelEventType } from '../../infrastructure/events/types/event-type.enum';
 import { ActionCategory } from '../../infrastructure/events/types/action-category.enum';
+import { ChannelEventType } from '../../infrastructure/events/types/event-type.enum';
+import { SubscriptionTier } from '../../plugins/subscriptions/subscription.entity';
+import { PaystackService } from '../payments/paystack.service';
 
 export interface SubscriptionStatus {
   isValid: boolean;
@@ -33,7 +33,7 @@ export class SubscriptionService {
     private connection: TransactionalConnection,
     private paystackService: PaystackService,
     private eventRouter: ChannelEventRouterService
-  ) {}
+  ) { }
 
   /**
    * Check subscription status for a channel
@@ -428,10 +428,123 @@ export class SubscriptionService {
   }
 
   /**
-   * Get all active subscription tiers
+   * Get all subscription tiers (active and inactive)
    */
   async getAllSubscriptionTiers(): Promise<SubscriptionTier[]> {
     const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
-    return tierRepo.find({ where: { isActive: true }, order: { priceMonthly: 'ASC' } });
+    return tierRepo.find({ order: { priceMonthly: 'ASC' } });
+  }
+
+  /**
+   * Create a new subscription tier
+   */
+  async createSubscriptionTier(
+    ctx: RequestContext,
+    input: {
+      code: string;
+      name: string;
+      description?: string;
+      priceMonthly: number;
+      priceYearly: number;
+      features?: any;
+      isActive?: boolean;
+    }
+  ): Promise<SubscriptionTier> {
+    const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
+
+    // Check if code already exists
+    const existing = await tierRepo.findOne({ where: { code: input.code } });
+    if (existing) {
+      throw new Error(`Subscription tier with code "${input.code}" already exists`);
+    }
+
+    const tier = tierRepo.create({
+      code: input.code,
+      name: input.name,
+      description: input.description ?? undefined,
+      priceMonthly: input.priceMonthly,
+      priceYearly: input.priceYearly,
+      features: input.features || { features: [] },
+      isActive: input.isActive !== undefined ? input.isActive : true,
+    });
+
+    const saved = await tierRepo.save(tier);
+    this.logger.log(`Created subscription tier: ${saved.code} (${saved.name})`);
+    return saved;
+  }
+
+  /**
+   * Update an existing subscription tier
+   */
+  async updateSubscriptionTier(
+    ctx: RequestContext,
+    input: {
+      id: string;
+      code?: string;
+      name?: string;
+      description?: string;
+      priceMonthly?: number;
+      priceYearly?: number;
+      features?: any;
+      isActive?: boolean;
+    }
+  ): Promise<SubscriptionTier> {
+    const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
+
+    const tier = await tierRepo.findOne({ where: { id: input.id } });
+    if (!tier) {
+      throw new Error(`Subscription tier with ID "${input.id}" not found`);
+    }
+
+    // Check if code is being changed and if new code already exists
+    if (input.code && input.code !== tier.code) {
+      const existing = await tierRepo.findOne({ where: { code: input.code } });
+      if (existing) {
+        throw new Error(`Subscription tier with code "${input.code}" already exists`);
+      }
+      tier.code = input.code;
+    }
+
+    if (input.name !== undefined) {
+      tier.name = input.name;
+    }
+    if (input.description !== undefined) {
+      tier.description = input.description;
+    }
+    if (input.priceMonthly !== undefined) {
+      tier.priceMonthly = input.priceMonthly;
+    }
+    if (input.priceYearly !== undefined) {
+      tier.priceYearly = input.priceYearly;
+    }
+    if (input.features !== undefined) {
+      tier.features = input.features;
+    }
+    if (input.isActive !== undefined) {
+      tier.isActive = input.isActive;
+    }
+
+    const saved = await tierRepo.save(tier);
+    this.logger.log(`Updated subscription tier: ${saved.code} (${saved.name})`);
+    return saved;
+  }
+
+  /**
+   * Delete a subscription tier (soft delete by setting isActive=false)
+   */
+  async deleteSubscriptionTier(ctx: RequestContext, id: string): Promise<boolean> {
+    const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
+
+    const tier = await tierRepo.findOne({ where: { id } });
+    if (!tier) {
+      throw new Error(`Subscription tier with ID "${id}" not found`);
+    }
+
+    // Soft delete by setting isActive to false
+    tier.isActive = false;
+    await tierRepo.save(tier);
+
+    this.logger.log(`Deleted (deactivated) subscription tier: ${tier.code} (${tier.name})`);
+    return true;
   }
 }
