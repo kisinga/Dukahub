@@ -1,0 +1,124 @@
+<div class="container mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold">Team Management</h1>
+      <p class="text-base-content/70 mt-1">Manage channel administrators and permissions</p>
+    </div>
+    <button class="btn btn-primary" (click)="onCreateClick()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      Add Team Member
+    </button>
+  </div>
+
+  <!-- Stats -->
+  @if (stats(); as statsData) {
+    <div class="stats stats-horizontal shadow mb-6 w-full">
+      <div class="stat">
+        <div class="stat-title">Total Members</div>
+        <div class="stat-value text-primary">{{ statsData.total }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-title">Verified</div>
+        <div class="stat-value text-success">{{ statsData.verified }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-title">Roles</div>
+        <div class="stat-value text-secondary">{{ Object.keys(statsData.byRole).length }}</div>
+      </div>
+    </div>
+  }
+
+  <!-- Search -->
+  <div class="mb-6">
+    <input
+      type="text"
+      placeholder="Search by name, email, or phone..."
+      class="input input-bordered w-full"
+      [value]="searchQuery()"
+      (input)="onSearch($any($event.target).value)"
+    />
+  </div>
+
+  <!-- Error Message -->
+  @if (error(); as errorMsg) {
+    <div class="alert alert-error mb-6">
+      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>{{ errorMsg }}</span>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="flex justify-center items-center py-12">
+      <span class="loading loading-spinner loading-lg"></span>
+    </div>
+  }
+
+  <!-- Members List -->
+  @if (!isLoading() && filteredMembers().length > 0) {
+    <div class="overflow-x-auto">
+      <table class="table table-zebra">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Contact</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (member of filteredMembers(); track member.id) {
+            <app-team-member-row
+              [member]="member"
+              (edit)="onEditClick($event)"
+              (delete)="onDeleteClick($event)"
+            />
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!isLoading() && filteredMembers().length === 0) {
+    <div class="text-center py-12">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+      <h3 class="text-xl font-semibold mb-2">No team members found</h3>
+      <p class="text-base-content/70 mb-4">
+        @if (searchQuery()) {
+          No members match your search criteria.
+        } @else {
+          Get started by adding your first team member.
+        }
+      </p>
+      @if (!searchQuery()) {
+        <button class="btn btn-primary" (click)="onCreateClick()">
+          Add Team Member
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Modals -->
+  <app-create-admin-modal
+    #createModal
+    [roleTemplates]="roleTemplates()"
+    (memberCreated)="onMemberCreated()"
+  />
+
+  <app-permission-editor
+    #permissionEditor
+    [member]="memberToEdit()"
+    [roleTemplates]="roleTemplates()"
+    (permissionsUpdated)="onPermissionsUpdated()"
+  />
+</div>
+

@@ -1878,6 +1878,75 @@ export const INVITE_CHANNEL_ADMINISTRATOR = graphql(`
       firstName
       lastName
       emailAddress
+      user {
+        id
+        identifier
+        roles {
+          id
+          code
+          permissions
+        }
+      }
+    }
+  }
+`);
+
+export const GET_ROLE_TEMPLATES = graphql(`
+  query GetRoleTemplates {
+    roleTemplates {
+      code
+      name
+      description
+      permissions
+    }
+  }
+`);
+
+export const CREATE_CHANNEL_ADMIN = graphql(`
+  mutation CreateChannelAdmin($input: CreateChannelAdminInput!) {
+    createChannelAdmin(input: $input) {
+      id
+      firstName
+      lastName
+      emailAddress
+      user {
+        id
+        identifier
+        roles {
+          id
+          code
+          permissions
+        }
+      }
+    }
+  }
+`);
+
+export const UPDATE_CHANNEL_ADMIN = graphql(`
+  mutation UpdateChannelAdmin($id: ID!, $permissions: [String!]!) {
+    updateChannelAdmin(id: $id, permissions: $permissions) {
+      id
+      firstName
+      lastName
+      emailAddress
+      user {
+        id
+        identifier
+        roles {
+          id
+          code
+          permissions
+        }
+      }
+    }
+  }
+`);
+
+export const DISABLE_CHANNEL_ADMIN = graphql(`
+  mutation DisableChannelAdmin($id: ID!) {
+    disableChannelAdmin(id: $id) {
+      success
+      message
     }
   }
 `);

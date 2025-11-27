@@ -54,6 +54,11 @@ export class DashboardLayoutComponent implements OnInit {
       baseItems.splice(4, 0, { label: 'Credit', icon: '💳', route: '/dashboard/credit' });
     }
 
+    // Add Team if user has settings permission (same as Settings page)
+    if (this.authService.hasUpdateSettingsPermission()) {
+      baseItems.push({ label: 'Team', icon: '👥', route: '/dashboard/team' });
+    }
+
     // Only add Stock Adjustments if user has ManageStockAdjustmentsPermission
     if (this.authService.hasManageStockAdjustmentsPermission()) {
       baseItems.push({
