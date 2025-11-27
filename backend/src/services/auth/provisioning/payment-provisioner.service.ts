@@ -1,9 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { LanguageCode, PaymentMethod, PaymentMethodService, RequestContext } from '@vendure/core';
+import { ACCOUNT_CODES } from '../../../ledger/account-codes.constants';
 import { PAYMENT_METHOD_CODES } from '../../payments/payment-method-codes.constants';
 import { ChannelAssignmentService } from './channel-assignment.service';
 import { RegistrationAuditorService } from './registration-auditor.service';
 import { RegistrationErrorService } from './registration-error.service';
+
+/**
+ * Reconciliation type for payment methods
+ */
+export type ReconciliationType = 'blind_count' | 'transaction_verification' | 'statement_match' | 'none';
+
+/**
+ * Reconciliation defaults for payment method handlers
+ */
+interface ReconciliationDefaults {
+  reconciliationType: ReconciliationType;
+  ledgerAccountCode: string;
+  isCashierControlled: boolean;
+  requiresReconciliation: boolean;
+}
 
 /**
  * Payment Provisioner Service
@@ -132,6 +148,7 @@ export class PaymentProvisionerService {
       ],
       customFields: {
         isActive: true,
+        ...this.getReconciliationDefaults(handlerCode),
       },
     });
 
@@ -158,5 +175,43 @@ export class PaymentProvisionerService {
     }
 
     return paymentMethodResult as PaymentMethod;
+  }
+
+  /**
+   * Get reconciliation defaults based on payment handler code
+   *
+   * These defaults are set when creating a payment method and can be
+   * overridden in the admin UI on a per-payment-method basis.
+   */
+  private getReconciliationDefaults(handlerCode: string): ReconciliationDefaults {
+    const defaults: Record<string, ReconciliationDefaults> = {
+      [PAYMENT_METHOD_CODES.CASH]: {
+        reconciliationType: 'blind_count',
+        ledgerAccountCode: ACCOUNT_CODES.CASH_ON_HAND,
+        isCashierControlled: true,
+        requiresReconciliation: true,
+      },
+      [PAYMENT_METHOD_CODES.MPESA]: {
+        reconciliationType: 'transaction_verification',
+        ledgerAccountCode: ACCOUNT_CODES.CLEARING_MPESA,
+        isCashierControlled: true,
+        requiresReconciliation: true,
+      },
+      [PAYMENT_METHOD_CODES.CREDIT]: {
+        reconciliationType: 'none',
+        ledgerAccountCode: ACCOUNT_CODES.CLEARING_CREDIT,
+        isCashierControlled: false,
+        requiresReconciliation: false,
+      },
+    };
+
+    return (
+      defaults[handlerCode] || {
+        reconciliationType: 'none',
+        ledgerAccountCode: ACCOUNT_CODES.CLEARING_GENERIC,
+        isCashierControlled: false,
+        requiresReconciliation: false,
+      }
+    );
   }
 }
