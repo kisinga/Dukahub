@@ -94,39 +94,130 @@ services:
       start_period: 10s
 
   # ========================================
-  # OpenTelemetry Collector
+  # SigNoz Observability Stack
   # ========================================
-  # Receives traces via OTLP and logs to console (for debugging)
-  # Named 'signoz' for backwards compatibility - apps connect to signoz:4317/4318
-  signoz:
-    image: otel/opentelemetry-collector-contrib:latest
+  # Full observability platform with storage, querying, and visualization
+  # Architecture: Apps → OTel Collector → ClickHouse → SigNoz UI
+  #
+  # Resource Requirements:
+  # - ClickHouse: ~2GB RAM minimum
+  # - SigNoz: ~1GB RAM
+  # - Total: ~4GB RAM recommended
+  #
+  # Access:
+  # - SigNoz UI: http://localhost:${SIGNOZ_UI_PORT:-8080}
+  # - OTLP gRPC: localhost:${SIGNOZ_OTLP_GRPC_PORT:-4317}
+  # - OTLP HTTP: localhost:${SIGNOZ_OTLP_HTTP_PORT:-4318}
+
+  # ZooKeeper - Required for ClickHouse coordination
+  signoz-zookeeper:
+    image: bitnami/zookeeper:3.7.1
     platform: linux/amd64
     restart: unless-stopped
     networks:
       - dukarun_services_network
-    command: ['--config=/etc/otelcol/config.yaml']
-    configs:
-      - source: otel_config
-        target: /etc/otelcol/config.yaml
-    ports:
-      # OTLP ports - exposed for receiving traces
-      - '${SIGNOZ_OTLP_GRPC_PORT:-4317}:4317' # OTLP gRPC
-      - '${SIGNOZ_OTLP_HTTP_PORT:-4318}:4318' # OTLP HTTP
-      - '13133:13133' # Health check
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: 'yes'
+      ZOO_AUTOPURGE_INTERVAL: '1'
+    volumes:
+      - signoz_zookeeper_data:/bitnami/zookeeper
     healthcheck:
-      test: ['CMD-SHELL', 'wget -q --spider http://localhost:13133/ || exit 1']
+      test: ['CMD', 'zkServer.sh', 'status']
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
+
+  # ClickHouse - High-performance analytics database for telemetry storage
+  signoz-clickhouse:
+    image: clickhouse/clickhouse-server:24.1.2-alpine
+    platform: linux/amd64
+    restart: unless-stopped
+    networks:
+      - dukarun_services_network
+    environment:
+      CLICKHOUSE_DB: signoz
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: '1'
+    volumes:
+      - signoz_clickhouse_data:/var/lib/clickhouse
+      - signoz_clickhouse_logs:/var/log/clickhouse-server
+    depends_on:
+      signoz-zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:8123/ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # SigNoz OTel Collector - Receives telemetry and writes to ClickHouse
+  # Apps send traces/metrics/logs here via OTLP (ports 4317/4318)
+  signoz-otel-collector:
+    image: signoz/signoz-otel-collector:0.111.24
+    platform: linux/amd64
+    restart: unless-stopped
+    networks:
+      - dukarun_services_network
+    command:
+      - '--config=/etc/otel-collector-config.yaml'
+    environment:
+      OTEL_RESOURCE_ATTRIBUTES: 'host.name=signoz-host,os.type=linux'
+      SIGNOZ_COMPONENT: otel-collector
+      LOW_CARDINAL_EXCEPTION_GROUPING: 'true'
+    configs:
+      - source: otel_collector_config
+        target: /etc/otel-collector-config.yaml
+    ports:
+      - '${SIGNOZ_OTLP_GRPC_PORT:-4317}:4317' # OTLP gRPC
+      - '${SIGNOZ_OTLP_HTTP_PORT:-4318}:4318' # OTLP HTTP
+    depends_on:
+      signoz-clickhouse:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:13133/']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # SigNoz Query Service - UI, API, and Alert Manager
+  signoz:
+    image: signoz/signoz:0.69.0
+    platform: linux/amd64
+    restart: unless-stopped
+    networks:
+      - dukarun_services_network
+    environment:
+      SIGNOZ_LOCAL_DB_PATH: /var/lib/signoz/signoz.db
+      STORAGE: clickhouse
+      GODEBUG: netdns=go
+      ClickHouseUrl: tcp://signoz-clickhouse:9000
+      ALERTMANAGER_API_PREFIX: http://localhost:9093/api/
+      QUERY_SERVICE_URL: http://localhost:8080
+    volumes:
+      - signoz_data:/var/lib/signoz
+    ports:
+      - '${SIGNOZ_UI_PORT:-8080}:8080' # SigNoz UI
+    depends_on:
+      signoz-clickhouse:
+        condition: service_healthy
+      signoz-otel-collector:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:8080/api/v1/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
 # ========================================
 # Configs (inline - no external files needed)
 # ========================================
 configs:
-  otel_config:
+  otel_collector_config:
     content: |
-      # OpenTelemetry Collector Configuration
       receivers:
         otlp:
           protocols:
@@ -134,31 +225,95 @@ configs:
               endpoint: 0.0.0.0:4317
             http:
               endpoint: 0.0.0.0:4318
+        hostmetrics:
+          collection_interval: 30s
+          scrapers:
+            cpu: {}
+            load: {}
+            memory: {}
+            disk: {}
+            filesystem: {}
+            network: {}
+
       processors:
         batch:
-          timeout: 1s
-          send_batch_size: 1024
+          send_batch_size: 10000
+          send_batch_max_size: 11000
+          timeout: 10s
+        memory_limiter:
+          limit_mib: 4000
+          spike_limit_mib: 800
+          check_interval: 5s
+        resourcedetection:
+          detectors: [env, system]
+          timeout: 5s
+          override: false
+        signozspanmetrics/prometheus:
+          metrics_exporter: prometheus
+          latency_histogram_buckets: [100us, 1ms, 2ms, 6ms, 10ms, 50ms, 100ms, 250ms, 500ms, 1000ms, 1400ms, 2000ms, 5s, 10s, 20s, 40s, 60s]
+          dimensions_cache_size: 100000
+          dimensions:
+            - name: service.namespace
+              default: default
+            - name: deployment.environment
+              default: default
+
       exporters:
-        debug:
-          verbosity: basic
+        clickhousetraces:
+          datasource: tcp://signoz-clickhouse:9000/?database=signoz_traces
+          docker_multi_node_cluster: false
+          low_cardinal_exception_grouping: true
+        clickhousemetricswrite:
+          endpoint: tcp://signoz-clickhouse:9000/?database=signoz_metrics
+          resource_to_telemetry_conversion:
+            enabled: true
+        clickhouselogsexporter:
+          dsn: tcp://signoz-clickhouse:9000/?database=signoz_logs
+          timeout: 5s
+          sending_queue:
+            queue_size: 100
+          retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+        prometheus:
+          endpoint: 0.0.0.0:8889
+
       extensions:
         health_check:
           endpoint: 0.0.0.0:13133
+        zpages:
+          endpoint: 0.0.0.0:55679
+        pprof:
+          endpoint: 0.0.0.0:1777
+
       service:
-        extensions: [health_check]
+        telemetry:
+          metrics:
+            address: 0.0.0.0:8888
+        extensions: [health_check, zpages, pprof]
         pipelines:
           traces:
             receivers: [otlp]
-            processors: [batch]
-            exporters: [debug]
+            processors: [signozspanmetrics/prometheus, memory_limiter, batch]
+            exporters: [clickhousetraces]
           metrics:
             receivers: [otlp]
-            processors: [batch]
-            exporters: [debug]
+            processors: [memory_limiter, batch]
+            exporters: [clickhousemetricswrite]
+          metrics/hostmetrics:
+            receivers: [hostmetrics]
+            processors: [memory_limiter, resourcedetection, batch]
+            exporters: [clickhousemetricswrite]
+          metrics/spanmetrics:
+            receivers: []
+            processors: []
+            exporters: [prometheus]
           logs:
             receivers: [otlp]
-            processors: [batch]
-            exporters: [debug]
+            processors: [memory_limiter, batch]
+            exporters: [clickhouselogsexporter]
 
 # ========================================
 # Networks
@@ -178,4 +333,16 @@ volumes:
     driver: local
 
   timescaledb_audit_data:
+    driver: local
+
+  signoz_zookeeper_data:
+    driver: local
+
+  signoz_clickhouse_data:
+    driver: local
+
+  signoz_clickhouse_logs:
+    driver: local
+
+  signoz_data:
     driver: local

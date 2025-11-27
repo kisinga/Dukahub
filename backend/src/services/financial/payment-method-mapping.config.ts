@@ -16,7 +16,8 @@
  * See: `payment-method-codes.constants.ts` for the naming convention documentation.
  */
 
-import { ACCOUNT_CODES, type AccountCode } from '../../ledger/account-codes.constants';
+import { PaymentMethod } from '@vendure/core';
+import { ACCOUNT_CODES, isValidAccountCode, type AccountCode } from '../../ledger/account-codes.constants';
 import { PAYMENT_METHOD_CODES } from '../payments/payment-method-codes.constants';
 
 /**
@@ -120,4 +121,80 @@ export function getPaymentMethodsForAccount(accountCode: AccountCode): string[] 
   return PAYMENT_METHOD_MAPPINGS.filter(rule => rule.accountCode === accountCode)
     .map(rule => rule.exactCode || rule.pattern || '')
     .filter(code => code !== '');
+}
+
+/**
+ * Resolve ledger account code from a PaymentMethod entity
+ *
+ * Priority:
+ * 1. Custom field `ledgerAccountCode` if set and valid
+ * 2. Handler-based mapping (fallback)
+ *
+ * This allows admin to override the default account mapping per payment method.
+ *
+ * @param paymentMethod PaymentMethod entity
+ * @returns Ledger account code
+ */
+export function getAccountCodeFromPaymentMethod(paymentMethod: PaymentMethod): AccountCode {
+  // 1. Check custom field override
+  const customFields = (paymentMethod as any).customFields;
+  const customCode = customFields?.ledgerAccountCode;
+
+  if (customCode && typeof customCode === 'string' && customCode.trim() !== '') {
+    const trimmedCode = customCode.trim();
+    if (isValidAccountCode(trimmedCode)) {
+      return trimmedCode as AccountCode;
+    }
+  }
+
+  // 2. Fall back to handler-based mapping
+  // Extract handler code from payment method code (e.g., 'cash-1' -> 'cash')
+  const handlerCode = paymentMethod.code.split('-')[0];
+  return mapPaymentMethodToAccount(handlerCode);
+}
+
+/**
+ * Get reconciliation type from PaymentMethod custom fields
+ *
+ * @param paymentMethod PaymentMethod entity
+ * @returns Reconciliation type or 'none' as default
+ */
+export function getReconciliationTypeFromPaymentMethod(
+  paymentMethod: PaymentMethod
+): 'blind_count' | 'transaction_verification' | 'statement_match' | 'none' {
+  const customFields = (paymentMethod as any).customFields;
+  const reconType = customFields?.reconciliationType;
+
+  if (
+    reconType === 'blind_count' ||
+    reconType === 'transaction_verification' ||
+    reconType === 'statement_match'
+  ) {
+    return reconType;
+  }
+
+  return 'none';
+}
+
+/**
+ * Check if a PaymentMethod is cashier-controlled
+ *
+ * @param paymentMethod PaymentMethod entity
+ * @returns true if payment method should be included in cashier session reconciliation
+ */
+export function isCashierControlledPaymentMethod(paymentMethod: PaymentMethod): boolean {
+  const customFields = (paymentMethod as any).customFields;
+  return customFields?.isCashierControlled === true;
+}
+
+/**
+ * Check if a PaymentMethod requires reconciliation
+ *
+ * @param paymentMethod PaymentMethod entity
+ * @returns true if payment method must be reconciled before period close
+ */
+export function requiresReconciliation(paymentMethod: PaymentMethod): boolean {
+  const customFields = (paymentMethod as any).customFields;
+  // Default to true if not explicitly set to false
+  return customFields?.requiresReconciliation !== false;
 }

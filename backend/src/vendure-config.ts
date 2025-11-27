@@ -276,6 +276,51 @@ export const config: VendureConfig = {
         ui: { tab: 'Settings' },
       },
       {
+        name: 'cashControlEnabled',
+        type: 'boolean',
+        label: [{ languageCode: LanguageCode.en, value: 'Enable Cash Control' }],
+        description: [
+          {
+            languageCode: LanguageCode.en,
+            value: 'When enabled, cashiers must perform blind cash counts during sessions',
+          },
+        ],
+        defaultValue: true,
+        public: true,
+        nullable: false,
+        ui: { tab: 'Settings' },
+      },
+      {
+        name: 'requireOpeningCount',
+        type: 'boolean',
+        label: [{ languageCode: LanguageCode.en, value: 'Require Opening Count' }],
+        description: [
+          {
+            languageCode: LanguageCode.en,
+            value: 'Require a cash count when opening a cashier session',
+          },
+        ],
+        defaultValue: true,
+        public: true,
+        nullable: false,
+        ui: { tab: 'Settings' },
+      },
+      {
+        name: 'varianceNotificationThreshold',
+        type: 'int',
+        label: [{ languageCode: LanguageCode.en, value: 'Variance Notification Threshold' }],
+        description: [
+          {
+            languageCode: LanguageCode.en,
+            value: 'Minimum variance (in cents) to trigger manager notification. Default 100 = 1 KES',
+          },
+        ],
+        defaultValue: 100,
+        public: false,
+        nullable: false,
+        ui: { tab: 'Settings' },
+      },
+      {
         name: 'status',
         type: 'string',
         label: [{ languageCode: LanguageCode.en, value: 'Channel Status' }],
@@ -1130,6 +1175,72 @@ export const config: VendureConfig = {
         nullable: true,
         defaultValue: true,
         ui: { tab: 'Display' },
+      },
+      // Reconciliation Configuration
+      {
+        name: 'reconciliationType',
+        type: 'string',
+        label: [{ languageCode: LanguageCode.en, value: 'Reconciliation Type' }],
+        description: [
+          {
+            languageCode: LanguageCode.en,
+            value: 'How this payment method should be reconciled: blind_count (cash), transaction_verification (mobile money), statement_match (bank), none',
+          },
+        ],
+        defaultValue: 'none',
+        public: true,
+        nullable: false,
+        options: [
+          { value: 'blind_count' },
+          { value: 'transaction_verification' },
+          { value: 'statement_match' },
+          { value: 'none' },
+        ],
+        ui: { tab: 'Reconciliation' },
+      },
+      {
+        name: 'ledgerAccountCode',
+        type: 'string',
+        label: [{ languageCode: LanguageCode.en, value: 'Ledger Account Code' }],
+        description: [
+          {
+            languageCode: LanguageCode.en,
+            value: 'Account code for ledger postings (e.g., CASH_ON_HAND, CLEARING_MPESA). Auto-derived from handler if empty.',
+          },
+        ],
+        public: true,
+        nullable: true,
+        ui: { tab: 'Reconciliation' },
+      },
+      {
+        name: 'isCashierControlled',
+        type: 'boolean',
+        label: [{ languageCode: LanguageCode.en, value: 'Cashier Controlled' }],
+        description: [
+          {
+            languageCode: LanguageCode.en,
+            value: 'Include this payment method in cashier session reconciliation',
+          },
+        ],
+        defaultValue: false,
+        public: true,
+        nullable: false,
+        ui: { tab: 'Reconciliation' },
+      },
+      {
+        name: 'requiresReconciliation',
+        type: 'boolean',
+        label: [{ languageCode: LanguageCode.en, value: 'Requires Reconciliation' }],
+        description: [
+          {
+            languageCode: LanguageCode.en,
+            value: 'Must be reconciled before accounting period close',
+          },
+        ],
+        defaultValue: true,
+        public: true,
+        nullable: false,
+        ui: { tab: 'Reconciliation' },
       },
     ],
     OrderLine: [
