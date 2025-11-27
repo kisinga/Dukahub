@@ -1,328 +1,76 @@
-# =====================================
-# Dukarun Infrastructure Services
-# =====================================
-#
-# This file contains only infrastructure services (databases, cache, observability)
-# Application services (backend, frontend) are in docker-compose.yml
-#
-# Usage:
-#   # First, create the external network (one-time):
-#   docker network create dukarun_services_network
-#   # Then start services:
-#   docker compose -f docker-compose.services.yml up -d
-#   docker compose -f docker-compose.services.yml logs -f
-#   docker compose -f docker-compose.services.yml down
-#
-# This file can be pasted directly into Coolify for managed resources with backups
-
 services:
-  # ========================================
-  # Database Service
-  # ========================================
   postgres_db:
-    image: postgres:17
+    image: 'postgres:17'
     restart: unless-stopped
     networks:
       - dukarun_services_network
     environment:
-      POSTGRES_DB: ${DB_NAME:-vendure}
-      POSTGRES_USER: ${DB_USER:-vendure}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-vendure}
+      POSTGRES_DB: '${DB_NAME:-vendure}'
+      POSTGRES_USER: '${DB_USER:-vendure}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-vendure}'
       POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - 'postgres_data:/var/lib/postgresql/data'
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-vendure} -d ${DB_NAME:-vendure}']
+      test:
+        - CMD-SHELL
+        - 'pg_isready -U ${DB_USER:-vendure} -d ${DB_NAME:-vendure}'
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
-
-  # ========================================
-  # Audit Log Database (TimescaleDB)
-  # ========================================
   timescaledb_audit:
-    image: timescale/timescaledb:latest-pg17
+    image: 'timescale/timescaledb:latest-pg17'
     platform: linux/amd64
     restart: unless-stopped
     networks:
       - dukarun_services_network
     environment:
-      POSTGRES_DB: ${AUDIT_DB_NAME:-audit_logs}
-      POSTGRES_USER: ${AUDIT_DB_USER:-audit_user}
-      POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD:-audit_password}
+      POSTGRES_DB: '${AUDIT_DB_NAME:-audit_logs}'
+      POSTGRES_USER: '${AUDIT_DB_USER:-audit_user}'
+      POSTGRES_PASSWORD: '${AUDIT_DB_PASSWORD:-audit_password}'
       POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
     volumes:
-      - timescaledb_audit_data:/var/lib/postgresql/data
+      - 'timescaledb_audit_data:/var/lib/postgresql/data'
     ports:
       - '${AUDIT_DB_PORT:-5433}:5432'
     healthcheck:
       test:
-        ['CMD-SHELL', 'pg_isready -U ${AUDIT_DB_USER:-audit_user} -d ${AUDIT_DB_NAME:-audit_logs}']
+        - CMD-SHELL
+        - 'pg_isready -U ${AUDIT_DB_USER:-audit_user} -d ${AUDIT_DB_NAME:-audit_logs}'
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
-
-  # ========================================
-  # Redis Cache Service
-  # ========================================
   redis:
-    image: redis:7-alpine
+    image: 'redis:7-alpine'
     restart: unless-stopped
     networks:
       - dukarun_services_network
-    command: >
-      redis-server 
-      --appendonly yes 
-      --maxmemory 512mb 
-      --maxmemory-policy allkeys-lru
-      --save 900 1
-      --save 300 10
-      --save 60 10000
+    command: "redis-server  --appendonly yes  --maxmemory 512mb  --maxmemory-policy allkeys-lru --save 900 1 --save 300 10 --save 60 10000\n"
     volumes:
-      - redis_data:/data
+      - 'redis_data:/data'
     ports:
       - '${REDIS_PORT:-6379}:6379'
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test:
+        - CMD
+        - redis-cli
+        - ping
       interval: 10s
       timeout: 3s
       retries: 5
       start_period: 10s
 
-  # ========================================
-  # SigNoz Observability Stack
-  # ========================================
-  # Full observability platform with storage, querying, and visualization
-  # Architecture: Apps → OTel Collector → ClickHouse → SigNoz UI
-  #
-  # Resource Requirements:
-  # - ClickHouse: ~2GB RAM minimum
-  # - SigNoz: ~1GB RAM
-  # - Total: ~4GB RAM recommended
-  #
-  # Access:
-  # - SigNoz UI: http://localhost:${SIGNOZ_UI_PORT:-8080}
-  # - OTLP gRPC: localhost:${SIGNOZ_OTLP_GRPC_PORT:-4317}
-  # - OTLP HTTP: localhost:${SIGNOZ_OTLP_HTTP_PORT:-4318}
-
-  # ClickHouse - High-performance analytics database for telemetry storage
-  # Official SigNoz template configuration
-  signoz-clickhouse:
-    image: clickhouse/clickhouse-server:${CLICKHOUSE_VERSION:-25.5.6}
-    platform: linux/amd64
-    restart: unless-stopped
-    networks:
-      - dukarun_services_network
-    environment:
-      CLICKHOUSE_SKIP_USER_SETUP: '1'
-    volumes:
-      - signoz_clickhouse_data:/var/lib/clickhouse
-    healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', '0.0.0.0:8123/ping']
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    ulimits:
-      nproc: 65535
-      nofile:
-        soft: 262144
-        hard: 262144
-
-  # Schema Migrator - Creates databases and tables automatically
-  # Must run before SigNoz services start
-  signoz-schema-migrator:
-    image: signoz/signoz-schema-migrator:${SIGNOZ_VERSION:-v0.129.12}
-    platform: linux/amd64
-    restart: on-failure
-    networks:
-      - dukarun_services_network
-    command:
-      - sync
-      - --dsn=tcp://signoz-clickhouse:9000
-      - --dev
-    depends_on:
-      signoz-clickhouse:
-        condition: service_healthy
-
-  # SigNoz Query Service - UI, API, and Alert Manager
-  # Official SigNoz template configuration
-  signoz:
-    image: signoz/signoz:${SIGNOZ_VERSION:-v0.103.0}
-    platform: linux/amd64
-    restart: unless-stopped
-    networks:
-      - dukarun_services_network
-    environment:
-      SIGNOZ_ALERTMANAGER_PROVIDER: signoz
-      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: tcp://signoz-clickhouse:9000
-      SIGNOZ_SQLSTORE_SQLITE_PATH: /var/lib/signoz/signoz.db
-      STORAGE: clickhouse
-      GODEBUG: netdns=go
-      TELEMETRY_ENABLED: 'true'
-      DEPLOYMENT_TYPE: docker-standalone-amd
-      DOT_METRICS_ENABLED: 'true'
-    volumes:
-      - signoz_data:/var/lib/signoz
-    ports:
-      - '${SIGNOZ_UI_PORT:-8080}:8080' # SigNoz UI
-    depends_on:
-      signoz-clickhouse:
-        condition: service_healthy
-    healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'localhost:8080/api/v1/health']
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  # SigNoz OTel Collector - Receives telemetry and writes to ClickHouse
-  # Official SigNoz template configuration
-  # Apps send traces/metrics/logs here via OTLP (ports 4317/4318)
-  signoz-otel-collector:
-    image: signoz/signoz-otel-collector:${SIGNOZ_VERSION:-v0.129.12}
-    platform: linux/amd64
-    restart: unless-stopped
-    networks:
-      - dukarun_services_network
-    command:
-      - '--config=/etc/otel-collector-config.yaml'
-      - '--feature-gates=-pkg.translator.prometheus.NormalizeName'
-    environment:
-      OTEL_RESOURCE_ATTRIBUTES: 'host.name=signoz-host,os.type=linux'
-      LOW_CARDINAL_EXCEPTION_GROUPING: ${LOW_CARDINAL_EXCEPTION_GROUPING:-false}
-    configs:
-      - source: otel_collector_config
-        target: /etc/otel-collector-config.yaml
-    ports:
-      - '${SIGNOZ_OTLP_GRPC_PORT:-4317}:4317' # OTLP gRPC
-      - '${SIGNOZ_OTLP_HTTP_PORT:-4318}:4318' # OTLP HTTP
-    depends_on:
-      signoz-clickhouse:
-        condition: service_healthy
-    healthcheck:
-      test: ['CMD', 'sh', '-c', 'nc -z localhost 13133 || exit 1']
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-# ========================================
-# Configs (Official SigNoz template)
-# ========================================
-configs:
-  otel_collector_config:
-    content: |
-      connectors:
-        signozmeter:
-          metrics_flush_interval: 1h
-          dimensions:
-            - name: service.name
-            - name: deployment.environment
-            - name: host.name
-      receivers:
-        otlp:
-          protocols:
-            grpc:
-              endpoint: 0.0.0.0:4317
-            http:
-              endpoint: 0.0.0.0:4318
-      processors:
-        batch:
-          send_batch_size: 10000
-          send_batch_max_size: 11000
-          timeout: 10s
-        batch/meter:
-          send_batch_max_size: 25000
-          send_batch_size: 20000
-          timeout: 1s
-        resourcedetection:
-          detectors: [env, system]
-          timeout: 2s
-        signozspanmetrics/delta:
-          metrics_exporter: signozclickhousemetrics
-          metrics_flush_interval: 60s
-          latency_histogram_buckets: [100us, 1ms, 2ms, 6ms, 10ms, 50ms, 100ms, 250ms, 500ms, 1000ms, 1400ms, 2000ms, 5s, 10s, 20s, 40s, 60s]
-          dimensions_cache_size: 100000
-          aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
-          enable_exp_histogram: true
-          dimensions:
-            - name: service.namespace
-              default: default
-            - name: deployment.environment
-              default: default
-            - name: signoz.collector.id
-            - name: service.version
-            - name: host.name
-      extensions:
-        health_check:
-          endpoint: 0.0.0.0:13133
-        pprof:
-          endpoint: 0.0.0.0:1777
-      exporters:
-        clickhousetraces:
-          datasource: tcp://signoz-clickhouse:9000/signoz_traces
-          low_cardinal_exception_grouping: $${env:LOW_CARDINAL_EXCEPTION_GROUPING}
-          use_new_schema: true
-        signozclickhousemetrics:
-          dsn: tcp://signoz-clickhouse:9000/signoz_metrics
-        clickhouselogsexporter:
-          dsn: tcp://signoz-clickhouse:9000/signoz_logs
-          timeout: 10s
-          use_new_schema: true
-        signozclickhousemeter:
-          dsn: tcp://signoz-clickhouse:9000/signoz_meter
-          timeout: 45s
-          sending_queue:
-            enabled: false
-      service:
-        telemetry:
-          logs:
-            encoding: json
-        extensions:
-          - health_check
-          - pprof
-        pipelines:
-          traces:
-            receivers: [otlp]
-            processors: [signozspanmetrics/delta, batch]
-            exporters: [clickhousetraces, signozmeter]
-          metrics:
-            receivers: [otlp]
-            processors: [batch]
-            exporters: [signozclickhousemetrics, signozmeter]
-          logs:
-            receivers: [otlp]
-            processors: [batch]
-            exporters: [clickhouselogsexporter, signozmeter]
-          metrics/meter:
-            receivers: [signozmeter]
-            processors: [batch/meter]
-            exporters: [signozclickhousemeter]
-
-# ========================================
-# Networks
-# ========================================
 networks:
   dukarun_services_network:
     external: true
-
-# ========================================
-# Volumes
-# ========================================
 volumes:
   postgres_data:
     driver: local
-
   redis_data:
     driver: local
-
   timescaledb_audit_data:
-    driver: local
-
-  signoz_clickhouse_data:
-    driver: local
-
-  signoz_data:
     driver: local
