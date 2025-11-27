@@ -63,9 +63,12 @@ export interface UpdateChannelSettingsInput {
 }
 
 export interface InviteAdministratorInput {
-  emailAddress: string;
+  emailAddress?: string;
   firstName: string;
   lastName: string;
+  phoneNumber: string;
+  roleTemplateCode?: string;
+  permissionOverrides?: string[];
 }
 
 export interface CreatePaymentMethodInput {
@@ -178,13 +181,33 @@ export class SettingsService {
 
     try {
       const client = this.apolloService.getClient();
+      if (!input.phoneNumber) {
+        throw new Error('phoneNumber is required');
+      }
       const result = await client.mutate({
         mutation: INVITE_CHANNEL_ADMINISTRATOR,
         variables: { input },
       });
 
       if (result.data?.inviteChannelAdministrator) {
-        return result.data.inviteChannelAdministrator as Administrator;
+        const admin = result.data.inviteChannelAdministrator;
+        // Map GraphQL response to Administrator interface
+        // Note: inviteChannelAdministrator response doesn't include verified field
+        return {
+          ...admin,
+          user: admin.user
+            ? {
+                ...admin.user,
+                verified: false, // Default to false since not in response
+                roles: admin.user.roles?.map((role) => ({
+                  id: role.id,
+                  code: role.code,
+                  permissions: role.permissions ?? [],
+                  channels: [],
+                })),
+              }
+            : null,
+        } as Administrator;
       }
       return null;
     } catch (err) {

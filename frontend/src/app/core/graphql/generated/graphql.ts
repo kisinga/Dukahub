@@ -35,6 +35,17 @@ export type AccountBreakdown = {
   value: Scalars['Float']['output'];
 };
 
+export type AccountingPeriod = {
+  __typename?: 'AccountingPeriod';
+  channelId: Scalars['Int']['output'];
+  closedAt?: Maybe<Scalars['DateTime']['output']>;
+  closedBy?: Maybe<Scalars['Int']['output']>;
+  endDate: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  startDate: Scalars['DateTime']['output'];
+  status: Scalars['String']['output'];
+};
+
 export type AddFulfillmentToOrderResult =
   | CreateFulfillmentError
   | EmptyOrderLineSelectionError
@@ -477,6 +488,76 @@ export type CartItemInput = {
   variantId: Scalars['ID']['input'];
 };
 
+export type CashCountResult = {
+  __typename?: 'CashCountResult';
+  count: CashDrawerCount;
+  hasVariance: Scalars['Boolean']['output'];
+  varianceHidden: Scalars['Boolean']['output'];
+};
+
+export type CashDrawerCount = {
+  __typename?: 'CashDrawerCount';
+  channelId: Scalars['Int']['output'];
+  countType: Scalars['String']['output'];
+  countedByUserId: Scalars['Int']['output'];
+  declaredCash: Scalars['String']['output'];
+  expectedCash?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  reviewNotes?: Maybe<Scalars['String']['output']>;
+  reviewedAt?: Maybe<Scalars['DateTime']['output']>;
+  reviewedByUserId?: Maybe<Scalars['Int']['output']>;
+  sessionId: Scalars['ID']['output'];
+  takenAt: Scalars['DateTime']['output'];
+  variance?: Maybe<Scalars['String']['output']>;
+  varianceReason?: Maybe<Scalars['String']['output']>;
+};
+
+export type CashierSession = {
+  __typename?: 'CashierSession';
+  cashierUserId: Scalars['Int']['output'];
+  channelId: Scalars['Int']['output'];
+  closedAt?: Maybe<Scalars['DateTime']['output']>;
+  closingDeclared: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  openedAt: Scalars['DateTime']['output'];
+  openingFloat: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+};
+
+export type CashierSessionLedgerTotals = {
+  __typename?: 'CashierSessionLedgerTotals';
+  cashTotal: Scalars['String']['output'];
+  mpesaTotal: Scalars['String']['output'];
+  totalCollected: Scalars['String']['output'];
+};
+
+export type CashierSessionList = {
+  __typename?: 'CashierSessionList';
+  items: Array<CashierSession>;
+  totalItems: Scalars['Int']['output'];
+};
+
+export type CashierSessionListOptions = {
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+  status?: InputMaybe<Scalars['String']['input']>;
+  take?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type CashierSessionSummary = {
+  __typename?: 'CashierSessionSummary';
+  cashierUserId: Scalars['Int']['output'];
+  closedAt?: Maybe<Scalars['DateTime']['output']>;
+  closingDeclared: Scalars['String']['output'];
+  ledgerTotals: CashierSessionLedgerTotals;
+  openedAt: Scalars['DateTime']['output'];
+  openingFloat: Scalars['String']['output'];
+  sessionId: Scalars['ID']['output'];
+  status: Scalars['String']['output'];
+  variance: Scalars['String']['output'];
+};
+
 export type Channel = Node & {
   __typename?: 'Channel';
   availableCurrencyCodes: Array<CurrencyCode>;
@@ -528,12 +609,14 @@ export type ChannelCustomFields = {
   actionTrackingLastResetDate?: Maybe<Scalars['DateTime']['output']>;
   actionTrackingResetType?: Maybe<Scalars['String']['output']>;
   billingCycle?: Maybe<Scalars['String']['output']>;
+  cashControlEnabled?: Maybe<Scalars['Boolean']['output']>;
   cashierFlowEnabled?: Maybe<Scalars['Boolean']['output']>;
   cashierOpen?: Maybe<Scalars['Boolean']['output']>;
   companyLogoAsset?: Maybe<Asset>;
   eventConfig?: Maybe<Scalars['String']['output']>;
   lastPaymentAmount?: Maybe<Scalars['Int']['output']>;
   lastPaymentDate?: Maybe<Scalars['DateTime']['output']>;
+  maxAdminCount?: Maybe<Scalars['Int']['output']>;
   mlImageCount?: Maybe<Scalars['Int']['output']>;
   mlMetadataAsset?: Maybe<Asset>;
   mlModelBinAsset?: Maybe<Asset>;
@@ -545,12 +628,14 @@ export type ChannelCustomFields = {
   mlTrainingStatus?: Maybe<Scalars['String']['output']>;
   paystackCustomerCode?: Maybe<Scalars['String']['output']>;
   paystackSubscriptionCode?: Maybe<Scalars['String']['output']>;
+  requireOpeningCount?: Maybe<Scalars['Boolean']['output']>;
   status?: Maybe<Scalars['String']['output']>;
   subscriptionExpiresAt?: Maybe<Scalars['DateTime']['output']>;
   subscriptionStartedAt?: Maybe<Scalars['DateTime']['output']>;
   subscriptionStatus?: Maybe<Scalars['String']['output']>;
   subscriptionTier?: Maybe<SubscriptionTier>;
   trialEndsAt?: Maybe<Scalars['DateTime']['output']>;
+  varianceNotificationThreshold?: Maybe<Scalars['Int']['output']>;
 };
 
 /**
@@ -593,6 +678,7 @@ export type ChannelFilterParameter = {
   actionTrackingLastResetDate?: InputMaybe<DateOperators>;
   actionTrackingResetType?: InputMaybe<StringOperators>;
   billingCycle?: InputMaybe<StringOperators>;
+  cashControlEnabled?: InputMaybe<BooleanOperators>;
   cashierFlowEnabled?: InputMaybe<BooleanOperators>;
   cashierOpen?: InputMaybe<BooleanOperators>;
   code?: InputMaybe<StringOperators>;
@@ -604,6 +690,7 @@ export type ChannelFilterParameter = {
   id?: InputMaybe<IdOperators>;
   lastPaymentAmount?: InputMaybe<NumberOperators>;
   lastPaymentDate?: InputMaybe<DateOperators>;
+  maxAdminCount?: InputMaybe<NumberOperators>;
   mlImageCount?: InputMaybe<NumberOperators>;
   mlProductCount?: InputMaybe<NumberOperators>;
   mlTrainingError?: InputMaybe<StringOperators>;
@@ -614,6 +701,7 @@ export type ChannelFilterParameter = {
   paystackCustomerCode?: InputMaybe<StringOperators>;
   paystackSubscriptionCode?: InputMaybe<StringOperators>;
   pricesIncludeTax?: InputMaybe<BooleanOperators>;
+  requireOpeningCount?: InputMaybe<BooleanOperators>;
   status?: InputMaybe<StringOperators>;
   subscriptionExpiresAt?: InputMaybe<DateOperators>;
   subscriptionStartedAt?: InputMaybe<DateOperators>;
@@ -622,6 +710,7 @@ export type ChannelFilterParameter = {
   trackInventory?: InputMaybe<BooleanOperators>;
   trialEndsAt?: InputMaybe<DateOperators>;
   updatedAt?: InputMaybe<DateOperators>;
+  varianceNotificationThreshold?: InputMaybe<NumberOperators>;
 };
 
 export type ChannelList = PaginatedList & {
@@ -676,6 +765,7 @@ export type ChannelSortParameter = {
   actionTrackingLastResetDate?: InputMaybe<SortOrder>;
   actionTrackingResetType?: InputMaybe<SortOrder>;
   billingCycle?: InputMaybe<SortOrder>;
+  cashControlEnabled?: InputMaybe<SortOrder>;
   cashierFlowEnabled?: InputMaybe<SortOrder>;
   cashierOpen?: InputMaybe<SortOrder>;
   code?: InputMaybe<SortOrder>;
@@ -685,6 +775,7 @@ export type ChannelSortParameter = {
   id?: InputMaybe<SortOrder>;
   lastPaymentAmount?: InputMaybe<SortOrder>;
   lastPaymentDate?: InputMaybe<SortOrder>;
+  maxAdminCount?: InputMaybe<SortOrder>;
   mlImageCount?: InputMaybe<SortOrder>;
   mlMetadataAsset?: InputMaybe<SortOrder>;
   mlModelBinAsset?: InputMaybe<SortOrder>;
@@ -697,6 +788,7 @@ export type ChannelSortParameter = {
   outOfStockThreshold?: InputMaybe<SortOrder>;
   paystackCustomerCode?: InputMaybe<SortOrder>;
   paystackSubscriptionCode?: InputMaybe<SortOrder>;
+  requireOpeningCount?: InputMaybe<SortOrder>;
   status?: InputMaybe<SortOrder>;
   subscriptionExpiresAt?: InputMaybe<SortOrder>;
   subscriptionStartedAt?: InputMaybe<SortOrder>;
@@ -705,6 +797,7 @@ export type ChannelSortParameter = {
   token?: InputMaybe<SortOrder>;
   trialEndsAt?: InputMaybe<SortOrder>;
   updatedAt?: InputMaybe<SortOrder>;
+  varianceNotificationThreshold?: InputMaybe<SortOrder>;
 };
 
 export type ChannelSubscription = {
@@ -717,6 +810,12 @@ export type ChannelSubscription = {
   subscriptionStartedAt?: Maybe<Scalars['DateTime']['output']>;
   tier?: Maybe<SubscriptionTier>;
   trialEndsAt?: Maybe<Scalars['DateTime']['output']>;
+};
+
+export type CloseCashierSessionInput = {
+  closingDeclared: Scalars['String']['input'];
+  notes?: InputMaybe<Scalars['String']['input']>;
+  sessionId: Scalars['ID']['input'];
 };
 
 export type Collection = Node & {
@@ -1012,6 +1111,15 @@ export type CreateAssetInput = {
 
 export type CreateAssetResult = Asset | MimeTypeError;
 
+export type CreateChannelAdminInput = {
+  emailAddress?: InputMaybe<Scalars['String']['input']>;
+  firstName: Scalars['String']['input'];
+  lastName: Scalars['String']['input'];
+  permissionOverrides?: InputMaybe<Array<Scalars['String']['input']>>;
+  phoneNumber: Scalars['String']['input'];
+  roleTemplateCode: Scalars['String']['input'];
+};
+
 export type CreateChannelCustomFieldsInput = {
   actionCountAuthOtp?: InputMaybe<Scalars['Int']['input']>;
   actionCountAuthTotal?: InputMaybe<Scalars['Int']['input']>;
@@ -1038,12 +1146,14 @@ export type CreateChannelCustomFieldsInput = {
   actionTrackingLastResetDate?: InputMaybe<Scalars['DateTime']['input']>;
   actionTrackingResetType?: InputMaybe<Scalars['String']['input']>;
   billingCycle?: InputMaybe<Scalars['String']['input']>;
+  cashControlEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   cashierFlowEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   cashierOpen?: InputMaybe<Scalars['Boolean']['input']>;
   companyLogoAssetId?: InputMaybe<Scalars['ID']['input']>;
   eventConfig?: InputMaybe<Scalars['String']['input']>;
   lastPaymentAmount?: InputMaybe<Scalars['Int']['input']>;
   lastPaymentDate?: InputMaybe<Scalars['DateTime']['input']>;
+  maxAdminCount?: InputMaybe<Scalars['Int']['input']>;
   mlImageCount?: InputMaybe<Scalars['Int']['input']>;
   mlMetadataAssetId?: InputMaybe<Scalars['ID']['input']>;
   mlModelBinAssetId?: InputMaybe<Scalars['ID']['input']>;
@@ -1055,12 +1165,14 @@ export type CreateChannelCustomFieldsInput = {
   mlTrainingStatus?: InputMaybe<Scalars['String']['input']>;
   paystackCustomerCode?: InputMaybe<Scalars['String']['input']>;
   paystackSubscriptionCode?: InputMaybe<Scalars['String']['input']>;
+  requireOpeningCount?: InputMaybe<Scalars['Boolean']['input']>;
   status?: InputMaybe<Scalars['String']['input']>;
   subscriptionExpiresAt?: InputMaybe<Scalars['DateTime']['input']>;
   subscriptionStartedAt?: InputMaybe<Scalars['DateTime']['input']>;
   subscriptionStatus?: InputMaybe<Scalars['String']['input']>;
   subscriptionTierId?: InputMaybe<Scalars['ID']['input']>;
   trialEndsAt?: InputMaybe<Scalars['DateTime']['input']>;
+  varianceNotificationThreshold?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type CreateChannelInput = {
@@ -1177,6 +1289,14 @@ export type CreateGroupOptionInput = {
   translations: Array<ProductOptionGroupTranslationInput>;
 };
 
+export type CreateInventoryReconciliationInput = {
+  actualBalance: Scalars['String']['input'];
+  channelId: Scalars['Int']['input'];
+  notes?: InputMaybe<Scalars['String']['input']>;
+  periodEndDate: Scalars['DateTime']['input'];
+  stockLocationId?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type CreateOrderCustomFieldsInput = {
   auditCreatedAt?: InputMaybe<Scalars['DateTime']['input']>;
   createdByUserIdId?: InputMaybe<Scalars['ID']['input']>;
@@ -1196,6 +1316,10 @@ export type CreateOrderInput = {
 export type CreatePaymentMethodCustomFieldsInput = {
   imageAssetId?: InputMaybe<Scalars['ID']['input']>;
   isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  isCashierControlled?: InputMaybe<Scalars['Boolean']['input']>;
+  ledgerAccountCode?: InputMaybe<Scalars['String']['input']>;
+  reconciliationType?: InputMaybe<Scalars['String']['input']>;
+  requiresReconciliation?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type CreatePaymentMethodInput = {
@@ -1291,6 +1415,17 @@ export type CreateProvinceInput = {
   customFields?: InputMaybe<Scalars['JSON']['input']>;
   enabled: Scalars['Boolean']['input'];
   translations: Array<ProvinceTranslationInput>;
+};
+
+export type CreateReconciliationInput = {
+  actualBalance: Scalars['String']['input'];
+  channelId: Scalars['Int']['input'];
+  expectedBalance?: InputMaybe<Scalars['String']['input']>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  rangeEnd: Scalars['DateTime']['input'];
+  rangeStart: Scalars['DateTime']['input'];
+  scope: Scalars['String']['input'];
+  scopeRefId: Scalars['String']['input'];
 };
 
 export type CreateRoleInput = {
@@ -2047,6 +2182,12 @@ export enum DeletionResult {
   NOT_DELETED = 'NOT_DELETED',
 }
 
+export type DisableChannelAdminResponse = {
+  __typename?: 'DisableChannelAdminResponse';
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
 export type Discount = {
   __typename?: 'Discount';
   adjustmentSource: Scalars['String']['output'];
@@ -2611,6 +2752,15 @@ export type IntStructFieldConfig = StructField & {
   ui?: Maybe<Scalars['JSON']['output']>;
 };
 
+export type InterAccountTransferInput = {
+  amount: Scalars['String']['input'];
+  channelId: Scalars['Int']['input'];
+  entryDate: Scalars['DateTime']['input'];
+  fromAccountCode: Scalars['String']['input'];
+  memo?: InputMaybe<Scalars['String']['input']>;
+  toAccountCode: Scalars['String']['input'];
+};
+
 /** Returned if the user authentication credentials are not valid */
 export type InvalidCredentialsError = ErrorResult & {
   __typename?: 'InvalidCredentialsError';
@@ -2657,10 +2807,23 @@ export type InventoryStockAdjustmentList = {
   totalItems: Scalars['Int']['output'];
 };
 
+export type InventoryValuation = {
+  __typename?: 'InventoryValuation';
+  asOfDate: Scalars['DateTime']['output'];
+  batchCount: Scalars['Int']['output'];
+  channelId: Scalars['Int']['output'];
+  itemCount: Scalars['Int']['output'];
+  stockLocationId?: Maybe<Scalars['Int']['output']>;
+  totalValue: Scalars['String']['output'];
+};
+
 export type InviteAdministratorInput = {
-  emailAddress: Scalars['String']['input'];
+  emailAddress?: InputMaybe<Scalars['String']['input']>;
   firstName: Scalars['String']['input'];
   lastName: Scalars['String']['input'];
+  permissionOverrides?: InputMaybe<Array<Scalars['String']['input']>>;
+  phoneNumber: Scalars['String']['input'];
+  roleTemplateCode?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** Returned if the specified items are already part of a Fulfillment */
@@ -2779,6 +2942,7 @@ export type JournalEntriesResult = {
 
 export type JournalEntry = {
   __typename?: 'JournalEntry';
+  channelId: Scalars['Int']['output'];
   entryDate: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   lines: Array<JournalLine>;
@@ -2786,6 +2950,7 @@ export type JournalEntry = {
   postedAt: Scalars['DateTime']['output'];
   sourceId: Scalars['String']['output'];
   sourceType: Scalars['String']['output'];
+  status: Scalars['String']['output'];
 };
 
 export type JournalLine = {
@@ -3340,6 +3505,19 @@ export type MoveCollectionInput = {
   parentId: Scalars['ID']['input'];
 };
 
+export type MpesaVerification = {
+  __typename?: 'MpesaVerification';
+  allConfirmed: Scalars['Boolean']['output'];
+  channelId: Scalars['Int']['output'];
+  flaggedTransactionIds?: Maybe<Array<Scalars['String']['output']>>;
+  id: Scalars['ID']['output'];
+  notes?: Maybe<Scalars['String']['output']>;
+  sessionId: Scalars['ID']['output'];
+  transactionCount: Scalars['Int']['output'];
+  verifiedAt: Scalars['DateTime']['output'];
+  verifiedByUserId: Scalars['Int']['output'];
+};
+
 /** Returned if an operation has specified OrderLines from multiple Orders */
 export type MultipleOrderError = ErrorResult & {
   __typename?: 'MultipleOrderError';
@@ -3407,14 +3585,18 @@ export type Mutation = {
   cancelSubscription: Scalars['Boolean']['output'];
   /** Clear all ML model files for a channel */
   clearMlModel: Scalars['Boolean']['output'];
+  closeAccountingPeriod: PeriodEndCloseResult;
+  closeCashierSession: CashierSessionSummary;
   /** Complete training and upload model files (multipart) */
   completeTraining: Scalars['Boolean']['output'];
   /** Create a new Administrator */
   createAdministrator: Administrator;
   /** Create a new Asset */
   createAssets: Array<CreateAssetResult>;
+  createCashierSessionReconciliation: Reconciliation;
   /** Create a new Channel */
   createChannel: CreateChannelResult;
+  createChannelAdmin: Administrator;
   createChannelPaymentMethod: PaymentMethod;
   /** Create a new Collection */
   createCollection: Collection;
@@ -3434,6 +3616,8 @@ export type Mutation = {
   createFacetValue: FacetValue;
   /** Create one or more FacetValues */
   createFacetValues: Array<FacetValue>;
+  createInterAccountTransfer: JournalEntry;
+  createInventoryReconciliation: Reconciliation;
   createOrder: Order;
   /** Create existing PaymentMethod */
   createPaymentMethod: PaymentMethod;
@@ -3448,6 +3632,7 @@ export type Mutation = {
   createPromotion: CreatePromotionResult;
   /** Create a new Province */
   createProvince: Province;
+  createReconciliation: Reconciliation;
   /** Create a new Role */
   createRole: Role;
   /** Create a new Seller */
@@ -3549,11 +3734,13 @@ export type Mutation = {
   deleteZone: DeletionResponse;
   /** Delete a Zone */
   deleteZones: Array<DeletionResponse>;
+  disableChannelAdmin: DisableChannelAdminResponse;
   /**
    * Duplicate an existing entity using a specific EntityDuplicator.
    * Since v2.2.0.
    */
   duplicateEntity: DuplicateEntityResult;
+  explainVariance: CashDrawerCount;
   /** Manually trigger photo extraction */
   extractPhotosForTraining: Scalars['Boolean']['output'];
   flushBufferedJobs: Success;
@@ -3580,6 +3767,9 @@ export type Mutation = {
   modifyOrder: ModifyOrderResult;
   /** Move a Collection to a different parent or index */
   moveCollection: Collection;
+  openAccountingPeriod: AccountingPeriod;
+  openCashierSession: CashierSession;
+  recordCashCount: CashCountResult;
   recordPurchase: StockPurchase;
   recordStockAdjustment: InventoryStockAdjustment;
   refundOrder: RefundOrderResult;
@@ -3619,6 +3809,7 @@ export type Mutation = {
   removeStockLocationsFromChannel: Array<StockLocation>;
   requestLoginOTP: OtpResponse;
   requestRegistrationOTP: OtpResponse;
+  reviewCashCount: CashDrawerCount;
   runPendingSearchIndexUpdates: Success;
   runScheduledTask: Success;
   setCustomerForDraftOrder: SetCustomerForDraftOrderResult;
@@ -3659,6 +3850,7 @@ export type Mutation = {
   updateAsset: Asset;
   /** Update an existing Channel */
   updateChannel: UpdateChannelResult;
+  updateChannelAdmin: Administrator;
   updateChannelPaymentMethod: PaymentMethod;
   updateChannelSettings: ChannelSettings;
   /** Update an existing Collection */
@@ -3721,6 +3913,8 @@ export type Mutation = {
   /** Update an existing Zone */
   updateZone: Zone;
   verifyLoginOTP: LoginResult;
+  verifyMpesaTransactions: MpesaVerification;
+  verifyReconciliation: Reconciliation;
   verifyRegistrationOTP: RegistrationResult;
   /** Verify subscription payment */
   verifySubscriptionPayment: Scalars['Boolean']['output'];
@@ -3854,6 +4048,15 @@ export type MutationClearMlModelArgs = {
   channelId: Scalars['ID']['input'];
 };
 
+export type MutationCloseAccountingPeriodArgs = {
+  channelId: Scalars['Int']['input'];
+  periodEndDate: Scalars['DateTime']['input'];
+};
+
+export type MutationCloseCashierSessionArgs = {
+  input: CloseCashierSessionInput;
+};
+
 export type MutationCompleteTrainingArgs = {
   channelId: Scalars['ID']['input'];
   metadata: Scalars['Upload']['input'];
@@ -3869,8 +4072,17 @@ export type MutationCreateAssetsArgs = {
   input: Array<CreateAssetInput>;
 };
 
+export type MutationCreateCashierSessionReconciliationArgs = {
+  notes?: InputMaybe<Scalars['String']['input']>;
+  sessionId: Scalars['ID']['input'];
+};
+
 export type MutationCreateChannelArgs = {
   input: CreateChannelInput;
+};
+
+export type MutationCreateChannelAdminArgs = {
+  input: CreateChannelAdminInput;
 };
 
 export type MutationCreateChannelPaymentMethodArgs = {
@@ -3911,6 +4123,14 @@ export type MutationCreateFacetValuesArgs = {
   input: Array<CreateFacetValueInput>;
 };
 
+export type MutationCreateInterAccountTransferArgs = {
+  input: InterAccountTransferInput;
+};
+
+export type MutationCreateInventoryReconciliationArgs = {
+  input: CreateInventoryReconciliationInput;
+};
+
 export type MutationCreateOrderArgs = {
   input: CreateOrderInput;
 };
@@ -3941,6 +4161,10 @@ export type MutationCreatePromotionArgs = {
 
 export type MutationCreateProvinceArgs = {
   input: CreateProvinceInput;
+};
+
+export type MutationCreateReconciliationArgs = {
+  input: CreateReconciliationInput;
 };
 
 export type MutationCreateRoleArgs = {
@@ -4164,8 +4388,17 @@ export type MutationDeleteZonesArgs = {
   ids: Array<Scalars['ID']['input']>;
 };
 
+export type MutationDisableChannelAdminArgs = {
+  id: Scalars['ID']['input'];
+};
+
 export type MutationDuplicateEntityArgs = {
   input: DuplicateEntityInput;
+};
+
+export type MutationExplainVarianceArgs = {
+  countId: Scalars['ID']['input'];
+  reason: Scalars['String']['input'];
 };
 
 export type MutationExtractPhotosForTrainingArgs = {
@@ -4215,6 +4448,19 @@ export type MutationModifyOrderArgs = {
 
 export type MutationMoveCollectionArgs = {
   input: MoveCollectionInput;
+};
+
+export type MutationOpenAccountingPeriodArgs = {
+  channelId: Scalars['Int']['input'];
+  periodStartDate: Scalars['DateTime']['input'];
+};
+
+export type MutationOpenCashierSessionArgs = {
+  input: OpenCashierSessionInput;
+};
+
+export type MutationRecordCashCountArgs = {
+  input: RecordCashCountInput;
 };
 
 export type MutationRecordPurchaseArgs = {
@@ -4299,6 +4545,11 @@ export type MutationRequestLoginOtpArgs = {
 export type MutationRequestRegistrationOtpArgs = {
   phoneNumber: Scalars['String']['input'];
   registrationData: RegistrationInput;
+};
+
+export type MutationReviewCashCountArgs = {
+  countId: Scalars['ID']['input'];
+  notes?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationRunScheduledTaskArgs = {
@@ -4405,6 +4656,11 @@ export type MutationUpdateAssetArgs = {
 
 export type MutationUpdateChannelArgs = {
   input: UpdateChannelInput;
+};
+
+export type MutationUpdateChannelAdminArgs = {
+  id: Scalars['ID']['input'];
+  permissions: Array<Scalars['String']['input']>;
 };
 
 export type MutationUpdateChannelPaymentMethodArgs = {
@@ -4564,6 +4820,14 @@ export type MutationVerifyLoginOtpArgs = {
   phoneNumber: Scalars['String']['input'];
 };
 
+export type MutationVerifyMpesaTransactionsArgs = {
+  input: VerifyMpesaInput;
+};
+
+export type MutationVerifyReconciliationArgs = {
+  reconciliationId: Scalars['ID']['input'];
+};
+
 export type MutationVerifyRegistrationOtpArgs = {
   otp: Scalars['String']['input'];
   phoneNumber: Scalars['String']['input'];
@@ -4653,6 +4917,7 @@ export type NotificationListOptions = {
 };
 
 export enum NotificationType {
+  CASH_VARIANCE = 'CASH_VARIANCE',
   ML_TRAINING = 'ML_TRAINING',
   ORDER = 'ORDER',
   PAYMENT = 'PAYMENT',
@@ -4686,6 +4951,11 @@ export type OtpResponse = {
   message: Scalars['String']['output'];
   sessionId?: Maybe<Scalars['String']['output']>;
   success: Scalars['Boolean']['output'];
+};
+
+export type OpenCashierSessionInput = {
+  channelId: Scalars['Int']['input'];
+  openingFloat: Scalars['String']['input'];
 };
 
 export type Order = Node & {
@@ -5083,6 +5353,10 @@ export type PaymentMethodCustomFields = {
   __typename?: 'PaymentMethodCustomFields';
   imageAsset?: Maybe<Asset>;
   isActive?: Maybe<Scalars['Boolean']['output']>;
+  isCashierControlled?: Maybe<Scalars['Boolean']['output']>;
+  ledgerAccountCode?: Maybe<Scalars['String']['output']>;
+  reconciliationType?: Maybe<Scalars['String']['output']>;
+  requiresReconciliation?: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type PaymentMethodFilterParameter = {
@@ -5094,7 +5368,11 @@ export type PaymentMethodFilterParameter = {
   enabled?: InputMaybe<BooleanOperators>;
   id?: InputMaybe<IdOperators>;
   isActive?: InputMaybe<BooleanOperators>;
+  isCashierControlled?: InputMaybe<BooleanOperators>;
+  ledgerAccountCode?: InputMaybe<StringOperators>;
   name?: InputMaybe<StringOperators>;
+  reconciliationType?: InputMaybe<StringOperators>;
+  requiresReconciliation?: InputMaybe<BooleanOperators>;
   updatedAt?: InputMaybe<DateOperators>;
 };
 
@@ -5138,6 +5416,16 @@ export type PaymentMethodQuote = {
   name: Scalars['String']['output'];
 };
 
+export type PaymentMethodReconciliationConfig = {
+  __typename?: 'PaymentMethodReconciliationConfig';
+  isCashierControlled: Scalars['Boolean']['output'];
+  ledgerAccountCode: Scalars['String']['output'];
+  paymentMethodCode: Scalars['String']['output'];
+  paymentMethodId: Scalars['ID']['output'];
+  reconciliationType: Scalars['String']['output'];
+  requiresReconciliation: Scalars['Boolean']['output'];
+};
+
 export type PaymentMethodSortParameter = {
   code?: InputMaybe<SortOrder>;
   createdAt?: InputMaybe<SortOrder>;
@@ -5145,7 +5433,11 @@ export type PaymentMethodSortParameter = {
   id?: InputMaybe<SortOrder>;
   imageAsset?: InputMaybe<SortOrder>;
   isActive?: InputMaybe<SortOrder>;
+  isCashierControlled?: InputMaybe<SortOrder>;
+  ledgerAccountCode?: InputMaybe<SortOrder>;
   name?: InputMaybe<SortOrder>;
+  reconciliationType?: InputMaybe<SortOrder>;
+  requiresReconciliation?: InputMaybe<SortOrder>;
   updatedAt?: InputMaybe<SortOrder>;
 };
 
@@ -5184,12 +5476,28 @@ export type PaymentStateTransitionError = ErrorResult & {
   transitionError: Scalars['String']['output'];
 };
 
+export type PeriodEndCloseResult = {
+  __typename?: 'PeriodEndCloseResult';
+  period: AccountingPeriod;
+  reconciliationSummary: ReconciliationSummary;
+  success: Scalars['Boolean']['output'];
+};
+
 export type PeriodStats = {
   __typename?: 'PeriodStats';
   accounts: Array<AccountBreakdown>;
   month: Scalars['Float']['output'];
   today: Scalars['Float']['output'];
   week: Scalars['Float']['output'];
+};
+
+export type PeriodStatus = {
+  __typename?: 'PeriodStatus';
+  canClose: Scalars['Boolean']['output'];
+  currentPeriod?: Maybe<AccountingPeriod>;
+  isLocked: Scalars['Boolean']['output'];
+  lockEndDate?: Maybe<Scalars['DateTime']['output']>;
+  missingReconciliations: Array<Scalars['String']['output']>;
 };
 
 /**
@@ -5229,6 +5537,8 @@ export enum Permission {
   ApproveCustomerCredit = 'ApproveCustomerCredit',
   /** Authenticated means simply that the user is logged in */
   Authenticated = 'Authenticated',
+  /** Allows closing accounting periods after reconciliation verification. */
+  CloseAccountingPeriod = 'CloseAccountingPeriod',
   /** Grants permission to create Administrator */
   CreateAdministrator = 'CreateAdministrator',
   /** Grants permission to create Asset */
@@ -5319,6 +5629,8 @@ export enum Permission {
   DeleteZone = 'DeleteZone',
   /** Allows setting and adjusting customer credit limits. */
   ManageCustomerCreditLimit = 'ManageCustomerCreditLimit',
+  /** Allows creating and verifying reconciliations for all scopes. */
+  ManageReconciliation = 'ManageReconciliation',
   /** Allows recording stock adjustments for inventory corrections. */
   ManageStockAdjustments = 'ManageStockAdjustments',
   /** Allows managing supplier credit purchases, including approval, limit management, and bulk payments. */
@@ -5945,11 +6257,15 @@ export type Query = {
   /** Get a list of Assets */
   assets: AssetList;
   auditLogs: Array<AuditLog>;
+  cashierSession?: Maybe<CashierSessionSummary>;
+  cashierSessions: CashierSessionList;
   channel?: Maybe<Channel>;
+  channelReconciliationConfig: Array<PaymentMethodReconciliationConfig>;
   channels: ChannelList;
   checkAuthorizationStatus: AuthorizationStatus;
   /** Quick subscription status check */
   checkSubscriptionStatus: SubscriptionStatus;
+  closedPeriods: Array<AccountingPeriod>;
   /** Get a Collection either by id or slug. If neither id nor slug is specified, an error will result. */
   collection?: Maybe<Collection>;
   collectionFilters: Array<ConfigurableOperationDefinition>;
@@ -5957,6 +6273,8 @@ export type Query = {
   countries: CountryList;
   country?: Maybe<Country>;
   creditSummary: CreditSummary;
+  currentCashierSession?: Maybe<CashierSession>;
+  currentPeriodStatus: PeriodStatus;
   customer?: Maybe<Customer>;
   customerGroup?: Maybe<CustomerGroup>;
   customerGroups: CustomerGroupList;
@@ -5982,6 +6300,7 @@ export type Query = {
   getUnreadCount: Scalars['Int']['output'];
   getUserNotifications: NotificationList;
   globalSettings: GlobalSettings;
+  inventoryValuation: InventoryValuation;
   job?: Maybe<Job>;
   jobBufferSize: Array<JobBufferSize>;
   jobQueues: Array<JobQueue>;
@@ -6006,6 +6325,8 @@ export type Query = {
   paymentMethodHandlers: Array<ConfigurableOperationDefinition>;
   paymentMethods: PaymentMethodList;
   pendingSearchIndexUpdates: Scalars['Int']['output'];
+  pendingVarianceReviews: Array<CashDrawerCount>;
+  periodReconciliationStatus: ReconciliationStatus;
   /** Used for real-time previews of the contents of a Collection */
   previewCollectionVariants: ProductVariantList;
   /** Get a Product either by id or slug. If neither id nor slug is specified, an error will result. */
@@ -6026,11 +6347,15 @@ export type Query = {
   provinces: ProvinceList;
   purchases: StockPurchaseList;
   role?: Maybe<Role>;
+  roleTemplates: Array<RoleTemplate>;
   roles: RoleList;
   scheduledTasks: Array<ScheduledTask>;
   search: SearchResponse;
   seller?: Maybe<Seller>;
   sellers: SellerList;
+  sessionCashCounts: Array<CashDrawerCount>;
+  sessionMpesaVerifications: Array<MpesaVerification>;
+  sessionReconciliationRequirements: SessionReconciliationRequirements;
   shippingCalculators: Array<ConfigurableOperationDefinition>;
   shippingEligibilityCheckers: Array<ConfigurableOperationDefinition>;
   shippingMethod?: Maybe<ShippingMethod>;
@@ -6074,8 +6399,21 @@ export type QueryAuditLogsArgs = {
   options?: InputMaybe<AuditLogOptions>;
 };
 
+export type QueryCashierSessionArgs = {
+  sessionId: Scalars['ID']['input'];
+};
+
+export type QueryCashierSessionsArgs = {
+  channelId: Scalars['Int']['input'];
+  options?: InputMaybe<CashierSessionListOptions>;
+};
+
 export type QueryChannelArgs = {
   id: Scalars['ID']['input'];
+};
+
+export type QueryChannelReconciliationConfigArgs = {
+  channelId: Scalars['Int']['input'];
 };
 
 export type QueryChannelsArgs = {
@@ -6088,6 +6426,12 @@ export type QueryCheckAuthorizationStatusArgs = {
 
 export type QueryCheckSubscriptionStatusArgs = {
   channelId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+export type QueryClosedPeriodsArgs = {
+  channelId: Scalars['Int']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryCollectionArgs = {
@@ -6109,6 +6453,14 @@ export type QueryCountryArgs = {
 
 export type QueryCreditSummaryArgs = {
   customerId: Scalars['ID']['input'];
+};
+
+export type QueryCurrentCashierSessionArgs = {
+  channelId: Scalars['Int']['input'];
+};
+
+export type QueryCurrentPeriodStatusArgs = {
+  channelId: Scalars['Int']['input'];
 };
 
 export type QueryCustomerArgs = {
@@ -6168,6 +6520,12 @@ export type QueryGetUserNotificationsArgs = {
   options?: InputMaybe<NotificationListOptions>;
 };
 
+export type QueryInventoryValuationArgs = {
+  asOfDate: Scalars['DateTime']['input'];
+  channelId: Scalars['Int']['input'];
+  stockLocationId?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type QueryJobArgs = {
   jobId: Scalars['ID']['input'];
 };
@@ -6222,6 +6580,15 @@ export type QueryPaymentMethodArgs = {
 
 export type QueryPaymentMethodsArgs = {
   options?: InputMaybe<PaymentMethodListOptions>;
+};
+
+export type QueryPendingVarianceReviewsArgs = {
+  channelId: Scalars['Int']['input'];
+};
+
+export type QueryPeriodReconciliationStatusArgs = {
+  channelId: Scalars['Int']['input'];
+  periodEndDate: Scalars['DateTime']['input'];
 };
 
 export type QueryPreviewCollectionVariantsArgs = {
@@ -6293,6 +6660,18 @@ export type QuerySellerArgs = {
 
 export type QuerySellersArgs = {
   options?: InputMaybe<SellerListOptions>;
+};
+
+export type QuerySessionCashCountsArgs = {
+  sessionId: Scalars['ID']['input'];
+};
+
+export type QuerySessionMpesaVerificationsArgs = {
+  sessionId: Scalars['ID']['input'];
+};
+
+export type QuerySessionReconciliationRequirementsArgs = {
+  sessionId: Scalars['ID']['input'];
 };
 
 export type QueryShippingMethodArgs = {
@@ -6369,6 +6748,41 @@ export type QueryZoneArgs = {
 
 export type QueryZonesArgs = {
   options?: InputMaybe<ZoneListOptions>;
+};
+
+export type Reconciliation = {
+  __typename?: 'Reconciliation';
+  actualBalance?: Maybe<Scalars['String']['output']>;
+  channelId: Scalars['Int']['output'];
+  createdBy: Scalars['Int']['output'];
+  expectedBalance?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  notes?: Maybe<Scalars['String']['output']>;
+  rangeEnd: Scalars['DateTime']['output'];
+  rangeStart: Scalars['DateTime']['output'];
+  reviewedBy?: Maybe<Scalars['Int']['output']>;
+  scope: Scalars['String']['output'];
+  scopeRefId: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+  varianceAmount: Scalars['String']['output'];
+};
+
+export type ReconciliationStatus = {
+  __typename?: 'ReconciliationStatus';
+  periodEndDate: Scalars['DateTime']['output'];
+  scopes: Array<ScopeReconciliationStatus>;
+};
+
+export type ReconciliationSummary = {
+  __typename?: 'ReconciliationSummary';
+  periodEndDate: Scalars['DateTime']['output'];
+  scopes: Array<ScopeReconciliationStatus>;
+};
+
+export type RecordCashCountInput = {
+  countType: Scalars['String']['input'];
+  declaredCash: Scalars['String']['input'];
+  sessionId: Scalars['ID']['input'];
 };
 
 export type RecordPurchaseInput = {
@@ -6652,6 +7066,14 @@ export type RoleSortParameter = {
   updatedAt?: InputMaybe<SortOrder>;
 };
 
+export type RoleTemplate = {
+  __typename?: 'RoleTemplate';
+  code: Scalars['String']['output'];
+  description: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  permissions: Array<Scalars['String']['output']>;
+};
+
 export type Sale = Node &
   StockMovement & {
     __typename?: 'Sale';
@@ -6675,6 +7097,15 @@ export type ScheduledTask = {
   nextExecutionAt?: Maybe<Scalars['DateTime']['output']>;
   schedule: Scalars['String']['output'];
   scheduleDescription: Scalars['String']['output'];
+};
+
+export type ScopeReconciliationStatus = {
+  __typename?: 'ScopeReconciliationStatus';
+  displayName?: Maybe<Scalars['String']['output']>;
+  scope: Scalars['String']['output'];
+  scopeRefId: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+  varianceAmount?: Maybe<Scalars['String']['output']>;
 };
 
 export type SearchInput = {
@@ -6799,6 +7230,13 @@ export type ServerConfig = {
   orderProcess: Array<OrderProcessState>;
   permissions: Array<PermissionDefinition>;
   permittedAssetTypes: Array<Scalars['String']['output']>;
+};
+
+export type SessionReconciliationRequirements = {
+  __typename?: 'SessionReconciliationRequirements';
+  blindCountRequired: Scalars['Boolean']['output'];
+  paymentMethods: Array<PaymentMethodReconciliationConfig>;
+  verificationRequired: Scalars['Boolean']['output'];
 };
 
 export type SetCustomerForDraftOrderResult = EmailAddressConflictError | Order;
@@ -7598,12 +8036,14 @@ export type UpdateChannelCustomFieldsInput = {
   actionTrackingLastResetDate?: InputMaybe<Scalars['DateTime']['input']>;
   actionTrackingResetType?: InputMaybe<Scalars['String']['input']>;
   billingCycle?: InputMaybe<Scalars['String']['input']>;
+  cashControlEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   cashierFlowEnabled?: InputMaybe<Scalars['Boolean']['input']>;
   cashierOpen?: InputMaybe<Scalars['Boolean']['input']>;
   companyLogoAssetId?: InputMaybe<Scalars['ID']['input']>;
   eventConfig?: InputMaybe<Scalars['String']['input']>;
   lastPaymentAmount?: InputMaybe<Scalars['Int']['input']>;
   lastPaymentDate?: InputMaybe<Scalars['DateTime']['input']>;
+  maxAdminCount?: InputMaybe<Scalars['Int']['input']>;
   mlImageCount?: InputMaybe<Scalars['Int']['input']>;
   mlMetadataAssetId?: InputMaybe<Scalars['ID']['input']>;
   mlModelBinAssetId?: InputMaybe<Scalars['ID']['input']>;
@@ -7615,12 +8055,14 @@ export type UpdateChannelCustomFieldsInput = {
   mlTrainingStatus?: InputMaybe<Scalars['String']['input']>;
   paystackCustomerCode?: InputMaybe<Scalars['String']['input']>;
   paystackSubscriptionCode?: InputMaybe<Scalars['String']['input']>;
+  requireOpeningCount?: InputMaybe<Scalars['Boolean']['input']>;
   status?: InputMaybe<Scalars['String']['input']>;
   subscriptionExpiresAt?: InputMaybe<Scalars['DateTime']['input']>;
   subscriptionStartedAt?: InputMaybe<Scalars['DateTime']['input']>;
   subscriptionStatus?: InputMaybe<Scalars['String']['input']>;
   subscriptionTierId?: InputMaybe<Scalars['ID']['input']>;
   trialEndsAt?: InputMaybe<Scalars['DateTime']['input']>;
+  varianceNotificationThreshold?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type UpdateChannelInput = {
@@ -7803,6 +8245,10 @@ export type UpdateOrderNoteInput = {
 export type UpdatePaymentMethodCustomFieldsInput = {
   imageAssetId?: InputMaybe<Scalars['ID']['input']>;
   isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  isCashierControlled?: InputMaybe<Scalars['Boolean']['input']>;
+  ledgerAccountCode?: InputMaybe<Scalars['String']['input']>;
+  reconciliationType?: InputMaybe<Scalars['String']['input']>;
+  requiresReconciliation?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UpdatePaymentMethodInput = {
@@ -8009,6 +8455,13 @@ export type UserInfo = {
 export type ValidateCreditInput = {
   customerId: Scalars['ID']['input'];
   estimatedOrderTotal: Scalars['Float']['input'];
+};
+
+export type VerifyMpesaInput = {
+  allConfirmed: Scalars['Boolean']['input'];
+  flaggedTransactionIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  sessionId: Scalars['ID']['input'];
 };
 
 export type Zone = Node & {
@@ -10049,6 +10502,96 @@ export type InviteChannelAdministratorMutation = {
     firstName: string;
     lastName: string;
     emailAddress: string;
+    user: {
+      __typename?: 'User';
+      id: string;
+      identifier: string;
+      roles: Array<{
+        __typename?: 'Role';
+        id: string;
+        code: string;
+        permissions: Array<Permission>;
+      }>;
+    };
+  };
+};
+
+export type GetRoleTemplatesQueryVariables = Exact<{ [key: string]: never }>;
+
+export type GetRoleTemplatesQuery = {
+  __typename?: 'Query';
+  roleTemplates: Array<{
+    __typename?: 'RoleTemplate';
+    code: string;
+    name: string;
+    description: string;
+    permissions: Array<string>;
+  }>;
+};
+
+export type CreateChannelAdminMutationVariables = Exact<{
+  input: CreateChannelAdminInput;
+}>;
+
+export type CreateChannelAdminMutation = {
+  __typename?: 'Mutation';
+  createChannelAdmin: {
+    __typename?: 'Administrator';
+    id: string;
+    firstName: string;
+    lastName: string;
+    emailAddress: string;
+    user: {
+      __typename?: 'User';
+      id: string;
+      identifier: string;
+      roles: Array<{
+        __typename?: 'Role';
+        id: string;
+        code: string;
+        permissions: Array<Permission>;
+      }>;
+    };
+  };
+};
+
+export type UpdateChannelAdminMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  permissions: Array<Scalars['String']['input']> | Scalars['String']['input'];
+}>;
+
+export type UpdateChannelAdminMutation = {
+  __typename?: 'Mutation';
+  updateChannelAdmin: {
+    __typename?: 'Administrator';
+    id: string;
+    firstName: string;
+    lastName: string;
+    emailAddress: string;
+    user: {
+      __typename?: 'User';
+      id: string;
+      identifier: string;
+      roles: Array<{
+        __typename?: 'Role';
+        id: string;
+        code: string;
+        permissions: Array<Permission>;
+      }>;
+    };
+  };
+};
+
+export type DisableChannelAdminMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type DisableChannelAdminMutation = {
+  __typename?: 'Mutation';
+  disableChannelAdmin: {
+    __typename?: 'DisableChannelAdminResponse';
+    success: boolean;
+    message: string;
   };
 };
 
@@ -10517,6 +11060,278 @@ export type GetJournalEntryQuery = {
       meta?: any | null;
     }>;
   } | null;
+};
+
+export type GetCurrentCashierSessionQueryVariables = Exact<{
+  channelId: Scalars['Int']['input'];
+}>;
+
+export type GetCurrentCashierSessionQuery = {
+  __typename?: 'Query';
+  currentCashierSession?: {
+    __typename?: 'CashierSession';
+    id: string;
+    channelId: number;
+    cashierUserId: number;
+    openedAt: any;
+    closedAt?: any | null;
+    openingFloat: string;
+    closingDeclared: string;
+    status: string;
+  } | null;
+};
+
+export type GetCashierSessionQueryVariables = Exact<{
+  sessionId: Scalars['ID']['input'];
+}>;
+
+export type GetCashierSessionQuery = {
+  __typename?: 'Query';
+  cashierSession?: {
+    __typename?: 'CashierSessionSummary';
+    sessionId: string;
+    cashierUserId: number;
+    openedAt: any;
+    closedAt?: any | null;
+    status: string;
+    openingFloat: string;
+    closingDeclared: string;
+    variance: string;
+    ledgerTotals: {
+      __typename?: 'CashierSessionLedgerTotals';
+      cashTotal: string;
+      mpesaTotal: string;
+      totalCollected: string;
+    };
+  } | null;
+};
+
+export type GetCashierSessionsQueryVariables = Exact<{
+  channelId: Scalars['Int']['input'];
+  options?: InputMaybe<CashierSessionListOptions>;
+}>;
+
+export type GetCashierSessionsQuery = {
+  __typename?: 'Query';
+  cashierSessions: {
+    __typename?: 'CashierSessionList';
+    totalItems: number;
+    items: Array<{
+      __typename?: 'CashierSession';
+      id: string;
+      channelId: number;
+      cashierUserId: number;
+      openedAt: any;
+      closedAt?: any | null;
+      openingFloat: string;
+      closingDeclared: string;
+      status: string;
+    }>;
+  };
+};
+
+export type OpenCashierSessionMutationVariables = Exact<{
+  input: OpenCashierSessionInput;
+}>;
+
+export type OpenCashierSessionMutation = {
+  __typename?: 'Mutation';
+  openCashierSession: {
+    __typename?: 'CashierSession';
+    id: string;
+    channelId: number;
+    cashierUserId: number;
+    openedAt: any;
+    openingFloat: string;
+    status: string;
+  };
+};
+
+export type CloseCashierSessionMutationVariables = Exact<{
+  input: CloseCashierSessionInput;
+}>;
+
+export type CloseCashierSessionMutation = {
+  __typename?: 'Mutation';
+  closeCashierSession: {
+    __typename?: 'CashierSessionSummary';
+    sessionId: string;
+    cashierUserId: number;
+    openedAt: any;
+    closedAt?: any | null;
+    status: string;
+    openingFloat: string;
+    closingDeclared: string;
+    variance: string;
+    ledgerTotals: {
+      __typename?: 'CashierSessionLedgerTotals';
+      cashTotal: string;
+      mpesaTotal: string;
+      totalCollected: string;
+    };
+  };
+};
+
+export type CreateCashierSessionReconciliationMutationVariables = Exact<{
+  sessionId: Scalars['ID']['input'];
+  notes?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type CreateCashierSessionReconciliationMutation = {
+  __typename?: 'Mutation';
+  createCashierSessionReconciliation: {
+    __typename?: 'Reconciliation';
+    id: string;
+    channelId: number;
+    scope: string;
+    scopeRefId: string;
+    rangeStart: any;
+    rangeEnd: any;
+    status: string;
+    expectedBalance?: string | null;
+    actualBalance?: string | null;
+    varianceAmount: string;
+    notes?: string | null;
+    createdBy: number;
+  };
+};
+
+export type GetSessionCashCountsQueryVariables = Exact<{
+  sessionId: Scalars['ID']['input'];
+}>;
+
+export type GetSessionCashCountsQuery = {
+  __typename?: 'Query';
+  sessionCashCounts: Array<{
+    __typename?: 'CashDrawerCount';
+    id: string;
+    channelId: number;
+    sessionId: string;
+    countType: string;
+    takenAt: any;
+    declaredCash: string;
+    expectedCash?: string | null;
+    variance?: string | null;
+    varianceReason?: string | null;
+    reviewedByUserId?: number | null;
+    reviewedAt?: any | null;
+    reviewNotes?: string | null;
+    countedByUserId: number;
+  }>;
+};
+
+export type GetPendingVarianceReviewsQueryVariables = Exact<{
+  channelId: Scalars['Int']['input'];
+}>;
+
+export type GetPendingVarianceReviewsQuery = {
+  __typename?: 'Query';
+  pendingVarianceReviews: Array<{
+    __typename?: 'CashDrawerCount';
+    id: string;
+    channelId: number;
+    sessionId: string;
+    countType: string;
+    takenAt: any;
+    declaredCash: string;
+    expectedCash?: string | null;
+    variance?: string | null;
+    varianceReason?: string | null;
+    reviewedByUserId?: number | null;
+    reviewedAt?: any | null;
+    countedByUserId: number;
+  }>;
+};
+
+export type GetSessionMpesaVerificationsQueryVariables = Exact<{
+  sessionId: Scalars['ID']['input'];
+}>;
+
+export type GetSessionMpesaVerificationsQuery = {
+  __typename?: 'Query';
+  sessionMpesaVerifications: Array<{
+    __typename?: 'MpesaVerification';
+    id: string;
+    channelId: number;
+    sessionId: string;
+    verifiedAt: any;
+    transactionCount: number;
+    allConfirmed: boolean;
+    flaggedTransactionIds?: Array<string> | null;
+    notes?: string | null;
+    verifiedByUserId: number;
+  }>;
+};
+
+export type RecordCashCountMutationVariables = Exact<{
+  input: RecordCashCountInput;
+}>;
+
+export type RecordCashCountMutation = {
+  __typename?: 'Mutation';
+  recordCashCount: {
+    __typename?: 'CashCountResult';
+    hasVariance: boolean;
+    varianceHidden: boolean;
+    count: {
+      __typename?: 'CashDrawerCount';
+      id: string;
+      sessionId: string;
+      countType: string;
+      takenAt: any;
+      declaredCash: string;
+      varianceReason?: string | null;
+      countedByUserId: number;
+    };
+  };
+};
+
+export type ExplainVarianceMutationVariables = Exact<{
+  countId: Scalars['ID']['input'];
+  reason: Scalars['String']['input'];
+}>;
+
+export type ExplainVarianceMutation = {
+  __typename?: 'Mutation';
+  explainVariance: { __typename?: 'CashDrawerCount'; id: string; varianceReason?: string | null };
+};
+
+export type ReviewCashCountMutationVariables = Exact<{
+  countId: Scalars['ID']['input'];
+  notes?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type ReviewCashCountMutation = {
+  __typename?: 'Mutation';
+  reviewCashCount: {
+    __typename?: 'CashDrawerCount';
+    id: string;
+    declaredCash: string;
+    expectedCash?: string | null;
+    variance?: string | null;
+    varianceReason?: string | null;
+    reviewedByUserId?: number | null;
+    reviewedAt?: any | null;
+    reviewNotes?: string | null;
+  };
+};
+
+export type VerifyMpesaTransactionsMutationVariables = Exact<{
+  input: VerifyMpesaInput;
+}>;
+
+export type VerifyMpesaTransactionsMutation = {
+  __typename?: 'Mutation';
+  verifyMpesaTransactions: {
+    __typename?: 'MpesaVerification';
+    id: string;
+    sessionId: string;
+    verifiedAt: any;
+    transactionCount: number;
+    allConfirmed: boolean;
+    flaggedTransactionIds?: Array<string> | null;
+    notes?: string | null;
+  };
 };
 
 export type UpdateProductNameMutationVariables = Exact<{
@@ -16814,6 +17629,29 @@ export const InviteChannelAdministratorDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'firstName' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'lastName' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'emailAddress' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'user' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'identifier' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'roles' },
+                        selectionSet: {
+                          kind: 'SelectionSet',
+                          selections: [
+                            { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                            { kind: 'Field', name: { kind: 'Name', value: 'code' } },
+                            { kind: 'Field', name: { kind: 'Name', value: 'permissions' } },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
               ],
             },
           },
@@ -16825,6 +17663,232 @@ export const InviteChannelAdministratorDocument = {
   InviteChannelAdministratorMutation,
   InviteChannelAdministratorMutationVariables
 >;
+export const GetRoleTemplatesDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetRoleTemplates' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'roleTemplates' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'code' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'permissions' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<GetRoleTemplatesQuery, GetRoleTemplatesQueryVariables>;
+export const CreateChannelAdminDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateChannelAdmin' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CreateChannelAdminInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createChannelAdmin' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'firstName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'lastName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'emailAddress' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'user' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'identifier' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'roles' },
+                        selectionSet: {
+                          kind: 'SelectionSet',
+                          selections: [
+                            { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                            { kind: 'Field', name: { kind: 'Name', value: 'code' } },
+                            { kind: 'Field', name: { kind: 'Name', value: 'permissions' } },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CreateChannelAdminMutation, CreateChannelAdminMutationVariables>;
+export const UpdateChannelAdminDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UpdateChannelAdmin' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'permissions' } },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'ListType',
+              type: {
+                kind: 'NonNullType',
+                type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+              },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'updateChannelAdmin' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'permissions' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'permissions' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'firstName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'lastName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'emailAddress' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'user' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'identifier' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'roles' },
+                        selectionSet: {
+                          kind: 'SelectionSet',
+                          selections: [
+                            { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                            { kind: 'Field', name: { kind: 'Name', value: 'code' } },
+                            { kind: 'Field', name: { kind: 'Name', value: 'permissions' } },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<UpdateChannelAdminMutation, UpdateChannelAdminMutationVariables>;
+export const DisableChannelAdminDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DisableChannelAdmin' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'disableChannelAdmin' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'success' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'message' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DisableChannelAdminMutation, DisableChannelAdminMutationVariables>;
 export const GetAdministratorsDocument = {
   kind: 'Document',
   definitions: [
@@ -18135,6 +19199,747 @@ export const GetJournalEntryDocument = {
     },
   ],
 } as unknown as DocumentNode<GetJournalEntryQuery, GetJournalEntryQueryVariables>;
+export const GetCurrentCashierSessionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetCurrentCashierSession' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'channelId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'currentCashierSession' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'channelId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'channelId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'channelId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'cashierUserId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'openedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'closedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'openingFloat' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'closingDeclared' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<GetCurrentCashierSessionQuery, GetCurrentCashierSessionQueryVariables>;
+export const GetCashierSessionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetCashierSession' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'sessionId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'cashierSession' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'sessionId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'sessionId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'sessionId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'cashierUserId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'openedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'closedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'openingFloat' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'closingDeclared' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'ledgerTotals' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'cashTotal' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'mpesaTotal' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'totalCollected' } },
+                    ],
+                  },
+                },
+                { kind: 'Field', name: { kind: 'Name', value: 'variance' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<GetCashierSessionQuery, GetCashierSessionQueryVariables>;
+export const GetCashierSessionsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetCashierSessions' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'channelId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'options' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'CashierSessionListOptions' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'cashierSessions' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'channelId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'channelId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'options' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'options' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'items' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'channelId' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'cashierUserId' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'openedAt' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'closedAt' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'openingFloat' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'closingDeclared' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                    ],
+                  },
+                },
+                { kind: 'Field', name: { kind: 'Name', value: 'totalItems' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<GetCashierSessionsQuery, GetCashierSessionsQueryVariables>;
+export const OpenCashierSessionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'OpenCashierSession' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'OpenCashierSessionInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'openCashierSession' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'channelId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'cashierUserId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'openedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'openingFloat' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<OpenCashierSessionMutation, OpenCashierSessionMutationVariables>;
+export const CloseCashierSessionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CloseCashierSession' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CloseCashierSessionInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'closeCashierSession' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'sessionId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'cashierUserId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'openedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'closedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'openingFloat' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'closingDeclared' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'ledgerTotals' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'cashTotal' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'mpesaTotal' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'totalCollected' } },
+                    ],
+                  },
+                },
+                { kind: 'Field', name: { kind: 'Name', value: 'variance' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CloseCashierSessionMutation, CloseCashierSessionMutationVariables>;
+export const CreateCashierSessionReconciliationDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateCashierSessionReconciliation' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'sessionId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'notes' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createCashierSessionReconciliation' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'sessionId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'sessionId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'notes' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'notes' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'channelId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'scope' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'scopeRefId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'rangeStart' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'rangeEnd' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'expectedBalance' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'actualBalance' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'varianceAmount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'notes' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdBy' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateCashierSessionReconciliationMutation,
+  CreateCashierSessionReconciliationMutationVariables
+>;
+export const GetSessionCashCountsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetSessionCashCounts' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'sessionId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'sessionCashCounts' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'sessionId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'sessionId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'channelId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'sessionId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'countType' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'takenAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'declaredCash' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'expectedCash' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'variance' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'varianceReason' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'reviewedByUserId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'reviewedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'reviewNotes' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'countedByUserId' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<GetSessionCashCountsQuery, GetSessionCashCountsQueryVariables>;
+export const GetPendingVarianceReviewsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetPendingVarianceReviews' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'channelId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'pendingVarianceReviews' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'channelId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'channelId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'channelId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'sessionId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'countType' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'takenAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'declaredCash' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'expectedCash' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'variance' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'varianceReason' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'reviewedByUserId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'reviewedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'countedByUserId' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  GetPendingVarianceReviewsQuery,
+  GetPendingVarianceReviewsQueryVariables
+>;
+export const GetSessionMpesaVerificationsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetSessionMpesaVerifications' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'sessionId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'sessionMpesaVerifications' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'sessionId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'sessionId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'channelId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'sessionId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'verifiedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'transactionCount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'allConfirmed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'flaggedTransactionIds' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'notes' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'verifiedByUserId' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  GetSessionMpesaVerificationsQuery,
+  GetSessionMpesaVerificationsQueryVariables
+>;
+export const RecordCashCountDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RecordCashCount' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'RecordCashCountInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'recordCashCount' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'count' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'sessionId' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'countType' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'takenAt' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'declaredCash' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'varianceReason' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'countedByUserId' } },
+                    ],
+                  },
+                },
+                { kind: 'Field', name: { kind: 'Name', value: 'hasVariance' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'varianceHidden' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RecordCashCountMutation, RecordCashCountMutationVariables>;
+export const ExplainVarianceDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ExplainVariance' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'countId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'reason' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'explainVariance' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'countId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'countId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'reason' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'reason' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'varianceReason' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ExplainVarianceMutation, ExplainVarianceMutationVariables>;
+export const ReviewCashCountDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ReviewCashCount' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'countId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'notes' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'reviewCashCount' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'countId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'countId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'notes' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'notes' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'declaredCash' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'expectedCash' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'variance' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'varianceReason' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'reviewedByUserId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'reviewedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'reviewNotes' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ReviewCashCountMutation, ReviewCashCountMutationVariables>;
+export const VerifyMpesaTransactionsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'VerifyMpesaTransactions' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'VerifyMpesaInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'verifyMpesaTransactions' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'sessionId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'verifiedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'transactionCount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'allConfirmed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'flaggedTransactionIds' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'notes' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  VerifyMpesaTransactionsMutation,
+  VerifyMpesaTransactionsMutationVariables
+>;
 export const UpdateProductNameDocument = {
   kind: 'Document',
   definitions: [

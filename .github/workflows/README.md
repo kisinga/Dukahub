@@ -1,6 +1,6 @@
 # GitHub Actions Workflows
 
-This directory contains the CI/CD workflows for the Dukahub project.
+This directory contains the CI/CD workflows for the dukarun project.
 
 ## Workflow Overview
 

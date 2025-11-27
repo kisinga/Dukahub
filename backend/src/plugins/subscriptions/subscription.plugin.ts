@@ -6,6 +6,8 @@ import { PaystackService } from '../../services/payments/paystack.service';
 import { SubscriptionWebhookController } from './subscription-webhook.controller';
 import { SubscriptionTier } from './subscription.entity';
 import { SubscriptionGuard } from './subscription.guard';
+import { SubscriptionExpirySubscriber } from './subscription-expiry.subscriber';
+import { ChannelEventsPlugin } from '../channels/channel-events.plugin';
 
 /**
  * Subscription Plugin
@@ -18,9 +20,15 @@ import { SubscriptionGuard } from './subscription.guard';
  * - Read-only mode enforcement for expired subscriptions
  */
 @VendurePlugin({
-  imports: [PluginCommonModule],
+  imports: [PluginCommonModule, ChannelEventsPlugin],
   entities: [SubscriptionTier],
-  providers: [SubscriptionResolver, SubscriptionService, PaystackService, SubscriptionGuard],
+  providers: [
+    SubscriptionResolver,
+    SubscriptionService,
+    PaystackService,
+    SubscriptionGuard,
+    SubscriptionExpirySubscriber,
+  ],
   controllers: [SubscriptionWebhookController],
   adminApiExtensions: {
     schema: SUBSCRIPTION_SCHEMA,

@@ -28,6 +28,121 @@ import {
 import { ManageSupplierCreditPurchasesPermission } from '../../../plugins/credit/supplier-credit.permissions';
 
 /**
+ * Role Template Definitions
+ * 
+ * Predefined role templates for common admin roles with specific permission sets.
+ * Templates are code constants, not stored in database.
+ */
+export interface RoleTemplate {
+  code: string;
+  name: string;
+  description: string;
+  permissions: Permission[];
+}
+
+export const ROLE_TEMPLATES: Record<string, RoleTemplate> = {
+  admin: {
+    code: 'admin',
+    name: 'Admin',
+    description: 'Full system access',
+    permissions: [
+      // Asset permissions
+      Permission.CreateAsset,
+      Permission.ReadAsset,
+      Permission.UpdateAsset,
+      Permission.DeleteAsset,
+      // Catalog permissions
+      Permission.CreateCatalog,
+      Permission.ReadCatalog,
+      Permission.UpdateCatalog,
+      Permission.DeleteCatalog,
+      // Customer permissions
+      Permission.CreateCustomer,
+      Permission.ReadCustomer,
+      Permission.UpdateCustomer,
+      Permission.DeleteCustomer,
+      // Order permissions
+      Permission.CreateOrder,
+      Permission.ReadOrder,
+      Permission.UpdateOrder,
+      Permission.DeleteOrder,
+      // Product permissions
+      Permission.CreateProduct,
+      Permission.ReadProduct,
+      Permission.UpdateProduct,
+      Permission.DeleteProduct,
+      // StockLocation permissions
+      Permission.CreateStockLocation,
+      Permission.ReadStockLocation,
+      Permission.UpdateStockLocation,
+      // Settings permissions
+      Permission.ReadSettings,
+      Permission.UpdateSettings,
+      // Custom permissions
+      OverridePricePermission.Permission as Permission,
+      ApproveCustomerCreditPermission.Permission as Permission,
+      ManageCustomerCreditLimitPermission.Permission as Permission,
+      ManageStockAdjustmentsPermission.Permission as Permission,
+      ManageReconciliationPermission.Permission as Permission,
+      CloseAccountingPeriodPermission.Permission as Permission,
+      ManageSupplierCreditPurchasesPermission.Permission as Permission,
+    ],
+  },
+  cashier: {
+    code: 'cashier',
+    name: 'Cashier',
+    description: 'Payment processing and credit approval',
+    permissions: [
+      Permission.ReadOrder,
+      Permission.UpdateOrder,
+      Permission.ReadCustomer,
+      Permission.ReadProduct,
+      ApproveCustomerCreditPermission.Permission as Permission,
+      ManageReconciliationPermission.Permission as Permission,
+    ],
+  },
+  accountant: {
+    code: 'accountant',
+    name: 'Accountant',
+    description: 'Financial oversight and reconciliation',
+    permissions: [
+      Permission.ReadOrder,
+      Permission.ReadCustomer,
+      Permission.ReadProduct,
+      ManageReconciliationPermission.Permission as Permission,
+      CloseAccountingPeriodPermission.Permission as Permission,
+      ManageCustomerCreditLimitPermission.Permission as Permission,
+      ManageSupplierCreditPurchasesPermission.Permission as Permission,
+    ],
+  },
+  salesperson: {
+    code: 'salesperson',
+    name: 'Salesperson',
+    description: 'Sales operations and customer management',
+    permissions: [
+      Permission.CreateOrder,
+      Permission.ReadOrder,
+      Permission.CreateCustomer,
+      Permission.ReadCustomer,
+      Permission.ReadProduct,
+      OverridePricePermission.Permission as Permission,
+    ],
+  },
+  stockkeeper: {
+    code: 'stockkeeper',
+    name: 'Stockkeeper',
+    description: 'Inventory management',
+    permissions: [
+      Permission.CreateProduct,
+      Permission.ReadProduct,
+      Permission.UpdateProduct,
+      Permission.ReadStockLocation,
+      ManageStockAdjustmentsPermission.Permission as Permission,
+    ],
+  },
+};
+
+/**
  * Role Provisioner Service
  *
  * Handles admin role creation with full permissions and channel assignment.
@@ -169,6 +284,20 @@ export class RoleProvisionerService {
    */
   getAdminPermissions(): Permission[] {
     return [...RoleProvisionerService.ALL_ADMIN_PERMISSIONS];
+  }
+
+  /**
+   * Get role template by code
+   */
+  getRoleTemplate(code: string): RoleTemplate | undefined {
+    return ROLE_TEMPLATES[code];
+  }
+
+  /**
+   * Get all role templates
+   */
+  getAllRoleTemplates(): RoleTemplate[] {
+    return Object.values(ROLE_TEMPLATES);
   }
 
   /**

@@ -238,6 +238,9 @@ export class ChannelActionTrackingService {
       [ChannelEventType.ADMIN_UPDATED]: 'actionCountSysAdminUpdated',
       [ChannelEventType.USER_CREATED]: 'actionCountSysUserCreated',
       [ChannelEventType.USER_UPDATED]: 'actionCountSysUserUpdated',
+      [ChannelEventType.SUBSCRIPTION_EXPIRING_SOON]: 'actionCountSysSubscriptionExpiringSoon',
+      [ChannelEventType.SUBSCRIPTION_EXPIRED]: 'actionCountSysSubscriptionExpired',
+      [ChannelEventType.SUBSCRIPTION_RENEWED]: 'actionCountSysSubscriptionRenewed',
     };
 
     return fieldNameMap[eventType] || null;

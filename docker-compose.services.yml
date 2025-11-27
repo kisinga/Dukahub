@@ -1,181 +1,76 @@
-# =====================================
-# Dukarun Infrastructure Services
-# =====================================
-#
-# This file contains only infrastructure services (databases, cache, observability)
-# Application services (backend, frontend) are in docker-compose.yml
-#
-# Usage:
-#   # First, create the external network (one-time):
-#   docker network create dukarun_services_network
-#   # Then start services:
-#   docker compose -f docker-compose.services.yml up -d
-#   docker compose -f docker-compose.services.yml logs -f
-#   docker compose -f docker-compose.services.yml down
-#
-# This file can be pasted directly into Coolify for managed resources with backups
-
 services:
-  # ========================================
-  # Database Service
-  # ========================================
   postgres_db:
-    image: postgres:17
+    image: 'postgres:17'
     restart: unless-stopped
     networks:
       - dukarun_services_network
     environment:
-      POSTGRES_DB: ${DB_NAME:-vendure}
-      POSTGRES_USER: ${DB_USER:-vendure}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-vendure}
+      POSTGRES_DB: '${DB_NAME:-vendure}'
+      POSTGRES_USER: '${DB_USER:-vendure}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-vendure}'
       POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - 'postgres_data:/var/lib/postgresql/data'
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-vendure} -d ${DB_NAME:-vendure}']
+      test:
+        - CMD-SHELL
+        - 'pg_isready -U ${DB_USER:-vendure} -d ${DB_NAME:-vendure}'
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
-
-  # ========================================
-  # Audit Log Database (TimescaleDB)
-  # ========================================
   timescaledb_audit:
-    image: timescale/timescaledb:latest-pg17
+    image: 'timescale/timescaledb:latest-pg17'
     platform: linux/amd64
     restart: unless-stopped
     networks:
       - dukarun_services_network
     environment:
-      POSTGRES_DB: ${AUDIT_DB_NAME:-audit_logs}
-      POSTGRES_USER: ${AUDIT_DB_USER:-audit_user}
-      POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD:-audit_password}
+      POSTGRES_DB: '${AUDIT_DB_NAME:-audit_logs}'
+      POSTGRES_USER: '${AUDIT_DB_USER:-audit_user}'
+      POSTGRES_PASSWORD: '${AUDIT_DB_PASSWORD:-audit_password}'
       POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
     volumes:
-      - timescaledb_audit_data:/var/lib/postgresql/data
+      - 'timescaledb_audit_data:/var/lib/postgresql/data'
     ports:
       - '${AUDIT_DB_PORT:-5433}:5432'
     healthcheck:
       test:
-        ['CMD-SHELL', 'pg_isready -U ${AUDIT_DB_USER:-audit_user} -d ${AUDIT_DB_NAME:-audit_logs}']
+        - CMD-SHELL
+        - 'pg_isready -U ${AUDIT_DB_USER:-audit_user} -d ${AUDIT_DB_NAME:-audit_logs}'
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
-
-  # ========================================
-  # Redis Cache Service
-  # ========================================
   redis:
-    image: redis:7-alpine
+    image: 'redis:7-alpine'
     restart: unless-stopped
     networks:
       - dukarun_services_network
-    command: >
-      redis-server 
-      --appendonly yes 
-      --maxmemory 512mb 
-      --maxmemory-policy allkeys-lru
-      --save 900 1
-      --save 300 10
-      --save 60 10000
+    command: "redis-server  --appendonly yes  --maxmemory 512mb  --maxmemory-policy allkeys-lru --save 900 1 --save 300 10 --save 60 10000\n"
     volumes:
-      - redis_data:/data
+      - 'redis_data:/data'
     ports:
       - '${REDIS_PORT:-6379}:6379'
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test:
+        - CMD
+        - redis-cli
+        - ping
       interval: 10s
       timeout: 3s
       retries: 5
       start_period: 10s
 
-  # ========================================
-  # OpenTelemetry Collector
-  # ========================================
-  # Receives traces via OTLP and logs to console (for debugging)
-  # Named 'signoz' for backwards compatibility - apps connect to signoz:4317/4318
-  signoz:
-    image: otel/opentelemetry-collector-contrib:latest
-    platform: linux/amd64
-    restart: unless-stopped
-    networks:
-      - dukarun_services_network
-    command: ['--config=/etc/otelcol/config.yaml']
-    configs:
-      - source: otel_config
-        target: /etc/otelcol/config.yaml
-    ports:
-      # OTLP ports - exposed for receiving traces
-      - '${SIGNOZ_OTLP_GRPC_PORT:-4317}:4317' # OTLP gRPC
-      - '${SIGNOZ_OTLP_HTTP_PORT:-4318}:4318' # OTLP HTTP
-      - '13133:13133' # Health check
-    healthcheck:
-      test: ['CMD-SHELL', 'wget -q --spider http://localhost:13133/ || exit 1']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-# ========================================
-# Configs (inline - no external files needed)
-# ========================================
-configs:
-  otel_config:
-    content: |
-      # OpenTelemetry Collector Configuration
-      receivers:
-        otlp:
-          protocols:
-            grpc:
-              endpoint: 0.0.0.0:4317
-            http:
-              endpoint: 0.0.0.0:4318
-      processors:
-        batch:
-          timeout: 1s
-          send_batch_size: 1024
-      exporters:
-        debug:
-          verbosity: basic
-      extensions:
-        health_check:
-          endpoint: 0.0.0.0:13133
-      service:
-        extensions: [health_check]
-        pipelines:
-          traces:
-            receivers: [otlp]
-            processors: [batch]
-            exporters: [debug]
-          metrics:
-            receivers: [otlp]
-            processors: [batch]
-            exporters: [debug]
-          logs:
-            receivers: [otlp]
-            processors: [batch]
-            exporters: [debug]
-
-# ========================================
-# Networks
-# ========================================
 networks:
   dukarun_services_network:
     external: true
-
-# ========================================
-# Volumes
-# ========================================
 volumes:
   postgres_data:
     driver: local
-
   redis_data:
     driver: local
-
   timescaledb_audit_data:
     driver: local

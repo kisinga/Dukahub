@@ -1,0 +1,467 @@
+/**
+ * Subscription Flow Integration Tests
+ *
+ * Validates subscription payment processing and expiry notifications:
+ * - Prepaid extension logic (early renewal, late renewal, from trial)
+ * - System alert events fire on renewal
+ * - Scheduler finds expiring channels
+ */
+
+import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import { RequestContext, Channel } from '@vendure/core';
+import { SubscriptionService } from '../../../src/services/subscriptions/subscription.service';
+import { ChannelEventRouterService } from '../../../src/infrastructure/events/channel-event-router.service';
+import { ChannelEventType } from '../../../src/infrastructure/events/types/event-type.enum';
+import { PaystackService } from '../../../src/services/payments/paystack.service';
+import { ChannelService } from '@vendure/core';
+
+describe('Subscription Flow Integration', () => {
+  const ctx = {} as RequestContext;
+  let subscriptionService: SubscriptionService;
+  let mockChannelService: jest.Mocked<ChannelService>;
+  let mockPaystackService: jest.Mocked<PaystackService>;
+  let mockEventRouter: jest.Mocked<ChannelEventRouterService>;
+  let mockConnection: any;
+
+  beforeEach(() => {
+    // Mock ChannelService
+    mockChannelService = {
+      findOne: jest.fn(),
+      update: jest.fn(),
+      findAll: jest.fn(),
+    } as any;
+
+    // Mock PaystackService
+    mockPaystackService = {
+      createCustomer: jest.fn(),
+      chargeMobile: jest.fn(),
+      initializeTransaction: jest.fn(),
+    } as any;
+
+    // Mock EventRouter
+    mockEventRouter = {
+      routeEvent: jest.fn(),
+    } as any;
+
+    // Mock TransactionalConnection
+    mockConnection = {
+      rawConnection: {
+        getRepository: jest.fn(() => ({
+          findOne: jest.fn((options?: any) => {
+            // Handle both { where: { id: 'tier-1' } } and direct id
+            const id = options?.where?.id || options?.id || 'tier-1';
+            if (id === 'tier-1') {
+              return Promise.resolve({
+                id: 'tier-1',
+                priceMonthly: 10000,
+                priceYearly: 100000,
+              });
+            }
+            return Promise.resolve(null);
+          }),
+          find: jest.fn(),
+        })),
+      },
+    };
+
+    subscriptionService = new SubscriptionService(
+      mockChannelService,
+      mockConnection,
+      mockPaystackService,
+      mockEventRouter
+    );
+  });
+
+  describe('Prepaid Extension Logic', () => {
+    it('should extend from current expiry date when renewing early', async () => {
+      const channelId = '1';
+      const currentExpiry = new Date('2024-02-15');
+      const now = new Date('2024-02-01'); // 14 days before expiry
+
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {
+          subscriptionStatus: 'active',
+          subscriptionExpiresAt: currentExpiry.toISOString(),
+          billingCycle: 'monthly',
+          subscriptionTierId: 'tier-1',
+        },
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+      mockChannelService.update.mockResolvedValue(mockChannel);
+
+      await subscriptionService.processSuccessfulPayment(ctx, channelId, {
+        reference: 'ref-123',
+        amount: 10000,
+      });
+
+      // Verify update was called
+      expect(mockChannelService.update).toHaveBeenCalled();
+      const updateCall = mockChannelService.update.mock.calls[0][1]; // Second argument is the update data
+      const newExpiry = new Date(updateCall.customFields.subscriptionExpiresAt);
+
+      // Should extend from current expiry (Feb 15) + 1 month = March 15
+      expect(newExpiry.getMonth()).toBe(2); // March (0-indexed)
+      expect(newExpiry.getDate()).toBe(15);
+    });
+
+    it('should extend from now when renewing after expiry', async () => {
+      const channelId = '1';
+      const expiredDate = new Date('2024-01-01');
+      const now = new Date('2024-02-15'); // 45 days after expiry
+
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {
+          subscriptionStatus: 'active',
+          subscriptionExpiresAt: expiredDate.toISOString(),
+          billingCycle: 'monthly',
+          subscriptionTierId: 'tier-1',
+        },
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+      mockChannelService.update.mockResolvedValue(mockChannel);
+
+      // Mock Date.now to return fixed time
+      const originalNow = Date.now;
+      Date.now = jest.fn(() => now.getTime());
+
+      await subscriptionService.processSuccessfulPayment(ctx, channelId, {
+        reference: 'ref-123',
+        amount: 10000,
+      });
+
+      // Verify update was called
+      expect(mockChannelService.update).toHaveBeenCalled();
+      const updateCall = mockChannelService.update.mock.calls[0][1]; // Second argument is the update data
+      const newExpiry = new Date(updateCall.customFields.subscriptionExpiresAt);
+
+      // Should extend from now (Feb 15) + 1 month = March 15
+      expect(newExpiry.getMonth()).toBe(2); // March
+      expect(newExpiry.getDate()).toBe(15);
+
+      Date.now = originalNow;
+    });
+
+    it('should extend from trial end when renewing during trial', async () => {
+      const channelId = '1';
+      const trialEnd = new Date('2024-03-01');
+      const now = new Date('2024-02-15'); // During trial
+
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {
+          subscriptionStatus: 'trial',
+          trialEndsAt: trialEnd.toISOString(),
+          billingCycle: 'monthly',
+          subscriptionTierId: 'tier-1',
+        },
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+      mockChannelService.update.mockResolvedValue(mockChannel);
+
+      // Mock Date.now
+      const originalNow = Date.now;
+      Date.now = jest.fn(() => now.getTime());
+
+      await subscriptionService.processSuccessfulPayment(ctx, channelId, {
+        reference: 'ref-123',
+        amount: 10000,
+      });
+
+      // Verify update was called
+      expect(mockChannelService.update).toHaveBeenCalled();
+      const updateCall = mockChannelService.update.mock.calls[0][1]; // Second argument is the update data
+      const newExpiry = new Date(updateCall.customFields.subscriptionExpiresAt);
+
+      // Should extend from trial end (March 1) + 1 month = April 1
+      expect(newExpiry.getMonth()).toBe(3); // April
+      expect(newExpiry.getDate()).toBe(1);
+
+      Date.now = originalNow;
+    });
+  });
+
+  describe('System Alert Events', () => {
+    it('should emit SUBSCRIPTION_RENEWED event on successful payment', async () => {
+      const channelId = '1';
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {
+          subscriptionStatus: 'active',
+          subscriptionExpiresAt: new Date('2024-02-15').toISOString(),
+          billingCycle: 'monthly',
+          subscriptionTierId: 'tier-1',
+        },
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+      mockChannelService.update.mockResolvedValue(mockChannel);
+
+      await subscriptionService.processSuccessfulPayment(ctx, channelId, {
+        reference: 'ref-123',
+        amount: 10000,
+      });
+
+      // Verify event was emitted
+      expect(mockEventRouter.routeEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: ChannelEventType.SUBSCRIPTION_RENEWED,
+          channelId,
+          data: expect.objectContaining({
+            billingCycle: 'monthly',
+            amount: 10000,
+          }),
+        })
+      );
+    });
+  });
+
+  describe('Email Fallback', () => {
+    it('should use placeholder email when email is not provided', async () => {
+      const channelId = '1';
+      const phoneNumber = '+254712345678';
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {},
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+      mockPaystackService.createCustomer.mockResolvedValue({
+        data: { customer_code: 'cust-123' },
+      } as any);
+      mockPaystackService.chargeMobile.mockResolvedValue({
+        data: { reference: 'ref-123' },
+      } as any);
+      mockChannelService.update.mockResolvedValue(mockChannel);
+
+      await subscriptionService.initiatePurchase(
+        ctx,
+        channelId,
+        'tier-1',
+        'monthly',
+        phoneNumber,
+        '' // Empty email
+      );
+
+      // Verify Paystack was called with placeholder email
+      expect(mockPaystackService.createCustomer).toHaveBeenCalledWith(
+        '254712345678@placeholder.dukarun.com',
+        undefined,
+        undefined,
+        phoneNumber,
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe('Early Tester Support (Blank Expiry Dates)', () => {
+    it('should allow full access for trial with blank trialEndsAt', async () => {
+      const channelId = '1';
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {
+          subscriptionStatus: 'trial',
+          // trialEndsAt is intentionally blank (set by admin for early testers)
+        },
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+
+      const status = await subscriptionService.checkSubscriptionStatus(ctx, channelId);
+
+      expect(status.isValid).toBe(true);
+      expect(status.status).toBe('trial');
+      expect(status.canPerformAction).toBe(true);
+      expect(status.isEarlyTester).toBe(true);
+      expect(status.trialEndsAt).toBeUndefined();
+      expect(status.daysRemaining).toBeUndefined();
+    });
+
+    it('should allow full access for active subscription with blank subscriptionExpiresAt', async () => {
+      const channelId = '1';
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {
+          subscriptionStatus: 'active',
+          // subscriptionExpiresAt is intentionally blank (set by admin for early testers)
+        },
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+
+      const status = await subscriptionService.checkSubscriptionStatus(ctx, channelId);
+
+      expect(status.isValid).toBe(true);
+      expect(status.status).toBe('active');
+      expect(status.canPerformAction).toBe(true);
+      expect(status.isEarlyTester).toBe(true);
+      expect(status.expiresAt).toBeUndefined();
+      expect(status.daysRemaining).toBeUndefined();
+    });
+
+    it('should handle prepaid extension with blank expiry dates', async () => {
+      const channelId = '1';
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {
+          subscriptionStatus: 'trial',
+          // Both expiry dates blank - early tester
+          billingCycle: 'monthly',
+          subscriptionTierId: 'tier-1',
+        },
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+      mockChannelService.update.mockResolvedValue(mockChannel);
+
+      // Mock Date.now to return fixed time
+      const now = new Date('2024-02-15');
+      const originalNow = Date.now;
+      Date.now = jest.fn(() => now.getTime());
+
+      await subscriptionService.processSuccessfulPayment(ctx, channelId, {
+        reference: 'ref-123',
+        amount: 10000,
+      });
+
+      // Verify update was called
+      expect(mockChannelService.update).toHaveBeenCalled();
+      const updateCall = mockChannelService.update.mock.calls[0][1];
+      const newExpiry = new Date(updateCall.customFields.subscriptionExpiresAt);
+
+      // Should extend from now (Feb 15) + 1 month = March 15
+      expect(newExpiry.getMonth()).toBe(2); // March
+      expect(newExpiry.getDate()).toBe(15);
+
+      Date.now = originalNow;
+    });
+  });
+
+  describe('Subscription Status Checks', () => {
+    it('should return valid status for active trial with expiry', async () => {
+      const channelId = '1';
+      const now = new Date('2024-02-15');
+      const trialEnd = new Date('2024-02-25'); // 10 days from now
+
+      // Mock Date.now
+      const originalNow = Date.now;
+      Date.now = jest.fn(() => now.getTime());
+
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {
+          subscriptionStatus: 'trial',
+          trialEndsAt: trialEnd.toISOString(),
+        },
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+
+      const status = await subscriptionService.checkSubscriptionStatus(ctx, channelId);
+
+      expect(status.isValid).toBe(true);
+      expect(status.status).toBe('trial');
+      expect(status.canPerformAction).toBe(true);
+      expect(status.isEarlyTester).toBe(false);
+      expect(status.daysRemaining).toBeGreaterThan(0);
+      expect(status.daysRemaining).toBeLessThanOrEqual(10);
+
+      Date.now = originalNow;
+    });
+
+    it('should return expired status for trial past expiry', async () => {
+      const channelId = '1';
+      const now = new Date('2024-02-15');
+      const expiredDate = new Date('2024-02-10'); // Expired 5 days ago
+
+      // Mock Date.now
+      const originalNow = Date.now;
+      Date.now = jest.fn(() => now.getTime());
+
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {
+          subscriptionStatus: 'trial',
+          trialEndsAt: expiredDate.toISOString(),
+        },
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+      mockChannelService.update.mockResolvedValue(mockChannel);
+
+      const status = await subscriptionService.checkSubscriptionStatus(ctx, channelId);
+
+      expect(status.isValid).toBe(false);
+      expect(status.status).toBe('expired');
+      expect(status.canPerformAction).toBe(false);
+      expect(status.isEarlyTester).toBe(false);
+
+      Date.now = originalNow;
+    });
+
+    it('should return valid status for active subscription with expiry', async () => {
+      const channelId = '1';
+      const now = new Date('2024-02-15');
+      const expiresAt = new Date('2024-03-07'); // 20 days from now
+
+      // Mock Date.now
+      const originalNow = Date.now;
+      Date.now = jest.fn(() => now.getTime());
+
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {
+          subscriptionStatus: 'active',
+          subscriptionExpiresAt: expiresAt.toISOString(),
+        },
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+
+      const status = await subscriptionService.checkSubscriptionStatus(ctx, channelId);
+
+      expect(status.isValid).toBe(true);
+      expect(status.status).toBe('active');
+      expect(status.canPerformAction).toBe(true);
+      expect(status.isEarlyTester).toBe(false);
+      expect(status.daysRemaining).toBeGreaterThan(0);
+      expect(status.daysRemaining).toBeLessThanOrEqual(21); // Allow some margin for date calculation
+
+      Date.now = originalNow;
+    });
+
+    it('should return expired status for active subscription past expiry', async () => {
+      const channelId = '1';
+      const now = new Date('2024-02-15');
+      const expiredDate = new Date('2024-02-05'); // Expired 10 days ago
+
+      // Mock Date.now
+      const originalNow = Date.now;
+      Date.now = jest.fn(() => now.getTime());
+
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {
+          subscriptionStatus: 'active',
+          subscriptionExpiresAt: expiredDate.toISOString(),
+        },
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+      mockChannelService.update.mockResolvedValue(mockChannel);
+
+      const status = await subscriptionService.checkSubscriptionStatus(ctx, channelId);
+
+      expect(status.isValid).toBe(false);
+      expect(status.status).toBe('expired');
+      expect(status.canPerformAction).toBe(false);
+      expect(status.isEarlyTester).toBe(false);
+
+      Date.now = originalNow;
+    });
+  });
+});

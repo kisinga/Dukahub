@@ -2,6 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Channel, ChannelService, RequestContext, TransactionalConnection } from '@vendure/core';
 import { PaystackService } from '../payments/paystack.service';
 import { SubscriptionTier } from '../../plugins/subscriptions/subscription.entity';
+import { ChannelEventRouterService } from '../../infrastructure/events/channel-event-router.service';
+import { ChannelEventType } from '../../infrastructure/events/types/event-type.enum';
+import { ActionCategory } from '../../infrastructure/events/types/action-category.enum';
 
 export interface SubscriptionStatus {
   isValid: boolean;
@@ -10,6 +13,7 @@ export interface SubscriptionStatus {
   expiresAt?: Date;
   trialEndsAt?: Date;
   canPerformAction: boolean;
+  isEarlyTester?: boolean; // true if expiry dates are blank (set by admin)
 }
 
 export interface InitiatePurchaseResult {
@@ -27,7 +31,8 @@ export class SubscriptionService {
   constructor(
     private channelService: ChannelService,
     private connection: TransactionalConnection,
-    private paystackService: PaystackService
+    private paystackService: PaystackService,
+    private eventRouter: ChannelEventRouterService
   ) {}
 
   /**
@@ -48,7 +53,17 @@ export class SubscriptionService {
     // Check if in trial
     if (status === 'trial') {
       const trialEndsAt = customFields.trialEndsAt ? new Date(customFields.trialEndsAt) : null;
-      if (trialEndsAt && trialEndsAt > new Date()) {
+      if (!trialEndsAt) {
+        // Early tester - no expiry set by admin, allow full access indefinitely
+        return {
+          isValid: true,
+          status: 'trial',
+          canPerformAction: true,
+          isEarlyTester: true,
+          // No daysRemaining or trialEndsAt - indicates indefinite access
+        };
+      }
+      if (trialEndsAt > new Date()) {
         const daysRemaining = Math.ceil(
           (trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
         );
@@ -58,6 +73,7 @@ export class SubscriptionService {
           daysRemaining,
           trialEndsAt: trialEndsAt ?? undefined,
           canPerformAction: true,
+          isEarlyTester: false,
         };
       } else {
         // Trial expired, mark as expired
@@ -66,6 +82,7 @@ export class SubscriptionService {
           isValid: false,
           status: 'expired',
           canPerformAction: false,
+          isEarlyTester: false,
         };
       }
     }
@@ -75,7 +92,17 @@ export class SubscriptionService {
       const expiresAt = customFields.subscriptionExpiresAt
         ? new Date(customFields.subscriptionExpiresAt)
         : null;
-      if (expiresAt && expiresAt > new Date()) {
+      if (!expiresAt) {
+        // Early tester - no expiry set by admin, allow full access indefinitely
+        return {
+          isValid: true,
+          status: 'active',
+          canPerformAction: true,
+          isEarlyTester: true,
+          // No daysRemaining or expiresAt - indicates indefinite access
+        };
+      }
+      if (expiresAt > new Date()) {
         const daysRemaining = Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
         return {
           isValid: true,
@@ -83,6 +110,7 @@ export class SubscriptionService {
           daysRemaining,
           expiresAt: expiresAt ?? undefined,
           canPerformAction: true,
+          isEarlyTester: false,
         };
       } else {
         // Subscription expired
@@ -92,6 +120,7 @@ export class SubscriptionService {
           status: 'expired',
           expiresAt: expiresAt ?? undefined,
           canPerformAction: false,
+          isEarlyTester: false,
         };
       }
     }
@@ -101,6 +130,7 @@ export class SubscriptionService {
       isValid: false,
       status: status as 'expired' | 'cancelled',
       canPerformAction: false,
+      isEarlyTester: false,
     };
   }
 
@@ -159,12 +189,15 @@ export class SubscriptionService {
       const amount = billingCycle === 'monthly' ? tier.priceMonthly : tier.priceYearly;
       const amountInKes = amount / 100; // Convert from cents to KES
 
+      // Email fallback: use placeholder email if not provided
+      const effectiveEmail = email || `${phoneNumber.replace(/\+/g, '')}@placeholder.dukarun.com`;
+
       // Create or get Paystack customer
       let customerCode = (channel.customFields as any).paystackCustomerCode;
       if (!customerCode) {
         try {
           const customer = await this.paystackService.createCustomer(
-            email,
+            effectiveEmail,
             undefined,
             undefined,
             phoneNumber,
@@ -195,7 +228,7 @@ export class SubscriptionService {
         const chargeResponse = await this.paystackService.chargeMobile(
           amountInKes,
           phoneNumber,
-          email,
+          effectiveEmail,
           reference,
           {
             channelId,
@@ -218,7 +251,7 @@ export class SubscriptionService {
 
         const transactionResponse = await this.paystackService.initializeTransaction(
           amountInKes,
-          email,
+          effectiveEmail,
           phoneNumber,
           {
             channelId,
@@ -284,9 +317,20 @@ export class SubscriptionService {
       throw new Error('Subscription tier not found');
     }
 
-    // Calculate expiration date based on billing cycle
+    // Prepaid extension logic: New Expiry = MAX(Current Expiry, Trial End, Now) + Billing Cycle
+    // Handles blank expiry dates (early testers) gracefully
     const billingCycle = customFields.billingCycle || 'monthly';
-    const expiresAt = new Date();
+    const currentExpiry = customFields.subscriptionExpiresAt
+      ? new Date(customFields.subscriptionExpiresAt)
+      : null;
+    const trialEnd = customFields.trialEndsAt ? new Date(customFields.trialEndsAt) : null;
+    // Use Math.max to find the latest date, defaulting to now if dates are null/undefined
+    const baseDate = new Date(
+      Math.max(currentExpiry?.getTime() || 0, trialEnd?.getTime() || 0, Date.now())
+    );
+
+    // Add billing period to base date
+    const expiresAt = new Date(baseDate);
     if (billingCycle === 'monthly') {
       expiresAt.setMonth(expiresAt.getMonth() + 1);
     } else {
@@ -316,6 +360,25 @@ export class SubscriptionService {
     });
 
     this.logger.log(`Subscription activated for channel ${channelId}`);
+
+    // Emit subscription renewed event
+    await this.eventRouter
+      .routeEvent({
+        type: ChannelEventType.SUBSCRIPTION_RENEWED,
+        channelId,
+        category: ActionCategory.SYSTEM_NOTIFICATIONS,
+        context: ctx,
+        data: {
+          expiresAt: expiresAt.toISOString(),
+          billingCycle,
+          amount: paystackData.amount,
+        },
+      })
+      .catch(err => {
+        this.logger.warn(
+          `Failed to emit subscription renewed event: ${err instanceof Error ? err.message : String(err)}`
+        );
+      });
   }
 
   /**

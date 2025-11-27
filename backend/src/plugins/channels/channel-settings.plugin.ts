@@ -5,9 +5,10 @@ import { AuditService } from '../../infrastructure/audit/audit.service';
 import { UserContextResolver } from '../../infrastructure/audit/user-context.resolver';
 import { ChannelSettingsService } from '../../services/channels/channel-settings.service';
 import { ChannelSettingsResolver, channelSettingsSchema } from './channel-settings.resolver';
+import { ChannelEventsPlugin } from './channel-events.plugin';
 
 @VendurePlugin({
-  imports: [PluginCommonModule],
+  imports: [PluginCommonModule, ChannelEventsPlugin],
   providers: [
     // Audit dependencies (must be available for ChannelSettingsService)
     // AuditDbConnection uses singleton pattern to prevent duplicate initialization

@@ -57,13 +57,37 @@ export class AuditDbConnection implements OnModuleInit, OnModuleDestroy {
   }
 
   private async initialize(): Promise<void> {
-    this.dataSource = new DataSource(auditDbConfig as DataSourceOptions);
-    await this.dataSource.initialize();
-    this.logger.log('Audit database connection established');
+    const maxRetries = 3;
+    const retryDelay = 2000; // Start with 2 seconds
 
-    // Initialize TimescaleDB hypertable and retention policy
-    await this.initializeTimescaleDB();
-    AuditDbConnection.initializationPromise = null;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        this.dataSource = new DataSource(auditDbConfig as DataSourceOptions);
+        await this.dataSource.initialize();
+        this.logger.log('Audit database connection established');
+
+        // Initialize TimescaleDB hypertable and retention policy
+        await this.initializeTimescaleDB();
+        AuditDbConnection.initializationPromise = null;
+        return; // Success, exit retry loop
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        if (attempt === maxRetries) {
+          // Last attempt failed, throw the error
+          throw new Error(
+            `Failed to connect to audit database after ${maxRetries} attempts: ${errorMessage}`
+          );
+        }
+
+        // Wait before retrying with exponential backoff
+        const delay = retryDelay * Math.pow(2, attempt - 1);
+        this.logger.warn(
+          `Audit DB connection attempt ${attempt}/${maxRetries} failed: ${errorMessage}. Retrying in ${delay}ms...`
+        );
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
   }
 
   async onModuleDestroy(): Promise<void> {

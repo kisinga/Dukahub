@@ -1,0 +1,57 @@
+<dialog #modal class="modal" (click)="onBackdropClick($event)">
+  <div class="modal-box max-w-3xl max-h-[90vh] overflow-y-auto">
+    <h3 class="font-bold text-lg mb-4">
+      Edit Permissions - {{ member?.firstName }} {{ member?.lastName }}
+    </h3>
+
+    @if (error(); as errorMsg) {
+      <div class="alert alert-error mb-4">
+        <span>{{ errorMsg }}</span>
+      </div>
+    }
+
+    <div class="space-y-6">
+      @for (group of Object.keys(getGroupedPermissions()); track group) {
+        <div class="collapse collapse-arrow bg-base-200">
+          <input type="checkbox" checked />
+          <div class="collapse-title font-semibold">{{ group }}</div>
+          <div class="collapse-content">
+            <div class="space-y-2">
+              @for (perm of getGroupedPermissions()[group]; track perm) {
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-primary"
+                    [checked]="hasPermission(perm)"
+                    (change)="togglePermission(perm)"
+                  />
+                  <span class="text-sm">{{ perm }}</span>
+                </label>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="modal-action">
+      <button class="btn btn-ghost" (click)="close()">Cancel</button>
+      <button
+        class="btn btn-primary"
+        (click)="save()"
+        [disabled]="isSubmitting()"
+      >
+        @if (isSubmitting()) {
+          <span class="loading loading-spinner"></span>
+          Saving...
+        } @else {
+          Save Permissions
+        }
+      </button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+

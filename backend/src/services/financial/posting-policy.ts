@@ -24,6 +24,8 @@ export interface PaymentPostingContext {
   orderId: string;
   orderCode: string;
   customerId?: string;
+  cashierSessionId?: string; // Active cashier session for reconciliation
+  resolvedAccountCode?: string; // Pre-resolved from PaymentMethod custom fields (takes priority over method-based mapping)
 }
 
 export interface SalePostingContext {
@@ -48,6 +50,7 @@ export interface SupplierPaymentPostingContext {
   purchaseReference: string;
   supplierId: string;
   method: string; // payment method code
+  resolvedAccountCode?: string; // Pre-resolved from PaymentMethod custom fields
 }
 
 export interface RefundPostingContext {
@@ -56,6 +59,7 @@ export interface RefundPostingContext {
   orderCode: string;
   originalPaymentId: string;
   method: string; // original payment method
+  resolvedAccountCode?: string; // Pre-resolved from PaymentMethod custom fields
 }
 
 export interface InventoryPurchasePostingContext {
@@ -99,19 +103,27 @@ export interface InventoryWriteOffPostingContext {
  * Credits: Sales account (income increase)
  */
 export function createPaymentEntry(context: PaymentPostingContext): JournalEntryTemplate {
-  const clearingAccount = mapPaymentMethodToAccount(context.method);
+  // Use pre-resolved account if provided, otherwise fall back to method-based mapping
+  const clearingAccount = context.resolvedAccountCode || mapPaymentMethodToAccount(context.method);
+
+  // Build meta with optional cashierSessionId
+  const baseMeta = {
+    orderId: context.orderId,
+    orderCode: context.orderCode,
+    method: context.method,
+    customerId: context.customerId,
+  };
+
+  const debitMeta = context.cashierSessionId
+    ? { ...baseMeta, cashierSessionId: context.cashierSessionId }
+    : baseMeta;
 
   return {
     lines: [
       {
         accountCode: clearingAccount,
         debit: context.amount,
-        meta: {
-          orderId: context.orderId,
-          orderCode: context.orderCode,
-          method: context.method,
-          customerId: context.customerId,
-        },
+        meta: debitMeta,
       },
       {
         accountCode: ACCOUNT_CODES.SALES,
@@ -120,6 +132,7 @@ export function createPaymentEntry(context: PaymentPostingContext): JournalEntry
           orderId: context.orderId,
           orderCode: context.orderCode,
           method: context.method,
+          cashierSessionId: context.cashierSessionId,
         },
       },
     ],
@@ -170,19 +183,27 @@ export function createCreditSaleEntry(context: SalePostingContext): JournalEntry
  * Credits: Accounts Receivable (asset decrease - customer debt reduced)
  */
 export function createPaymentAllocationEntry(context: PaymentPostingContext): JournalEntryTemplate {
-  const clearingAccount = mapPaymentMethodToAccount(context.method);
+  // Use pre-resolved account if provided, otherwise fall back to method-based mapping
+  const clearingAccount = context.resolvedAccountCode || mapPaymentMethodToAccount(context.method);
+
+  // Build meta with optional cashierSessionId
+  const baseMeta = {
+    orderId: context.orderId,
+    orderCode: context.orderCode,
+    method: context.method,
+    customerId: context.customerId,
+  };
+
+  const debitMeta = context.cashierSessionId
+    ? { ...baseMeta, cashierSessionId: context.cashierSessionId }
+    : baseMeta;
 
   return {
     lines: [
       {
         accountCode: clearingAccount,
         debit: context.amount,
-        meta: {
-          orderId: context.orderId,
-          orderCode: context.orderCode,
-          method: context.method,
-          customerId: context.customerId,
-        },
+        meta: debitMeta,
       },
       {
         accountCode: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
@@ -191,6 +212,7 @@ export function createPaymentAllocationEntry(context: PaymentPostingContext): Jo
           orderId: context.orderId,
           orderCode: context.orderCode,
           customerId: context.customerId,
+          cashierSessionId: context.cashierSessionId,
         },
       },
     ],
@@ -243,7 +265,8 @@ export function createSupplierPurchaseEntry(context: PurchasePostingContext): Jo
 export function createSupplierPaymentEntry(
   context: SupplierPaymentPostingContext
 ): JournalEntryTemplate {
-  const cashAccount = mapPaymentMethodToAccount(context.method);
+  // Use pre-resolved account if provided, otherwise fall back to method-based mapping
+  const cashAccount = context.resolvedAccountCode || mapPaymentMethodToAccount(context.method);
 
   return {
     lines: [
@@ -279,7 +302,8 @@ export function createSupplierPaymentEntry(
  * Credits: Cash/Clearing account (asset decrease - money returned)
  */
 export function createRefundEntry(context: RefundPostingContext): JournalEntryTemplate {
-  const clearingAccount = mapPaymentMethodToAccount(context.method);
+  // Use pre-resolved account if provided, otherwise fall back to method-based mapping
+  const clearingAccount = context.resolvedAccountCode || mapPaymentMethodToAccount(context.method);
 
   return {
     lines: [

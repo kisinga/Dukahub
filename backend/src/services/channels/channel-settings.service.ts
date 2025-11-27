@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
   Administrator,
   AdministratorService,
@@ -12,6 +12,7 @@ import {
   Role,
   RoleService,
   TransactionalConnection,
+  User,
 } from '@vendure/core';
 import { AuditService } from '../../infrastructure/audit/audit.service';
 import {
@@ -19,6 +20,11 @@ import {
   ManageCustomerCreditLimitPermission,
 } from '../../plugins/credit/permissions';
 import { OverridePricePermission } from '../../plugins/pricing/price-override.permission';
+import { ChannelActionTrackingService } from '../../infrastructure/events/channel-action-tracking.service';
+import { ChannelEventType } from '../../infrastructure/events/types/event-type.enum';
+import { ActionCategory } from '../../infrastructure/events/types/action-category.enum';
+import { ChannelActionType } from '../../infrastructure/events/types/action-type.enum';
+import { ROLE_TEMPLATES, RoleTemplate } from '../auth/provisioning/role-provisioner.service';
 
 export interface ChannelSettings {
   cashierFlowEnabled: boolean;
@@ -33,9 +39,26 @@ export interface UpdateChannelSettingsInput {
 }
 
 export interface InviteAdministratorInput {
-  emailAddress: string;
+  emailAddress?: string;
+  phoneNumber: string;
   firstName: string;
   lastName: string;
+  roleTemplateCode?: string;
+  permissionOverrides?: Permission[];
+}
+
+export interface CreateChannelAdminInput {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  emailAddress?: string;
+  roleTemplateCode: string;
+  permissionOverrides?: Permission[];
+}
+
+export interface UpdateChannelAdminInput {
+  id: string;
+  permissions: Permission[];
 }
 
 @Injectable()
@@ -48,7 +71,8 @@ export class ChannelSettingsService {
     private readonly administratorService: AdministratorService,
     private readonly roleService: RoleService,
     private readonly connection: TransactionalConnection,
-    private readonly auditService: AuditService
+    private readonly auditService: AuditService,
+    private readonly actionTrackingService: ChannelActionTrackingService
   ) {}
 
   async updateChannelSettings(
@@ -154,53 +178,116 @@ export class ChannelSettingsService {
     return this.mapChannelSettings(channel);
   }
 
-  async inviteChannelAdministrator(
-    ctx: RequestContext,
-    input: InviteAdministratorInput
-  ): Promise<Administrator> {
-    // Get or create "Channel Admin" role for this channel
-    let channelAdminRole = await this.connection
-      .getRepository(ctx, Role)
-      .createQueryBuilder('role')
-      .leftJoinAndSelect('role.channels', 'channel')
-      .where('role.code = :code', { code: `channel-admin-${ctx.channelId}` })
-      .andWhere('channel.id = :channelId', { channelId: ctx.channelId })
-      .getOne();
+  /**
+   * Get available role templates
+   */
+  getRoleTemplates(): RoleTemplate[] {
+    return Object.values(ROLE_TEMPLATES);
+  }
 
-    if (!channelAdminRole) {
-      // Create channel admin role
-      const createRoleInput = {
-        code: `channel-admin-${ctx.channelId}`,
-        description: `Channel Admin for ${ctx.channelId}`,
-        permissions: [
-          Permission.ReadCatalog,
-          Permission.UpdateCatalog,
-          Permission.ReadOrder,
-          Permission.UpdateOrder,
-          Permission.ReadCustomer,
-          Permission.UpdateCustomer,
-          Permission.ReadSettings,
-          Permission.UpdateSettings,
-          OverridePricePermission.Permission,
-          ApproveCustomerCreditPermission.Permission,
-          ManageCustomerCreditLimitPermission.Permission,
-        ],
-        channelIds: [ctx.channelId!],
-      };
-
-      channelAdminRole = await this.roleService.create(ctx, createRoleInput);
+  /**
+   * Check admin count rate limit
+   */
+  private async checkAdminCountLimit(ctx: RequestContext): Promise<void> {
+    const channelId = ctx.channelId!;
+    const channel = await this.channelService.findOne(ctx, channelId);
+    if (!channel) {
+      throw new Error('Channel not found');
     }
 
-    // Create administrator directly using AdministratorService
-    const createAdminInput = {
-      emailAddress: input.emailAddress,
+    const customFields = (channel.customFields ?? {}) as {
+      maxAdminCount?: number;
+    };
+
+    const maxAdminCount = customFields.maxAdminCount ?? 5;
+
+    // Count current administrators for this channel
+    const administrators = await this.connection
+      .getRepository(ctx, Administrator)
+      .createQueryBuilder('admin')
+      .leftJoinAndSelect('admin.user', 'user')
+      .leftJoinAndSelect('user.roles', 'role')
+      .leftJoinAndSelect('role.channels', 'channel')
+      .where('channel.id = :channelId', { channelId })
+      .getMany();
+
+    if (administrators.length >= maxAdminCount) {
+      throw new BadRequestException(
+        `Maximum admin count (${maxAdminCount}) reached for this channel.`
+      );
+    }
+  }
+
+  /**
+   * Invite or create channel administrator
+   * Supports both legacy email-based and new phone-based flows
+   */
+  async inviteChannelAdministrator(
+    ctx: RequestContext,
+    input: InviteAdministratorInput | CreateChannelAdminInput
+  ): Promise<Administrator> {
+    const channelId = ctx.channelId!;
+
+    // Check rate limit
+    await this.checkAdminCountLimit(ctx);
+
+    // Determine role template
+    const roleTemplateCode = 'roleTemplateCode' in input ? input.roleTemplateCode : 'admin';
+    const template = roleTemplateCode ? ROLE_TEMPLATES[roleTemplateCode] : undefined;
+    if (!template) {
+      throw new BadRequestException(`Invalid role template code: ${roleTemplateCode}`);
+    }
+
+    // Merge template permissions with overrides
+    const finalPermissions =
+      'permissionOverrides' in input && input.permissionOverrides
+        ? input.permissionOverrides
+        : template.permissions;
+
+    // Create or get role for this admin
+    const roleCode = `channel-${roleTemplateCode}-${channelId}-${Date.now()}`;
+    const createRoleInput = {
+      code: roleCode,
+      description: `${template.name} role for ${input.firstName} ${input.lastName}`,
+      permissions: finalPermissions,
+      channelIds: [channelId],
+    };
+
+    const role = await this.roleService.create(ctx, createRoleInput);
+
+    // Create administrator
+    const createAdminInput: any = {
       firstName: input.firstName,
       lastName: input.lastName,
       password: this.generateTemporaryPassword(),
-      roleIds: [channelAdminRole.id],
+      roleIds: [role.id],
     };
 
+    // Phone number is required
+    if (!('phoneNumber' in input) || !input.phoneNumber) {
+      throw new BadRequestException('phoneNumber is required');
+    }
+
+    // Phone-based flow: create user with phone identifier
+    createAdminInput.identifier = input.phoneNumber;
+    if (input.emailAddress) {
+      createAdminInput.emailAddress = input.emailAddress;
+    }
+
     const administrator = await this.administratorService.create(ctx, createAdminInput);
+
+    // Track action (using SMS as placeholder action type for counting)
+    await this.actionTrackingService.trackAction(
+      ctx,
+      channelId.toString(),
+      ChannelEventType.ADMIN_CREATED,
+      ChannelActionType.SMS,
+      ActionCategory.SYSTEM_NOTIFICATIONS,
+      {
+        adminId: administrator.id.toString(),
+        roleTemplateCode: roleTemplateCode || 'admin',
+      }
+    );
 
     // Log audit event
     await this.auditService
@@ -208,10 +295,12 @@ export class ChannelSettingsService {
         entityType: 'Administrator',
         entityId: administrator.id.toString(),
         data: {
-          emailAddress: input.emailAddress,
           firstName: input.firstName,
           lastName: input.lastName,
-          roleId: channelAdminRole.id.toString(),
+          phoneNumber: 'phoneNumber' in input ? input.phoneNumber : undefined,
+          emailAddress: 'emailAddress' in input ? input.emailAddress : undefined,
+          roleId: role.id.toString(),
+          roleTemplateCode,
         },
       })
       .catch(err => {
@@ -220,10 +309,134 @@ export class ChannelSettingsService {
         );
       });
 
-    // TODO: Send invitation email
-    // await this.emailService.sendAdminInvitation(administrator, ctx.channel);
+    // TODO: Send welcome SMS notification for new admin invitations
 
     return administrator;
+  }
+
+  /**
+   * Update channel administrator permissions
+   */
+  async updateChannelAdministrator(
+    ctx: RequestContext,
+    input: UpdateChannelAdminInput
+  ): Promise<Administrator> {
+    const channelId = ctx.channelId!;
+
+    // Get administrator
+    const administrator = await this.administratorService.findOne(ctx, input.id);
+    if (!administrator) {
+      throw new NotFoundException(`Administrator with ID ${input.id} not found`);
+    }
+
+    // Verify administrator belongs to this channel
+    const user = await this.connection.getRepository(ctx, User).findOne({
+      where: { id: administrator.user.id },
+      relations: ['roles', 'roles.channels'],
+    });
+
+    if (!user || !user.roles.some(role => role.channels.some(ch => ch.id === channelId))) {
+      throw new BadRequestException('Administrator does not belong to this channel');
+    }
+
+    // Update role permissions (assuming single role per admin for simplicity)
+    const role = user.roles.find(r => r.channels.some(ch => ch.id === channelId));
+    if (!role) {
+      throw new BadRequestException('Role not found for administrator');
+    }
+
+    await this.roleService.update(ctx, {
+      id: role.id,
+      permissions: input.permissions,
+    });
+
+    // Track action (using SMS as placeholder action type for counting)
+    await this.actionTrackingService.trackAction(
+      ctx,
+      channelId.toString(),
+      ChannelEventType.ADMIN_UPDATED,
+      ChannelActionType.SMS,
+      ActionCategory.SYSTEM_NOTIFICATIONS,
+      {
+        adminId: administrator.id.toString(),
+      }
+    );
+
+    // Log audit event
+    await this.auditService
+      .log(ctx, 'admin.updated', {
+        entityType: 'Administrator',
+        entityId: administrator.id.toString(),
+        data: {
+          permissions: input.permissions,
+        },
+      })
+      .catch(err => {
+        this.logger.warn(
+          `Failed to log admin update audit: ${err instanceof Error ? err.message : String(err)}`
+        );
+      });
+
+    // Reload administrator
+    const updated = await this.administratorService.findOne(ctx, input.id);
+    if (!updated) {
+      throw new Error('Failed to reload administrator after update');
+    }
+
+    return updated;
+  }
+
+  /**
+   * Disable (soft delete) channel administrator
+   */
+  async disableChannelAdministrator(
+    ctx: RequestContext,
+    adminId: string
+  ): Promise<{ success: boolean; message: string }> {
+    const channelId = ctx.channelId!;
+
+    // Get administrator
+    const administrator = await this.administratorService.findOne(ctx, adminId);
+    if (!administrator) {
+      throw new NotFoundException(`Administrator with ID ${adminId} not found`);
+    }
+
+    // Delete administrator via repository (Vendure doesn't expose delete on AdministratorService)
+    // Remove all roles first, then delete the administrator entity
+    const user = await this.connection.getRepository(ctx, User).findOne({
+      where: { id: administrator.user.id },
+      relations: ['roles'],
+    });
+
+    if (user && user.roles.length > 0) {
+      // Remove all roles
+      user.roles = [];
+      await this.connection.getRepository(ctx, User).save(user);
+    }
+
+    // Delete the administrator entity
+    await this.connection.getRepository(ctx, Administrator).remove(administrator);
+
+    // Log audit event
+    await this.auditService
+      .log(ctx, 'admin.disabled', {
+        entityType: 'Administrator',
+        entityId: adminId,
+        data: {
+          firstName: administrator.firstName,
+          lastName: administrator.lastName,
+        },
+      })
+      .catch(err => {
+        this.logger.warn(
+          `Failed to log admin disable audit: ${err instanceof Error ? err.message : String(err)}`
+        );
+      });
+
+    return {
+      success: true,
+      message: 'Administrator disabled successfully',
+    };
   }
 
   async createChannelPaymentMethod(ctx: RequestContext, input: any): Promise<PaymentMethod> {

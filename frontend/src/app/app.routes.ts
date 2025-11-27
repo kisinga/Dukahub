@@ -194,6 +194,12 @@ export const routes: Routes = [
           import('./dashboard/pages/settings/settings.component').then((m) => m.SettingsComponent),
       },
       {
+        path: 'team',
+        canActivate: [settingsGuard],
+        loadComponent: () =>
+          import('./dashboard/pages/team/team.component').then((m) => m.TeamComponent),
+      },
+      {
         path: 'ledger',
         loadComponent: () =>
           import('./dashboard/pages/ledger/ledger.component').then((m) => m.LedgerComponent),

@@ -7,7 +7,7 @@ interface Feature {
   title: string;
   description: string;
   icon: string;
-  origin: 'Dukahub-Exclusive' | 'Dukahub-Enhanced' | 'Standard';
+  origin: 'dukarun-Exclusive' | 'dukarun-Enhanced' | 'Standard';
   useCase?: string;
   visualPlaceholder?: string;
 }
@@ -41,9 +41,9 @@ export class FeaturesComponent {
         {
           title: 'Point Your Phone, Sell Instantly',
           description:
-            'Point your phone camera at a price label or product. Dukahub recognizes it instantly and adds it to your cart. No typing, no barcode scanner needed. Perfect for fresh produce, services, and items without barcodes.',
+            'Point your phone camera at a price label or product. dukarun recognizes it instantly and adds it to your cart. No typing, no barcode scanner needed. Perfect for fresh produce, services, and items without barcodes.',
           icon: '📷',
-          origin: 'Dukahub-Exclusive',
+          origin: 'dukarun-Exclusive',
           useCase: 'Perfect for markets, salons, and shops selling items without barcodes',
         },
         {
@@ -51,7 +51,7 @@ export class FeaturesComponent {
           description:
             'Scan barcodes to quickly add packaged goods to your cart or create new products. Fast and accurate for items with barcodes.',
           icon: '📊',
-          origin: 'Dukahub-Enhanced',
+          origin: 'dukarun-Enhanced',
           useCase: 'Ideal for packaged goods and products with barcodes',
         },
         {
@@ -59,7 +59,7 @@ export class FeaturesComponent {
           description:
             'Continue selling even when internet is down. Record up to 30 sales offline. Everything syncs automatically when you reconnect. Never lose a sale.',
           icon: '📡',
-          origin: 'Dukahub-Exclusive',
+          origin: 'dukarun-Exclusive',
           useCase: 'Essential for areas with unreliable internet or during power cuts',
         },
         {
@@ -67,7 +67,7 @@ export class FeaturesComponent {
           description:
             'Take payments via cash and M-Pesa in one system. Everything is tracked automatically in your books. No need for separate payment systems.',
           icon: '💳',
-          origin: 'Dukahub-Exclusive',
+          origin: 'dukarun-Exclusive',
           useCase: 'Perfect for Kenyan businesses accepting both cash and mobile money',
         },
         {
@@ -89,7 +89,7 @@ export class FeaturesComponent {
           description:
             'See exactly how much stock you have at any moment. Every sale updates your inventory instantly. No more guessing or manual counting.',
           icon: '📦',
-          origin: 'Dukahub-Enhanced',
+          origin: 'dukarun-Enhanced',
           useCase: 'Essential for any business that manages inventory',
         },
         {
@@ -105,7 +105,7 @@ export class FeaturesComponent {
           description:
             'Easily adjust stock levels when needed. Record damages, losses, or corrections. Everything is tracked with a clear audit trail.',
           icon: '📝',
-          origin: 'Dukahub-Enhanced',
+          origin: 'dukarun-Enhanced',
           useCase: 'Ideal when you need to correct stock counts or record losses',
         },
         {
@@ -113,7 +113,7 @@ export class FeaturesComponent {
           description:
             'Get notified when items are running low. Never run out of popular items. Make better decisions about what to order.',
           icon: '🔔',
-          origin: 'Dukahub-Exclusive',
+          origin: 'dukarun-Exclusive',
           useCase: 'Perfect for preventing stockouts and reducing waste',
         },
       ],
@@ -127,7 +127,7 @@ export class FeaturesComponent {
           description:
             'Track customers and suppliers in the same system. No need for separate lists. See everything in one place.',
           icon: '👥',
-          origin: 'Dukahub-Exclusive',
+          origin: 'dukarun-Exclusive',
           useCase: 'Simplifies operations for businesses dealing with both customers and suppliers',
         },
         {
@@ -135,7 +135,7 @@ export class FeaturesComponent {
           description:
             'Set credit limits for customers. The system automatically checks limits before allowing credit sales. Prevent bad debt.',
           icon: '💳',
-          origin: 'Dukahub-Exclusive',
+          origin: 'dukarun-Exclusive',
           useCase: 'Essential for businesses that sell on credit',
         },
         {
@@ -143,7 +143,7 @@ export class FeaturesComponent {
           description:
             'The system sends friendly reminders to customers about payments due. You also get notified to follow up. Improve cash flow.',
           icon: '📧',
-          origin: 'Dukahub-Exclusive',
+          origin: 'dukarun-Exclusive',
           useCase: 'Perfect for reducing time spent chasing payments',
         },
         {
@@ -151,7 +151,7 @@ export class FeaturesComponent {
           description:
             'Instantly see how much each customer owes you and how much you owe each supplier. Everything calculated automatically from your sales and purchases.',
           icon: '💰',
-          origin: 'Dukahub-Exclusive',
+          origin: 'dukarun-Exclusive',
           useCase: 'Essential for managing cash flow and collections',
         },
       ],
@@ -165,7 +165,7 @@ export class FeaturesComponent {
           description:
             "See what's selling, what's not, and trends over time. Make decisions based on real data, not guesswork.",
           icon: '📊',
-          origin: 'Dukahub-Enhanced',
+          origin: 'dukarun-Enhanced',
           useCase: 'Perfect for understanding your business performance',
         },
         {
@@ -173,7 +173,7 @@ export class FeaturesComponent {
           description:
             'Quickly see your best-selling items. Know what to stock more of. Identify opportunities to grow.',
           icon: '⭐',
-          origin: 'Dukahub-Enhanced',
+          origin: 'dukarun-Enhanced',
           useCase: 'Ideal for optimizing your product mix',
         },
         {
@@ -181,7 +181,7 @@ export class FeaturesComponent {
           description:
             'Every sale, payment, and purchase is automatically recorded in a double-entry ledger. No need for separate accounting software.',
           icon: '📚',
-          origin: 'Dukahub-Exclusive',
+          origin: 'dukarun-Exclusive',
           useCase: 'Perfect for businesses that want integrated accounting',
         },
         {
@@ -189,7 +189,7 @@ export class FeaturesComponent {
           description:
             'See key metrics at a glance. Sales, inventory, and cash flow all in one place. Designed for small businesses, not complex BI tools.',
           icon: '📈',
-          origin: 'Dukahub-Enhanced',
+          origin: 'dukarun-Enhanced',
           useCase: 'Essential for owners who want quick insights',
         },
       ],
@@ -211,7 +211,7 @@ export class FeaturesComponent {
           description:
             'Set different permission levels for different roles. Owners see everything, cashiers can only sell, managers can adjust prices. Keep your business secure.',
           icon: '🔒',
-          origin: 'Dukahub-Enhanced',
+          origin: 'dukarun-Enhanced',
           useCase: 'Essential for businesses with multiple staff and different roles',
         },
         {
@@ -219,7 +219,7 @@ export class FeaturesComponent {
           description:
             'Manage multiple shops or businesses from one account. Each shop has its own inventory and sales, but you control everything from one place.',
           icon: '🏬',
-          origin: 'Dukahub-Enhanced',
+          origin: 'dukarun-Enhanced',
           useCase: 'Perfect for business owners with multiple locations',
         },
       ],
@@ -233,7 +233,7 @@ export class FeaturesComponent {
           description:
             'Built from the ground up to work without internet. Your catalog is stored on your device. Sales continue even when connectivity is poor.',
           icon: '📱',
-          origin: 'Dukahub-Exclusive',
+          origin: 'dukarun-Exclusive',
           useCase: 'Critical for areas with unreliable internet',
         },
         {
@@ -241,13 +241,13 @@ export class FeaturesComponent {
           description:
             'Accept M-Pesa on your existing Till. We track the confirmation, you keep the money. No manual reconciliation needed.',
           icon: '📲',
-          origin: 'Dukahub-Exclusive',
+          origin: 'dukarun-Exclusive',
           useCase: 'Essential for Kenyan businesses accepting mobile money',
         },
         {
           title: 'API Access',
           description:
-            'Connect Dukahub to other systems you use. Build custom integrations. For technical users who need more.',
+            'Connect dukarun to other systems you use. Build custom integrations. For technical users who need more.',
           icon: '🔌',
           origin: 'Standard',
           useCase: 'For businesses that need custom integrations',
@@ -257,7 +257,7 @@ export class FeaturesComponent {
           description:
             'Industry-standard security protects your business data. Your information stays private and is never shared.',
           icon: '🛡️',
-          origin: 'Dukahub-Exclusive',
+          origin: 'dukarun-Exclusive',
           useCase: 'Essential for protecting your business information',
         },
       ],
@@ -265,7 +265,7 @@ export class FeaturesComponent {
   ];
 
   protected readonly comparisonData = {
-    dukahub: [
+    dukarun: [
       'Point phone to sell (no barcode needed)',
       'Works without internet',
       'Built-in accounting',

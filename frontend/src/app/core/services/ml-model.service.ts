@@ -75,7 +75,7 @@ export class MlModelService {
   private readonly isInitializedSignal = signal<boolean>(false);
   private readonly errorSignal = signal<ModelError | null>(null);
 
-  private readonly MODEL_CACHE_NAME = 'dukahub-ml-models';
+  private readonly MODEL_CACHE_NAME = 'dukarun-ml-models';
 
   // Cache for asset sources to prevent duplicate queries
   private assetSourcesCache = new Map<

@@ -1,0 +1,163 @@
+<dialog #modal class="modal" (click)="onBackdropClick($event)">
+  <div class="modal-box max-w-2xl">
+    <h3 class="font-bold text-lg mb-4">Add Team Member</h3>
+
+    <!-- Progress Steps -->
+    <div class="steps mb-6">
+      <div class="step" [class.step-primary]="step() >= 1">Info</div>
+      <div class="step" [class.step-primary]="step() >= 2">Role</div>
+      <div class="step" [class.step-primary]="step() >= 3">Permissions</div>
+      <div class="step" [class.step-primary]="step() >= 4">Confirm</div>
+    </div>
+
+    @if (error(); as errorMsg) {
+      <div class="alert alert-error mb-4">
+        <span>{{ errorMsg }}</span>
+      </div>
+    }
+
+    <form [formGroup]="form">
+      <!-- Step 1: Info -->
+      @if (step() === 1) {
+        <div class="space-y-4">
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">First Name *</span>
+            </label>
+            <input
+              type="text"
+              formControlName="firstName"
+              class="input input-bordered"
+              [class.input-error]="form.get('firstName')?.invalid && form.get('firstName')?.touched"
+            />
+          </div>
+
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Last Name *</span>
+            </label>
+            <input
+              type="text"
+              formControlName="lastName"
+              class="input input-bordered"
+              [class.input-error]="form.get('lastName')?.invalid && form.get('lastName')?.touched"
+            />
+          </div>
+
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Phone Number *</span>
+            </label>
+            <input
+              type="tel"
+              formControlName="phoneNumber"
+              class="input input-bordered"
+              placeholder="07XXXXXXXX"
+              [class.input-error]="form.get('phoneNumber')?.invalid && form.get('phoneNumber')?.touched"
+            />
+          </div>
+
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Email Address (Optional)</span>
+            </label>
+            <input
+              type="email"
+              formControlName="emailAddress"
+              class="input input-bordered"
+            />
+          </div>
+        </div>
+      }
+
+      <!-- Step 2: Role -->
+      @if (step() === 2) {
+        <div class="space-y-4">
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Role Template *</span>
+            </label>
+            <select formControlName="roleTemplateCode" class="select select-bordered">
+              <option value="">Select a role...</option>
+              @for (template of roleTemplates; track template.code) {
+                <option [value]="template.code">{{ template.name }} - {{ template.description }}</option>
+              }
+            </select>
+          </div>
+
+          @if (getSelectedTemplate(); as template) {
+            <div class="alert alert-info">
+              <div>
+                <div class="font-semibold">{{ template.name }}</div>
+                <div class="text-sm mt-1">{{ template.description }}</div>
+                <div class="text-xs mt-2">
+                  <strong>Permissions:</strong> {{ template.permissions.length }} permissions included
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Step 3: Permissions (simplified - can be enhanced later) -->
+      @if (step() === 3) {
+        <div class="space-y-4">
+          <p class="text-sm text-base-content/70">
+            Permissions are pre-filled from the selected role template. 
+            You can customize them in the next step after creation.
+          </p>
+        </div>
+      }
+
+      <!-- Step 4: Confirm -->
+      @if (step() === 4) {
+        <div class="space-y-4">
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Re-enter Phone Number to Confirm *</span>
+            </label>
+            <input
+              type="tel"
+              formControlName="phoneConfirm"
+              class="input input-bordered"
+              placeholder="07XXXXXXXX"
+              [class.input-error]="form.get('phoneConfirm')?.invalid && form.get('phoneConfirm')?.touched"
+            />
+          </div>
+
+          <div class="alert alert-warning">
+            <span>Please confirm the phone number is correct before creating the team member.</span>
+          </div>
+        </div>
+      }
+    </form>
+
+    <!-- Actions -->
+    <div class="modal-action">
+      @if (step() > 1) {
+        <button class="btn btn-ghost" (click)="prevStep()">Previous</button>
+      }
+      <button class="btn btn-ghost" (click)="close()">Cancel</button>
+      @if (step() < 4) {
+        <button class="btn btn-primary" (click)="nextStep()">Next</button>
+      } @else {
+        <button
+          class="btn btn-primary"
+          (click)="submit()"
+          [disabled]="isSubmitting() || form.invalid"
+        >
+          @if (isSubmitting()) {
+            <span class="loading loading-spinner"></span>
+            Creating...
+          } @else {
+            Create Team Member
+          }
+        </button>
+      }
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+

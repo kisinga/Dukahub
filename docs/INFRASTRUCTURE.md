@@ -49,16 +49,53 @@ Dukarun uses a shared Docker network to enable service discovery and secure comm
 
 All services communicate using Docker service names (not `localhost`):
 
-| Service         | Hostname            | Port      | Notes                          |
-| --------------- | ------------------- | --------- | ------------------------------ |
-| **PostgreSQL**  | `postgres_db`       | 5432      | Main database                  |
-| **TimescaleDB** | `timescaledb_audit` | 5432      | Audit logs database            |
-| **Redis**       | `redis`             | 6379      | Cache and OTP storage          |
-| **Backend**     | `backend`           | 3000      | Vendure API server             |
-| **SigNoz**      | `signoz`            | 4317/4318 | Observability platform         |
-| **ClickHouse**  | `clickhouse`        | 9000      | SigNoz storage (internal only) |
+| Service                   | Hostname                | Port      | Notes                                   |
+| ------------------------- | ----------------------- | --------- | --------------------------------------- |
+| **PostgreSQL**            | `postgres_db`           | 5432      | Main database                           |
+| **TimescaleDB**           | `timescaledb_audit`     | 5432      | Audit logs database                     |
+| **Redis**                 | `redis`                 | 6379      | Cache and OTP storage                   |
+| **Backend**               | `backend`               | 3000      | Vendure API server                      |
+| **SigNoz OTel Collector** | `signoz-otel-collector` | 4317/4318 | Receives traces/metrics/logs via OTLP   |
+| **SigNoz UI**             | `signoz`                | 8080      | Observability dashboard and API         |
+| **ClickHouse**            | `signoz-clickhouse`     | 9000      | SigNoz storage (internal only)          |
+| **ZooKeeper**             | `signoz-zookeeper`      | 2181      | ClickHouse coordination (internal only) |
 
 **Example:** Backend connects to database using `DB_HOST=postgres_db` (not `localhost`)
+
+### SigNoz Observability Architecture
+
+```
+┌─────────────┐    ┌─────────────┐
+│   Backend   │    │  Frontend   │
+│  (Vendure)  │    │  (Angular)  │
+└──────┬──────┘    └──────┬──────┘
+       │ OTLP gRPC        │ OTLP HTTP (via nginx)
+       │ :4317            │ /signoz/v1/traces → :4318
+       └────────┬─────────┘
+                ▼
+    ┌───────────────────────┐
+    │  signoz-otel-collector │  ← Receives all telemetry
+    │     (ports 4317/4318)  │
+    └───────────┬───────────┘
+                │ Writes to ClickHouse
+                ▼
+    ┌───────────────────────┐
+    │   signoz-clickhouse   │  ← Stores traces/metrics/logs
+    │      (port 9000)      │
+    └───────────┬───────────┘
+                │ Queries
+                ▼
+    ┌───────────────────────┐
+    │       signoz          │  ← UI, API, Alerts
+    │     (port 8080)       │
+    └───────────────────────┘
+```
+
+**Key Points:**
+
+- Apps send telemetry to `signoz-otel-collector` (not `signoz`)
+- Frontend proxies through nginx: `/signoz/` → `signoz-otel-collector:4318`
+- SigNoz UI available at `http://localhost:8080` (configurable via `SIGNOZ_UI_PORT`)
 
 ### Network Setup (Required for All Deployments)
 
@@ -83,6 +120,24 @@ docker compose up -d
 **Note:** Both compose files are already configured to use `dukarun_services_network` as an external network. The network must be created manually before starting services.
 
 **For Coolify Deployments:** Follow the same network setup steps above. Create the network via SSH or Coolify terminal before deploying services. If using Coolify's "Connect to Predefined Network" feature, change the network name from `dukarun_services_network` to `coolify` in both compose files.
+
+### SigNoz Setup (Automated)
+
+SigNoz requires manual database creation in ClickHouse. Use the automated setup script:
+
+```bash
+./scripts/setup-signoz.sh
+```
+
+This script:
+
+- Creates the Docker network (if needed)
+- Starts ClickHouse and waits for it to be healthy
+- Creates required databases (`signoz_traces`, `signoz_metrics`, `signoz_logs`, `signoz_meter`)
+- Starts SigNoz UI and OTel Collector
+- Verifies all endpoints
+
+**Access:** SigNoz UI at `http://localhost:8080` (or `SIGNOZ_UI_PORT`)
 
 ---
 
@@ -134,26 +189,32 @@ All configuration is managed via environment variables. See `.env.example` in th
 
 ### Observability (SigNoz)
 
-| Variable                     | Example                | Default                                      | Notes                                  |
-| ---------------------------- | ---------------------- | -------------------------------------------- | -------------------------------------- |
-| `SIGNOZ_ENABLED`             | `true`                 | `false`                                      | Enable backend observability           |
-| `SIGNOZ_HOST`                | `signoz`               | `signoz`                                     | SigNoz service hostname                |
-| `SIGNOZ_OTLP_GRPC_PORT`      | `4317`                 | `4317`                                       | OTLP gRPC port (backend)               |
-| `SIGNOZ_OTLP_HTTP_PORT`      | `4318`                 | `4318`                                       | OTLP HTTP port (frontend)              |
-| `SIGNOZ_SERVICE_NAME`        | `dukarun-backend`      | `dukarun-backend`                            | Backend service identifier             |
-| `SIGNOZ_SERVICE_VERSION`     | `2.0.0`                | `2.0.0`                                      | Service version                        |
-| `SIGNOZ_UI_PORT`             | `3301`                 | `3301`                                       | SigNoz UI port (exposed to host)       |
-| `SIGNOZ_OTLP_GRPC_ENDPOINT`  | `http://signoz:4317`   | —                                            | Override OTLP gRPC endpoint (optional) |
-| `SIGNOZ_OTLP_HTTP_ENDPOINT`  | `http://signoz:4318`   | —                                            | Override OTLP HTTP endpoint (optional) |
-| `SIGNOZ_ENDPOINT`            | `http://signoz:4317`   | —                                            | Legacy endpoint (optional)             |
-| `ENABLE_TRACING`             | `true`                 | `false`                                      | Enable frontend tracing                |
-| `SIGNOZ_ENDPOINT` (frontend) | `/signoz/v1/traces`    | `/signoz/v1/traces`                          | Frontend SigNoz endpoint (nginx proxy) |
-| `CLICKHOUSE_DB`              | `signoz`               | `signoz`                                     | ClickHouse database name               |
-| `CLICKHOUSE_USER`            | `default`              | `default`                                    | ClickHouse user                        |
-| `CLICKHOUSE_PASSWORD`        | `secure-password`      | —                                            | ClickHouse password                    |
-| `CLICKHOUSE_HOST`            | `clickhouse`           | `clickhouse`                                 | ClickHouse hostname (for SigNoz)       |
-| `CLICKHOUSE_PORT`            | `9000`                 | `9000`                                       | ClickHouse port (for SigNoz)           |
-| `OTEL_RESOURCE_ATTRIBUTES`   | `service.name=dukarun` | `service.name=dukarun,service.version=2.0.0` | OpenTelemetry resource attributes      |
+SigNoz provides full observability with traces, metrics, and logs stored in ClickHouse.
+
+| Variable                 | Example                 | Default                 | Notes                                    |
+| ------------------------ | ----------------------- | ----------------------- | ---------------------------------------- |
+| `SIGNOZ_ENABLED`         | `true`                  | `false`                 | Enable backend observability             |
+| `SIGNOZ_HOST`            | `signoz-otel-collector` | `signoz-otel-collector` | OTel Collector hostname (apps send here) |
+| `SIGNOZ_OTLP_GRPC_PORT`  | `4317`                  | `4317`                  | OTLP gRPC port (backend)                 |
+| `SIGNOZ_OTLP_HTTP_PORT`  | `4318`                  | `4318`                  | OTLP HTTP port (frontend)                |
+| `SIGNOZ_SERVICE_NAME`    | `dukarun-backend`       | `dukarun-backend`       | Service identifier in traces             |
+| `SIGNOZ_SERVICE_VERSION` | `2.0.0`                 | `2.0.0`                 | Service version in traces                |
+| `SIGNOZ_UI_PORT`         | `8080`                  | `8080`                  | SigNoz UI port (exposed to host)         |
+| `ENABLE_TRACING`         | `true`                  | `false`                 | Enable frontend tracing                  |
+| `SIGNOZ_ENDPOINT`        | `/signoz/v1/traces`     | `/signoz/v1/traces`     | Frontend endpoint (proxied via nginx)    |
+| `SIGNOZ_PORT`            | `4318`                  | `4318`                  | Port for nginx proxy to OTel collector   |
+
+**Resource Requirements:**
+
+- ClickHouse: ~2GB RAM minimum
+- SigNoz: ~1GB RAM
+- Total: ~4GB RAM recommended for observability stack
+
+**Retention Defaults:**
+
+- Traces: 7 days
+- Logs: 7 days
+- Metrics: 30 days
 
 **Flexible Backend Connection:** The frontend can connect to backends anywhere:
 
@@ -186,12 +247,22 @@ The nginx configuration supports both Docker internal DNS and public DNS resolut
 | `VAPID_EMAIL`       | `mailto:admin@dukarun.com` | `mailto:admin@dukarun.com` | VAPID subject/email                        |
 | `VAPID_SUBJECT`     | `mailto:admin@dukarun.com` | —                          | VAPID subject (alternative)                |
 
-### Payment Provider Configuration
+### Payment Provider Configuration (Paystack)
 
-| Variable              | Example       | Default | Notes               |
-| --------------------- | ------------- | ------- | ------------------- |
-| `PAYSTACK_SECRET_KEY` | `sk_live_...` | —       | Paystack secret key |
-| `PAYSTACK_PUBLIC_KEY` | `pk_live_...` | —       | Paystack public key |
+| Variable                  | Example       | Default | Notes                                                                                                                                                                     |
+| ------------------------- | ------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PAYSTACK_SECRET_KEY`     | `sk_live_xxx` | —       | Paystack secret key (required). Use `sk_test_xxx` for test mode.                                                                                                          |
+| `PAYSTACK_PUBLIC_KEY`     | `pk_live_xxx` | —       | Paystack public key (required). Use `pk_test_xxx` for test mode.                                                                                                          |
+| `PAYSTACK_WEBHOOK_SECRET` | `whsec_xxx`   | —       | Webhook secret for signature verification (recommended). Get from Paystack dashboard → Settings → Webhooks. If not set, webhook verification is disabled (security risk). |
+
+**Setup Instructions:**
+
+1. Get API keys from Paystack dashboard: Settings → API Keys & Webhooks
+2. Get webhook secret from Paystack dashboard: Settings → Webhooks → [Your webhook] → Secret
+3. For test mode, use keys starting with `sk_test_` and `pk_test_`
+4. For production, use keys starting with `sk_live_` and `pk_live_`
+
+**See also:** [Paystack Integration Setup](../SUBSCRIPTION_INTEGRATION.md#paystack-integration) for webhook configuration and payment flow details.
 
 ### Email Configuration (Optional)
 
@@ -280,7 +351,8 @@ Always use service names (not `localhost`):
 - Redis: `redis`
 - Backend: `backend`
 - TimescaleDB: `timescaledb_audit`
-- SigNoz: `signoz`
+- SigNoz OTel Collector: `signoz-otel-collector` (for sending telemetry)
+- SigNoz UI: `signoz` (for UI access)
 
 ---
 
@@ -557,14 +629,17 @@ Deploy using Docker Compose with hosted images for a complete, self-contained se
 
 ### Service Overview
 
-| Service        | Image/Version                             | Port | Requirements         |
-| -------------- | ----------------------------------------- | ---- | -------------------- |
-| **Frontend**   | `ghcr.io/kisinga/dukarun/frontend:latest` | 4200 | Backend API          |
-| **Backend**    | `ghcr.io/kisinga/dukarun/backend:latest`  | 3000 | Postgres 17, Redis 7 |
-| **Postgres**   | `postgres:17`                             | 5432 | Persistent storage   |
-| **Redis**      | `redis:7-alpine`                          | 6379 | Persistent storage   |
-| **SigNoz**     | `signoz/signoz:latest`                    | 3301 | ClickHouse           |
-| **ClickHouse** | `clickhouse/clickhouse-server:latest`     | —    | Internal only        |
+| Service                   | Image/Version                                | Port      | Requirements           |
+| ------------------------- | -------------------------------------------- | --------- | ---------------------- |
+| **Frontend**              | `ghcr.io/kisinga/dukarun/frontend:latest`    | 4200      | Backend API            |
+| **Backend**               | `ghcr.io/kisinga/dukarun/backend:latest`     | 3000      | Postgres 17, Redis 7   |
+| **Postgres**              | `postgres:17`                                | 5432      | Persistent storage     |
+| **Redis**                 | `redis:7-alpine`                             | 6379      | Persistent storage     |
+| **TimescaleDB**           | `timescale/timescaledb:latest-pg17`          | 5433      | Persistent storage     |
+| **SigNoz OTel Collector** | `signoz/signoz-otel-collector:0.111.24`      | 4317/4318 | ClickHouse             |
+| **SigNoz UI**             | `signoz/signoz:0.69.0`                       | 8080      | ClickHouse, OTel Coll. |
+| **ClickHouse**            | `clickhouse/clickhouse-server:24.1.2-alpine` | —         | ZooKeeper (internal)   |
+| **ZooKeeper**             | `bitnami/zookeeper:3.7.1`                    | —         | Internal only          |
 
 ### Docker Compose Deployment
 
@@ -646,10 +721,13 @@ All services communicate via Docker service names on the shared `dukarun_service
 - Backend → PostgreSQL: `postgres_db:5432`
 - Backend → Redis: `redis:6379`
 - Backend → TimescaleDB: `timescaledb_audit:5432`
-- Backend → SigNoz: `signoz:4317` (gRPC) or `signoz:4318` (HTTP)
-- Frontend → SigNoz: `signoz:4318` (via nginx proxy at `/signoz/`)
+- Backend → SigNoz OTel Collector: `signoz-otel-collector:4317` (gRPC)
+- Frontend → SigNoz OTel Collector: `signoz-otel-collector:4318` (via nginx proxy at `/signoz/`)
+- SigNoz UI: `http://localhost:8080` (or via reverse proxy)
 
 **Important:** Never use `localhost` in Docker containers. Always use service names for inter-container communication.
+
+**Note:** Apps send telemetry to `signoz-otel-collector`, not `signoz`. The `signoz` service is the UI/API.
 
 ### New Components
 

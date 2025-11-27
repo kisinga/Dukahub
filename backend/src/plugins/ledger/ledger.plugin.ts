@@ -1,30 +1,33 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
+import { gql } from 'graphql-tag';
 import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
-import { PostingService } from '../../ledger/posting.service';
+import { CashDrawerCount } from '../../domain/cashier/cash-drawer-count.entity';
+import { CashierSession } from '../../domain/cashier/cashier-session.entity';
+import { MpesaVerification } from '../../domain/cashier/mpesa-verification.entity';
+import { MoneyEvent } from '../../domain/money/money-event.entity';
+import { AccountingPeriod } from '../../domain/period/accounting-period.entity';
+import { PeriodLock } from '../../domain/period/period-lock.entity';
+import { Reconciliation } from '../../domain/recon/reconciliation.entity';
 import { Account } from '../../ledger/account.entity';
 import { JournalEntry } from '../../ledger/journal-entry.entity';
 import { JournalLine } from '../../ledger/journal-line.entity';
-import { MoneyEvent } from '../../domain/money/money-event.entity';
-import { CashierSession } from '../../domain/cashier/cashier-session.entity';
-import { Reconciliation } from '../../domain/recon/reconciliation.entity';
-import { PeriodLock } from '../../domain/period/period-lock.entity';
-import { AccountingPeriod } from '../../domain/period/accounting-period.entity';
-import { PurchasePayment } from '../../services/stock/entities/purchase-payment.entity';
-import { gql } from 'graphql-tag';
-import { DASHBOARD_STATS_SCHEMA } from './dashboard-stats.schema';
-import { DashboardStatsResolver } from './dashboard-stats.resolver';
-import { LEDGER_VIEWER_SCHEMA } from './ledger-viewer.schema';
-import { LedgerViewerResolver } from './ledger-viewer.resolver';
-import { PERIOD_MANAGEMENT_SCHEMA } from './period-management.schema';
-import { PeriodManagementResolver } from './period-management.resolver';
-import { LedgerQueryService } from '../../services/financial/ledger-query.service';
+import { PostingService } from '../../ledger/posting.service';
 import { AccountBalanceService } from '../../services/financial/account-balance.service';
-import { PeriodLockService } from '../../services/financial/period-lock.service';
-import { ReconciliationService } from '../../services/financial/reconciliation.service';
-import { ReconciliationValidatorService } from '../../services/financial/reconciliation-validator.service';
+import { CashierSessionService } from '../../services/financial/cashier-session.service';
 import { InventoryReconciliationService } from '../../services/financial/inventory-reconciliation.service';
+import { LedgerQueryService } from '../../services/financial/ledger-query.service';
 import { PeriodEndClosingService } from '../../services/financial/period-end-closing.service';
-import { ManageReconciliationPermission, CloseAccountingPeriodPermission } from './permissions';
+import { PeriodLockService } from '../../services/financial/period-lock.service';
+import { ReconciliationValidatorService } from '../../services/financial/reconciliation-validator.service';
+import { ReconciliationService } from '../../services/financial/reconciliation.service';
+import { PurchasePayment } from '../../services/stock/entities/purchase-payment.entity';
+import { DashboardStatsResolver } from './dashboard-stats.resolver';
+import { DASHBOARD_STATS_SCHEMA } from './dashboard-stats.schema';
+import { LedgerViewerResolver } from './ledger-viewer.resolver';
+import { LEDGER_VIEWER_SCHEMA } from './ledger-viewer.schema';
+import { PeriodManagementResolver } from './period-management.resolver';
+import { PERIOD_MANAGEMENT_SCHEMA } from './period-management.schema';
+import { CloseAccountingPeriodPermission, ManageReconciliationPermission } from './permissions';
 
 // Merge schemas
 const COMBINED_SCHEMA = gql`
@@ -41,6 +44,8 @@ const COMBINED_SCHEMA = gql`
     JournalLine,
     MoneyEvent,
     CashierSession,
+    CashDrawerCount,
+    MpesaVerification,
     Reconciliation,
     PeriodLock,
     AccountingPeriod,
@@ -58,8 +63,9 @@ const COMBINED_SCHEMA = gql`
     ReconciliationValidatorService,
     InventoryReconciliationService,
     PeriodEndClosingService,
+    CashierSessionService,
   ],
-  exports: [PostingService, AccountBalanceService],
+  exports: [PostingService, AccountBalanceService, CashierSessionService],
   configuration: config => {
     // Register custom permissions
     config.authOptions.customPermissions = [
@@ -79,4 +85,4 @@ const COMBINED_SCHEMA = gql`
   },
   compatibility: VENDURE_COMPATIBILITY_VERSION,
 })
-export class LedgerPlugin {}
+export class LedgerPlugin { }

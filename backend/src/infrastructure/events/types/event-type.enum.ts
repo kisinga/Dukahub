@@ -41,6 +41,11 @@ export enum ChannelEventType {
   ADMIN_UPDATED = 'admin_updated',
   USER_CREATED = 'user_created',
   USER_UPDATED = 'user_updated',
+
+  // Subscription Events (System, Not Subscribable)
+  SUBSCRIPTION_EXPIRING_SOON = 'subscription_expiring_soon',
+  SUBSCRIPTION_EXPIRED = 'subscription_expired',
+  SUBSCRIPTION_RENEWED = 'subscription_renewed',
 }
 
 /**

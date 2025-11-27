@@ -1,16 +1,25 @@
-import { Args, Mutation, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Allow, Ctx, Permission, RequestContext } from '@vendure/core';
 import { gql } from 'graphql-tag';
 
 import {
   ChannelSettingsService,
   UpdateChannelSettingsInput,
+  CreateChannelAdminInput,
+  UpdateChannelAdminInput,
 } from '../../services/channels/channel-settings.service';
 
 export const channelSettingsSchema = gql`
+  extend type Query {
+    roleTemplates: [RoleTemplate!]!
+  }
+
   extend type Mutation {
     updateChannelSettings(input: UpdateChannelSettingsInput!): ChannelSettings!
     inviteChannelAdministrator(input: InviteAdministratorInput!): Administrator!
+    createChannelAdmin(input: CreateChannelAdminInput!): Administrator!
+    updateChannelAdmin(id: ID!, permissions: [String!]!): Administrator!
+    disableChannelAdmin(id: ID!): DisableChannelAdminResponse!
     createChannelPaymentMethod(input: CreatePaymentMethodInput!): PaymentMethod!
     updateChannelPaymentMethod(input: UpdatePaymentMethodInput!): PaymentMethod!
   }
@@ -21,6 +30,18 @@ export const channelSettingsSchema = gql`
     companyLogoAsset: Asset
   }
 
+  type RoleTemplate {
+    code: String!
+    name: String!
+    description: String!
+    permissions: [String!]!
+  }
+
+  type DisableChannelAdminResponse {
+    success: Boolean!
+    message: String!
+  }
+
   input UpdateChannelSettingsInput {
     cashierFlowEnabled: Boolean
     cashierOpen: Boolean
@@ -28,15 +49,39 @@ export const channelSettingsSchema = gql`
   }
 
   input InviteAdministratorInput {
-    emailAddress: String!
+    emailAddress: String
+    phoneNumber: String!
     firstName: String!
     lastName: String!
+    roleTemplateCode: String
+    permissionOverrides: [String!]
+  }
+
+  input CreateChannelAdminInput {
+    firstName: String!
+    lastName: String!
+    phoneNumber: String!
+    emailAddress: String
+    roleTemplateCode: String!
+    permissionOverrides: [String!]
   }
 `;
 
 @Resolver()
 export class ChannelSettingsResolver {
   constructor(private readonly channelSettingsService: ChannelSettingsService) {}
+
+  @Query()
+  @Allow(Permission.ReadSettings)
+  async roleTemplates(@Ctx() ctx: RequestContext) {
+    const templates = this.channelSettingsService.getRoleTemplates();
+    return templates.map(template => ({
+      code: template.code,
+      name: template.name,
+      description: template.description,
+      permissions: template.permissions,
+    }));
+  }
 
   @Mutation()
   @Allow(Permission.UpdateSettings)
@@ -51,6 +96,34 @@ export class ChannelSettingsResolver {
   @Allow(Permission.CreateAdministrator)
   async inviteChannelAdministrator(@Ctx() ctx: RequestContext, @Args('input') input: any) {
     return this.channelSettingsService.inviteChannelAdministrator(ctx, input);
+  }
+
+  @Mutation()
+  @Allow(Permission.CreateAdministrator)
+  async createChannelAdmin(
+    @Ctx() ctx: RequestContext,
+    @Args('input') input: CreateChannelAdminInput
+  ) {
+    return this.channelSettingsService.inviteChannelAdministrator(ctx, input);
+  }
+
+  @Mutation()
+  @Allow(Permission.UpdateAdministrator)
+  async updateChannelAdmin(
+    @Ctx() ctx: RequestContext,
+    @Args('id') id: string,
+    @Args('permissions', { type: () => [String] }) permissions: string[]
+  ) {
+    return this.channelSettingsService.updateChannelAdministrator(ctx, {
+      id,
+      permissions: permissions as Permission[],
+    });
+  }
+
+  @Mutation()
+  @Allow(Permission.DeleteAdministrator)
+  async disableChannelAdmin(@Ctx() ctx: RequestContext, @Args('id') id: string) {
+    return this.channelSettingsService.disableChannelAdministrator(ctx, id);
   }
 
   @Mutation()

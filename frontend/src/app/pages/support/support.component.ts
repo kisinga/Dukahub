@@ -19,13 +19,13 @@ interface FAQItem {
 export class SupportComponent {
   protected readonly faqItems = signal<FAQItem[]>([
     {
-      question: 'How do I get started with Dukahub?',
+      question: 'How do I get started with dukarun?',
       answer:
         "Sign up for a free 30-day trial. No credit card required. Add your products by scanning barcodes or taking photos, and you're ready to start selling.",
       open: false,
     },
     {
-      question: 'Does Dukahub work without internet?',
+      question: 'Does dukarun work without internet?',
       answer:
         'Yes! You can record up to 30 sales without internet. Everything is stored on your device and syncs automatically when you reconnect.',
       open: false,
@@ -33,13 +33,13 @@ export class SupportComponent {
     {
       question: 'How do I add products?',
       answer:
-        'You can add products by scanning barcodes or taking photos of price labels. Dukahub learns each product in under a minute.',
+        'You can add products by scanning barcodes or taking photos of price labels. dukarun learns each product in under a minute.',
       open: false,
     },
     {
       question: 'Can I accept M-Pesa payments?',
       answer:
-        'Yes! Dukahub supports both cash and M-Pesa payments. All payments are tracked automatically in your ledger.',
+        'Yes! dukarun supports both cash and M-Pesa payments. All payments are tracked automatically in your ledger.',
       open: false,
     },
     {

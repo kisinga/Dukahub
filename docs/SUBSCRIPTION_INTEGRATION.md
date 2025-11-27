@@ -34,7 +34,7 @@ This document describes the Paystack subscription and payment flow integration f
    - `lastPaymentDate` - Last payment date
    - `lastPaymentAmount` - Last payment amount in cents
 
-3. **PaystackService** (`backend/src/plugins/paystack.service.ts`)
+3. **PaystackService** (`backend/src/services/payments/paystack.service.ts`)
    - Handles Paystack API integration
    - Methods: initializeTransaction, chargeMobile (STK push), verifyTransaction, createCustomer, etc.
 
@@ -74,32 +74,35 @@ This document describes the Paystack subscription and payment flow integration f
 
 ### 1. Environment Variables
 
-Add to root `.env`:
+**Paystack Environment Variables:** See [Paystack Environment Variables](../INFRASTRUCTURE.md#payment-provider-configuration-paystack) in INFRASTRUCTURE.md for complete setup instructions.
 
-```bash
-PAYSTACK_SECRET_KEY=sk_live_xxx
-PAYSTACK_PUBLIC_KEY=pk_live_xxx
-PAYSTACK_WEBHOOK_SECRET=whsec_xxx
-SUBSCRIPTION_TRIAL_DAYS=30
-```
+Required variables:
+- `PAYSTACK_SECRET_KEY` - Paystack secret key
+- `PAYSTACK_PUBLIC_KEY` - Paystack public key
+- `PAYSTACK_WEBHOOK_SECRET` - Webhook secret (recommended)
+- `SUBSCRIPTION_TRIAL_DAYS` - Trial period duration in days (default: 30)
 
 ### 2. Paystack Configuration
+
+**Environment Variables**: See [Paystack Environment Variables](../INFRASTRUCTURE.md#payment-provider-configuration-paystack) in INFRASTRUCTURE.md for complete setup.
 
 1. **Get API Keys**
    - Log in to Paystack dashboard
    - Navigate to Settings → API Keys & Webhooks
    - Copy Secret Key and Public Key
+   - Add to `.env` as `PAYSTACK_SECRET_KEY` and `PAYSTACK_PUBLIC_KEY`
 
 2. **Configure Webhook**
    - In Paystack dashboard, go to Settings → Webhooks
    - Add webhook URL: `https://your-domain.com/webhooks/paystack`
+   - **Important**: Webhook URL must be publicly accessible
    - Select events: `charge.success`, `subscription.create`, `subscription.disable`, `subscription.not_renew`
-   - Copy webhook secret
+   - Copy webhook secret and add to `.env` as `PAYSTACK_WEBHOOK_SECRET`
 
 3. **Test Mode**
    - Use test keys for development: `sk_test_xxx` and `pk_test_xxx`
    - Use ngrok for local webhook testing: `ngrok http 3000`
-   - Update webhook URL in Paystack to ngrok URL
+   - Update webhook URL in Paystack to ngrok URL: `https://your-ngrok-url.ngrok.io/webhooks/paystack`
 
 ### 3. Database Migration
 
@@ -125,6 +128,111 @@ After adding GraphQL operations, regenerate types:
 cd frontend
 npm run codegen
 ```
+
+## Paystack Integration
+
+### Overview
+
+- **PaystackService Location**: `backend/src/services/payments/paystack.service.ts`
+- **API Base URL**: `https://api.paystack.co`
+- **Authentication**: Bearer token with secret key
+- **Currency**: KES (Kenyan Shillings)
+
+### Environment Variables
+
+See [Paystack Environment Variables](../INFRASTRUCTURE.md#payment-provider-configuration-paystack) in INFRASTRUCTURE.md for complete setup.
+
+Required variables:
+- `PAYSTACK_SECRET_KEY` - Paystack secret key
+- `PAYSTACK_PUBLIC_KEY` - Paystack public key
+- `PAYSTACK_WEBHOOK_SECRET` - Webhook secret (recommended for security)
+
+### Webhook Configuration
+
+- **Endpoint**: `POST /webhooks/paystack`
+- **Controller**: `SubscriptionWebhookController` at `backend/src/plugins/subscriptions/subscription-webhook.controller.ts`
+- **Required Events**:
+  - `charge.success` - Payment completed (processes subscription activation)
+  - `subscription.create` - Subscription created (logs only)
+  - `subscription.disable` - Subscription disabled (logs only)
+  - `subscription.not_renew` - Subscription won't renew (logs only)
+  - `subscription.expiring_cards` - Card expiring (logs only)
+- **Webhook URL Format**: `https://your-domain.com/webhooks/paystack`
+- **Signature Verification**: HMAC SHA512 using `PAYSTACK_WEBHOOK_SECRET`
+
+**Setup Steps:**
+1. Paystack dashboard → Settings → Webhooks
+2. Add webhook URL
+3. Select required events
+4. Copy webhook secret to `PAYSTACK_WEBHOOK_SECRET`
+
+**Security Note**: Webhook verification is disabled if `PAYSTACK_WEBHOOK_SECRET` is not set (logs warning).
+
+### STK Push Payment Flow
+
+- **Method**: `chargeMobile()` in PaystackService
+- **Paystack API Endpoint**: `POST /charge`
+- **Required Parameters**:
+  - `amount` (in kobo/cents, converted from KES: `amount * 100`)
+  - `phone` (E.164 format: `+254712345678`)
+  - `email` (or placeholder: `{phone}@placeholder.dukarun.com` if not provided)
+  - `reference` (format: `SUB-{channelId}-{timestamp}`)
+  - `currency` (`KES`)
+  - `metadata` (see Metadata Requirements below)
+- **Response**: Returns `reference` for tracking
+- **User Experience**: Customer receives STK push prompt on phone
+
+### Payment Link Fallback
+
+- **Triggered When**: STK push fails or unavailable
+- **Method**: `initializeTransaction()` in PaystackService
+- **Paystack API Endpoint**: `POST /transaction/initialize`
+- **Returns**: `authorization_url` for redirect
+- **User Experience**: Customer redirected to Paystack payment page
+
+### Metadata Requirements
+
+When calling `chargeMobile()` or `initializeTransaction()`, metadata must include:
+
+- `channelId` (string, required) - Channel ID for subscription
+- `tierId` (string, required) - Subscription tier ID
+- `billingCycle` (string, required) - "monthly" or "yearly"
+- `type` (string, required) - Must be "subscription" for webhook filtering
+
+**Optional Fields:**
+- `customerCode` - Paystack customer code
+- `subscriptionCode` - Paystack subscription code
+
+### Webhook Processing Flow
+
+1. Paystack sends webhook to `/webhooks/paystack`
+2. Signature verified using `PAYSTACK_WEBHOOK_SECRET` (HMAC SHA512)
+3. Event type extracted from `body.event`
+4. For `charge.success`:
+   - Extract `channelId` and `type` from `data.metadata`
+   - Filter: Only process if `type === 'subscription'`
+   - Verify transaction with Paystack API (`verifyTransaction()`)
+   - If verified, call `processSuccessfulPayment()`
+   - Updates channel subscription status and expiry
+5. Response: Always return `200 OK` to prevent Paystack retries
+6. Error Handling: Log errors but return `200 OK` to prevent retries
+
+### Customer Management
+
+- **Method**: `createCustomer()` in PaystackService
+- **Paystack API Endpoint**: `POST /customer`
+- **Purpose**: Creates Paystack customer record
+- **Stores**: `customer_code` in channel custom field `paystackCustomerCode`
+- **Reuse**: If channel already has `paystackCustomerCode`, skips creation
+- **Parameters**: email, firstName, lastName, phone, metadata
+
+### Transaction Verification
+
+- **Method**: `verifyTransaction()` in PaystackService
+- **Paystack API Endpoint**: `GET /transaction/verify/{reference}`
+- **Usage**: Called in webhook handler before processing payment
+- **Purpose**: Ensures transaction status is "success" before activating subscription
+- **Returns**: Full transaction details including amount, customer, status
 
 ## Usage
 
@@ -167,16 +275,37 @@ When subscription expires:
 
 ### Local Testing with Paystack Test Mode
 
-1. Use Paystack test keys in `.env`
-2. Use ngrok for webhook: `ngrok http 3000`
-3. Update Paystack webhook URL to ngrok URL
-4. Test payment flow with test phone numbers
+1. **Set up test environment**:
+   - Use Paystack test keys in `.env`: `sk_test_xxx` and `pk_test_xxx`
+   - Set `PAYSTACK_WEBHOOK_SECRET` to test webhook secret
+
+2. **Set up ngrok for webhook testing**:
+   ```bash
+   ngrok http 3000
+   ```
+   - Copy the ngrok HTTPS URL (e.g., `https://abc123.ngrok.io`)
+   - Update Paystack webhook URL to: `https://abc123.ngrok.io/webhooks/paystack`
+
+3. **Test payment flow**:
+   - Use test phone numbers (see below)
+   - Monitor ngrok webhook requests at `http://localhost:4040`
+   - Check backend logs for webhook processing
 
 ### Test Phone Numbers (Paystack)
 
-- Success: `+254700000000`
-- Failure: `+254700000001`
-- Timeout: `+254700000002`
+- **Success**: `+254700000000` - Payment succeeds immediately
+- **Failure**: `+254700000001` - Payment fails immediately
+- **Timeout**: `+254700000002` - Payment times out
+
+### Webhook Testing Checklist
+
+- [ ] Webhook URL is publicly accessible
+- [ ] Webhook secret matches in `.env` and Paystack dashboard
+- [ ] All required events are subscribed in Paystack
+- [ ] Webhook endpoint returns 200 OK
+- [ ] Signature verification is working (check logs)
+- [ ] Transaction verification succeeds
+- [ ] Channel subscription status updates correctly
 
 ### Manual Testing
 
@@ -190,24 +319,51 @@ When subscription expires:
 
 ### Webhook Not Receiving Events
 
-- Check webhook URL is publicly accessible
-- Verify webhook secret matches in `.env`
-- Check Paystack webhook logs for delivery status
-- Ensure webhook endpoint returns 200 OK
+- **Check webhook URL**: Must be publicly accessible (use ngrok for local testing)
+- **Verify webhook secret**: Must match in `.env` (`PAYSTACK_WEBHOOK_SECRET`) and Paystack dashboard
+- **Check Paystack webhook logs**: Paystack dashboard → Settings → Webhooks → [Your webhook] → Logs
+- **Ensure webhook endpoint returns 200 OK**: Check backend logs for webhook responses
+- **Verify signature verification**: Check backend logs for "Invalid webhook signature" warnings
+- **Check event subscriptions**: Ensure all required events are selected in Paystack dashboard
+
+### Webhook Signature Verification Issues
+
+- **Missing webhook secret**: If `PAYSTACK_WEBHOOK_SECRET` is not set, verification is disabled (security risk)
+- **Secret mismatch**: Verify secret in `.env` matches Paystack dashboard
+- **Raw body required**: Ensure webhook controller receives raw body for signature verification
 
 ### Payment Not Processing
 
-- Verify Paystack API keys are correct
-- Check phone number format (E.164: +254712345678)
-- Verify transaction reference is unique
-- Check Paystack transaction logs
+- **Verify Paystack API keys**: Check `PAYSTACK_SECRET_KEY` and `PAYSTACK_PUBLIC_KEY` in `.env`
+- **Check phone number format**: Must be E.164 format: `+254712345678`
+- **Verify transaction reference**: Must be unique (format: `SUB-{channelId}-{timestamp}`)
+- **Check Paystack transaction logs**: Paystack dashboard → Transactions
+- **STK push failures**: Check if fallback to payment link is working
+- **Metadata requirements**: Ensure all required metadata fields are included (channelId, tierId, billingCycle, type)
+
+### STK Push Failure
+
+- **Check phone number**: Must be valid Kenyan mobile number in E.164 format
+- **Verify amount**: Must be in KES (converted to kobo/cents)
+- **Check Paystack logs**: Paystack dashboard → Transactions → [Transaction] → Logs
+- **Fallback mechanism**: System should automatically fall back to payment link
+- **Network issues**: Check if customer's mobile network is accessible
 
 ### Subscription Status Not Updating
 
-- Check database migration ran successfully
-- Verify channel custom fields exist
-- Check subscription service logs
-- Verify webhook is updating channel correctly
+- **Check database migration**: Ensure migration ran successfully
+- **Verify channel custom fields**: Check that subscription fields exist on channel
+- **Check subscription service logs**: Look for errors in `processSuccessfulPayment()`
+- **Verify webhook processing**: Check webhook handler logs for successful processing
+- **Transaction verification**: Ensure `verifyTransaction()` succeeds before processing
+- **Metadata filtering**: Verify `type === 'subscription'` in webhook metadata
+
+### Webhook Event Filtering
+
+- **Check metadata**: Ensure `type: 'subscription'` is in metadata
+- **Verify channelId**: Must be present in metadata
+- **Check webhook logs**: Verify events are being received but filtered out
+- **Non-subscription charges**: System logs "Skipping non-subscription charge" for other payment types
 
 ### Read-Only Mode Not Enforcing
 

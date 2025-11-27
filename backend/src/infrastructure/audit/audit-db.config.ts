@@ -22,4 +22,11 @@ export const auditDbConfig: DataSourceOptions = {
   logging: false,
   entities: [path.join(__dirname, 'audit-log.entity.{ts,js}')],
   migrations: [path.join(__dirname, '../migrations/audit-*.{ts,js}')],
+  // Connection pool settings for better reliability
+  extra: {
+    max: 10, // Maximum number of connections in the pool
+    min: 2, // Minimum number of connections in the pool
+    idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
+    connectionTimeoutMillis: 10000, // Wait 10 seconds before timing out when connecting
+  },
 };

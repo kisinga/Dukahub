@@ -293,28 +293,28 @@ export const CACHE_CONFIGS = {
   // Cart cache - channel-specific, persistent
   CART: {
     storage: 'localStorage' as const,
-    keyPrefix: 'dukahub_cart',
+    keyPrefix: 'dukarun_cart',
     channelSpecific: true,
   },
 
   // Product cache - channel-specific, persistent
   PRODUCTS: {
     storage: 'localStorage' as const,
-    keyPrefix: 'dukahub_products',
+    keyPrefix: 'dukarun_products',
     channelSpecific: true,
   },
 
   // Session cache - global, persistent
   SESSION: {
     storage: 'localStorage' as const,
-    keyPrefix: 'dukahub_session',
+    keyPrefix: 'dukarun_session',
     channelSpecific: false,
   },
 
   // Temporary cache - channel-specific, session-only
   TEMP: {
     storage: 'sessionStorage' as const,
-    keyPrefix: 'dukahub_temp',
+    keyPrefix: 'dukarun_temp',
     channelSpecific: true,
   },
 } as const;

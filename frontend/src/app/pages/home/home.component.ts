@@ -113,8 +113,8 @@ export class HomeComponent {
     {
       number: '1',
       title: 'Capture your catalog',
-      summary: 'Scan labels or take five quick photos per product.',
-      detail: 'Dukahub learns each item in under a minute — no spreadsheets required.',
+      summary: 'Scan barcodes or take five quick photos of the product label.',
+      detail: 'dukarun learns each item so that you can sell it in seconds.',
     },
     {
       number: '2',
@@ -187,7 +187,7 @@ export class HomeComponent {
   protected readonly testimonials: Testimonial[] = [
     {
       quote:
-        'Dukahub is so easy! Pointing my phone is faster than typing. Finally know my stock levels accurately.',
+        'dukarun is so easy! Pointing my phone is faster than typing. Finally know my stock levels accurately.',
       author: 'Amina K.',
       title: 'Mini Mart Owner, Nairobi',
       metric: 'Saves 2 hours daily',
@@ -208,7 +208,7 @@ export class HomeComponent {
     },
   ];
 
-  // Business examples representing 80% of Kenyan MSMEs that can afford Dukahub
+  // Business examples representing 80% of Kenyan MSMEs that can afford dukarun
   // Metrics stored for internal knowledge, only name and icon displayed on page
   protected readonly businessExamples: BusinessExample[] = [
     {
@@ -253,7 +253,19 @@ export class HomeComponent {
     {
       question: 'How does the product recognition work?',
       answer:
-        'Take a few photos of each product. When you sell, just point your camera at the product and it recognizes it in seconds. Works great for items without barcodes. Barcode scanning also works if available.',
+        'Take a few photos of each product labels. When you sell, just point your camera at the label and it recognizes it in seconds. Works great for items without barcodes. Barcode scanning also works if available.',
+      open: false,
+    },
+    {
+      question: 'What do you mean by "product labels"?',
+      answer:
+        'These are the price tags or cards that you use to display the price of the product. They are usually handwritten and are unique to each product.',
+      open: false,
+    },
+    {
+      question: 'Why product labels and not products?',
+      answer:
+        'Product labels are more reliable than products. They are consistent and unique. They are also easier to scan than products.',
       open: false,
     },
     {

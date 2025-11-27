@@ -1878,6 +1878,75 @@ export const INVITE_CHANNEL_ADMINISTRATOR = graphql(`
       firstName
       lastName
       emailAddress
+      user {
+        id
+        identifier
+        roles {
+          id
+          code
+          permissions
+        }
+      }
+    }
+  }
+`);
+
+export const GET_ROLE_TEMPLATES = graphql(`
+  query GetRoleTemplates {
+    roleTemplates {
+      code
+      name
+      description
+      permissions
+    }
+  }
+`);
+
+export const CREATE_CHANNEL_ADMIN = graphql(`
+  mutation CreateChannelAdmin($input: CreateChannelAdminInput!) {
+    createChannelAdmin(input: $input) {
+      id
+      firstName
+      lastName
+      emailAddress
+      user {
+        id
+        identifier
+        roles {
+          id
+          code
+          permissions
+        }
+      }
+    }
+  }
+`);
+
+export const UPDATE_CHANNEL_ADMIN = graphql(`
+  mutation UpdateChannelAdmin($id: ID!, $permissions: [String!]!) {
+    updateChannelAdmin(id: $id, permissions: $permissions) {
+      id
+      firstName
+      lastName
+      emailAddress
+      user {
+        id
+        identifier
+        roles {
+          id
+          code
+          permissions
+        }
+      }
+    }
+  }
+`);
+
+export const DISABLE_CHANNEL_ADMIN = graphql(`
+  mutation DisableChannelAdmin($id: ID!) {
+    disableChannelAdmin(id: $id) {
+      success
+      message
     }
   }
 `);
@@ -2301,6 +2370,230 @@ export const GET_JOURNAL_ENTRY = graphql(`
         credit
         meta
       }
+    }
+  }
+`);
+
+// ============================================================================
+// CASHIER SESSION MANAGEMENT
+// ============================================================================
+
+export const GET_CURRENT_CASHIER_SESSION = graphql(`
+  query GetCurrentCashierSession($channelId: Int!) {
+    currentCashierSession(channelId: $channelId) {
+      id
+      channelId
+      cashierUserId
+      openedAt
+      closedAt
+      openingFloat
+      closingDeclared
+      status
+    }
+  }
+`);
+
+export const GET_CASHIER_SESSION = graphql(`
+  query GetCashierSession($sessionId: ID!) {
+    cashierSession(sessionId: $sessionId) {
+      sessionId
+      cashierUserId
+      openedAt
+      closedAt
+      status
+      openingFloat
+      closingDeclared
+      ledgerTotals {
+        cashTotal
+        mpesaTotal
+        totalCollected
+      }
+      variance
+    }
+  }
+`);
+
+export const GET_CASHIER_SESSIONS = graphql(`
+  query GetCashierSessions($channelId: Int!, $options: CashierSessionListOptions) {
+    cashierSessions(channelId: $channelId, options: $options) {
+      items {
+        id
+        channelId
+        cashierUserId
+        openedAt
+        closedAt
+        openingFloat
+        closingDeclared
+        status
+      }
+      totalItems
+    }
+  }
+`);
+
+export const OPEN_CASHIER_SESSION = graphql(`
+  mutation OpenCashierSession($input: OpenCashierSessionInput!) {
+    openCashierSession(input: $input) {
+      id
+      channelId
+      cashierUserId
+      openedAt
+      openingFloat
+      status
+    }
+  }
+`);
+
+export const CLOSE_CASHIER_SESSION = graphql(`
+  mutation CloseCashierSession($input: CloseCashierSessionInput!) {
+    closeCashierSession(input: $input) {
+      sessionId
+      cashierUserId
+      openedAt
+      closedAt
+      status
+      openingFloat
+      closingDeclared
+      ledgerTotals {
+        cashTotal
+        mpesaTotal
+        totalCollected
+      }
+      variance
+    }
+  }
+`);
+
+export const CREATE_CASHIER_SESSION_RECONCILIATION = graphql(`
+  mutation CreateCashierSessionReconciliation($sessionId: ID!, $notes: String) {
+    createCashierSessionReconciliation(sessionId: $sessionId, notes: $notes) {
+      id
+      channelId
+      scope
+      scopeRefId
+      rangeStart
+      rangeEnd
+      status
+      expectedBalance
+      actualBalance
+      varianceAmount
+      notes
+      createdBy
+    }
+  }
+`);
+
+// ============================================================================
+// CASH CONTROL OPERATIONS
+// ============================================================================
+
+export const GET_SESSION_CASH_COUNTS = graphql(`
+  query GetSessionCashCounts($sessionId: ID!) {
+    sessionCashCounts(sessionId: $sessionId) {
+      id
+      channelId
+      sessionId
+      countType
+      takenAt
+      declaredCash
+      expectedCash
+      variance
+      varianceReason
+      reviewedByUserId
+      reviewedAt
+      reviewNotes
+      countedByUserId
+    }
+  }
+`);
+
+export const GET_PENDING_VARIANCE_REVIEWS = graphql(`
+  query GetPendingVarianceReviews($channelId: Int!) {
+    pendingVarianceReviews(channelId: $channelId) {
+      id
+      channelId
+      sessionId
+      countType
+      takenAt
+      declaredCash
+      expectedCash
+      variance
+      varianceReason
+      reviewedByUserId
+      reviewedAt
+      countedByUserId
+    }
+  }
+`);
+
+export const GET_SESSION_MPESA_VERIFICATIONS = graphql(`
+  query GetSessionMpesaVerifications($sessionId: ID!) {
+    sessionMpesaVerifications(sessionId: $sessionId) {
+      id
+      channelId
+      sessionId
+      verifiedAt
+      transactionCount
+      allConfirmed
+      flaggedTransactionIds
+      notes
+      verifiedByUserId
+    }
+  }
+`);
+
+export const RECORD_CASH_COUNT = graphql(`
+  mutation RecordCashCount($input: RecordCashCountInput!) {
+    recordCashCount(input: $input) {
+      count {
+        id
+        sessionId
+        countType
+        takenAt
+        declaredCash
+        varianceReason
+        countedByUserId
+      }
+      hasVariance
+      varianceHidden
+    }
+  }
+`);
+
+export const EXPLAIN_VARIANCE = graphql(`
+  mutation ExplainVariance($countId: ID!, $reason: String!) {
+    explainVariance(countId: $countId, reason: $reason) {
+      id
+      varianceReason
+    }
+  }
+`);
+
+export const REVIEW_CASH_COUNT = graphql(`
+  mutation ReviewCashCount($countId: ID!, $notes: String) {
+    reviewCashCount(countId: $countId, notes: $notes) {
+      id
+      declaredCash
+      expectedCash
+      variance
+      varianceReason
+      reviewedByUserId
+      reviewedAt
+      reviewNotes
+    }
+  }
+`);
+
+export const VERIFY_MPESA_TRANSACTIONS = graphql(`
+  mutation VerifyMpesaTransactions($input: VerifyMpesaInput!) {
+    verifyMpesaTransactions(input: $input) {
+      id
+      sessionId
+      verifiedAt
+      transactionCount
+      allConfirmed
+      flaggedTransactionIds
+      notes
     }
   }
 `);

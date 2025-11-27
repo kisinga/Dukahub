@@ -32,6 +32,124 @@ export const PERIOD_MANAGEMENT_SCHEMA = gql`
     displayName: String
   }
 
+  type CashierSession {
+    id: ID!
+    channelId: Int!
+    cashierUserId: Int!
+    openedAt: DateTime!
+    closedAt: DateTime
+    openingFloat: String!
+    closingDeclared: String!
+    status: String!
+  }
+
+  type CashierSessionLedgerTotals {
+    cashTotal: String!
+    mpesaTotal: String!
+    totalCollected: String!
+  }
+
+  type CashierSessionSummary {
+    sessionId: ID!
+    cashierUserId: Int!
+    openedAt: DateTime!
+    closedAt: DateTime
+    status: String!
+    openingFloat: String!
+    closingDeclared: String!
+    ledgerTotals: CashierSessionLedgerTotals!
+    variance: String!
+  }
+
+  type CashierSessionList {
+    items: [CashierSession!]!
+    totalItems: Int!
+  }
+
+  input OpenCashierSessionInput {
+    channelId: Int!
+    openingFloat: String!
+  }
+
+  input CloseCashierSessionInput {
+    sessionId: ID!
+    closingDeclared: String!
+    notes: String
+  }
+
+  input CashierSessionListOptions {
+    status: String
+    startDate: DateTime
+    endDate: DateTime
+    take: Int
+    skip: Int
+  }
+
+  # Cash Control Types
+  type CashDrawerCount {
+    id: ID!
+    channelId: Int!
+    sessionId: ID!
+    countType: String!
+    takenAt: DateTime!
+    declaredCash: String!
+    # These fields are only populated for managers or after review
+    expectedCash: String
+    variance: String
+    varianceReason: String
+    reviewedByUserId: Int
+    reviewedAt: DateTime
+    reviewNotes: String
+    countedByUserId: Int!
+  }
+
+  type CashCountResult {
+    count: CashDrawerCount!
+    hasVariance: Boolean!
+    varianceHidden: Boolean!
+  }
+
+  type MpesaVerification {
+    id: ID!
+    channelId: Int!
+    sessionId: ID!
+    verifiedAt: DateTime!
+    transactionCount: Int!
+    allConfirmed: Boolean!
+    flaggedTransactionIds: [String!]
+    notes: String
+    verifiedByUserId: Int!
+  }
+
+  input RecordCashCountInput {
+    sessionId: ID!
+    declaredCash: String!
+    countType: String!
+  }
+
+  input VerifyMpesaInput {
+    sessionId: ID!
+    allConfirmed: Boolean!
+    flaggedTransactionIds: [String!]
+    notes: String
+  }
+
+  # Payment Method Reconciliation Configuration (driven by PM custom fields)
+  type PaymentMethodReconciliationConfig {
+    paymentMethodId: ID!
+    paymentMethodCode: String!
+    reconciliationType: String! # blind_count, transaction_verification, statement_match, none
+    ledgerAccountCode: String!
+    isCashierControlled: Boolean!
+    requiresReconciliation: Boolean!
+  }
+
+  type SessionReconciliationRequirements {
+    blindCountRequired: Boolean!
+    verificationRequired: Boolean!
+    paymentMethods: [PaymentMethodReconciliationConfig!]!
+  }
+
   type PeriodEndCloseResult {
     success: Boolean!
     period: AccountingPeriod!
@@ -105,6 +223,16 @@ export const PERIOD_MANAGEMENT_SCHEMA = gql`
       asOfDate: DateTime!
       stockLocationId: Int
     ): InventoryValuation!
+    currentCashierSession(channelId: Int!): CashierSession
+    cashierSession(sessionId: ID!): CashierSessionSummary
+    cashierSessions(channelId: Int!, options: CashierSessionListOptions): CashierSessionList!
+    # Cash Control Queries
+    sessionCashCounts(sessionId: ID!): [CashDrawerCount!]!
+    pendingVarianceReviews(channelId: Int!): [CashDrawerCount!]!
+    sessionMpesaVerifications(sessionId: ID!): [MpesaVerification!]!
+    # Reconciliation Config Queries (driven by PaymentMethod custom fields)
+    sessionReconciliationRequirements(sessionId: ID!): SessionReconciliationRequirements!
+    channelReconciliationConfig(channelId: Int!): [PaymentMethodReconciliationConfig!]!
   }
 
   extend type Mutation {
@@ -114,5 +242,13 @@ export const PERIOD_MANAGEMENT_SCHEMA = gql`
     openAccountingPeriod(channelId: Int!, periodStartDate: DateTime!): AccountingPeriod!
     createInventoryReconciliation(input: CreateInventoryReconciliationInput!): Reconciliation!
     createInterAccountTransfer(input: InterAccountTransferInput!): JournalEntry!
+    openCashierSession(input: OpenCashierSessionInput!): CashierSession!
+    closeCashierSession(input: CloseCashierSessionInput!): CashierSessionSummary!
+    createCashierSessionReconciliation(sessionId: ID!, notes: String): Reconciliation!
+    # Cash Control Mutations
+    recordCashCount(input: RecordCashCountInput!): CashCountResult!
+    explainVariance(countId: ID!, reason: String!): CashDrawerCount!
+    reviewCashCount(countId: ID!, notes: String): CashDrawerCount!
+    verifyMpesaTransactions(input: VerifyMpesaInput!): MpesaVerification!
   }
 `;
