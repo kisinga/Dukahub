@@ -1,15 +1,7 @@
 name: Build and Push Docker Images
 
 on:
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - "backend/**"
-      - "frontend/**"
-      - "docker-compose.prod.yml"
-      - ".github/workflows/build-and-push.yml"
+  # Remove direct push trigger - builds should only happen after tests pass
   workflow_dispatch: # Allow manual triggers
   workflow_run:
     workflows: ["Test Suite"]
@@ -23,7 +15,8 @@ env:
 jobs:
   build-backend:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    # Only build if tests passed OR manual dispatch (never on direct push without tests)
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     permissions:
       contents: read
       packages: write
@@ -66,7 +59,8 @@ jobs:
 
   build-frontend:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    # Only build if tests passed OR manual dispatch (never on direct push without tests)
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     permissions:
       contents: read
       packages: write
