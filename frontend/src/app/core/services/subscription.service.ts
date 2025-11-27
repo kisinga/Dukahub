@@ -193,9 +193,18 @@ export class SubscriptionService {
         fetchPolicy: 'network-only',
       });
 
+      // Check for GraphQL errors first
+      if (result.errors && result.errors.length > 0) {
+        const errorMessages = result.errors.map((e) => e.message).join(', ');
+        console.warn('GraphQL errors when checking subscription status:', errorMessages);
+        return null;
+      }
+
       const status = (result.data?.checkSubscriptionStatus ?? null) as SubscriptionStatus | null;
       if (!status) {
-        throw new Error('Subscription status unavailable');
+        // Status is null but no GraphQL errors - log warning and return null gracefully
+        console.warn('Subscription status unavailable for channel:', targetChannelId);
+        return null;
       }
 
       // Update cache
