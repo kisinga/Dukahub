@@ -5,7 +5,7 @@ export interface Notification {
   id: string;
   userId: string;
   channelId: string;
-  type: 'ORDER' | 'STOCK' | 'ML_TRAINING' | 'PAYMENT';
+  type: 'ORDER' | 'STOCK' | 'ML_TRAINING' | 'PAYMENT' | 'CASH_VARIANCE';
   title: string;
   message: string;
   data?: any;

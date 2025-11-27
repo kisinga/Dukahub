@@ -40,7 +40,7 @@ describe('Subscription Flow Integration', () => {
 
     // Mock EventRouter
     mockEventRouter = {
-      routeEvent: jest.fn(),
+      routeEvent: jest.fn(async () => {}),
     } as any;
 
     // Mock TransactionalConnection
