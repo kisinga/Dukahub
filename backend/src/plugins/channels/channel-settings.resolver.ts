@@ -19,7 +19,7 @@ export const channelSettingsSchema = gql`
     inviteChannelAdministrator(input: InviteAdministratorInput!): Administrator!
     createChannelAdmin(input: CreateChannelAdminInput!): Administrator!
     updateChannelAdmin(id: ID!, permissions: [String!]!): Administrator!
-    disableChannelAdmin(id: ID!): DeletionResponse!
+    disableChannelAdmin(id: ID!): DisableChannelAdminResponse!
     createChannelPaymentMethod(input: CreatePaymentMethodInput!): PaymentMethod!
     updateChannelPaymentMethod(input: UpdatePaymentMethodInput!): PaymentMethod!
   }
@@ -35,6 +35,11 @@ export const channelSettingsSchema = gql`
     name: String!
     description: String!
     permissions: [String!]!
+  }
+
+  type DisableChannelAdminResponse {
+    success: Boolean!
+    message: String!
   }
 
   input UpdateChannelSettingsInput {
@@ -95,7 +100,10 @@ export class ChannelSettingsResolver {
 
   @Mutation()
   @Allow(Permission.CreateAdministrator)
-  async createChannelAdmin(@Ctx() ctx: RequestContext, @Args('input') input: CreateChannelAdminInput) {
+  async createChannelAdmin(
+    @Ctx() ctx: RequestContext,
+    @Args('input') input: CreateChannelAdminInput
+  ) {
     return this.channelSettingsService.inviteChannelAdministrator(ctx, input);
   }
 

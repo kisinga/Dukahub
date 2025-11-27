@@ -95,7 +95,11 @@ type Documents = {
   '\n  mutation UpdateSupplier($input: UpdateCustomerInput!) {\n    updateCustomer(input: $input) {\n      ... on Customer {\n        id\n        firstName\n        lastName\n        emailAddress\n        phoneNumber\n        updatedAt\n        customFields {\n          isSupplier\n          supplierType\n          contactPerson\n          taxId\n          paymentTerms\n          notes\n        }\n      }\n      ... on EmailAddressConflictError {\n        errorCode\n        message\n      }\n    }\n  }\n': typeof types.UpdateSupplierDocument;
   '\n  mutation DeleteSupplier($id: ID!) {\n    deleteCustomer(id: $id) {\n      result\n      message\n    }\n  }\n': typeof types.DeleteSupplierDocument;
   '\n  mutation UpdateChannelSettings($input: UpdateChannelSettingsInput!) {\n    updateChannelSettings(input: $input) {\n      cashierFlowEnabled\n      cashierOpen\n      companyLogoAsset {\n        id\n        source\n        preview\n      }\n    }\n  }\n': typeof types.UpdateChannelSettingsDocument;
-  '\n  mutation InviteChannelAdministrator($input: InviteAdministratorInput!) {\n    inviteChannelAdministrator(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n    }\n  }\n': typeof types.InviteChannelAdministratorDocument;
+  '\n  mutation InviteChannelAdministrator($input: InviteAdministratorInput!) {\n    inviteChannelAdministrator(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n      user {\n        id\n        identifier\n        roles {\n          id\n          code\n          permissions\n        }\n      }\n    }\n  }\n': typeof types.InviteChannelAdministratorDocument;
+  '\n  query GetRoleTemplates {\n    roleTemplates {\n      code\n      name\n      description\n      permissions\n    }\n  }\n': typeof types.GetRoleTemplatesDocument;
+  '\n  mutation CreateChannelAdmin($input: CreateChannelAdminInput!) {\n    createChannelAdmin(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n      user {\n        id\n        identifier\n        roles {\n          id\n          code\n          permissions\n        }\n      }\n    }\n  }\n': typeof types.CreateChannelAdminDocument;
+  '\n  mutation UpdateChannelAdmin($id: ID!, $permissions: [String!]!) {\n    updateChannelAdmin(id: $id, permissions: $permissions) {\n      id\n      firstName\n      lastName\n      emailAddress\n      user {\n        id\n        identifier\n        roles {\n          id\n          code\n          permissions\n        }\n      }\n    }\n  }\n': typeof types.UpdateChannelAdminDocument;
+  '\n  mutation DisableChannelAdmin($id: ID!) {\n    disableChannelAdmin(id: $id) {\n      success\n      message\n    }\n  }\n': typeof types.DisableChannelAdminDocument;
   '\n  query GetAdministrators($options: AdministratorListOptions) {\n    administrators(options: $options) {\n      items {\n        id\n        firstName\n        lastName\n        emailAddress\n        user {\n          id\n          identifier\n          verified\n          roles {\n            id\n            code\n            channels {\n              id\n            }\n          }\n        }\n      }\n    }\n  }\n': typeof types.GetAdministratorsDocument;
   '\n  query GetAdministratorById($id: ID!) {\n    administrator(id: $id) {\n      id\n      firstName\n      lastName\n      emailAddress\n      createdAt\n      updatedAt\n      user {\n        id\n        identifier\n        verified\n        lastLogin\n        roles {\n          id\n          code\n          description\n          permissions\n          channels {\n            id\n            code\n            token\n          }\n        }\n      }\n    }\n  }\n': typeof types.GetAdministratorByIdDocument;
   '\n  mutation CreateChannelPaymentMethod($input: CreatePaymentMethodInput!) {\n    createChannelPaymentMethod(input: $input) {\n      id\n      code\n      name\n    }\n  }\n': typeof types.CreateChannelPaymentMethodDocument;
@@ -120,6 +124,19 @@ type Documents = {
   '\n  query GetLedgerAccounts {\n    ledgerAccounts {\n      items {\n        id\n        code\n        name\n        type\n        isActive\n        balance\n      }\n    }\n  }\n': typeof types.GetLedgerAccountsDocument;
   '\n  query GetJournalEntries($options: JournalEntriesOptions) {\n    journalEntries(options: $options) {\n      items {\n        id\n        entryDate\n        postedAt\n        sourceType\n        sourceId\n        memo\n        lines {\n          id\n          accountCode\n          accountName\n          debit\n          credit\n          meta\n        }\n      }\n      totalItems\n    }\n  }\n': typeof types.GetJournalEntriesDocument;
   '\n  query GetJournalEntry($id: ID!) {\n    journalEntry(id: $id) {\n      id\n      entryDate\n      postedAt\n      sourceType\n      sourceId\n      memo\n      lines {\n        id\n        accountCode\n        accountName\n        debit\n        credit\n        meta\n      }\n    }\n  }\n': typeof types.GetJournalEntryDocument;
+  '\n  query GetCurrentCashierSession($channelId: Int!) {\n    currentCashierSession(channelId: $channelId) {\n      id\n      channelId\n      cashierUserId\n      openedAt\n      closedAt\n      openingFloat\n      closingDeclared\n      status\n    }\n  }\n': typeof types.GetCurrentCashierSessionDocument;
+  '\n  query GetCashierSession($sessionId: ID!) {\n    cashierSession(sessionId: $sessionId) {\n      sessionId\n      cashierUserId\n      openedAt\n      closedAt\n      status\n      openingFloat\n      closingDeclared\n      ledgerTotals {\n        cashTotal\n        mpesaTotal\n        totalCollected\n      }\n      variance\n    }\n  }\n': typeof types.GetCashierSessionDocument;
+  '\n  query GetCashierSessions($channelId: Int!, $options: CashierSessionListOptions) {\n    cashierSessions(channelId: $channelId, options: $options) {\n      items {\n        id\n        channelId\n        cashierUserId\n        openedAt\n        closedAt\n        openingFloat\n        closingDeclared\n        status\n      }\n      totalItems\n    }\n  }\n': typeof types.GetCashierSessionsDocument;
+  '\n  mutation OpenCashierSession($input: OpenCashierSessionInput!) {\n    openCashierSession(input: $input) {\n      id\n      channelId\n      cashierUserId\n      openedAt\n      openingFloat\n      status\n    }\n  }\n': typeof types.OpenCashierSessionDocument;
+  '\n  mutation CloseCashierSession($input: CloseCashierSessionInput!) {\n    closeCashierSession(input: $input) {\n      sessionId\n      cashierUserId\n      openedAt\n      closedAt\n      status\n      openingFloat\n      closingDeclared\n      ledgerTotals {\n        cashTotal\n        mpesaTotal\n        totalCollected\n      }\n      variance\n    }\n  }\n': typeof types.CloseCashierSessionDocument;
+  '\n  mutation CreateCashierSessionReconciliation($sessionId: ID!, $notes: String) {\n    createCashierSessionReconciliation(sessionId: $sessionId, notes: $notes) {\n      id\n      channelId\n      scope\n      scopeRefId\n      rangeStart\n      rangeEnd\n      status\n      expectedBalance\n      actualBalance\n      varianceAmount\n      notes\n      createdBy\n    }\n  }\n': typeof types.CreateCashierSessionReconciliationDocument;
+  '\n  query GetSessionCashCounts($sessionId: ID!) {\n    sessionCashCounts(sessionId: $sessionId) {\n      id\n      channelId\n      sessionId\n      countType\n      takenAt\n      declaredCash\n      expectedCash\n      variance\n      varianceReason\n      reviewedByUserId\n      reviewedAt\n      reviewNotes\n      countedByUserId\n    }\n  }\n': typeof types.GetSessionCashCountsDocument;
+  '\n  query GetPendingVarianceReviews($channelId: Int!) {\n    pendingVarianceReviews(channelId: $channelId) {\n      id\n      channelId\n      sessionId\n      countType\n      takenAt\n      declaredCash\n      expectedCash\n      variance\n      varianceReason\n      reviewedByUserId\n      reviewedAt\n      countedByUserId\n    }\n  }\n': typeof types.GetPendingVarianceReviewsDocument;
+  '\n  query GetSessionMpesaVerifications($sessionId: ID!) {\n    sessionMpesaVerifications(sessionId: $sessionId) {\n      id\n      channelId\n      sessionId\n      verifiedAt\n      transactionCount\n      allConfirmed\n      flaggedTransactionIds\n      notes\n      verifiedByUserId\n    }\n  }\n': typeof types.GetSessionMpesaVerificationsDocument;
+  '\n  mutation RecordCashCount($input: RecordCashCountInput!) {\n    recordCashCount(input: $input) {\n      count {\n        id\n        sessionId\n        countType\n        takenAt\n        declaredCash\n        varianceReason\n        countedByUserId\n      }\n      hasVariance\n      varianceHidden\n    }\n  }\n': typeof types.RecordCashCountDocument;
+  '\n  mutation ExplainVariance($countId: ID!, $reason: String!) {\n    explainVariance(countId: $countId, reason: $reason) {\n      id\n      varianceReason\n    }\n  }\n': typeof types.ExplainVarianceDocument;
+  '\n  mutation ReviewCashCount($countId: ID!, $notes: String) {\n    reviewCashCount(countId: $countId, notes: $notes) {\n      id\n      declaredCash\n      expectedCash\n      variance\n      varianceReason\n      reviewedByUserId\n      reviewedAt\n      reviewNotes\n    }\n  }\n': typeof types.ReviewCashCountDocument;
+  '\n  mutation VerifyMpesaTransactions($input: VerifyMpesaInput!) {\n    verifyMpesaTransactions(input: $input) {\n      id\n      sessionId\n      verifiedAt\n      transactionCount\n      allConfirmed\n      flaggedTransactionIds\n      notes\n    }\n  }\n': typeof types.VerifyMpesaTransactionsDocument;
   '\n      mutation UpdateProductName($id: ID!, $name: String!, $slug: String!) {\n        updateProduct(\n          input: { id: $id, translations: [{ languageCode: en, name: $name, slug: $slug }] }\n        ) {\n          id\n          name\n          slug\n        }\n      }\n    ': typeof types.UpdateProductNameDocument;
 };
 const documents: Documents = {
@@ -284,8 +301,16 @@ const documents: Documents = {
     types.DeleteSupplierDocument,
   '\n  mutation UpdateChannelSettings($input: UpdateChannelSettingsInput!) {\n    updateChannelSettings(input: $input) {\n      cashierFlowEnabled\n      cashierOpen\n      companyLogoAsset {\n        id\n        source\n        preview\n      }\n    }\n  }\n':
     types.UpdateChannelSettingsDocument,
-  '\n  mutation InviteChannelAdministrator($input: InviteAdministratorInput!) {\n    inviteChannelAdministrator(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n    }\n  }\n':
+  '\n  mutation InviteChannelAdministrator($input: InviteAdministratorInput!) {\n    inviteChannelAdministrator(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n      user {\n        id\n        identifier\n        roles {\n          id\n          code\n          permissions\n        }\n      }\n    }\n  }\n':
     types.InviteChannelAdministratorDocument,
+  '\n  query GetRoleTemplates {\n    roleTemplates {\n      code\n      name\n      description\n      permissions\n    }\n  }\n':
+    types.GetRoleTemplatesDocument,
+  '\n  mutation CreateChannelAdmin($input: CreateChannelAdminInput!) {\n    createChannelAdmin(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n      user {\n        id\n        identifier\n        roles {\n          id\n          code\n          permissions\n        }\n      }\n    }\n  }\n':
+    types.CreateChannelAdminDocument,
+  '\n  mutation UpdateChannelAdmin($id: ID!, $permissions: [String!]!) {\n    updateChannelAdmin(id: $id, permissions: $permissions) {\n      id\n      firstName\n      lastName\n      emailAddress\n      user {\n        id\n        identifier\n        roles {\n          id\n          code\n          permissions\n        }\n      }\n    }\n  }\n':
+    types.UpdateChannelAdminDocument,
+  '\n  mutation DisableChannelAdmin($id: ID!) {\n    disableChannelAdmin(id: $id) {\n      success\n      message\n    }\n  }\n':
+    types.DisableChannelAdminDocument,
   '\n  query GetAdministrators($options: AdministratorListOptions) {\n    administrators(options: $options) {\n      items {\n        id\n        firstName\n        lastName\n        emailAddress\n        user {\n          id\n          identifier\n          verified\n          roles {\n            id\n            code\n            channels {\n              id\n            }\n          }\n        }\n      }\n    }\n  }\n':
     types.GetAdministratorsDocument,
   '\n  query GetAdministratorById($id: ID!) {\n    administrator(id: $id) {\n      id\n      firstName\n      lastName\n      emailAddress\n      createdAt\n      updatedAt\n      user {\n        id\n        identifier\n        verified\n        lastLogin\n        roles {\n          id\n          code\n          description\n          permissions\n          channels {\n            id\n            code\n            token\n          }\n        }\n      }\n    }\n  }\n':
@@ -331,6 +356,32 @@ const documents: Documents = {
     types.GetJournalEntriesDocument,
   '\n  query GetJournalEntry($id: ID!) {\n    journalEntry(id: $id) {\n      id\n      entryDate\n      postedAt\n      sourceType\n      sourceId\n      memo\n      lines {\n        id\n        accountCode\n        accountName\n        debit\n        credit\n        meta\n      }\n    }\n  }\n':
     types.GetJournalEntryDocument,
+  '\n  query GetCurrentCashierSession($channelId: Int!) {\n    currentCashierSession(channelId: $channelId) {\n      id\n      channelId\n      cashierUserId\n      openedAt\n      closedAt\n      openingFloat\n      closingDeclared\n      status\n    }\n  }\n':
+    types.GetCurrentCashierSessionDocument,
+  '\n  query GetCashierSession($sessionId: ID!) {\n    cashierSession(sessionId: $sessionId) {\n      sessionId\n      cashierUserId\n      openedAt\n      closedAt\n      status\n      openingFloat\n      closingDeclared\n      ledgerTotals {\n        cashTotal\n        mpesaTotal\n        totalCollected\n      }\n      variance\n    }\n  }\n':
+    types.GetCashierSessionDocument,
+  '\n  query GetCashierSessions($channelId: Int!, $options: CashierSessionListOptions) {\n    cashierSessions(channelId: $channelId, options: $options) {\n      items {\n        id\n        channelId\n        cashierUserId\n        openedAt\n        closedAt\n        openingFloat\n        closingDeclared\n        status\n      }\n      totalItems\n    }\n  }\n':
+    types.GetCashierSessionsDocument,
+  '\n  mutation OpenCashierSession($input: OpenCashierSessionInput!) {\n    openCashierSession(input: $input) {\n      id\n      channelId\n      cashierUserId\n      openedAt\n      openingFloat\n      status\n    }\n  }\n':
+    types.OpenCashierSessionDocument,
+  '\n  mutation CloseCashierSession($input: CloseCashierSessionInput!) {\n    closeCashierSession(input: $input) {\n      sessionId\n      cashierUserId\n      openedAt\n      closedAt\n      status\n      openingFloat\n      closingDeclared\n      ledgerTotals {\n        cashTotal\n        mpesaTotal\n        totalCollected\n      }\n      variance\n    }\n  }\n':
+    types.CloseCashierSessionDocument,
+  '\n  mutation CreateCashierSessionReconciliation($sessionId: ID!, $notes: String) {\n    createCashierSessionReconciliation(sessionId: $sessionId, notes: $notes) {\n      id\n      channelId\n      scope\n      scopeRefId\n      rangeStart\n      rangeEnd\n      status\n      expectedBalance\n      actualBalance\n      varianceAmount\n      notes\n      createdBy\n    }\n  }\n':
+    types.CreateCashierSessionReconciliationDocument,
+  '\n  query GetSessionCashCounts($sessionId: ID!) {\n    sessionCashCounts(sessionId: $sessionId) {\n      id\n      channelId\n      sessionId\n      countType\n      takenAt\n      declaredCash\n      expectedCash\n      variance\n      varianceReason\n      reviewedByUserId\n      reviewedAt\n      reviewNotes\n      countedByUserId\n    }\n  }\n':
+    types.GetSessionCashCountsDocument,
+  '\n  query GetPendingVarianceReviews($channelId: Int!) {\n    pendingVarianceReviews(channelId: $channelId) {\n      id\n      channelId\n      sessionId\n      countType\n      takenAt\n      declaredCash\n      expectedCash\n      variance\n      varianceReason\n      reviewedByUserId\n      reviewedAt\n      countedByUserId\n    }\n  }\n':
+    types.GetPendingVarianceReviewsDocument,
+  '\n  query GetSessionMpesaVerifications($sessionId: ID!) {\n    sessionMpesaVerifications(sessionId: $sessionId) {\n      id\n      channelId\n      sessionId\n      verifiedAt\n      transactionCount\n      allConfirmed\n      flaggedTransactionIds\n      notes\n      verifiedByUserId\n    }\n  }\n':
+    types.GetSessionMpesaVerificationsDocument,
+  '\n  mutation RecordCashCount($input: RecordCashCountInput!) {\n    recordCashCount(input: $input) {\n      count {\n        id\n        sessionId\n        countType\n        takenAt\n        declaredCash\n        varianceReason\n        countedByUserId\n      }\n      hasVariance\n      varianceHidden\n    }\n  }\n':
+    types.RecordCashCountDocument,
+  '\n  mutation ExplainVariance($countId: ID!, $reason: String!) {\n    explainVariance(countId: $countId, reason: $reason) {\n      id\n      varianceReason\n    }\n  }\n':
+    types.ExplainVarianceDocument,
+  '\n  mutation ReviewCashCount($countId: ID!, $notes: String) {\n    reviewCashCount(countId: $countId, notes: $notes) {\n      id\n      declaredCash\n      expectedCash\n      variance\n      varianceReason\n      reviewedByUserId\n      reviewedAt\n      reviewNotes\n    }\n  }\n':
+    types.ReviewCashCountDocument,
+  '\n  mutation VerifyMpesaTransactions($input: VerifyMpesaInput!) {\n    verifyMpesaTransactions(input: $input) {\n      id\n      sessionId\n      verifiedAt\n      transactionCount\n      allConfirmed\n      flaggedTransactionIds\n      notes\n    }\n  }\n':
+    types.VerifyMpesaTransactionsDocument,
   '\n      mutation UpdateProductName($id: ID!, $name: String!, $slug: String!) {\n        updateProduct(\n          input: { id: $id, translations: [{ languageCode: en, name: $name, slug: $slug }] }\n        ) {\n          id\n          name\n          slug\n        }\n      }\n    ':
     types.UpdateProductNameDocument,
 };
@@ -839,8 +890,32 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: '\n  mutation InviteChannelAdministrator($input: InviteAdministratorInput!) {\n    inviteChannelAdministrator(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n    }\n  }\n',
-): (typeof documents)['\n  mutation InviteChannelAdministrator($input: InviteAdministratorInput!) {\n    inviteChannelAdministrator(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n    }\n  }\n'];
+  source: '\n  mutation InviteChannelAdministrator($input: InviteAdministratorInput!) {\n    inviteChannelAdministrator(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n      user {\n        id\n        identifier\n        roles {\n          id\n          code\n          permissions\n        }\n      }\n    }\n  }\n',
+): (typeof documents)['\n  mutation InviteChannelAdministrator($input: InviteAdministratorInput!) {\n    inviteChannelAdministrator(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n      user {\n        id\n        identifier\n        roles {\n          id\n          code\n          permissions\n        }\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query GetRoleTemplates {\n    roleTemplates {\n      code\n      name\n      description\n      permissions\n    }\n  }\n',
+): (typeof documents)['\n  query GetRoleTemplates {\n    roleTemplates {\n      code\n      name\n      description\n      permissions\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateChannelAdmin($input: CreateChannelAdminInput!) {\n    createChannelAdmin(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n      user {\n        id\n        identifier\n        roles {\n          id\n          code\n          permissions\n        }\n      }\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateChannelAdmin($input: CreateChannelAdminInput!) {\n    createChannelAdmin(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n      user {\n        id\n        identifier\n        roles {\n          id\n          code\n          permissions\n        }\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation UpdateChannelAdmin($id: ID!, $permissions: [String!]!) {\n    updateChannelAdmin(id: $id, permissions: $permissions) {\n      id\n      firstName\n      lastName\n      emailAddress\n      user {\n        id\n        identifier\n        roles {\n          id\n          code\n          permissions\n        }\n      }\n    }\n  }\n',
+): (typeof documents)['\n  mutation UpdateChannelAdmin($id: ID!, $permissions: [String!]!) {\n    updateChannelAdmin(id: $id, permissions: $permissions) {\n      id\n      firstName\n      lastName\n      emailAddress\n      user {\n        id\n        identifier\n        roles {\n          id\n          code\n          permissions\n        }\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation DisableChannelAdmin($id: ID!) {\n    disableChannelAdmin(id: $id) {\n      success\n      message\n    }\n  }\n',
+): (typeof documents)['\n  mutation DisableChannelAdmin($id: ID!) {\n    disableChannelAdmin(id: $id) {\n      success\n      message\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -985,6 +1060,84 @@ export function graphql(
 export function graphql(
   source: '\n  query GetJournalEntry($id: ID!) {\n    journalEntry(id: $id) {\n      id\n      entryDate\n      postedAt\n      sourceType\n      sourceId\n      memo\n      lines {\n        id\n        accountCode\n        accountName\n        debit\n        credit\n        meta\n      }\n    }\n  }\n',
 ): (typeof documents)['\n  query GetJournalEntry($id: ID!) {\n    journalEntry(id: $id) {\n      id\n      entryDate\n      postedAt\n      sourceType\n      sourceId\n      memo\n      lines {\n        id\n        accountCode\n        accountName\n        debit\n        credit\n        meta\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query GetCurrentCashierSession($channelId: Int!) {\n    currentCashierSession(channelId: $channelId) {\n      id\n      channelId\n      cashierUserId\n      openedAt\n      closedAt\n      openingFloat\n      closingDeclared\n      status\n    }\n  }\n',
+): (typeof documents)['\n  query GetCurrentCashierSession($channelId: Int!) {\n    currentCashierSession(channelId: $channelId) {\n      id\n      channelId\n      cashierUserId\n      openedAt\n      closedAt\n      openingFloat\n      closingDeclared\n      status\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query GetCashierSession($sessionId: ID!) {\n    cashierSession(sessionId: $sessionId) {\n      sessionId\n      cashierUserId\n      openedAt\n      closedAt\n      status\n      openingFloat\n      closingDeclared\n      ledgerTotals {\n        cashTotal\n        mpesaTotal\n        totalCollected\n      }\n      variance\n    }\n  }\n',
+): (typeof documents)['\n  query GetCashierSession($sessionId: ID!) {\n    cashierSession(sessionId: $sessionId) {\n      sessionId\n      cashierUserId\n      openedAt\n      closedAt\n      status\n      openingFloat\n      closingDeclared\n      ledgerTotals {\n        cashTotal\n        mpesaTotal\n        totalCollected\n      }\n      variance\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query GetCashierSessions($channelId: Int!, $options: CashierSessionListOptions) {\n    cashierSessions(channelId: $channelId, options: $options) {\n      items {\n        id\n        channelId\n        cashierUserId\n        openedAt\n        closedAt\n        openingFloat\n        closingDeclared\n        status\n      }\n      totalItems\n    }\n  }\n',
+): (typeof documents)['\n  query GetCashierSessions($channelId: Int!, $options: CashierSessionListOptions) {\n    cashierSessions(channelId: $channelId, options: $options) {\n      items {\n        id\n        channelId\n        cashierUserId\n        openedAt\n        closedAt\n        openingFloat\n        closingDeclared\n        status\n      }\n      totalItems\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation OpenCashierSession($input: OpenCashierSessionInput!) {\n    openCashierSession(input: $input) {\n      id\n      channelId\n      cashierUserId\n      openedAt\n      openingFloat\n      status\n    }\n  }\n',
+): (typeof documents)['\n  mutation OpenCashierSession($input: OpenCashierSessionInput!) {\n    openCashierSession(input: $input) {\n      id\n      channelId\n      cashierUserId\n      openedAt\n      openingFloat\n      status\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CloseCashierSession($input: CloseCashierSessionInput!) {\n    closeCashierSession(input: $input) {\n      sessionId\n      cashierUserId\n      openedAt\n      closedAt\n      status\n      openingFloat\n      closingDeclared\n      ledgerTotals {\n        cashTotal\n        mpesaTotal\n        totalCollected\n      }\n      variance\n    }\n  }\n',
+): (typeof documents)['\n  mutation CloseCashierSession($input: CloseCashierSessionInput!) {\n    closeCashierSession(input: $input) {\n      sessionId\n      cashierUserId\n      openedAt\n      closedAt\n      status\n      openingFloat\n      closingDeclared\n      ledgerTotals {\n        cashTotal\n        mpesaTotal\n        totalCollected\n      }\n      variance\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CreateCashierSessionReconciliation($sessionId: ID!, $notes: String) {\n    createCashierSessionReconciliation(sessionId: $sessionId, notes: $notes) {\n      id\n      channelId\n      scope\n      scopeRefId\n      rangeStart\n      rangeEnd\n      status\n      expectedBalance\n      actualBalance\n      varianceAmount\n      notes\n      createdBy\n    }\n  }\n',
+): (typeof documents)['\n  mutation CreateCashierSessionReconciliation($sessionId: ID!, $notes: String) {\n    createCashierSessionReconciliation(sessionId: $sessionId, notes: $notes) {\n      id\n      channelId\n      scope\n      scopeRefId\n      rangeStart\n      rangeEnd\n      status\n      expectedBalance\n      actualBalance\n      varianceAmount\n      notes\n      createdBy\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query GetSessionCashCounts($sessionId: ID!) {\n    sessionCashCounts(sessionId: $sessionId) {\n      id\n      channelId\n      sessionId\n      countType\n      takenAt\n      declaredCash\n      expectedCash\n      variance\n      varianceReason\n      reviewedByUserId\n      reviewedAt\n      reviewNotes\n      countedByUserId\n    }\n  }\n',
+): (typeof documents)['\n  query GetSessionCashCounts($sessionId: ID!) {\n    sessionCashCounts(sessionId: $sessionId) {\n      id\n      channelId\n      sessionId\n      countType\n      takenAt\n      declaredCash\n      expectedCash\n      variance\n      varianceReason\n      reviewedByUserId\n      reviewedAt\n      reviewNotes\n      countedByUserId\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query GetPendingVarianceReviews($channelId: Int!) {\n    pendingVarianceReviews(channelId: $channelId) {\n      id\n      channelId\n      sessionId\n      countType\n      takenAt\n      declaredCash\n      expectedCash\n      variance\n      varianceReason\n      reviewedByUserId\n      reviewedAt\n      countedByUserId\n    }\n  }\n',
+): (typeof documents)['\n  query GetPendingVarianceReviews($channelId: Int!) {\n    pendingVarianceReviews(channelId: $channelId) {\n      id\n      channelId\n      sessionId\n      countType\n      takenAt\n      declaredCash\n      expectedCash\n      variance\n      varianceReason\n      reviewedByUserId\n      reviewedAt\n      countedByUserId\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query GetSessionMpesaVerifications($sessionId: ID!) {\n    sessionMpesaVerifications(sessionId: $sessionId) {\n      id\n      channelId\n      sessionId\n      verifiedAt\n      transactionCount\n      allConfirmed\n      flaggedTransactionIds\n      notes\n      verifiedByUserId\n    }\n  }\n',
+): (typeof documents)['\n  query GetSessionMpesaVerifications($sessionId: ID!) {\n    sessionMpesaVerifications(sessionId: $sessionId) {\n      id\n      channelId\n      sessionId\n      verifiedAt\n      transactionCount\n      allConfirmed\n      flaggedTransactionIds\n      notes\n      verifiedByUserId\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation RecordCashCount($input: RecordCashCountInput!) {\n    recordCashCount(input: $input) {\n      count {\n        id\n        sessionId\n        countType\n        takenAt\n        declaredCash\n        varianceReason\n        countedByUserId\n      }\n      hasVariance\n      varianceHidden\n    }\n  }\n',
+): (typeof documents)['\n  mutation RecordCashCount($input: RecordCashCountInput!) {\n    recordCashCount(input: $input) {\n      count {\n        id\n        sessionId\n        countType\n        takenAt\n        declaredCash\n        varianceReason\n        countedByUserId\n      }\n      hasVariance\n      varianceHidden\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation ExplainVariance($countId: ID!, $reason: String!) {\n    explainVariance(countId: $countId, reason: $reason) {\n      id\n      varianceReason\n    }\n  }\n',
+): (typeof documents)['\n  mutation ExplainVariance($countId: ID!, $reason: String!) {\n    explainVariance(countId: $countId, reason: $reason) {\n      id\n      varianceReason\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation ReviewCashCount($countId: ID!, $notes: String) {\n    reviewCashCount(countId: $countId, notes: $notes) {\n      id\n      declaredCash\n      expectedCash\n      variance\n      varianceReason\n      reviewedByUserId\n      reviewedAt\n      reviewNotes\n    }\n  }\n',
+): (typeof documents)['\n  mutation ReviewCashCount($countId: ID!, $notes: String) {\n    reviewCashCount(countId: $countId, notes: $notes) {\n      id\n      declaredCash\n      expectedCash\n      variance\n      varianceReason\n      reviewedByUserId\n      reviewedAt\n      reviewNotes\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation VerifyMpesaTransactions($input: VerifyMpesaInput!) {\n    verifyMpesaTransactions(input: $input) {\n      id\n      sessionId\n      verifiedAt\n      transactionCount\n      allConfirmed\n      flaggedTransactionIds\n      notes\n    }\n  }\n',
+): (typeof documents)['\n  mutation VerifyMpesaTransactions($input: VerifyMpesaInput!) {\n    verifyMpesaTransactions(input: $input) {\n      id\n      sessionId\n      verifiedAt\n      transactionCount\n      allConfirmed\n      flaggedTransactionIds\n      notes\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

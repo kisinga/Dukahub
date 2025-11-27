@@ -24,10 +24,7 @@ import { ChannelActionTrackingService } from '../../infrastructure/events/channe
 import { ChannelEventType } from '../../infrastructure/events/types/event-type.enum';
 import { ActionCategory } from '../../infrastructure/events/types/action-category.enum';
 import { ChannelActionType } from '../../infrastructure/events/types/action-type.enum';
-import {
-  ROLE_TEMPLATES,
-  RoleTemplate,
-} from '../auth/provisioning/role-provisioner.service';
+import { ROLE_TEMPLATES, RoleTemplate } from '../auth/provisioning/role-provisioner.service';
 
 export interface ChannelSettings {
   cashierFlowEnabled: boolean;
@@ -266,18 +263,15 @@ export class ChannelSettingsService {
       roleIds: [role.id],
     };
 
-    // Handle phone number (new flow) or email (legacy flow)
-    if ('phoneNumber' in input && input.phoneNumber) {
-      // Phone-based flow: create user with phone identifier
-      createAdminInput.identifier = input.phoneNumber;
-      if (input.emailAddress) {
-        createAdminInput.emailAddress = input.emailAddress;
-      }
-    } else if ('emailAddress' in input && input.emailAddress) {
-      // Legacy email-based flow
+    // Phone number is required
+    if (!('phoneNumber' in input) || !input.phoneNumber) {
+      throw new BadRequestException('phoneNumber is required');
+    }
+
+    // Phone-based flow: create user with phone identifier
+    createAdminInput.identifier = input.phoneNumber;
+    if (input.emailAddress) {
       createAdminInput.emailAddress = input.emailAddress;
-    } else {
-      throw new BadRequestException('Either phoneNumber or emailAddress must be provided');
     }
 
     const administrator = await this.administratorService.create(ctx, createAdminInput);

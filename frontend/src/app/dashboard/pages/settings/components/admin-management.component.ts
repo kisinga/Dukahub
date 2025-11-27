@@ -134,7 +134,26 @@ import {
 
             <div class="form-control mb-4">
               <label class="label">
-                <span class="label-text">Email Address</span>
+                <span class="label-text">Phone Number</span>
+              </label>
+              <input
+                type="tel"
+                placeholder="Enter phone number"
+                class="input input-bordered"
+                formControlName="phoneNumber"
+              />
+              @if (
+                inviteForm.get('phoneNumber')?.invalid && inviteForm.get('phoneNumber')?.touched
+              ) {
+                <label class="label">
+                  <span class="label-text-alt text-error">Phone number is required</span>
+                </label>
+              }
+            </div>
+
+            <div class="form-control mb-4">
+              <label class="label">
+                <span class="label-text">Email Address (Optional)</span>
               </label>
               <input
                 type="email"
@@ -147,9 +166,7 @@ import {
               ) {
                 <label class="label">
                   <span class="label-text-alt text-error">
-                    @if (inviteForm.get('emailAddress')?.errors?.['required']) {
-                      Email is required
-                    } @else if (inviteForm.get('emailAddress')?.errors?.['email']) {
+                    @if (inviteForm.get('emailAddress')?.errors?.['email']) {
                       Please enter a valid email
                     }
                   </span>
@@ -230,7 +247,8 @@ export class AdminManagementComponent {
     return this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
-      emailAddress: ['', [Validators.required, Validators.email]],
+      phoneNumber: ['', [Validators.required]],
+      emailAddress: ['', [Validators.email]],
     });
   }
 
@@ -251,6 +269,7 @@ export class AdminManagementComponent {
       firstName: this.inviteForm.value.firstName,
       lastName: this.inviteForm.value.lastName,
       emailAddress: this.inviteForm.value.emailAddress,
+      phoneNumber: this.inviteForm.value.phoneNumber,
     };
 
     const result = await this.settingsService.inviteAdministrator(input);

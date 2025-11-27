@@ -89,16 +89,29 @@ export class TeamService {
       });
 
       const admins = result.data?.administrators.items ?? [];
-      
-      // Filter to only admins that belong to the current channel
-      const channelAdmins = admins.filter(admin => {
-        const roles = admin.user?.roles ?? [];
-        return roles.some(role => 
-          role.channels?.some(ch => ch.id === channel.id)
-        );
-      });
 
-      this.members.set(channelAdmins as Administrator[]);
+      // Filter to only admins that belong to the current channel
+      const channelAdmins = admins
+        .filter((admin) => {
+          const roles = admin.user?.roles ?? [];
+          return roles.some((role) => role.channels?.some((ch) => ch.id === channel.id));
+        })
+        .map((admin) => ({
+          ...admin,
+          user: admin.user
+            ? {
+                ...admin.user,
+                verified: admin.user.verified ?? false,
+                roles: admin.user.roles?.map((role) => ({
+                  id: role.id,
+                  code: role.code,
+                  channels: role.channels ?? [],
+                })),
+              }
+            : null,
+        })) as Administrator[];
+
+      this.members.set(channelAdmins);
     } catch (err) {
       console.error('Failed to load team members:', err);
       this.error.set('Failed to load team members');
@@ -151,8 +164,24 @@ export class TeamService {
         throw new Error('Failed to create team member');
       }
 
-      const newMember = result.data.createChannelAdmin as Administrator;
-      
+      const admin = result.data.createChannelAdmin;
+      // Map GraphQL response to Administrator interface
+      const newMember: Administrator = {
+        ...admin,
+        user: admin.user
+          ? {
+              ...admin.user,
+              verified: false, // Default to false if not provided
+              roles: admin.user.roles?.map((role) => ({
+                id: role.id,
+                code: role.code,
+                permissions: role.permissions ?? [],
+                channels: [],
+              })),
+            }
+          : null,
+      };
+
       // Reload members to get updated list
       await this.loadMembers();
 
@@ -185,8 +214,24 @@ export class TeamService {
         throw new Error('Failed to update team member');
       }
 
-      const updatedMember = result.data.updateChannelAdmin as Administrator;
-      
+      const admin = result.data.updateChannelAdmin;
+      // Map GraphQL response to Administrator interface
+      const updatedMember: Administrator = {
+        ...admin,
+        user: admin.user
+          ? {
+              ...admin.user,
+              verified: false, // Default to false if not provided
+              roles: admin.user.roles?.map((role) => ({
+                id: role.id,
+                code: role.code,
+                permissions: role.permissions ?? [],
+                channels: [],
+              })),
+            }
+          : null,
+      };
+
       // Reload members to get updated list
       await this.loadMembers();
 
@@ -233,4 +278,3 @@ export class TeamService {
     }
   }
 }
-
