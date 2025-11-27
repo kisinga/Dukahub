@@ -24,6 +24,7 @@ export interface PaymentPostingContext {
   orderId: string;
   orderCode: string;
   customerId?: string;
+  cashierSessionId?: string; // Active cashier session for reconciliation
 }
 
 export interface SalePostingContext {
@@ -101,17 +102,24 @@ export interface InventoryWriteOffPostingContext {
 export function createPaymentEntry(context: PaymentPostingContext): JournalEntryTemplate {
   const clearingAccount = mapPaymentMethodToAccount(context.method);
 
+  // Build meta with optional cashierSessionId
+  const baseMeta = {
+    orderId: context.orderId,
+    orderCode: context.orderCode,
+    method: context.method,
+    customerId: context.customerId,
+  };
+
+  const debitMeta = context.cashierSessionId
+    ? { ...baseMeta, cashierSessionId: context.cashierSessionId }
+    : baseMeta;
+
   return {
     lines: [
       {
         accountCode: clearingAccount,
         debit: context.amount,
-        meta: {
-          orderId: context.orderId,
-          orderCode: context.orderCode,
-          method: context.method,
-          customerId: context.customerId,
-        },
+        meta: debitMeta,
       },
       {
         accountCode: ACCOUNT_CODES.SALES,
@@ -120,6 +128,7 @@ export function createPaymentEntry(context: PaymentPostingContext): JournalEntry
           orderId: context.orderId,
           orderCode: context.orderCode,
           method: context.method,
+          cashierSessionId: context.cashierSessionId,
         },
       },
     ],
@@ -172,17 +181,24 @@ export function createCreditSaleEntry(context: SalePostingContext): JournalEntry
 export function createPaymentAllocationEntry(context: PaymentPostingContext): JournalEntryTemplate {
   const clearingAccount = mapPaymentMethodToAccount(context.method);
 
+  // Build meta with optional cashierSessionId
+  const baseMeta = {
+    orderId: context.orderId,
+    orderCode: context.orderCode,
+    method: context.method,
+    customerId: context.customerId,
+  };
+
+  const debitMeta = context.cashierSessionId
+    ? { ...baseMeta, cashierSessionId: context.cashierSessionId }
+    : baseMeta;
+
   return {
     lines: [
       {
         accountCode: clearingAccount,
         debit: context.amount,
-        meta: {
-          orderId: context.orderId,
-          orderCode: context.orderCode,
-          method: context.method,
-          customerId: context.customerId,
-        },
+        meta: debitMeta,
       },
       {
         accountCode: ACCOUNT_CODES.ACCOUNTS_RECEIVABLE,
@@ -191,6 +207,7 @@ export function createPaymentAllocationEntry(context: PaymentPostingContext): Jo
           orderId: context.orderId,
           orderCode: context.orderCode,
           customerId: context.customerId,
+          cashierSessionId: context.cashierSessionId,
         },
       },
     ],

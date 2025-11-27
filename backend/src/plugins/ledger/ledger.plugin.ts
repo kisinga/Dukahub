@@ -24,6 +24,7 @@ import { ReconciliationService } from '../../services/financial/reconciliation.s
 import { ReconciliationValidatorService } from '../../services/financial/reconciliation-validator.service';
 import { InventoryReconciliationService } from '../../services/financial/inventory-reconciliation.service';
 import { PeriodEndClosingService } from '../../services/financial/period-end-closing.service';
+import { CashierSessionService } from '../../services/financial/cashier-session.service';
 import { ManageReconciliationPermission, CloseAccountingPeriodPermission } from './permissions';
 
 // Merge schemas
@@ -58,8 +59,9 @@ const COMBINED_SCHEMA = gql`
     ReconciliationValidatorService,
     InventoryReconciliationService,
     PeriodEndClosingService,
+    CashierSessionService,
   ],
-  exports: [PostingService, AccountBalanceService],
+  exports: [PostingService, AccountBalanceService, CashierSessionService],
   configuration: config => {
     // Register custom permissions
     config.authOptions.customPermissions = [

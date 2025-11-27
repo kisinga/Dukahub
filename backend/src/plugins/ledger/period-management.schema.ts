@@ -32,6 +32,59 @@ export const PERIOD_MANAGEMENT_SCHEMA = gql`
     displayName: String
   }
 
+  type CashierSession {
+    id: ID!
+    channelId: Int!
+    cashierUserId: Int!
+    openedAt: DateTime!
+    closedAt: DateTime
+    openingFloat: String!
+    closingDeclared: String!
+    status: String!
+  }
+
+  type CashierSessionLedgerTotals {
+    cashTotal: String!
+    mpesaTotal: String!
+    totalCollected: String!
+  }
+
+  type CashierSessionSummary {
+    sessionId: ID!
+    cashierUserId: Int!
+    openedAt: DateTime!
+    closedAt: DateTime
+    status: String!
+    openingFloat: String!
+    closingDeclared: String!
+    ledgerTotals: CashierSessionLedgerTotals!
+    variance: String!
+  }
+
+  type CashierSessionList {
+    items: [CashierSession!]!
+    totalItems: Int!
+  }
+
+  input OpenCashierSessionInput {
+    channelId: Int!
+    openingFloat: String!
+  }
+
+  input CloseCashierSessionInput {
+    sessionId: ID!
+    closingDeclared: String!
+    notes: String
+  }
+
+  input CashierSessionListOptions {
+    status: String
+    startDate: DateTime
+    endDate: DateTime
+    take: Int
+    skip: Int
+  }
+
   type PeriodEndCloseResult {
     success: Boolean!
     period: AccountingPeriod!
@@ -105,6 +158,9 @@ export const PERIOD_MANAGEMENT_SCHEMA = gql`
       asOfDate: DateTime!
       stockLocationId: Int
     ): InventoryValuation!
+    currentCashierSession(channelId: Int!): CashierSession
+    cashierSession(sessionId: ID!): CashierSessionSummary
+    cashierSessions(channelId: Int!, options: CashierSessionListOptions): CashierSessionList!
   }
 
   extend type Mutation {
@@ -114,5 +170,8 @@ export const PERIOD_MANAGEMENT_SCHEMA = gql`
     openAccountingPeriod(channelId: Int!, periodStartDate: DateTime!): AccountingPeriod!
     createInventoryReconciliation(input: CreateInventoryReconciliationInput!): Reconciliation!
     createInterAccountTransfer(input: InterAccountTransferInput!): JournalEntry!
+    openCashierSession(input: OpenCashierSessionInput!): CashierSession!
+    closeCashierSession(input: CloseCashierSessionInput!): CashierSessionSummary!
+    createCashierSessionReconciliation(sessionId: ID!, notes: String): Reconciliation!
   }
 `;

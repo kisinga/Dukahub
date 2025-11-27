@@ -2,10 +2,12 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Allow, Ctx, Permission, RequestContext } from '@vendure/core';
 import { AccountingPeriod } from '../../domain/period/accounting-period.entity';
 import { Reconciliation } from '../../domain/recon/reconciliation.entity';
+import { CashierSession } from '../../domain/cashier/cashier-session.entity';
 import { JournalEntry } from '../../ledger/journal-entry.entity';
 import { PeriodEndClosingService } from '../../services/financial/period-end-closing.service';
 import { ReconciliationService } from '../../services/financial/reconciliation.service';
 import { InventoryReconciliationService } from '../../services/financial/inventory-reconciliation.service';
+import { CashierSessionService, CashierSessionSummary } from '../../services/financial/cashier-session.service';
 import { PostingService } from '../../ledger/posting.service';
 import { TransactionalConnection } from '@vendure/core';
 import { Account } from '../../ledger/account.entity';
@@ -18,6 +20,7 @@ export class PeriodManagementResolver {
     private readonly periodEndClosingService: PeriodEndClosingService,
     private readonly reconciliationService: ReconciliationService,
     private readonly inventoryReconciliationService: InventoryReconciliationService,
+    private readonly cashierSessionService: CashierSessionService,
     private readonly postingService: PostingService,
     private readonly connection: TransactionalConnection,
     private readonly periodLockService: PeriodLockService
@@ -190,5 +193,110 @@ export class PeriodManagementResolver {
         },
       ],
     });
+  }
+
+  // ============================================================================
+  // CASHIER SESSION QUERIES
+  // ============================================================================
+
+  @Query()
+  @Allow(Permission.ReadOrder)
+  async currentCashierSession(
+    @Ctx() ctx: RequestContext,
+    @Args('channelId') channelId: number
+  ): Promise<CashierSession | null> {
+    return this.cashierSessionService.getCurrentSession(ctx, channelId);
+  }
+
+  @Query()
+  @Allow(Permission.ReadOrder)
+  async cashierSession(
+    @Ctx() ctx: RequestContext,
+    @Args('sessionId') sessionId: string
+  ) {
+    const summary = await this.cashierSessionService.getSessionSummary(ctx, sessionId);
+    return this.formatSessionSummaryForGraphQL(summary);
+  }
+
+  @Query()
+  @Allow(Permission.ReadOrder)
+  async cashierSessions(
+    @Ctx() ctx: RequestContext,
+    @Args('channelId') channelId: number,
+    @Args('options', { nullable: true }) options?: any
+  ) {
+    return this.cashierSessionService.getSessions(ctx, channelId, {
+      status: options?.status,
+      startDate: options?.startDate,
+      endDate: options?.endDate,
+      take: options?.take,
+      skip: options?.skip,
+    });
+  }
+
+  // ============================================================================
+  // CASHIER SESSION MUTATIONS
+  // ============================================================================
+
+  @Mutation()
+  @Allow(ManageReconciliationPermission.Permission)
+  async openCashierSession(
+    @Ctx() ctx: RequestContext,
+    @Args('input') input: any
+  ): Promise<CashierSession> {
+    return this.cashierSessionService.startSession(ctx, {
+      channelId: input.channelId,
+      openingFloat: parseInt(input.openingFloat, 10),
+    });
+  }
+
+  @Mutation()
+  @Allow(ManageReconciliationPermission.Permission)
+  async closeCashierSession(
+    @Ctx() ctx: RequestContext,
+    @Args('input') input: any
+  ) {
+    const summary = await this.cashierSessionService.closeSession(ctx, {
+      sessionId: input.sessionId,
+      closingDeclared: parseInt(input.closingDeclared, 10),
+      notes: input.notes,
+    });
+    return this.formatSessionSummaryForGraphQL(summary);
+  }
+
+  @Mutation()
+  @Allow(ManageReconciliationPermission.Permission)
+  async createCashierSessionReconciliation(
+    @Ctx() ctx: RequestContext,
+    @Args('sessionId') sessionId: string,
+    @Args('notes', { nullable: true }) notes?: string
+  ): Promise<Reconciliation> {
+    return this.cashierSessionService.createSessionReconciliation(ctx, sessionId, notes);
+  }
+
+  // ============================================================================
+  // HELPER METHODS
+  // ============================================================================
+
+  /**
+   * Format session summary for GraphQL response
+   * Converts numeric values to strings for BigInt compatibility
+   */
+  private formatSessionSummaryForGraphQL(summary: CashierSessionSummary) {
+    return {
+      sessionId: summary.sessionId,
+      cashierUserId: summary.cashierUserId,
+      openedAt: summary.openedAt,
+      closedAt: summary.closedAt,
+      status: summary.status,
+      openingFloat: summary.openingFloat.toString(),
+      closingDeclared: summary.closingDeclared.toString(),
+      ledgerTotals: {
+        cashTotal: summary.ledgerTotals.cashTotal.toString(),
+        mpesaTotal: summary.ledgerTotals.mpesaTotal.toString(),
+        totalCollected: summary.ledgerTotals.totalCollected.toString(),
+      },
+      variance: summary.variance.toString(),
+    };
   }
 }

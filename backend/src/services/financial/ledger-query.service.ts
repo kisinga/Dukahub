@@ -14,6 +14,7 @@ export interface BalanceQuery {
   customerId?: string; // For AR account filtering
   supplierId?: string; // For AP account filtering
   orderId?: string; // For order-scoped AR queries
+  cashierSessionId?: string; // For cashier session reconciliation
 }
 
 export interface AccountBalance {
@@ -58,8 +59,8 @@ export class LedgerQueryService {
    * For liabilities/income: negative balance = credit (normal)
    */
   async getAccountBalance(query: BalanceQuery): Promise<AccountBalance> {
-    // If no special filtering (customer/supplier/order), use AccountBalanceService for consistency
-    if (!query.customerId && !query.supplierId && !query.orderId) {
+    // If no special filtering (customer/supplier/order/session), use AccountBalanceService for consistency
+    if (!query.customerId && !query.supplierId && !query.orderId && !query.cashierSessionId) {
       // Check cache first
       const cacheKey = this.getCacheKey(query);
       const cached = this.balanceCache.get(cacheKey);
@@ -152,6 +153,12 @@ export class LedgerQueryService {
     if (query.orderId) {
       queryBuilder = queryBuilder.andWhere('line.meta @> :orderFilter', {
         orderFilter: JSON.stringify({ orderId: query.orderId }),
+      });
+    }
+
+    if (query.cashierSessionId) {
+      queryBuilder = queryBuilder.andWhere('line.meta @> :sessionFilter', {
+        sessionFilter: JSON.stringify({ cashierSessionId: query.cashierSessionId }),
       });
     }
 
@@ -433,7 +440,55 @@ export class LedgerQueryService {
     this.balanceCache.clear();
   }
 
+  /**
+   * Get cashier session balance for a specific account
+   * Returns the balance filtered by cashierSessionId
+   */
+  async getSessionBalance(
+    channelId: number,
+    accountCode: string,
+    cashierSessionId: string
+  ): Promise<AccountBalance> {
+    return this.getAccountBalance({
+      channelId,
+      accountCode,
+      cashierSessionId,
+    });
+  }
+
+  /**
+   * Get total cash collected during a cashier session across cash accounts
+   * Useful for end-of-shift reconciliation
+   */
+  async getCashierSessionTotals(
+    channelId: number,
+    cashierSessionId: string
+  ): Promise<{
+    cashTotal: number;
+    mpesaTotal: number;
+    totalCollected: number;
+  }> {
+    const [cashBalance, mpesaBalance] = await Promise.all([
+      this.getAccountBalance({
+        channelId,
+        accountCode: ACCOUNT_CODES.CASH_ON_HAND,
+        cashierSessionId,
+      }),
+      this.getAccountBalance({
+        channelId,
+        accountCode: ACCOUNT_CODES.CLEARING_MPESA,
+        cashierSessionId,
+      }),
+    ]);
+
+    return {
+      cashTotal: cashBalance.balance,
+      mpesaTotal: mpesaBalance.balance,
+      totalCollected: cashBalance.balance + mpesaBalance.balance,
+    };
+  }
+
   private getCacheKey(query: BalanceQuery): string {
-    return `${query.channelId}:${query.accountCode}:${query.startDate || ''}:${query.endDate || ''}:${query.customerId || ''}:${query.supplierId || ''}:${query.orderId || ''}`;
+    return `${query.channelId}:${query.accountCode}:${query.startDate || ''}:${query.endDate || ''}:${query.customerId || ''}:${query.supplierId || ''}:${query.orderId || ''}:${query.cashierSessionId || ''}`;
   }
 }

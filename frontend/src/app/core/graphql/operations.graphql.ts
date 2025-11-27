@@ -2304,3 +2304,112 @@ export const GET_JOURNAL_ENTRY = graphql(`
     }
   }
 `);
+
+// ============================================================================
+// CASHIER SESSION MANAGEMENT
+// ============================================================================
+
+export const GET_CURRENT_CASHIER_SESSION = graphql(`
+  query GetCurrentCashierSession($channelId: Int!) {
+    currentCashierSession(channelId: $channelId) {
+      id
+      channelId
+      cashierUserId
+      openedAt
+      closedAt
+      openingFloat
+      closingDeclared
+      status
+    }
+  }
+`);
+
+export const GET_CASHIER_SESSION = graphql(`
+  query GetCashierSession($sessionId: ID!) {
+    cashierSession(sessionId: $sessionId) {
+      sessionId
+      cashierUserId
+      openedAt
+      closedAt
+      status
+      openingFloat
+      closingDeclared
+      ledgerTotals {
+        cashTotal
+        mpesaTotal
+        totalCollected
+      }
+      variance
+    }
+  }
+`);
+
+export const GET_CASHIER_SESSIONS = graphql(`
+  query GetCashierSessions($channelId: Int!, $options: CashierSessionListOptions) {
+    cashierSessions(channelId: $channelId, options: $options) {
+      items {
+        id
+        channelId
+        cashierUserId
+        openedAt
+        closedAt
+        openingFloat
+        closingDeclared
+        status
+      }
+      totalItems
+    }
+  }
+`);
+
+export const OPEN_CASHIER_SESSION = graphql(`
+  mutation OpenCashierSession($input: OpenCashierSessionInput!) {
+    openCashierSession(input: $input) {
+      id
+      channelId
+      cashierUserId
+      openedAt
+      openingFloat
+      status
+    }
+  }
+`);
+
+export const CLOSE_CASHIER_SESSION = graphql(`
+  mutation CloseCashierSession($input: CloseCashierSessionInput!) {
+    closeCashierSession(input: $input) {
+      sessionId
+      cashierUserId
+      openedAt
+      closedAt
+      status
+      openingFloat
+      closingDeclared
+      ledgerTotals {
+        cashTotal
+        mpesaTotal
+        totalCollected
+      }
+      variance
+    }
+  }
+`);
+
+export const CREATE_CASHIER_SESSION_RECONCILIATION = graphql(`
+  mutation CreateCashierSessionReconciliation($sessionId: ID!, $notes: String) {
+    createCashierSessionReconciliation(sessionId: $sessionId, notes: $notes) {
+      id
+      channelId
+      scope
+      scopeRefId
+      rangeStart
+      rangeEnd
+      status
+      expectedBalance
+      actualBalance
+      varianceAmount
+      notes
+      createdBy
+    }
+  }
+`);
