@@ -206,27 +206,31 @@ export class ChannelEventRouterService implements OnModuleInit {
           );
         });
 
-      // Load channel configuration
-      const channelConfig = await this.getChannelConfig(event.channelId);
-      if (!channelConfig) {
-        this.logger.warn(`No channel config found for channel ${event.channelId}`);
-        return;
-      }
-
-      // Get event metadata
+      // Get metadata FIRST to determine routing strategy
       const metadata = this.getEventMetadata(event.type);
       if (!metadata) {
         this.logger.warn(`No metadata found for event type ${event.type}`);
         return;
       }
 
-      // Get enabled actions from channel config
-      const eventConfig = channelConfig[event.type];
-      if (!eventConfig) {
-        this.logger.debug(
-          `No config found for event type ${event.type} in channel ${event.channelId}`
-        );
-        return;
+      // Determine if this is a system event (non-subscribable, non-customer-facing)
+      const isSystemEvent = !metadata.subscribable && !metadata.customerFacing;
+
+      // Get effective config based on event type
+      let effectiveConfig: Record<string, ActionConfig>;
+      if (isSystemEvent) {
+        // System events use default config - no channel setup required
+        effectiveConfig = this.getDefaultSystemEventConfig();
+      } else {
+        // Subscribable events require channel config
+        const channelConfig = await this.getChannelConfig(event.channelId);
+        if (!channelConfig?.[event.type]) {
+          this.logger.debug(
+            `No config found for event type ${event.type} in channel ${event.channelId}`
+          );
+          return;
+        }
+        effectiveConfig = channelConfig[event.type];
       }
 
       // Determine target users
@@ -251,7 +255,7 @@ export class ChannelEventRouterService implements OnModuleInit {
 
       // For each target user, check preferences and route to handlers
       for (const userId of targetUserIds) {
-        await this.routeEventForUser(event, userId, eventConfig, metadata);
+        await this.routeEventForUser(event, userId, effectiveConfig, metadata);
       }
     } catch (error) {
       this.logger.error(
@@ -372,5 +376,15 @@ export class ChannelEventRouterService implements OnModuleInit {
    */
   private loadEventMetadata(): void {
     this.eventMetadataCache = new Map(EVENT_METADATA_MAP);
+  }
+
+  /**
+   * Get default configuration for system events
+   * System events always fire to channel admins with in-app notifications enabled
+   */
+  private getDefaultSystemEventConfig(): Record<string, ActionConfig> {
+    return {
+      [ChannelActionType.IN_APP_NOTIFICATION]: { enabled: true },
+    };
   }
 }

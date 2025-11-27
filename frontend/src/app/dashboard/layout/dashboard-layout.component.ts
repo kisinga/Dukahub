@@ -6,13 +6,16 @@ import {
   effect,
   inject,
 } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AppInitService } from '../../core/services/app-init.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyService } from '../../core/services/company.service';
 import { NetworkService } from '../../core/services/network.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { NotificationStateService } from '../../core/services/notification/notification-state.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
 import { StockLocationService } from '../../core/services/stock-location.service';
+import type { Notification } from '../../core/graphql/notification.types';
 
 interface NavItem {
   label: string;
@@ -33,6 +36,9 @@ export class DashboardLayoutComponent implements OnInit {
   private readonly stockLocationService = inject(StockLocationService);
   private readonly appInitService = inject(AppInitService);
   private readonly notificationService = inject(NotificationService);
+  private readonly notificationStateService = inject(NotificationStateService);
+  private readonly subscriptionService = inject(SubscriptionService);
+  private readonly router = inject(Router);
   private readonly networkService = inject(NetworkService);
   private lastCompanyId: string | null = null;
 
@@ -73,6 +79,15 @@ export class DashboardLayoutComponent implements OnInit {
       baseItems.push({ label: 'Settings', icon: '⚙️', route: '/dashboard/settings' });
     }
 
+    // Add Upgrade button if in trial
+    if (this.isTrialActive()) {
+      baseItems.push({
+        label: 'Upgrade',
+        icon: '⭐',
+        route: '/dashboard/settings?tab=subscription',
+      });
+    }
+
     return baseItems;
   });
 
@@ -93,6 +108,9 @@ export class DashboardLayoutComponent implements OnInit {
 
   // Use notification service
   protected readonly unreadCount = this.notificationService.unreadCount;
+
+  // Subscription status
+  protected readonly isTrialActive = this.subscriptionService.isTrialActive;
 
   // Network status
   protected readonly isOnline = this.networkService.isOnline;
@@ -120,16 +138,20 @@ export class DashboardLayoutComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     // Initialization is handled by the effect in constructor
     // No need for duplicate call here
 
-    // Load notifications
-    this.notificationService.loadNotifications();
-    this.notificationService.loadUnreadCount();
+    // Load notifications first
+    await this.notificationService.loadNotifications();
+    await this.notificationService.loadUnreadCount();
 
     // Prompt for notification permission on dashboard navigation
     this.notificationService.promptPermissionIfNeeded();
+
+    // Check subscription status and create trial notification if needed
+    // Do this after notifications are loaded so we can check for existing ones
+    await this.checkAndCreateTrialNotification();
   }
 
   closeDrawer(): void {
@@ -155,7 +177,97 @@ export class DashboardLayoutComponent implements OnInit {
 
   // Notification handling methods
   async markNotificationAsRead(notificationId: string): Promise<void> {
+    const notification = this.notifications().find((n) => n.id === notificationId);
+
+    // Check if this is a trial notification and navigate to payment area
+    if (notification && this.isTrialNotification(notification)) {
+      // Mark as read in local state (synthetic notification - no backend call needed)
+      if (notificationId.startsWith('trial-')) {
+        this.notificationStateService.markAsRead(notificationId);
+        // Update unread count
+        await this.notificationService.loadUnreadCount();
+      } else {
+        // Real notification from backend - mark via service
+        await this.notificationService.markAsRead(notificationId);
+      }
+
+      // Navigate to subscription settings
+      await this.router.navigate(['/dashboard/settings'], {
+        queryParams: { tab: 'subscription' },
+      });
+      return;
+    }
+
+    // Regular notification - mark as read normally
     await this.notificationService.markAsRead(notificationId);
+  }
+
+  /**
+   * Check if notification is trial-related
+   */
+  private isTrialNotification(notification: any): boolean {
+    const title = notification.title?.toLowerCase() || '';
+    const message = notification.message?.toLowerCase() || '';
+    return (
+      title.includes('trial') ||
+      title.includes('early tester') ||
+      message.includes('trial') ||
+      message.includes('early tester')
+    );
+  }
+
+  /**
+   * Check subscription status and inject trial notification if needed
+   */
+  private async checkAndCreateTrialNotification(): Promise<void> {
+    try {
+      const status = await this.subscriptionService.checkSubscriptionStatus();
+      if (!status || status.status !== 'trial' || !status.isValid) {
+        return; // Not in trial or trial expired
+      }
+
+      // Check if trial notification already exists
+      const existingNotifications = this.notifications();
+      const hasTrialNotification = existingNotifications.some((n) => this.isTrialNotification(n));
+
+      if (hasTrialNotification) {
+        return; // Already has trial notification
+      }
+
+      // Create trial notification and inject into notification state
+      const trialNotification: Notification = {
+        id: `trial-${Date.now()}`,
+        userId: this.user()?.user?.id || '',
+        channelId: this.activeCompanyId() || '',
+        type: 'PAYMENT',
+        title: status.isEarlyTester ? 'Early Tester Program' : 'Trial Period Active',
+        message: status.isEarlyTester
+          ? "You're part of our early testers program. Upgrade anytime to support the platform!"
+          : status.daysRemaining
+            ? `Your trial ends in ${status.daysRemaining} day${status.daysRemaining !== 1 ? 's' : ''}. Upgrade now to continue using all features.`
+            : 'Your trial period is active. Upgrade now to continue using all features.',
+        read: false,
+        createdAt: new Date().toISOString(),
+        data: {
+          isTrialNotification: true,
+          subscriptionStatus: status,
+        },
+      };
+
+      // Inject into notification state (will reset on refresh - that's okay)
+      this.notificationStateService.updateNotifications((notifications) => {
+        // Add to beginning of list if not already present
+        if (!notifications.some((n) => this.isTrialNotification(n))) {
+          return [trialNotification, ...notifications];
+        }
+        return notifications;
+      });
+
+      // Update unread count
+      this.notificationStateService.setUnreadCount(this.notificationStateService.unreadCount() + 1);
+    } catch (error) {
+      console.error('Failed to check subscription status for trial notification:', error);
+    }
   }
 
   async markAllNotificationsAsRead(): Promise<void> {

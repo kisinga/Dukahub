@@ -39,6 +39,10 @@ export class ChannelProvisionerService {
     sellerId: string
   ): Promise<Channel> {
     try {
+      // Calculate trial period
+      const trialDays = parseInt(process.env.SUBSCRIPTION_TRIAL_DAYS || '30', 10);
+      const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+
       const channelResult = await this.channelService.create(ctx, {
         code: registrationData.companyCode,
         token: registrationData.companyCode,
@@ -50,6 +54,8 @@ export class ChannelProvisionerService {
         defaultTaxZoneId: kenyaZone.id,
         customFields: {
           status: 'UNAPPROVED', // New channels start as unapproved
+          subscriptionStatus: 'trial',
+          trialEndsAt: trialEndsAt.toISOString(),
         },
       });
 

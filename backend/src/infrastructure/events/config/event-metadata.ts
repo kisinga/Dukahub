@@ -128,6 +128,24 @@ export const EVENT_METADATA: Record<ChannelEventType, EventMetadata> = {
     defaultEnabled: false,
     category: ActionCategory.SYSTEM_NOTIFICATIONS,
   },
+  [ChannelEventType.SUBSCRIPTION_EXPIRING_SOON]: {
+    subscribable: false,
+    customerFacing: false,
+    defaultEnabled: true,
+    category: ActionCategory.SYSTEM_NOTIFICATIONS,
+  },
+  [ChannelEventType.SUBSCRIPTION_EXPIRED]: {
+    subscribable: false,
+    customerFacing: false,
+    defaultEnabled: true,
+    category: ActionCategory.SYSTEM_NOTIFICATIONS,
+  },
+  [ChannelEventType.SUBSCRIPTION_RENEWED]: {
+    subscribable: false,
+    customerFacing: false,
+    defaultEnabled: true,
+    category: ActionCategory.SYSTEM_NOTIFICATIONS,
+  },
 };
 
 export const EVENT_METADATA_MAP = new Map<ChannelEventType, EventMetadata>(

@@ -81,7 +81,11 @@ export class InAppActionHandler implements IChannelActionHandler {
     if (eventType.includes('ML_TRAINING') || eventType.includes('ML_EXTRACTION')) {
       return NotificationType.ML_TRAINING;
     }
-    if (eventType.includes('PAYMENT') || eventType.includes('CREDIT')) {
+    if (
+      eventType.includes('PAYMENT') ||
+      eventType.includes('CREDIT') ||
+      eventType.includes('SUBSCRIPTION')
+    ) {
       return NotificationType.PAYMENT;
     }
     return NotificationType.ORDER; // Default
@@ -101,6 +105,9 @@ export class InAppActionHandler implements IChannelActionHandler {
       ml_extraction_started: 'ML Extraction Started',
       ml_extraction_completed: 'ML Extraction Completed',
       ml_extraction_failed: 'ML Extraction Failed',
+      subscription_expiring_soon: 'Subscription Expiring Soon',
+      subscription_expired: 'Subscription Expired',
+      subscription_renewed: 'Subscription Renewed',
     };
     return titleMap[event.type] || 'Notification';
   }
@@ -125,6 +132,16 @@ export class InAppActionHandler implements IChannelActionHandler {
       ml_extraction_completed: data =>
         `Photo extraction has completed successfully for channel ${data.channelId || 'N/A'}`,
       ml_extraction_failed: data => `Photo extraction failed: ${data.error || 'Unknown error'}`,
+      subscription_expiring_soon: data => {
+        const daysRemaining = data.daysRemaining ?? 'N/A';
+        return `Your subscription expires in ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}. Please renew to continue using the service.`;
+      },
+      subscription_expired: () =>
+        'Your subscription has expired. Please renew to continue using the service.',
+      subscription_renewed: data => {
+        const expiresAt = data.expiresAt ? new Date(data.expiresAt).toLocaleDateString() : 'N/A';
+        return `Your subscription has been renewed successfully. It will expire on ${expiresAt}.`;
+      },
     };
 
     const messageFn = messageMap[event.type];

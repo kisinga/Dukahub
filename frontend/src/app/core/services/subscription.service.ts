@@ -36,6 +36,7 @@ export interface SubscriptionStatus {
   expiresAt?: Date;
   trialEndsAt?: Date;
   canPerformAction: boolean;
+  isEarlyTester?: boolean;
 }
 
 /**
@@ -60,6 +61,14 @@ export class SubscriptionService {
   private readonly isLoadingSignal = signal(false);
   private readonly errorSignal = signal<string | null>(null);
   private readonly isProcessingPaymentSignal = signal(false);
+
+  // Caching
+  private subscriptionStatusCache: {
+    status: SubscriptionStatus | null;
+    timestamp: number;
+    channelId: string;
+  } | null = null;
+  private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
   // Public readonly signals
   readonly tiers = this.tiersSignal.asReadonly();
@@ -87,6 +96,11 @@ export class SubscriptionService {
   readonly canPerformAction = computed(() => {
     const status = this.subscriptionStatusSignal();
     return status?.canPerformAction ?? false;
+  });
+
+  readonly hasIndefiniteTrial = computed(() => {
+    const status = this.subscriptionStatusSignal();
+    return status?.status === 'trial' && !status.trialEndsAt;
   });
 
   /**
@@ -151,16 +165,26 @@ export class SubscriptionService {
 
   /**
    * Check subscription status for current channel
+   * Uses caching (5 minute TTL) to avoid excessive API calls
    */
   async checkSubscriptionStatus(channelId?: string): Promise<SubscriptionStatus | null> {
     try {
-      this.isLoadingSignal.set(true);
-      this.errorSignal.set(null);
-
       const targetChannelId = channelId || this.companyService.activeCompanyId();
       if (!targetChannelId) {
         throw new Error('No active channel');
       }
+
+      // Check cache first (must match channel ID)
+      if (
+        this.subscriptionStatusCache &&
+        this.subscriptionStatusCache.channelId === targetChannelId &&
+        Date.now() - this.subscriptionStatusCache.timestamp < this.CACHE_TTL_MS
+      ) {
+        return this.subscriptionStatusCache.status;
+      }
+
+      this.isLoadingSignal.set(true);
+      this.errorSignal.set(null);
 
       const client = this.apolloService.getClient();
       const result = await client.query<CheckSubscriptionStatusQuery>({
@@ -173,6 +197,14 @@ export class SubscriptionService {
       if (!status) {
         throw new Error('Subscription status unavailable');
       }
+
+      // Update cache
+      this.subscriptionStatusCache = {
+        status,
+        timestamp: Date.now(),
+        channelId: targetChannelId,
+      };
+
       this.subscriptionStatusSignal.set(status);
       return status;
     } catch (error) {
@@ -267,10 +299,12 @@ export class SubscriptionService {
       const success = result.data?.verifySubscriptionPayment ?? false;
 
       if (success) {
-        // Refresh subscription status after successful payment
+        // Clear cache and refresh subscription status after successful payment
+        this.subscriptionStatusCache = null;
         await this.checkSubscriptionStatus();
         // Refresh active channel data
         await this.companyService.fetchActiveChannel();
+        // Note: Notifications will be reloaded by dashboard layout component
       }
 
       return success;
