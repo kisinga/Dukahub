@@ -252,6 +252,6 @@ export class CustomerCreateComponent {
     // Add timestamp to ensure uniqueness
     const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
 
-    return `noemail-${sanitizedName}-${timestamp}@dukahub.local`;
+    return `noemail-${sanitizedName}-${timestamp}@dukarun.local`;
   }
 }

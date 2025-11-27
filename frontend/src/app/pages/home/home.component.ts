@@ -114,7 +114,7 @@ export class HomeComponent {
       number: '1',
       title: 'Capture your catalog',
       summary: 'Scan barcodes or take five quick photos of the product label.',
-      detail: 'Dukahub learns each item so that you can sell it in seconds.',
+      detail: 'dukarun learns each item so that you can sell it in seconds.',
     },
     {
       number: '2',
@@ -187,7 +187,7 @@ export class HomeComponent {
   protected readonly testimonials: Testimonial[] = [
     {
       quote:
-        'Dukahub is so easy! Pointing my phone is faster than typing. Finally know my stock levels accurately.',
+        'dukarun is so easy! Pointing my phone is faster than typing. Finally know my stock levels accurately.',
       author: 'Amina K.',
       title: 'Mini Mart Owner, Nairobi',
       metric: 'Saves 2 hours daily',
@@ -208,7 +208,7 @@ export class HomeComponent {
     },
   ];
 
-  // Business examples representing 80% of Kenyan MSMEs that can afford Dukahub
+  // Business examples representing 80% of Kenyan MSMEs that can afford dukarun
   // Metrics stored for internal knowledge, only name and icon displayed on page
   protected readonly businessExamples: BusinessExample[] = [
     {

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the tight integration between payment methods, the reconciliation process, and ledger accounts in the Dukahub system. The system is designed for **maximum accuracy** and **theft prevention** in retail POS environments.
+This document describes the tight integration between payment methods, the reconciliation process, and ledger accounts in the dukarun system. The system is designed for **maximum accuracy** and **theft prevention** in retail POS environments.
 
 ## Architecture
 

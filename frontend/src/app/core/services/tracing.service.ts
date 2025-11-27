@@ -33,7 +33,7 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root',
 })
 export class TracingService {
-  private tracer = trace.getTracer(environment.serviceName || 'dukahub-frontend');
+  private tracer = trace.getTracer(environment.serviceName || 'dukarun-frontend');
   private initialized = false;
 
   /**
@@ -65,7 +65,7 @@ export class TracingService {
         url: environment.signozEndpoint,
       });
 
-      const serviceName = environment.serviceName || 'dukahub-frontend';
+      const serviceName = environment.serviceName || 'dukarun-frontend';
       const serviceVersion = environment.serviceVersion || '2.0.0';
 
       const provider = new WebTracerProvider({

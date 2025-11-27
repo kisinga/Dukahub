@@ -291,7 +291,7 @@ input CreateChannelAdminInput {
 1. **Clone and Install Dependencies**
    ```bash
    git clone <repository-url>
-   cd Dukahub
+   cd dukarun
    npm install
    cd backend && npm install
    cd ../frontend && npm install
