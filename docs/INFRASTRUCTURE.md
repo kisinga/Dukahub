@@ -120,6 +120,23 @@ docker compose up -d
 
 **For Coolify Deployments:** Follow the same network setup steps above. Create the network via SSH or Coolify terminal before deploying services. If using Coolify's "Connect to Predefined Network" feature, change the network name from `dukarun_services_network` to `coolify` in both compose files.
 
+### SigNoz Setup (Automated)
+
+SigNoz requires manual database creation in ClickHouse. Use the automated setup script:
+
+```bash
+./scripts/setup-signoz.sh
+```
+
+This script:
+- Creates the Docker network (if needed)
+- Starts ClickHouse and waits for it to be healthy
+- Creates required databases (`signoz_traces`, `signoz_metrics`, `signoz_logs`, `signoz_meter`)
+- Starts SigNoz UI and OTel Collector
+- Verifies all endpoints
+
+**Access:** SigNoz UI at `http://localhost:8080` (or `SIGNOZ_UI_PORT`)
+
 ---
 
 ## Environment Variables
