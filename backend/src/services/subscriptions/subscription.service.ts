@@ -257,6 +257,31 @@ export class SubscriptionService {
           }
         );
 
+        // Verify that STK push was actually initiated
+        // Paystack returns various statuses when STK push is sent:
+        // - "pending": waiting for user action
+        // - "sent": STK push sent to user's phone
+        // - "pay_offline": user needs to complete payment on their phone (STK push sent)
+        // - "success": payment already completed
+        // If status indicates failure or unexpected state, fall back to payment link
+        const responseStatus = chargeResponse.data?.status?.toLowerCase();
+        const validStkStatuses = ['pending', 'sent', 'pay_offline', 'success'];
+
+        if (!responseStatus || !validStkStatuses.includes(responseStatus)) {
+          // STK push was not successfully initiated, fall back to payment link
+          this.logger.warn(
+            `STK push response indicates failure (status: ${responseStatus}), falling back to payment link`,
+            {
+              reference: chargeResponse.data?.reference,
+              status: responseStatus,
+              phoneNumber,
+            }
+          );
+
+          // Fall through to payment link generation
+          throw new Error(`STK push not initiated: status ${responseStatus}`);
+        }
+
         return {
           success: true,
           reference: chargeResponse.data.reference,
@@ -264,9 +289,35 @@ export class SubscriptionService {
         };
       } catch (error) {
         // Fallback to payment link if STK push fails
-        this.logger.warn(
-          `STK push failed, falling back to payment link: ${error instanceof Error ? error.message : String(error)}`
-        );
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorDetails: any = {
+          message: errorMessage,
+          phoneNumber,
+          amount: amountInKes,
+          reference,
+        };
+
+        // Try to extract additional error details if available
+        if (error && typeof error === 'object') {
+          if ('response' in error) {
+            const response = (error as any).response;
+            if (response) {
+              errorDetails.responseStatus = response.status;
+              errorDetails.responseStatusText = response.statusText;
+              if (response.data) {
+                errorDetails.responseData = response.data;
+              }
+            }
+          }
+          if ('status' in error) {
+            errorDetails.status = (error as any).status;
+          }
+          if ('data' in error) {
+            errorDetails.data = (error as any).data;
+          }
+        }
+
+        this.logger.warn(`STK push failed, falling back to payment link`, errorDetails);
 
         const transactionResponse = await this.paystackService.initializeTransaction(
           amountInKes,
