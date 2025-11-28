@@ -1,8 +1,8 @@
 export const extensionRoutes = [  {
     path: 'extensions/subscription-tiers',
-    loadChildren: () => import('./extensions/6e657b5e87e67cb314e8529e66179af45dc67297ae292a0095b74526581b24f9/subscription-tier.module').then(m => m.SubscriptionTierModule),
+    loadChildren: () => import('./extensions/1cbe795a69b76c0e44ca937c33de35ccff50ac598f5e95349cb3ed88af245f96/subscription-tier.module').then(m => m.SubscriptionTierModule),
   },
   {
     path: 'extensions/subscription-tiers',
-    loadChildren: () => import('./extensions/6e657b5e87e67cb314e8529e66179af45dc67297ae292a0095b74526581b24f9/routes'),
+    loadChildren: () => import('./extensions/1cbe795a69b76c0e44ca937c33de35ccff50ac598f5e95349cb3ed88af245f96/routes'),
   }];

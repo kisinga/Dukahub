@@ -33,7 +33,7 @@ export class SubscriptionService {
     private connection: TransactionalConnection,
     private paystackService: PaystackService,
     private eventRouter: ChannelEventRouterService
-  ) { }
+  ) {}
 
   /**
    * Check subscription status for a channel
@@ -174,6 +174,25 @@ export class SubscriptionService {
     email: string
   ): Promise<InitiatePurchaseResult> {
     try {
+      // Validate tierId before database query
+      if (!tierId || tierId === '-1') {
+        this.logger.warn(`Invalid tierId provided: ${tierId}`);
+        return {
+          success: false,
+          message: `Invalid subscription tier ID: "${tierId}" is not a valid tier ID`,
+        };
+      }
+
+      // Validate tierId is a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(tierId)) {
+        this.logger.warn(`Invalid tierId format provided: ${tierId}`);
+        return {
+          success: false,
+          message: `Invalid subscription tier ID format: "${tierId}" is not a valid UUID`,
+        };
+      }
+
       // Get channel and tier
       const channel = await this.channelService.findOne(ctx, channelId);
       if (!channel) {
@@ -423,15 +442,186 @@ export class SubscriptionService {
    * Get subscription tier
    */
   async getSubscriptionTier(tierId: string): Promise<SubscriptionTier | null> {
+    if (!tierId || tierId === '-1') {
+      return null;
+    }
     const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
     return tierRepo.findOne({ where: { id: tierId } });
   }
 
   /**
-   * Get all active subscription tiers
+   * Get channel subscription details including tier
+   */
+  async getChannelSubscription(
+    ctx: RequestContext,
+    channelId: string
+  ): Promise<{
+    tier: SubscriptionTier | null;
+    status: string;
+    trialEndsAt?: Date;
+    subscriptionStartedAt?: Date;
+    subscriptionExpiresAt?: Date;
+    billingCycle?: string;
+    lastPaymentDate?: Date;
+    lastPaymentAmount?: number;
+  }> {
+    const channel = await this.channelService.findOne(ctx, channelId);
+    if (!channel) {
+      throw new Error(`Channel ${channelId} not found`);
+    }
+
+    const customFields = channel.customFields as any;
+    const subscriptionTierRef = customFields.subscriptionTier ?? null;
+    const tierId =
+      (typeof subscriptionTierRef === 'string' && subscriptionTierRef) ||
+      (typeof subscriptionTierRef === 'object' && subscriptionTierRef?.id) ||
+      customFields.subscriptionTierId ||
+      customFields.subscriptionTierId?.id ||
+      customFields.subscriptiontierid ||
+      null;
+
+    // Get tier if tierId exists and is valid (not "-1")
+    let tier: SubscriptionTier | null = null;
+    if (tierId && tierId !== '-1') {
+      tier = await this.getSubscriptionTier(tierId);
+    }
+
+    return {
+      tier: tier || null,
+      status: customFields.subscriptionStatus || 'trial',
+      trialEndsAt: customFields.trialEndsAt ? new Date(customFields.trialEndsAt) : undefined,
+      subscriptionStartedAt: customFields.subscriptionStartedAt
+        ? new Date(customFields.subscriptionStartedAt)
+        : undefined,
+      subscriptionExpiresAt: customFields.subscriptionExpiresAt
+        ? new Date(customFields.subscriptionExpiresAt)
+        : undefined,
+      billingCycle: customFields.billingCycle || undefined,
+      lastPaymentDate: customFields.lastPaymentDate
+        ? new Date(customFields.lastPaymentDate)
+        : undefined,
+      lastPaymentAmount: customFields.lastPaymentAmount || undefined,
+    };
+  }
+
+  /**
+   * Get all subscription tiers (active and inactive)
    */
   async getAllSubscriptionTiers(): Promise<SubscriptionTier[]> {
     const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
-    return tierRepo.find({ where: { isActive: true }, order: { priceMonthly: 'ASC' } });
+    return tierRepo.find({ order: { priceMonthly: 'ASC' } });
+  }
+
+  /**
+   * Create a new subscription tier
+   */
+  async createSubscriptionTier(
+    ctx: RequestContext,
+    input: {
+      code: string;
+      name: string;
+      description?: string;
+      priceMonthly: number;
+      priceYearly: number;
+      features?: any;
+      isActive?: boolean;
+    }
+  ): Promise<SubscriptionTier> {
+    const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
+
+    // Check if code already exists
+    const existing = await tierRepo.findOne({ where: { code: input.code } });
+    if (existing) {
+      throw new Error(`Subscription tier with code "${input.code}" already exists`);
+    }
+
+    const tier = tierRepo.create({
+      code: input.code,
+      name: input.name,
+      description: input.description ?? undefined,
+      priceMonthly: input.priceMonthly,
+      priceYearly: input.priceYearly,
+      features: input.features || { features: [] },
+      isActive: input.isActive !== undefined ? input.isActive : true,
+    });
+
+    const saved = await tierRepo.save(tier);
+    this.logger.log(`Created subscription tier: ${saved.code} (${saved.name})`);
+    return saved;
+  }
+
+  /**
+   * Update an existing subscription tier
+   */
+  async updateSubscriptionTier(
+    ctx: RequestContext,
+    input: {
+      id: string;
+      code?: string;
+      name?: string;
+      description?: string;
+      priceMonthly?: number;
+      priceYearly?: number;
+      features?: any;
+      isActive?: boolean;
+    }
+  ): Promise<SubscriptionTier> {
+    const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
+
+    const tier = await tierRepo.findOne({ where: { id: input.id } });
+    if (!tier) {
+      throw new Error(`Subscription tier with ID "${input.id}" not found`);
+    }
+
+    // Check if code is being changed and if new code already exists
+    if (input.code && input.code !== tier.code) {
+      const existing = await tierRepo.findOne({ where: { code: input.code } });
+      if (existing) {
+        throw new Error(`Subscription tier with code "${input.code}" already exists`);
+      }
+      tier.code = input.code;
+    }
+
+    if (input.name !== undefined) {
+      tier.name = input.name;
+    }
+    if (input.description !== undefined) {
+      tier.description = input.description;
+    }
+    if (input.priceMonthly !== undefined) {
+      tier.priceMonthly = input.priceMonthly;
+    }
+    if (input.priceYearly !== undefined) {
+      tier.priceYearly = input.priceYearly;
+    }
+    if (input.features !== undefined) {
+      tier.features = input.features;
+    }
+    if (input.isActive !== undefined) {
+      tier.isActive = input.isActive;
+    }
+
+    const saved = await tierRepo.save(tier);
+    this.logger.log(`Updated subscription tier: ${saved.code} (${saved.name})`);
+    return saved;
+  }
+
+  /**
+   * Delete a subscription tier (soft delete by setting isActive=false)
+   */
+  async deleteSubscriptionTier(ctx: RequestContext, id: string): Promise<boolean> {
+    const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
+
+    const tier = await tierRepo.findOne({ where: { id } });
+    if (!tier) {
+      throw new Error(`Subscription tier with ID "${id}" not found`);
+    }
+
+    // Soft delete by setting isActive to false
+    tier.isActive = false;
+    await tierRepo.save(tier);
+
+    this.logger.log(`Deleted (deactivated) subscription tier: ${tier.code} (${tier.name})`);
+    return true;
   }
 }

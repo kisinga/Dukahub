@@ -2162,7 +2162,7 @@ export const CHECK_SUBSCRIPTION_STATUS = graphql(`
 export const INITIATE_SUBSCRIPTION_PURCHASE = graphql(`
   mutation InitiateSubscriptionPurchase(
     $channelId: ID!
-    $tierId: ID!
+    $tierId: String!
     $billingCycle: String!
     $phoneNumber: String!
     $email: String!

@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   input,
+  OnInit,
   output,
   signal,
 } from '@angular/core';
@@ -14,6 +15,7 @@ import {
   type SubscriptionTier,
 } from '../../../../core/services/subscription.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { CompanyService } from '../../../../core/services/company.service';
 
 @Component({
   selector: 'app-payment-modal',
@@ -120,9 +122,10 @@ import { AuthService } from '../../../../core/services/auth.service';
     </dialog>
   `,
 })
-export class PaymentModalComponent {
+export class PaymentModalComponent implements OnInit {
   protected readonly subscriptionService = inject(SubscriptionService);
   protected readonly authService = inject(AuthService);
+  protected readonly companyService = inject(CompanyService);
 
   isOpen = input<boolean>(false);
   tier = input<SubscriptionTier | null>(null);
@@ -159,10 +162,52 @@ export class PaymentModalComponent {
 
   async initiatePayment() {
     const tier = this.selectedTier();
+
+    // Log tier for debugging
+    console.log('[PaymentModal] initiatePayment called with tier:', tier);
+
+    // Validate tier exists
     if (!tier) {
-      this.error.set('Please select a subscription tier');
+      console.error('[PaymentModal] No tier selected');
+      this.error.set(
+        'Please select a valid subscription tier. If this issue persists, please refresh the page.',
+      );
       return;
     }
+
+    // Validate tier ID exists and is not "-1"
+    const tierId = tier.id;
+    console.log('[PaymentModal] Tier ID:', tierId, 'type:', typeof tierId);
+
+    if (!tierId) {
+      console.error('[PaymentModal] Tier ID is missing');
+      this.error.set(
+        'Invalid subscription tier selected. Please close this modal, refresh the page, and try again.',
+      );
+      return;
+    }
+
+    // Check for "-1" in all possible forms
+    const tierIdStr = String(tierId).trim();
+    if (tierIdStr === '-1') {
+      console.error('[PaymentModal] CRITICAL: Tier ID is "-1":', { tierId, tierIdStr, tier });
+      this.error.set(
+        'Invalid subscription tier selected. Please close this modal, refresh the page, and try again.',
+      );
+      return;
+    }
+
+    // Validate tier ID is a valid UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(tierIdStr)) {
+      console.error('[PaymentModal] Tier ID is not a valid UUID:', tierIdStr);
+      this.error.set(
+        'Invalid subscription tier ID format. Please close this modal, refresh the page, and try again.',
+      );
+      return;
+    }
+
+    console.log('[PaymentModal] Tier validation passed, proceeding with tierId:', tierIdStr);
 
     const phone = this.phoneNumber();
     if (!phone) {
@@ -175,6 +220,13 @@ export class PaymentModalComponent {
 
     if (!email) {
       this.error.set('Email address is required');
+      return;
+    }
+
+    // Validate channel ID
+    const channelId = this.companyService.activeCompanyId();
+    if (!channelId) {
+      this.error.set('No active channel. Please refresh the page and try again.');
       return;
     }
 
