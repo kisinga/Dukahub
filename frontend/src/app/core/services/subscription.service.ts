@@ -194,9 +194,9 @@ export class SubscriptionService {
       });
 
       // Check for GraphQL errors first
-      if (result.errors && result.errors.length > 0) {
-        const errorMessages = result.errors.map((e) => e.message).join(', ');
-        console.warn('GraphQL errors when checking subscription status:', errorMessages);
+      if (result.error) {
+        const errorMessage = result.error.message || 'Unknown error';
+        console.warn('GraphQL error when checking subscription status:', errorMessage);
         return null;
       }
 

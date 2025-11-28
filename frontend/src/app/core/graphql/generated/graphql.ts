@@ -1455,6 +1455,16 @@ export type CreateStockLocationInput = {
   name: Scalars['String']['input'];
 };
 
+export type CreateSubscriptionTierInput = {
+  code: Scalars['String']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  features?: InputMaybe<Scalars['JSON']['input']>;
+  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  name: Scalars['String']['input'];
+  priceMonthly: Scalars['Int']['input'];
+  priceYearly: Scalars['Int']['input'];
+};
+
 export type CreateTagInput = {
   value: Scalars['String']['input'];
 };
@@ -3640,6 +3650,8 @@ export type Mutation = {
   /** Create a new ShippingMethod */
   createShippingMethod: ShippingMethod;
   createStockLocation: StockLocation;
+  /** Create a new subscription tier */
+  createSubscriptionTier: SubscriptionTier;
   /** Create a new Tag */
   createTag: Tag;
   /** Create a new TaxCategory */
@@ -3720,6 +3732,8 @@ export type Mutation = {
   deleteShippingMethods: Array<DeletionResponse>;
   deleteStockLocation: DeletionResponse;
   deleteStockLocations: Array<DeletionResponse>;
+  /** Delete a subscription tier (soft delete by setting isActive=false) */
+  deleteSubscriptionTier: Scalars['Boolean']['output'];
   /** Delete an existing Tag */
   deleteTag: DeletionResponse;
   /** Deletes multiple TaxCategories */
@@ -3900,6 +3914,8 @@ export type Mutation = {
   /** Update an existing ShippingMethod */
   updateShippingMethod: ShippingMethod;
   updateStockLocation: StockLocation;
+  /** Update an existing subscription tier */
+  updateSubscriptionTier: SubscriptionTier;
   updateSupplierCreditDuration: SupplierCreditSummary;
   updateSupplierCreditLimit: SupplierCreditSummary;
   /** Update an existing Tag */
@@ -4183,6 +4199,10 @@ export type MutationCreateStockLocationArgs = {
   input: CreateStockLocationInput;
 };
 
+export type MutationCreateSubscriptionTierArgs = {
+  input: CreateSubscriptionTierInput;
+};
+
 export type MutationCreateTagArgs = {
   input: CreateTagInput;
 };
@@ -4358,6 +4378,10 @@ export type MutationDeleteStockLocationArgs = {
 
 export type MutationDeleteStockLocationsArgs = {
   input: Array<DeleteStockLocationInput>;
+};
+
+export type MutationDeleteSubscriptionTierArgs = {
+  id: Scalars['ID']['input'];
 };
 
 export type MutationDeleteTagArgs = {
@@ -4782,6 +4806,10 @@ export type MutationUpdateShippingMethodArgs = {
 
 export type MutationUpdateStockLocationArgs = {
   input: UpdateStockLocationInput;
+};
+
+export type MutationUpdateSubscriptionTierArgs = {
+  input: UpdateSubscriptionTierInput;
 };
 
 export type MutationUpdateSupplierCreditDurationArgs = {
@@ -6295,7 +6323,9 @@ export type Query = {
   getSettingsStoreValue?: Maybe<Scalars['JSON']['output']>;
   /** Get multiple key-value pairs (each automatically scoped) */
   getSettingsStoreValues?: Maybe<Scalars['JSON']['output']>;
-  /** Get all active subscription tiers */
+  /** Get a single subscription tier by ID */
+  getSubscriptionTier?: Maybe<SubscriptionTier>;
+  /** Get all subscription tiers (active and inactive) */
   getSubscriptionTiers: Array<SubscriptionTier>;
   getUnreadCount: Scalars['Int']['output'];
   getUserNotifications: NotificationList;
@@ -6514,6 +6544,10 @@ export type QueryGetSettingsStoreValueArgs = {
 
 export type QueryGetSettingsStoreValuesArgs = {
   keys: Array<Scalars['String']['input']>;
+};
+
+export type QueryGetSubscriptionTierArgs = {
+  id: Scalars['ID']['input'];
 };
 
 export type QueryGetUserNotificationsArgs = {
@@ -8385,6 +8419,17 @@ export type UpdateStockLocationInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateSubscriptionTierInput = {
+  code?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  features?: InputMaybe<Scalars['JSON']['input']>;
+  id: Scalars['ID']['input'];
+  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  priceMonthly?: InputMaybe<Scalars['Int']['input']>;
+  priceYearly?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type UpdateSupplierCreditDurationInput = {
