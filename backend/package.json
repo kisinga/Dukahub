@@ -17,9 +17,7 @@
     "test:migrations": "jest --testNamePattern='Migration Idempotence'",
     "test:all": "npm run build && npm run test:coverage",
     "format": "prettier --write \"**/*.{ts,js,json}\"",
-    "format:check": "prettier --check \"**/*.{ts,js,json}\"",
-    "compile:admin-ui": "ts-node ./src/compile-admin-ui.ts",
-    "build:admin-ui": "NODE_ENV=production ts-node ./src/compile-admin-ui.ts"
+    "format:check": "prettier --check \"**/*.{ts,js,json}\""
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",

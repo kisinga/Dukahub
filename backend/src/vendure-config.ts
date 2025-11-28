@@ -1,5 +1,4 @@
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
-import { compileUiExtensions } from '@vendure/ui-devkit/compiler';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
 import {
   Asset,
@@ -1414,31 +1413,6 @@ export const config: VendureConfig = {
       adminUiConfig: {
         apiPort: serverPort,
       },
-      app: compileUiExtensions({
-        outputPath: path.join(__dirname, '../../admin-ui'),
-        extensions: [
-          {
-            // Resolve to source files (admin-ui is excluded from compilation)
-            // When running from dist, go up to find source directory
-            extensionPath: path.join(__dirname.replace(/\/dist\//, '/'), 'plugins/subscriptions/admin-ui'),
-            ngModules: [
-              {
-                type: 'lazy',
-                route: 'subscription-tiers',
-                ngModuleFileName: 'subscription-tier.module.ts',
-                ngModuleName: 'SubscriptionTierModule',
-              },
-            ],
-            routes: [
-              {
-                route: 'subscription-tiers',
-                filePath: 'routes.ts',
-              },
-            ],
-          },
-        ],
-        devMode: !IS_PRODUCTION,
-      }),
     }),
   ],
 };
