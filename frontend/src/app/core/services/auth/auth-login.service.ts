@@ -52,7 +52,7 @@ export class AuthLoginService {
         variables: {
           username: normalizedPhone,
           password: verifyResult.token!,
-          rememberMe: false,
+          rememberMe: true, // Long-lived cookies for mobile OTP logins
         },
         context: { skipChannelToken: true },
       });
