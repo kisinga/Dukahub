@@ -24,7 +24,6 @@
     "migration.ts",
     "src/plugins/**/ui/*",
     "src/plugins/**/dashboard/*",
-    "src/plugins/**/admin-ui/*",
     "admin-ui",
     "vite.*.*ts"
   ],
