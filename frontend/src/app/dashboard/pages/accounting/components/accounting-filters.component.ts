@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { LedgerAccount } from '../../../../core/services/ledger/ledger.service';
 
-export interface LedgerFilters {
+export interface AccountingFilters {
   searchTerm: string;
   selectedAccount: LedgerAccount | null;
   sourceTypeFilter: string;
@@ -13,14 +13,14 @@ export interface LedgerFilters {
 }
 
 @Component({
-  selector: 'app-ledger-filters',
+  selector: 'app-accounting-filters',
   imports: [CommonModule],
-  templateUrl: './ledger-filters.component.html',
-  styleUrl: './ledger-filters.component.scss',
+  templateUrl: './accounting-filters.component.html',
+  styleUrl: './accounting-filters.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LedgerFiltersComponent {
-  filters = input.required<LedgerFilters>();
+export class AccountingFiltersComponent {
+  filters = input.required<AccountingFilters>();
 
   searchTermChange = output<string>();
   accountChange = output<string>();

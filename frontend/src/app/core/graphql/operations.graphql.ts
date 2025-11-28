@@ -2324,6 +2324,8 @@ export const GET_LEDGER_ACCOUNTS = graphql(`
         type
         isActive
         balance
+        parentAccountId
+        isParent
       }
     }
   }

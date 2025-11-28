@@ -1,0 +1,106 @@
+<div class="space-y-4">
+  @if (isLoading()) {
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <div class="flex flex-col items-center justify-center py-16">
+          <span class="loading loading-spinner loading-lg text-primary"></span>
+          <p class="text-sm text-base-content/60 mt-4">Loading accounts...</p>
+        </div>
+      </div>
+    </div>
+  } @else if (!hasAccounts()) {
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <div class="text-center py-12 lg:py-20 px-4">
+          <div
+            class="w-20 h-20 lg:w-24 lg:h-24 mx-auto mb-4 rounded-full bg-base-200 flex items-center justify-center"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-10 w-10 lg:h-12 lg:w-12 text-base-content/30"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+          <h3 class="text-lg lg:text-xl font-semibold">No accounts found</h3>
+          <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+            No accounts have been set up yet. Accounts will appear here once they are created.
+          </p>
+        </div>
+      </div>
+    </div>
+  } @else {
+    @for (type of accountTypes; track type) {
+      @if (hierarchicalAccounts()[type] && hierarchicalAccounts()[type].length > 0) {
+        <!-- Account Type Section -->
+        <div class="collapse collapse-arrow bg-base-100 shadow">
+          <input type="checkbox" checked />
+          <div class="collapse-title text-xl font-medium">
+            {{ getAccountTypeLabel()(type) }}
+            <span class="badge badge-outline ml-2">
+              {{ hierarchicalAccounts()[type].length }} accounts
+            </span>
+            <span
+              class="badge ml-2"
+              [class.badge-success]="getAccountTypeTotal()(type) >= 0"
+              [class.badge-error]="getAccountTypeTotal()(type) < 0"
+            >
+              {{ formatCurrency()(getAccountTypeTotal()(type)) }}
+            </span>
+          </div>
+          <div class="collapse-content">
+            <!-- Mobile: Card View -->
+            <div class="lg:hidden space-y-3">
+              @for (account of hierarchicalAccounts()[type]; track account.id) {
+                <app-account-card
+                  [account]="account"
+                  [selectedAccount]="selectedAccount()"
+                  [formatCurrency]="formatCurrency()"
+                  [getDisplayBalance]="getDisplayBalance"
+                  [level]="0"
+                  (accountSelect)="onAccountClick($event)"
+                  (viewTransactions)="onViewTransactions($event, $any($event))"
+                />
+              }
+            </div>
+
+            <!-- Desktop: Table View -->
+            <div class="hidden lg:block overflow-x-auto">
+              <table class="table table-zebra">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Balance</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (account of hierarchicalAccounts()[type]; track account.id) {
+                    <app-account-row
+                      [account]="account"
+                      [selectedAccount]="selectedAccount()"
+                      [formatCurrency]="formatCurrency()"
+                      [getDisplayBalance]="getDisplayBalance"
+                      [level]="0"
+                      (accountSelect)="onAccountClick($event)"
+                      (viewTransactions)="onViewTransactions($event, $any($event))"
+                    />
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  }
+</div>

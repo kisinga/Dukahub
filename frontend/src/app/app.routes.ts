@@ -200,9 +200,11 @@ export const routes: Routes = [
           import('./dashboard/pages/team/team.component').then((m) => m.TeamComponent),
       },
       {
-        path: 'ledger',
+        path: 'accounting',
         loadComponent: () =>
-          import('./dashboard/pages/ledger/ledger.component').then((m) => m.LedgerComponent),
+          import('./dashboard/pages/accounting/accounting.component').then(
+            (m) => m.AccountingComponent,
+          ),
       },
     ],
   },

@@ -13,34 +13,38 @@ import {
   LedgerAccount,
   JournalEntry,
 } from '../../../core/services/ledger/ledger.service';
+import { forkJoin } from 'rxjs';
 import { TransactionDetailModalComponent } from './components/transaction-detail-modal.component';
-import { LedgerStatsComponent, LedgerStats } from './components/ledger-stats.component';
-import { LedgerFiltersComponent, LedgerFilters } from './components/ledger-filters.component';
-import { LedgerTabsComponent } from './components/ledger-tabs.component';
-import type { TabType } from './components/ledger-tabs.component';
+import { AccountingStatsComponent, AccountingStats } from './components/accounting-stats.component';
+import {
+  AccountingFiltersComponent,
+  AccountingFilters,
+} from './components/accounting-filters.component';
+import { AccountingTabsComponent } from './components/accounting-tabs.component';
+import type { TabType } from './components/accounting-tabs.component';
 import { OverviewTabComponent } from './components/overview-tab.component';
-import { AccountsTabComponent } from './components/accounts-tab.component';
+import { AccountsTabComponent, type AccountNode } from './components/accounts-tab.component';
 import { TransactionsTabComponent } from './components/transactions-tab.component';
 import { ReconciliationTabComponent } from './components/reconciliation-tab.component';
 
 @Component({
-  selector: 'app-ledger',
+  selector: 'app-accounting',
   imports: [
     CommonModule,
     TransactionDetailModalComponent,
-    LedgerStatsComponent,
-    LedgerFiltersComponent,
-    LedgerTabsComponent,
+    AccountingStatsComponent,
+    AccountingFiltersComponent,
+    AccountingTabsComponent,
     OverviewTabComponent,
     AccountsTabComponent,
     TransactionsTabComponent,
     ReconciliationTabComponent,
   ],
-  templateUrl: './ledger.component.html',
-  styleUrl: './ledger.component.scss',
+  templateUrl: './accounting.component.html',
+  styleUrl: './accounting.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LedgerComponent implements OnInit {
+export class AccountingComponent implements OnInit {
   private readonly ledgerService = inject(LedgerService);
 
   readonly transactionModal = viewChild<TransactionDetailModalComponent>('transactionModal');
@@ -79,6 +83,81 @@ export class LedgerComponent implements OnInit {
       if (grouped[account.type]) {
         grouped[account.type].push(account);
       }
+    });
+
+    return grouped;
+  });
+
+  // Hierarchical account structure with parent-child relationships
+
+  readonly hierarchicalAccounts = computed(() => {
+    const accounts = this.accounts();
+    const accountMap = new Map<string, AccountNode>();
+    const rootAccounts: AccountNode[] = [];
+
+    // First pass: create nodes for all accounts
+    accounts.forEach((account) => {
+      accountMap.set(account.id, {
+        ...account,
+        children: [],
+        calculatedBalance: account.balance,
+      });
+    });
+
+    // Second pass: build parent-child relationships
+    accounts.forEach((account) => {
+      const node = accountMap.get(account.id)!;
+      if (account.parentAccountId) {
+        const parent = accountMap.get(account.parentAccountId);
+        if (parent) {
+          parent.children.push(node);
+        }
+      } else {
+        rootAccounts.push(node);
+      }
+    });
+
+    // Third pass: calculate parent balances from children
+    const calculateParentBalance = (node: AccountNode): number => {
+      if (node.children.length === 0) {
+        return node.balance;
+      }
+      const childrenBalance = node.children.reduce(
+        (sum, child) => sum + calculateParentBalance(child),
+        0,
+      );
+      node.calculatedBalance = childrenBalance;
+      return childrenBalance;
+    };
+
+    rootAccounts.forEach((root) => calculateParentBalance(root));
+
+    // Group root accounts by type
+    const grouped: Record<string, AccountNode[]> = {
+      asset: [],
+      liability: [],
+      equity: [],
+      income: [],
+      expense: [],
+    };
+
+    rootAccounts.forEach((account) => {
+      if (grouped[account.type]) {
+        grouped[account.type].push(account);
+      }
+    });
+
+    // Sort each type's accounts
+    Object.keys(grouped).forEach((type) => {
+      grouped[type].sort((a, b) => a.code.localeCompare(b.code));
+      // Sort children recursively
+      const sortChildren = (nodes: AccountNode[]) => {
+        nodes.forEach((node) => {
+          node.children.sort((a, b) => a.code.localeCompare(b.code));
+          sortChildren(node.children);
+        });
+      };
+      sortChildren(grouped[type]);
     });
 
     return grouped;
@@ -202,7 +281,7 @@ export class LedgerComponent implements OnInit {
   });
 
   // Computed for stats component
-  readonly stats = computed<LedgerStats>(() => ({
+  readonly stats = computed<AccountingStats>(() => ({
     totalDebits: this.totalDebits(),
     totalCredits: this.totalCredits(),
     netBalance: this.netBalance(),
@@ -211,7 +290,7 @@ export class LedgerComponent implements OnInit {
   }));
 
   // Computed for filters component
-  readonly filters = computed<LedgerFilters>(() => ({
+  readonly filters = computed<AccountingFilters>(() => ({
     searchTerm: this.searchTerm(),
     selectedAccount: this.selectedAccount(),
     sourceTypeFilter: this.sourceTypeFilter(),
@@ -231,6 +310,9 @@ export class LedgerComponent implements OnInit {
   }
 
   loadData() {
+    this.ledgerService.isLoading.set(true);
+    this.ledgerService.error.set(null);
+
     const options: any = {
       take: 1000, // Load more entries for filtering
       skip: 0,
@@ -252,8 +334,21 @@ export class LedgerComponent implements OnInit {
       options.sourceType = this.sourceTypeFilter();
     }
 
-    this.ledgerService.loadAccounts().subscribe();
-    this.ledgerService.loadJournalEntries(options).subscribe();
+    // Wait for both requests to complete before clearing loading state
+    forkJoin({
+      accounts: this.ledgerService.loadAccounts(),
+      entries: this.ledgerService.loadJournalEntries(options),
+    }).subscribe({
+      next: () => {
+        // Both requests completed successfully
+        this.ledgerService.isLoading.set(false);
+      },
+      error: (err) => {
+        // Error is already handled in the service
+        this.ledgerService.isLoading.set(false);
+        console.error('Error loading accounting data:', err);
+      },
+    });
   }
 
   setQuickFilter(period: string) {

@@ -21,6 +21,7 @@ describe('Subscription Flow Integration', () => {
   let mockPaystackService: jest.Mocked<PaystackService>;
   let mockEventRouter: jest.Mocked<ChannelEventRouterService>;
   let mockConnection: any;
+  const TEST_TIER_ID = '00000000-0000-0000-0000-000000000001';
 
   beforeEach(() => {
     // Mock ChannelService
@@ -39,7 +40,7 @@ describe('Subscription Flow Integration', () => {
 
     // Mock EventRouter
     mockEventRouter = {
-      routeEvent: jest.fn(async () => { }),
+      routeEvent: jest.fn(async () => {}),
     } as any;
 
     // Mock TransactionalConnection
@@ -47,11 +48,12 @@ describe('Subscription Flow Integration', () => {
       rawConnection: {
         getRepository: jest.fn(() => ({
           findOne: jest.fn((options?: any) => {
-            // Handle both { where: { id: 'tier-1' } } and direct id
-            const id = options?.where?.id || options?.id || 'tier-1';
-            if (id === 'tier-1') {
+            // Handle both { where: { id: TEST_TIER_ID } } and direct id
+            const id = options?.where?.id || options?.id || TEST_TIER_ID;
+            // Support both TEST_TIER_ID (UUID) and 'tier-1' for backward compatibility with customFields
+            if (id === TEST_TIER_ID || id === 'tier-1') {
               return Promise.resolve({
-                id: 'tier-1',
+                id: id, // Return the same id that was queried
                 priceMonthly: 10000,
                 priceYearly: 100000,
               });
@@ -241,15 +243,16 @@ describe('Subscription Flow Integration', () => {
       mockPaystackService.createCustomer.mockResolvedValue({
         data: { customer_code: 'cust-123' },
       } as any);
+      // Mock chargeMobile to return a valid STK push response
       mockPaystackService.chargeMobile.mockResolvedValue({
-        data: { reference: 'ref-123' },
+        data: { reference: 'ref-123', status: 'pending' },
       } as any);
       mockChannelService.update.mockResolvedValue(mockChannel);
 
       await subscriptionService.initiatePurchase(
         ctx,
         channelId,
-        'tier-1',
+        TEST_TIER_ID,
         'monthly',
         phoneNumber,
         '' // Empty email

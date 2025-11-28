@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-export interface LedgerStats {
+export interface AccountingStats {
   totalDebits: number;
   totalCredits: number;
   netBalance: number;
@@ -10,13 +10,13 @@ export interface LedgerStats {
 }
 
 @Component({
-  selector: 'app-ledger-stats',
+  selector: 'app-accounting-stats',
   imports: [CommonModule],
-  templateUrl: './ledger-stats.component.html',
-  styleUrl: './ledger-stats.component.scss',
+  templateUrl: './accounting-stats.component.html',
+  styleUrl: './accounting-stats.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LedgerStatsComponent {
-  stats = input.required<LedgerStats>();
+export class AccountingStatsComponent {
+  stats = input.required<AccountingStats>();
   formatCurrency = input.required<(amount: number) => string>();
 }
