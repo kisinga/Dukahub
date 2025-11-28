@@ -2,10 +2,10 @@ import { Injectable, inject, signal } from '@angular/core';
 import { ApolloService } from '../apollo.service';
 import { map, catchError, of, from } from 'rxjs';
 import {
-  GET_LEDGER_ACCOUNTS,
-  GET_JOURNAL_ENTRIES,
-  GET_JOURNAL_ENTRY,
-} from '../../graphql/operations.graphql';
+  GetLedgerAccountsDocument,
+  GetJournalEntriesDocument,
+  GetJournalEntryDocument,
+} from '../../graphql/generated/graphql';
 
 export interface LedgerAccount {
   id: string;
@@ -63,7 +63,7 @@ export class LedgerService {
 
     const client = this.apolloService.getClient();
     const queryPromise = client.query<{ ledgerAccounts: { items: LedgerAccount[] } }>({
-      query: GET_LEDGER_ACCOUNTS as any,
+      query: GetLedgerAccountsDocument,
       fetchPolicy: 'network-only',
     });
 
@@ -91,7 +91,7 @@ export class LedgerService {
     const queryPromise = client.query<{
       journalEntries: { items: JournalEntry[]; totalItems: number };
     }>({
-      query: GET_JOURNAL_ENTRIES as any,
+      query: GetJournalEntriesDocument,
       variables: { options },
       fetchPolicy: 'network-only',
     });
@@ -119,7 +119,7 @@ export class LedgerService {
   getJournalEntry(id: string) {
     const client = this.apolloService.getClient();
     const queryPromise = client.query<{ journalEntry: JournalEntry | null }>({
-      query: GET_JOURNAL_ENTRY as any,
+      query: GetJournalEntryDocument,
       variables: { id },
       fetchPolicy: 'network-only',
     });

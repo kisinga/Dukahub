@@ -3303,7 +3303,9 @@ export type LedgerAccount = {
   code: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
+  isParent: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
+  parentAccountId?: Maybe<Scalars['ID']['output']>;
   type: Scalars['String']['output'];
 };
 
@@ -11002,6 +11004,8 @@ export type GetLedgerAccountsQuery = {
       type: string;
       isActive: boolean;
       balance: number;
+      parentAccountId?: string | null;
+      isParent: boolean;
     }>;
   };
 };
@@ -19057,6 +19061,8 @@ export const GetLedgerAccountsDocument = {
                       { kind: 'Field', name: { kind: 'Name', value: 'type' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'isActive' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'balance' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'parentAccountId' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'isParent' } },
                     ],
                   },
                 },
