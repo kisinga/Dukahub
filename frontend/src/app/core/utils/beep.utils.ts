@@ -4,17 +4,14 @@
  * @deprecated This utility function is maintained for backward compatibility.
  * For new code, inject and use ScannerBeepService directly.
  *
- * Note: Parameters are ignored - uses exact hardware specifications (2400 Hz, 50ms)
- * matching real Honeywell scanners for authentic sound.
+ * Default values match exact hardware specifications (2400 Hz, 50ms) from Honeywell scanners.
+ * Parameters are respected - you can override frequency and duration as needed.
  *
- * @param frequency - Ignored (uses 2400 Hz hardware spec)
- * @param duration - Ignored (uses 50ms hardware spec)
+ * @param frequency - Frequency in Hz (default: 2400 Hz - Honeywell HF680 Series default)
+ * @param duration - Duration in milliseconds (default: 50ms - industry standard)
  * @returns Promise that resolves when beep completes or rejects if audio is unavailable
  */
-export async function playBeep(frequency: number = 3000, duration: number = 4000): Promise<void> {
-  // Hardware specifications matching real scanners
-  const FREQUENCY = 2400; // Hz - Honeywell HF680 Series default
-  const DURATION = 50; // milliseconds - industry standard
+export async function playBeep(frequency: number = 2400, duration: number = 50): Promise<void> {
   const VOLUME = 0.3; // Gain level (moderate, not jarring)
 
   // Only work in browser environment
@@ -37,16 +34,16 @@ export async function playBeep(frequency: number = 3000, duration: number = 4000
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
-    // Configure oscillator: pure sine wave at exact scanner frequency
+    // Configure oscillator: pure sine wave at specified frequency
     oscillator.type = 'sine';
-    oscillator.frequency.value = FREQUENCY;
+    oscillator.frequency.value = frequency;
 
     // Configure gain: moderate volume with smooth fade-out
     gainNode.gain.setValueAtTime(VOLUME, audioContext.currentTime);
     // Fade out slightly at the end for smoother sound
     gainNode.gain.exponentialRampToValueAtTime(
       0.01,
-      audioContext.currentTime + DURATION / 1000,
+      audioContext.currentTime + duration / 1000,
     );
 
     // Connect nodes: oscillator -> gain -> destination (speakers)
@@ -56,8 +53,8 @@ export async function playBeep(frequency: number = 3000, duration: number = 4000
     // Start the oscillator
     oscillator.start(audioContext.currentTime);
 
-    // Stop after specified duration (matching hardware spec)
-    oscillator.stop(audioContext.currentTime + DURATION / 1000);
+    // Stop after specified duration
+    oscillator.stop(audioContext.currentTime + duration / 1000);
 
     // Return promise that resolves when sound finishes
     return new Promise((resolve) => {
