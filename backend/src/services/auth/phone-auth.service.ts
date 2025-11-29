@@ -7,6 +7,7 @@ import {
   User,
   UserService,
 } from '@vendure/core';
+import { IsNull } from 'typeorm';
 import { ChannelStatus, getChannelStatus } from '../../domain/channel-custom-fields';
 import { RegistrationStorageService } from '../../infrastructure/storage/registration-storage.service';
 import { findChannelById } from '../../utils/channel-access.util';
@@ -45,7 +46,7 @@ export class PhoneAuthService {
     private readonly registrationValidator: RegistrationValidatorService,
     private readonly registrationStorageService: RegistrationStorageService,
     private readonly connection: TransactionalConnection
-  ) {}
+  ) { }
 
   /**
    * Store registration data and request OTP
@@ -261,9 +262,12 @@ export class PhoneAuthService {
       };
     }
 
-    // Find user with roles and channels loaded
+    // Find user with roles and channels loaded, EXCLUDING soft-deleted users
     const user = await this.connection.getRepository(ctx, User).findOne({
-      where: { identifier: formattedPhone },
+      where: {
+        identifier: formattedPhone,
+        deletedAt: IsNull() // Exclude soft-deleted users
+      },
       relations: ['roles', 'roles.channels'],
     });
 

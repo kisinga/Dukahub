@@ -1,7 +1,8 @@
 import { Injectable, Injector, inject, signal } from '@angular/core';
 import { CompanyService } from './company.service';
-import type { MlModelService } from './ml-model.service';
 import { loadMlModelService } from './ml-model.loader';
+import type { MlModelService } from './ml-model.service';
+import { NotificationService } from './notification.service';
 import { ProductCacheService } from './product/product-cache.service';
 import { StockLocationService } from './stock-location.service';
 
@@ -12,6 +13,7 @@ export interface InitStatus {
   productsLoaded: boolean;
   modelLoaded: boolean;
   locationsLoaded: boolean;
+  notificationsLoaded: boolean;
   channelId: string | null;
   error: string | null;
 }
@@ -27,6 +29,7 @@ export class AppInitService {
   private readonly companyService = inject(CompanyService);
   private readonly productCacheService = inject(ProductCacheService);
   private readonly stockLocationService = inject(StockLocationService);
+  private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
   private mlModelService: MlModelService | null = null;
 
@@ -34,6 +37,7 @@ export class AppInitService {
     productsLoaded: false,
     modelLoaded: false,
     locationsLoaded: false,
+    notificationsLoaded: false,
     channelId: null,
     error: null,
   });
@@ -59,11 +63,13 @@ export class AppInitService {
 
     try {
       // Run prefetch operations in parallel
-      const [productsSuccess, modelSuccess, locationsSuccess] = await Promise.allSettled([
-        this.prefetchProducts(channelId),
-        this.prefetchModel(channelId),
-        this.prefetchStockLocations(),
-      ]);
+      const [productsSuccess, modelSuccess, locationsSuccess, notificationsSuccess] =
+        await Promise.allSettled([
+          this.prefetchProducts(channelId),
+          this.prefetchModel(channelId),
+          this.prefetchStockLocations(),
+          this.prefetchNotifications(),
+        ]);
 
       // Update status based on results
       this.initStatusSignal.update((s) => ({
@@ -71,18 +77,26 @@ export class AppInitService {
         productsLoaded: productsSuccess.status === 'fulfilled' && productsSuccess.value,
         modelLoaded: modelSuccess.status === 'fulfilled' && modelSuccess.value,
         locationsLoaded: locationsSuccess.status === 'fulfilled' && locationsSuccess.value,
+        notificationsLoaded:
+          notificationsSuccess.status === 'fulfilled' && notificationsSuccess.value,
         error:
           productsSuccess.status === 'rejected' ||
-          modelSuccess.status === 'rejected' ||
-          locationsSuccess.status === 'rejected'
+            modelSuccess.status === 'rejected' ||
+            locationsSuccess.status === 'rejected' ||
+            notificationsSuccess.status === 'rejected'
             ? 'Some features failed to initialize'
             : null,
       }));
 
       const status = this.initStatusSignal();
-      if (status.productsLoaded && status.modelLoaded && status.locationsLoaded) {
+      if (
+        status.productsLoaded &&
+        status.modelLoaded &&
+        status.locationsLoaded &&
+        status.notificationsLoaded
+      ) {
         console.log('✅ Dashboard initialized');
-      } else if (status.productsLoaded && status.locationsLoaded) {
+      } else if (status.productsLoaded && status.locationsLoaded && status.notificationsLoaded) {
         console.log('⚠️ Dashboard initialized (ML unavailable)');
       } else {
         console.error('❌ Dashboard initialization incomplete');
@@ -138,6 +152,20 @@ export class AppInitService {
   }
 
   /**
+   * Pre-fetch notifications on boot
+   */
+  private async prefetchNotifications(): Promise<boolean> {
+    try {
+      await this.notificationService.loadNotifications();
+      await this.notificationService.loadUnreadCount();
+      return true;
+    } catch (error: any) {
+      console.error('Failed to prefetch notifications:', error);
+      return false;
+    }
+  }
+
+  /**
    * Clear all cached data (on logout or channel switch)
    */
   clearCache(): void {
@@ -150,6 +178,7 @@ export class AppInitService {
       productsLoaded: false,
       modelLoaded: false,
       locationsLoaded: false,
+      notificationsLoaded: false,
       channelId: null,
       error: null,
     });
