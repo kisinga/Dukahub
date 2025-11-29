@@ -93,9 +93,28 @@ export class TeamService {
       const admins = result.data?.administrators.items ?? [];
 
       // Filter to only admins that belong to the current channel
+      // Also filter out superadmins (identified by role code or roles with no channel restrictions)
       const channelAdmins = admins
         .filter((admin) => {
           const roles = admin.user?.roles ?? [];
+
+          // Exclude superadmins by checking role code (SuperAdmin role code is '__super_admin_role__')
+          // or roles with no channel assignments (original check for roles that haven't had channels added)
+          const isSuperAdmin = roles.some((role) => {
+            const roleCode = role.code?.toLowerCase() || '';
+            // Check if it's the SuperAdmin role by code
+            if (roleCode === '__super_admin_role__' || roleCode.includes('superadmin')) {
+              return true;
+            }
+            // Also check if role has no channel assignments (for superadmin roles without channels)
+            return !role.channels || role.channels.length === 0;
+          });
+
+          if (isSuperAdmin) {
+            return false;
+          }
+
+          // Include only admins that belong to the current channel
           return roles.some((role) => role.channels?.some((ch) => ch.id === channelId));
         })
         .map((admin) => ({
