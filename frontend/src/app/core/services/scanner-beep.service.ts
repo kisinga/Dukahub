@@ -19,23 +19,8 @@ import { inject, Injectable, PLATFORM_ID } from '@angular/core';
     providedIn: 'root',
 })
 export class ScannerBeepService {
-    private readonly platformId: Object;
-
-    constructor(platformId?: Object) {
-        // Use injected platform ID if provided (Angular DI context)
-        // Otherwise, detect platform from environment (standalone usage)
-        if (platformId !== undefined) {
-            this.platformId = platformId;
-        } else {
-            // Try to inject PLATFORM_ID if available (Angular DI context)
-            try {
-                this.platformId = inject(PLATFORM_ID);
-            } catch {
-                // Not in Angular DI context - detect from environment
-                this.platformId = typeof window !== 'undefined' ? 'browser' : 'server';
-            }
-        }
-    }
+    // Inject PLATFORM_ID using Angular's inject() function at field level
+    private readonly platformId = inject(PLATFORM_ID);
 
     // Hardware specifications matching real scanners
     private readonly FREQUENCY = 2400; // Hz - Honeywell HF680 Series default
