@@ -142,17 +142,13 @@ export class DashboardLayoutComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     // Initialization is handled by the effect in constructor
-    // No need for duplicate call here
-
-    // Load notifications first
-    await this.notificationService.loadNotifications();
-    await this.notificationService.loadUnreadCount();
+    // Notifications are loaded via AppInitService during dashboard initialization
 
     // Prompt for notification permission on dashboard navigation
     this.notificationService.promptPermissionIfNeeded();
 
     // Check subscription status and create trial notification if needed
-    // Do this after notifications are loaded so we can check for existing ones
+    // Do this after notifications are loaded (via AppInitService) so we can check for existing ones
     await this.checkAndCreateTrialNotification();
   }
 
@@ -168,7 +164,7 @@ export class DashboardLayoutComponent implements OnInit {
     // Note: effect() in constructor will trigger initialization
     // Also clear and refetch locations for new company
     this.stockLocationService.clearLocations();
-    this.stockLocationService.fetchStockLocationsWithCashier();
+    this.stockLocationService.fetchStockLocationsWithCashier(true); // Force refresh after clearing
   }
 
   async logout(): Promise<void> {

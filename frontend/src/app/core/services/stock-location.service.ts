@@ -65,10 +65,16 @@ export class StockLocationService {
   /**
    * Fetch all stock locations
    * Called when product creation page loads (without cashier data)
+   * @param forceRefresh - If true, will refetch even if locations already exist
    */
-  async fetchStockLocations(): Promise<void> {
-    // KIS: Prevent duplicate fetches if already loading or have data
-    if (this.isLoadingSignal() || this.locationsSignal().length > 0) {
+  async fetchStockLocations(forceRefresh: boolean = false): Promise<void> {
+    // Prevent duplicate fetches if already loading
+    if (this.isLoadingSignal()) {
+      return;
+    }
+
+    // Allow refetch if forceRefresh is true or if no locations exist
+    if (!forceRefresh && this.locationsSignal().length > 0) {
       return;
     }
 
@@ -116,8 +122,8 @@ export class StockLocationService {
    *
    * @deprecated Use fetchStockLocations() instead
    */
-  async fetchStockLocationsWithCashier(): Promise<void> {
-    await this.fetchStockLocations();
+  async fetchStockLocationsWithCashier(forceRefresh: boolean = false): Promise<void> {
+    await this.fetchStockLocations(forceRefresh);
   }
 
   /**
@@ -143,5 +149,6 @@ export class StockLocationService {
   clearLocations(): void {
     this.locationsSignal.set([]);
     this.errorSignal.set(null);
+    this.isLoadingSignal.set(false); // Reset loading state
   }
 }

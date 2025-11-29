@@ -11,6 +11,7 @@ import {
   Zone,
   ZoneService,
 } from '@vendure/core';
+import { IsNull } from 'typeorm';
 import { RegistrationInput } from '../registration.service';
 
 /**
@@ -28,7 +29,7 @@ export class RegistrationValidatorService {
     private readonly administratorService: AdministratorService,
     private readonly connection: TransactionalConnection,
     private readonly zoneService: ZoneService
-  ) {}
+  ) { }
 
   /**
    * Validate registration input before provisioning
@@ -108,8 +109,8 @@ export class RegistrationValidatorService {
     if (!defaultChannel.defaultShippingZone || !defaultChannel.defaultTaxZone) {
       throw new Error(
         `REGISTRATION_ZONES_MISSING: Default zones not configured. ` +
-          `Please set up shipping and tax zones in the default channel first. ` +
-          `Navigate to Settings → Channels → Default Channel and configure defaultShippingZone and defaultTaxZone.`
+        `Please set up shipping and tax zones in the default channel first. ` +
+        `Navigate to Settings → Channels → Default Channel and configure defaultShippingZone and defaultTaxZone.`
       );
     }
   }
@@ -128,7 +129,10 @@ export class RegistrationValidatorService {
     // so we use repository for this lookup (documented limitation)
     const adminRepo = this.connection.getRepository(ctx, Administrator);
     const existingAdmin = await adminRepo.findOne({
-      where: { emailAddress: email },
+      where: {
+        emailAddress: email,
+        deletedAt: IsNull() // Exclude soft-deleted administrators
+      },
       relations: ['user'],
     });
 
@@ -164,7 +168,7 @@ export class RegistrationValidatorService {
     if (!kenyaZone) {
       throw new Error(
         `REGISTRATION_KENYA_ZONE_MISSING: Kenya zone not found. ` +
-          `Please create a zone named "Kenya" in Settings → Zones.`
+        `Please create a zone named "Kenya" in Settings → Zones.`
       );
     }
 
