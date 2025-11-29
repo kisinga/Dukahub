@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  OnDestroy,
+  signal,
+} from '@angular/core';
+import { Location } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 import { FooterComponent } from '../../core/layout/footer/footer.component';
 import { NavbarComponent } from '../../core/layout/navbar/navbar.component';
 
@@ -60,6 +68,12 @@ interface BusinessExample {
   employeeRange: string;
 }
 
+interface EaseOfUseBenefit {
+  icon: string;
+  title: string;
+  description: string;
+}
+
 @Component({
   selector: 'app-home',
   imports: [RouterLink, NavbarComponent, FooterComponent],
@@ -67,7 +81,12 @@ interface BusinessExample {
   styleUrl: './home.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HomeComponent {
+export class HomeComponent implements AfterViewInit, OnDestroy {
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
+  private observers: IntersectionObserver[] = [];
+  private isUpdatingHash = false;
+
   protected readonly isYearly = signal(false);
 
   protected readonly socialProof: SocialProof = {
@@ -78,6 +97,7 @@ export class HomeComponent {
 
   protected readonly heroHighlights: FeatureHighlight[] = [
     { icon: '📱', text: 'Start on your phone' },
+    { icon: '🎓', text: 'No training needed' },
     { icon: '🖥️', text: 'Grow to any size' },
     { icon: '🤝', text: 'Trust in every sale' },
   ];
@@ -104,8 +124,14 @@ export class HomeComponent {
     {
       icon: '📈',
       title: 'Decisions with data',
-      description: 'See daily trends, best sellers, and what needs attention at a glance.',
-      bullets: ['Dashboards & reports', 'Top product insights', 'Performance alerts'],
+      description:
+        'Pro-level business intelligence at your fingertips. See daily trends, best sellers, and make data-driven decisions to grow your business to the next stage.',
+      bullets: [
+        'Dashboards & reports',
+        'Top product insights',
+        'Performance alerts',
+        'Data-driven growth decisions',
+      ],
     },
   ];
 
@@ -120,7 +146,8 @@ export class HomeComponent {
       number: '2',
       title: 'Sell from any device',
       summary: 'Point, confirm, and accept cash or M-Pesa in seconds.',
-      detail: 'No signal? Keep selling. Each sale syncs automatically when you reconnect.',
+      detail:
+        'Accept cash and track M-Pesa payments automatically. No signal? Keep selling. Each sale syncs automatically when you reconnect.',
     },
     {
       number: '3',
@@ -307,4 +334,118 @@ export class HomeComponent {
   }
 
   protected readonly stars = [1, 2, 3, 4, 5];
+
+  protected readonly easeOfUseBenefits: EaseOfUseBenefit[] = [
+    {
+      icon: '📱',
+      title: 'No complex hardware',
+      description:
+        'Works on any smartphone. No barcode scanners, printers, or special equipment needed. Your phone is all you need.',
+    },
+    {
+      icon: '🎓',
+      title: 'No computer literacy required',
+      description:
+        'If you know how to use a smartphone, you can use Dukarun. No training needed — most things are intuitive.',
+    },
+    {
+      icon: '📚',
+      title: 'Simple tutorials available',
+      description:
+        'Step-by-step guides teach you how to use the system, but most features work naturally once you start.',
+    },
+    {
+      icon: '💡',
+      title: 'Intuitive smartphone interface',
+      description:
+        'Designed for touch and simplicity. Everything you need is just a tap away, just like using any modern app.',
+    },
+    {
+      icon: '📊',
+      title: 'Professional accounting made accessible',
+      description:
+        'Lowers the barrier to professional accounting. Get enterprise-level financial tracking without the complexity.',
+    },
+    {
+      icon: '🚀',
+      title: 'Powerful insights at your fingertips',
+      description:
+        'Pro-level business tool that gives you powerful information for gauging business status and making data-driven decisions to grow.',
+    },
+  ];
+
+  ngAfterViewInit(): void {
+    this.setupScrollSpy();
+    this.handleInitialHash();
+  }
+
+  ngOnDestroy(): void {
+    this.observers.forEach((observer) => observer.disconnect());
+    this.observers = [];
+  }
+
+  private setupScrollSpy(): void {
+    const sectionIds = [
+      'hero',
+      'proof',
+      'pillars',
+      'ease-of-use',
+      'journey',
+      'pricing-preview',
+      'faq',
+      'cta',
+    ];
+
+    const options: IntersectionObserverInit = {
+      root: null,
+      rootMargin: '-20% 0px -60% 0px',
+      threshold: [0.1, 0.5],
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      if (this.isUpdatingHash) return;
+
+      const visibleEntries = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+      if (visibleEntries.length > 0) {
+        const id = visibleEntries[0].target.id;
+        if (id) {
+          this.updateHash(id);
+        }
+      }
+    }, options);
+
+    sectionIds.forEach((id) => {
+      const element = document.getElementById(id);
+      if (element) {
+        observer.observe(element);
+      }
+    });
+
+    this.observers.push(observer);
+  }
+
+  private updateHash(id: string): void {
+    this.isUpdatingHash = true;
+    const url = this.router.url.split('#')[0];
+    this.location.replaceState(`${url}#${id}`);
+    // Use setTimeout to reset flag after location update
+    setTimeout(() => {
+      this.isUpdatingHash = false;
+    }, 0);
+  }
+
+  private handleInitialHash(): void {
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+      const element = document.getElementById(hash);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }
+  }
 }
