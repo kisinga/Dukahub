@@ -235,6 +235,7 @@ export class SubscriptionService {
     billingCycle: 'monthly' | 'yearly',
     phoneNumber: string,
     email: string,
+    paymentMethod?: string,
   ): Promise<{
     success: boolean;
     reference?: string;
@@ -311,6 +312,7 @@ export class SubscriptionService {
           billingCycle,
           phoneNumber,
           email,
+          paymentMethod: paymentMethod || undefined,
         },
       });
 

@@ -2166,6 +2166,7 @@ export const INITIATE_SUBSCRIPTION_PURCHASE = graphql(`
     $billingCycle: String!
     $phoneNumber: String!
     $email: String!
+    $paymentMethod: String
   ) {
     initiateSubscriptionPurchase(
       channelId: $channelId
@@ -2173,6 +2174,7 @@ export const INITIATE_SUBSCRIPTION_PURCHASE = graphql(`
       billingCycle: $billingCycle
       phoneNumber: $phoneNumber
       email: $email
+      paymentMethod: $paymentMethod
     ) {
       success
       reference

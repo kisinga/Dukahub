@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Channel, ChannelService, RequestContext } from '@vendure/core';
 import { ChannelEventRouterService } from '../../../src/infrastructure/events/channel-event-router.service';
 import { ChannelEventType } from '../../../src/infrastructure/events/types/event-type.enum';
+import { RedisCacheService } from '../../../src/infrastructure/storage/redis-cache.service';
 import { PaystackService } from '../../../src/services/payments/paystack.service';
 import { SubscriptionService } from '../../../src/services/subscriptions/subscription.service';
 
@@ -20,6 +21,7 @@ describe('Subscription Flow Integration', () => {
   let mockChannelService: jest.Mocked<ChannelService>;
   let mockPaystackService: jest.Mocked<PaystackService>;
   let mockEventRouter: jest.Mocked<ChannelEventRouterService>;
+  let mockRedisCache: jest.Mocked<RedisCacheService>;
   let mockConnection: any;
   const TEST_TIER_ID = '00000000-0000-0000-0000-000000000001';
 
@@ -41,6 +43,14 @@ describe('Subscription Flow Integration', () => {
     // Mock EventRouter
     mockEventRouter = {
       routeEvent: jest.fn(async () => {}),
+    } as any;
+
+    // Mock RedisCacheService
+    mockRedisCache = {
+      get: jest.fn(async () => null),
+      set: jest.fn(async () => {}),
+      delete: jest.fn(async () => {}),
+      exists: jest.fn(async () => false),
     } as any;
 
     // Mock TransactionalConnection
@@ -69,7 +79,8 @@ describe('Subscription Flow Integration', () => {
       mockChannelService,
       mockConnection,
       mockPaystackService,
-      mockEventRouter
+      mockEventRouter,
+      mockRedisCache
     );
   });
 

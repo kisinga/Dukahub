@@ -3,6 +3,7 @@ import { Channel, ChannelService, RequestContext, TransactionalConnection } from
 import { ChannelEventRouterService } from '../../infrastructure/events/channel-event-router.service';
 import { ActionCategory } from '../../infrastructure/events/types/action-category.enum';
 import { ChannelEventType } from '../../infrastructure/events/types/event-type.enum';
+import { RedisCacheService } from '../../infrastructure/storage/redis-cache.service';
 import { SubscriptionTier } from '../../plugins/subscriptions/subscription.entity';
 import { PaystackService } from '../payments/paystack.service';
 
@@ -23,16 +24,24 @@ export interface InitiatePurchaseResult {
   message?: string;
 }
 
+interface PaymentStatusCacheEntry {
+  status: 'success' | 'pending' | 'failed';
+  timestamp: number;
+}
+
 @Injectable()
 export class SubscriptionService {
   private readonly logger = new Logger(SubscriptionService.name);
   private readonly trialDays = parseInt(process.env.SUBSCRIPTION_TRIAL_DAYS || '30', 10);
+  private readonly CACHE_TTL_SECONDS = 10; // 10 seconds (for Redis SETEX)
+  private readonly CACHE_NAMESPACE = 'payment:status';
 
   constructor(
     private channelService: ChannelService,
     private connection: TransactionalConnection,
     private paystackService: PaystackService,
-    private eventRouter: ChannelEventRouterService
+    private eventRouter: ChannelEventRouterService,
+    private redisCache: RedisCacheService
   ) {}
 
   /**
@@ -171,7 +180,8 @@ export class SubscriptionService {
     tierId: string,
     billingCycle: 'monthly' | 'yearly',
     phoneNumber: string,
-    email: string
+    email: string,
+    paymentMethod?: string
   ): Promise<InitiatePurchaseResult> {
     try {
       // Validate tierId before database query
@@ -242,7 +252,45 @@ export class SubscriptionService {
       // Generate reference
       const reference = `SUB-${channelId}-${Date.now()}`;
 
-      // Initialize transaction with STK push
+      // Route based on payment method
+      // If paymentMethod is 'checkout' or any other value (not 'mobile_money'), use checkout redirect
+      // If paymentMethod is 'mobile_money' or not specified, use STK push
+      const useCheckout = paymentMethod && paymentMethod !== 'mobile_money';
+
+      if (useCheckout) {
+        // Redirect to Paystack checkout for card and other payment methods
+        try {
+          const transactionResponse = await this.paystackService.initializeTransaction(
+            amountInKes,
+            effectiveEmail,
+            phoneNumber,
+            {
+              channelId,
+              tierId,
+              billingCycle,
+              type: 'subscription',
+              reference,
+            }
+          );
+
+          return {
+            success: true,
+            reference: transactionResponse.data.reference,
+            authorizationUrl: transactionResponse.data.authorization_url,
+            message: 'Payment link generated. Please complete payment.',
+          };
+        } catch (error) {
+          this.logger.error(
+            `Failed to initialize transaction: ${error instanceof Error ? error.message : String(error)}`
+          );
+          return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to initialize payment',
+          };
+        }
+      }
+
+      // Use STK push for mobile money (default behavior)
       try {
         const chargeResponse = await this.paystackService.chargeMobile(
           amountInKes,
@@ -270,15 +318,9 @@ export class SubscriptionService {
         if (!responseStatus || !validStkStatuses.includes(responseStatus)) {
           // STK push was not successfully initiated, fall back to payment link
           this.logger.warn(
-            `STK push response indicates failure (status: ${responseStatus}), falling back to payment link`,
-            {
-              reference: chargeResponse.data?.reference,
-              status: responseStatus,
-              phoneNumber,
-            }
+            `STK push failed (status: ${responseStatus}), falling back to payment link`,
+            { reference, status: responseStatus }
           );
-
-          // Fall through to payment link generation
           throw new Error(`STK push not initiated: status ${responseStatus}`);
         }
 
@@ -290,54 +332,52 @@ export class SubscriptionService {
       } catch (error) {
         // Fallback to payment link if STK push fails
         const errorMessage = error instanceof Error ? error.message : String(error);
-        const errorDetails: any = {
-          message: errorMessage,
-          phoneNumber,
-          amount: amountInKes,
-          reference,
-        };
+        const isTimeout = errorMessage.includes('timed out');
 
-        // Try to extract additional error details if available
-        if (error && typeof error === 'object') {
-          if ('response' in error) {
-            const response = (error as any).response;
-            if (response) {
-              errorDetails.responseStatus = response.status;
-              errorDetails.responseStatusText = response.statusText;
-              if (response.data) {
-                errorDetails.responseData = response.data;
-              }
-            }
-          }
-          if ('status' in error) {
-            errorDetails.status = (error as any).status;
-          }
-          if ('data' in error) {
-            errorDetails.data = (error as any).data;
-          }
+        if (isTimeout) {
+          this.logger.warn(`STK push timed out, falling back to payment link`, { reference });
+        } else {
+          this.logger.warn(`STK push failed, falling back to payment link`, {
+            reference,
+            error: errorMessage,
+          });
         }
 
-        this.logger.warn(`STK push failed, falling back to payment link`, errorDetails);
+        // Attempt to generate payment link as fallback
+        try {
+          const transactionResponse = await this.paystackService.initializeTransaction(
+            amountInKes,
+            effectiveEmail,
+            phoneNumber,
+            {
+              channelId,
+              tierId,
+              billingCycle,
+              type: 'subscription',
+              reference,
+            }
+          );
 
-        const transactionResponse = await this.paystackService.initializeTransaction(
-          amountInKes,
-          effectiveEmail,
-          phoneNumber,
-          {
-            channelId,
-            tierId,
-            billingCycle,
-            type: 'subscription',
+          return {
+            success: true,
+            reference: transactionResponse.data.reference,
+            authorizationUrl: transactionResponse.data.authorization_url,
+            message: 'Payment link generated. Please complete payment.',
+          };
+        } catch (fallbackError) {
+          // If fallback also fails, return error
+          const fallbackErrorMessage =
+            fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+          this.logger.error(`Both STK push and payment link generation failed`, {
             reference,
-          }
-        );
-
-        return {
-          success: true,
-          reference: transactionResponse.data.reference,
-          authorizationUrl: transactionResponse.data.authorization_url,
-          message: 'Payment link generated. Please complete payment.',
-        };
+            originalError: errorMessage,
+            fallbackError: fallbackErrorMessage,
+          });
+          return {
+            success: false,
+            message: `Payment initiation failed. Please try again or contact support.`,
+          };
+        }
       }
     } catch (error) {
       this.logger.error(
@@ -449,6 +489,134 @@ export class SubscriptionService {
           `Failed to emit subscription renewed event: ${err instanceof Error ? err.message : String(err)}`
         );
       });
+  }
+
+  /**
+   * Check payment status for a transaction reference
+   * This is the single source of truth for payment verification
+   *
+   * Flow:
+   * 1. Check channel state - if subscription already active (webhook processed), return success
+   * 2. Check cache - if recently verified (within TTL), return cached result
+   * 3. Call Paystack - if status unknown, verify with Paystack API
+   * 4. Cache result and return
+   */
+  async checkPaymentStatus(
+    ctx: RequestContext,
+    channelId: string,
+    reference: string
+  ): Promise<{ success: boolean; status: 'success' | 'pending' | 'failed'; message?: string }> {
+    try {
+      // Step 1: Check channel state first (webhook may have already processed payment)
+      const channel = await this.channelService.findOne(ctx, channelId);
+      if (channel) {
+        const customFields = channel.customFields as any;
+        const subscriptionStatus = customFields.subscriptionStatus;
+        const lastPaymentDate = customFields.lastPaymentDate;
+
+        // If subscription is active and payment was recent (within last 5 minutes), likely this payment
+        if (subscriptionStatus === 'active' && lastPaymentDate) {
+          const paymentDate = new Date(lastPaymentDate);
+          const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+          if (paymentDate > fiveMinutesAgo) {
+            return { success: true, status: 'success', message: 'Payment already processed' };
+          }
+        }
+      }
+
+      // Step 2: Check cache
+      const cached = await this.redisCache.get<PaymentStatusCacheEntry>(
+        this.CACHE_NAMESPACE,
+        reference
+      );
+      if (cached) {
+        // Check if cache entry is still valid (within TTL)
+        const age = Date.now() - cached.timestamp;
+        const ageSeconds = age / 1000;
+        if (ageSeconds < this.CACHE_TTL_SECONDS) {
+          return {
+            success: cached.status === 'success',
+            status: cached.status,
+            message: cached.status === 'success' ? 'Payment verified' : 'Payment pending',
+          };
+        }
+        // Cache entry expired, will be handled by Redis TTL or fallback cleanup
+      }
+
+      // Step 3: Verify with Paystack API
+      const verification = await this.paystackService.verifyTransaction(reference);
+
+      let status: 'success' | 'pending' | 'failed';
+      let success = false;
+
+      if (verification.data.status === 'success') {
+        status = 'success';
+        success = true;
+
+        // Process successful payment
+        const customerCode =
+          verification.data.customer?.customer_code ||
+          (verification.data.metadata as any)?.customerCode;
+
+        await this.processSuccessfulPayment(ctx, channelId, {
+          reference,
+          amount: verification.data.amount,
+          customerCode: customerCode,
+        });
+      } else if (verification.data.status === 'pending' || verification.data.status === 'sent') {
+        status = 'pending';
+        success = false;
+      } else {
+        status = 'failed';
+        success = false;
+        this.logger.warn(
+          `Payment ${reference} verification failed with status: ${verification.data.status}`
+        );
+      }
+
+      // Step 4: Cache result
+      await this.redisCache.set(
+        this.CACHE_NAMESPACE,
+        reference,
+        {
+          status,
+          timestamp: Date.now(),
+        },
+        this.CACHE_TTL_SECONDS
+      );
+
+      return {
+        success,
+        status,
+        message: success
+          ? 'Payment verified successfully'
+          : status === 'pending'
+            ? 'Payment is pending'
+            : 'Payment verification failed',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error checking payment status for ${reference}: ${error instanceof Error ? error.message : String(error)}`
+      );
+
+      // Cache failure to prevent repeated API calls
+      await this.redisCache.set(
+        this.CACHE_NAMESPACE,
+        reference,
+        {
+          status: 'failed',
+          timestamp: Date.now(),
+        },
+        this.CACHE_TTL_SECONDS
+      );
+
+      return {
+        success: false,
+        status: 'failed',
+        message: error instanceof Error ? error.message : 'Failed to verify payment',
+      };
+    }
   }
 
   /**

@@ -71,10 +71,11 @@ import { CompanyService } from '../../../../core/services/company.service';
           </div>
         }
 
-        <!-- Phone Number Input -->
+        <!-- Phone Number Input (for Express Payment) -->
         <div class="form-control mb-4">
           <label class="label">
             <span class="label-text">Phone Number</span>
+            <span class="label-text-alt">For Express Payment via Mobile Money</span>
           </label>
           <input
             type="tel"
@@ -82,7 +83,6 @@ import { CompanyService } from '../../../../core/services/company.service';
             [ngModel]="phoneNumber()"
             (ngModelChange)="phoneNumber.set($event)"
             placeholder="+254712345678"
-            required
           />
           <label class="label">
             <span class="label-text-alt">We'll send a payment request to this number</span>
@@ -97,22 +97,33 @@ import { CompanyService } from '../../../../core/services/company.service';
         }
 
         <!-- Loading State -->
-        @if (subscriptionService.isProcessingPayment()) {
+        @if (isProcessingPayment()) {
           <div class="flex items-center justify-center py-4">
             <span class="loading loading-spinner loading-lg"></span>
-            <span class="ml-2">Processing payment...</span>
+            <span class="ml-2">{{ loadingMessage() || 'Processing payment...' }}</span>
           </div>
         }
 
         <!-- Payment Actions -->
-        <div class="modal-action">
-          <button class="btn btn-ghost" (click)="close()">Cancel</button>
-          <button
-            class="btn btn-primary"
-            [disabled]="!phoneNumber() || subscriptionService.isProcessingPayment()"
-            (click)="initiatePayment()"
-          >
-            Pay with Paystack
+        <div class="modal-action flex-col gap-2">
+          <div class="flex gap-2 w-full">
+            <button
+              class="btn btn-primary flex-1"
+              [disabled]="!phoneNumber() || isProcessingPayment()"
+              (click)="initiateExpressPayment()"
+            >
+              Express Payment
+            </button>
+            <button
+              class="btn btn-outline flex-1"
+              [disabled]="isProcessingPayment()"
+              (click)="initiateCheckoutPayment()"
+            >
+              Additional Payment Options
+            </button>
+          </div>
+          <button class="btn btn-ghost w-full" [disabled]="isProcessingPayment()" (click)="close()">
+            Cancel
           </button>
         </div>
       </div>
@@ -135,6 +146,8 @@ export class PaymentModalComponent implements OnInit {
   protected readonly billingCycle = signal<'monthly' | 'yearly'>('monthly');
   protected readonly phoneNumber = signal<string>('');
   protected readonly error = signal<string | null>(null);
+  protected readonly isProcessingPayment = signal(false);
+  protected readonly loadingMessage = signal<string>('');
 
   protected readonly selectedTier = computed(() => this.tier());
   protected readonly price = computed(() => {
@@ -160,11 +173,11 @@ export class PaymentModalComponent implements OnInit {
     }
   }
 
-  async initiatePayment() {
+  private validateTier(): string | null {
     const tier = this.selectedTier();
 
     // Log tier for debugging
-    console.log('[PaymentModal] initiatePayment called with tier:', tier);
+    console.log('[PaymentModal] validateTier called with tier:', tier);
 
     // Validate tier exists
     if (!tier) {
@@ -172,7 +185,7 @@ export class PaymentModalComponent implements OnInit {
       this.error.set(
         'Please select a valid subscription tier. If this issue persists, please refresh the page.',
       );
-      return;
+      return null;
     }
 
     // Validate tier ID exists and is not "-1"
@@ -184,7 +197,7 @@ export class PaymentModalComponent implements OnInit {
       this.error.set(
         'Invalid subscription tier selected. Please close this modal, refresh the page, and try again.',
       );
-      return;
+      return null;
     }
 
     // Check for "-1" in all possible forms
@@ -194,7 +207,7 @@ export class PaymentModalComponent implements OnInit {
       this.error.set(
         'Invalid subscription tier selected. Please close this modal, refresh the page, and try again.',
       );
-      return;
+      return null;
     }
 
     // Validate tier ID is a valid UUID format
@@ -204,14 +217,22 @@ export class PaymentModalComponent implements OnInit {
       this.error.set(
         'Invalid subscription tier ID format. Please close this modal, refresh the page, and try again.',
       );
-      return;
+      return null;
     }
 
     console.log('[PaymentModal] Tier validation passed, proceeding with tierId:', tierIdStr);
+    return tierIdStr;
+  }
+
+  async initiateExpressPayment() {
+    const tierIdStr = this.validateTier();
+    if (!tierIdStr) {
+      return;
+    }
 
     const phone = this.phoneNumber();
     if (!phone) {
-      this.error.set('Phone number is required');
+      this.error.set('Phone number is required for Express Payment');
       return;
     }
 
@@ -231,48 +252,158 @@ export class PaymentModalComponent implements OnInit {
     }
 
     this.error.set(null);
+    this.isProcessingPayment.set(true);
+    this.loadingMessage.set('Initiating payment...');
 
-    const result = await this.subscriptionService.initiatePurchase(
-      tier.id,
-      this.billingCycle(),
-      phone,
-      email,
-    );
+    try {
+      const tier = this.selectedTier();
+      const result = await this.subscriptionService.initiatePurchase(
+        tier!.id,
+        this.billingCycle(),
+        phone,
+        email,
+        'mobile_money', // Payment method for Express Payment
+      );
 
-    if (result.success && result.reference) {
-      this.paymentInitiated.emit({
-        reference: result.reference,
-        authorizationUrl: result.authorizationUrl,
-      });
+      if (result.success && result.reference) {
+        this.paymentInitiated.emit({
+          reference: result.reference,
+          authorizationUrl: result.authorizationUrl,
+        });
 
-      // If there's an authorization URL, open it
-      if (result.authorizationUrl) {
-        window.open(result.authorizationUrl, '_blank');
+        // If authorizationUrl exists, it means fallback to payment link occurred
+        // Redirect to payment page instead of polling
+        if (result.authorizationUrl) {
+          this.loadingMessage.set('Redirecting to payment page...');
+          window.location.href = result.authorizationUrl;
+        } else {
+          // No authorizationUrl means STK push was successful, poll for verification
+          this.loadingMessage.set('Waiting for payment confirmation... (check your phone)');
+          await this.pollPaymentStatus(result.reference);
+        }
+      } else {
+        this.error.set(result.message || 'Failed to initiate payment');
+        this.isProcessingPayment.set(false);
+        this.loadingMessage.set('');
       }
-
-      // Start polling for payment verification
-      this.pollPaymentStatus(result.reference);
-    } else {
-      this.error.set(result.message || 'Failed to initiate payment');
+    } catch (error) {
+      this.error.set(error instanceof Error ? error.message : 'Failed to initiate payment');
+      this.isProcessingPayment.set(false);
+      this.loadingMessage.set('');
     }
   }
 
-  private async pollPaymentStatus(reference: string, maxAttempts = 30) {
-    for (let i = 0; i < maxAttempts; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
-
-      const verified = await this.subscriptionService.verifyPayment(reference);
-      if (verified) {
-        this.close();
-        return;
-      }
+  async initiateCheckoutPayment() {
+    const tierIdStr = this.validateTier();
+    if (!tierIdStr) {
+      return;
     }
 
-    // If not verified after max attempts, show message
-    this.error.set('Payment verification timeout. Please check your payment status.');
+    const user = this.authService.user();
+    const email = user?.emailAddress || '';
+
+    if (!email) {
+      this.error.set('Email address is required');
+      return;
+    }
+
+    // Validate channel ID
+    const channelId = this.companyService.activeCompanyId();
+    if (!channelId) {
+      this.error.set('No active channel. Please refresh the page and try again.');
+      return;
+    }
+
+    this.error.set(null);
+    this.isProcessingPayment.set(true);
+    this.loadingMessage.set('Initiating payment...');
+
+    try {
+      const tier = this.selectedTier();
+      // Use phone number if available, otherwise use placeholder format
+      const phone = this.phoneNumber() || `+254700000000`;
+
+      const result = await this.subscriptionService.initiatePurchase(
+        tier!.id,
+        this.billingCycle(),
+        phone,
+        email,
+        'checkout', // Payment method for redirect to Paystack checkout
+      );
+
+      if (result.success && result.reference) {
+        this.paymentInitiated.emit({
+          reference: result.reference,
+          authorizationUrl: result.authorizationUrl,
+        });
+
+        // If there's an authorization URL, redirect to it
+        if (result.authorizationUrl) {
+          this.loadingMessage.set('Redirecting to payment page...');
+          window.location.href = result.authorizationUrl;
+        } else {
+          this.error.set('Payment link not generated. Please try again.');
+          this.isProcessingPayment.set(false);
+          this.loadingMessage.set('');
+        }
+      } else {
+        this.error.set(result.message || 'Failed to initiate payment');
+        this.isProcessingPayment.set(false);
+        this.loadingMessage.set('');
+      }
+    } catch (error) {
+      this.error.set(error instanceof Error ? error.message : 'Failed to initiate payment');
+      this.isProcessingPayment.set(false);
+      this.loadingMessage.set('');
+    }
+  }
+
+  private async pollPaymentStatus(reference: string, maxAttempts = 3) {
+    // Polling strategy: 3 attempts with 15-second intervals
+    // Attempt 1: Immediate (0 seconds)
+    // Attempt 2: After 15 seconds
+    // Attempt 3: After 30 seconds (total: 45 seconds max)
+
+    try {
+      for (let i = 0; i < maxAttempts; i++) {
+        // First attempt is immediate, subsequent attempts wait 15 seconds
+        if (i > 0) {
+          this.loadingMessage.set(`Verifying payment... (attempt ${i + 1} of ${maxAttempts})`);
+          await new Promise((resolve) => setTimeout(resolve, 15000)); // Wait 15 seconds
+        } else {
+          this.loadingMessage.set('Verifying payment...');
+        }
+
+        const verified = await this.subscriptionService.verifyPayment(reference);
+        if (verified) {
+          this.loadingMessage.set('Payment verified successfully!');
+          // Small delay to show success message
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          this.isProcessingPayment.set(false);
+          this.loadingMessage.set('');
+          this.close();
+          return;
+        }
+      }
+
+      // If not verified after max attempts, show message
+      this.error.set(
+        'Payment verification timeout. Your payment may still be processing. Please check your payment status or try refreshing the page.',
+      );
+      this.isProcessingPayment.set(false);
+      this.loadingMessage.set('');
+    } catch (error) {
+      this.error.set(error instanceof Error ? error.message : 'Failed to verify payment');
+      this.isProcessingPayment.set(false);
+      this.loadingMessage.set('');
+    }
   }
 
   close() {
+    // Clear loading state if user cancels
+    this.isProcessingPayment.set(false);
+    this.loadingMessage.set('');
+    this.error.set(null);
     this.closed.emit();
   }
 }

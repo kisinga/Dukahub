@@ -4419,6 +4419,7 @@ export type MutationInitiateSubscriptionPurchaseArgs = {
   billingCycle: Scalars['String']['input'];
   channelId: Scalars['ID']['input'];
   email: Scalars['String']['input'];
+  paymentMethod?: InputMaybe<Scalars['String']['input']>;
   phoneNumber: Scalars['String']['input'];
   tierId: Scalars['String']['input'];
 };
@@ -5846,6 +5847,18 @@ export type ProductOption = Node & {
   updatedAt: Scalars['DateTime']['output'];
 };
 
+export type ProductOptionFilterParameter = {
+  _and?: InputMaybe<Array<ProductOptionFilterParameter>>;
+  _or?: InputMaybe<Array<ProductOptionFilterParameter>>;
+  code?: InputMaybe<StringOperators>;
+  createdAt?: InputMaybe<DateOperators>;
+  groupId?: InputMaybe<IdOperators>;
+  id?: InputMaybe<IdOperators>;
+  languageCode?: InputMaybe<StringOperators>;
+  name?: InputMaybe<StringOperators>;
+  updatedAt?: InputMaybe<DateOperators>;
+};
+
 export type ProductOptionGroup = Node & {
   __typename?: 'ProductOptionGroup';
   code: Scalars['String']['output'];
@@ -5881,6 +5894,34 @@ export type ProductOptionInUseError = ErrorResult & {
   message: Scalars['String']['output'];
   optionGroupCode: Scalars['String']['output'];
   productVariantCount: Scalars['Int']['output'];
+};
+
+export type ProductOptionList = PaginatedList & {
+  __typename?: 'ProductOptionList';
+  items: Array<ProductOption>;
+  totalItems: Scalars['Int']['output'];
+};
+
+export type ProductOptionListOptions = {
+  /** Allows the results to be filtered */
+  filter?: InputMaybe<ProductOptionFilterParameter>;
+  /** Specifies whether multiple top-level "filter" fields should be combined with a logical AND or OR operation. Defaults to AND. */
+  filterOperator?: InputMaybe<LogicalOperator>;
+  /** Skips the first n results, for use in pagination */
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  /** Specifies which properties to sort the results by */
+  sort?: InputMaybe<ProductOptionSortParameter>;
+  /** Takes n results, for use in pagination */
+  take?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type ProductOptionSortParameter = {
+  code?: InputMaybe<SortOrder>;
+  createdAt?: InputMaybe<SortOrder>;
+  groupId?: InputMaybe<SortOrder>;
+  id?: InputMaybe<SortOrder>;
+  name?: InputMaybe<SortOrder>;
+  updatedAt?: InputMaybe<SortOrder>;
 };
 
 export type ProductOptionTranslation = {
@@ -6333,8 +6374,10 @@ export type Query = {
   previewCollectionVariants: ProductVariantList;
   /** Get a Product either by id or slug. If neither id nor slug is specified, an error will result. */
   product?: Maybe<Product>;
+  productOption?: Maybe<ProductOption>;
   productOptionGroup?: Maybe<ProductOptionGroup>;
   productOptionGroups: Array<ProductOptionGroup>;
+  productOptions: ProductOptionList;
   /** Get a ProductVariant by id */
   productVariant?: Maybe<ProductVariant>;
   /** List ProductVariants either all or for the specific product. */
@@ -6362,6 +6405,8 @@ export type Query = {
   shippingEligibilityCheckers: Array<ConfigurableOperationDefinition>;
   shippingMethod?: Maybe<ShippingMethod>;
   shippingMethods: ShippingMethodList;
+  /** Generate slug for entity */
+  slugForEntity: Scalars['String']['output'];
   stockAdjustments: InventoryStockAdjustmentList;
   stockLocation?: Maybe<StockLocation>;
   stockLocations: StockLocationList;
@@ -6603,12 +6648,21 @@ export type QueryProductArgs = {
   slug?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type QueryProductOptionArgs = {
+  id: Scalars['ID']['input'];
+};
+
 export type QueryProductOptionGroupArgs = {
   id: Scalars['ID']['input'];
 };
 
 export type QueryProductOptionGroupsArgs = {
   filterTerm?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QueryProductOptionsArgs = {
+  groupId?: InputMaybe<Scalars['ID']['input']>;
+  options?: InputMaybe<ProductOptionListOptions>;
 };
 
 export type QueryProductVariantArgs = {
@@ -6682,6 +6736,10 @@ export type QueryShippingMethodArgs = {
 
 export type QueryShippingMethodsArgs = {
   options?: InputMaybe<ShippingMethodListOptions>;
+};
+
+export type QuerySlugForEntityArgs = {
+  input: SlugForEntityInput;
 };
 
 export type QueryStockAdjustmentsArgs = {
@@ -7403,6 +7461,13 @@ export type SinglePrice = {
   value: Scalars['Money']['output'];
 };
 
+export type SlugForEntityInput = {
+  entityId?: InputMaybe<Scalars['ID']['input']>;
+  entityName: Scalars['String']['input'];
+  fieldName: Scalars['String']['input'];
+  inputValue: Scalars['String']['input'];
+};
+
 export enum SortOrder {
   ASC = 'ASC',
   DESC = 'DESC',
@@ -7866,12 +7931,14 @@ export type TaxRate = Node & {
 export type TaxRateFilterParameter = {
   _and?: InputMaybe<Array<TaxRateFilterParameter>>;
   _or?: InputMaybe<Array<TaxRateFilterParameter>>;
+  categoryId?: InputMaybe<IdOperators>;
   createdAt?: InputMaybe<DateOperators>;
   enabled?: InputMaybe<BooleanOperators>;
   id?: InputMaybe<IdOperators>;
   name?: InputMaybe<StringOperators>;
   updatedAt?: InputMaybe<DateOperators>;
   value?: InputMaybe<NumberOperators>;
+  zoneId?: InputMaybe<IdOperators>;
 };
 
 export type TaxRateList = PaginatedList & {
@@ -10833,6 +10900,7 @@ export type InitiateSubscriptionPurchaseMutationVariables = Exact<{
   billingCycle: Scalars['String']['input'];
   phoneNumber: Scalars['String']['input'];
   email: Scalars['String']['input'];
+  paymentMethod?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 export type InitiateSubscriptionPurchaseMutation = {
@@ -18585,6 +18653,11 @@ export const InitiateSubscriptionPurchaseDocument = {
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
           },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'paymentMethod' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -18617,6 +18690,11 @@ export const InitiateSubscriptionPurchaseDocument = {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'email' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'paymentMethod' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'paymentMethod' } },
               },
             ],
             selectionSet: {

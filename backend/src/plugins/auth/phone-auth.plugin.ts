@@ -54,6 +54,7 @@ import { ProvisioningContextAdapter } from '../../services/provisioning/context-
     // Note: Authentication strategies are configured via config.authOptions.adminAuthenticationStrategy
     // in the configuration() hook below, not via DI providers, to keep the source of truth in one place.
   ],
+  exports: [OtpService], // Export OtpService for use by other plugins (e.g., RedisCacheService)
   configuration: (config: any) => {
     const existingStrategies = config.authOptions.adminAuthenticationStrategy ?? [];
 

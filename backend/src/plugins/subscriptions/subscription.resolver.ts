@@ -77,6 +77,7 @@ export const SUBSCRIPTION_SCHEMA = gql`
       billingCycle: String!
       phoneNumber: String!
       email: String!
+      paymentMethod: String
     ): InitiatePurchaseResult!
 
     """
@@ -146,6 +147,7 @@ export class SubscriptionResolver {
       billingCycle: string;
       phoneNumber: string;
       email: string;
+      paymentMethod?: string;
     }
   ): Promise<any> {
     // Log the received args for debugging
@@ -196,7 +198,8 @@ export class SubscriptionResolver {
       tierIdStr,
       args.billingCycle as 'monthly' | 'yearly',
       args.phoneNumber,
-      args.email
+      args.email,
+      args.paymentMethod
     );
   }
 
@@ -215,28 +218,15 @@ export class SubscriptionResolver {
       throw new Error('Channel ID required');
     }
 
-    try {
-      // Verify transaction with Paystack
-      const verification = await this.paystackService.verifyTransaction(args.reference);
+    // Use the new checkPaymentStatus method which is the single source of truth
+    // It handles: channel state check, cache, and Paystack API call
+    const result = await this.subscriptionService.checkPaymentStatus(
+      ctx,
+      String(channelId),
+      args.reference
+    );
 
-      if (verification.data.status === 'success') {
-        // Process successful payment
-        const customerCode =
-          verification.data.customer?.customer_code ||
-          (verification.data.metadata as any)?.customerCode;
-
-        await this.subscriptionService.processSuccessfulPayment(ctx, String(channelId), {
-          reference: args.reference,
-          amount: verification.data.amount,
-          customerCode: customerCode,
-        });
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      return false;
-    }
+    return result.success;
   }
 
   @Mutation()
