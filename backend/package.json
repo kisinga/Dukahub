@@ -38,6 +38,7 @@
     "@opentelemetry/semantic-conventions": "^1.28.0",
     "@vendure/admin-ui-plugin": "3.5.1",
     "@vendure/asset-server-plugin": "3.5.1",
+    "@vendure/common": "3.5.1",
     "@vendure/core": "3.5.1",
     "@vendure/create": "3.5.1",
     "@vendure/email-plugin": "3.5.1",
