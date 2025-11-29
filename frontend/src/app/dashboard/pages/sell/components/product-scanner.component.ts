@@ -18,13 +18,13 @@ import {
   BarcodeScannerService,
 } from '../../../../core/services/barcode-scanner.service';
 import { CameraService } from '../../../../core/services/camera.service';
-import type { MlModelService, ModelPrediction } from '../../../../core/services/ml-model.service';
 import { loadMlModelService } from '../../../../core/services/ml-model.loader';
+import type { MlModelService, ModelPrediction } from '../../../../core/services/ml-model.service';
 import {
   ProductSearchResult,
   ProductSearchService,
 } from '../../../../core/services/product/product-search.service';
-import { playBeep } from '../../../../core/utils/beep.utils';
+import { ScannerBeepService } from '../../../../core/services/scanner-beep.service';
 
 type ScannerStatus =
   | 'idle'
@@ -138,6 +138,7 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
   private readonly cameraService = inject(CameraService);
   private readonly barcodeService = inject(BarcodeScannerService);
   private readonly productSearchService = inject(ProductSearchService);
+  private readonly scannerBeepService = inject(ScannerBeepService);
 
   // View references
   readonly videoElement = viewChild<ElementRef<HTMLVideoElement>>('cameraView');
@@ -353,7 +354,7 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
 
       if (product) {
         // Play beep sound on successful detection (fire and forget)
-        playBeep().catch(() => {
+        this.scannerBeepService.playBeep().catch(() => {
           // Silently handle beep errors - don't interrupt detection flow
         });
         this.stopScanner();
@@ -382,7 +383,7 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
 
       if (variant) {
         // Play beep sound on successful detection (fire and forget)
-        playBeep().catch(() => {
+        this.scannerBeepService.playBeep().catch(() => {
           // Silently handle beep errors - don't interrupt detection flow
         });
         this.stopScanner();
