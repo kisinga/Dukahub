@@ -24,7 +24,7 @@ export class ScannerBeepService {
 
     // Hardware specifications matching real scanners
     private readonly FREQUENCY = 2400; // Hz - Honeywell HF680 Series default
-    private readonly DURATION = 50; // milliseconds - industry standard
+    private readonly DURATION = 1000; // milliseconds - industry standard
     private readonly VOLUME = 0.3; // Gain level (moderate, not jarring)
 
     private audioContext: AudioContext | null = null;
@@ -33,9 +33,12 @@ export class ScannerBeepService {
 
     /**
      * Play scanner beep sound with exact hardware specifications
+     *
+     * @param frequency - Frequency in Hz (default: 2400 Hz - Honeywell HF680 Series default)
+     * @param duration - Duration in milliseconds (default: 50ms - industry standard)
      * @returns Promise that resolves when beep completes or rejects if unavailable
      */
-    async playBeep(): Promise<void> {
+    async playBeep(frequency?: number, duration?: number): Promise<void> {
         // Only work in browser environment
         if (!isPlatformBrowser(this.platformId)) {
             return Promise.resolve();
@@ -51,16 +54,20 @@ export class ScannerBeepService {
             const oscillator = context.createOscillator();
             const gainNode = context.createGain();
 
-            // Configure oscillator: pure sine wave at exact scanner frequency
+            // Use provided parameters or defaults (hardware specs)
+            const beepFrequency = frequency ?? this.FREQUENCY;
+            const beepDuration = duration ?? this.DURATION;
+
+            // Configure oscillator: pure sine wave at specified frequency
             oscillator.type = 'sine';
-            oscillator.frequency.value = this.FREQUENCY;
+            oscillator.frequency.value = beepFrequency;
 
             // Configure gain: moderate volume with smooth fade-out
             gainNode.gain.setValueAtTime(this.VOLUME, context.currentTime);
             // Fade out slightly at the end for smoother sound
             gainNode.gain.exponentialRampToValueAtTime(
                 0.01,
-                context.currentTime + this.DURATION / 1000,
+                context.currentTime + beepDuration / 1000,
             );
 
             // Connect nodes: oscillator -> gain -> destination (speakers)
@@ -70,8 +77,8 @@ export class ScannerBeepService {
             // Start the oscillator
             oscillator.start(context.currentTime);
 
-            // Stop after specified duration (matching hardware spec)
-            oscillator.stop(context.currentTime + this.DURATION / 1000);
+            // Stop after specified duration
+            oscillator.stop(context.currentTime + beepDuration / 1000);
 
             // Return promise that resolves when sound finishes
             return new Promise((resolve) => {
