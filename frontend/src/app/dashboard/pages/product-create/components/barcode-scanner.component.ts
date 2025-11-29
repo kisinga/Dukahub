@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { BarcodeScannerService } from '../../../../core/services/barcode-scanner.service';
 import { CameraService } from '../../../../core/services/camera.service';
+import { ScannerBeepService } from '../../../../core/services/scanner-beep.service';
 import { TracingService } from '../../../../core/services/tracing.service';
 
 /**
@@ -181,6 +182,7 @@ import { TracingService } from '../../../../core/services/tracing.service';
 export class BarcodeScannerComponent implements OnDestroy {
   private readonly cameraService = inject(CameraService);
   private readonly barcodeService = inject(BarcodeScannerService);
+  private readonly scannerBeepService = inject(ScannerBeepService);
   private readonly tracingService = inject(TracingService, { optional: true });
 
   // View reference
@@ -334,6 +336,12 @@ export class BarcodeScannerComponent implements OnDestroy {
         (result) => {
           // Barcode detected
           this.lastScannedCode.set(result.rawValue);
+
+          // Play beep sound on successful detection (fire and forget)
+          this.scannerBeepService.playBeep().catch(() => {
+            // Silently handle beep errors - don't interrupt detection flow
+          });
+
           this.barcodeScanned.emit(result.rawValue);
           if (this.scannerSpan) {
             this.tracingService?.setAttributes(this.scannerSpan, {
