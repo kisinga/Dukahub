@@ -88,15 +88,6 @@ services:
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-info}
 
-      # SigNoz Observability Configuration (Backend)
-      # Connects to signoz-otel-collector service for sending traces/metrics/logs
-      SIGNOZ_ENABLED: ${SIGNOZ_ENABLED:-false}
-      SIGNOZ_HOST: ${SIGNOZ_HOST:-signoz-otel-collector}
-      SIGNOZ_OTLP_GRPC_PORT: ${SIGNOZ_OTLP_GRPC_PORT:-4317}
-      SIGNOZ_OTLP_HTTP_PORT: ${SIGNOZ_OTLP_HTTP_PORT:-4318}
-      SIGNOZ_SERVICE_NAME: ${SIGNOZ_SERVICE_NAME:-dukarun-backend}
-      SIGNOZ_SERVICE_VERSION: ${SIGNOZ_SERVICE_VERSION:-2.0.0}
-
     volumes:
       - backend_assets:/app/static/assets
       - backend_uploads:/app/static/uploads
@@ -130,15 +121,6 @@ services:
       # Additional frontend configuration
       NODE_ENV: ${NODE_ENV:-production}
 
-      # SigNoz Observability Configuration (Frontend)
-      # SIGNOZ_HOST/PORT used by nginx to proxy /signoz/ requests to OTel collector
-      # SIGNOZ_ENDPOINT is the browser-side path (proxied via nginx)
-      ENABLE_TRACING: ${ENABLE_TRACING:-false}
-      SIGNOZ_HOST: ${SIGNOZ_HOST:-signoz-otel-collector}
-      SIGNOZ_PORT: ${SIGNOZ_OTLP_HTTP_PORT:-4318}
-      SIGNOZ_ENDPOINT: ${SIGNOZ_ENDPOINT:-/signoz/v1/traces}
-      SERVICE_NAME: ${SIGNOZ_SERVICE_NAME:-dukarun-frontend}
-      SERVICE_VERSION: ${SIGNOZ_SERVICE_VERSION:-2.0.0}
     ports:
       - '${FRONTEND_PORT:-4200}:4200'
     depends_on:
