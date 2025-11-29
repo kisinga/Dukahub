@@ -193,9 +193,18 @@ export class SubscriptionService {
         fetchPolicy: 'network-only',
       });
 
+      // Check for GraphQL errors first
+      if (result.error) {
+        const errorMessage = result.error.message || 'Unknown error';
+        console.warn('GraphQL error when checking subscription status:', errorMessage);
+        return null;
+      }
+
       const status = (result.data?.checkSubscriptionStatus ?? null) as SubscriptionStatus | null;
       if (!status) {
-        throw new Error('Subscription status unavailable');
+        // Status is null but no GraphQL errors - log warning and return null gracefully
+        console.warn('Subscription status unavailable for channel:', targetChannelId);
+        return null;
       }
 
       // Update cache
@@ -226,6 +235,7 @@ export class SubscriptionService {
     billingCycle: 'monthly' | 'yearly',
     phoneNumber: string,
     email: string,
+    paymentMethod?: string,
   ): Promise<{
     success: boolean;
     reference?: string;
@@ -236,20 +246,73 @@ export class SubscriptionService {
       this.isProcessingPaymentSignal.set(true);
       this.errorSignal.set(null);
 
+      // Log the tierId being passed for debugging
+      console.log(
+        '[SubscriptionService] initiatePurchase called with tierId:',
+        tierId,
+        'type:',
+        typeof tierId,
+      );
+
+      // Validate tier ID exists
+      if (!tierId) {
+        console.error('[SubscriptionService] Invalid tierId provided: null or undefined');
+        throw new Error('Invalid subscription tier ID: missing ID');
+      }
+
+      // Validate tier ID is not "-1"
+      const tierIdStr = String(tierId).trim();
+      if (tierIdStr === '-1') {
+        console.error('[SubscriptionService] Invalid tierId provided: -1', {
+          tierId,
+          tierIdStr,
+          type: typeof tierId,
+        });
+        const error = new Error('Invalid subscription tier ID: "-1" is not a valid tier ID');
+        this.errorSignal.set(error.message);
+        throw error;
+      }
+
+      // Validate tier ID is a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(tierIdStr)) {
+        console.error(
+          `[SubscriptionService] Invalid tierId format provided: ${tierId} (type: ${typeof tierId})`,
+        );
+        const error = new Error(
+          `Invalid subscription tier ID format: "${tierId}" is not a valid UUID`,
+        );
+        this.errorSignal.set(error.message);
+        throw error;
+      }
+
       const channelId = this.companyService.activeCompanyId();
       if (!channelId) {
         throw new Error('No active channel');
       }
 
+      // Final safety check before GraphQL call - ensure tierId is valid
+      if (!tierIdStr || tierIdStr === '-1' || !uuidRegex.test(tierIdStr)) {
+        console.error(
+          '[SubscriptionService] CRITICAL: Invalid tierId passed validation but reached GraphQL call:',
+          tierIdStr,
+        );
+        const error = new Error('Invalid subscription tier ID: validation failed');
+        this.errorSignal.set(error.message);
+        throw error;
+      }
+
+      console.log('[SubscriptionService] Calling GraphQL with valid tierId:', tierIdStr);
       const client = this.apolloService.getClient();
       const result = await client.mutate<InitiateSubscriptionPurchaseMutation>({
         mutation: INITIATE_SUBSCRIPTION_PURCHASE,
         variables: {
           channelId,
-          tierId,
+          tierId: tierIdStr, // Use the validated string version
           billingCycle,
           phoneNumber,
           email,
+          paymentMethod: paymentMethod || undefined,
         },
       });
 

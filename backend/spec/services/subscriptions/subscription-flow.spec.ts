@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Channel, ChannelService, RequestContext } from '@vendure/core';
 import { ChannelEventRouterService } from '../../../src/infrastructure/events/channel-event-router.service';
 import { ChannelEventType } from '../../../src/infrastructure/events/types/event-type.enum';
+import { RedisCacheService } from '../../../src/infrastructure/storage/redis-cache.service';
 import { PaystackService } from '../../../src/services/payments/paystack.service';
 import { SubscriptionService } from '../../../src/services/subscriptions/subscription.service';
 
@@ -20,7 +21,9 @@ describe('Subscription Flow Integration', () => {
   let mockChannelService: jest.Mocked<ChannelService>;
   let mockPaystackService: jest.Mocked<PaystackService>;
   let mockEventRouter: jest.Mocked<ChannelEventRouterService>;
+  let mockRedisCache: jest.Mocked<RedisCacheService>;
   let mockConnection: any;
+  const TEST_TIER_ID = '00000000-0000-0000-0000-000000000001';
 
   beforeEach(() => {
     // Mock ChannelService
@@ -39,7 +42,15 @@ describe('Subscription Flow Integration', () => {
 
     // Mock EventRouter
     mockEventRouter = {
-      routeEvent: jest.fn(async () => { }),
+      routeEvent: jest.fn(async () => {}),
+    } as any;
+
+    // Mock RedisCacheService
+    mockRedisCache = {
+      get: jest.fn(async () => null),
+      set: jest.fn(async () => {}),
+      delete: jest.fn(async () => {}),
+      exists: jest.fn(async () => false),
     } as any;
 
     // Mock TransactionalConnection
@@ -47,11 +58,12 @@ describe('Subscription Flow Integration', () => {
       rawConnection: {
         getRepository: jest.fn(() => ({
           findOne: jest.fn((options?: any) => {
-            // Handle both { where: { id: 'tier-1' } } and direct id
-            const id = options?.where?.id || options?.id || 'tier-1';
-            if (id === 'tier-1') {
+            // Handle both { where: { id: TEST_TIER_ID } } and direct id
+            const id = options?.where?.id || options?.id || TEST_TIER_ID;
+            // Support both TEST_TIER_ID (UUID) and 'tier-1' for backward compatibility with customFields
+            if (id === TEST_TIER_ID || id === 'tier-1') {
               return Promise.resolve({
-                id: 'tier-1',
+                id: id, // Return the same id that was queried
                 priceMonthly: 10000,
                 priceYearly: 100000,
               });
@@ -67,7 +79,8 @@ describe('Subscription Flow Integration', () => {
       mockChannelService,
       mockConnection,
       mockPaystackService,
-      mockEventRouter
+      mockEventRouter,
+      mockRedisCache
     );
   });
 
@@ -230,30 +243,80 @@ describe('Subscription Flow Integration', () => {
 
   describe('Email Fallback', () => {
     it('should use placeholder email when email is not provided', async () => {
+      // Clear all mocks to ensure clean state
+      jest.clearAllMocks();
+
       const channelId = '1';
       const phoneNumber = '+254712345678';
       const mockChannel: Channel = {
         id: channelId,
-        customFields: {},
+        customFields: {}, // Ensure no paystackCustomerCode exists
       } as any;
 
       mockChannelService.findOne.mockResolvedValue(mockChannel);
       mockPaystackService.createCustomer.mockResolvedValue({
         data: { customer_code: 'cust-123' },
       } as any);
+      // Mock chargeMobile to return a valid STK push response
       mockPaystackService.chargeMobile.mockResolvedValue({
-        data: { reference: 'ref-123' },
+        data: { reference: 'ref-123', status: 'pending' },
       } as any);
       mockChannelService.update.mockResolvedValue(mockChannel);
 
-      await subscriptionService.initiatePurchase(
+      const result = await subscriptionService.initiatePurchase(
         ctx,
         channelId,
-        'tier-1',
+        TEST_TIER_ID,
         'monthly',
         phoneNumber,
         '' // Empty email
       );
+
+      // Verify the method completed successfully
+      expect(result.success).toBe(true);
+
+      // Verify Paystack was called with placeholder email
+      expect(mockPaystackService.createCustomer).toHaveBeenCalledWith(
+        '254712345678@placeholder.dukarun.com',
+        undefined,
+        undefined,
+        phoneNumber,
+        expect.any(Object)
+      );
+    });
+
+    it('should use placeholder email when email is undefined', async () => {
+      // Clear all mocks to ensure clean state
+      jest.clearAllMocks();
+
+      const channelId = '1';
+      const phoneNumber = '+254712345678';
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {}, // Ensure no paystackCustomerCode exists
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+      mockPaystackService.createCustomer.mockResolvedValue({
+        data: { customer_code: 'cust-123' },
+      } as any);
+      // Mock chargeMobile to return a valid STK push response
+      mockPaystackService.chargeMobile.mockResolvedValue({
+        data: { reference: 'ref-123', status: 'pending' },
+      } as any);
+      mockChannelService.update.mockResolvedValue(mockChannel);
+
+      const result = await subscriptionService.initiatePurchase(
+        ctx,
+        channelId,
+        TEST_TIER_ID,
+        'monthly',
+        phoneNumber,
+        undefined as any // Undefined email
+      );
+
+      // Verify the method completed successfully
+      expect(result.success).toBe(true);
 
       // Verify Paystack was called with placeholder email
       expect(mockPaystackService.createCustomer).toHaveBeenCalledWith(

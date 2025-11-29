@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AdminManagementComponent } from './components/admin-management.component';
 import { AuditTrailComponent } from './components/audit-trail.component';
 import { GeneralSettingsComponent } from './components/general-settings.component';
@@ -7,6 +8,8 @@ import { MlModelStatusComponent } from './components/ml-model-status.component';
 import { NotificationSettingsComponent } from './components/notification-settings.component';
 import { NotificationTestComponent } from './components/notification-test.component';
 import { PaymentMethodsComponent } from './components/payment-methods.component';
+import { SubscriptionStatusComponent } from './components/subscription-status.component';
+import { SubscriptionTiersComponent } from './components/subscription-tiers.component';
 
 @Component({
   selector: 'app-settings',
@@ -19,6 +22,8 @@ import { PaymentMethodsComponent } from './components/payment-methods.component'
     NotificationSettingsComponent,
     NotificationTestComponent,
     PaymentMethodsComponent,
+    SubscriptionStatusComponent,
+    SubscriptionTiersComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -83,6 +88,14 @@ import { PaymentMethodsComponent } from './components/payment-methods.component'
           [checked]="activeTab() === 'audit-trail'"
           (change)="setActiveTab('audit-trail')"
         />
+        <input
+          type="radio"
+          name="settings_tabs"
+          class="tab"
+          aria-label="Subscription"
+          [checked]="activeTab() === 'subscription'"
+          (change)="setActiveTab('subscription')"
+        />
       </div>
 
       <!-- Tab Content -->
@@ -108,11 +121,20 @@ import { PaymentMethodsComponent } from './components/payment-methods.component'
         @case ('audit-trail') {
           <app-audit-trail />
         }
+        @case ('subscription') {
+          <div class="space-y-6">
+            <app-subscription-status />
+            <app-subscription-tiers />
+          </div>
+        }
       }
     </div>
   `,
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnInit {
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
   readonly activeTab = signal<
     | 'general'
     | 'ml-model'
@@ -121,7 +143,31 @@ export class SettingsComponent {
     | 'admins'
     | 'payments'
     | 'audit-trail'
+    | 'subscription'
   >('general');
+
+  ngOnInit() {
+    // Read query parameters to set active tab
+    this.route.queryParams.subscribe((params) => {
+      if (params['tab']) {
+        const tab = params['tab'] as string;
+        if (
+          [
+            'general',
+            'ml-model',
+            'notifications',
+            'test-notifications',
+            'admins',
+            'payments',
+            'audit-trail',
+            'subscription',
+          ].includes(tab)
+        ) {
+          this.activeTab.set(tab as any);
+        }
+      }
+    });
+  }
 
   setActiveTab(
     tab:
@@ -131,8 +177,15 @@ export class SettingsComponent {
       | 'test-notifications'
       | 'admins'
       | 'payments'
-      | 'audit-trail',
+      | 'audit-trail'
+      | 'subscription',
   ): void {
     this.activeTab.set(tab);
+    // Update URL query params
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab },
+      queryParamsHandling: 'merge',
+    });
   }
 }

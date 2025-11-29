@@ -25,6 +25,7 @@ import { ChannelEventType } from '../../infrastructure/events/types/event-type.e
 import { ActionCategory } from '../../infrastructure/events/types/action-category.enum';
 import { ChannelActionType } from '../../infrastructure/events/types/action-type.enum';
 import { ROLE_TEMPLATES, RoleTemplate } from '../auth/provisioning/role-provisioner.service';
+import { SmsService } from '../../infrastructure/sms/sms.service';
 
 export interface ChannelSettings {
   cashierFlowEnabled: boolean;
@@ -72,7 +73,8 @@ export class ChannelSettingsService {
     private readonly roleService: RoleService,
     private readonly connection: TransactionalConnection,
     private readonly auditService: AuditService,
-    private readonly actionTrackingService: ChannelActionTrackingService
+    private readonly actionTrackingService: ChannelActionTrackingService,
+    private readonly smsService: SmsService
   ) {}
 
   async updateChannelSettings(
@@ -186,6 +188,37 @@ export class ChannelSettingsService {
   }
 
   /**
+   * Check if an administrator is a superadmin
+   * Superadmins have roles with no channel restrictions (empty or null channels array)
+   */
+  private async isSuperAdmin(ctx: RequestContext, administrator: Administrator): Promise<boolean> {
+    try {
+      if (!administrator.user) {
+        return false;
+      }
+
+      // Load user with roles and channels
+      const user = await this.connection.getRepository(ctx, User).findOne({
+        where: { id: administrator.user.id },
+        relations: ['roles', 'roles.channels'],
+      });
+
+      if (!user || !user.roles) {
+        return false;
+      }
+
+      // Check if user has any role with no channel restrictions
+      // Superadmins have roles with empty or null channels array
+      return user.roles.some(role => !role.channels || role.channels.length === 0);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to check if administrator is superadmin: ${error instanceof Error ? error.message : String(error)}`
+      );
+      return false;
+    }
+  }
+
+  /**
    * Check admin count rate limit
    */
   private async checkAdminCountLimit(ctx: RequestContext): Promise<void> {
@@ -219,8 +252,125 @@ export class ChannelSettingsService {
   }
 
   /**
+   * Find existing user by phone number (identifier)
+   */
+  private async findExistingUserByPhone(
+    ctx: RequestContext,
+    phoneNumber: string
+  ): Promise<User | null> {
+    try {
+      const user = await this.connection.getRepository(ctx, User).findOne({
+        where: { identifier: phoneNumber },
+        relations: ['roles', 'roles.channels'],
+      });
+      return user || null;
+    } catch (error) {
+      this.logger.warn(
+        `Failed to find user by phone number: ${error instanceof Error ? error.message : String(error)}`
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Check if user belongs to a specific channel
+   */
+  private userBelongsToChannel(user: User, channelId: string): boolean {
+    if (!user.roles) {
+      return false;
+    }
+    return user.roles.some(role => role.channels?.some(channel => channel.id === channelId));
+  }
+
+  /**
+   * Update administrator email if existing email is blank/null and new email is provided
+   */
+  private async updateAdministratorEmailIfNeeded(
+    ctx: RequestContext,
+    administrator: Administrator,
+    newEmail: string | undefined
+  ): Promise<void> {
+    if (!newEmail || typeof newEmail !== 'string' || newEmail.trim().length === 0) {
+      return;
+    }
+
+    // Only update if current email is blank/null/empty
+    const currentEmail = administrator.emailAddress;
+    if (currentEmail && currentEmail.trim().length > 0) {
+      return; // Don't overwrite existing email
+    }
+
+    // Update email
+    administrator.emailAddress = newEmail.trim();
+    await this.connection.getRepository(ctx, Administrator).save(administrator);
+  }
+
+  /**
+   * Attach role to existing user (for multi-channel support)
+   */
+  private async attachRoleToExistingUser(
+    ctx: RequestContext,
+    user: User,
+    role: Role
+  ): Promise<User> {
+    const userRepo = this.connection.getRepository(ctx, User);
+    const userWithRoles = await userRepo.findOne({
+      where: { id: user.id },
+      relations: ['roles'],
+    });
+
+    if (!userWithRoles) {
+      throw new BadRequestException(`User ${user.id} not found`);
+    }
+
+    // Check if role is already assigned
+    if (userWithRoles.roles?.some(r => r.id === role.id)) {
+      return userWithRoles;
+    }
+
+    // Attach role directly
+    userWithRoles.roles = [...(userWithRoles.roles || []), role];
+    await userRepo.save(userWithRoles);
+
+    return userWithRoles;
+  }
+
+  /**
+   * Send welcome SMS to new administrator
+   */
+  private async sendWelcomeSms(
+    ctx: RequestContext,
+    phoneNumber: string,
+    channelId: string,
+    isExistingUser: boolean
+  ): Promise<void> {
+    try {
+      // Get channel to include company name in message
+      const channel = await this.channelService.findOne(ctx, channelId);
+      const companyName = channel?.code || 'your organization';
+
+      const message = isExistingUser
+        ? `Welcome! You've been added as an administrator to ${companyName}. You can now access the dashboard.`
+        : `Welcome to ${companyName}! You've been added as an administrator. You can now access the dashboard.`;
+
+      const result = await this.smsService.sendSms(phoneNumber, message);
+
+      if (!result.success) {
+        this.logger.warn(`Failed to send welcome SMS to ${phoneNumber}: ${result.error}`);
+        // Don't throw - SMS failure shouldn't block admin creation
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Error sending welcome SMS: ${error instanceof Error ? error.message : String(error)}`
+      );
+      // Don't throw - SMS failure shouldn't block admin creation
+    }
+  }
+
+  /**
    * Invite or create channel administrator
    * Supports both legacy email-based and new phone-based flows
+   * Handles multi-channel support: adds existing users to new channels instead of creating duplicates
    */
   async inviteChannelAdministrator(
     ctx: RequestContext,
@@ -228,6 +378,104 @@ export class ChannelSettingsService {
   ): Promise<Administrator> {
     const channelId = ctx.channelId!;
 
+    // Phone number is required
+    if (!('phoneNumber' in input) || !input.phoneNumber) {
+      throw new BadRequestException('phoneNumber is required');
+    }
+
+    // Check if user with this phone number already exists (phone is primary identifier)
+    const existingUser = await this.findExistingUserByPhone(ctx, input.phoneNumber);
+
+    if (existingUser) {
+      // User exists - check if they already belong to this channel
+      if (this.userBelongsToChannel(existingUser, channelId.toString())) {
+        throw new BadRequestException(
+          `Administrator with phone number ${input.phoneNumber} already belongs to this channel`
+        );
+      }
+
+      // User exists but belongs to different channel(s) - add them to this channel
+      // Determine role template
+      const roleTemplateCode = 'roleTemplateCode' in input ? input.roleTemplateCode : 'admin';
+      const template = roleTemplateCode ? ROLE_TEMPLATES[roleTemplateCode] : undefined;
+      if (!template) {
+        throw new BadRequestException(`Invalid role template code: ${roleTemplateCode}`);
+      }
+
+      // Merge template permissions with overrides
+      const finalPermissions =
+        'permissionOverrides' in input && input.permissionOverrides
+          ? input.permissionOverrides
+          : template.permissions;
+
+      // Create new channel-specific role
+      const roleCode = `channel-${roleTemplateCode}-${channelId}-${Date.now()}`;
+      const createRoleInput = {
+        code: roleCode,
+        description: `${template.name} role for ${input.firstName} ${input.lastName}`,
+        permissions: finalPermissions,
+        channelIds: [channelId],
+      };
+
+      const role = await this.roleService.create(ctx, createRoleInput);
+
+      // Attach role to existing user
+      await this.attachRoleToExistingUser(ctx, existingUser, role);
+
+      // Get existing administrator
+      const administrator = await this.connection.getRepository(ctx, Administrator).findOne({
+        where: { user: { id: existingUser.id } },
+      });
+
+      if (!administrator) {
+        throw new BadRequestException(
+          `Administrator not found for user with phone number ${input.phoneNumber}`
+        );
+      }
+
+      // Update email if provided and existing email is blank
+      await this.updateAdministratorEmailIfNeeded(ctx, administrator, input.emailAddress);
+
+      // Send welcome SMS
+      await this.sendWelcomeSms(ctx, input.phoneNumber, channelId.toString(), true);
+
+      // Track action and audit
+      await this.actionTrackingService.trackAction(
+        ctx,
+        channelId.toString(),
+        ChannelEventType.ADMIN_CREATED,
+        ChannelActionType.SMS,
+        ActionCategory.SYSTEM_NOTIFICATIONS,
+        {
+          adminId: administrator.id.toString(),
+          roleTemplateCode: roleTemplateCode || 'admin',
+        }
+      );
+
+      await this.auditService
+        .log(ctx, 'admin.invited', {
+          entityType: 'Administrator',
+          entityId: administrator.id.toString(),
+          data: {
+            firstName: input.firstName,
+            lastName: input.lastName,
+            phoneNumber: input.phoneNumber,
+            emailAddress: 'emailAddress' in input ? input.emailAddress : undefined,
+            roleId: role.id.toString(),
+            roleTemplateCode,
+            action: 'added_to_channel',
+          },
+        })
+        .catch(err => {
+          this.logger.warn(
+            `Failed to log admin invitation audit: ${err instanceof Error ? err.message : String(err)}`
+          );
+        });
+
+      return administrator;
+    }
+
+    // User doesn't exist - proceed with creating new administrator
     // Check rate limit
     await this.checkAdminCountLimit(ctx);
 
@@ -263,18 +511,21 @@ export class ChannelSettingsService {
       roleIds: [role.id],
     };
 
-    // Phone number is required
-    if (!('phoneNumber' in input) || !input.phoneNumber) {
-      throw new BadRequestException('phoneNumber is required');
-    }
-
     // Phone-based flow: create user with phone identifier
     createAdminInput.identifier = input.phoneNumber;
-    if (input.emailAddress) {
-      createAdminInput.emailAddress = input.emailAddress;
+    // Only set emailAddress if provided and non-empty string (prevents normalization error)
+    if (
+      input.emailAddress &&
+      typeof input.emailAddress === 'string' &&
+      input.emailAddress.trim().length > 0
+    ) {
+      createAdminInput.emailAddress = input.emailAddress.trim();
     }
 
     const administrator = await this.administratorService.create(ctx, createAdminInput);
+
+    // Send welcome SMS
+    await this.sendWelcomeSms(ctx, input.phoneNumber, channelId.toString(), false);
 
     // Track action (using SMS as placeholder action type for counting)
     await this.actionTrackingService.trackAction(
@@ -309,8 +560,6 @@ export class ChannelSettingsService {
         );
       });
 
-    // TODO: Send welcome SMS notification for new admin invitations
-
     return administrator;
   }
 
@@ -327,6 +576,12 @@ export class ChannelSettingsService {
     const administrator = await this.administratorService.findOne(ctx, input.id);
     if (!administrator) {
       throw new NotFoundException(`Administrator with ID ${input.id} not found`);
+    }
+
+    // Prevent modifying superadmins
+    const isSuper = await this.isSuperAdmin(ctx, administrator);
+    if (isSuper) {
+      throw new BadRequestException('Cannot modify superadmin profiles');
     }
 
     // Verify administrator belongs to this channel
@@ -399,6 +654,12 @@ export class ChannelSettingsService {
     const administrator = await this.administratorService.findOne(ctx, adminId);
     if (!administrator) {
       throw new NotFoundException(`Administrator with ID ${adminId} not found`);
+    }
+
+    // Prevent disabling superadmins
+    const isSuper = await this.isSuperAdmin(ctx, administrator);
+    if (isSuper) {
+      throw new BadRequestException('Cannot disable superadmin profiles');
     }
 
     // Delete administrator via repository (Vendure doesn't expose delete on AdministratorService)

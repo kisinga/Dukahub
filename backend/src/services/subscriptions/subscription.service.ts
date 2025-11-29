@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Channel, ChannelService, RequestContext, TransactionalConnection } from '@vendure/core';
-import { PaystackService } from '../payments/paystack.service';
-import { SubscriptionTier } from '../../plugins/subscriptions/subscription.entity';
 import { ChannelEventRouterService } from '../../infrastructure/events/channel-event-router.service';
-import { ChannelEventType } from '../../infrastructure/events/types/event-type.enum';
 import { ActionCategory } from '../../infrastructure/events/types/action-category.enum';
+import { ChannelEventType } from '../../infrastructure/events/types/event-type.enum';
+import { RedisCacheService } from '../../infrastructure/storage/redis-cache.service';
+import { SubscriptionTier } from '../../plugins/subscriptions/subscription.entity';
+import { PaystackService } from '../payments/paystack.service';
 
 export interface SubscriptionStatus {
   isValid: boolean;
@@ -23,16 +24,24 @@ export interface InitiatePurchaseResult {
   message?: string;
 }
 
+interface PaymentStatusCacheEntry {
+  status: 'success' | 'pending' | 'failed';
+  timestamp: number;
+}
+
 @Injectable()
 export class SubscriptionService {
   private readonly logger = new Logger(SubscriptionService.name);
   private readonly trialDays = parseInt(process.env.SUBSCRIPTION_TRIAL_DAYS || '30', 10);
+  private readonly CACHE_TTL_SECONDS = 10; // 10 seconds (for Redis SETEX)
+  private readonly CACHE_NAMESPACE = 'payment:status';
 
   constructor(
     private channelService: ChannelService,
     private connection: TransactionalConnection,
     private paystackService: PaystackService,
-    private eventRouter: ChannelEventRouterService
+    private eventRouter: ChannelEventRouterService,
+    private redisCache: RedisCacheService
   ) {}
 
   /**
@@ -171,9 +180,29 @@ export class SubscriptionService {
     tierId: string,
     billingCycle: 'monthly' | 'yearly',
     phoneNumber: string,
-    email: string
+    email: string,
+    paymentMethod?: string
   ): Promise<InitiatePurchaseResult> {
     try {
+      // Validate tierId before database query
+      if (!tierId || tierId === '-1') {
+        this.logger.warn(`Invalid tierId provided: ${tierId}`);
+        return {
+          success: false,
+          message: `Invalid subscription tier ID: "${tierId}" is not a valid tier ID`,
+        };
+      }
+
+      // Validate tierId is a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(tierId)) {
+        this.logger.warn(`Invalid tierId format provided: ${tierId}`);
+        return {
+          success: false,
+          message: `Invalid subscription tier ID format: "${tierId}" is not a valid UUID`,
+        };
+      }
+
       // Get channel and tier
       const channel = await this.channelService.findOne(ctx, channelId);
       if (!channel) {
@@ -223,7 +252,45 @@ export class SubscriptionService {
       // Generate reference
       const reference = `SUB-${channelId}-${Date.now()}`;
 
-      // Initialize transaction with STK push
+      // Route based on payment method
+      // If paymentMethod is 'checkout' or any other value (not 'mobile_money'), use checkout redirect
+      // If paymentMethod is 'mobile_money' or not specified, use STK push
+      const useCheckout = paymentMethod && paymentMethod !== 'mobile_money';
+
+      if (useCheckout) {
+        // Redirect to Paystack checkout for card and other payment methods
+        try {
+          const transactionResponse = await this.paystackService.initializeTransaction(
+            amountInKes,
+            effectiveEmail,
+            phoneNumber,
+            {
+              channelId,
+              tierId,
+              billingCycle,
+              type: 'subscription',
+              reference,
+            }
+          );
+
+          return {
+            success: true,
+            reference: transactionResponse.data.reference,
+            authorizationUrl: transactionResponse.data.authorization_url,
+            message: 'Payment link generated. Please complete payment.',
+          };
+        } catch (error) {
+          this.logger.error(
+            `Failed to initialize transaction: ${error instanceof Error ? error.message : String(error)}`
+          );
+          return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Failed to initialize payment',
+          };
+        }
+      }
+
+      // Use STK push for mobile money (default behavior)
       try {
         const chargeResponse = await this.paystackService.chargeMobile(
           amountInKes,
@@ -238,6 +305,25 @@ export class SubscriptionService {
           }
         );
 
+        // Verify that STK push was actually initiated
+        // Paystack returns various statuses when STK push is sent:
+        // - "pending": waiting for user action
+        // - "sent": STK push sent to user's phone
+        // - "pay_offline": user needs to complete payment on their phone (STK push sent)
+        // - "success": payment already completed
+        // If status indicates failure or unexpected state, fall back to payment link
+        const responseStatus = chargeResponse.data?.status?.toLowerCase();
+        const validStkStatuses = ['pending', 'sent', 'pay_offline', 'success'];
+
+        if (!responseStatus || !validStkStatuses.includes(responseStatus)) {
+          // STK push was not successfully initiated, fall back to payment link
+          this.logger.warn(
+            `STK push failed (status: ${responseStatus}), falling back to payment link`,
+            { reference, status: responseStatus }
+          );
+          throw new Error(`STK push not initiated: status ${responseStatus}`);
+        }
+
         return {
           success: true,
           reference: chargeResponse.data.reference,
@@ -245,29 +331,53 @@ export class SubscriptionService {
         };
       } catch (error) {
         // Fallback to payment link if STK push fails
-        this.logger.warn(
-          `STK push failed, falling back to payment link: ${error instanceof Error ? error.message : String(error)}`
-        );
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isTimeout = errorMessage.includes('timed out');
 
-        const transactionResponse = await this.paystackService.initializeTransaction(
-          amountInKes,
-          effectiveEmail,
-          phoneNumber,
-          {
-            channelId,
-            tierId,
-            billingCycle,
-            type: 'subscription',
+        if (isTimeout) {
+          this.logger.warn(`STK push timed out, falling back to payment link`, { reference });
+        } else {
+          this.logger.warn(`STK push failed, falling back to payment link`, {
             reference,
-          }
-        );
+            error: errorMessage,
+          });
+        }
 
-        return {
-          success: true,
-          reference: transactionResponse.data.reference,
-          authorizationUrl: transactionResponse.data.authorization_url,
-          message: 'Payment link generated. Please complete payment.',
-        };
+        // Attempt to generate payment link as fallback
+        try {
+          const transactionResponse = await this.paystackService.initializeTransaction(
+            amountInKes,
+            effectiveEmail,
+            phoneNumber,
+            {
+              channelId,
+              tierId,
+              billingCycle,
+              type: 'subscription',
+              reference,
+            }
+          );
+
+          return {
+            success: true,
+            reference: transactionResponse.data.reference,
+            authorizationUrl: transactionResponse.data.authorization_url,
+            message: 'Payment link generated. Please complete payment.',
+          };
+        } catch (fallbackError) {
+          // If fallback also fails, return error
+          const fallbackErrorMessage =
+            fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+          this.logger.error(`Both STK push and payment link generation failed`, {
+            reference,
+            originalError: errorMessage,
+            fallbackError: fallbackErrorMessage,
+          });
+          return {
+            success: false,
+            message: `Payment initiation failed. Please try again or contact support.`,
+          };
+        }
       }
     } catch (error) {
       this.logger.error(
@@ -382,6 +492,134 @@ export class SubscriptionService {
   }
 
   /**
+   * Check payment status for a transaction reference
+   * This is the single source of truth for payment verification
+   *
+   * Flow:
+   * 1. Check channel state - if subscription already active (webhook processed), return success
+   * 2. Check cache - if recently verified (within TTL), return cached result
+   * 3. Call Paystack - if status unknown, verify with Paystack API
+   * 4. Cache result and return
+   */
+  async checkPaymentStatus(
+    ctx: RequestContext,
+    channelId: string,
+    reference: string
+  ): Promise<{ success: boolean; status: 'success' | 'pending' | 'failed'; message?: string }> {
+    try {
+      // Step 1: Check channel state first (webhook may have already processed payment)
+      const channel = await this.channelService.findOne(ctx, channelId);
+      if (channel) {
+        const customFields = channel.customFields as any;
+        const subscriptionStatus = customFields.subscriptionStatus;
+        const lastPaymentDate = customFields.lastPaymentDate;
+
+        // If subscription is active and payment was recent (within last 5 minutes), likely this payment
+        if (subscriptionStatus === 'active' && lastPaymentDate) {
+          const paymentDate = new Date(lastPaymentDate);
+          const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+          if (paymentDate > fiveMinutesAgo) {
+            return { success: true, status: 'success', message: 'Payment already processed' };
+          }
+        }
+      }
+
+      // Step 2: Check cache
+      const cached = await this.redisCache.get<PaymentStatusCacheEntry>(
+        this.CACHE_NAMESPACE,
+        reference
+      );
+      if (cached) {
+        // Check if cache entry is still valid (within TTL)
+        const age = Date.now() - cached.timestamp;
+        const ageSeconds = age / 1000;
+        if (ageSeconds < this.CACHE_TTL_SECONDS) {
+          return {
+            success: cached.status === 'success',
+            status: cached.status,
+            message: cached.status === 'success' ? 'Payment verified' : 'Payment pending',
+          };
+        }
+        // Cache entry expired, will be handled by Redis TTL or fallback cleanup
+      }
+
+      // Step 3: Verify with Paystack API
+      const verification = await this.paystackService.verifyTransaction(reference);
+
+      let status: 'success' | 'pending' | 'failed';
+      let success = false;
+
+      if (verification.data.status === 'success') {
+        status = 'success';
+        success = true;
+
+        // Process successful payment
+        const customerCode =
+          verification.data.customer?.customer_code ||
+          (verification.data.metadata as any)?.customerCode;
+
+        await this.processSuccessfulPayment(ctx, channelId, {
+          reference,
+          amount: verification.data.amount,
+          customerCode: customerCode,
+        });
+      } else if (verification.data.status === 'pending' || verification.data.status === 'sent') {
+        status = 'pending';
+        success = false;
+      } else {
+        status = 'failed';
+        success = false;
+        this.logger.warn(
+          `Payment ${reference} verification failed with status: ${verification.data.status}`
+        );
+      }
+
+      // Step 4: Cache result
+      await this.redisCache.set(
+        this.CACHE_NAMESPACE,
+        reference,
+        {
+          status,
+          timestamp: Date.now(),
+        },
+        this.CACHE_TTL_SECONDS
+      );
+
+      return {
+        success,
+        status,
+        message: success
+          ? 'Payment verified successfully'
+          : status === 'pending'
+            ? 'Payment is pending'
+            : 'Payment verification failed',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error checking payment status for ${reference}: ${error instanceof Error ? error.message : String(error)}`
+      );
+
+      // Cache failure to prevent repeated API calls
+      await this.redisCache.set(
+        this.CACHE_NAMESPACE,
+        reference,
+        {
+          status: 'failed',
+          timestamp: Date.now(),
+        },
+        this.CACHE_TTL_SECONDS
+      );
+
+      return {
+        success: false,
+        status: 'failed',
+        message: error instanceof Error ? error.message : 'Failed to verify payment',
+      };
+    }
+  }
+
+  /**
    * Handle expired subscription
    */
   async handleExpiredSubscription(ctx: RequestContext, channelId: string): Promise<void> {
@@ -423,15 +661,186 @@ export class SubscriptionService {
    * Get subscription tier
    */
   async getSubscriptionTier(tierId: string): Promise<SubscriptionTier | null> {
+    if (!tierId || tierId === '-1') {
+      return null;
+    }
     const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
     return tierRepo.findOne({ where: { id: tierId } });
   }
 
   /**
-   * Get all active subscription tiers
+   * Get channel subscription details including tier
+   */
+  async getChannelSubscription(
+    ctx: RequestContext,
+    channelId: string
+  ): Promise<{
+    tier: SubscriptionTier | null;
+    status: string;
+    trialEndsAt?: Date;
+    subscriptionStartedAt?: Date;
+    subscriptionExpiresAt?: Date;
+    billingCycle?: string;
+    lastPaymentDate?: Date;
+    lastPaymentAmount?: number;
+  }> {
+    const channel = await this.channelService.findOne(ctx, channelId);
+    if (!channel) {
+      throw new Error(`Channel ${channelId} not found`);
+    }
+
+    const customFields = channel.customFields as any;
+    const subscriptionTierRef = customFields.subscriptionTier ?? null;
+    const tierId =
+      (typeof subscriptionTierRef === 'string' && subscriptionTierRef) ||
+      (typeof subscriptionTierRef === 'object' && subscriptionTierRef?.id) ||
+      customFields.subscriptionTierId ||
+      customFields.subscriptionTierId?.id ||
+      customFields.subscriptiontierid ||
+      null;
+
+    // Get tier if tierId exists and is valid (not "-1")
+    let tier: SubscriptionTier | null = null;
+    if (tierId && tierId !== '-1') {
+      tier = await this.getSubscriptionTier(tierId);
+    }
+
+    return {
+      tier: tier || null,
+      status: customFields.subscriptionStatus || 'trial',
+      trialEndsAt: customFields.trialEndsAt ? new Date(customFields.trialEndsAt) : undefined,
+      subscriptionStartedAt: customFields.subscriptionStartedAt
+        ? new Date(customFields.subscriptionStartedAt)
+        : undefined,
+      subscriptionExpiresAt: customFields.subscriptionExpiresAt
+        ? new Date(customFields.subscriptionExpiresAt)
+        : undefined,
+      billingCycle: customFields.billingCycle || undefined,
+      lastPaymentDate: customFields.lastPaymentDate
+        ? new Date(customFields.lastPaymentDate)
+        : undefined,
+      lastPaymentAmount: customFields.lastPaymentAmount || undefined,
+    };
+  }
+
+  /**
+   * Get all subscription tiers (active and inactive)
    */
   async getAllSubscriptionTiers(): Promise<SubscriptionTier[]> {
     const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
-    return tierRepo.find({ where: { isActive: true }, order: { priceMonthly: 'ASC' } });
+    return tierRepo.find({ order: { priceMonthly: 'ASC' } });
+  }
+
+  /**
+   * Create a new subscription tier
+   */
+  async createSubscriptionTier(
+    ctx: RequestContext,
+    input: {
+      code: string;
+      name: string;
+      description?: string;
+      priceMonthly: number;
+      priceYearly: number;
+      features?: any;
+      isActive?: boolean;
+    }
+  ): Promise<SubscriptionTier> {
+    const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
+
+    // Check if code already exists
+    const existing = await tierRepo.findOne({ where: { code: input.code } });
+    if (existing) {
+      throw new Error(`Subscription tier with code "${input.code}" already exists`);
+    }
+
+    const tier = tierRepo.create({
+      code: input.code,
+      name: input.name,
+      description: input.description ?? undefined,
+      priceMonthly: input.priceMonthly,
+      priceYearly: input.priceYearly,
+      features: input.features || { features: [] },
+      isActive: input.isActive !== undefined ? input.isActive : true,
+    });
+
+    const saved = await tierRepo.save(tier);
+    this.logger.log(`Created subscription tier: ${saved.code} (${saved.name})`);
+    return saved;
+  }
+
+  /**
+   * Update an existing subscription tier
+   */
+  async updateSubscriptionTier(
+    ctx: RequestContext,
+    input: {
+      id: string;
+      code?: string;
+      name?: string;
+      description?: string;
+      priceMonthly?: number;
+      priceYearly?: number;
+      features?: any;
+      isActive?: boolean;
+    }
+  ): Promise<SubscriptionTier> {
+    const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
+
+    const tier = await tierRepo.findOne({ where: { id: input.id } });
+    if (!tier) {
+      throw new Error(`Subscription tier with ID "${input.id}" not found`);
+    }
+
+    // Check if code is being changed and if new code already exists
+    if (input.code && input.code !== tier.code) {
+      const existing = await tierRepo.findOne({ where: { code: input.code } });
+      if (existing) {
+        throw new Error(`Subscription tier with code "${input.code}" already exists`);
+      }
+      tier.code = input.code;
+    }
+
+    if (input.name !== undefined) {
+      tier.name = input.name;
+    }
+    if (input.description !== undefined) {
+      tier.description = input.description;
+    }
+    if (input.priceMonthly !== undefined) {
+      tier.priceMonthly = input.priceMonthly;
+    }
+    if (input.priceYearly !== undefined) {
+      tier.priceYearly = input.priceYearly;
+    }
+    if (input.features !== undefined) {
+      tier.features = input.features;
+    }
+    if (input.isActive !== undefined) {
+      tier.isActive = input.isActive;
+    }
+
+    const saved = await tierRepo.save(tier);
+    this.logger.log(`Updated subscription tier: ${saved.code} (${saved.name})`);
+    return saved;
+  }
+
+  /**
+   * Delete a subscription tier (soft delete by setting isActive=false)
+   */
+  async deleteSubscriptionTier(ctx: RequestContext, id: string): Promise<boolean> {
+    const tierRepo = this.connection.rawConnection.getRepository(SubscriptionTier);
+
+    const tier = await tierRepo.findOne({ where: { id } });
+    if (!tier) {
+      throw new Error(`Subscription tier with ID "${id}" not found`);
+    }
+
+    // Soft delete by setting isActive to false
+    tier.isActive = false;
+    await tierRepo.save(tier);
+
+    this.logger.log(`Deleted (deactivated) subscription tier: ${tier.code} (${tier.name})`);
+    return true;
   }
 }

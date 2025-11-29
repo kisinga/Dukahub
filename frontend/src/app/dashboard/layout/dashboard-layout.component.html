@@ -443,6 +443,7 @@
             <li>
               <a
                 [routerLink]="item.route"
+                [queryParams]="item.queryParams"
                 routerLinkActive="active"
                 [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
                 (click)="closeDrawer()"

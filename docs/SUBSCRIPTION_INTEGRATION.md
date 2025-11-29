@@ -19,10 +19,12 @@ This document describes the Paystack subscription and payment flow integration f
 #### Backend
 
 1. **SubscriptionTier Entity** (`backend/src/plugins/subscription.entity.ts`)
+
    - Stores subscription tier definitions
    - Fields: code, name, description, priceMonthly, priceYearly, features, isActive
 
 2. **Channel Custom Fields**
+
    - `subscriptionTierId` - Current tier
    - `subscriptionStatus` - "trial" | "active" | "expired" | "cancelled"
    - `trialEndsAt` - Trial end date
@@ -35,14 +37,17 @@ This document describes the Paystack subscription and payment flow integration f
    - `lastPaymentAmount` - Last payment amount in cents
 
 3. **PaystackService** (`backend/src/services/payments/paystack.service.ts`)
+
    - Handles Paystack API integration
    - Methods: initializeTransaction, chargeMobile (STK push), verifyTransaction, createCustomer, etc.
 
 4. **SubscriptionService** (`backend/src/plugins/subscription.service.ts`)
+
    - Business logic for subscriptions
    - Methods: checkSubscriptionStatus, initiatePurchase, processSuccessfulPayment, etc.
 
 5. **SubscriptionWebhookController** (`backend/src/plugins/subscription-webhook.controller.ts`)
+
    - Handles Paystack webhook callbacks
    - Endpoint: `POST /webhooks/paystack`
    - Events: charge.success, subscription.create, subscription.disable, subscription.not_renew
@@ -55,14 +60,17 @@ This document describes the Paystack subscription and payment flow integration f
 #### Frontend
 
 1. **SubscriptionService** (`frontend/src/app/core/services/subscription.service.ts`)
+
    - Angular service for subscription management
    - Provides signals for subscription status, tiers, etc.
 
 2. **SubscriptionStatusComponent** (`frontend/src/app/dashboard/pages/settings/components/subscription-status.component.ts`)
+
    - Displays subscription status and trial information
    - Shows renewal options
 
 3. **PaymentModalComponent** (`frontend/src/app/dashboard/pages/settings/components/payment-modal.component.ts`)
+
    - Modal for subscription purchase
    - Handles billing cycle selection and payment initiation
 
@@ -77,6 +85,7 @@ This document describes the Paystack subscription and payment flow integration f
 **Paystack Environment Variables:** See [Paystack Environment Variables](../INFRASTRUCTURE.md#payment-provider-configuration-paystack) in INFRASTRUCTURE.md for complete setup instructions.
 
 Required variables:
+
 - `PAYSTACK_SECRET_KEY` - Paystack secret key
 - `PAYSTACK_PUBLIC_KEY` - Paystack public key
 - `PAYSTACK_WEBHOOK_SECRET` - Webhook secret (recommended)
@@ -87,12 +96,14 @@ Required variables:
 **Environment Variables**: See [Paystack Environment Variables](../INFRASTRUCTURE.md#payment-provider-configuration-paystack) in INFRASTRUCTURE.md for complete setup.
 
 1. **Get API Keys**
+
    - Log in to Paystack dashboard
    - Navigate to Settings → API Keys & Webhooks
    - Copy Secret Key and Public Key
    - Add to `.env` as `PAYSTACK_SECRET_KEY` and `PAYSTACK_PUBLIC_KEY`
 
 2. **Configure Webhook**
+
    - In Paystack dashboard, go to Settings → Webhooks
    - Add webhook URL: `https://your-domain.com/webhooks/paystack`
    - **Important**: Webhook URL must be publicly accessible
@@ -117,8 +128,9 @@ This will:
 
 - Create `subscription_tier` table
 - Add subscription custom fields to `channel` table
-- Seed default subscription tier (Basic Plan)
 - Set existing channels to trial status
+
+**Note**: Subscription tiers must be created manually using the `createSubscriptionTier` GraphQL mutation. See [subscription_tiers.gql.md](./subscription_tiers.gql.md) for example mutations.
 
 ### 4. Run Code Generation (Frontend)
 
@@ -143,6 +155,7 @@ npm run codegen
 See [Paystack Environment Variables](../INFRASTRUCTURE.md#payment-provider-configuration-paystack) in INFRASTRUCTURE.md for complete setup.
 
 Required variables:
+
 - `PAYSTACK_SECRET_KEY` - Paystack secret key
 - `PAYSTACK_PUBLIC_KEY` - Paystack public key
 - `PAYSTACK_WEBHOOK_SECRET` - Webhook secret (recommended for security)
@@ -161,6 +174,7 @@ Required variables:
 - **Signature Verification**: HMAC SHA512 using `PAYSTACK_WEBHOOK_SECRET`
 
 **Setup Steps:**
+
 1. Paystack dashboard → Settings → Webhooks
 2. Add webhook URL
 3. Select required events
@@ -200,6 +214,7 @@ When calling `chargeMobile()` or `initializeTransaction()`, metadata must includ
 - `type` (string, required) - Must be "subscription" for webhook filtering
 
 **Optional Fields:**
+
 - `customerCode` - Paystack customer code
 - `subscriptionCode` - Paystack subscription code
 
@@ -276,13 +291,16 @@ When subscription expires:
 ### Local Testing with Paystack Test Mode
 
 1. **Set up test environment**:
+
    - Use Paystack test keys in `.env`: `sk_test_xxx` and `pk_test_xxx`
    - Set `PAYSTACK_WEBHOOK_SECRET` to test webhook secret
 
 2. **Set up ngrok for webhook testing**:
+
    ```bash
    ngrok http 3000
    ```
+
    - Copy the ngrok HTTPS URL (e.g., `https://abc123.ngrok.io`)
    - Update Paystack webhook URL to: `https://abc123.ngrok.io/webhooks/paystack`
 
@@ -408,10 +426,12 @@ Future enhancements:
 ## Security Considerations
 
 1. **Webhook Signature Verification**
+
    - Always verify webhook signatures
    - Never trust webhook data without verification
 
 2. **API Key Security**
+
    - Store keys in environment variables
    - Never commit keys to version control
    - Use different keys for test/production

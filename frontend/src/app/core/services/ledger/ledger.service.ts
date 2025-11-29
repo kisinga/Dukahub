@@ -2,10 +2,10 @@ import { Injectable, inject, signal } from '@angular/core';
 import { ApolloService } from '../apollo.service';
 import { map, catchError, of, from } from 'rxjs';
 import {
-  GET_LEDGER_ACCOUNTS,
-  GET_JOURNAL_ENTRIES,
-  GET_JOURNAL_ENTRY,
-} from '../../graphql/operations.graphql';
+  GetLedgerAccountsDocument,
+  GetJournalEntriesDocument,
+  GetJournalEntryDocument,
+} from '../../graphql/generated/graphql';
 
 export interface LedgerAccount {
   id: string;
@@ -14,6 +14,8 @@ export interface LedgerAccount {
   type: string;
   isActive: boolean;
   balance: number;
+  parentAccountId?: string | null;
+  isParent: boolean;
 }
 
 export interface JournalLine {
@@ -57,12 +59,11 @@ export class LedgerService {
   readonly error = signal<string | null>(null);
 
   loadAccounts() {
-    this.isLoading.set(true);
     this.error.set(null);
 
     const client = this.apolloService.getClient();
     const queryPromise = client.query<{ ledgerAccounts: { items: LedgerAccount[] } }>({
-      query: GET_LEDGER_ACCOUNTS as any,
+      query: GetLedgerAccountsDocument,
       fetchPolicy: 'network-only',
     });
 
@@ -70,29 +71,27 @@ export class LedgerService {
       map((result) => {
         if (result.data) {
           this.accounts.set(result.data.ledgerAccounts.items);
-          this.isLoading.set(false);
           return result.data.ledgerAccounts.items;
         }
-        this.isLoading.set(false);
+        this.accounts.set([]);
         return [];
       }),
       catchError((err) => {
         this.error.set(err.message || 'Failed to load accounts');
-        this.isLoading.set(false);
+        this.accounts.set([]);
         return of([]);
       }),
     );
   }
 
   loadJournalEntries(options?: JournalEntriesOptions) {
-    this.isLoading.set(true);
     this.error.set(null);
 
     const client = this.apolloService.getClient();
     const queryPromise = client.query<{
       journalEntries: { items: JournalEntry[]; totalItems: number };
     }>({
-      query: GET_JOURNAL_ENTRIES as any,
+      query: GetJournalEntriesDocument,
       variables: { options },
       fetchPolicy: 'network-only',
     });
@@ -102,15 +101,16 @@ export class LedgerService {
         if (result.data) {
           this.entries.set(result.data.journalEntries.items);
           this.totalEntries.set(result.data.journalEntries.totalItems);
-          this.isLoading.set(false);
           return result.data.journalEntries;
         }
-        this.isLoading.set(false);
+        this.entries.set([]);
+        this.totalEntries.set(0);
         return { items: [], totalItems: 0 };
       }),
       catchError((err) => {
         this.error.set(err.message || 'Failed to load journal entries');
-        this.isLoading.set(false);
+        this.entries.set([]);
+        this.totalEntries.set(0);
         return of({ items: [], totalItems: 0 });
       }),
     );
@@ -119,7 +119,7 @@ export class LedgerService {
   getJournalEntry(id: string) {
     const client = this.apolloService.getClient();
     const queryPromise = client.query<{ journalEntry: JournalEntry | null }>({
-      query: GET_JOURNAL_ENTRY as any,
+      query: GetJournalEntryDocument,
       variables: { id },
       fetchPolicy: 'network-only',
     });

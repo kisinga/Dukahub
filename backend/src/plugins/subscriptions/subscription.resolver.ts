@@ -1,5 +1,6 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Allow, Ctx, ID, Permission, RequestContext } from '@vendure/core';
+import { Logger } from '@nestjs/common';
 import gql from 'graphql-tag';
 import { PaystackService } from '../../services/payments/paystack.service';
 import { SubscriptionService } from '../../services/subscriptions/subscription.service';
@@ -72,10 +73,11 @@ export const SUBSCRIPTION_SCHEMA = gql`
     """
     initiateSubscriptionPurchase(
       channelId: ID!
-      tierId: ID!
+      tierId: String!
       billingCycle: String!
       phoneNumber: String!
       email: String!
+      paymentMethod: String
     ): InitiatePurchaseResult!
 
     """
@@ -92,6 +94,8 @@ export const SUBSCRIPTION_SCHEMA = gql`
 
 @Resolver()
 export class SubscriptionResolver {
+  private readonly logger = new Logger(SubscriptionResolver.name);
+
   constructor(
     private subscriptionService: SubscriptionService,
     private paystackService: PaystackService
@@ -114,18 +118,8 @@ export class SubscriptionResolver {
       throw new Error('Channel ID required');
     }
 
-    // Get channel with subscription details
-    // This would require ChannelService injection - simplified for now
-    const status = await this.subscriptionService.checkSubscriptionStatus(ctx, String(channelId));
-
-    // Return subscription details
-    // In a full implementation, you'd fetch the tier and other details
-    return {
-      status: status.status,
-      trialEndsAt: status.trialEndsAt,
-      expiresAt: status.expiresAt,
-      canPerformAction: status.canPerformAction,
-    };
+    // Get channel subscription details including tier
+    return this.subscriptionService.getChannelSubscription(ctx, String(channelId));
   }
 
   @Query()
@@ -149,12 +143,18 @@ export class SubscriptionResolver {
     @Args()
     args: {
       channelId: ID;
-      tierId: ID;
+      tierId: string; // Changed from ID to string to prevent Vendure ID type coercion
       billingCycle: string;
       phoneNumber: string;
       email: string;
+      paymentMethod?: string;
     }
   ): Promise<any> {
+    // Log the received args for debugging
+    this.logger.log(
+      `initiateSubscriptionPurchase called with tierId: ${args.tierId} (type: ${typeof args.tierId})`
+    );
+
     const channelId = args.channelId || ctx.channelId;
     if (!channelId) {
       throw new Error('Channel ID required');
@@ -164,13 +164,42 @@ export class SubscriptionResolver {
       throw new Error('Billing cycle must be "monthly" or "yearly"');
     }
 
+    // Validate tierId - it should be a string UUID
+    if (!args.tierId || typeof args.tierId !== 'string') {
+      this.logger.error(
+        `CRITICAL: Invalid tierId received: ${args.tierId} (type: ${typeof args.tierId})`
+      );
+      throw new Error('Tier ID must be a valid string UUID');
+    }
+
+    const tierIdStr = args.tierId.trim();
+    this.logger.log(`Using tierId string: "${tierIdStr}"`);
+
+    if (
+      tierIdStr === '-1' ||
+      tierIdStr === 'null' ||
+      tierIdStr === 'undefined' ||
+      tierIdStr === ''
+    ) {
+      this.logger.error(`CRITICAL: Invalid tierId received: "${tierIdStr}"`);
+      throw new Error(`Invalid tier ID: "${tierIdStr}"`);
+    }
+
+    // Validate it's a UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(tierIdStr)) {
+      this.logger.error(`CRITICAL: tierId is not a valid UUID: "${tierIdStr}"`);
+      throw new Error(`Invalid tier ID format: "${tierIdStr}" is not a valid UUID`);
+    }
+
     return this.subscriptionService.initiatePurchase(
       ctx,
       String(channelId),
-      String(args.tierId),
+      tierIdStr,
       args.billingCycle as 'monthly' | 'yearly',
       args.phoneNumber,
-      args.email
+      args.email,
+      args.paymentMethod
     );
   }
 
@@ -189,28 +218,15 @@ export class SubscriptionResolver {
       throw new Error('Channel ID required');
     }
 
-    try {
-      // Verify transaction with Paystack
-      const verification = await this.paystackService.verifyTransaction(args.reference);
+    // Use the new checkPaymentStatus method which is the single source of truth
+    // It handles: channel state check, cache, and Paystack API call
+    const result = await this.subscriptionService.checkPaymentStatus(
+      ctx,
+      String(channelId),
+      args.reference
+    );
 
-      if (verification.data.status === 'success') {
-        // Process successful payment
-        const customerCode =
-          verification.data.customer?.customer_code ||
-          (verification.data.metadata as any)?.customerCode;
-
-        await this.subscriptionService.processSuccessfulPayment(ctx, String(channelId), {
-          reference: args.reference,
-          amount: verification.data.amount,
-          customerCode: customerCode,
-        });
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      return false;
-    }
+    return result.success;
   }
 
   @Mutation()

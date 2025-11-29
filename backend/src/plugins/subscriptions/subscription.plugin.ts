@@ -1,5 +1,6 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
 import { VENDURE_COMPATIBILITY_VERSION } from '../../constants/vendure-version.constants';
+import { RedisCacheService } from '../../infrastructure/storage/redis-cache.service';
 import { SubscriptionResolver, SUBSCRIPTION_SCHEMA } from './subscription.resolver';
 import { SubscriptionService } from '../../services/subscriptions/subscription.service';
 import { PaystackService } from '../../services/payments/paystack.service';
@@ -8,6 +9,7 @@ import { SubscriptionTier } from './subscription.entity';
 import { SubscriptionGuard } from './subscription.guard';
 import { SubscriptionExpirySubscriber } from './subscription-expiry.subscriber';
 import { ChannelEventsPlugin } from '../channels/channel-events.plugin';
+import { PhoneAuthPlugin } from '../auth/phone-auth.plugin';
 
 /**
  * Subscription Plugin
@@ -20,12 +22,13 @@ import { ChannelEventsPlugin } from '../channels/channel-events.plugin';
  * - Read-only mode enforcement for expired subscriptions
  */
 @VendurePlugin({
-  imports: [PluginCommonModule, ChannelEventsPlugin],
+  imports: [PluginCommonModule, ChannelEventsPlugin, PhoneAuthPlugin],
   entities: [SubscriptionTier],
   providers: [
     SubscriptionResolver,
     SubscriptionService,
     PaystackService,
+    RedisCacheService,
     SubscriptionGuard,
     SubscriptionExpirySubscriber,
   ],

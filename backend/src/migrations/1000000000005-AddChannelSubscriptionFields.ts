@@ -253,23 +253,6 @@ export class AddChannelSubscriptionFields1000000000005 implements MigrationInter
                 END IF;
             END $$;
         `);
-
-    // Seed default subscription tier
-    await queryRunner.query(`
-            INSERT INTO "subscription_tier" ("code", "name", "description", "priceMonthly", "priceYearly", "features", "isActive", "createdAt", "updatedAt")
-            VALUES (
-                'basic-tier',
-                'Basic Plan',
-                'Essential features for small businesses',
-                5000,
-                50000,
-                '{"features": ["Unlimited products", "Order management", "Inventory tracking", "Basic reporting"]}'::jsonb,
-                true,
-                now(),
-                now()
-            )
-            ON CONFLICT ("code") DO NOTHING
-        `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

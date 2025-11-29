@@ -47,6 +47,8 @@ export class LedgerViewerResolver {
           type: account.type,
           isActive: account.isActive,
           balance: balance.balance / 100, // Convert from cents to base currency
+          parentAccountId: account.parentAccountId || null,
+          isParent: account.isParent,
         };
       })
     );

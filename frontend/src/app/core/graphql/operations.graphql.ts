@@ -2162,10 +2162,11 @@ export const CHECK_SUBSCRIPTION_STATUS = graphql(`
 export const INITIATE_SUBSCRIPTION_PURCHASE = graphql(`
   mutation InitiateSubscriptionPurchase(
     $channelId: ID!
-    $tierId: ID!
+    $tierId: String!
     $billingCycle: String!
     $phoneNumber: String!
     $email: String!
+    $paymentMethod: String
   ) {
     initiateSubscriptionPurchase(
       channelId: $channelId
@@ -2173,6 +2174,7 @@ export const INITIATE_SUBSCRIPTION_PURCHASE = graphql(`
       billingCycle: $billingCycle
       phoneNumber: $phoneNumber
       email: $email
+      paymentMethod: $paymentMethod
     ) {
       success
       reference
@@ -2324,6 +2326,8 @@ export const GET_LEDGER_ACCOUNTS = graphql(`
         type
         isActive
         balance
+        parentAccountId
+        isParent
       }
     }
   }

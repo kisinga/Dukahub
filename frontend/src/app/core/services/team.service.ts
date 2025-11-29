@@ -69,9 +69,11 @@ export class TeamService {
     this.error.set(null);
 
     try {
-      const channel = this.companyService.activeChannel();
-      if (!channel) {
-        throw new Error('No active channel');
+      const channelId = this.companyService.activeCompanyId();
+      if (!channelId) {
+        this.error.set('No active channel');
+        this.members.set([]);
+        return;
       }
 
       const client = this.apolloService.getClient();
@@ -91,10 +93,29 @@ export class TeamService {
       const admins = result.data?.administrators.items ?? [];
 
       // Filter to only admins that belong to the current channel
+      // Also filter out superadmins (identified by role code or roles with no channel restrictions)
       const channelAdmins = admins
         .filter((admin) => {
           const roles = admin.user?.roles ?? [];
-          return roles.some((role) => role.channels?.some((ch) => ch.id === channel.id));
+
+          // Exclude superadmins by checking role code (SuperAdmin role code is '__super_admin_role__')
+          // or roles with no channel assignments (original check for roles that haven't had channels added)
+          const isSuperAdmin = roles.some((role) => {
+            const roleCode = role.code?.toLowerCase() || '';
+            // Check if it's the SuperAdmin role by code
+            if (roleCode === '__super_admin_role__' || roleCode.includes('superadmin')) {
+              return true;
+            }
+            // Also check if role has no channel assignments (for superadmin roles without channels)
+            return !role.channels || role.channels.length === 0;
+          });
+
+          if (isSuperAdmin) {
+            return false;
+          }
+
+          // Include only admins that belong to the current channel
+          return roles.some((role) => role.channels?.some((ch) => ch.id === channelId));
         })
         .map((admin) => ({
           ...admin,
@@ -154,14 +175,29 @@ export class TeamService {
     this.error.set(null);
 
     try {
+      const channelId = this.companyService.activeCompanyId();
+      if (!channelId) {
+        const errorMessage = 'No active channel';
+        this.error.set(errorMessage);
+        throw new Error(errorMessage);
+      }
+
       const client = this.apolloService.getClient();
       const result = await client.mutate<CreateChannelAdminMutation>({
         mutation: CREATE_CHANNEL_ADMIN,
         variables: { input },
       });
 
+      // Check for Apollo Client errors
+      if (result.error) {
+        console.error('GraphQL error creating team member:', result.error);
+        throw new Error(result.error.message || 'Failed to create team member');
+      }
+
+      // Check if mutation returned data
       if (!result.data?.createChannelAdmin) {
-        throw new Error('Failed to create team member');
+        console.error('No data returned from createChannelAdmin mutation:', result);
+        throw new Error('Failed to create team member: No data returned');
       }
 
       const admin = result.data.createChannelAdmin;
@@ -186,11 +222,22 @@ export class TeamService {
       await this.loadMembers();
 
       return newMember;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to create team member:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create team member';
+      console.error('Error details:', {
+        message: err?.message,
+        graphQLErrors: err?.graphQLErrors,
+        networkError: err?.networkError,
+      });
+
+      // Extract error message from various sources
+      const errorMessage =
+        err?.graphQLErrors?.[0]?.message ||
+        err?.networkError?.message ||
+        (err instanceof Error ? err.message : 'Failed to create team member');
+
       this.error.set(errorMessage);
-      throw err;
+      throw new Error(errorMessage);
     } finally {
       this.isLoading.set(false);
     }

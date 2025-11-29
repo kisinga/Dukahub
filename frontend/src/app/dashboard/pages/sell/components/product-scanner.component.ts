@@ -24,6 +24,7 @@ import {
   ProductSearchResult,
   ProductSearchService,
 } from '../../../../core/services/product/product-search.service';
+import { playBeep } from '../../../../core/utils/beep.utils';
 
 type ScannerStatus =
   | 'idle'
@@ -351,6 +352,10 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
       const product = await this.productSearchService.getProductById('3');
 
       if (product) {
+        // Play beep sound on successful detection (fire and forget)
+        playBeep().catch(() => {
+          // Silently handle beep errors - don't interrupt detection flow
+        });
         this.stopScanner();
         this.productDetected.emit(product);
       } else {
@@ -376,6 +381,10 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
       const variant = await this.productSearchService.searchByBarcode(result.rawValue);
 
       if (variant) {
+        // Play beep sound on successful detection (fire and forget)
+        playBeep().catch(() => {
+          // Silently handle beep errors - don't interrupt detection flow
+        });
         this.stopScanner();
         const product: ProductSearchResult = {
           id: variant.productId,

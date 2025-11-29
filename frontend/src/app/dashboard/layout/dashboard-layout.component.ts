@@ -20,7 +20,8 @@ import type { Notification } from '../../core/graphql/notification.types';
 interface NavItem {
   label: string;
   icon: string;
-  route: string;
+  route: string | string[];
+  queryParams?: Record<string, string>;
 }
 
 @Component({
@@ -52,7 +53,7 @@ export class DashboardLayoutComponent implements OnInit {
       { label: 'Customers', icon: '👥', route: '/dashboard/customers' },
       { label: 'Suppliers', icon: '🏢', route: '/dashboard/suppliers' },
       { label: 'Purchases', icon: '🛒', route: '/dashboard/purchases' },
-      { label: 'Ledger', icon: '📋', route: '/dashboard/ledger' },
+      { label: 'Accounting', icon: '📋', route: '/dashboard/accounting' },
       { label: 'Reports', icon: '📈', route: '/dashboard/reports' },
     ];
 
@@ -84,7 +85,8 @@ export class DashboardLayoutComponent implements OnInit {
       baseItems.push({
         label: 'Upgrade',
         icon: '⭐',
-        route: '/dashboard/settings?tab=subscription',
+        route: '/dashboard/settings',
+        queryParams: { tab: 'subscription' },
       });
     }
 

@@ -81,7 +81,8 @@ export class PaystackService {
   private async makeRequest<T>(
     endpoint: string,
     method: 'GET' | 'POST' | 'PUT' = 'GET',
-    body?: any
+    body?: any,
+    timeoutMs: number = 30000 // 30 seconds default timeout
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const headers: Record<string, string> = {
@@ -89,24 +90,55 @@ export class PaystackService {
       'Content-Type': 'application/json',
     };
 
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
       const response = await fetch(url, {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const data = await response.json();
 
-      if (!response.ok || !data.status) {
+      // Handle cases where Paystack returns 200 OK but with status: false
+      // This happens with "Charge attempted" and similar scenarios
+      if (!response.ok) {
         throw new Error(data.message || `Paystack API error: ${response.statusText}`);
+      }
+
+      // If response is OK but data.status is false, still throw error
+      // This allows the caller to handle it (e.g., fallback to payment link)
+      if (!data.status) {
+        const errorMessage = data.message || 'Paystack API returned unsuccessful status';
+        throw new Error(errorMessage);
       }
 
       return data as T;
     } catch (error) {
-      this.logger.error(
-        `Paystack API request failed: ${error instanceof Error ? error.message : String(error)}`
-      );
+      clearTimeout(timeoutId);
+
+      // Handle timeout specifically
+      if (error instanceof Error && error.name === 'AbortError') {
+        const timeoutError = new Error(`Paystack API request timed out after ${timeoutMs}ms`);
+        this.logger.error(`Paystack API request timed out: ${endpoint}`);
+        throw timeoutError;
+      }
+
+      // Handle other errors
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // Only log errors (not warnings) - "Charge attempted" is expected and handled gracefully
+      // The subscription service will log appropriate warnings when needed
+      if (!errorMessage.includes('Charge attempted')) {
+        this.logger.error(`Paystack API request failed: ${errorMessage} (endpoint: ${endpoint})`);
+      }
+
       throw error;
     }
   }
@@ -144,12 +176,47 @@ export class PaystackService {
     reference: string,
     metadata?: Record<string, any>
   ): Promise<PaystackChargeResponse> {
+    // Convert phone number to international format for Paystack
+    // Paystack expects: +254712345678 (with + sign) for mobile_money object
+    // Input might be: 07XXXXXXXX (local format)
+    let formattedPhone = phone.trim();
+
+    // Remove leading + if present (we'll add it back)
+    if (formattedPhone.startsWith('+')) {
+      formattedPhone = formattedPhone.substring(1);
+    }
+
+    // Convert 07XXXXXXXX to 2547XXXXXXXX
+    if (formattedPhone.startsWith('07') && formattedPhone.length === 10) {
+      formattedPhone = '254' + formattedPhone.substring(1);
+    }
+
+    // Ensure it starts with 254 for Kenya
+    if (!formattedPhone.startsWith('254')) {
+      throw new Error(
+        `Invalid phone number format for Paystack: ${phone}. Expected format: 07XXXXXXXX or +2547XXXXXXXX or 2547XXXXXXXX`
+      );
+    }
+
+    // Validate: should be 12 digits (254 + 9 digits starting with 7)
+    if (!/^2547\d{8}$/.test(formattedPhone)) {
+      throw new Error(
+        `Invalid phone number format for Paystack: ${phone}. Expected format: 07XXXXXXXX or +2547XXXXXXXX or 2547XXXXXXXX`
+      );
+    }
+
+    // Paystack mobile_money requires phone with + sign: +254712345678
+    const mobileMoneyPhone = '+' + formattedPhone;
+
     const body = {
       amount: amount * 100, // Convert to kobo/cents
       email,
-      phone,
       reference,
       currency: 'KES',
+      mobile_money: {
+        phone: mobileMoneyPhone, // Format: +254712345678 (with + sign)
+        provider: 'mpesa', // M-Pesa for Kenya. Options: mpesa, atl (Airtel)
+      },
       metadata,
     };
 
