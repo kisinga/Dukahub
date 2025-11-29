@@ -2,14 +2,15 @@
 
 <main class="features">
   <!-- Hero -->
-  <section class="section hero">
+  <section class="section hero" id="hero">
     <div class="container hero-grid">
       <div class="hero-copy">
         <span class="badge badge-primary badge-soft">Feature tour</span>
         <h1>See everything dukarun does for your business</h1>
         <p>
           Explore how dukarun keeps selling fast, inventory honest, and finances calm — all in one
-          simple workspace.
+          simple workspace. No complex hardware, no training required. If you can use a smartphone,
+          you can run professional accounting with powerful business insights at your fingertips.
         </p>
         <div class="hero-cta">
           <a
@@ -23,16 +24,24 @@
         </div>
         <div class="hero-points">
           <div class="point">
+            <span class="icon">🎓</span>
+            <span>No training required — intuitive smartphone interface</span>
+          </div>
+          <div class="point">
+            <span class="icon">📱</span>
+            <span>Works on any smartphone, no complex hardware needed</span>
+          </div>
+          <div class="point">
+            <span class="icon">📚</span>
+            <span>Simple step-by-step tutorials available</span>
+          </div>
+          <div class="point">
             <span class="icon">🔍</span>
             <span>At-a-glance summaries for owners and managers</span>
           </div>
           <div class="point">
             <span class="icon">⚙️</span>
             <span>Practical automation, no complicated setup</span>
-          </div>
-          <div class="point">
-            <span class="icon">📱</span>
-            <span>Designed for phones, friendly on desktop</span>
           </div>
         </div>
       </div>
@@ -64,7 +73,11 @@
 
   <!-- Categories -->
   @for (category of categories; track category.name; let i = $index) {
-    <section class="section category" [class.category-alt]="i % 2 === 1">
+    <section
+      class="section category scroll-mt-28"
+      [class.category-alt]="i % 2 === 1"
+      [id]="getCategoryId(category.name)"
+    >
       <div class="container">
         <div class="category-header">
           <div>
@@ -127,7 +140,7 @@
   }
 
   <!-- Comparison -->
-  <section class="section compare" id="compare">
+  <section class="section compare scroll-mt-28" id="compare">
     <div class="container section-header">
       <span class="eyebrow">Make the confident choice</span>
       <h2>Why teams graduate from paper or generic POS to dukarun</h2>
@@ -176,7 +189,7 @@
   </section>
 
   <!-- Coming Soon -->
-  <section class="section category">
+  <section class="section category scroll-mt-28" id="coming-soon">
     <div class="container">
       <div class="category-header">
         <div>
@@ -204,7 +217,7 @@
   </section>
 
   <!-- Closing CTA -->
-  <section class="section closing">
+  <section class="section closing scroll-mt-28" id="cta">
     <div class="container closing-card">
       <div>
         <span class="eyebrow">Start calmly</span>

@@ -39,7 +39,7 @@ export class SupportComponent {
     {
       question: 'Can I accept M-Pesa payments?',
       answer:
-        'Yes! dukarun supports both cash and M-Pesa payments. All payments are tracked automatically in your ledger.',
+        'Yes! dukarun tracks M-Pesa payments automatically in your ledger. Record M-Pesa receipts from your existing Till number with full accounting integration. Customer-initiated M-Pesa payments (STK Push) are coming soon.',
       open: false,
     },
     {

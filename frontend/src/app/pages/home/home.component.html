@@ -15,7 +15,9 @@
           Point and Sell
         </h1>
         <p class="max-w-xl text-lg text-base-content/70">
-          Your phone is a powerful computer. Dukarun makes it a fast and efficient point of sale. Point your camera at the porduct and sell it in seconds. <br>
+          Your phone is a powerful computer. Dukarun makes it a fast and efficient point of sale.
+          Point your camera at the product and sell it in seconds. No complex hardware, no training
+          needed. <br />
           Already have a desktop computer? Great! Dukarun works on your computer too.
         </p>
         <div class="flex flex-col gap-3 sm:max-w-md sm:flex-row sm:items-center">
@@ -43,7 +45,6 @@
             </span>
           }
         </div>
-
       </div>
       <div class="home-hero-intro-delay flex justify-center">
         <div
@@ -162,7 +163,8 @@
         Everything your team needs in one calm workspace
       </h2>
       <p class="mx-auto max-w-2xl text-base text-base-content/70">
-        Dukarun makes the things that should be simple actually simple. From ringing up a sale to knowing who owes what, all on your phone.
+        Dukarun makes the things that should be simple actually simple. From recording up a sale to
+        knowing who owes what, all on your phone.
       </p>
     </div>
     <div class="container-app mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
@@ -179,6 +181,35 @@
                 <li>{{ point }}</li>
               }
             </ul>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="section scroll-mt-28 bg-base-200/40" id="ease-of-use">
+    <div class="container-app space-y-4 text-center">
+      <span
+        class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80"
+      >
+        Designed for everyone
+      </span>
+      <h2 class="text-3xl font-bold md:text-4xl">Professional accounting without the complexity</h2>
+      <p class="mx-auto max-w-2xl text-base text-base-content/70">
+        Dukarun lowers the barrier to professional accounting. No complex hardware, no computer
+        literacy required. If you can use a smartphone, you can run a professional business system.
+        Simple tutorials guide you, but most things are intuitive.
+      </p>
+    </div>
+    <div class="container-app mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      @for (benefit of easeOfUseBenefits; track benefit.title) {
+        <article
+          class="group rounded-2xl border border-base-300 bg-base-100 p-6 text-left shadow-md transition-transform transition-shadow duration-200 hover:-translate-y-1 hover:shadow-xl hover:border-primary/40"
+        >
+          <div class="flex flex-col gap-4">
+            <span class="text-3xl">{{ benefit.icon }}</span>
+            <h3 class="text-lg font-semibold">{{ benefit.title }}</h3>
+            <p class="text-base-content/80">{{ benefit.description }}</p>
           </div>
         </article>
       }

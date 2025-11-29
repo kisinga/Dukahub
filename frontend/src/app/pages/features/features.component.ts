@@ -1,5 +1,12 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  OnDestroy,
+} from '@angular/core';
+import { Location } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 import { FooterComponent } from '../../core/layout/footer/footer.component';
 import { NavbarComponent } from '../../core/layout/navbar/navbar.component';
 
@@ -32,8 +39,71 @@ interface ComingSoonFeature {
   styleUrl: './features.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FeaturesComponent {
+export class FeaturesComponent implements AfterViewInit, OnDestroy {
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
+  private observers: IntersectionObserver[] = [];
+  private isUpdatingHash = false;
+
   protected readonly categories: FeatureCategory[] = [
+    {
+      name: 'Getting Started',
+      description: 'Designed for everyone — no barriers to professional accounting',
+      features: [
+        {
+          title: 'No Complex Hardware Required',
+          description:
+            'Works on any smartphone. No barcode scanners, printers, or special equipment needed. Your phone is all you need to run a professional business system.',
+          icon: '📱',
+          origin: 'dukarun-Exclusive',
+          useCase:
+            'Perfect for businesses that want to start immediately without investing in hardware',
+        },
+        {
+          title: 'No Computer Literacy Needed',
+          description:
+            'If you know how to use a smartphone, you can use Dukarun. No training required — most things are intuitive. The system is designed to be as simple as using any modern app.',
+          icon: '🎓',
+          origin: 'dukarun-Exclusive',
+          useCase:
+            'Ideal for business owners who want professional tools without the learning curve',
+        },
+        {
+          title: 'Intuitive Smartphone Interface',
+          description:
+            'Designed for touch and simplicity. Everything you need is just a tap away. The interface works naturally, just like using any smartphone app you already know.',
+          icon: '💡',
+          origin: 'dukarun-Exclusive',
+          useCase: 'Perfect for teams that want to get started quickly without extensive training',
+        },
+        {
+          title: 'Simple Step-by-Step Tutorials',
+          description:
+            'Clear, easy-to-follow tutorials teach you how to use the system. Most features work intuitively, but helpful guides are available whenever you need them.',
+          icon: '📚',
+          origin: 'dukarun-Exclusive',
+          useCase: 'Great for new users who want guidance while learning the system',
+        },
+        {
+          title: 'Professional Accounting Made Accessible',
+          description:
+            'Lowers the barrier to professional accounting. Get enterprise-level financial tracking, double-entry ledger, and comprehensive reporting without the complexity.',
+          icon: '📊',
+          origin: 'dukarun-Exclusive',
+          useCase:
+            'Essential for businesses that want professional accounting without hiring accountants',
+        },
+        {
+          title: 'Powerful Insights Without Complexity',
+          description:
+            'Pro-level business tool that gives you powerful information for gauging business status and making data-driven decisions to grow your business to the next stage.',
+          icon: '🚀',
+          origin: 'dukarun-Exclusive',
+          useCase:
+            'Perfect for business owners who want actionable insights without complex dashboards',
+        },
+      ],
+    },
     {
       name: 'Selling & Checkout',
       description: 'Everything you need to sell quickly and accurately',
@@ -65,7 +135,7 @@ export class FeaturesComponent {
         {
           title: 'Accept Cash and M-Pesa',
           description:
-            'Take payments via cash and M-Pesa in one system. Everything is tracked automatically in your books. No need for separate payment systems.',
+            'Take payments via cash and M-Pesa in one system. Track M-Pesa payments automatically in your books with full ledger integration. Customer-initiated M-Pesa payments (STK Push) coming soon.',
           icon: '💳',
           origin: 'dukarun-Exclusive',
           useCase: 'Perfect for Kenyan businesses accepting both cash and mobile money',
@@ -239,7 +309,7 @@ export class FeaturesComponent {
         {
           title: 'M-Pesa Integration',
           description:
-            'Accept M-Pesa on your existing Till. We track the confirmation, you keep the money. No manual reconciliation needed.',
+            'Track M-Pesa payments automatically in your ledger. Record M-Pesa receipts from your existing Till number with full accounting integration. Customer-initiated payments (STK Push) coming soon.',
           icon: '📲',
           origin: 'dukarun-Exclusive',
           useCase: 'Essential for Kenyan businesses accepting mobile money',
@@ -322,4 +392,86 @@ export class FeaturesComponent {
       category: 'Operations',
     },
   ];
+
+  /**
+   * Convert category name to URL-friendly ID
+   */
+  getCategoryId(categoryName: string): string {
+    return categoryName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  ngAfterViewInit(): void {
+    this.setupScrollSpy();
+    this.handleInitialHash();
+  }
+
+  ngOnDestroy(): void {
+    this.observers.forEach((observer) => observer.disconnect());
+    this.observers = [];
+  }
+
+  private setupScrollSpy(): void {
+    // Static sections
+    const staticIds = ['hero', 'compare', 'coming-soon', 'cta'];
+
+    // Dynamic category sections
+    const categoryIds = this.categories.map((cat) => this.getCategoryId(cat.name));
+
+    const allIds = [...staticIds, ...categoryIds];
+
+    const options: IntersectionObserverInit = {
+      root: null,
+      rootMargin: '-20% 0px -60% 0px',
+      threshold: [0.1, 0.5],
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      if (this.isUpdatingHash) return;
+
+      const visibleEntries = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+      if (visibleEntries.length > 0) {
+        const id = visibleEntries[0].target.id;
+        if (id) {
+          this.updateHash(id);
+        }
+      }
+    }, options);
+
+    allIds.forEach((id) => {
+      const element = document.getElementById(id);
+      if (element) {
+        observer.observe(element);
+      }
+    });
+
+    this.observers.push(observer);
+  }
+
+  private updateHash(id: string): void {
+    this.isUpdatingHash = true;
+    const url = this.router.url.split('#')[0];
+    this.location.replaceState(`${url}#${id}`);
+    // Use setTimeout to reset flag after location update
+    setTimeout(() => {
+      this.isUpdatingHash = false;
+    }, 0);
+  }
+
+  private handleInitialHash(): void {
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+      const element = document.getElementById(hash);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }
+  }
 }
