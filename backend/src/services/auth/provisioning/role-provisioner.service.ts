@@ -29,7 +29,7 @@ import { ManageSupplierCreditPurchasesPermission } from '../../../plugins/credit
 
 /**
  * Role Template Definitions
- * 
+ *
  * Predefined role templates for common admin roles with specific permission sets.
  * Templates are code constants, not stored in database.
  */
@@ -78,6 +78,9 @@ export const ROLE_TEMPLATES: Record<string, RoleTemplate> = {
       // Settings permissions
       Permission.ReadSettings,
       Permission.UpdateSettings,
+      // Administrator permissions (channel-scoped)
+      Permission.CreateAdministrator,
+      Permission.UpdateAdministrator,
       // Custom permissions
       OverridePricePermission.Permission as Permission,
       ApproveCustomerCreditPermission.Permission as Permission,
@@ -189,6 +192,9 @@ export class RoleProvisionerService {
     // Settings permissions
     Permission.ReadSettings,
     Permission.UpdateSettings,
+    // Administrator permissions (channel-scoped)
+    Permission.CreateAdministrator,
+    Permission.UpdateAdministrator,
     // Custom permissions for channel admin
     OverridePricePermission.Permission as Permission,
     ApproveCustomerCreditPermission.Permission as Permission,

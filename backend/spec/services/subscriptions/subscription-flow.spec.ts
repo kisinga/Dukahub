@@ -232,11 +232,14 @@ describe('Subscription Flow Integration', () => {
 
   describe('Email Fallback', () => {
     it('should use placeholder email when email is not provided', async () => {
+      // Clear all mocks to ensure clean state
+      jest.clearAllMocks();
+
       const channelId = '1';
       const phoneNumber = '+254712345678';
       const mockChannel: Channel = {
         id: channelId,
-        customFields: {},
+        customFields: {}, // Ensure no paystackCustomerCode exists
       } as any;
 
       mockChannelService.findOne.mockResolvedValue(mockChannel);
@@ -249,7 +252,7 @@ describe('Subscription Flow Integration', () => {
       } as any);
       mockChannelService.update.mockResolvedValue(mockChannel);
 
-      await subscriptionService.initiatePurchase(
+      const result = await subscriptionService.initiatePurchase(
         ctx,
         channelId,
         TEST_TIER_ID,
@@ -257,6 +260,52 @@ describe('Subscription Flow Integration', () => {
         phoneNumber,
         '' // Empty email
       );
+
+      // Verify the method completed successfully
+      expect(result.success).toBe(true);
+
+      // Verify Paystack was called with placeholder email
+      expect(mockPaystackService.createCustomer).toHaveBeenCalledWith(
+        '254712345678@placeholder.dukarun.com',
+        undefined,
+        undefined,
+        phoneNumber,
+        expect.any(Object)
+      );
+    });
+
+    it('should use placeholder email when email is undefined', async () => {
+      // Clear all mocks to ensure clean state
+      jest.clearAllMocks();
+
+      const channelId = '1';
+      const phoneNumber = '+254712345678';
+      const mockChannel: Channel = {
+        id: channelId,
+        customFields: {}, // Ensure no paystackCustomerCode exists
+      } as any;
+
+      mockChannelService.findOne.mockResolvedValue(mockChannel);
+      mockPaystackService.createCustomer.mockResolvedValue({
+        data: { customer_code: 'cust-123' },
+      } as any);
+      // Mock chargeMobile to return a valid STK push response
+      mockPaystackService.chargeMobile.mockResolvedValue({
+        data: { reference: 'ref-123', status: 'pending' },
+      } as any);
+      mockChannelService.update.mockResolvedValue(mockChannel);
+
+      const result = await subscriptionService.initiatePurchase(
+        ctx,
+        channelId,
+        TEST_TIER_ID,
+        'monthly',
+        phoneNumber,
+        undefined as any // Undefined email
+      );
+
+      // Verify the method completed successfully
+      expect(result.success).toBe(true);
 
       // Verify Paystack was called with placeholder email
       expect(mockPaystackService.createCustomer).toHaveBeenCalledWith(
