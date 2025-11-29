@@ -11,7 +11,7 @@
  * @param duration - Ignored (uses 50ms hardware spec)
  * @returns Promise that resolves when beep completes or rejects if audio is unavailable
  */
-export async function playBeep(frequency: number = 3000, duration: number = 100): Promise<void> {
+export async function playBeep(frequency: number = 3000, duration: number = 2000): Promise<void> {
   // Hardware specifications matching real scanners
   const FREQUENCY = 2400; // Hz - Honeywell HF680 Series default
   const DURATION = 50; // milliseconds - industry standard
