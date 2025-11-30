@@ -280,7 +280,7 @@ export class DashboardService {
         query: GET_PRODUCTS,
         variables: {
           options: {
-            take: 1000, // Get all products for accurate count
+            take: 100, // Limited to prevent list-query-limit-exceeded errors
           },
         },
       });

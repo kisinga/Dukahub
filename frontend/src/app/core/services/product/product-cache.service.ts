@@ -59,7 +59,7 @@ export class ProductCacheService {
         };
       }>({
         query: PREFETCH_PRODUCTS,
-        variables: { take: 1000 }, // Adjust based on your needs
+        variables: { take: 100 }, // Limited to prevent list-query-limit-exceeded errors
         fetchPolicy: 'network-only', // Force fresh fetch on boot
       });
 
