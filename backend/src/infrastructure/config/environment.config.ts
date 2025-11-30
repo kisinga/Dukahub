@@ -85,6 +85,7 @@ export class EnvironmentConfig implements OnModuleInit {
   readonly paystack = {
     secretKey: '',
     publicKey: '',
+    systemEmail: '', // System email for all Paystack API calls (emails not mandatory for users)
   };
 
   // OTP configuration
@@ -221,6 +222,8 @@ export class EnvironmentConfig implements OnModuleInit {
     // Load Paystack configuration
     this.paystack.secretKey = process.env.PAYSTACK_SECRET_KEY || '';
     this.paystack.publicKey = process.env.PAYSTACK_PUBLIC_KEY || '';
+    this.paystack.systemEmail =
+      process.env.PAYSTACK_SYSTEM_EMAIL || `payments@${BRAND_CONFIG.emailDomain}`;
 
     // Load OTP configuration
     this.otp.redisHost = process.env.OTP_REDIS_HOST || process.env.REDIS_HOST || 'localhost';

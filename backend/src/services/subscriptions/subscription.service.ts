@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Channel, ChannelService, RequestContext, TransactionalConnection } from '@vendure/core';
+import { env } from '../../infrastructure/config/environment.config';
 import { ChannelEventRouterService } from '../../infrastructure/events/channel-event-router.service';
 import { ActionCategory } from '../../infrastructure/events/types/action-category.enum';
 import { ChannelEventType } from '../../infrastructure/events/types/event-type.enum';
@@ -218,8 +219,8 @@ export class SubscriptionService {
       const amount = billingCycle === 'monthly' ? tier.priceMonthly : tier.priceYearly;
       const amountInKes = amount / 100; // Convert from cents to KES
 
-      // Email fallback: use placeholder email if not provided
-      const effectiveEmail = email || `${phoneNumber.replace(/\+/g, '')}@placeholder.dukarun.com`;
+      // Use system email for all Paystack calls since user emails are not mandatory
+      const effectiveEmail = env.paystack.systemEmail;
 
       // Create or get Paystack customer
       let customerCode = (channel.customFields as any).paystackCustomerCode;
