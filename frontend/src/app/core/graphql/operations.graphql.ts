@@ -122,12 +122,6 @@ export const CHECK_AUTHORIZATION_STATUS = graphql(`
   }
 `);
 
-export const CHECK_COMPANY_CODE_AVAILABILITY = graphql(`
-  query CheckCompanyCodeAvailability($companyCode: String!) {
-    checkCompanyCodeAvailability(companyCode: $companyCode)
-  }
-`);
-
 export const LOGOUT = graphql(`
   mutation Logout {
     logout {

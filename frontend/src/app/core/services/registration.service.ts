@@ -1,9 +1,9 @@
 import { Injectable, signal } from '@angular/core';
-import { formatPhoneNumber, generateCompanyCode, validatePhoneNumber } from '../utils/phone.utils';
+import { formatPhoneNumber, validatePhoneNumber } from '../utils/phone.utils';
 
 export interface CompanyInfo {
   companyName: string;
-  companyCode: string;
+  // companyCode is NOT part of this interface - backend generates it from companyName
   currency: string;
 }
 
@@ -46,16 +46,11 @@ export class RegistrationService {
 
   /**
    * Set company information
+   * Note: companyCode is no longer auto-generated here - backend will generate it from companyName
    */
   setCompanyInfo(info: Partial<CompanyInfo>): void {
     const current = this.companyInfoSignal();
     const updated = { ...current, ...info };
-
-    // Auto-generate company code if company name is provided
-    if (info.companyName && !info.companyCode) {
-      updated.companyCode = generateCompanyCode(info.companyName);
-    }
-
     this.companyInfoSignal.set(updated);
   }
 
@@ -84,6 +79,7 @@ export class RegistrationService {
 
   /**
    * Validate company information
+   * Note: companyCode validation removed - backend will generate it from companyName
    */
   validateCompanyInfo(data?: Partial<CompanyInfo>): ValidationResult {
     const info = data || this.companyInfoSignal();
@@ -91,16 +87,6 @@ export class RegistrationService {
 
     if (!info.companyName?.trim()) {
       errors.push('Company name is required');
-    }
-
-    if (!info.companyCode?.trim()) {
-      errors.push('Company code is required');
-    } else {
-      // Validate company code format (lowercase, no spaces, hyphens allowed)
-      const codeRegex = /^[a-z0-9-]+$/;
-      if (!codeRegex.test(info.companyCode)) {
-        errors.push('Company code must be lowercase with no spaces (hyphens allowed)');
-      }
     }
 
     if (!info.currency) {
@@ -171,6 +157,7 @@ export class RegistrationService {
 
   /**
    * Get complete registration data
+   * Note: companyCode is optional - backend will generate it from companyName if not provided
    */
   getRegistrationData(): RegistrationData | null {
     const company = this.companyInfoSignal();
@@ -192,7 +179,7 @@ export class RegistrationService {
     return {
       company: {
         companyName: company.companyName!,
-        companyCode: company.companyCode!,
+        // companyCode is NOT sent - backend generates it from companyName
         currency: company.currency!,
       },
       admin: {

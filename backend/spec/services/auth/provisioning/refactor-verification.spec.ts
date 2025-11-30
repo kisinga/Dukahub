@@ -111,10 +111,19 @@ describe('Provisioning Refactor Verification', () => {
     } as any;
 
     // Mock ChannelService
+    // Generate company code from company name (same logic as backend)
+    const mockCompanyCode = registrationData.companyName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || 'test-company';
+    
     const mockChannel: Channel = {
       id: '2',
-      code: registrationData.companyCode,
-      token: registrationData.companyCode,
+      code: mockCompanyCode,
+      token: mockCompanyCode,
       seller: { id: '1', name: 'Test Seller' } as Seller,
     } as Channel;
 
@@ -162,7 +171,7 @@ describe('Provisioning Refactor Verification', () => {
     // Mock RoleService
     const mockRole: Role = {
       id: '6',
-      code: `${registrationData.companyCode}-admin`,
+      code: `${mockCompanyCode}-admin`,
       description: 'Test role',
       permissions: [],
       channels: [mockChannel],

@@ -10,7 +10,7 @@ describe('RegistrationService.provisionCustomer', () => {
 
   const registrationData: RegistrationInput = {
     companyName: 'Test Company',
-    companyCode: 'test-company',
+    // companyCode is NOT part of input - backend generates it from companyName
     currency: 'USD',
     adminFirstName: 'Jane',
     adminLastName: 'Doe',

@@ -1,7 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import type { LoginMutation, LoginMutationVariables } from '../models/user.model';
-import { CHECK_COMPANY_CODE_AVAILABILITY } from '../graphql/operations.graphql';
 import { ApolloService } from './apollo.service';
 import { AuthLoginService } from './auth/auth-login.service';
 import { AuthOtpService } from './auth/auth-otp.service';
@@ -113,28 +112,6 @@ export class AuthService {
     sessionId: string,
   ): Promise<{ success: boolean; userId?: string; message: string }> {
     return this.otpService.verifyRegistrationOTP(phoneNumber, otp, sessionId);
-  }
-
-  /**
-   * Check if company code is available
-   * Returns true if available, false if taken
-   */
-  async checkCompanyCodeAvailability(companyCode: string): Promise<boolean> {
-    try {
-      const client = this.apolloService.getClient();
-      const result = await client.query({
-        query: CHECK_COMPANY_CODE_AVAILABILITY,
-        variables: { companyCode },
-        context: { skipChannelToken: true },
-        fetchPolicy: 'network-only', // Always check fresh data
-      });
-
-      return result.data?.checkCompanyCodeAvailability ?? false;
-    } catch (error) {
-      console.error('Check company code availability error:', error);
-      // On error, assume unavailable to be safe
-      return false;
-    }
   }
 
   /**

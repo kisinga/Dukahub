@@ -18,12 +18,12 @@ import { StoreProvisionerService } from './provisioning/store-provisioner.servic
  */
 export interface RegistrationInput {
   companyName: string;
-  companyCode: string;
+  // companyCode is NOT part of input - always generated from companyName by backend
   currency: string;
   adminFirstName: string;
   adminLastName: string;
   adminPhoneNumber: string;
-  adminEmail?: string;
+ adminEmail?: string;
   storeName: string;
   storeAddress?: string;
 }
@@ -100,7 +100,6 @@ export class RegistrationService {
     existingUser?: User
   ): Promise<ProvisionResult> {
     const span = this.tracingService?.startSpan('registration.provisionCustomer', {
-      'registration.company_code': registrationData.companyCode,
       'registration.company_name': registrationData.companyName,
       'registration.currency': registrationData.currency,
     });
@@ -125,7 +124,7 @@ export class RegistrationService {
       this.tracingService?.addEvent(span!, 'registration.seller.created');
 
       // Step 3: Create Channel (company workspace)
-      this.logger.log(`Creating channel: ${registrationData.companyCode}`);
+      this.logger.log(`Creating channel for: ${registrationData.companyName}`);
       this.tracingService?.addEvent(span!, 'registration.channel.creating');
       const channel = await this.channelProvisioner.createChannel(
         ctx,
@@ -198,13 +197,18 @@ export class RegistrationService {
       const paymentMethods = await this.paymentProvisioner.createAndAssignPaymentMethods(
         ctx,
         channel.id.toString(),
-        registrationData.companyCode
+        channel.code // Use channel.code (which is the generated company code from companyName)
       );
       this.logger.log(`Payment methods created and assigned: ${paymentMethods.length}`);
 
       // Step 6: Create Role (access control) with all permissions
       this.logger.log(`Creating admin role for channel: ${channel.id}`);
-      const role = await this.roleProvisioner.createAdminRole(ctx, registrationData, channel.id);
+      const role = await this.roleProvisioner.createAdminRole(
+        ctx,
+        registrationData,
+        channel.id,
+        channel.code // Use channel.code (which is the generated company code from companyName)
+      );
       this.logger.log(`Admin role created: ${role.id} Code: ${role.code}`);
 
       // Step 7: Create Access (user + administrator) with role

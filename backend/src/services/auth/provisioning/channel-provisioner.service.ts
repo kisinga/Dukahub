@@ -9,9 +9,11 @@ import {
   TransactionalConnection,
   Zone,
 } from '@vendure/core';
+import { generateCompanyCode } from '../../../utils/phone.utils';
 import { RegistrationInput } from '../registration.service';
 import { RegistrationAuditorService } from './registration-auditor.service';
 import { RegistrationErrorService } from './registration-error.service';
+import { RegistrationValidatorService } from './registration-validator.service';
 
 /**
  * Channel Provisioner Service
@@ -25,8 +27,31 @@ export class ChannelProvisionerService {
     private readonly channelService: ChannelService,
     private readonly connection: TransactionalConnection,
     private readonly auditor: RegistrationAuditorService,
-    private readonly errorService: RegistrationErrorService
-  ) {}
+    private readonly errorService: RegistrationErrorService,
+    private readonly validator: RegistrationValidatorService
+  ) { }
+
+  /**
+   * Generate a unique company code from company name
+   * If the sanitized name is taken, appends a random suffix
+   */
+  private async generateUniqueCompanyCode(
+    ctx: RequestContext,
+    companyName: string
+  ): Promise<string> {
+    // Generate sanitized company code from name (without random suffix first)
+    const sanitizedCode = generateCompanyCode(companyName, false);
+
+    // Check if this code is available
+    const isAvailable = await this.validator.checkCompanyCodeAvailability(ctx, sanitizedCode);
+
+    if (isAvailable) {
+      return sanitizedCode;
+    }
+
+    // Code is taken - generate with random suffix
+    return generateCompanyCode(companyName, true);
+  }
 
   /**
    * Create channel for new company registration
@@ -39,13 +64,19 @@ export class ChannelProvisionerService {
     sellerId: string
   ): Promise<Channel> {
     try {
+      // Generate unique company code from company name
+      const companyCode = await this.generateUniqueCompanyCode(
+        ctx,
+        registrationData.companyName
+      );
+
       // Calculate trial period
       const trialDays = parseInt(process.env.SUBSCRIPTION_TRIAL_DAYS || '30', 10);
       const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
 
       const channelResult = await this.channelService.create(ctx, {
-        code: registrationData.companyCode,
-        token: registrationData.companyCode,
+        code: companyCode,
+        token: companyCode,
         defaultCurrencyCode: registrationData.currency as CurrencyCode,
         defaultLanguageCode: LanguageCode.en,
         pricesIncludeTax: true,
@@ -73,7 +104,7 @@ export class ChannelProvisionerService {
       // Audit log
       await this.auditor.logEntityCreated(ctx, 'Channel', channel.id.toString(), channel, {
         companyName: registrationData.companyName,
-        companyCode: registrationData.companyCode,
+        companyCode: companyCode,
         currency: registrationData.currency,
         phoneNumber,
       });

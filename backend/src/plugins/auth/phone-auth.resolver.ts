@@ -38,7 +38,7 @@ export const phoneAuthSchema = gql`
 
   input RegistrationInput {
     companyName: String!
-    companyCode: String!
+    # companyCode is NOT part of input - always generated from companyName by backend
     currency: String!
     adminFirstName: String!
     adminLastName: String!
@@ -64,7 +64,6 @@ export const phoneAuthSchema = gql`
 
   extend type Query {
     checkAuthorizationStatus(identifier: String!): AuthorizationStatus!
-    checkCompanyCodeAvailability(companyCode: String!): Boolean!
   }
 `;
 
@@ -124,14 +123,5 @@ export class PhoneAuthResolver {
     @Args('identifier') identifier: string
   ) {
     return this.phoneAuthService.checkAuthorizationStatus(identifier);
-  }
-
-  @Query()
-  @Allow(Permission.Public)
-  async checkCompanyCodeAvailability(
-    @Ctx() ctx: RequestContext,
-    @Args('companyCode') companyCode: string
-  ): Promise<boolean> {
-    return this.phoneAuthService.checkCompanyCodeAvailability(ctx, companyCode);
   }
 }

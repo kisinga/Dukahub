@@ -91,32 +91,11 @@
               placeholder="Your Company Name"
               class="input input-bordered w-full"
               [(ngModel)]="companyName"
-              (ngModelChange)="onCompanyNameChange()"
               name="companyName"
               required
               [disabled]="isLoadingAny()"
               autocomplete="organization"
             />
-          </div>
-
-          <!-- Company Code (Read-only, auto-generated) -->
-          <div class="form-control">
-            <label class="label">
-              <span class="label-text">Company Code</span>
-            </label>
-            <input
-              type="text"
-              class="input input-bordered w-full bg-base-200"
-              [value]="companyCode"
-              name="companyCode"
-              readonly
-              [disabled]="true"
-            />
-            <label class="label">
-              <span class="label-text-alt text-base-content/60">
-                Auto-generated (cannot be changed)
-              </span>
-            </label>
           </div>
 
           <div class="divider">

@@ -84,3 +84,45 @@ export function validatePhoneNumber(phoneNumber: string): boolean {
     return false;
   }
 }
+
+/**
+ * Generate a random alphanumeric string
+ * @param length - Length of the string
+ * @returns Random string
+ */
+function generateRandomString(length: number = 4): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+/**
+ * Generate company code from company name
+ * Sanitizes company name and optionally appends random suffix
+ *
+ * @param companyName - Company name
+ * @param includeRandomSuffix - Whether to append random suffix (default: true)
+ * @returns Company code in format: company-name-random4 (if suffix) or company-name
+ */
+export function generateCompanyCode(
+  companyName: string,
+  includeRandomSuffix: boolean = true
+): string {
+  const sanitized = companyName
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  if (!includeRandomSuffix) {
+    return sanitized || generateRandomString(4);
+  }
+
+  const randomSuffix = generateRandomString(4);
+  return sanitized ? `${sanitized}-${randomSuffix}` : randomSuffix;
+}
