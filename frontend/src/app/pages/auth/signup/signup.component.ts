@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { RegistrationService } from '../../../core/services/registration.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { formatPhoneNumber, generateCompanyCode } from '../../../core/utils/phone.utils';
 
 type Step = 1 | 2 | 3;
@@ -25,6 +26,7 @@ export class SignupComponent implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly registrationService = inject(RegistrationService);
   private readonly router = inject(Router);
+  private readonly toastService = inject(ToastService);
 
   // Form state
   protected readonly currentStep = signal<Step>(1);
@@ -68,9 +70,16 @@ export class SignupComponent implements OnDestroy {
   protected readonly displayedOTP = signal<string | null>(null); // For development - shows OTP on screen
   private registrationSessionId = signal<string | null>(null); // Store sessionId from OTP request
 
+  // Company name debouncing
+  private companyNameDebounceTimer: any = null;
+  private readonly DEBOUNCE_DELAY = 400; // 400ms debounce delay
+
   ngOnDestroy(): void {
     if (this.otpTimer) {
       clearInterval(this.otpTimer);
+    }
+    if (this.companyNameDebounceTimer) {
+      clearTimeout(this.companyNameDebounceTimer);
     }
   }
 
@@ -390,10 +399,45 @@ export class SignupComponent implements OnDestroy {
   }
 
   protected onCompanyNameChange(): void {
-    // Auto-generate company code whenever company name changes
-    if (this.companyName.trim()) {
-      this.companyCode = generateCompanyCode(this.companyName);
+    // Clear existing debounce timer
+    if (this.companyNameDebounceTimer) {
+      clearTimeout(this.companyNameDebounceTimer);
     }
+
+    // Debounce the availability check
+    this.companyNameDebounceTimer = setTimeout(async () => {
+      const trimmedName = this.companyName.trim();
+      if (!trimmedName) {
+        this.companyCode = '';
+        return;
+      }
+
+      // Generate sanitized company code WITHOUT random suffix
+      const sanitizedCode = generateCompanyCode(trimmedName, false);
+
+      try {
+        // Check if the company code is available
+        const isAvailable = await this.authService.checkCompanyCodeAvailability(sanitizedCode);
+
+        if (isAvailable) {
+          // Name is available - use clean code without random suffix
+          this.companyCode = sanitizedCode;
+        } else {
+          // Name is taken - append random suffix and show toast
+          this.companyCode = generateCompanyCode(trimmedName, true);
+          this.toastService.show(
+            'Company Name Taken',
+            'This company name is already taken. A random suffix has been added. You can edit it manually if you prefer.',
+            'warning',
+            5000
+          );
+        }
+      } catch (error) {
+        // On error, default to including random suffix for safety
+        console.error('Error checking company code availability:', error);
+        this.companyCode = generateCompanyCode(trimmedName, true);
+      }
+    }, this.DEBOUNCE_DELAY);
   }
 
   private startOTPResendCooldown(): void {

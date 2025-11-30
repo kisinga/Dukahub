@@ -85,18 +85,31 @@ export class RegistrationValidatorService {
   }
 
   /**
+   * Check if company code is available (not taken)
+   * Returns true if available, false if taken
+   */
+  async checkCompanyCodeAvailability(
+    ctx: RequestContext,
+    companyCode: string
+  ): Promise<boolean> {
+    // Use ChannelService.findAll() to check for existing channel with same code
+    // Note: ChannelService doesn't provide findOne by code, so we use findAll and filter
+    const channels = await this.channelService.findAll(ctx);
+    const existingChannel = channels.items.find(ch => ch.code === companyCode);
+
+    // Return true if available (no existing channel), false if taken
+    return !existingChannel;
+  }
+
+  /**
    * Validate channel code uniqueness using ChannelService
    */
   private async validateChannelCodeUniqueness(
     ctx: RequestContext,
     companyCode: string
   ): Promise<void> {
-    // Use ChannelService.findAll() to check for existing channel with same code
-    // Note: ChannelService doesn't provide findOne by code, so we use findAll and filter
-    const channels = await this.channelService.findAll(ctx);
-    const existingChannel = channels.items.find(ch => ch.code === companyCode);
-
-    if (existingChannel) {
+    const isAvailable = await this.checkCompanyCodeAvailability(ctx, companyCode);
+    if (!isAvailable) {
       throw new Error(
         `REGISTRATION_CHANNEL_CODE_EXISTS: Channel with code "${companyCode}" already exists. Please choose a different company code.`
       );

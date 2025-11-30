@@ -395,6 +395,17 @@ export class PhoneAuthService {
   }
 
   /**
+   * Check if company code is available
+   * Returns true if available, false if taken
+   */
+  async checkCompanyCodeAvailability(
+    ctx: RequestContext,
+    companyCode: string
+  ): Promise<boolean> {
+    return this.registrationValidator.checkCompanyCodeAvailability(ctx, companyCode);
+  }
+
+  /**
    * Check authorization status
    */
   async checkAuthorizationStatus(identifier: string): Promise<{

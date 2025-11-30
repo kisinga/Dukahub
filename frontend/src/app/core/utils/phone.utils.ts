@@ -101,12 +101,16 @@ function generateRandomString(length: number = 4): string {
 
 /**
  * Generate company code from company name
- * Sanitizes company name and appends random suffix
+ * Sanitizes company name and optionally appends random suffix
  *
  * @param companyName - Company name
- * @returns Company code in format: company-name-random4
+ * @param includeRandomSuffix - Whether to append random suffix (default: true for backward compatibility)
+ * @returns Company code in format: company-name-random4 (if includeRandomSuffix is true) or company-name (if false)
  */
-export function generateCompanyCode(companyName: string): string {
+export function generateCompanyCode(
+  companyName: string,
+  includeRandomSuffix: boolean = true
+): string {
   const sanitized = companyName
     .toLowerCase()
     .trim()
@@ -114,6 +118,10 @@ export function generateCompanyCode(companyName: string): string {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
+
+  if (!includeRandomSuffix) {
+    return sanitized || generateRandomString(4);
+  }
 
   const randomSuffix = generateRandomString(4);
   return sanitized ? `${sanitized}-${randomSuffix}` : randomSuffix;
