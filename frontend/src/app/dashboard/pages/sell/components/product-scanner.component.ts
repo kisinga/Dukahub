@@ -276,9 +276,13 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
         optimizeForMobile: true,
       });
 
+      // Wait for video stream to be ready before starting detection
+      // This ensures video has valid dimensions and readyState
+      await this.waitForVideoReady(videoEl);
+
       this.scannerStatus.set('scanning');
 
-      // Start detection coordinator
+      // Start detection coordinator (it has its own 250ms delay built-in)
       if (this.coordinator) {
         this.coordinator.start(videoEl, (result: DetectionResult) => {
           this.handleDetection(result);
@@ -376,6 +380,49 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
       };
 
       checkForElement();
+    });
+  }
+
+  /**
+   * Wait for video element to have valid stream and dimensions
+   * Ensures video is ready for frame processing
+   */
+  private async waitForVideoReady(videoEl: HTMLVideoElement): Promise<void> {
+    const maxRetries = 20;
+    const retryDelay = 50; // 50ms between retries
+    let retries = 0;
+
+    return new Promise<void>((resolve, reject) => {
+      const checkReady = () => {
+        // Check if video has enough data (HAVE_CURRENT_DATA = 2)
+        const hasData = videoEl.readyState >= 2;
+        // Check if video has source stream
+        const hasStream = !!videoEl.srcObject;
+        // Check if video has valid dimensions
+        const hasDimensions = videoEl.videoWidth > 0 && videoEl.videoHeight > 0;
+
+        if (hasData && hasStream && hasDimensions) {
+          console.log(
+            `[ProductScanner] Video ready: ${videoEl.videoWidth}x${videoEl.videoHeight}, readyState=${videoEl.readyState}`,
+          );
+          resolve();
+          return;
+        }
+
+        retries++;
+        if (retries >= maxRetries) {
+          console.warn(
+            `[ProductScanner] Video not ready after ${maxRetries} retries (${maxRetries * retryDelay}ms)`,
+          );
+          // Don't reject - continue anyway, coordinator will handle it
+          resolve();
+          return;
+        }
+
+        setTimeout(checkReady, retryDelay);
+      };
+
+      checkReady();
     });
   }
 

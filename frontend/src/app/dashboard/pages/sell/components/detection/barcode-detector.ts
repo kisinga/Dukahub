@@ -46,8 +46,24 @@ export class BarcodeDetector implements Detector {
       return null;
     }
 
-    // Check if video is ready
-    if (!video.videoWidth || video.paused || video.ended) {
+    // Enhanced video readiness checks
+    // Check if video has enough data loaded (HAVE_CURRENT_DATA = 2)
+    if (video.readyState < 2) {
+      return null;
+    }
+
+    // Check if video has a source stream
+    if (!video.srcObject) {
+      return null;
+    }
+
+    // Check if video has valid dimensions
+    if (!video.videoWidth || !video.videoHeight || video.videoWidth < 64 || video.videoHeight < 64) {
+      return null;
+    }
+
+    // Check if video is playing
+    if (video.paused || video.ended) {
       return null;
     }
 

@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Span, SpanStatusCode, trace } from '@opentelemetry/api';
-import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
@@ -92,10 +91,9 @@ export class TracingService {
         ],
       });
 
-      // Register with Zone.js context manager (required for Angular)
-      provider.register({
-        contextManager: new ZoneContextManager(),
-      });
+      // Register provider without Zone.js context manager (zoneless Angular)
+      // The default context manager works fine for zoneless applications
+      provider.register();
 
       this.tracer = trace.getTracer(serviceName);
       this.initialized = true;
@@ -119,16 +117,16 @@ export class TracingService {
       // Return a no-op span if not initialized
       return {
         spanContext: () => ({ traceId: '', spanId: '', traceFlags: 0 }),
-        setAttribute: () => {},
-        setAttributes: () => {},
-        addEvent: () => {},
-        addLink: () => {},
-        addLinks: () => {},
-        setStatus: () => {},
-        updateName: () => {},
-        end: () => {},
+        setAttribute: () => { },
+        setAttributes: () => { },
+        addEvent: () => { },
+        addLink: () => { },
+        addLinks: () => { },
+        setStatus: () => { },
+        updateName: () => { },
+        end: () => { },
         isRecording: () => false,
-        recordException: () => {},
+        recordException: () => { },
       } as unknown as Span;
     }
 

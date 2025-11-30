@@ -227,6 +227,21 @@ export class MlModelService {
       await tf.ready();
       const metadataResponse = await fetch(sources.metadataUrl);
       if (!metadataResponse.ok) {
+        // Handle 404 as "model not available" (expected scenario)
+        if (metadataResponse.status === 404) {
+          const error: ModelError = {
+            type: ModelErrorType.NOT_FOUND,
+            message: 'ML model not configured for this channel. Please set up the model asset IDs in channel settings.',
+            technicalDetails: `Metadata URL returned HTTP ${metadataResponse.status}`,
+          };
+          this.errorSignal.set(error);
+          this.model = null;
+          this.metadata = null;
+          this.isInitializedSignal.set(false);
+          console.warn('⚠️ ML model not available:', error.message);
+          return false;
+        }
+        // Other HTTP errors are unexpected
         throw new Error(`Failed to fetch metadata: HTTP ${metadataResponse.status}`);
       }
       const metadata = await metadataResponse.json();
@@ -246,8 +261,17 @@ export class MlModelService {
       this.isInitializedSignal.set(true);
       return true;
     } catch (error: any) {
-      console.error('❌ Failed to load model:', error);
-      this.errorSignal.set(this.parseError(error));
+      // Parse error to determine if it's expected (404) or unexpected
+      const parsedError = this.parseError(error);
+      
+      // Use appropriate logging level based on error type
+      if (parsedError.type === ModelErrorType.NOT_FOUND) {
+        console.warn('⚠️ ML model not available:', parsedError.message);
+      } else {
+        console.error('❌ Failed to load model:', error);
+      }
+      
+      this.errorSignal.set(parsedError);
       this.model = null;
       this.metadata = null;
       this.isInitializedSignal.set(false);

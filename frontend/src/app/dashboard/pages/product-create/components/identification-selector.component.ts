@@ -22,45 +22,29 @@ import { PhotoManagerComponent } from './photo-manager.component';
   imports: [CommonModule, ReactiveFormsModule, PhotoManagerComponent, BarcodeScannerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="card bg-base-100 border border-base-300">
-      <!-- Tabs using daisyUI -->
-      <div role="tablist" class="tabs tabs-boxed bg-base-200 rounded-t-lg rounded-b-none">
-        <button
-          type="button"
-          role="tab"
-          class="tab tab-lg flex-1 gap-2"
-          [class.tab-active]="identificationMethod() === 'barcode'"
-          (click)="onMethodChange('barcode')"
-        >
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 5h2v14H3zM7 5h1v14H7zM11 5h2v14h-2zM15 5h1v14h-1zM19 5h2v14h-2z"/>
-          </svg>
-          <span>Barcode</span>
-          @if (barcodeControl().value) {
-            <span class="badge badge-sm badge-success">✓</span>
-          }
-        </button>
-        <button
-          type="button"
-          role="tab"
-          class="tab tab-lg flex-1 gap-2"
-          [class.tab-active]="identificationMethod() === 'label-photos'"
-          (click)="onMethodChange('label-photos')"
-        >
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
-          </svg>
-          <span>Photos</span>
-          @if (photoCount() >= 5) {
-            <span class="badge badge-sm badge-success">✓</span>
-          } @else if (photoCount() > 0) {
-            <span class="badge badge-sm badge-primary">{{ photoCount() }}</span>
-          }
-        </button>
-      </div>
-
-      <!-- Tab content -->
-      <div class="card-body p-4 min-h-[120px]">
+    <div class="tabs tabs-lift w-full [--tab-bg:var(--color-base-300)] lg:bg-base-200 lg:p-1 lg:rounded-xl">
+      <!-- Barcode tab -->
+      <label
+        class="tab flex-1 gap-2 font-medium"
+        [class.tab-active]="identificationMethod() === 'barcode'"
+        [class.text-primary]="identificationMethod() === 'barcode'"
+      >
+        <input
+          type="radio"
+          name="identification_tabs"
+          class="hidden"
+          [checked]="identificationMethod() === 'barcode'"
+          (change)="onMethodChange('barcode')"
+        />
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 5h2v14H3zM7 5h1v14H7zM11 5h2v14h-2zM15 5h1v14h-1zM19 5h2v14h-2z"/>
+        </svg>
+        <span>Barcode</span>
+        @if (barcodeControl().value) {
+          <span class="badge badge-xs badge-success">✓</span>
+        }
+      </label>
+      <div class="tab-content bg-base-100 border-base-300 p-3 min-h-[100px]">
         @if (identificationMethod() === 'barcode') {
           <div class="space-y-3">
             @if (isScannerActive()) {
@@ -103,8 +87,37 @@ import { PhotoManagerComponent } from './photo-manager.component';
               }
             }
           </div>
+        } @else {
+          <div class="flex items-center justify-center h-16">
+            <p class="text-sm text-base-content/40">Enter or scan a barcode</p>
+          </div>
         }
+      </div>
 
+      <!-- Photos tab -->
+      <label
+        class="tab flex-1 gap-2 font-medium"
+        [class.tab-active]="identificationMethod() === 'label-photos'"
+        [class.text-primary]="identificationMethod() === 'label-photos'"
+      >
+        <input
+          type="radio"
+          name="identification_tabs"
+          class="hidden"
+          [checked]="identificationMethod() === 'label-photos'"
+          (change)="onMethodChange('label-photos')"
+        />
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+        </svg>
+        <span>Photos</span>
+        @if (photoCount() >= 5) {
+          <span class="badge badge-xs badge-success">✓</span>
+        } @else if (photoCount() > 0) {
+          <span class="badge badge-xs badge-primary">{{ photoCount() }}</span>
+        }
+      </label>
+      <div class="tab-content bg-base-100 border-base-300 p-3 min-h-[100px]">
         @if (identificationMethod() === 'label-photos') {
           <div class="space-y-3">
             <app-photo-manager
@@ -122,11 +135,9 @@ import { PhotoManagerComponent } from './photo-manager.component';
               <p class="text-xs text-center opacity-60">Take {{ 5 - photoCount() }} more photo{{ 5 - photoCount() > 1 ? 's' : '' }} of the product label</p>
             }
           </div>
-        }
-
-        @if (!identificationMethod()) {
-          <div class="flex items-center justify-center h-24">
-            <p class="text-sm opacity-40">Choose how to identify this product</p>
+        } @else {
+          <div class="flex items-center justify-center h-16">
+            <p class="text-sm text-base-content/40">Take photos of the product label</p>
           </div>
         }
       </div>
