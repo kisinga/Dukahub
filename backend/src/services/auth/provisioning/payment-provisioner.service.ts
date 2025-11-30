@@ -44,7 +44,7 @@ export class PaymentProvisionerService {
   async createAndAssignPaymentMethods(
     ctx: RequestContext,
     channelId: string,
-    companyCode: string
+    companyCode: string // Company code from channel.code
   ): Promise<PaymentMethod[]> {
     try {
       const paymentMethods: PaymentMethod[] = [];

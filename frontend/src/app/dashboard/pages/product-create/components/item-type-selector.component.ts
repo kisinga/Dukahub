@@ -5,41 +5,37 @@ import { ItemType } from '../types/product-creation.types';
 /**
  * Item Type Selector Component
  *
- * Handles product vs service selection with clear visual distinction.
- * Simple presentational component with no business logic.
+ * Clean segment control for product vs service.
  */
 @Component({
   selector: 'app-item-type-selector',
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="card bg-base-100 shadow">
-      <div class="card-body p-3">
-        <h3 class="font-bold text-sm">What are you adding?</h3>
-        <div class="grid grid-cols-2 gap-2 mt-2">
-          <button
-            type="button"
-            class="btn btn-lg flex-col h-auto py-4"
-            [class.btn-primary]="itemType() === 'product'"
-            (click)="onItemTypeChange('product')"
-          >
-            <span class="text-2xl">🛒</span>
-            <span class="text-sm font-medium">Physical product</span>
-            <span class="text-xs opacity-60">Tracked in stock</span>
-          </button>
+    <div class="join w-full bg-base-200 p-1 rounded-lg">
+      <button
+        type="button"
+        class="btn join-item flex-1 flex-col h-auto py-3 gap-1"
+        [class.btn-primary]="itemType() === 'product'"
+        [class.btn-ghost]="itemType() !== 'product'"
+        (click)="onItemTypeChange('product')"
+      >
+        <span class="text-2xl">📦</span>
+        <span class="text-sm font-semibold">Product</span>
+        <span class="text-xs opacity-60">Tracked stock</span>
+      </button>
 
-          <button
-            type="button"
-            class="btn btn-lg flex-col h-auto py-4"
-            [class.btn-primary]="itemType() === 'service'"
-            (click)="onItemTypeChange('service')"
-          >
-            <span class="text-2xl">🧾</span>
-            <span class="text-sm font-medium">Service</span>
-            <span class="text-xs opacity-60">No stock tracking</span>
-          </button>
-        </div>
-      </div>
+      <button
+        type="button"
+        class="btn join-item flex-1 flex-col h-auto py-3 gap-1"
+        [class.btn-primary]="itemType() === 'service'"
+        [class.btn-ghost]="itemType() !== 'service'"
+        (click)="onItemTypeChange('service')"
+      >
+        <span class="text-2xl">✨</span>
+        <span class="text-sm font-semibold">Service</span>
+        <span class="text-xs opacity-60">No stock</span>
+      </button>
     </div>
   `,
 })

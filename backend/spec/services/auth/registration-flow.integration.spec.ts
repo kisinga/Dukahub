@@ -23,7 +23,7 @@ describe('Registration Flow Integration', () => {
 
   const registrationData: RegistrationInput = {
     companyName: 'Test Company',
-    companyCode: 'test-company',
+    // companyCode is NOT part of input - backend generates it from companyName
     currency: 'KES',
     adminFirstName: 'Jane',
     adminLastName: 'Doe',
@@ -310,7 +310,7 @@ describe('Registration Flow Integration', () => {
       await harness2.registrationService.provisionCustomer(ctx, {
         ...registrationData,
         companyName: 'Company B',
-        companyCode: 'company-b',
+        // companyCode is NOT part of input - backend generates it from companyName
       });
 
       // Each registration should create its own seller

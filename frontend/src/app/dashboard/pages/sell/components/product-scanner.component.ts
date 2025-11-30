@@ -13,30 +13,27 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import {
-  BarcodeResult,
-  BarcodeScannerService,
-} from '../../../../core/services/barcode-scanner.service';
+import { BarcodeScannerService } from '../../../../core/services/barcode-scanner.service';
 import { CameraService } from '../../../../core/services/camera.service';
-import { loadMlModelService } from '../../../../core/services/ml-model.loader';
-import type { MlModelService, ModelPrediction } from '../../../../core/services/ml-model.service';
-import {
-  ProductSearchResult,
-  ProductSearchService,
-} from '../../../../core/services/product/product-search.service';
+import { ProductSearchResult } from '../../../../core/services/product/product-search.service';
+import { ProductSearchService } from '../../../../core/services/product/product-search.service';
 import { ScannerBeepService } from '../../../../core/services/scanner-beep.service';
+import { BarcodeDetector } from './detection/barcode-detector';
+import { DetectionCoordinator } from './detection/detection-coordinator';
+import { DetectionResult } from './detection/detection.types';
+import { MLDetector } from './detection/ml-detector';
 
-type ScannerStatus =
-  | 'idle'
-  | 'initializing'
-  | 'loading_model'
-  | 'ready'
-  | 'scanning'
-  | 'detecting'
-  | 'error';
+type ScannerStatus = 'idle' | 'initializing' | 'ready' | 'scanning' | 'error';
 
 /**
- * Product scanner component with ML and barcode detection
+ * Product scanner component with dual detection (barcode + ML)
+ *
+ * Uses a modular architecture with:
+ * - DetectionCoordinator: manages frame distribution between detectors
+ * - BarcodeDetector: barcode scanning via BarcodeDetector API
+ * - MLDetector: ML-based product recognition via TensorFlow.js
+ *
+ * Frame distribution is alternating (50/50) between barcode and ML detection.
  */
 @Component({
   selector: 'app-product-scanner',
@@ -50,6 +47,9 @@ type ScannerStatus =
             <div class="flex items-center gap-2">
               <div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
               <span class="font-semibold text-sm">Scanning...</span>
+              @if (activeDetectors().length > 0) {
+                <span class="text-xs opacity-60">({{ activeDetectors().join(', ') }})</span>
+              }
             </div>
             <button class="btn btn-sm btn-error" (click)="stopScanner()">Stop</button>
           </div>
@@ -121,24 +121,23 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
   // Inputs
   readonly channelId = input.required<string>();
   readonly confidenceThreshold = input<number>(0.9);
-  readonly detectionIntervalMs = input<number>(1200);
   readonly enableMLDetection = input<boolean>(true);
   readonly enableBarcodeScanning = input<boolean>(true);
   readonly autoStartOnMobile = input<boolean>(true);
+  readonly detectionTimeoutMs = input<number>(30000);
 
   // Outputs
   readonly productDetected = output<ProductSearchResult>();
   readonly scannerReady = output<void>();
   readonly scannerError = output<string>();
-  readonly scanningStateChange = output<boolean>(); // Emit when scanning starts/stops
+  readonly scanningStateChange = output<boolean>();
 
   // Services
   private readonly injector = inject(Injector);
-  private readonly mlModelServiceSignal = signal<MlModelService | null>(null);
   private readonly cameraService = inject(CameraService);
   private readonly barcodeService = inject(BarcodeScannerService);
   private readonly productSearchService = inject(ProductSearchService);
-  private readonly scannerBeepService = inject(ScannerBeepService);
+  private readonly beepService = inject(ScannerBeepService);
 
   // View references
   readonly videoElement = viewChild<ElementRef<HTMLVideoElement>>('cameraView');
@@ -146,11 +145,10 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
   // State
   readonly scannerStatus = signal<ScannerStatus>('idle');
   readonly isScanning = signal<boolean>(false);
-  readonly mlModelError = computed(() => this.mlModelServiceSignal()?.error() ?? null);
+  readonly activeDetectors = signal<string[]>([]);
 
-  // Detection loop
-  private detectionInterval: any = null;
-  private detectionInProgress = false; // Track if a detection is already being processed
+  // Detection coordinator
+  private coordinator: DetectionCoordinator | null = null;
   private cameraCleanup: (() => void) | null = null;
 
   readonly canStart = computed(() => {
@@ -164,13 +162,18 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopScanner();
-    this.mlModelServiceSignal()?.unloadModel();
+    this.coordinator?.cleanup();
+    this.coordinator = null;
   }
 
+  /**
+   * Initialize scanner - check camera, create coordinator and detectors
+   */
   private async initializeScanner(): Promise<void> {
     this.scannerStatus.set('initializing');
 
     try {
+      // Check camera availability
       const cameraAvailable = await this.cameraService.isCameraAvailable();
       if (!cameraAvailable) {
         const error = 'No camera found on this device';
@@ -179,48 +182,73 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
         return;
       }
 
-      if (this.enableBarcodeScanning() && this.barcodeService.isSupported()) {
-        await this.barcodeService.initialize();
+      // Create coordinator
+      this.coordinator = new DetectionCoordinator({
+        timeoutMs: this.detectionTimeoutMs(),
+        pauseOnHidden: true,
+        minFrameIntervalMs: 100,
+      });
+
+      // Register barcode detector
+      if (this.enableBarcodeScanning()) {
+        const barcodeDetector = new BarcodeDetector(
+          this.barcodeService,
+          this.productSearchService,
+          this.beepService,
+        );
+        this.coordinator.registerDetector(barcodeDetector);
       }
 
+      // Register ML detector
       if (this.enableMLDetection()) {
-        this.scannerStatus.set('loading_model');
-        const mlModelService = await this.ensureMlModelService();
-        const modelLoaded = await mlModelService.loadModel(this.channelId());
-
-        if (!modelLoaded) {
-          const error = mlModelService.error();
-          console.warn('ML model not available:', error?.message);
-        }
+        const mlDetector = new MLDetector(
+          this.injector,
+          this.productSearchService,
+          this.beepService,
+          this.channelId(),
+          this.confidenceThreshold(),
+        );
+        this.coordinator.registerDetector(mlDetector);
       }
 
+      // Initialize all detectors
+      const anyReady = await this.coordinator.initializeDetectors();
+
+      if (!anyReady) {
+        console.warn('[ProductScanner] No detectors initialized successfully');
+        // Continue anyway - camera will still work, just no detection
+      }
+
+      this.activeDetectors.set(this.coordinator.getReadyDetectors());
       this.scannerStatus.set('ready');
       this.scannerReady.emit();
 
-      // Auto-start on mobile - but don't propagate errors
+      // Auto-start on mobile
       if (this.autoStartOnMobile() && this.isMobileDevice()) {
         setTimeout(() => {
           this.startScanner().catch((err) => {
-            console.warn('Auto-start failed (non-fatal):', err);
-            // Reset to ready state so user can manually retry
+            console.warn('[ProductScanner] Auto-start failed (non-fatal):', err);
             this.scannerStatus.set('ready');
           });
         }, 500);
       }
     } catch (error: any) {
-      console.error('Scanner initialization failed:', error);
+      console.error('[ProductScanner] Initialization failed:', error);
       this.scannerStatus.set('error');
       this.scannerError.emit(error.message);
     }
   }
 
+  /**
+   * Start the scanner - show camera and begin detection
+   */
   async startScanner(): Promise<void> {
     if (!this.canStart()) {
-      console.warn('Cannot start scanner in current state:', this.scannerStatus());
+      console.warn('[ProductScanner] Cannot start in current state:', this.scannerStatus());
       return;
     }
 
-    // If recovering from error, clear it first
+    // If recovering from error, reset state
     if (this.scannerStatus() === 'error') {
       this.scannerStatus.set('initializing');
     }
@@ -229,10 +257,9 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
     this.isScanning.set(true);
     this.scanningStateChange.emit(true);
 
-    // Wait for Angular change detection + DOM paint (double RAF ensures paint complete)
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    // Wait for video element with robust polling
+    const videoEl = await this.waitForVideoElement();
 
-    const videoEl = this.videoElement()?.nativeElement;
     if (!videoEl) {
       const error = 'Camera view not ready. Please try again.';
       this.scannerStatus.set('error');
@@ -243,33 +270,39 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
     }
 
     try {
-      // Start camera with mobile optimization
+      // Start camera
       this.cameraCleanup = await this.cameraService.startCamera(videoEl, {
         facingMode: 'environment',
         optimizeForMobile: true,
       });
 
       this.scannerStatus.set('scanning');
-      this.startDetectionLoops(videoEl);
+
+      // Start detection coordinator
+      if (this.coordinator) {
+        this.coordinator.start(videoEl, (result: DetectionResult) => {
+          this.handleDetection(result);
+        });
+        this.activeDetectors.set(this.coordinator.getReadyDetectors());
+      }
     } catch (error: any) {
-      console.error('Failed to start scanner:', error);
+      console.error('[ProductScanner] Failed to start:', error);
       this.scannerStatus.set('error');
       this.scannerError.emit(error.message);
       this.isScanning.set(false);
       this.scanningStateChange.emit(false);
-      throw error; // Propagate for promise chain
+      throw error;
     }
   }
 
+  /**
+   * Stop the scanner
+   */
   stopScanner(): void {
-    if (this.detectionInterval) {
-      clearInterval(this.detectionInterval);
-      this.detectionInterval = null;
-    }
+    // Stop coordinator
+    this.coordinator?.stop();
 
-    this.barcodeService.stopScanning();
-
-    // Use cleanup function if available, otherwise fallback to manual stop
+    // Stop camera
     if (this.cameraCleanup) {
       this.cameraCleanup();
       this.cameraCleanup = null;
@@ -282,10 +315,12 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
 
     this.isScanning.set(false);
     this.scannerStatus.set('ready');
-    this.detectionInProgress = false; // Reset detection flag
     this.scanningStateChange.emit(false);
   }
 
+  /**
+   * Toggle scanner on/off
+   */
   toggleScanner(): void {
     if (this.isScanning()) {
       this.stopScanner();
@@ -294,136 +329,60 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
     }
   }
 
-  private startDetectionLoops(videoElement: HTMLVideoElement): void {
-    if (this.enableBarcodeScanning() && this.barcodeService.isSupported()) {
-      // Barcode scanning with timeout and visibility handling
-      this.barcodeService.startScanning(
-        videoElement,
-        (result) => this.handleBarcodeDetection(result),
-        { timeoutMs: 30000, pauseOnHidden: true },
-      );
-    }
+  /**
+   * Handle detection result from coordinator
+   */
+  private handleDetection(result: DetectionResult): void {
+    console.log(`[ProductScanner] Detection from ${result.type}:`, result.product.name);
 
-    if (this.enableMLDetection() && this.isMlModelInitialized()) {
-      this.detectionInterval = setInterval(() => {
-        this.runMLDetection(videoElement);
-      }, this.detectionIntervalMs());
-    }
+    // Stop scanner
+    this.stopScanner();
+
+    // Emit product to parent
+    this.productDetected.emit(result.product);
   }
 
-  private async runMLDetection(videoElement: HTMLVideoElement): Promise<void> {
-    if (
-      !this.isScanning() ||
-      !videoElement.videoWidth ||
-      videoElement.paused ||
-      videoElement.ended
-    ) {
+  /**
+   * Wait for video element to be available in the DOM
+   * Uses double-RAF pattern + polling for reliability
+   */
+  private async waitForVideoElement(): Promise<HTMLVideoElement | null> {
+    // Wait for Angular change detection + DOM paint (double RAF ensures paint complete)
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    // Poll for element with timeout
+    const maxRetries = 10;
+    const retryDelay = 50; // 50ms between retries
+    let retries = 0;
+
+    return new Promise<HTMLVideoElement | null>((resolve) => {
+      const checkForElement = () => {
+        const videoEl = this.videoElement()?.nativeElement;
+        if (videoEl) {
+          resolve(videoEl);
       return;
     }
 
-    try {
-      const mlModelService = await this.ensureMlModelService();
-      const predictions = await mlModelService.predict(videoElement, 3);
-      const bestPrediction = predictions[0];
-
-      if (bestPrediction && bestPrediction.probability >= this.confidenceThreshold()) {
-        console.log('ML Detection:', bestPrediction);
-        this.scannerStatus.set('detecting');
-        await this.handleMLDetection(bestPrediction);
-      }
-    } catch (error) {
-      console.error('ML detection error:', error);
-    }
-  }
-
-  private async handleMLDetection(prediction: ModelPrediction): Promise<void> {
-    // Check if barcode detection is already in progress (barcode takes priority)
-    if (this.detectionInProgress) {
-      console.log('ML detection skipped: barcode detection in progress');
+        retries++;
+        if (retries >= maxRetries) {
+          console.warn(
+            `[ProductScanner] Video element not found after ${maxRetries} retries (${maxRetries * retryDelay}ms)`,
+          );
+          resolve(null);
       return;
     }
 
-    this.detectionInProgress = true;
-    const mlModelService = await this.ensureMlModelService();
-    const productId = mlModelService.getProductIdFromLabel(prediction.className);
+        setTimeout(checkForElement, retryDelay);
+      };
 
-    try {
-      // const product = await this.productSearchService.getProductById(productId);
-      // HARDCODED PRODUCT ID FOR TESTING
-      const product = await this.productSearchService.getProductById('3');
-
-      if (product) {
-        // Play beep sound on successful detection (fire and forget)
-        this.scannerBeepService.playBeep().catch(() => {
-          // Silently handle beep errors - don't interrupt detection flow
-        });
-        this.stopScanner();
-        this.productDetected.emit(product);
-      } else {
-        // Product not in database - log and continue scanning
-        console.warn(`⚠️ ML detected "${prediction.className}" but product not found in system`);
-        this.detectionInProgress = false; // Reset flag to allow future detections
-        // Don't stop scanner, just continue looking
-      }
-    } catch (error) {
-      console.error('Product lookup failed:', error);
-      this.detectionInProgress = false; // Reset flag on error
-      // Don't stop scanner on lookup errors
-    }
+      checkForElement();
+    });
   }
 
-  private async handleBarcodeDetection(result: BarcodeResult): Promise<void> {
-    console.log('Barcode detected:', result);
-
-    // Barcode takes priority - set flag immediately to prevent ML detection
-    this.detectionInProgress = true;
-
-    try {
-      const variant = await this.productSearchService.searchByBarcode(result.rawValue);
-
-      if (variant) {
-        // Play beep sound on successful detection (fire and forget)
-        this.scannerBeepService.playBeep().catch(() => {
-          // Silently handle beep errors - don't interrupt detection flow
-        });
-        this.stopScanner();
-        const product: ProductSearchResult = {
-          id: variant.productId,
-          name: variant.productName,
-          variants: [variant],
-          featuredAsset: variant.featuredAsset,
-        };
-        this.productDetected.emit(product);
-      } else {
-        // Barcode not in database - log and continue scanning
-        console.warn(`⚠️ Barcode "${result.rawValue}" not found in system`);
-        this.detectionInProgress = false; // Reset flag to allow future detections
-        // Don't stop scanner, just continue looking
-      }
-    } catch (error) {
-      console.error('Barcode lookup failed:', error);
-      this.detectionInProgress = false; // Reset flag on error
-      // Don't stop scanner on lookup errors
-    }
-  }
-
+  /**
+   * Check if running on mobile device
+   */
   private isMobileDevice(): boolean {
     return navigator.maxTouchPoints > 0 && window.innerWidth < 768;
-  }
-
-  private isMlModelInitialized(): boolean {
-    const service = this.mlModelServiceSignal();
-    return service ? service.isInitialized() : false;
-  }
-
-  private async ensureMlModelService(): Promise<MlModelService> {
-    const existing = this.mlModelServiceSignal();
-    if (existing) {
-      return existing;
-    }
-
-    const service = await loadMlModelService(this.injector);
-    this.mlModelServiceSignal.set(service);
-    return service;
   }
 }

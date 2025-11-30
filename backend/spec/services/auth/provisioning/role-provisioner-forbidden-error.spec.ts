@@ -89,7 +89,7 @@ describe('RoleProvisionerService - ForbiddenError Scenario', () => {
 
   const registrationData: RegistrationInput = {
     companyName: 'Test Company',
-    companyCode: 'test-company',
+    // companyCode is NOT part of input - backend generates it from companyName
     currency: 'USD',
     adminFirstName: 'Jane',
     adminLastName: 'Doe',
@@ -248,7 +248,8 @@ describe('RoleProvisionerService - ForbiddenError Scenario', () => {
       const result = await service.createAdminRole(
         ctxWithSuperadminButNoMatchingRoles,
         registrationData,
-        '2'
+        '2',
+        'test-company' // Mock company code
       );
 
       // Should succeed because we use repository directly
@@ -281,7 +282,7 @@ describe('RoleProvisionerService - ForbiddenError Scenario', () => {
         } as unknown as User,
       } as unknown as RequestContext;
 
-      const result = await service.createAdminRole(ctxWithWrongSeller, registrationData, '2');
+      const result = await service.createAdminRole(ctxWithWrongSeller, registrationData, '2', 'test-company');
 
       // Should succeed because we use repository directly
       expect(result).toBeDefined();
@@ -310,7 +311,7 @@ describe('RoleProvisionerService - ForbiddenError Scenario', () => {
         } as unknown as User,
       } as unknown as RequestContext;
 
-      const result = await service.createAdminRole(ctxWithMatchingRoles, registrationData, '2');
+      const result = await service.createAdminRole(ctxWithMatchingRoles, registrationData, '2', 'test-company');
 
       expect(result).toBeDefined();
       expect(result.id).toBe(6);

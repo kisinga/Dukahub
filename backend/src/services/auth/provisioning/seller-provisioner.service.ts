@@ -59,7 +59,7 @@ export class SellerProvisionerService {
       // Audit log
       await this.auditor.logEntityCreated(ctx, 'Seller', savedSeller.id.toString(), savedSeller, {
         companyName: registrationData.companyName,
-        companyCode: registrationData.companyCode,
+        // companyCode not available at seller creation time - will be generated with channel
       });
 
       return savedSeller;

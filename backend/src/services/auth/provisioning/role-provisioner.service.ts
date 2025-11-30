@@ -228,10 +228,11 @@ export class RoleProvisionerService {
   async createAdminRole(
     ctx: RequestContext,
     registrationData: RegistrationInput,
-    channelId: ID
+    channelId: ID,
+    companyCode: string // Company code from channel.code
   ): Promise<Role> {
     try {
-      const roleCode = `${registrationData.companyCode}-admin`;
+      const roleCode = `${companyCode}-admin`;
 
       // Load the new channel for assignment
       const channel = await this.connection.getRepository(ctx, Channel).findOne({
@@ -274,7 +275,7 @@ export class RoleProvisionerService {
       // Audit log
       await this.auditor.logEntityCreated(ctx, 'Role', savedRole.id.toString(), savedRole, {
         channelId: channelId.toString(),
-        companyCode: registrationData.companyCode,
+        companyCode: companyCode,
         companyName: registrationData.companyName,
       });
 

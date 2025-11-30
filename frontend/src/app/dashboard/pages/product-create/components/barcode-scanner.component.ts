@@ -31,151 +31,190 @@ import { TracingService } from '../../../../core/services/tracing.service';
       <!-- Compact inline mode -->
       <div class="space-y-2">
         @if (isScanning()) {
-          <div class="relative aspect-video bg-black rounded-lg overflow-hidden">
-            <video #cameraVideo autoplay playsinline class="w-full h-full object-cover"></video>
-            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div class="border-2 border-primary w-3/4 h-3/4 rounded-lg"></div>
+          <div class="scanner-container">
+            <video #cameraVideo autoplay playsinline class="scanner-video"></video>
+            <!-- Viewfinder overlay -->
+            <div class="scanner-overlay">
+              <div class="scanner-frame">
+                <!-- Corner brackets -->
+                <div class="corner corner-tl"></div>
+                <div class="corner corner-tr"></div>
+                <div class="corner corner-bl"></div>
+                <div class="corner corner-br"></div>
+                <!-- Scan line -->
+                <div class="scan-line"></div>
+              </div>
+            </div>
+            <!-- Hint text using badge -->
+            <div class="badge badge-sm badge-ghost absolute bottom-3 left-1/2 -translate-x-1/2">
+              Align barcode within frame
             </div>
           </div>
-          <button
-            type="button"
-            (click)="stopScanning()"
-            class="btn btn-sm btn-error btn-block gap-2"
-          >
-            <span class="material-symbols-outlined text-base">stop</span>
-            <span>Stop Scanner</span>
+          <button type="button" (click)="stopScanning()" class="btn btn-sm btn-ghost btn-block">
+            Cancel
           </button>
-        } @else {
-          <div class="text-center text-xs opacity-60 py-2">Ready to scan barcode</div>
         }
         @if (error()) {
-          <div role="alert" class="alert alert-error alert-sm py-1">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+          <div class="alert alert-error alert-sm py-2">
             <span class="text-xs">{{ error() }}</span>
           </div>
         }
         @if (lastScannedCode()) {
-          <div role="alert" class="alert alert-success alert-sm py-1">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
+          <div class="alert alert-success alert-sm py-2">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
             </svg>
-            <span class="text-xs">Scanned: {{ lastScannedCode() }}</span>
+            <span class="text-xs">{{ lastScannedCode() }}</span>
           </div>
         }
       </div>
     } @else {
       <!-- Full card mode (default) -->
       <div class="card card-border bg-base-100">
-        <div class="card-body">
-          <h2 class="card-title">Scan Barcode</h2>
-          <p class="text-sm text-base-content/70 mb-4">
-            Scan product barcodes to automatically fill barcode field
-          </p>
+        <div class="card-body p-4">
+          <h2 class="card-title text-base">Scan Barcode</h2>
 
           @if (!isScanning()) {
-            <!-- Instructions when not scanning -->
-            <div role="alert" class="alert alert-info mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>Click "Scan with camera" to start scanning</span>
-            </div>
+            <p class="text-sm opacity-60">Use camera to scan product barcode</p>
           } @else {
-            <!-- Camera view when scanning -->
-            <div class="mb-4">
-              <div class="relative aspect-video bg-black rounded-lg overflow-hidden">
-                <video #cameraVideo autoplay playsinline class="w-full h-full object-cover"></video>
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div class="border-2 border-primary w-3/4 h-3/4 rounded-lg"></div>
+            <div class="scanner-container scanner-container-lg">
+              <video #cameraVideo autoplay playsinline class="scanner-video"></video>
+              <div class="scanner-overlay">
+                <div class="scanner-frame">
+                  <div class="corner corner-tl"></div>
+                  <div class="corner corner-tr"></div>
+                  <div class="corner corner-bl"></div>
+                  <div class="corner corner-br"></div>
+                  <div class="scan-line"></div>
                 </div>
               </div>
-              <button type="button" (click)="stopScanning()" class="btn btn-error btn-block mt-2">
-                Stop Scanner
-              </button>
-            </div>
-          }
-
-          <!-- Error message -->
-          @if (error()) {
-            <div role="alert" class="alert alert-error">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <div>
-                <h3 class="font-bold">Barcode scanning not available</h3>
-                <div class="text-xs">{{ error() }}</div>
+              <div class="badge badge-sm badge-ghost absolute bottom-3 left-1/2 -translate-x-1/2">
+                Align barcode within frame
               </div>
             </div>
+            <button type="button" (click)="stopScanning()" class="btn btn-error btn-block mt-2">
+              Stop Scanner
+            </button>
           }
 
-          <!-- Success message after scan -->
+          @if (error()) {
+            <div class="alert alert-error mt-2">
+              <span class="text-sm">{{ error() }}</span>
+            </div>
+          }
+
           @if (lastScannedCode()) {
-            <div role="alert" class="alert alert-success">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+            <div class="alert alert-success mt-2">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
               </svg>
-              <span>Barcode scanned: {{ lastScannedCode() }}</span>
+              <span>Scanned: {{ lastScannedCode() }}</span>
             </div>
           }
         </div>
       </div>
+    }
+  `,
+  styles: `
+    /* Minimal custom CSS for viewfinder - cannot be done with daisyUI */
+    .scanner-container {
+      position: relative;
+      aspect-ratio: 4/3;
+      background: #000;
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+
+    .scanner-container-lg {
+      aspect-ratio: 16/10;
+    }
+
+    .scanner-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .scanner-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .scanner-frame {
+      position: relative;
+      width: 75%;
+      height: 55%;
+      max-width: 280px;
+      max-height: 180px;
+      min-width: 200px;
+      min-height: 120px;
+    }
+
+    /* Corner brackets - custom styling required */
+    .corner {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-color: oklch(var(--p));
+      border-style: solid;
+      border-width: 3px;
+    }
+
+    .corner-tl {
+      top: 0;
+      left: 0;
+      border-right: none;
+      border-bottom: none;
+      border-top-left-radius: 8px;
+    }
+
+    .corner-tr {
+      top: 0;
+      right: 0;
+      border-left: none;
+      border-bottom: none;
+      border-top-right-radius: 8px;
+    }
+
+    .corner-bl {
+      bottom: 0;
+      left: 0;
+      border-right: none;
+      border-top: none;
+      border-bottom-left-radius: 8px;
+    }
+
+    .corner-br {
+      bottom: 0;
+      right: 0;
+      border-left: none;
+      border-top: none;
+      border-bottom-right-radius: 8px;
+    }
+
+    /* Animated scan line - custom animation required */
+    .scan-line {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, oklch(var(--p)), transparent);
+      animation: scan 2s ease-in-out infinite;
+    }
+
+    @keyframes scan {
+      0%, 100% {
+        top: 10%;
+        opacity: 0.5;
+      }
+      50% {
+        top: 85%;
+        opacity: 1;
+      }
     }
   `,
 })

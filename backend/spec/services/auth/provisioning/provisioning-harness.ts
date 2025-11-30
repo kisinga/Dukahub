@@ -61,7 +61,7 @@ export function createTestRegistrationInput(
 ): RegistrationInput {
   return {
     companyName: 'Test Company',
-    companyCode: 'test-company',
+    // companyCode is NOT part of input - backend generates it from companyName
     currency: 'USD',
     adminFirstName: 'Jane',
     adminLastName: 'Doe',
@@ -156,14 +156,24 @@ export async function assertProvisioningComplete(
   }
 
   // Verify channel configuration
-  if (channel.code !== registrationInput.companyCode) {
+  // Channel code is generated from companyName, so we verify it's a valid sanitized version
+  const expectedCodeBase = registrationInput.companyName
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  
+  // Channel code should start with the sanitized company name (may have random suffix)
+  if (!channel.code.startsWith(expectedCodeBase) && channel.code !== expectedCodeBase) {
     throw new Error(
-      `Channel code mismatch: expected ${registrationInput.companyCode}, got ${channel.code}`
+      `Channel code should be based on company name "${registrationInput.companyName}": expected to start with "${expectedCodeBase}", got "${channel.code}"`
     );
   }
 
-  // Verify role configuration
-  const expectedRoleCode = `${registrationInput.companyCode}-admin`;
+  // Verify role configuration - role code should use the generated channel code
+  const expectedRoleCode = `${channel.code}-admin`;
   if (role.code !== expectedRoleCode) {
     throw new Error(`Role code mismatch: expected ${expectedRoleCode}, got ${role.code}`);
   }

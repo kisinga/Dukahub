@@ -84,7 +84,7 @@ describe('StoreProvisionerService', () => {
   const ctx = {} as RequestContext;
   const registrationData = {
     companyName: 'Test Company',
-    companyCode: 'test-company',
+    // companyCode is NOT part of input - backend generates it from companyName
     currency: 'USD',
     adminFirstName: 'Jane',
     adminLastName: 'Doe',

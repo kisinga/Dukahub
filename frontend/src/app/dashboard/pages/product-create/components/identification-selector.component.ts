@@ -14,96 +14,119 @@ import { PhotoManagerComponent } from './photo-manager.component';
 /**
  * Identification Selector Component
  *
- * Handles barcode vs photo identification methods.
- * Embeds photo-manager and barcode-scanner components.
+ * Tabbed interface for barcode vs photo identification.
+ * Clean either/or choice with distinct content areas.
  */
 @Component({
   selector: 'app-identification-selector',
   imports: [CommonModule, ReactiveFormsModule, PhotoManagerComponent, BarcodeScannerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="card bg-base-100 shadow">
-      <div class="card-body p-3">
-        <h3 class="font-bold text-sm mb-2">Identification</h3>
-        <p class="text-xs opacity-60 mb-3">Choose one method to identify this item</p>
+    <div class="card bg-base-100 border border-base-300">
+      <!-- Tabs using daisyUI -->
+      <div role="tablist" class="tabs tabs-boxed bg-base-200 rounded-t-lg rounded-b-none">
+        <button
+          type="button"
+          role="tab"
+          class="tab tab-lg flex-1 gap-2"
+          [class.tab-active]="identificationMethod() === 'barcode'"
+          (click)="onMethodChange('barcode')"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 5h2v14H3zM7 5h1v14H7zM11 5h2v14h-2zM15 5h1v14h-1zM19 5h2v14h-2z"/>
+          </svg>
+          <span>Barcode</span>
+          @if (barcodeControl().value) {
+            <span class="badge badge-sm badge-success">✓</span>
+          }
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="tab tab-lg flex-1 gap-2"
+          [class.tab-active]="identificationMethod() === 'label-photos'"
+          (click)="onMethodChange('label-photos')"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+          </svg>
+          <span>Photos</span>
+          @if (photoCount() >= 5) {
+            <span class="badge badge-sm badge-success">✓</span>
+          } @else if (photoCount() > 0) {
+            <span class="badge badge-sm badge-primary">{{ photoCount() }}</span>
+          }
+        </button>
+      </div>
 
-        <div class="space-y-2">
-          <!-- Barcode Method -->
-          <div class="space-y-2">
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="btn btn-sm flex-1 justify-start"
-                [class.btn-primary]="identificationMethod() === 'barcode'"
-                (click)="onMethodChange('barcode')"
-              >
-                Scan barcode
-              </button>
-            </div>
-
-            @if (identificationMethod() === 'barcode') {
-              <div class="space-y-2">
-                <!-- Manual input -->
+      <!-- Tab content -->
+      <div class="card-body p-4 min-h-[120px]">
+        @if (identificationMethod() === 'barcode') {
+          <div class="space-y-3">
+            @if (isScannerActive()) {
+              <app-barcode-scanner
+                #barcodeScanner
+                [compact]="true"
+                (barcodeScanned)="onBarcodeScanned($event)"
+                (scanningStateChange)="onScanningStateChange($event)"
+              />
+            } @else {
+              <!-- Input + scan button using join -->
+              <div class="join w-full">
                 <input
                   type="text"
                   [formControl]="barcodeControl()"
-                  placeholder="Enter barcode manually"
-                  class="input input-bordered w-full input-sm"
+                  placeholder="Enter or scan barcode"
+                  class="input input-bordered join-item flex-1"
                 />
-
-                <!-- Camera scanner button or scanner view -->
-                @if (!isScannerActive()) {
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline btn-block gap-2"
-                    (click)="startBarcodeScanner()"
-                  >
-                    <span class="material-symbols-outlined text-base">camera_alt</span>
-                    <span>Scan with camera</span>
-                  </button>
-                } @else {
-                  <!-- Inline scanner view -->
-                  <div class="border border-base-300 rounded-lg p-2 bg-base-200">
-                    <app-barcode-scanner
-                      #barcodeScanner
-                      [compact]="true"
-                      (barcodeScanned)="onBarcodeScanned($event)"
-                      (scanningStateChange)="onScanningStateChange($event)"
-                    />
-                  </div>
-                }
+                <button
+                  type="button"
+                  class="btn btn-square btn-outline join-item"
+                  (click)="startBarcodeScanner()"
+                  title="Scan with camera"
+                >
+                  <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                </button>
               </div>
+              @if (barcodeControl().value) {
+                <div class="alert alert-success py-2">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m22 4-10 10-3-3"/>
+                  </svg>
+                  <span class="text-sm">Barcode ready</span>
+                </div>
+              } @else {
+                <p class="text-xs text-center opacity-60">Scan product barcode or type it manually</p>
+              }
             }
           </div>
+        }
 
-          <!-- Photo Method -->
-          <div class="space-y-2">
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="btn btn-sm flex-1 justify-start"
-                [class.btn-primary]="identificationMethod() === 'label-photos'"
-                (click)="onMethodChange('label-photos')"
-              >
-                Label photos
-              </button>
-              <span class="text-xs opacity-60">{{ photoCount() }}/5 photos</span>
-            </div>
-
-            @if (identificationMethod() === 'label-photos') {
-              <app-photo-manager
-                #photoManager
-                (photosChanged)="onPhotosChanged($event)"
-                class="mt-2"
-              />
+        @if (identificationMethod() === 'label-photos') {
+          <div class="space-y-3">
+            <app-photo-manager
+              #photoManager
+              (photosChanged)="onPhotosChanged($event)"
+            />
+            @if (photoCount() >= 5) {
+              <div class="alert alert-success py-2">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m22 4-10 10-3-3"/>
+                </svg>
+                <span class="text-sm">{{ photoCount() }} photos ready</span>
+              </div>
+            } @else {
+              <p class="text-xs text-center opacity-60">Take {{ 5 - photoCount() }} more photo{{ 5 - photoCount() > 1 ? 's' : '' }} of the product label</p>
             }
           </div>
-        </div>
+        }
 
-        @if (!hasValidIdentification()) {
-          <div class="bg-warning/10 p-2 rounded text-xs mt-2">
-            Add a barcode or at least 5 label photos to continue. You can add more photos later in
-            edit.
+        @if (!identificationMethod()) {
+          <div class="flex items-center justify-center h-24">
+            <p class="text-sm opacity-40">Choose how to identify this product</p>
           </div>
         }
       </div>
