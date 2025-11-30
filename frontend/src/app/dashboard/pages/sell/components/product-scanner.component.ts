@@ -360,8 +360,8 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
         const videoEl = this.videoElement()?.nativeElement;
         if (videoEl) {
           resolve(videoEl);
-          return;
-        }
+      return;
+    }
 
         retries++;
         if (retries >= maxRetries) {
@@ -369,8 +369,8 @@ export class ProductScannerComponent implements OnInit, OnDestroy {
             `[ProductScanner] Video element not found after ${maxRetries} retries (${maxRetries * retryDelay}ms)`,
           );
           resolve(null);
-          return;
-        }
+      return;
+    }
 
         setTimeout(checkForElement, retryDelay);
       };
