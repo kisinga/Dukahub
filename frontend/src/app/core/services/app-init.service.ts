@@ -2,6 +2,7 @@ import { Injectable, Injector, computed, inject, signal } from '@angular/core';
 import { CompanyService } from './company.service';
 import { loadMlModelService } from './ml-model.loader';
 import type { MlModelService } from './ml-model.service';
+import { ModelErrorType } from './ml-model.service';
 import { NotificationService } from './notification.service';
 import { ProductCacheService } from './product/product-cache.service';
 import { StockLocationService } from './stock-location.service';
@@ -138,13 +139,28 @@ export class AppInitService {
       const mlModelService = await this.ensureMlModelService();
       const exists = await mlModelService.checkModelExists(channelId);
       if (!exists.exists) {
-        console.warn('ML model not available:', exists.error?.message);
+        console.warn('⚠️ ML model not available:', exists.error?.message || 'Model not configured');
         return false;
       }
 
-      return await mlModelService.loadModel(channelId);
+      const loaded = await mlModelService.loadModel(channelId);
+      
+      // If loadModel returned false, check if it's a NOT_FOUND error (expected) or unexpected
+      if (!loaded) {
+        const error = mlModelService.error();
+        if (error?.type === ModelErrorType.NOT_FOUND) {
+          // Model not configured - this is expected, use warning
+          console.warn('⚠️ ML model not available:', error.message);
+        } else if (error) {
+          // Other errors (network, load errors) - log as error
+          console.error('❌ Failed to load ML model:', error.message);
+        }
+      }
+      
+      return loaded;
     } catch (error: any) {
-      console.error('Failed to prefetch ML model:', error);
+      // Only unexpected errors reach here (e.g., service initialization failures)
+      console.error('❌ Failed to prefetch ML model:', error);
       return false;
     }
   }

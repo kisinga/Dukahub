@@ -90,11 +90,11 @@ import { TracingService } from '../../../../core/services/tracing.service';
               </div>
               <div class="badge badge-sm badge-ghost absolute bottom-3 left-1/2 -translate-x-1/2">
                 Align barcode within frame
+                </div>
               </div>
-            </div>
-            <button type="button" (click)="stopScanning()" class="btn btn-error btn-block mt-2">
-              Stop Scanner
-            </button>
+              <button type="button" (click)="stopScanning()" class="btn btn-error btn-block mt-2">
+                Stop Scanner
+              </button>
           }
 
           @if (error()) {

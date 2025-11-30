@@ -28,6 +28,10 @@ import { LocationDisplayComponent } from './components/location-display.componen
 import { MeasurementUnitSelectorComponent } from './components/measurement-unit-selector.component';
 import { ProductNameInputComponent } from './components/product-name-input.component';
 import { ServiceSkuEditorComponent } from './components/service-sku-editor.component';
+import {
+  SizeTemplate,
+  SizeTemplateSelectorComponent,
+} from './components/size-template-selector.component';
 import { SkuListEditorComponent } from './components/sku-list-editor.component';
 import { SubmitBarComponent } from './components/submit-bar.component';
 import { ValidationIssuesPanelComponent } from './components/validation-issues-panel.component';
@@ -66,6 +70,7 @@ import {
     ProductNameInputComponent,
     IdentificationSelectorComponent,
     MeasurementUnitSelectorComponent,
+    SizeTemplateSelectorComponent,
     VariantDimensionEditorComponent,
     SkuListEditorComponent,
     LocationDisplayComponent,
@@ -106,6 +111,7 @@ export class ProductCreateComponent implements OnInit {
   readonly measurementUnit = signal<string | null>(null);
   readonly variantDimensions = signal<VariantDimension[]>([]);
   readonly howSoldPreset = signal<HowSoldPreset | null>(null);
+  readonly selectedSizeTemplate = signal<SizeTemplate>(null);
   readonly currentStage = signal<1 | 2>(1);
 
   // Form: Product + Multiple SKUs
@@ -144,7 +150,7 @@ export class ProductCreateComponent implements OnInit {
   readonly defaultLocation = this.stockLocationService.defaultLocation;
 
   // Identification method chosen
-  readonly identificationMethod = signal<'barcode' | 'label-photos' | null>(null);
+  readonly identificationMethod = signal<'barcode' | 'label-photos' | null>('barcode');
   readonly photoCount = signal(0);
   readonly barcodeValue = signal<string>(''); // Track barcode as signal
   readonly productNameValue = signal<string>(''); // Track name as signal
@@ -427,6 +433,9 @@ export class ProductCreateComponent implements OnInit {
   onHowSoldSelected(preset: HowSoldPreset): void {
     this.howSoldPreset.set(preset);
 
+    // Reset size template when changing presets
+    this.selectedSizeTemplate.set(null);
+
     // All presets apply to products, not services
     this.itemType.set('product');
 
@@ -436,8 +445,10 @@ export class ProductCreateComponent implements OnInit {
       this.measurementUnit.set(null);
       this.variantDimensions.set([]);
     } else if (preset === 'multi-variant') {
-      // Discrete variants, start with a generic "Size / Pack size" dimension
+      // Discrete variants - wait for template selection to populate options
       this.productType.set('discrete');
+      this.measurementUnit.set(null);
+      // Start with empty dimension, template selector will populate
       const baseDimension: VariantDimension = {
         id: Date.now().toString(),
         name: 'Size / Pack size',
@@ -453,6 +464,33 @@ export class ProductCreateComponent implements OnInit {
       this.measurementUnit.set('L');
       this.variantDimensions.set([]);
     }
+
+    this.generateSkus();
+  }
+
+  /**
+   * Handle size template selection from size-template-selector.
+   * This populates the variant dimension with preset options.
+   */
+  onSizeTemplateChange(template: SizeTemplate): void {
+    this.selectedSizeTemplate.set(template);
+
+    // Template definitions
+    const templateOptions: Record<Exclude<SizeTemplate, null>, string[]> = {
+      clothing: ['S', 'M', 'L', 'XL'],
+      packs: ['1-pack', '3-pack', '6-pack', '12-pack'],
+      custom: [],
+    };
+
+    const options = template ? templateOptions[template] : [];
+    const dimensionName = options.length > 0 ? 'Size' : 'Size / Pack size';
+
+    const baseDimension: VariantDimension = {
+      id: Date.now().toString(),
+      name: dimensionName,
+      options: options,
+    };
+    this.variantDimensions.set([baseDimension]);
 
     this.generateSkus();
   }
@@ -878,12 +916,10 @@ export class ProductCreateComponent implements OnInit {
   }
 
   /**
-   * Cancel and go back
+   * Cancel and go back to products list
    */
   cancel(): void {
-    if (confirm('Discard this product?')) {
-      this.router.navigate(['/dashboard/products']);
-    }
+    this.router.navigate(['/dashboard/products']);
   }
 
   // --- Validation Helper Methods ---

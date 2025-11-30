@@ -134,8 +134,14 @@ export class DetectionCoordinator {
       document.addEventListener('visibilitychange', this.visibilityHandler);
     }
 
-    // Start frame loop
-    this.scheduleNextFrame(video);
+    // Add initial delay to ensure video stream is ready before processing frames
+    // This matches the pattern from product-create where camera starts before scanning begins
+    setTimeout(() => {
+      if (this.running) {
+        // Start frame loop after delay
+        this.scheduleNextFrame(video);
+      }
+    }, 250);
   }
 
   /**
@@ -236,8 +242,27 @@ export class DetectionCoordinator {
     }
     this.lastFrameTime = now;
 
-    // Check if video is ready
-    if (!video.videoWidth || video.paused || video.ended) {
+    // Enhanced video readiness checks
+    // Check if video has enough data loaded (HAVE_CURRENT_DATA = 2)
+    if (video.readyState < 2) {
+      this.scheduleNextFrame(video);
+      return;
+    }
+
+    // Check if video has a source stream
+    if (!video.srcObject) {
+      this.scheduleNextFrame(video);
+      return;
+    }
+
+    // Check if video has valid dimensions
+    if (!video.videoWidth || !video.videoHeight || video.videoWidth < 64 || video.videoHeight < 64) {
+      this.scheduleNextFrame(video);
+      return;
+    }
+
+    // Check if video is playing
+    if (video.paused || video.ended) {
       this.scheduleNextFrame(video);
       return;
     }

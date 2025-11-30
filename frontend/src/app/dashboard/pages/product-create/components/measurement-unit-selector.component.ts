@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 
 /**
  * Measurement Unit Selector Component
  *
  * Handles unit selection for measured products.
  * Only visible when product type is 'measured'.
+ * Design matches size-template-selector for visual harmony.
  */
 @Component({
   selector: 'app-measurement-unit-selector',
@@ -13,11 +14,43 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (visible()) {
-      <div class="card bg-base-100 shadow">
-        <div class="card-body p-3">
-          <h3 class="font-bold text-sm">Measurement Unit</h3>
+      <div class="space-y-2 animate-in">
+        <h3 class="text-sm font-medium text-base-content/70">Measurement unit</h3>
+
+        <!-- Quick unit buttons -->
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="btn btn-sm transition-all duration-150"
+            [class.btn-primary]="measurementUnit() === 'KG'"
+            [class.btn-outline]="measurementUnit() !== 'KG'"
+            (click)="onUnitChange('KG')"
+          >
+            Kilograms (kg)
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm transition-all duration-150"
+            [class.btn-primary]="measurementUnit() === 'L'"
+            [class.btn-outline]="measurementUnit() !== 'L'"
+            (click)="onUnitChange('L')"
+          >
+            Liters (L)
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost transition-all duration-150"
+            [class.btn-active]="showAllUnits()"
+            (click)="toggleShowAll()"
+          >
+            Other...
+          </button>
+        </div>
+
+        <!-- Extended dropdown (shown when "Other" is clicked) -->
+        @if (showAllUnits()) {
           <select
-            class="select select-bordered w-full mt-2"
+            class="select select-bordered select-sm w-full"
             [value]="measurementUnit()"
             (change)="onUnitChange($any($event.target).value)"
           >
@@ -41,12 +74,11 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
               <option value="M2">Square Meters (m²)</option>
             </optgroup>
           </select>
+        }
 
-          <div class="bg-info/10 p-2 rounded text-xs mt-2 flex items-center gap-1">
-            <span class="material-symbols-outlined text-sm">info</span>
-            <span>Fractional sales enabled — customers can buy any amount.</span>
-          </div>
-        </div>
+        <p class="text-xs text-base-content/50">
+          Fractional sales enabled — customers can buy any amount
+        </p>
       </div>
     }
   `,
@@ -59,10 +91,24 @@ export class MeasurementUnitSelectorComponent {
   // Outputs
   readonly unitChange = output<string>();
 
+  // Internal state
+  readonly showAllUnits = signal(false);
+
   /**
    * Handle unit selection change
    */
   onUnitChange(unit: string): void {
     this.unitChange.emit(unit);
+    // Hide dropdown if a quick unit was selected
+    if (unit === 'KG' || unit === 'L') {
+      this.showAllUnits.set(false);
+    }
+  }
+
+  /**
+   * Toggle showing all units dropdown
+   */
+  toggleShowAll(): void {
+    this.showAllUnits.update((v) => !v);
   }
 }

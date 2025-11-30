@@ -1,62 +1,71 @@
 <!-- Product Creation -->
-<div class="min-h-screen bg-base-200 p-3 sm:p-4 pb-32 lg:pb-4">
+<div class="min-h-screen bg-gradient-to-b from-base-200 to-base-300/30 px-4 py-3 pb-32 lg:py-8 lg:pb-8">
   @if (isReady()) {
-    <div class="max-w-lg mx-auto" [formGroup]="productForm">
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h1 class="text-xl font-bold">
-            @if (isEditMode()) { Edit Product } @else { New Item }
-          </h1>
-          <p class="text-xs opacity-60">
-            @if (currentStage() === 1) { Basic info } @else { Pricing & stock }
-          </p>
+    <div class="max-w-lg lg:max-w-xl mx-auto" [formGroup]="productForm">
+      <!-- Desktop card wrapper -->
+      <div class="lg:bg-base-100 lg:rounded-2xl lg:shadow-lg lg:border lg:border-base-300/50 lg:p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="hidden lg:flex w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
+              <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-base sm:text-lg lg:text-xl font-semibold">
+                @if (isEditMode()) { Edit Product } @else { New Item }
+              </h2>
+              <p class="hidden lg:block text-xs text-base-content/50">
+                @if (currentStage() === 1) { Fill in the basics } @else { Set your prices }
+              </p>
+            </div>
+          </div>
         </div>
-        <button type="button" class="btn btn-ghost btn-sm btn-circle" (click)="cancel()">✕</button>
-      </div>
 
-      <!-- Progress indicator using daisyUI -->
-      <div class="flex items-center gap-2 mb-5">
-        <button
-          type="button"
-          class="btn btn-circle w-8 h-8 min-h-0 p-0 text-xs font-semibold"
-          [class.btn-primary]="currentStage() === 1"
-          [class.btn-success]="currentStage() === 2"
-          [class.btn-outline]="currentStage() !== 1 && currentStage() !== 2"
-          [class.btn-ghost]="currentStage() === 2"
-          (click)="goToStage1()"
-        >
-          1
-        </button>
-        <div class="flex-1 h-0.5 bg-base-300 transition-colors" [class.bg-success]="currentStage() === 2"></div>
-        <button
-          type="button"
-          class="btn btn-circle w-8 h-8 min-h-0 p-0 text-xs font-semibold"
-          [class.btn-primary]="currentStage() === 2"
-          [class.btn-outline]="currentStage() !== 2"
-          (click)="goToStage2()"
-        >
-          2
-        </button>
-      </div>
+        <!-- Progress steps -->
+        <ul class="steps steps-horizontal w-full mb-4 lg:mb-6 text-xs">
+          <li
+            class="step cursor-pointer transition-all duration-200"
+            [class.step-primary]="currentStage() >= 1"
+            (click)="goToStage1()"
+          >
+            Details
+          </li>
+          <li
+            class="step cursor-pointer transition-all duration-200"
+            [class.step-primary]="currentStage() >= 2"
+            (click)="goToStage2()"
+          >
+            Pricing
+          </li>
+        </ul>
 
-      <!-- Stage 1: Item type, product basics & how it's sold -->
-      @if (currentStage() === 1) {
-        <div class="space-y-4">
+        <!-- Stage 1: Item type, product basics & how it's sold -->
+        @if (currentStage() === 1) {
+          <div class="space-y-3 lg:space-y-4">
           <!-- Item type (product vs service) -->
           <app-item-type-selector [itemType]="itemType()" (itemTypeChange)="setItemType($event)" />
 
-          <!-- Product name -->
-          <app-product-name-input [nameControl]="nameControl" />
+          <!-- Name field (for both products AND services) -->
+          <app-product-name-input [nameControl]="nameControl" [itemType]="itemType()" />
 
-          <!-- How it's sold (presets) for products only -->
+          <!-- Product-specific options -->
           @if (itemType() === 'product') {
+            <!-- How it's sold (presets) -->
             <app-how-sold-selector
               [selected]="howSoldPreset()"
               (selectedChange)="onHowSoldSelected($event)"
             />
 
-            <!-- Measurement unit (only for measured presets) -->
+            <!-- Size template (for multi-variant) -->
+            <app-size-template-selector
+              [visible]="howSoldPreset() === 'multi-variant'"
+              [selectedTemplate]="selectedSizeTemplate()"
+              (templateChange)="onSizeTemplateChange($event)"
+            />
+
+            <!-- Measurement unit (for measured presets) -->
             <app-measurement-unit-selector
               [measurementUnit]="measurementUnit()"
               [visible]="productType() === 'measured'"
@@ -86,23 +95,23 @@
             </div>
           }
 
-          <!-- Continue to Stage 2 -->
-          <button
-            type="button"
-            class="btn btn-primary btn-block"
-            (click)="goToStage2()"
-          >
-            Continue
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="m9 18 6-6-6-6"/>
-            </svg>
-          </button>
-        </div>
-      }
+            <!-- Continue to Stage 2 -->
+            <button
+              type="button"
+              class="btn btn-primary btn-block mt-3 lg:mt-4 gap-2"
+              (click)="goToStage2()"
+            >
+              Continue
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </button>
+          </div>
+        }
 
-      <!-- Stage 2: Variants / SKUs, pricing & stock -->
-      @if (currentStage() === 2) {
-        <div class="space-y-3">
+        <!-- Stage 2: Variants / SKUs, pricing & stock -->
+        @if (currentStage() === 2) {
+          <div class="space-y-3 lg:space-y-4">
           @if (itemType() === 'product') {
             <!-- Variant dimensions for products -->
             <app-variant-dimension-editor
@@ -125,23 +134,26 @@
           <!-- Validation Issues -->
           <app-validation-issues-panel [issues]="validationIssues()" />
 
-          <!-- Location (bottom, just before create button) -->
-          <app-location-display [location]="defaultLocation()" />
-        </div>
-      }
+            <!-- Location (bottom, just before create button) -->
+            <app-location-display [location]="defaultLocation()" />
+          </div>
+        }
 
-      <!-- Submit Button (Stage 2 only) -->
-      @if (currentStage() === 2) {
-        <app-submit-bar
-          [canSubmit]="canSubmit()"
-          [isLoading]="isLoading()"
-          [isEditMode]="isEditMode()"
-          [itemType]="itemType()"
-          [submitError]="submitError()"
-          [submitSuccess]="submitSuccess()"
-          (submit)="submitForm()"
-        />
-      }
+        <!-- Submit Button (Stage 2 only) -->
+        @if (currentStage() === 2) {
+          <div class="mt-4 lg:mt-6">
+            <app-submit-bar
+              [canSubmit]="canSubmit()"
+              [isLoading]="isLoading()"
+              [isEditMode]="isEditMode()"
+              [itemType]="itemType()"
+              [submitError]="submitError()"
+              [submitSuccess]="submitSuccess()"
+              (submit)="submitForm()"
+            />
+          </div>
+        }
+      </div>
     </div>
   } @else {
     <!-- Loading state while dashboard initializes -->
