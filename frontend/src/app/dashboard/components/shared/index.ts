@@ -8,3 +8,12 @@ export * from './contact-display.component';
 export * from './entity-avatar.component';
 export * from './status-badge.component';
 
+// Navbar Components
+export * from './menu-toggle-button.component';
+export * from './user-avatar-button.component';
+
+// Notification Components (composable)
+export * from './notification-item.component';
+export * from './notification-list.component';
+export * from './notification-dropdown.component';
+

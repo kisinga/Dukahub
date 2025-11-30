@@ -15,6 +15,11 @@ import { NotificationService } from '../../core/services/notification.service';
 import { NotificationStateService } from '../../core/services/notification/notification-state.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import type { Notification } from '../../core/graphql/notification.types';
+import {
+  MenuToggleButtonComponent,
+  NotificationDropdownComponent,
+  UserAvatarButtonComponent,
+} from '../components/shared';
 
 interface NavItem {
   label: string;
@@ -25,7 +30,14 @@ interface NavItem {
 
 @Component({
   selector: 'app-dashboard-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    MenuToggleButtonComponent,
+    NotificationDropdownComponent,
+    UserAvatarButtonComponent,
+  ],
   templateUrl: './dashboard-layout.component.html',
   styleUrl: './dashboard-layout.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -630,7 +630,7 @@ export const PREFETCH_PRODUCTS = graphql(`
 
 export const GET_ORDERS_FOR_PERIOD = graphql(`
   query GetOrdersForPeriod($startDate: DateTime!) {
-    orders(options: { filter: { orderPlacedAt: { after: $startDate } }, take: 1000 }) {
+    orders(options: { filter: { orderPlacedAt: { after: $startDate } }, take: 100 }) {
       items {
         id
         total

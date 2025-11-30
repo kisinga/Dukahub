@@ -314,7 +314,7 @@ export class AccountingComponent implements OnInit {
     this.ledgerService.error.set(null);
 
     const options: any = {
-      take: 1000, // Load more entries for filtering
+      take: 100, // Limited to prevent list-query-limit-exceeded errors
       skip: 0,
     };
 
