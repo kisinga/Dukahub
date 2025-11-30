@@ -219,8 +219,16 @@ export class SubscriptionService {
       const amount = billingCycle === 'monthly' ? tier.priceMonthly : tier.priceYearly;
       const amountInKes = amount / 100; // Convert from cents to KES
 
-      // Use system email for all Paystack calls since user emails are not mandatory
-      const effectiveEmail = env.paystack.systemEmail;
+      // Generate placeholder email from phone number if email is not provided
+      // Format: {cleanedPhoneNumber}@placeholder.dukarun.com
+      // Clean phone number by removing + and spaces, keeping only digits
+      let effectiveEmail: string;
+      if (!email || email.trim() === '') {
+        const cleanedPhone = phoneNumber.replace(/[+\s-]/g, ''); // Remove +, spaces, and hyphens
+        effectiveEmail = `${cleanedPhone}@placeholder.dukarun.com`;
+      } else {
+        effectiveEmail = email;
+      }
 
       // Create or get Paystack customer
       let customerCode = (channel.customFields as any).paystackCustomerCode;
