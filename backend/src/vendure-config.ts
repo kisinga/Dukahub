@@ -116,6 +116,7 @@ export const config: VendureConfig = {
       httpOnly: true,
       sameSite: 'lax',
       secure: COOKIE_SECURE,
+      maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year in milliseconds
     },
     customPermissions: [
       OverridePricePermission,

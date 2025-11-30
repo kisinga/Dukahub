@@ -49,6 +49,21 @@ export class StockLocationService {
   readonly hasLocations = computed(() => this.locationsSignal().length > 0);
 
   /**
+   * Default stock location for the active channel
+   * In simplified architecture, each channel has one primary location (first one)
+   */
+  readonly defaultLocation = computed(() => {
+    const locs = this.locationsSignal();
+    return locs.length > 0 ? locs[0] : null;
+  });
+
+  /**
+   * Whether locations are loaded and a default location is available
+   * Use this to gate UI that requires a location
+   */
+  readonly isReady = computed(() => this.defaultLocation() !== null);
+
+  /**
    * Cashier flow enabled for the active channel
    * Controls whether to show cashier checkout option
    * Delegates to CompanyService which reads from channel custom fields
@@ -136,10 +151,10 @@ export class StockLocationService {
   /**
    * Get the default stock location (first location)
    * In simplified architecture, each channel has one primary location
+   * @deprecated Use the defaultLocation computed signal instead
    */
   getDefaultLocation(): StockLocation | null {
-    const locs = this.locationsSignal();
-    return locs.length > 0 ? locs[0] : null;
+    return this.defaultLocation();
   }
 
   /**
