@@ -1,38 +1,158 @@
-<div class="container mx-auto px-4 py-6">
+<!-- FAB for Add Team Member - Mobile Only -->
+<div class="fixed bottom-24 right-4 z-40 lg:hidden">
+  <button
+    (click)="onCreateClick()"
+    class="btn btn-lg btn-circle btn-primary shadow-xl"
+    aria-label="Add team member"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-6 w-6"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+      />
+    </svg>
+  </button>
+</div>
+
+<div class="space-y-5 lg:space-y-6">
   <!-- Header -->
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-    <div>
-      <h1 class="text-2xl font-bold">Team Management</h1>
-      <p class="text-base-content/70 mt-1">Manage channel administrators and permissions</p>
+  <div class="flex items-start justify-between gap-4">
+    <div class="flex-1 min-w-0">
+      <h1 class="text-2xl lg:text-3xl font-bold tracking-tight">Team</h1>
+      <p class="text-sm text-base-content/60 mt-1">
+        Manage channel administrators and permissions
+      </p>
     </div>
-    <button class="btn btn-primary" (click)="onCreateClick()">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-      </svg>
-      Add Team Member
-    </button>
+
+    <div class="flex gap-2 shrink-0">
+      <button
+        class="btn btn-primary btn-sm lg:btn-md gap-2 hidden lg:flex"
+        (click)="onCreateClick()"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+          />
+        </svg>
+        Add Team Member
+      </button>
+    </div>
   </div>
 
-  <!-- Stats -->
+  <!-- Statistics Cards -->
   @if (stats(); as statsData) {
-    <div class="stats stats-horizontal shadow mb-6 w-full">
-      <div class="stat">
-        <div class="stat-title">Total Members</div>
-        <div class="stat-value text-primary">{{ statsData.total }}</div>
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+      <!-- Total Members -->
+      <div class="card bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20">
+        <div class="card-body p-3 lg:p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-secondary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs text-base-content/60 truncate">Total Members</p>
+              <p class="text-xl lg:text-2xl font-bold text-secondary tracking-tight">
+                {{ statsData.total }}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="stat">
-        <div class="stat-title">Verified</div>
-        <div class="stat-value text-success">{{ statsData.verified }}</div>
+
+      <!-- Verified Members -->
+      <div class="card bg-gradient-to-br from-success/10 to-success/5 border border-success/20">
+        <div class="card-body p-3 lg:p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-success"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs text-base-content/60 truncate">Verified</p>
+              <p class="text-xl lg:text-2xl font-bold text-success tracking-tight">
+                {{ statsData.verified }}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="stat">
-        <div class="stat-title">Roles</div>
-        <div class="stat-value text-secondary">{{ Object.keys(statsData.byRole).length }}</div>
+
+      <!-- Roles Count -->
+      <div class="card bg-gradient-to-br from-info/10 to-info/5 border border-info/20 col-span-2 lg:col-span-1">
+        <div class="card-body p-3 lg:p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-info/10 flex items-center justify-center shrink-0">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-info"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                />
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs text-base-content/60 truncate">Roles</p>
+              <p class="text-xl lg:text-2xl font-bold text-info tracking-tight">
+                {{ Object.keys(statsData.byRole).length }}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   }
 
-  <!-- Search -->
-  <div class="mb-6">
+  <!-- Search Bar -->
+  <div class="form-control">
     <input
       type="text"
       placeholder="Search by name, email, or phone..."
@@ -42,83 +162,190 @@
     />
   </div>
 
-  <!-- Error Message -->
+  <!-- Error Alert -->
   @if (error(); as errorMsg) {
-    <div class="alert alert-error mb-6">
-      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <div role="alert" class="alert alert-error">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
-      <span>{{ errorMsg }}</span>
+      <span class="flex-1">{{ errorMsg }}</span>
     </div>
   }
 
   <!-- Loading State -->
   @if (isLoading()) {
-    <div class="flex justify-center items-center py-12">
-      <span class="loading loading-spinner loading-lg"></span>
-    </div>
-  }
-
-  <!-- Members List -->
-  @if (!isLoading() && filteredMembers().length > 0) {
-    <div class="overflow-x-auto">
-      <table class="table table-zebra">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Contact</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (member of filteredMembers(); track member.id) {
-            <app-team-member-row
-              [member]="member"
-              (edit)="onEditClick($event)"
-              (delete)="onDeleteClick($event)"
-            />
-          }
-        </tbody>
-      </table>
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <div class="flex flex-col items-center justify-center py-12">
+          <span class="loading loading-spinner loading-lg text-secondary"></span>
+          <p class="text-sm text-base-content/60 mt-4">Loading team members...</p>
+        </div>
+      </div>
     </div>
   }
 
   <!-- Empty State -->
-  @if (!isLoading() && filteredMembers().length === 0) {
-    <div class="text-center py-12">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-      <h3 class="text-xl font-semibold mb-2">No team members found</h3>
-      <p class="text-base-content/70 mb-4">
-        @if (searchQuery()) {
-          No members match your search criteria.
-        } @else {
-          Get started by adding your first team member.
-        }
-      </p>
-      @if (!searchQuery()) {
-        <button class="btn btn-primary" (click)="onCreateClick()">
-          Add Team Member
-        </button>
-      }
+  @else if (filteredMembers().length === 0 && !error()) {
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <div class="text-center py-12 lg:py-16 px-4">
+          <div
+            class="w-16 h-16 lg:w-20 lg:h-20 mx-auto mb-4 rounded-full bg-base-200 flex items-center justify-center"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-8 w-8 lg:h-10 lg:w-10 text-base-content/30"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold">No team members found</h3>
+          @if (searchQuery()) {
+            <p class="text-sm text-base-content/60 mt-2 max-w-md mx-auto">
+              No members match your search criteria.
+            </p>
+            <button (click)="searchQuery.set('')" class="btn btn-outline btn-sm mt-6">
+              Clear Search
+            </button>
+          } @else {
+            <p class="text-sm text-base-content/60 mt-2 max-w-md mx-auto">
+              Get started by adding your first team member.
+            </p>
+            <button class="btn btn-primary btn-sm mt-6 gap-2" (click)="onCreateClick()">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              Add Team Member
+            </button>
+          }
+        </div>
+      </div>
     </div>
   }
 
-  <!-- Modals -->
-  <app-create-admin-modal
-    #createModal
-    [roleTemplates]="roleTemplates()"
-    (memberCreated)="onMemberCreated()"
-  />
+  <!-- Team Members List -->
+  @else {
+    <!-- Mobile: Card View -->
+    <div class="lg:hidden space-y-3">
+      @for (member of filteredMembers(); track member.id) {
+        <div class="card bg-base-100 shadow-sm border border-base-300 rounded-xl">
+          <div class="card-body p-4">
+            <div class="flex items-start gap-3">
+              <div class="avatar placeholder shrink-0">
+                <div class="bg-secondary/10 text-secondary rounded-lg w-12 h-12">
+                  <span class="text-lg">{{ (member.firstName[0] || '') + (member.lastName[0] || '') }}</span>
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-base truncate">{{ member.firstName }} {{ member.lastName }}</h3>
+                <p class="text-xs text-base-content/60 truncate">{{ member.emailAddress }}</p>
+                @if (member.user?.identifier) {
+                  <p class="text-xs text-base-content/60 truncate">{{ member.user?.identifier }}</p>
+                }
+                <div class="flex items-center gap-2 mt-2">
+                  @if (member.user?.roles?.[0]?.code) {
+                    <span class="badge badge-sm badge-secondary">{{ member.user?.roles?.[0]?.code }}</span>
+                  }
+                  @if (member.user?.verified) {
+                    <span class="badge badge-sm badge-success gap-1">
+                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Verified
+                    </span>
+                  } @else {
+                    <span class="badge badge-sm badge-warning">Pending</span>
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-2 mt-3 pt-3 border-t border-base-300">
+              <button class="btn btn-sm btn-ghost flex-1 gap-1.5" (click)="onEditClick(member)">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+                Edit
+              </button>
+              <button class="btn btn-sm btn-error btn-outline gap-1.5" (click)="onDeleteClick(member)">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
 
-  <app-permission-editor
-    #permissionEditor
-    [member]="memberToEdit()"
-    [roleTemplates]="roleTemplates()"
-    (permissionsUpdated)="onPermissionsUpdated()"
-  />
+    <!-- Desktop: Table View -->
+    <div class="card bg-base-100 shadow hidden lg:block">
+      <div class="overflow-x-auto">
+        <table class="table table-zebra">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Contact</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (member of filteredMembers(); track member.id) {
+              <app-team-member-row
+                [member]="member"
+                (edit)="onEditClick($event)"
+                (delete)="onDeleteClick($event)"
+              />
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
 </div>
 
+<!-- Modals -->
+<app-create-admin-modal
+  #createModal
+  [roleTemplates]="roleTemplates()"
+  (memberCreated)="onMemberCreated()"
+/>
+
+<app-permission-editor
+  #permissionEditor
+  [member]="memberToEdit()"
+  [roleTemplates]="roleTemplates()"
+  (permissionsUpdated)="onPermissionsUpdated()"
+/>

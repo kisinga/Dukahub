@@ -26,8 +26,8 @@
   <!-- Header -->
   <div class="flex items-start justify-between gap-4">
     <div class="flex-1 min-w-0">
-      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">Purchases</h1>
-      <p class="text-base sm:text-lg text-base-content/60 mt-2 leading-relaxed">
+      <h1 class="text-2xl lg:text-3xl font-bold tracking-tight">Purchases</h1>
+      <p class="text-sm text-base-content/60 mt-1">
         Manage your purchase records
       </p>
     </div>
@@ -35,14 +35,14 @@
     <div class="flex gap-2 shrink-0">
       <button
         (click)="refreshPurchases()"
-        class="btn btn-ghost btn-square btn-lg lg:btn-md"
+        class="btn btn-ghost btn-square btn-sm lg:btn-md"
         [class.loading]="isLoading()"
         title="Refresh purchases"
       >
         @if (!isLoading()) {
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 lg:h-5 lg:w-5"
+            class="h-4 w-4"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -58,11 +58,11 @@
       </button>
       <button
         (click)="router.navigate(['/dashboard/purchases/create'])"
-        class="btn btn-primary gap-2 hidden lg:flex"
+        class="btn btn-primary btn-sm lg:btn-md gap-2 hidden lg:flex"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5"
+          class="h-4 w-4"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -87,10 +87,10 @@
 
   <!-- Error Alert -->
   @if (error()) {
-    <div role="alert" class="alert alert-error shadow-lg">
+    <div role="alert" class="alert alert-error">
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        class="h-6 w-6 shrink-0"
+        class="h-5 w-5 shrink-0"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -111,7 +111,7 @@
   @if (isLoading()) {
     <div class="card bg-base-100 shadow">
       <div class="card-body">
-        <div class="flex flex-col items-center justify-center py-16">
+        <div class="flex flex-col items-center justify-center py-12">
           <span class="loading loading-spinner loading-lg text-primary"></span>
           <p class="text-sm text-base-content/60 mt-4">Loading purchases...</p>
         </div>
@@ -123,13 +123,13 @@
   @else if (filteredPurchases().length === 0 && !error()) {
     <div class="card bg-base-100 shadow">
       <div class="card-body">
-        <div class="text-center py-12 lg:py-20 px-4">
+        <div class="text-center py-12 lg:py-16 px-4">
           <div
-            class="w-20 h-20 lg:w-24 lg:h-24 mx-auto mb-4 rounded-full bg-base-200 flex items-center justify-center"
+            class="w-16 h-16 lg:w-20 lg:h-20 mx-auto mb-4 rounded-full bg-base-200 flex items-center justify-center"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="h-10 w-10 lg:h-12 lg:w-12 text-base-content/30"
+              class="h-8 w-8 lg:h-10 lg:w-10 text-base-content/30"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -142,25 +142,25 @@
               />
             </svg>
           </div>
-          <h3 class="text-lg lg:text-xl font-semibold">No purchases found</h3>
+          <h3 class="text-lg font-semibold">No purchases found</h3>
           @if (searchQuery()) {
-            <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+            <p class="text-sm text-base-content/60 mt-2 max-w-md mx-auto">
               No purchases match "{{ searchQuery() }}". Try a different search term.
             </p>
-            <button (click)="searchQuery.set('')" class="btn btn-outline btn-sm lg:btn-md mt-6">
+            <button (click)="searchQuery.set('')" class="btn btn-outline btn-sm mt-6">
               Clear Search
             </button>
           } @else {
-            <p class="text-sm lg:text-base text-base-content/60 mt-2 max-w-md mx-auto">
+            <p class="text-sm text-base-content/60 mt-2 max-w-md mx-auto">
               Start by recording your first purchase
             </p>
             <button
               (click)="router.navigate(['/dashboard/purchases/create'])"
-              class="btn btn-primary btn-sm lg:btn-md mt-6"
+              class="btn btn-primary btn-sm mt-6 gap-2"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
+                class="h-4 w-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"

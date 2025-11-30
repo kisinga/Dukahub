@@ -1,493 +1,115 @@
-// Enhanced styles with sophisticated typography and interactions
-// Following mobile-first design principles with ultra-compact mobile cards
+// Overview component styles - Mobile-first design
+@use '../../styles/dashboard-animations' as *;
 
-:host {
-  display: block;
-  width: 100%;
-}
-
-// Typography enhancements - tabular nums for consistent number display
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum';
-}
-
-// ============================================
-// COMPACT STAT CARDS - Mobile Optimized
-// ============================================
-
-.stat-card {
-  & {
-    position: relative;
-    background: oklch(var(--b1));
-    border-radius: 0.75rem;
-    border: 2px solid oklch(var(--b3));
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-    text-align: left;
-    appearance: none;
-    font-family: inherit;
-  }
-
-  &:active {
-    transform: scale(0.97);
-  }
-
-  // Category-specific colors
-  &.stat-card-purchases {
-    border-color: oklch(var(--p) / 0.3);
-
-    .stat-icon {
-      color: oklch(var(--p));
-      background: oklch(var(--p) / 0.1);
-    }
-
-    .stat-bar {
-      background: oklch(var(--p));
-    }
-
-    .stat-period-dot {
-      background: oklch(var(--p) / 0.3);
-      &.stat-period-dot-week {
-        background: oklch(var(--p) / 0.6);
-      }
-      &.stat-period-dot-month {
-        background: oklch(var(--p));
-      }
-    }
-
-    &.stat-card-active {
-      border-color: oklch(var(--p));
-      background: oklch(var(--p) / 0.05);
-    }
-  }
-
-  &.stat-card-sales {
-    border-color: oklch(var(--su) / 0.3);
-    position: relative;
-    z-index: 2; // Ensure sales card appears above ribbon
-
-    .stat-icon {
-      color: oklch(var(--su));
-      background: oklch(var(--su) / 0.1);
-    }
-
-    .stat-bar {
-      background: oklch(var(--su));
-    }
-
-    .stat-period-dot {
-      background: oklch(var(--su) / 0.3);
-      &.stat-period-dot-week {
-        background: oklch(var(--su) / 0.6);
-      }
-      &.stat-period-dot-month {
-        background: oklch(var(--su));
-      }
-    }
-
-    &.stat-card-active {
-      border-color: oklch(var(--su));
-      background: oklch(var(--su) / 0.05);
-    }
-  }
-
-  &.stat-card-expenses {
-    border-color: oklch(var(--er) / 0.3);
-
-    .stat-icon {
-      color: oklch(var(--er));
-      background: oklch(var(--er) / 0.1);
-    }
-
-    .stat-bar {
-      background: oklch(var(--er));
-    }
-
-    .stat-period-dot {
-      background: oklch(var(--er) / 0.3);
-      &.stat-period-dot-week {
-        background: oklch(var(--er) / 0.6);
-      }
-      &.stat-period-dot-month {
-        background: oklch(var(--er));
-      }
-    }
-
-    &.stat-card-active {
-      border-color: oklch(var(--er));
-      background: oklch(var(--er) / 0.05);
-    }
+// Hide scrollbar but allow scrolling
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 
-// Mobile Compact Layout
-.stat-card-compact {
-  padding: 0.75rem;
-  min-height: 120px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-// Icon with background
-.stat-icon {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 0.5rem;
-  padding: 0.375rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s ease;
-
-  .stat-card:active & {
-    transform: scale(0.9);
+// Snap scrolling for stats row on mobile
+.overflow-x-auto {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  
+  > * {
+    scroll-snap-align: start;
   }
 }
 
-// Trend indicator
-.stat-trend {
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 0.25rem;
-  background: oklch(var(--su) / 0.15);
-  color: oklch(var(--su));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.125rem;
-
-  svg {
-    stroke-width: 2.5;
-  }
-}
-
-// Category label
-.stat-label {
-  font-size: 0.625rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.7;
-  margin-bottom: 0.25rem;
-  line-height: 1.2;
-}
-
-// Primary value display
-.stat-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  margin-bottom: 0.5rem;
-}
-
-// Visual bar indicator
-.stat-bar-container {
-  width: 100%;
-  height: 0.25rem;
-  background: oklch(var(--b3));
-  border-radius: 0.125rem;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.stat-bar {
-  height: 100%;
-  border-radius: 0.125rem;
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-// Period dots indicator
-.stat-periods {
-  display: flex;
-  gap: 0.25rem;
-  justify-content: center;
-}
-
-.stat-period-dot {
-  width: 0.375rem;
-  height: 0.375rem;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-// Tablet/Desktop full layout
-.stat-card-full {
-  padding: 1rem;
-}
-
-// ============================================
-// STATS CONTAINER & RIBBON - Mobile Only
-// ============================================
-
-.stats-container {
-  position: relative;
-}
-
-// Mobile Ribbon - Smooth connection from Sales Card to Expanded Section
-.sales-ribbon {
-  position: absolute;
-  // Position to align with middle column (sales card)
-  // Grid: 3 columns with gap-2 (0.5rem on mobile)
-  // Sales card is in column 2 (middle)
-  left: calc((100% / 3) + 0.25rem); // Start from left edge of sales card + half gap
-  width: calc((100% / 3) - 0.5rem); // Width of sales card minus full gap
-  top: 120px; // Start from bottom of stat card (min-height from stat-card-compact)
-  height: 1rem; // Height of gap between cards
-  background: linear-gradient(
-    to bottom,
-    oklch(var(--su) / 0.15),
-    oklch(var(--su) / 0.1),
-    oklch(var(--su) / 0.05)
-  );
-  border-left: 2px solid oklch(var(--su) / 0.4);
-  border-right: 2px solid oklch(var(--su) / 0.4);
-  border-radius: 0 0 0.75rem 0.75rem;
-  pointer-events: none;
-  z-index: 1;
-  animation: ribbonAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  transform-origin: top center;
-
-  // Extend ribbon down to expanded card with fade
-  &::after {
-    content: '';
-    position: absolute;
-    left: -2px;
-    right: -2px;
-    top: 100%;
-    height: 0.75rem;
-    background: linear-gradient(
-      to bottom,
-      oklch(var(--su) / 0.08),
-      oklch(var(--su) / 0.03),
-      transparent
-    );
-    border-left: 2px solid oklch(var(--su) / 0.25);
-    border-right: 2px solid oklch(var(--su) / 0.25);
-  }
-}
-
-@keyframes ribbonAppear {
-  from {
-    opacity: 0;
-    transform: scaleY(0);
-  }
-  to {
-    opacity: 1;
-    transform: scaleY(1);
-  }
-}
-
-// Expanded Details Card - Compact & Focused
-.expanded-details-card {
-  position: relative;
-  z-index: 2; // Ensure it appears above the ribbon
-  margin-top: 0.5rem;
-
-  // Desktop: Subtle connection without ribbon
-  @media (min-width: 640px) {
-    margin-top: 0.75rem;
-
-    // Add subtle top border accent when sales is expanded
-    &.border-success {
-      border-top-width: 3px;
-      box-shadow: 0 -2px 8px oklch(var(--su) / 0.1);
-    }
-
-    &.border-primary {
-      border-top-width: 3px;
-      box-shadow: 0 -2px 8px oklch(var(--p) / 0.1);
-    }
-
-    &.border-error {
-      border-top-width: 3px;
-      box-shadow: 0 -2px 8px oklch(var(--er) / 0.1);
-    }
-  }
-}
-
-// Smooth card animations with subtle depth
-.card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    transform: translateY(-2px);
-  }
-}
-
-// Button as card interactions
-button.card {
-  text-align: left;
-  cursor: pointer;
-
-  &:active {
-    transform: scale(0.98);
-  }
-}
-
-// Enhanced stat cards with gradient backgrounds
-.card.bg-gradient-to-br {
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    background: inherit;
-  }
-
-  &:hover::before {
-    opacity: 0.15;
-  }
-}
-
-// Slide-in animation for expanded details
-.animate-in {
-  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-// Keyframe animations
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-// Smooth pulse animation for status indicator
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-// Enhanced collapse components with smooth transitions
-.collapse {
-  .collapse-title {
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background-color: oklch(var(--b2) / 0.5);
-    }
-  }
-
-  .collapse-content {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-}
-
-// Smooth transform utilities
-.active\:scale-98:active {
-  transform: scale(0.98);
-  transition: transform 0.1s ease;
-}
-
-.active\:scale-95:active {
-  transform: scale(0.95);
-  transition: transform 0.1s ease;
-}
-
-.hover\:scale-105:hover {
-  transform: scale(1.05);
-  transition: transform 0.2s ease;
-}
-
-// Enhanced button interactions
-.btn {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:active {
-    transform: scale(0.95);
-  }
-}
-
-// Badge animations
-.badge {
-  transition: all 0.2s ease;
-}
-
-// Alert enhancements
-.alert {
-  animation: slideIn 0.3s ease-out;
-}
-
-// Responsive typography improvements
-@media (min-width: 640px) {
-  h1,
-  h2,
-  h3 {
-    letter-spacing: -0.025em;
-  }
-}
-
-@media (min-width: 1024px) {
-  h1 {
-    letter-spacing: -0.03em;
-  }
-}
-
-// Touch device optimizations
+// Touch-optimized interactions
 @media (hover: none) and (pointer: coarse) {
-  // Remove hover effects and rely on active states only
-  .card:hover,
-  .btn:hover {
-    transform: none;
-  }
-
-  // Ensure touch interactions are smooth
-  .card,
-  .btn,
-  button {
+  // Remove hover effects, rely on active states
+  button,
+  [role="button"] {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
-
-  // Enhanced active states for better feedback
-  .card:active,
-  button.card:active {
-    transform: scale(0.98);
-  }
-
-  .btn:active {
-    transform: scale(0.95);
+  
+  // Faster active feedback
+  .active\:scale-95:active,
+  .active\:scale-\[0\.98\]:active,
+  .active\:scale-\[0\.99\]:active {
+    transition-duration: 0.1s;
   }
 }
 
-// Ensure accessibility - focus states
-button:focus-visible,
-.btn:focus-visible {
-  outline: 2px solid oklch(var(--p));
-  outline-offset: 2px;
+// Primary CTA button enhancement
+.btn-primary.btn-lg {
+  min-height: 3.5rem;
+  font-size: 1rem;
+  
+  @media (min-width: 640px) {
+    min-height: 3rem;
+  }
 }
 
-// Loading state animations
-.loading {
-  animation: spin 1s linear infinite;
+// Ensure proper touch targets (44px minimum)
+button,
+[role="button"],
+a {
+  min-height: 44px;
+  
+  &.btn-xs,
+  &.btn-sm,
+  &.badge {
+    min-height: auto;
+  }
 }
 
-@keyframes spin {
+// Compact badge sizing
+.badge-xs {
+  min-height: auto;
+  padding: 0 0.375rem;
+  font-size: 0.625rem;
+}
+
+// Stats card hover on desktop only
+@media (hover: hover) {
+  .rounded-xl[class*="bg-gradient"] {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px -8px oklch(var(--bc) / 0.1);
+    }
+  }
+}
+
+// Quick action cards
+.grid.grid-cols-3 button {
+  min-height: 100px;
+  
+  @media (min-width: 640px) {
+    min-height: 110px;
+  }
+}
+
+// Recent activity collapse animation
+.divide-y > div {
+  animation: slide-down 0.2s ease-out;
+}
+
+@keyframes slide-down {
   from {
-    transform: rotate(0deg);
+    opacity: 0;
+    transform: translateY(-8px);
   }
   to {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: translateY(0);
   }
+}
+
+// Smooth expand/collapse for chevron
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+svg[class*="transition-transform"] {
+  transition: transform 0.2s ease;
 }

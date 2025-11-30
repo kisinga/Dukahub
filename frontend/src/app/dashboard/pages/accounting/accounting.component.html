@@ -2,8 +2,8 @@
   <!-- Header -->
   <div class="flex items-start justify-between gap-4">
     <div class="flex-1 min-w-0">
-      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">Accounting</h1>
-      <p class="text-base sm:text-lg text-base-content/60 mt-2 leading-relaxed">
+      <h1 class="text-2xl lg:text-3xl font-bold tracking-tight">Accounting</h1>
+      <p class="text-sm text-base-content/60 mt-1">
         View chart of accounts, transactions, and financial history
       </p>
     </div>
@@ -11,14 +11,14 @@
     <div class="flex gap-2 shrink-0">
       <button
         (click)="loadData()"
-        class="btn btn-ghost btn-square btn-lg lg:btn-md"
+        class="btn btn-ghost btn-square btn-sm lg:btn-md"
         [class.loading]="isLoading()"
         title="Refresh accounting"
       >
         @if (!isLoading()) {
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 lg:h-5 lg:w-5"
+            class="h-4 w-4"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -37,10 +37,10 @@
 
   <!-- Error Alert -->
   @if (error(); as err) {
-    <div role="alert" class="alert alert-error shadow-lg">
+    <div role="alert" class="alert alert-error">
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        class="h-6 w-6 shrink-0"
+        class="h-5 w-5 shrink-0"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -77,7 +77,7 @@
   <app-accounting-tabs [activeTab]="activeTab()" (tabChange)="setActiveTab($event)" />
 
   <!-- Tab Content -->
-  <div class="mt-4">
+  <div class="mt-3">
     <!-- Overview Tab -->
     @if (activeTab() === 'overview') {
       <app-overview-tab

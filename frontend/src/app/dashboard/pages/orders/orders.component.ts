@@ -147,16 +147,7 @@ export class OrdersComponent implements OnInit {
       (o) => o.state === 'PaymentSettled' || o.state === 'Fulfilled',
     ).length;
 
-    // Today's orders
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayOrders = allOrders.filter((o) => {
-      const orderDate = new Date(o.orderPlacedAt || o.createdAt);
-      orderDate.setHours(0, 0, 0, 0);
-      return orderDate.getTime() === today.getTime();
-    }).length;
-
-    return { totalOrders, draftOrders, unpaidOrders, paidOrders, todayOrders };
+    return { totalOrders, draftOrders, unpaidOrders, paidOrders };
   });
 
   // Computed: end item for pagination display
