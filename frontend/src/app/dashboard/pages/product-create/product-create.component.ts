@@ -21,12 +21,12 @@ import { AppInitService } from '../../../core/services/app-init.service';
 import { CompanyService } from '../../../core/services/company.service';
 import { ProductService } from '../../../core/services/product.service';
 import { StockLocationService } from '../../../core/services/stock-location.service';
+import { HowSoldSelectorComponent } from './components/how-sold-selector.component';
 import { IdentificationSelectorComponent } from './components/identification-selector.component';
 import { ItemTypeSelectorComponent } from './components/item-type-selector.component';
 import { LocationDisplayComponent } from './components/location-display.component';
 import { MeasurementUnitSelectorComponent } from './components/measurement-unit-selector.component';
 import { ProductNameInputComponent } from './components/product-name-input.component';
-import { HowSoldSelectorComponent } from './components/how-sold-selector.component';
 import { ServiceSkuEditorComponent } from './components/service-sku-editor.component';
 import { SkuListEditorComponent } from './components/sku-list-editor.component';
 import { SubmitBarComponent } from './components/submit-bar.component';
@@ -410,9 +410,9 @@ export class ProductCreateComponent implements OnInit {
     const optionsArray = Array.isArray(options)
       ? options
       : options
-          .split(',')
-          .map((opt) => opt.trim())
-          .filter((opt) => opt);
+        .split(',')
+        .map((opt) => opt.trim())
+        .filter((opt) => opt);
     this.variantDimensions.update((dims) =>
       dims.map((dim) => (dim.id === id ? { ...dim, options: optionsArray } : dim)),
     );
