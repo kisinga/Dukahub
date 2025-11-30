@@ -23,7 +23,7 @@ export interface RegistrationInput {
   adminFirstName: string;
   adminLastName: string;
   adminPhoneNumber: string;
- adminEmail?: string;
+  adminEmail?: string;
   storeName: string;
   storeAddress?: string;
 }

@@ -10,7 +10,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { RegistrationService } from '../../../core/services/registration.service';
-import { formatPhoneNumber } from '../../../core/utils/phone.utils';
+import { formatPhoneNumber, generateCompanyCode } from '../../../core/utils/phone.utils';
 
 type Step = 1 | 2 | 3;
 
@@ -58,6 +58,14 @@ export class SignupComponent implements OnDestroy {
   protected adminPhone = '';
   protected adminEmail = '';
 
+  // Company name availability state
+  protected readonly companyNameStatus = signal<'idle' | 'checking' | 'available' | 'taken'>(
+    'idle',
+  );
+  protected readonly generatedCompanyCode = signal<string>('');
+  protected readonly suggestedCompanyCode = signal<string>(''); // Code with suffix when taken
+  private lastCheckedCompanyName = '';
+
   // Step 2: Store Info
   protected storeName = '';
   protected storeAddress = '';
@@ -70,6 +78,61 @@ export class SignupComponent implements OnDestroy {
   ngOnDestroy(): void {
     if (this.otpTimer) {
       clearInterval(this.otpTimer);
+    }
+  }
+
+  /**
+   * Check company name availability on blur
+   * Generates sanitized company code and checks if it's available
+   */
+  protected async onCompanyNameBlur(): Promise<void> {
+    const trimmedName = this.companyName.trim();
+
+    // Skip if empty or same as last check
+    if (!trimmedName) {
+      this.companyNameStatus.set('idle');
+      this.generatedCompanyCode.set('');
+      return;
+    }
+
+    // Generate sanitized company code (without random suffix)
+    const sanitizedCode = generateCompanyCode(trimmedName, false);
+
+    // Skip if empty after sanitization or same as last check
+    if (!sanitizedCode || trimmedName === this.lastCheckedCompanyName) {
+      return;
+    }
+
+    this.companyNameStatus.set('checking');
+    this.lastCheckedCompanyName = trimmedName;
+    this.generatedCompanyCode.set(sanitizedCode);
+
+    try {
+      const isAvailable = await this.authService.checkCompanyCodeAvailability(sanitizedCode);
+      if (isAvailable) {
+        this.companyNameStatus.set('available');
+        this.suggestedCompanyCode.set('');
+      } else {
+        this.companyNameStatus.set('taken');
+        // Generate suggested alternative with random suffix
+        this.suggestedCompanyCode.set(generateCompanyCode(trimmedName, true));
+      }
+    } catch {
+      // On error, don't block user - just reset to idle
+      this.companyNameStatus.set('idle');
+    }
+  }
+
+  /**
+   * Reset status when user starts typing again
+   */
+  protected onCompanyNameInput(): void {
+    // Reset status when user types (will re-check on blur)
+    if (
+      this.companyNameStatus() !== 'idle' &&
+      this.companyName.trim() !== this.lastCheckedCompanyName
+    ) {
+      this.companyNameStatus.set('idle');
     }
   }
 
