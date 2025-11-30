@@ -22,7 +22,6 @@ type Documents = {
     "\n  mutation RequestLoginOTP($phoneNumber: String!) {\n    requestLoginOTP(phoneNumber: $phoneNumber) {\n      success\n      message\n      expiresAt\n    }\n  }\n": typeof types.RequestLoginOtpDocument,
     "\n  mutation VerifyLoginOTP($phoneNumber: String!, $otp: String!) {\n    verifyLoginOTP(phoneNumber: $phoneNumber, otp: $otp) {\n      success\n      token\n      user {\n        id\n        identifier\n      }\n      message\n    }\n  }\n": typeof types.VerifyLoginOtpDocument,
     "\n  query CheckAuthorizationStatus($identifier: String!) {\n    checkAuthorizationStatus(identifier: $identifier) {\n      status\n      message\n    }\n  }\n": typeof types.CheckAuthorizationStatusDocument,
-    "\n  query CheckCompanyCodeAvailability($companyCode: String!) {\n    checkCompanyCodeAvailability(companyCode: $companyCode)\n  }\n": typeof types.CheckCompanyCodeAvailabilityDocument,
     "\n  mutation Logout {\n    logout {\n      success\n    }\n  }\n": typeof types.LogoutDocument,
     "\n  mutation UpdateAdministrator($input: UpdateActiveAdministratorInput!) {\n    updateActiveAdministrator(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n    }\n  }\n": typeof types.UpdateAdministratorDocument,
     "\n  query GetUserChannels {\n    me {\n      id\n      identifier\n      channels {\n        id\n        code\n        token\n      }\n    }\n  }\n": typeof types.GetUserChannelsDocument,
@@ -149,7 +148,6 @@ const documents: Documents = {
     "\n  mutation RequestLoginOTP($phoneNumber: String!) {\n    requestLoginOTP(phoneNumber: $phoneNumber) {\n      success\n      message\n      expiresAt\n    }\n  }\n": types.RequestLoginOtpDocument,
     "\n  mutation VerifyLoginOTP($phoneNumber: String!, $otp: String!) {\n    verifyLoginOTP(phoneNumber: $phoneNumber, otp: $otp) {\n      success\n      token\n      user {\n        id\n        identifier\n      }\n      message\n    }\n  }\n": types.VerifyLoginOtpDocument,
     "\n  query CheckAuthorizationStatus($identifier: String!) {\n    checkAuthorizationStatus(identifier: $identifier) {\n      status\n      message\n    }\n  }\n": types.CheckAuthorizationStatusDocument,
-    "\n  query CheckCompanyCodeAvailability($companyCode: String!) {\n    checkCompanyCodeAvailability(companyCode: $companyCode)\n  }\n": types.CheckCompanyCodeAvailabilityDocument,
     "\n  mutation Logout {\n    logout {\n      success\n    }\n  }\n": types.LogoutDocument,
     "\n  mutation UpdateAdministrator($input: UpdateActiveAdministratorInput!) {\n    updateActiveAdministrator(input: $input) {\n      id\n      firstName\n      lastName\n      emailAddress\n    }\n  }\n": types.UpdateAdministratorDocument,
     "\n  query GetUserChannels {\n    me {\n      id\n      identifier\n      channels {\n        id\n        code\n        token\n      }\n    }\n  }\n": types.GetUserChannelsDocument,
@@ -314,10 +312,6 @@ export function graphql(source: "\n  mutation VerifyLoginOTP($phoneNumber: Strin
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query CheckAuthorizationStatus($identifier: String!) {\n    checkAuthorizationStatus(identifier: $identifier) {\n      status\n      message\n    }\n  }\n"): (typeof documents)["\n  query CheckAuthorizationStatus($identifier: String!) {\n    checkAuthorizationStatus(identifier: $identifier) {\n      status\n      message\n    }\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(source: "\n  query CheckCompanyCodeAvailability($companyCode: String!) {\n    checkCompanyCodeAvailability(companyCode: $companyCode)\n  }\n"): (typeof documents)["\n  query CheckCompanyCodeAvailability($companyCode: String!) {\n    checkCompanyCodeAvailability(companyCode: $companyCode)\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
