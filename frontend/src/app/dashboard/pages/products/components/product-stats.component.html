@@ -1,20 +1,12 @@
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
   <!-- Total Products -->
-  <div class="card bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-    <div class="card-body p-5 lg:p-6">
-      <div class="flex items-start justify-between mb-3">
-        <div class="flex-1">
-          <p class="text-sm font-medium text-base-content/70 mb-2">Total Products</p>
-          <p class="text-4xl lg:text-5xl font-bold text-primary tracking-tight">
-            {{ stats().totalProducts }}
-          </p>
-        </div>
-        <div
-          class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-primary/10 flex items-center justify-center"
-        >
+  <div class="card bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+    <div class="card-body p-3 lg:p-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 lg:h-7 lg:w-7 text-primary"
+            class="h-5 w-5 text-primary"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -27,26 +19,24 @@
             />
           </svg>
         </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs text-base-content/60 truncate">Total Products</p>
+          <p class="text-xl lg:text-2xl font-bold text-primary tracking-tight">
+            {{ stats().totalProducts }}
+          </p>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Total Variants -->
-  <div class="card bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20">
-    <div class="card-body p-5 lg:p-6">
-      <div class="flex items-start justify-between mb-3">
-        <div class="flex-1">
-          <p class="text-sm font-medium text-base-content/70 mb-2">Variants</p>
-          <p class="text-4xl lg:text-5xl font-bold text-secondary tracking-tight">
-            {{ stats().totalVariants }}
-          </p>
-        </div>
-        <div
-          class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-secondary/10 flex items-center justify-center"
-        >
+  <div class="card bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+    <div class="card-body p-3 lg:p-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 lg:h-7 lg:w-7 text-secondary"
+            class="h-5 w-5 text-secondary"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -59,26 +49,24 @@
             />
           </svg>
         </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs text-base-content/60 truncate">Variants</p>
+          <p class="text-xl lg:text-2xl font-bold text-secondary tracking-tight">
+            {{ stats().totalVariants }}
+          </p>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Total Stock -->
-  <div class="card bg-gradient-to-br from-success/10 to-success/5 border border-success/20">
-    <div class="card-body p-5 lg:p-6">
-      <div class="flex items-start justify-between mb-3">
-        <div class="flex-1">
-          <p class="text-sm font-medium text-base-content/70 mb-2">Total Stock</p>
-          <p class="text-4xl lg:text-5xl font-bold text-success tracking-tight">
-            {{ stats().totalStock }}
-          </p>
-        </div>
-        <div
-          class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-success/10 flex items-center justify-center"
-        >
+  <div class="card bg-gradient-to-br from-success/10 to-success/5 border border-success/20 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+    <div class="card-body p-3 lg:p-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 lg:h-7 lg:w-7 text-success"
+            class="h-5 w-5 text-success"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -91,26 +79,24 @@
             />
           </svg>
         </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs text-base-content/60 truncate">Total Stock</p>
+          <p class="text-xl lg:text-2xl font-bold text-success tracking-tight">
+            {{ stats().totalStock }}
+          </p>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Low Stock -->
-  <div class="card bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20">
-    <div class="card-body p-5 lg:p-6">
-      <div class="flex items-start justify-between mb-3">
-        <div class="flex-1">
-          <p class="text-sm font-medium text-base-content/70 mb-2">Low Stock</p>
-          <p class="text-4xl lg:text-5xl font-bold text-warning tracking-tight">
-            {{ stats().lowStock }}
-          </p>
-        </div>
-        <div
-          class="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-warning/10 flex items-center justify-center"
-        >
+  <div class="card bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+    <div class="card-body p-3 lg:p-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 lg:h-7 lg:w-7 text-warning"
+            class="h-5 w-5 text-warning"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -122,6 +108,12 @@
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
             />
           </svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs text-base-content/60 truncate">Low Stock</p>
+          <p class="text-xl lg:text-2xl font-bold text-warning tracking-tight">
+            {{ stats().lowStock }}
+          </p>
         </div>
       </div>
     </div>

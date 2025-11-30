@@ -368,20 +368,66 @@ animation: slideIn 0.3s ease-out;
 
 ---
 
-## 📦 Example Components
+## 📦 Dashboard Components
 
-### Stat Card (Dashboard):
-
+### Gradient Stat Card:
 ```html
-<button class="stat-card stat-card-sales">
-  <div class="stat-icon">💰</div>
-  <div class="stat-label">Sales</div>
-  <div class="stat-value">1.5k</div>
-  <div class="stat-bar-container">
-    <div class="stat-bar" style="width: 75%"></div>
+<div class="card bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 
+            transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+  <div class="card-body p-3 lg:p-4">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+        <svg class="h-5 w-5 text-primary">...</svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs text-base-content/60">Label</p>
+        <p class="text-xl font-bold text-primary tabular-nums">Value</p>
+      </div>
+    </div>
   </div>
+</div>
+```
+
+### Quick Action Button:
+```html
+<button class="flex flex-col items-center gap-2 p-4 rounded-xl bg-base-100 
+               border border-base-300 active:scale-95 transition-all">
+  <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+    <svg class="h-6 w-6 text-primary">...</svg>
+  </div>
+  <span class="text-xs font-medium">Label</span>
 </button>
 ```
+
+### Primary CTA (Full Width Mobile):
+```html
+<button class="w-full btn btn-primary btn-lg gap-3 shadow-lg shadow-primary/20 
+               active:scale-[0.98] transition-transform">
+  <svg class="h-6 w-6">...</svg>
+  <span class="text-base font-semibold">Action</span>
+</button>
+```
+
+### Horizontal Scroll Stats (Mobile):
+```html
+<div class="flex gap-3 overflow-x-auto pb-2 -mx-3 px-3 sm:grid sm:grid-cols-4 scrollbar-hide">
+  <div class="flex-shrink-0 w-[140px] sm:w-auto">...</div>
+</div>
+```
+
+### Dashboard Animations (Import):
+```scss
+@use '../../styles/dashboard-animations' as *;
+```
+
+### Page Color Mapping:
+| Page | Color | Variable |
+|------|-------|----------|
+| Products | primary | `--p` |
+| Orders | secondary | `--s` |
+| Payments | success | `--su` |
+| Customers | info | `--in` |
+| Suppliers | accent | `--a` |
 
 ### Search Bar:
 

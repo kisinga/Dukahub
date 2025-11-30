@@ -6,10 +6,9 @@
 
 export interface PaymentStats {
   totalPayments: number;
-  settledPayments: number;
-  authorizedPayments: number;
-  declinedPayments: number;
-  todayPayments: number;
+  successfulPayments: number;
+  pendingPayments: number;
+  failedPayments: number;
 }
 
 export interface Payment {
@@ -28,21 +27,11 @@ export interface Payment {
  */
 export function calculatePaymentStats(payments: Payment[]): PaymentStats {
   const totalPayments = payments.length;
-  const settledPayments = payments.filter((p) => p.state === 'Settled').length;
-  const authorizedPayments = payments.filter((p) => p.state === 'Authorized').length;
-  const declinedPayments = payments.filter(
+  const successfulPayments = payments.filter((p) => p.state === 'Settled').length;
+  const pendingPayments = payments.filter((p) => p.state === 'Authorized').length;
+  const failedPayments = payments.filter(
     (p) => p.state === 'Declined' || p.state === 'Cancelled',
   ).length;
 
-  // Today's payments
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayPayments = payments.filter((p) => {
-    if (!p.createdAt) return false;
-    const paymentDate = new Date(p.createdAt);
-    paymentDate.setHours(0, 0, 0, 0);
-    return paymentDate.getTime() === today.getTime();
-  }).length;
-
-  return { totalPayments, settledPayments, authorizedPayments, declinedPayments, todayPayments };
+  return { totalPayments, successfulPayments, pendingPayments, failedPayments };
 }
