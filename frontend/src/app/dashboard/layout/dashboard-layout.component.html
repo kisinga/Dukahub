@@ -7,11 +7,7 @@
     <div class="navbar bg-base-100 border-b border-base-300 sticky top-0 z-40 px-3 sm:px-4 min-h-[4rem]">
       <!-- Mobile: Menu Button -->
       <div class="flex-none lg:hidden">
-        <label for="dashboard-drawer" class="btn btn-ghost btn-square">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-5 w-5 stroke-current">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-          </svg>
-        </label>
+        <app-menu-toggle-button for="dashboard-drawer" />
       </div>
 
       <!-- Company Branding -->
@@ -29,86 +25,30 @@
       </div>
 
       <!-- Right side actions -->
-      <div class="flex-none gap-1">
+      <div class="flex-none flex items-center gap-1">
         <!-- Offline Indicator -->
         @if (!isOnline()) {
           <div class="tooltip tooltip-bottom" data-tip="Offline Mode">
-            <div class="btn btn-ghost btn-sm btn-square indicator">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" />
+            <button type="button" class="btn btn-ghost btn-square btn-md indicator">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" />
               </svg>
-              <span class="badge badge-warning badge-xs indicator-item"></span>
-            </div>
+              <span class="badge badge-warning badge-sm indicator-item"></span>
+            </button>
           </div>
         }
 
         <!-- Notifications -->
-        <div class="dropdown dropdown-end">
-          <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square indicator" [class.animate-pulse]="unreadCount() > 0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            @if (unreadCount() > 0) {
-              <span class="badge badge-error badge-xs indicator-item">{{ unreadCount() }}</span>
-            }
-          </div>
-          <div tabindex="0" class="dropdown-content bg-base-100 rounded-xl z-50 mt-2 w-screen max-w-sm shadow-xl border border-base-300">
-            <!-- Header -->
-            <div class="px-4 py-3 border-b border-base-300 flex items-center justify-between">
-              <div>
-                <h3 class="font-semibold text-sm">Notifications</h3>
-                @if (unreadCount() > 0) {
-                  <p class="text-xs text-base-content/60">{{ unreadCount() }} unread</p>
-                }
-              </div>
-              @if (unreadCount() > 0) {
-                <button class="btn btn-ghost btn-xs" (click)="markAllNotificationsAsRead()">Mark all read</button>
-              }
-            </div>
-
-            <!-- Notifications List -->
-            <div class="max-h-[60vh] overflow-y-auto">
-              @for (notif of notifications(); track notif.id) {
-                <div
-                  class="flex items-start gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors border-b border-base-200 last:border-b-0"
-                  [class.bg-primary/5]="!notif.read"
-                  (click)="markNotificationAsRead(notif.id)"
-                >
-                  <div
-                    class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm"
-                    [class.bg-warning/20]="getNotificationTypeClass(notif.type) === 'warning'"
-                    [class.bg-success/20]="getNotificationTypeClass(notif.type) === 'success'"
-                    [class.bg-info/20]="getNotificationTypeClass(notif.type) === 'info'"
-                  >
-                    {{ getNotificationIcon(notif.type) }}
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm" [class.font-medium]="!notif.read">{{ notif.title }}</p>
-                    <p class="text-xs text-base-content/60 mt-0.5 line-clamp-2">{{ notif.message }}</p>
-                    <p class="text-xs text-base-content/40 mt-1">{{ formatNotificationTime(notif.createdAt) }}</p>
-                  </div>
-                  @if (!notif.read) {
-                    <div class="w-2 h-2 bg-primary rounded-full shrink-0 mt-1"></div>
-                  }
-                </div>
-              } @empty {
-                <div class="text-center py-12">
-                  <div class="text-3xl mb-2">🔔</div>
-                  <p class="font-medium text-sm">No notifications</p>
-                  <p class="text-xs text-base-content/60 mt-1">You're all caught up!</p>
-                </div>
-              }
-            </div>
-          </div>
-        </div>
+        <app-notification-dropdown
+          [notifications]="notifications()"
+          [unreadCount]="unreadCount()"
+          (markAsRead)="markNotificationAsRead($event)"
+          (markAllRead)="markAllNotificationsAsRead()"
+        />
 
         <!-- User Profile -->
         <div class="dropdown dropdown-end">
-          <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-circle avatar">
-            <div class="w-8 h-8 rounded-full ring-2 ring-base-300">
-              <img [src]="userAvatar()" [alt]="fullName()" />
-            </div>
-          </div>
+          <app-user-avatar-button [imageUrl]="userAvatar()" [name]="fullName()" />
           <div tabindex="0" class="dropdown-content bg-base-100 rounded-xl z-50 mt-2 w-72 shadow-xl border border-base-300">
             <!-- User Info Header -->
             <div class="bg-gradient-to-br from-primary/10 to-secondary/5 px-4 py-4 border-b border-base-300 rounded-t-xl">
