@@ -14,7 +14,6 @@ import { NetworkService } from '../../core/services/network.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { NotificationStateService } from '../../core/services/notification/notification-state.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
-import { StockLocationService } from '../../core/services/stock-location.service';
 import type { Notification } from '../../core/graphql/notification.types';
 
 interface NavItem {
@@ -34,7 +33,6 @@ interface NavItem {
 export class DashboardLayoutComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly companyService = inject(CompanyService);
-  private readonly stockLocationService = inject(StockLocationService);
   private readonly appInitService = inject(AppInitService);
   private readonly notificationService = inject(NotificationService);
   private readonly notificationStateService = inject(NotificationStateService);
@@ -131,11 +129,20 @@ export class DashboardLayoutComponent implements OnInit {
     // This ensures the selected company persists across page refreshes
 
     // Watch for active company changes and initialize dashboard
+    // Uses reinitialize() on company switch to clear cache first
     effect(() => {
       const companyId = this.activeCompanyId();
       if (companyId && companyId !== this.lastCompanyId) {
+        const isSwitch = this.lastCompanyId !== null;
         this.lastCompanyId = companyId;
-        this.appInitService.initializeDashboard(companyId);
+
+        if (isSwitch) {
+          // Company switch: clear cache and reinitialize
+          this.appInitService.reinitialize(companyId);
+        } else {
+          // First load: just initialize
+          this.appInitService.initializeDashboard(companyId);
+        }
       }
     });
   }
@@ -161,10 +168,7 @@ export class DashboardLayoutComponent implements OnInit {
 
   selectCompany(companyId: string): void {
     this.companyService.activateCompany(companyId);
-    // Note: effect() in constructor will trigger initialization
-    // Also clear and refetch locations for new company
-    this.stockLocationService.clearLocations();
-    this.stockLocationService.fetchStockLocationsWithCashier(true); // Force refresh after clearing
+    // Effect in constructor handles cache clearing and reinitialization
   }
 
   async logout(): Promise<void> {

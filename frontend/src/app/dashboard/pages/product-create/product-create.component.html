@@ -1,114 +1,121 @@
 <!-- Product Creation - MEASURED vs DISCRETE Model -->
 <div class="min-h-screen bg-base-200 p-4">
-  <div class="max-w-2xl mx-auto space-y-4" [formGroup]="productForm">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold">
-        @if (isEditMode()) {
-          Edit Product
-        } @else {
-          Add New Item
-        }
-      </h1>
-      <button type="button" class="btn btn-ghost btn-sm" (click)="cancel()">Cancel</button>
-    </div>
+  @if (isReady()) {
+    <div class="max-w-2xl mx-auto space-y-4" [formGroup]="productForm">
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold">
+          @if (isEditMode()) {
+            Edit Product
+          } @else {
+            Add New Item
+          }
+        </h1>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="cancel()">Cancel</button>
+      </div>
 
-    <!-- Steps -->
-    <ul class="steps steps-horizontal w-full text-xs mt-1">
-      <li class="step" [class.step-primary]="currentStage() === 1" (click)="goToStage1()">
-        Step 1 · Setup
-      </li>
-      <li class="step" [class.step-primary]="currentStage() === 2" (click)="goToStage2()">
-        Step 2 · Pricing & stock
-      </li>
-    </ul>
+      <!-- Steps -->
+      <ul class="steps steps-horizontal w-full text-xs mt-1">
+        <li class="step" [class.step-primary]="currentStage() === 1" (click)="goToStage1()">
+          Step 1 · Setup
+        </li>
+        <li class="step" [class.step-primary]="currentStage() === 2" (click)="goToStage2()">
+          Step 2 · Pricing & stock
+        </li>
+      </ul>
 
-    <!-- Stage 1: Item type, product basics & how it's sold -->
-    @if (currentStage() === 1) {
-      <div class="space-y-3">
-        <!-- Item type (product vs service) comes first -->
-        <app-item-type-selector [itemType]="itemType()" (itemTypeChange)="setItemType($event)" />
+      <!-- Stage 1: Item type, product basics & how it's sold -->
+      @if (currentStage() === 1) {
+        <div class="space-y-3">
+          <!-- Item type (product vs service) comes first -->
+          <app-item-type-selector [itemType]="itemType()" (itemTypeChange)="setItemType($event)" />
 
-        <!-- Product name -->
-        <app-product-name-input [nameControl]="nameControl" />
+          <!-- Product name -->
+          <app-product-name-input [nameControl]="nameControl" />
 
-        <!-- How it's sold (presets) for products only -->
-        @if (itemType() === 'product') {
-          <app-how-sold-selector
-            [selected]="howSoldPreset()"
-            (selectedChange)="onHowSoldSelected($event)"
+          <!-- How it's sold (presets) for products only -->
+          @if (itemType() === 'product') {
+            <app-how-sold-selector
+              [selected]="howSoldPreset()"
+              (selectedChange)="onHowSoldSelected($event)"
+            />
+
+            <!-- Measurement unit (only for measured presets) -->
+            <app-measurement-unit-selector
+              [measurementUnit]="measurementUnit()"
+              [visible]="productType() === 'measured'"
+              (unitChange)="setMeasurementUnit($event)"
+            />
+          }
+
+          <!-- Identification -->
+          <app-identification-selector
+            #identificationSelector
+            [identificationMethod]="identificationMethod()"
+            [barcodeControl]="barcodeControl"
+            [photoCount]="photoCount()"
+            [hasValidIdentification]="hasValidIdentification()"
+            (methodChange)="chooseIdentificationMethod($event)"
+            (barcodeScanned)="onBarcodeScanned($event)"
+            (photosChanged)="onPhotosChanged($event)"
           />
 
-          <!-- Measurement unit (only for measured presets) -->
-          <app-measurement-unit-selector
-            [measurementUnit]="measurementUnit()"
-            [visible]="productType() === 'measured'"
-            (unitChange)="setMeasurementUnit($event)"
-          />
-        }
-
-        <!-- Identification -->
-        <app-identification-selector
-          #identificationSelector
-          [identificationMethod]="identificationMethod()"
-          [barcodeControl]="barcodeControl"
-          [photoCount]="photoCount()"
-          [hasValidIdentification]="hasValidIdentification()"
-          (methodChange)="chooseIdentificationMethod($event)"
-          (barcodeScanned)="onBarcodeScanned($event)"
-          (photosChanged)="onPhotosChanged($event)"
-        />
-
-        <!-- Continue to Stage 2 -->
-        <div class="flex justify-end">
-          <button type="button" class="btn btn-primary btn-sm" (click)="goToStage2()">
-            Continue to pricing
-          </button>
+          <!-- Continue to Stage 2 -->
+          <div class="flex justify-end">
+            <button type="button" class="btn btn-primary btn-sm" (click)="goToStage2()">
+              Continue to pricing
+            </button>
+          </div>
         </div>
-      </div>
-    }
+      }
 
-    <!-- Stage 2: Variants / SKUs, pricing & stock -->
-    @if (currentStage() === 2) {
-      <div class="space-y-3">
-        @if (itemType() === 'product') {
-          <!-- Variant dimensions for products -->
-          <app-variant-dimension-editor
-            [variantDimensions]="variantDimensions()"
-            [productType]="productType()"
-            (addDimension)="addVariantDimension()"
-            (removeDimension)="removeVariantDimension($event)"
-            (updateOptions)="updateDimensionOptions($event.id, $event.options)"
-          />
+      <!-- Stage 2: Variants / SKUs, pricing & stock -->
+      @if (currentStage() === 2) {
+        <div class="space-y-3">
+          @if (itemType() === 'product') {
+            <!-- Variant dimensions for products -->
+            <app-variant-dimension-editor
+              [variantDimensions]="variantDimensions()"
+              [productType]="productType()"
+              (addDimension)="addVariantDimension()"
+              (removeDimension)="removeVariantDimension($event)"
+              (updateOptions)="updateDimensionOptions($event.id, $event.options)"
+            />
 
-          <!-- Generated SKUs with pricing & opening stock -->
-          <app-sku-list-editor [skus]="skus" [canRegenerate]="true" (regenerate)="generateSkus()" />
-        }
+            <!-- Generated SKUs with pricing & opening stock -->
+            <app-sku-list-editor [skus]="skus" [canRegenerate]="true" (regenerate)="generateSkus()" />
+          }
 
-        <!-- Service-specific form -->
-        @if (itemType() === 'service') {
-          <app-service-sku-editor [skuFormGroup]="firstSkuFormGroup" />
-        }
+          <!-- Service-specific form -->
+          @if (itemType() === 'service') {
+            <app-service-sku-editor [skuFormGroup]="firstSkuFormGroup" />
+          }
 
-        <!-- Validation Issues -->
-        <app-validation-issues-panel [issues]="validationIssues()" />
+          <!-- Validation Issues -->
+          <app-validation-issues-panel [issues]="validationIssues()" />
 
-        <!-- Location (bottom, just before create button) -->
-        <app-location-display [location]="defaultLocation()" />
-      </div>
-    }
+          <!-- Location (bottom, just before create button) -->
+          <app-location-display [location]="defaultLocation()" />
+        </div>
+      }
 
-    <!-- Submit Button (Stage 2 only) -->
-    @if (currentStage() === 2) {
-      <app-submit-bar
-        [canSubmit]="canSubmit()"
-        [isLoading]="isLoading()"
-        [isEditMode]="isEditMode()"
-        [itemType]="itemType()"
-        [submitError]="submitError()"
-        [submitSuccess]="submitSuccess()"
-        (submit)="submitForm()"
-      />
-    }
-  </div>
+      <!-- Submit Button (Stage 2 only) -->
+      @if (currentStage() === 2) {
+        <app-submit-bar
+          [canSubmit]="canSubmit()"
+          [isLoading]="isLoading()"
+          [isEditMode]="isEditMode()"
+          [itemType]="itemType()"
+          [submitError]="submitError()"
+          [submitSuccess]="submitSuccess()"
+          (submit)="submitForm()"
+        />
+      }
+    </div>
+  } @else {
+    <!-- Loading state while dashboard initializes -->
+    <div class="flex justify-center items-center min-h-[50vh]">
+      <span class="loading loading-spinner loading-lg"></span>
+    </div>
+  }
 </div>

@@ -1,4 +1,4 @@
-import { Injectable, Injector, inject, signal } from '@angular/core';
+import { Injectable, Injector, computed, inject, signal } from '@angular/core';
 import { CompanyService } from './company.service';
 import { loadMlModelService } from './ml-model.loader';
 import type { MlModelService } from './ml-model.service';
@@ -46,6 +46,17 @@ export class AppInitService {
   private readonly lastInitChannelId = signal<string | null>(null);
 
   readonly initStatus = this.initStatusSignal.asReadonly();
+
+  /**
+   * Whether locations are loaded and ready for use
+   * Use this to gate UI that requires a location (e.g., product creation)
+   */
+  readonly isReady = computed(() => this.initStatusSignal().locationsLoaded);
+
+  /**
+   * Whether initialization is currently in progress
+   */
+  readonly isInitializing = this.isInitializingSignal.asReadonly();
 
   /**
    * Initialize dashboard data when channel is set
@@ -182,6 +193,15 @@ export class AppInitService {
       channelId: null,
       error: null,
     });
+  }
+
+  /**
+   * Switch to a new channel - clears cache then initializes
+   * Use this when switching companies to ensure clean state
+   */
+  async reinitialize(channelId: string): Promise<void> {
+    this.clearCache();
+    await this.initializeDashboard(channelId);
   }
 
   /**

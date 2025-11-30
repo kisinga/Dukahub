@@ -17,6 +17,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AppInitService } from '../../../core/services/app-init.service';
 import { CompanyService } from '../../../core/services/company.service';
 import { ProductService } from '../../../core/services/product.service';
 import { StockLocationService } from '../../../core/services/stock-location.service';
@@ -82,7 +83,14 @@ export class ProductCreateComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly productService = inject(ProductService);
   private readonly stockLocationService = inject(StockLocationService);
+  private readonly appInitService = inject(AppInitService);
   readonly companyService = inject(CompanyService);
+
+  /**
+   * Whether dashboard initialization is complete (locations loaded)
+   * Template should wait for this before rendering the form
+   */
+  readonly isReady = this.appInitService.isReady;
 
   // View references (for photo upload in submit)
   readonly identificationSelector =
@@ -132,8 +140,8 @@ export class ProductCreateComponent implements OnInit {
   // Computed: Combined loading state (component + service)
   readonly isLoading = computed(() => this.isSubmitting() || this.productService.isCreating());
 
-  // Default location for the active channel
-  readonly defaultLocation = computed(() => this.stockLocationService.getDefaultLocation());
+  // Default location for the active channel (from StockLocationService)
+  readonly defaultLocation = this.stockLocationService.defaultLocation;
 
   // Identification method chosen
   readonly identificationMethod = signal<'barcode' | 'label-photos' | null>(null);
@@ -157,19 +165,19 @@ export class ProductCreateComponent implements OnInit {
   });
 
   // Computed: Form validity
+  // Note: Location is guaranteed by isReady gate in template
   readonly canSubmit = computed(() => {
     const isValid = this.formValid(); // Use signal instead of direct form access
     const notLoading = !this.isLoading();
-    const hasLocation = !!this.defaultLocation();
     const hasIdentification = this.hasValidIdentification();
 
-    return isValid && notLoading && hasLocation && hasIdentification;
+    return isValid && notLoading && hasIdentification;
   });
 
   // Computed: Validation issues
+  // Note: Location validation removed - guaranteed by isReady gate in template
   readonly validationIssues = computed(() => {
     const issues: string[] = [];
-    const type = this.itemType();
     const stage = this.currentStage();
 
     if (!this.hasValidIdentification()) {
@@ -177,7 +185,7 @@ export class ProductCreateComponent implements OnInit {
     }
     if (!this.productNameValid()) issues.push('Product name required');
 
-    // SKU + location validation only matters once we're in Stage 2
+    // SKU validation only matters once we're in Stage 2
     if (stage === 2) {
       // SKU validation (trigger ensures recomputation)
       this.skuValidityTrigger(); // Access signal to track changes
@@ -207,10 +215,6 @@ export class ProductCreateComponent implements OnInit {
         if (skuCodes.length !== uniqueSkuCodes.size) {
           issues.push('Duplicate SKU codes detected');
         }
-      }
-
-      if (type === 'product' && !this.defaultLocation()) {
-        issues.push('No location selected');
       }
     }
 
@@ -763,11 +767,11 @@ export class ProductCreateComponent implements OnInit {
     try {
       const formValue = this.productForm.value;
 
-      // Location is required for products
+      // Location is guaranteed by isReady gate, but assert defensively
       const stockLocationId = this.defaultLocation()?.id;
-
       if (!stockLocationId) {
-        this.submitError.set('No active location. Please select a location from the navbar.');
+        console.error('Unexpected: No location available during submit');
+        this.submitError.set('System error: Location not available. Please refresh the page.');
         this.isSubmitting.set(false);
         return;
       }
